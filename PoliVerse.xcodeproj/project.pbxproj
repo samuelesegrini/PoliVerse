@@ -55,8 +55,9 @@
 			isa = PBXGroup;
 			children = (
 				A44C43412AE041CE00E0B437 /* PoliVerseApp.swift */,
-				A49515BB2AE4308C000AB33D /* ContentView.swift */,
-				A41258312AE1724C002D9832 /* TabContainerView.swift */,
+				A49515BF2AE43103000AB33D /* Utilities */,
+				A49515BE2AE430FD000AB33D /* View */,
+				A49515BD2AE430F1000AB33D /* Model */,
 				A44C43452AE041D000E0B437 /* Assets.xcassets */,
 				A44C43472AE041D000E0B437 /* PoliVerse.entitlements */,
 				A44C43482AE041D000E0B437 /* Preview Content */,
@@ -70,6 +71,29 @@
 				A44C43492AE041D000E0B437 /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		A49515BD2AE430F1000AB33D /* Model */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		A49515BE2AE430FD000AB33D /* View */ = {
+			isa = PBXGroup;
+			children = (
+				A41258312AE1724C002D9832 /* TabContainerView.swift */,
+				A49515BB2AE4308C000AB33D /* ContentView.swift */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		A49515BF2AE43103000AB33D /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Utilities;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
