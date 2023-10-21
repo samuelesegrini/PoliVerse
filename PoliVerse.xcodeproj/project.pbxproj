@@ -9,19 +9,19 @@
 /* Begin PBXBuildFile section */
 		A41258322AE1724C002D9832 /* TabContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A41258312AE1724C002D9832 /* TabContainerView.swift */; };
 		A44C43422AE041CE00E0B437 /* PoliVerseApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44C43412AE041CE00E0B437 /* PoliVerseApp.swift */; };
-		A44C43442AE041CE00E0B437 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44C43432AE041CE00E0B437 /* ContentView.swift */; };
 		A44C43462AE041D000E0B437 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A44C43452AE041D000E0B437 /* Assets.xcassets */; };
 		A44C434A2AE041D000E0B437 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A44C43492AE041D000E0B437 /* Preview Assets.xcassets */; };
+		A49515BC2AE4308C000AB33D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49515BB2AE4308C000AB33D /* ContentView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		A41258312AE1724C002D9832 /* TabContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabContainerView.swift; sourceTree = "<group>"; };
 		A44C433E2AE041CE00E0B437 /* PoliVerse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PoliVerse.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A44C43412AE041CE00E0B437 /* PoliVerseApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoliVerseApp.swift; sourceTree = "<group>"; };
-		A44C43432AE041CE00E0B437 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A44C43452AE041D000E0B437 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A44C43472AE041D000E0B437 /* PoliVerse.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PoliVerse.entitlements; sourceTree = "<group>"; };
 		A44C43492AE041D000E0B437 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		A49515BB2AE4308C000AB33D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,7 +55,7 @@
 			isa = PBXGroup;
 			children = (
 				A44C43412AE041CE00E0B437 /* PoliVerseApp.swift */,
-				A44C43432AE041CE00E0B437 /* ContentView.swift */,
+				A49515BB2AE4308C000AB33D /* ContentView.swift */,
 				A41258312AE1724C002D9832 /* TabContainerView.swift */,
 				A44C43452AE041D000E0B437 /* Assets.xcassets */,
 				A44C43472AE041D000E0B437 /* PoliVerse.entitlements */,
@@ -143,9 +143,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A44C43442AE041CE00E0B437 /* ContentView.swift in Sources */,
 				A41258322AE1724C002D9832 /* TabContainerView.swift in Sources */,
 				A44C43422AE041CE00E0B437 /* PoliVerseApp.swift in Sources */,
+				A49515BC2AE4308C000AB33D /* ContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
