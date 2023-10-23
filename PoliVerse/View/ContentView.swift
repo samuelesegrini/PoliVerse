@@ -8,8 +8,18 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
     var body: some View {
-        TabContainerView()
+        if sizeClass == .regular {
+            NavigationSplitView {
+                
+            } detail: {
+                HomeView()
+            }
+        } else {
+            TabContainerView()
+        }
     }
 }
 
