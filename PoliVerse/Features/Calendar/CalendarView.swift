@@ -92,12 +92,12 @@ struct CalendarView: View {
             VStack(spacing: 4) {
                 Text(weekdaySymbol(day))
                     .font(.caption2)
-                    .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
+                    .foregroundStyle(isSelected ? Theme.onAccent.opacity(0.85) : .secondary)
                 Text(dayNumber(day))
                     .font(.callout.weight(isToday ? .bold : .regular))
-                    .foregroundStyle(isSelected ? .white : (isToday ? Theme.brand : .primary))
+                    .foregroundStyle(isSelected ? Theme.onAccent : (isToday ? Theme.brand : .primary))
                 Circle()
-                    .fill(isSelected ? Color.white : Theme.brand)
+                    .fill(isSelected ? Theme.onAccent : Theme.brand)
                     .frame(width: 5, height: 5)
                     .opacity(hasEvents ? 1 : 0)
             }

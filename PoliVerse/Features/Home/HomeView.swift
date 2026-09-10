@@ -7,7 +7,16 @@ struct HomeView: View {
     @Environment(CareerService.self) private var career
     @Environment(\.locale) private var locale
 
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var selectedCourse: Course?
+
+    /// One column on iPhone, two on a regular-width iPad. Full-width cards on
+    /// a 13" iPad leave a stripe of dead space between the title and buttons.
+    private var columns: [GridItem] {
+        sizeClass == .regular
+            ? [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
+            : [GridItem(.flexible())]
+    }
 
     private var todayEvents: [AgendaEvent] {
         agenda.events(on: .now).filter { $0.end > .now }
@@ -46,19 +55,23 @@ struct HomeView: View {
                                     .redacted(reason: .placeholder)
                             }
                         } else {
-                            ForEach(courses.courses) { course in
-                                CourseCard(
-                                    course: course,
-                                    onOpen: { selectedCourse = course },
-                                    onFavourite: { courses.toggleFavourite(course) },
-                                    onMaterials: { selectedCourse = course }
-                                )
+                            LazyVGrid(columns: columns, spacing: 14) {
+                                ForEach(courses.courses) { course in
+                                    CourseCard(
+                                        course: course,
+                                        onOpen: { selectedCourse = course },
+                                        onFavourite: { courses.toggleFavourite(course) },
+                                        onMaterials: { selectedCourse = course }
+                                    )
+                                }
                             }
                         }
                     }
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 24)
+                .frame(maxWidth: 1100)
+                .frame(maxWidth: .infinity)
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Home")
@@ -114,7 +127,7 @@ struct HomeView: View {
             .overlay {
                 Text(session.student?.initials ?? "?")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.onAccent)
             }
     }
 
@@ -188,7 +201,7 @@ private struct NextUpCard: View {
                     .font(.caption2.weight(.bold))
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(accent, in: .capsule)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.onAccent)
             }
         }
         .padding(12)

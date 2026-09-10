@@ -39,7 +39,7 @@ struct LoginView: View {
                         .padding(.vertical, 14)
                 }
                 .background(Theme.brand, in: .capsule)
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.onAccent)
                 .buttonStyle(.plain)
             }
 

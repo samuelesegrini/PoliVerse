@@ -82,7 +82,7 @@ struct CourseCard: View {
                 }
                 .buttonStyle(.plain)
                 .background(accent, in: .capsule)
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.onAccent)
             }
         }
         .padding(18)

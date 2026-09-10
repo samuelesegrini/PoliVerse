@@ -27,6 +27,17 @@ a network. Turn it off in Settings to use a real account.
 Courses are cached to Application Support, so the app opens with content and
 refreshes behind it. Tokens are never cached there — they live in the Keychain.
 
+## Design notes
+
+Colours are adaptive and contrast-checked. The brand navy scores 13:1 on white
+but only **1.3:1** on the dark-mode background, so every accent has a lighter
+dark twin, and text sitting *on* a filled accent flips to near-black in dark
+mode rather than staying white (which measured 2.3:1). Worst pair in either
+mode is now 4.7:1.
+
+Layout adapts: one column of course cards on iPhone, two on a regular-width
+iPad, capped at a readable measure on very wide windows.
+
 ## Requirements
 
 - Xcode 27, iOS 26 SDK
