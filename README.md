@@ -36,7 +36,9 @@ mode rather than staying white (which measured 2.3:1). Worst pair in either
 mode is now 4.7:1.
 
 Layout adapts: one column of course cards on iPhone, two on a regular-width
-iPad, capped at a readable measure on very wide windows.
+iPad, capped at a readable measure on very wide windows. Course card actions
+fall back from a single row to a stacked layout at accessibility text sizes,
+where a one-row layout overflowed.
 
 ## Requirements
 

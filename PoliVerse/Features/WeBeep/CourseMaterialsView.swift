@@ -37,7 +37,7 @@ struct CourseMaterialsView: View {
             ForEach(sections) { section in
                 Section(section.name) {
                     ForEach(section.files) { file in
-                        FileRow(file: file)
+                        FileRow(file: file, canDownload: service?.isLive == true)
                     }
                 }
             }
@@ -62,6 +62,10 @@ struct CourseMaterialsView: View {
 
 private struct FileRow: View {
     let file: WeBeepFile
+    /// Downloading is not wired up yet. Showing a download affordance that does
+    /// nothing when tapped is worse than showing none, so it is hidden until
+    /// the Moodle handshake lands.
+    let canDownload: Bool
     // `Date.formatted` reads `Locale.current`, not the SwiftUI environment, so
     // the locale has to be threaded into the format style by hand.
     @Environment(\.locale) private var locale
@@ -84,8 +88,10 @@ private struct FileRow: View {
 
             Spacer(minLength: 4)
 
-            Image(systemName: file.isDownloaded ? "checkmark.circle.fill" : "arrow.down.circle")
-                .foregroundStyle(file.isDownloaded ? .green : .secondary)
+            if canDownload {
+                Image(systemName: file.isDownloaded ? "checkmark.circle.fill" : "arrow.down.circle")
+                    .foregroundStyle(file.isDownloaded ? .green : .secondary)
+            }
         }
         .padding(.vertical, 2)
     }

@@ -14,6 +14,60 @@ struct CourseCard: View {
 
     private var accent: Color { Theme.accent(for: course) }
 
+    /// Icon buttons grow with the user's text size instead of staying 34pt.
+    @ScaledMetric(relativeTo: .body) private var controlSize: CGFloat = 34
+
+    @ViewBuilder
+    private var cfuChip: some View {
+        if course.cfu > 0 {
+            Label("\(course.cfu) CFU", systemImage: "graduationcap")
+                .font(.caption.weight(.medium))
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(accent.opacity(0.15), in: .capsule)
+                .foregroundStyle(accent)
+        }
+    }
+
+    @ViewBuilder
+    private var actionButtons: some View {
+        Button(action: onMaterials) {
+            Image(systemName: "folder.fill")
+                .frame(width: controlSize, height: controlSize)
+        }
+        .buttonStyle(.plain)
+        .background(Color(.tertiarySystemFill), in: .circle)
+        .accessibilityLabel("Materiali di \(course.name)")
+
+        Menu {
+            Button(course.isFavourite ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti",
+                   systemImage: course.isFavourite ? "star.slash" : "star",
+                   action: onFavourite)
+            Button("Apri materiali", systemImage: "folder", action: onMaterials)
+        } label: {
+            Image(systemName: "ellipsis")
+                .frame(width: controlSize, height: controlSize)
+                .background(Color(.tertiarySystemFill), in: .circle)
+        }
+        .accessibilityLabel("Altre azioni")
+
+        Button(action: onOpen) {
+            HStack(spacing: 6) {
+                Text("Apri")
+                Image(systemName: "arrow.up.right")
+            }
+            .font(.subheadline.weight(.semibold))
+            .lineLimit(1)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+        }
+        .buttonStyle(.plain)
+        .background(accent, in: .capsule)
+        .foregroundStyle(Theme.onAccent)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top) {
@@ -38,51 +92,22 @@ struct CourseCard: View {
 
             Spacer(minLength: 12)
 
-            HStack(spacing: 8) {
-                if course.cfu > 0 {
-                    Label("\(course.cfu) CFU", systemImage: "graduationcap")
-                        .font(.caption.weight(.medium))
-                        .labelStyle(.titleAndIcon)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(accent.opacity(0.15), in: .capsule)
-                        .foregroundStyle(accent)
+            // At accessibility text sizes the chip and the "Apri" label grow
+            // enough that a single row overflows — the CFU chip started
+            // wrapping mid-word. Fall back to stacking rather than squeezing.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    cfuChip
+                    Spacer(minLength: 4)
+                    actionButtons
                 }
 
-                Spacer()
-
-                Button(action: onMaterials) {
-                    Image(systemName: "folder.fill")
-                        .frame(width: 34, height: 34)
-                }
-                .buttonStyle(.plain)
-                .background(Color(.tertiarySystemFill), in: .circle)
-                .accessibilityLabel("Materiali di \(course.name)")
-
-                Menu {
-                    Button(course.isFavourite ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti",
-                           systemImage: course.isFavourite ? "star.slash" : "star",
-                           action: onFavourite)
-                    Button("Apri materiali", systemImage: "folder", action: onMaterials)
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .frame(width: 34, height: 34)
-                        .background(Color(.tertiarySystemFill), in: .circle)
-                }
-                .accessibilityLabel("Altre azioni")
-
-                Button(action: onOpen) {
-                    HStack(spacing: 6) {
-                        Text("Apri")
-                        Image(systemName: "arrow.up.right")
+                VStack(alignment: .leading, spacing: 10) {
+                    cfuChip
+                    HStack(spacing: 8) {
+                        actionButtons
                     }
-                    .font(.subheadline.weight(.semibold))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 9)
                 }
-                .buttonStyle(.plain)
-                .background(accent, in: .capsule)
-                .foregroundStyle(Theme.onAccent)
             }
         }
         .padding(18)
