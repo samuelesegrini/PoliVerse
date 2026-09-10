@@ -17,16 +17,22 @@ actor TokenStore {
     /// The single in-flight refresh, if any. Concurrent callers join this.
     private var refreshTask: Task<PoliMiToken, Error>?
 
-    private let account = "polimi"
+    private let storage: any TokenPersistence
     private let refresh: @Sendable (String) async throws -> PoliMiToken
 
-    /// - Parameter refresh: performs the network call. Injected so the store
-    ///   stays testable and free of any dependency on the API client.
-    init(refresh: @escaping @Sendable (String) async throws -> PoliMiToken) {
+    /// - Parameters:
+    ///   - refresh: performs the network call. Injected so the store stays
+    ///     testable and free of any dependency on the API client.
+    ///   - storage: where the token lives between launches. Defaults to the
+    ///     Keychain; tests pass an in-memory double so they neither read nor
+    ///     write the real one.
+    init(
+        storage: any TokenPersistence = KeychainTokenPersistence(),
+        refresh: @escaping @Sendable (String) async throws -> PoliMiToken
+    ) {
+        self.storage = storage
         self.refresh = refresh
-        if let data = KeychainStore.load(account: account) {
-            self.token = try? JSONDecoder().decode(PoliMiToken.self, from: data)
-        }
+        self.token = storage.load()
     }
 
     var hasToken: Bool { token != nil }
@@ -40,7 +46,7 @@ actor TokenStore {
         token = nil
         refreshTask?.cancel()
         refreshTask = nil
-        KeychainStore.delete(account: account)
+        storage.delete()
     }
 
     /// Returns a token that is valid *now*, refreshing once if needed.
@@ -99,9 +105,48 @@ actor TokenStore {
     }
 
     private func persist() {
-        guard let token, let data = try? JSONEncoder().encode(token) else { return }
+        guard let token else { return }
+        storage.save(token)
+    }
+}
+
+/// Where the token pair is kept between launches.
+nonisolated protocol TokenPersistence: Sendable {
+    func load() -> PoliMiToken?
+    func save(_ token: PoliMiToken)
+    func delete()
+}
+
+/// The real one.
+nonisolated struct KeychainTokenPersistence: TokenPersistence {
+    private let account = "polimi"
+
+    func load() -> PoliMiToken? {
+        guard let data = KeychainStore.load(account: account) else { return nil }
+        return try? JSONDecoder().decode(PoliMiToken.self, from: data)
+    }
+
+    func save(_ token: PoliMiToken) {
+        guard let data = try? JSONEncoder().encode(token) else { return }
         try? KeychainStore.save(data, account: account)
     }
+
+    func delete() {
+        KeychainStore.delete(account: account)
+    }
+}
+
+/// Keeps a token only for the lifetime of the process. Used by tests so they
+/// never touch the device Keychain.
+nonisolated final class InMemoryTokenPersistence: TokenPersistence, @unchecked Sendable {
+    private let lock = NSLock()
+    private var stored: PoliMiToken?
+
+    init(initial: PoliMiToken? = nil) { stored = initial }
+
+    func load() -> PoliMiToken? { lock.withLock { stored } }
+    func save(_ token: PoliMiToken) { lock.withLock { stored = token } }
+    func delete() { lock.withLock { stored = nil } }
 }
 
 nonisolated enum AuthError: LocalizedError, Equatable {

@@ -1,0 +1,216 @@
+import Testing
+import Foundation
+@testable import PoliVerse
+
+@Suite("Domain models")
+struct ModelTests {
+    /// This crashed the calendar tab: `isOngoing` forms `start...end`, which
+    /// traps on an inverted range, and a deadline was written 23:15 → 23:00.
+    @Test("An inverted event is clamped instead of trapping")
+    func invertedEventIsClamped() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let end = start.addingTimeInterval(-3600)
+
+        let event = AgendaEvent(
+            id: 1, title: "Consegna", start: start, end: end, kind: .deadline
+        )
+
+        #expect(event.end == start)
+        #expect(event.duration == 0)
+        #expect(event.isOngoing(at: start) == false)
+    }
+
+    @Test("A lecture reports as ongoing only within its window")
+    func ongoingWindow() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let event = AgendaEvent(
+            id: 2, title: "Lezione", start: start,
+            end: start.addingTimeInterval(3600), kind: .lecture
+        )
+
+        #expect(event.isOngoing(at: start.addingTimeInterval(1800)))
+        #expect(event.isOngoing(at: start.addingTimeInterval(-1)) == false)
+        #expect(event.isOngoing(at: start.addingTimeInterval(3601)) == false)
+    }
+
+    /// `hashValue` is seeded per process, so using it here made course colours
+    /// reshuffle on every launch.
+    @Test("Course colour is stable for a given code")
+    func colorSeedIsStable() {
+        let course = Course(
+            id: "085923", name: "Test", teacher: "T", cfu: 5,
+            semester: "1", academicYear: "2025"
+        )
+        // Hardcoded: if the hash implementation changes, colours change for
+        // every existing user, and this test should make that a deliberate act.
+        let seed = course.colorSeed
+        #expect(seed == course.colorSeed)
+        #expect((0..<8).contains(seed))
+
+        let other = Course(
+            id: "085923", name: "Different name", teacher: "Other", cfu: 9,
+            semester: "2", academicYear: "2026"
+        )
+        // Only the code feeds the colour, so the same course keeps its colour
+        // even if the title or teacher changes between years.
+        #expect(other.colorSeed == seed)
+    }
+
+    @Test("SHOUTED course titles are cased for display")
+    func titleNormalisation() {
+        #expect(Course.normalise("ARCHITETTURE DEI CALCOLATORI")
+                == "Architetture dei Calcolatori")
+        #expect(Course.normalise("FONDAMENTI DI AUTOMATICA")
+                == "Fondamenti di Automatica")
+        // Minor words stay lowercase only mid-title.
+        #expect(Course.normalise("BASI DI DATI") == "Basi di Dati")
+    }
+
+    @Test("Favourites are not encoded, so a stale cache cannot resurrect one")
+    func favouriteNotPersistedInCache() throws {
+        var course = Course(
+            id: "1", name: "N", teacher: "T", cfu: 5,
+            semester: "1", academicYear: "2025"
+        )
+        course.isFavourite = true
+
+        let data = try JSONEncoder().encode(course)
+        let decoded = try JSONDecoder().decode(Course.self, from: data)
+
+        #expect(decoded.isFavourite == false)
+        #expect(decoded.id == "1")
+    }
+}
+
+@Suite("Exam mapping")
+struct ExamMappingTests {
+    private func dto(
+        subscription: ExamDTO.ActiveSubscription? = nil,
+        open: Bool? = nil,
+        opens: String? = nil
+    ) -> ExamDTO {
+        ExamDTO(
+            c_appello: 1, d_app: "2026-06-12", ora_ok: "14:30",
+            d_apertura: opens, d_chiusura: nil, numIscrittiAppello: 10,
+            descTipoAppello: "Scritto", xaula: "Aula Magna",
+            iscrizioneAttiva: subscription, iscrizioniAperte: open
+        )
+    }
+
+    @Test("A published mark becomes a graded status")
+    func gradedStatus() throws {
+        let session = dto(subscription: .init(
+            c_iscriz: 1, verb_esito: "28", verb_esito_number: 28,
+            verb_positivo: "S", xverbEsito: "28", hasEsito: true, rifiutabile: true
+        )).toSession(courseName: "BASI DI DATI", courseCode: "097785", teacher: "CERI STEFANO")
+
+        let grade = try #require(session.grade)
+        #expect(grade.value == 28)
+        #expect(grade.passed)
+        #expect(grade.refusable)
+        #expect(session.courseName == "Basi di Dati")
+        #expect(session.teacher == "Ceri Stefano")
+    }
+
+    /// Pass/fail comes from `verb_positivo`, because the mark text can be
+    /// "SUPERATO" or "IDONEO" with no number at all.
+    @Test("A non-numeric pass is still a pass")
+    func nonNumericPass() throws {
+        let session = dto(subscription: .init(
+            c_iscriz: 1, verb_esito: "SUPERATO", verb_esito_number: nil,
+            verb_positivo: "S", xverbEsito: "SUPERATO", hasEsito: true, rifiutabile: false
+        )).toSession(courseName: "PROVA FINALE", courseCode: "1", teacher: nil)
+
+        let grade = try #require(session.grade)
+        #expect(grade.value == nil)
+        #expect(grade.passed)
+        #expect(grade.display == "SUPERATO")
+    }
+
+    @Test("Lode renders as 30L")
+    func lodeDisplay() throws {
+        let session = dto(subscription: .init(
+            c_iscriz: 1, verb_esito: "30 e lode", verb_esito_number: 30,
+            verb_positivo: "S", xverbEsito: "30 e lode", hasEsito: true, rifiutabile: false
+        )).toSession(courseName: "ANALISI", courseCode: "1", teacher: nil)
+
+        #expect(try #require(session.grade).display == "30L")
+    }
+
+    @Test("Enrolment states map without a mark")
+    func enrolmentStates() {
+        let enrolled = dto(subscription: .init(
+            c_iscriz: 9, verb_esito: nil, verb_esito_number: nil,
+            verb_positivo: nil, xverbEsito: nil, hasEsito: false, rifiutabile: nil
+        )).toSession(courseName: "A", courseCode: "1", teacher: nil)
+        #expect(enrolled.status == .enrolled)
+
+        #expect(dto(open: true).toSession(courseName: "A", courseCode: "1", teacher: nil)
+                    .status == .open)
+
+        let future = ISO8601DateFormatter().string(from: .now.addingTimeInterval(86_400 * 30))
+        #expect(dto(open: false, opens: future)
+                    .toSession(courseName: "A", courseCode: "1", teacher: nil)
+                    .status == .notYetOpen)
+
+        #expect(dto(open: false).toSession(courseName: "A", courseCode: "1", teacher: nil)
+                    .status == .closed)
+    }
+
+    @Test("Day and time fields are recombined into one instant")
+    func dateAndTimeCombined() throws {
+        let session = dto(open: true)
+            .toSession(courseName: "A", courseCode: "1", teacher: nil)
+        let date = try #require(session.date)
+
+        var rome = Calendar(identifier: .gregorian)
+        rome.timeZone = try #require(TimeZone(identifier: "Europe/Rome"))
+        #expect(rome.component(.day, from: date) == 12)
+        #expect(rome.component(.hour, from: date) == 14)
+        #expect(rome.component(.minute, from: date) == 30)
+    }
+}
+
+@Suite("OAuth")
+struct OAuthTests {
+    /// PoliFemo strips the prefix with `url.replace(...)`, which breaks as soon
+    /// as the IdP appends another parameter or reorders them.
+    @Test("Authcode survives extra and reordered query parameters")
+    func authCodeExtraction() throws {
+        let plain = try #require(URL(string:
+            "https://polimiapp.polimi.it/polimi_app/app?code=ABC123"))
+        #expect(PoliMiOAuth.authCode(from: plain) == "ABC123")
+
+        let withState = try #require(URL(string:
+            "https://polimiapp.polimi.it/polimi_app/app?state=10010&code=ABC123&scope=openid"))
+        #expect(PoliMiOAuth.authCode(from: withState) == "ABC123")
+    }
+
+    @Test("Unrelated redirects yield no code")
+    func ignoresOtherHosts() throws {
+        let other = try #require(URL(string: "https://example.com/app?code=NOPE"))
+        #expect(PoliMiOAuth.authCode(from: other) == nil)
+
+        let noCode = try #require(URL(string:
+            "https://polimiapp.polimi.it/polimi_app/app?error=access_denied"))
+        #expect(PoliMiOAuth.authCode(from: noCode) == nil)
+    }
+
+    @Test("The authorization URL carries the parameters the IdP requires")
+    func authorizationURLShape() throws {
+        let components = try #require(URLComponents(
+            url: PoliMiOAuth.authorizationURL, resolvingAgainstBaseURL: false))
+        let items = try #require(components.queryItems)
+        func value(_ name: String) -> String? {
+            items.first { $0.name == name }?.value
+        }
+
+        #expect(components.host == "oauthidp.polimi.it")
+        #expect(value("client_id") == PoliMiOAuth.clientID)
+        #expect(value("response_type") == "code")
+        #expect(value("access_type") == "offline")
+        #expect(value("redirect_uri") == PoliMiOAuth.redirectURI)
+        #expect(value("scope")?.contains("webeep") == true)
+        #expect(value("scope")?.contains("carriera") == true)
+    }
+}

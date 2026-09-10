@@ -24,11 +24,26 @@ history is not carried forward.
 The app ships with **mock data on by default** so every screen renders without
 a network. Turn it off in Settings to use a real account.
 
+Courses are cached to Application Support, so the app opens with content and
+refreshes behind it. Tokens are never cached there — they live in the Keychain.
+
 ## Requirements
 
 - Xcode 27, iOS 26 SDK
 - Swift 6 (strict concurrency, `MainActor` default isolation)
 - No third-party dependencies
+
+## Test
+
+```
+xcodebuild test -project PoliVerse.xcodeproj -scheme PoliVerse \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+```
+
+24 tests covering the parts that are easy to get wrong and hard to notice:
+timezone-less timestamp parsing across CET and CEST, refresh coalescing under
+concurrency, exam status mapping, authcode extraction, and the cache's refusal
+to round-trip a favourite.
 
 ## Build
 
@@ -52,6 +67,7 @@ PoliVerse/
   Models/         domain types + wire DTOs, kept separate
   Services/       OAuth, token store, API client, per-feature services
   Features/       one folder per tab
+PoliVerseTests/   unit tests, mirroring Services/ and Models/
 ```
 
 The Xcode project uses synchronized folder groups, so adding a `.swift` file

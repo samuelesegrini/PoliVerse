@@ -33,7 +33,7 @@ final class Session {
         // API client, which would be a retain cycle and would let a refresh
         // recurse into itself on a 401.
         let refreshSession = URLSession(configuration: .ephemeral)
-        self.tokens = TokenStore { refreshToken in
+        self.tokens = TokenStore(storage: KeychainTokenPersistence()) { refreshToken in
             let request = PoliMiOAuth.refreshRequest(refreshToken: refreshToken)
             var components = URLComponents(
                 url: request.host.baseURL.appendingPathComponent(request.path),

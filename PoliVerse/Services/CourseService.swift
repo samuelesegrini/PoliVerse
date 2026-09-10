@@ -16,6 +16,10 @@ final class CourseService {
 
     init(session: Session) {
         self.session = session
+        // Show last known courses immediately; `load()` refreshes behind them.
+        if let cached = DiskCache.load([Course].self, as: "courses") {
+            courses = applyFavourites(cached.value)
+        }
     }
 
     func load() async {
@@ -40,7 +44,9 @@ final class CourseService {
                 ),
                 as: TeachingsResponse.self
             )
-            courses = applyFavourites(response.INSEGN.map { $0.toCourse() })
+            let loaded = response.INSEGN.map { $0.toCourse() }
+            courses = applyFavourites(loaded)
+            DiskCache.save(loaded, as: "courses")
         } catch {
             errorMessage = error.localizedDescription
             // Falling back keeps the screen useful rather than blank while the

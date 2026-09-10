@@ -1,7 +1,7 @@
 import Foundation
 
 /// A teaching the student is enrolled in.
-nonisolated struct Course: Identifiable, Sendable, Hashable {
+nonisolated struct Course: Identifiable, Sendable, Hashable, Codable {
     let id: String
     /// `xdescrizione` upstream — arrives SHOUTED, so normalise on the way in.
     let name: String
@@ -27,6 +27,13 @@ nonisolated struct Course: Identifiable, Sendable, Hashable {
             hash &*= 0x0000_0100_0000_01B3
         }
         return Int(hash % 8)
+    }
+
+    /// `isFavourite` is deliberately absent from the coding keys: it lives in
+    /// `UserDefaults` and is reapplied on load, so a stale cache can never
+    /// resurrect a favourite the user has since removed.
+    private enum CodingKeys: String, CodingKey {
+        case id, name, teacher, cfu, semester, academicYear, teacherEmail
     }
 
     /// "ARCHITETTURE DEI CALCOLATORI" reads badly in a title; fix it once here.
