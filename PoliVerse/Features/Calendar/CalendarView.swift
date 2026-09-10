@@ -2,10 +2,9 @@ import SwiftUI
 
 /// Lectures, exams and deadlines, one day at a time with a scrubbable week strip.
 struct CalendarView: View {
-    @Environment(Session.self) private var session
+    @Environment(AgendaService.self) private var agenda
     @Environment(\.locale) private var locale
 
-    @State private var agenda: AgendaService?
     @State private var selectedDay: Date = PoliMiDate.romeCalendar.startOfDay(for: .now)
     /// Which week the strip is showing; moves independently of the selected day
     /// so paging back does not change the selection until the user taps.
@@ -14,7 +13,7 @@ struct CalendarView: View {
     private var calendar: Calendar { PoliMiDate.romeCalendar }
 
     private var dayEvents: [AgendaEvent] {
-        agenda?.events(on: selectedDay) ?? []
+        agenda.events(on: selectedDay)
     }
 
     var body: some View {
@@ -37,12 +36,8 @@ struct CalendarView: View {
                     .disabled(calendar.isDateInToday(selectedDay))
                 }
             }
-            .task {
-                let created = agenda ?? AgendaService(session: session)
-                agenda = created
-                await created.load(from: .now)
-            }
-            .refreshable { await agenda?.load(from: weekStart) }
+            .task { await agenda.load(from: .now) }
+            .refreshable { await agenda.load(from: weekStart) }
         }
     }
 
@@ -89,7 +84,7 @@ struct CalendarView: View {
     private func dayCell(_ day: Date) -> some View {
         let isSelected = calendar.isDate(day, inSameDayAs: selectedDay)
         let isToday = calendar.isDateInToday(day)
-        let hasEvents = agenda?.daysWithEvents().contains(calendar.startOfDay(for: day)) ?? false
+        let hasEvents = agenda.daysWithEvents().contains(calendar.startOfDay(for: day))
 
         return Button {
             withAnimation(.snappy(duration: 0.2)) { selectedDay = day }
@@ -125,7 +120,7 @@ struct CalendarView: View {
 
     @ViewBuilder
     private var dayList: some View {
-        if let agenda, agenda.isLoading && agenda.events.isEmpty {
+        if agenda.isLoading && agenda.events.isEmpty {
             Spacer()
             ProgressView()
             Spacer()
@@ -138,7 +133,7 @@ struct CalendarView: View {
         } else {
             ScrollView {
                 LazyVStack(spacing: 10) {
-                    if let message = agenda?.errorMessage {
+                    if let message = agenda.errorMessage {
                         Label(message, systemImage: "exclamationmark.triangle.fill")
                             .font(.footnote)
                             .padding(12)

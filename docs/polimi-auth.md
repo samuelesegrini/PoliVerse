@@ -117,6 +117,31 @@ verified against both CET and CEST dates. Day grouping uses a Rome calendar
 too, with `firstWeekday = 2` — building a `Calendar` by identifier rather than
 from a locale defaults to Sunday, which is wrong for an Italian week.
 
+## Career
+
+```
+GET /rest/me/polimi/{matricola}          # app host: mean, given_cfu, planned_cfu, exam_stats
+GET /rest/v1/insegn?lang=IT              # exams host: teachings, each with appelliEsame[]
+```
+
+One `/rest/v1/insegn` response carries both the course list and every exam
+sitting, so `CourseService` and `CareerService` share one fetch rather than
+calling it twice.
+
+A sitting splits its timestamp across two fields — `d_app` (day) and `ora_ok`
+(time) — recombined by `PoliMiDate.applying(time:to:)`.
+
+Result state lives in `iscrizioneAttiva`. Pass/fail comes from `verb_positivo`
+rather than parsing the mark text, which can be `28`, `30 e lode`, `SUPERATO`
+or `IDONEO`. `rifiutabile` says whether the mark can still be refused.
+
+## Rooms — not available
+
+PoliFemo's free-room search (`/v1/rooms/search`, occupancy data) is served by
+**PoliNetwork**, not PoliMi, and needs the PoliNetwork token from the Microsoft
+SSO leg this app deliberately skips. Adding room search means reinstating that
+leg, which is a real cost: a second token to store, refresh and revoke.
+
 ## WeBeep — unresolved
 
 **PoliFemo has no WeBeep integration.** `grep -ri webeep` across that repository

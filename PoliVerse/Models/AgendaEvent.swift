@@ -174,6 +174,21 @@ nonisolated enum PoliMiDate {
         return nil
     }
 
+    /// Combines an `HH:mm` (or `HH:mm:ss`) string with an existing date.
+    ///
+    /// The exams endpoint splits a sitting into `d_app` (the day) and `ora_ok`
+    /// (the time) instead of sending one timestamp.
+    static func applying(time: String, to date: Date) -> Date? {
+        let parts = time.split(separator: ":").compactMap { Int($0) }
+        guard parts.count >= 2 else { return nil }
+        return romeCalendar.date(
+            bySettingHour: parts[0],
+            minute: parts[1],
+            second: parts.count > 2 ? parts[2] : 0,
+            of: date
+        )
+    }
+
     /// The `start_date` query parameter wants a bare `yyyy-MM-dd`.
     static func queryString(_ date: Date) -> String { dateOnly.string(from: date) }
 

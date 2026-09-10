@@ -1,0 +1,187 @@
+import SwiftUI
+
+/// Everything about one course: next lecture, exam sittings, materials, teacher.
+struct CourseDetailView: View {
+    let course: Course
+
+    @Environment(AgendaService.self) private var agenda
+    @Environment(CareerService.self) private var career
+    @Environment(CourseService.self) private var courses
+    @Environment(\.locale) private var locale
+    @Environment(\.openURL) private var openURL
+
+    private var accent: Color { Theme.accent(for: course) }
+
+    /// Agenda entries whose title matches this course.
+    ///
+    /// The agenda and the teachings endpoint do not share an identifier — the
+    /// agenda carries a display title, not `c_insegn_piano` — so matching is by
+    /// normalised name. Imperfect, but the alternative is showing nothing.
+    private var lectures: [AgendaEvent] {
+        let target = course.name.lowercased()
+        return agenda.events
+            .filter { $0.end > .now }
+            .filter { event in
+                let title = event.title.lowercased()
+                return title.contains(target) || target.contains(title)
+            }
+            .prefix(3)
+            .map { $0 }
+    }
+
+    private var examSessions: [ExamSession] {
+        career.sessions
+            .filter { $0.courseCode == course.id }
+            .sorted { ($0.date ?? .distantFuture) < ($1.date ?? .distantFuture) }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                header
+
+                if !lectures.isEmpty {
+                    section("Prossime lezioni") {
+                        ForEach(lectures) { lecture in
+                            row(
+                                title: lecture.start.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)).capitalized,
+                                subtitle: "\(lecture.start.formatted(.dateTime.hour().minute().locale(locale))) · \(lecture.room ?? lecture.roomAcronym ?? "Aula da definire")",
+                                icon: "clock"
+                            )
+                        }
+                    }
+                }
+
+                if !examSessions.isEmpty {
+                    section("Appelli") {
+                        ForEach(examSessions) { exam in
+                            row(
+                                title: exam.date?.formatted(.dateTime.day().month(.wide).year().locale(locale)) ?? "Data da definire",
+                                subtitle: exam.status.label,
+                                icon: "pencil.and.list.clipboard"
+                            )
+                        }
+                    }
+                }
+
+                section("Materiali") {
+                    NavigationLink {
+                        CourseMaterialsView(course: course)
+                    } label: {
+                        row(
+                            title: "Apri su WeBeep",
+                            subtitle: "Dispense, esercitazioni e registrazioni",
+                            icon: "folder.fill",
+                            chevron: true
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if let email = course.teacherEmail, !email.isEmpty {
+                    section("Docente") {
+                        Button {
+                            if let url = URL(string: "mailto:\(email)") { openURL(url) }
+                        } label: {
+                            row(title: course.teacher, subtitle: email, icon: "envelope", chevron: true)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding()
+            .padding(.bottom, 20)
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle(course.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    courses.toggleFavourite(course)
+                } label: {
+                    Image(systemName: course.isFavourite ? "star.fill" : "star")
+                }
+                .accessibilityLabel(course.isFavourite ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti")
+            }
+        }
+        .task {
+            await agenda.load(from: .now)
+            await career.load()
+        }
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(course.name)
+                .font(.title2.weight(.bold))
+                .fontDesign(.rounded)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(course.teacher)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 8) {
+                if course.cfu > 0 { chip("\(course.cfu) CFU", "graduationcap") }
+                if course.semester != "—" { chip("Semestre \(course.semester)", "calendar") }
+                chip("A.A. \(course.academicYear)", "clock.arrow.circlepath")
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: Theme.cardCorner)
+                .fill(Color(.secondarySystemGroupedBackground))
+                .overlay(alignment: .topTrailing) {
+                    Circle()
+                        .fill(RadialGradient(
+                            colors: [accent.opacity(0.32), accent.opacity(0)],
+                            center: .center, startRadius: 0, endRadius: 130))
+                        .frame(width: 220, height: 220)
+                        .offset(x: 70, y: -90)
+                }
+                .clipShape(.rect(cornerRadius: Theme.cardCorner))
+        }
+    }
+
+    private func chip(_ text: String, _ icon: String) -> some View {
+        Label(text, systemImage: icon)
+            .font(.caption.weight(.medium))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(accent.opacity(0.15), in: .capsule)
+            .foregroundStyle(accent)
+    }
+
+    @ViewBuilder
+    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+            VStack(spacing: 8) { content() }
+        }
+    }
+
+    private func row(title: String, subtitle: String, icon: String, chevron: Bool = false) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .foregroundStyle(accent)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.subheadline.weight(.medium))
+                Text(subtitle).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            if chevron {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardBackground()
+    }
+}

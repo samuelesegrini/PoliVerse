@@ -9,12 +9,25 @@ nonisolated struct Course: Identifiable, Sendable, Hashable {
     let cfu: Int
     let semester: String
     let academicYear: String
+    var teacherEmail: String?
     var isFavourite: Bool = false
 
     /// Deterministic accent so a course keeps the same colour between launches
     /// without persisting anything. PoliFemo shipped 23 MB of stock wallpapers
     /// to solve this; a hash is free.
-    var colorSeed: Int { abs(id.hashValue) % 8 }
+    ///
+    /// - Important: this must NOT use `hashValue`. Swift seeds string hashing
+    ///   randomly per process, so `hashValue` gives a different answer on every
+    ///   launch — the colours visibly reshuffled each time the app restarted.
+    ///   FNV-1a is stable across processes and platforms.
+    var colorSeed: Int {
+        var hash: UInt64 = 0xcbf2_9ce4_8422_2325
+        for byte in id.utf8 {
+            hash ^= UInt64(byte)
+            hash &*= 0x0000_0100_0000_01B3
+        }
+        return Int(hash % 8)
+    }
 
     /// "ARCHITETTURE DEI CALCOLATORI" reads badly in a title; fix it once here.
     static func normalise(_ raw: String) -> String {
@@ -28,12 +41,18 @@ nonisolated struct Course: Identifiable, Sendable, Hashable {
 }
 
 /// Wire shape of an entry in `/rest/v1/insegn` (the `iae` exams host).
+///
+/// One response carries both the course list and every exam sitting, so
+/// `CourseService` and `CareerService` share a single fetch rather than
+/// hitting the endpoint twice.
 nonisolated struct TeachingDTO: Decodable, Sendable {
     let c_insegn_piano: String
     let xdescrizione: String
     let docente_esame: String?
+    let docente_esame_mail: String?
     let aa_freq: String
     let semestre_freq: String?
+    let appelliEsame: [ExamDTO]?
 
     func toCourse() -> Course {
         Course(
@@ -42,8 +61,19 @@ nonisolated struct TeachingDTO: Decodable, Sendable {
             teacher: docente_esame?.capitalized ?? "—",
             cfu: 0, // not present on this endpoint; filled from the study plan
             semester: semestre_freq ?? "—",
-            academicYear: aa_freq
+            academicYear: aa_freq,
+            teacherEmail: docente_esame_mail
         )
+    }
+
+    func toExamSessions() -> [ExamSession] {
+        (appelliEsame ?? []).map {
+            $0.toSession(
+                courseName: xdescrizione,
+                courseCode: c_insegn_piano,
+                teacher: docente_esame
+            )
+        }
     }
 }
 

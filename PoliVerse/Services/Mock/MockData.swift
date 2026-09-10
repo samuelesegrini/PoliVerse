@@ -31,6 +31,62 @@ nonisolated enum MockData {
     /// A plausible teaching week: lectures Monday to Friday, an exam, and a
     /// deadline. Anchored to the week containing `date` so the calendar always
     /// has something to show whenever it is opened.
+    static let gradeBook = GradeBook(
+        mean: 27.4, earnedCFU: 108, plannedCFU: 180,
+        examsPlanned: 22, examsSubscribed: 2, examsGiven: 14
+    )
+
+    static func examSessions(now: Date = .now) -> [ExamSession] {
+        let calendar = PoliMiDate.romeCalendar
+        func day(_ offset: Int, hour: Int = 9) -> Date {
+            calendar.date(bySettingHour: hour, minute: 0, second: 0,
+                          of: calendar.date(byAdding: .day, value: offset, to: now)!)!
+        }
+
+        func graded(_ id: Int, _ name: String, _ code: String, _ mark: Int,
+                    _ daysAgo: Int, lode: Bool = false) -> ExamSession {
+            ExamSession(
+                id: id, courseName: name, courseCode: code, teacher: nil,
+                date: day(-daysAgo), room: nil,
+                enrolmentOpens: nil, enrolmentCloses: nil, enrolledCount: nil,
+                kind: "Scritto",
+                status: .graded(ExamGrade(
+                    value: mark,
+                    text: lode ? "30 e lode" : String(mark),
+                    passed: mark >= 18,
+                    refusable: daysAgo < 7
+                ))
+            )
+        }
+
+        return [
+            ExamSession(
+                id: 901, courseName: "Ingegneria del Software", courseCode: "089160",
+                teacher: "Matteo Rossi", date: day(12, hour: 9), room: "Aula Magna",
+                enrolmentOpens: day(-8), enrolmentCloses: day(5),
+                enrolledCount: 214, kind: "Scritto", status: .enrolled
+            ),
+            ExamSession(
+                id: 902, courseName: "Basi di Dati", courseCode: "097785",
+                teacher: "Stefano Ceri", date: day(19, hour: 14), room: "Aula Rogers",
+                enrolmentOpens: day(-2), enrolmentCloses: day(12),
+                enrolledCount: 158, kind: "Scritto e orale", status: .open
+            ),
+            ExamSession(
+                id: 903, courseName: "Fondamenti di Automatica", courseCode: "091252",
+                teacher: "Luigi Piroddi", date: day(34, hour: 9), room: nil,
+                enrolmentOpens: day(14), enrolmentCloses: day(30),
+                enrolledCount: 0, kind: "Scritto", status: .notYetOpen
+            ),
+            graded(904, "Analisi e Geometria 1", "086088", 30, 190, lode: true),
+            graded(905, "Reti Logiche", "084391", 28, 150),
+            graded(906, "Fisica Sperimentale", "083801", 25, 120),
+            graded(907, "Chimica", "083802", 27, 95),
+            graded(908, "Informatica Teorica", "084392", 30, 40),
+            graded(909, "Analisi e Geometria 2", "086089", 24, 5),
+        ]
+    }
+
     static func agendaEvents(around date: Date) -> [AgendaEvent] {
         let calendar = PoliMiDate.romeCalendar
         let weekStart = calendar.dateInterval(of: .weekOfYear, for: date)?.start

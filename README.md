@@ -18,8 +18,8 @@ history is not carried forward.
 | Course list | Implemented against `/rest/v1/insegn` |
 | WeBeep materials | UI complete, backend unresolved — see [docs](docs/polimi-auth.md#webeep--unresolved) |
 | Timetable / calendar | Implemented against `/agenda/api/me/{matricola}/events` |
-| Career / grades | Not started (endpoint known) |
-| Search | Courses only |
+| Career / grades | Implemented — mean, CFU, exam sittings, published marks |
+| Search | Across courses, agenda and exam sittings |
 
 The app ships with **mock data on by default** so every screen renders without
 a network. Turn it off in Settings to use a real account.
