@@ -76,6 +76,47 @@ so when five parallel requests all 401 and all refresh, the first response
 invalidates the token the other four are mid-flight with, and the user is
 silently logged out. Making the store an `actor` makes that unrepresentable.
 
+## Agenda (calendar)
+
+```
+GET /agenda/api/me/{matricola}/events?start_date=yyyy-MM-dd&n_events=200
+GET /agenda/api/me/{matricola}/lectures/{event_id}     # detail, not used yet
+```
+
+Count-based, not range-based: it returns the next `n_events` items from
+`start_date` with no end bound, so "this week" means over-fetching and
+filtering client-side. PoliFemo asks for 200 and does the same.
+
+`event_type.typeId` classifies the entry and must not be renumbered:
+
+| id | meaning |
+| --- | --- |
+| 1 | lecture |
+| 2 | exam |
+| 3 | news |
+| 4 | deadline |
+| 5 | custom |
+
+Most strings arrive as an `{ it, en }` pair; the app prefers `it`.
+
+### The timestamp trap
+
+`date_start` and `date_end` look like `2026-03-14T09:15:00` — **no timezone
+designator**. They are Politecnico wall-clock time, i.e. Europe/Rome.
+
+Two ways to get this wrong, both easy to ship:
+
+- `JSONDecoder.dateDecodingStrategy = .iso8601` **throws** on these strings, so
+  the whole response fails to decode.
+- Parsing them as UTC "works" and is silently wrong: a 09:15 lecture in July
+  displays at 11:15, and in January at 10:15. The offset changes with daylight
+  saving, so it does not even look like a constant bug.
+
+`PoliMiDate` in `Models/AgendaEvent.swift` pins the zone explicitly and is
+verified against both CET and CEST dates. Day grouping uses a Rome calendar
+too, with `firstWeekday = 2` — building a `Calendar` by identifier rather than
+from a locale defaults to Sunday, which is wrong for an Italian week.
+
 ## WeBeep — unresolved
 
 **PoliFemo has no WeBeep integration.** `grep -ri webeep` across that repository

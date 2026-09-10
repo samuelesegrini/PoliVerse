@@ -28,6 +28,61 @@ nonisolated enum MockData {
                teacher: "Luigi Piroddi", cfu: 8, semester: "2", academicYear: "2025"),
     ]
 
+    /// A plausible teaching week: lectures Monday to Friday, an exam, and a
+    /// deadline. Anchored to the week containing `date` so the calendar always
+    /// has something to show whenever it is opened.
+    static func agendaEvents(around date: Date) -> [AgendaEvent] {
+        let calendar = PoliMiDate.romeCalendar
+        let weekStart = calendar.dateInterval(of: .weekOfYear, for: date)?.start
+            ?? calendar.startOfDay(for: date)
+
+        func at(_ dayOffset: Int, _ hour: Int, _ minute: Int = 0) -> Date {
+            let day = calendar.date(byAdding: .day, value: dayOffset, to: weekStart)!
+            return calendar.date(bySettingHour: hour, minute: minute, second: 0, of: day)!
+        }
+
+        var id = 1
+        func event(
+            _ title: String, _ dayOffset: Int, _ startHour: Int, _ endHour: Int,
+            _ kind: EventKind = .lecture, room: String? = nil, acronym: String? = nil
+        ) -> AgendaEvent {
+            defer { id += 1 }
+            return AgendaEvent(
+                id: id,
+                title: title,
+                start: at(dayOffset, startHour, 15),
+                end: at(dayOffset, endHour, 0),
+                kind: kind,
+                room: room,
+                roomAcronym: acronym,
+                calendarName: "Ingegneria Informatica"
+            )
+        }
+
+        /// A deadline is a moment, not a span.
+        func deadline(_ title: String, _ dayOffset: Int, _ hour: Int, _ minute: Int) -> AgendaEvent {
+            defer { id += 1 }
+            let moment = at(dayOffset, hour, minute)
+            return AgendaEvent(
+                id: id, title: title, start: moment, end: moment,
+                kind: .deadline, calendarName: "Ingegneria Informatica"
+            )
+        }
+
+        return [
+            event("Analisi e Geometria 2", 0, 8, 10, room: "Aula Rogers", acronym: "R.0.1"),
+            event("Architetture dei Calcolatori", 0, 10, 13, room: "Aula De Donato", acronym: "D.0.2"),
+            event("Basi di Dati", 1, 9, 12, room: "Aula Castigliano", acronym: "C.1.1"),
+            event("Reti Logiche", 1, 14, 16, room: "Aula Alfa", acronym: "A.2.3"),
+            event("Fondamenti di Automatica", 2, 8, 11, room: "Aula Rogers", acronym: "R.0.1"),
+            event("Ingegneria del Software", 2, 14, 17, room: "Aula Beta", acronym: "B.1.4"),
+            deadline("Consegna progetto IS", 2, 23, 59),
+            event("Basi di Dati — esercitazione", 3, 10, 13, room: "Lab Informatico", acronym: "L.0.5"),
+            event("Architetture dei Calcolatori", 4, 9, 12, room: "Aula De Donato", acronym: "D.0.2"),
+            event("Prova in itinere — Analisi 2", 4, 14, 16, .exam, room: "Aula Magna", acronym: "M.0.1"),
+        ]
+    }
+
     static func weBeepSections(for course: Course) -> [WeBeepSection] {
         let base = Date.now
         func file(_ name: String, _ section: String, _ mb: Double, _ daysAgo: Int) -> WeBeepFile {

@@ -1,19 +1,278 @@
 import SwiftUI
 
-/// Not yet implemented.
-///
-/// The endpoint is known — `GET /agenda/api/me/{matricola}/events` on the app
-/// host, with lecture detail at `/agenda/api/me/{matricola}/lectures/{id}` —
-/// so this is wiring, not research.
+/// Lectures, exams and deadlines, one day at a time with a scrubbable week strip.
 struct CalendarView: View {
+    @Environment(Session.self) private var session
+    @Environment(\.locale) private var locale
+
+    @State private var agenda: AgendaService?
+    @State private var selectedDay: Date = PoliMiDate.romeCalendar.startOfDay(for: .now)
+    /// Which week the strip is showing; moves independently of the selected day
+    /// so paging back does not change the selection until the user taps.
+    @State private var weekStart: Date = CalendarView.startOfWeek(for: .now)
+
+    private var calendar: Calendar { PoliMiDate.romeCalendar }
+
+    private var dayEvents: [AgendaEvent] {
+        agenda?.events(on: selectedDay) ?? []
+    }
+
     var body: some View {
         NavigationStack {
-            ContentUnavailableView {
-                Label("Calendario", systemImage: "calendar")
-            } description: {
-                Text("L'orario delle lezioni non è ancora collegato.")
+            VStack(spacing: 0) {
+                weekStrip
+                Divider()
+                dayList
             }
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Calendario")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Oggi") {
+                        withAnimation {
+                            selectedDay = calendar.startOfDay(for: .now)
+                            weekStart = Self.startOfWeek(for: .now)
+                        }
+                    }
+                    .disabled(calendar.isDateInToday(selectedDay))
+                }
+            }
+            .task {
+                let created = agenda ?? AgendaService(session: session)
+                agenda = created
+                await created.load(from: .now)
+            }
+            .refreshable { await agenda?.load(from: weekStart) }
+        }
+    }
+
+    // MARK: - Week strip
+
+    private var weekStrip: some View {
+        VStack(spacing: 10) {
+            HStack {
+                Button {
+                    withAnimation { shiftWeek(by: -1) }
+                } label: {
+                    Image(systemName: "chevron.left")
+                }
+                .accessibilityLabel("Settimana precedente")
+
+                Spacer()
+
+                Text(monthTitle)
+                    .font(.subheadline.weight(.semibold))
+                    .contentTransition(.numericText())
+
+                Spacer()
+
+                Button {
+                    withAnimation { shiftWeek(by: 1) }
+                } label: {
+                    Image(systemName: "chevron.right")
+                }
+                .accessibilityLabel("Settimana successiva")
+            }
+            .padding(.horizontal)
+
+            HStack(spacing: 6) {
+                ForEach(weekDays, id: \.self) { day in
+                    dayCell(day)
+                }
+            }
+            .padding(.horizontal, 10)
+        }
+        .padding(.vertical, 10)
+        .background(Color(.systemBackground))
+    }
+
+    private func dayCell(_ day: Date) -> some View {
+        let isSelected = calendar.isDate(day, inSameDayAs: selectedDay)
+        let isToday = calendar.isDateInToday(day)
+        let hasEvents = agenda?.daysWithEvents().contains(calendar.startOfDay(for: day)) ?? false
+
+        return Button {
+            withAnimation(.snappy(duration: 0.2)) { selectedDay = day }
+        } label: {
+            VStack(spacing: 4) {
+                Text(weekdaySymbol(day))
+                    .font(.caption2)
+                    .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
+                Text(dayNumber(day))
+                    .font(.callout.weight(isToday ? .bold : .regular))
+                    .foregroundStyle(isSelected ? .white : (isToday ? Theme.brand : .primary))
+                Circle()
+                    .fill(isSelected ? Color.white : Theme.brand)
+                    .frame(width: 5, height: 5)
+                    .opacity(hasEvents ? 1 : 0)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .background {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 12).fill(Theme.brand)
+                } else if isToday {
+                    RoundedRectangle(cornerRadius: 12).fill(Theme.brand.opacity(0.12))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    // MARK: - Day list
+
+    @ViewBuilder
+    private var dayList: some View {
+        if let agenda, agenda.isLoading && agenda.events.isEmpty {
+            Spacer()
+            ProgressView()
+            Spacer()
+        } else if dayEvents.isEmpty {
+            ContentUnavailableView {
+                Label("Niente in programma", systemImage: "calendar")
+            } description: {
+                Text(selectedDay.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)))
+            }
+        } else {
+            ScrollView {
+                LazyVStack(spacing: 10) {
+                    if let message = agenda?.errorMessage {
+                        Label(message, systemImage: "exclamationmark.triangle.fill")
+                            .font(.footnote)
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(.orange.opacity(0.15), in: .rect(cornerRadius: 14))
+                            .foregroundStyle(.orange)
+                    }
+
+                    ForEach(dayEvents) { event in
+                        EventRow(event: event)
+                    }
+                }
+                .padding()
+            }
+        }
+    }
+
+    // MARK: - Date helpers
+
+    private var weekDays: [Date] {
+        (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: weekStart) }
+    }
+
+    private var monthTitle: String {
+        guard let last = weekDays.last else { return "" }
+        // A week can straddle two months; say so rather than picking one.
+        if calendar.isDate(weekStart, equalTo: last, toGranularity: .month) {
+            return weekStart.formatted(.dateTime.month(.wide).year().locale(locale)).capitalized
+        }
+        let first = weekStart.formatted(.dateTime.month(.abbreviated).locale(locale))
+        let second = last.formatted(.dateTime.month(.abbreviated).year().locale(locale))
+        return "\(first) – \(second)".capitalized
+    }
+
+    private func weekdaySymbol(_ day: Date) -> String {
+        day.formatted(.dateTime.weekday(.abbreviated).locale(locale)).uppercased()
+    }
+
+    private func dayNumber(_ day: Date) -> String {
+        day.formatted(.dateTime.day().locale(locale))
+    }
+
+    private func shiftWeek(by weeks: Int) {
+        guard let shifted = calendar.date(byAdding: .weekOfYear, value: weeks, to: weekStart) else { return }
+        weekStart = shifted
+        // Keep the selection on the same weekday in the new week.
+        if let offset = calendar.dateComponents([.day], from: Self.startOfWeek(for: selectedDay), to: selectedDay).day,
+           let newSelection = calendar.date(byAdding: .day, value: offset, to: shifted) {
+            selectedDay = newSelection
+        }
+    }
+
+    private static func startOfWeek(for date: Date) -> Date {
+        let calendar = PoliMiDate.romeCalendar
+        return calendar.dateInterval(of: .weekOfYear, for: date)?.start
+            ?? calendar.startOfDay(for: date)
+    }
+}
+
+// MARK: - Row
+
+private struct EventRow: View {
+    let event: AgendaEvent
+    @Environment(\.locale) private var locale
+
+    private var accent: Color {
+        switch event.kind {
+        case .lecture: Theme.brand
+        case .exam: .red
+        case .deadline: .orange
+        case .news: .blue
+        case .custom: .purple
+        }
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(event.start.formatted(.dateTime.hour().minute().locale(locale)))
+                    .font(.callout.weight(.semibold))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                Text(event.end.formatted(.dateTime.hour().minute().locale(locale)))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+            }
+            .fixedSize(horizontal: true, vertical: false)
+            .frame(minWidth: 46, alignment: .trailing)
+
+            RoundedRectangle(cornerRadius: 3)
+                .fill(accent)
+                .frame(width: 4)
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text(event.title)
+                    .font(.subheadline.weight(.medium))
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 8) {
+                    Label(event.kind.label, systemImage: event.kind.icon)
+                        .font(.caption2.weight(.medium))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(accent.opacity(0.15), in: .capsule)
+                        .foregroundStyle(accent)
+
+                    if let room = event.roomAcronym ?? event.room {
+                        Label(room, systemImage: "mappin.and.ellipse")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                if let room = event.room, room != event.roomAcronym {
+                    Text(room)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 16))
+        .overlay {
+            // Ongoing events get a ring so "where am I supposed to be" is
+            // answerable at a glance.
+            if event.isOngoing() {
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(accent, lineWidth: 2)
+            }
         }
     }
 }
