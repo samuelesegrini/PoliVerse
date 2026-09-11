@@ -1,25 +1,12 @@
 import Foundation
 import OSLog
 
-/// The three hosts the Politecnico exposes. PoliFemo hardcoded a `staging`
-/// PoliNetwork URL into shipping builds; keeping them in one enum makes that
-/// mistake visible.
-nonisolated enum APIHost {
-    /// Main app backend: user info, gradebook, timetable.
-    case app
-    /// Exams/teachings backend (`iae`). Same bearer token, different origin.
-    case exams
-    /// Moodle instance backing WeBeep.
-    case weBeep
-
-    var baseURL: URL {
-        switch self {
-        case .app: URL(string: "https://polimiapp.polimi.it/polimi_app")!
-        case .exams: URL(string: "https://www22.dmz.polimi.it/iae")!
-        case .weBeep: URL(string: "https://webeep.polimi.it")!
-        }
-    }
-}
+/// Which backend a request goes to.
+///
+/// Resolved through ``ServiceDirectory`` rather than hardcoded, because the
+/// Politecnico moves these. `www22.dmz.polimi.it/iae` became
+/// `api.polimi.it/iae`, and the app that hardcoded the old host simply broke.
+typealias APIHost = ServiceDirectory.Service
 
 nonisolated struct APIRequest {
     var host: APIHost
@@ -72,12 +59,14 @@ nonisolated enum APIError: LocalizedError {
 nonisolated final class PoliMiAPI: Sendable {
     private let session: URLSession
     private let tokens: TokenStore
+    private let directory: ServiceDirectory
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "api")
 
     private let maxRetries = 3
 
-    init(tokens: TokenStore, session: URLSession = .shared) {
+    init(tokens: TokenStore, directory: ServiceDirectory, session: URLSession = .shared) {
         self.tokens = tokens
+        self.directory = directory
         self.session = session
     }
 
@@ -88,7 +77,12 @@ nonisolated final class PoliMiAPI: Sendable {
             decoder.dateDecodingStrategy = .iso8601
             return try decoder.decode(T.self, from: data)
         } catch {
+            // Log a slice of the body: when an endpoint moves, the shape often
+            // moves with it, and guessing from the decoding error alone is
+            // hopeless.
+            let preview = String(data: data.prefix(400), encoding: .utf8) ?? "<binary>"
             log.error("Decoding \(String(describing: T.self)) failed: \(error)")
+            log.error("Body was: \(preview, privacy: .public)")
             throw APIError.decoding(error)
         }
     }
@@ -127,7 +121,7 @@ nonisolated final class PoliMiAPI: Sendable {
                     continue
 
                 case 404:
-                    log.error("Endpoint gone: \(request.host.baseURL.absoluteString)\(request.path)")
+                    log.error("Endpoint gone: \(request.path, privacy: .public)")
                     throw APIError.endpointGone(request.path)
 
                 default:
@@ -188,8 +182,9 @@ nonisolated final class PoliMiAPI: Sendable {
     }
 
     private func makeURLRequest(_ request: APIRequest) async throws -> URLRequest {
+        let base = await MainActor.run { directory.baseURL(for: request.host) }
         var components = URLComponents(
-            url: request.host.baseURL.appendingPathComponent(request.path),
+            url: base.appendingPathComponent(request.path),
             resolvingAgainstBaseURL: false
         )!
         if !request.query.isEmpty { components.queryItems = request.query }

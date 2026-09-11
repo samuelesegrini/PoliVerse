@@ -4,7 +4,13 @@ import OSLog
 
 /// Lectures, exams and deadlines from the agenda endpoint.
 ///
-/// `GET /agenda/api/me/{matricola}/events?start_date=yyyy-MM-dd&n_events=N`
+/// `GET {agenda}/v1/matricola/{matricola}/events?start_date=yyyy-MM-dd&n_events=N`
+///
+/// The host and path moved — PoliFemo's
+/// `polimiapp.polimi.it/polimi_app/agenda/api/me/{matricola}/events` now 404s —
+/// but the query contract did not. The endpoint still names `start_date` and
+/// `n_events` in its own 400 response, so the parameters, and very likely the
+/// response shape, are unchanged.
 ///
 /// The endpoint is count-based, not range-based: it returns the next `n_events`
 /// items from `start_date` with no end date, so asking for "this week" means
@@ -49,8 +55,8 @@ final class AgendaService {
         do {
             let dtos = try await session.api.send(
                 APIRequest(
-                    host: .app,
-                    path: "/agenda/api/me/\(matricola)/events",
+                    host: .agenda,
+                    path: "/v1/matricola/\(matricola)/events",
                     query: [
                         .init(name: "start_date", value: PoliMiDate.queryString(startDate)),
                         .init(name: "n_events", value: String(pageSize)),

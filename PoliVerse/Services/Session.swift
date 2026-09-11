@@ -23,6 +23,7 @@ final class Session {
     }
 
     let tokens: TokenStore
+    let directory = ServiceDirectory()
     private(set) var api: PoliMiAPI!
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "session")
 
@@ -35,8 +36,12 @@ final class Session {
         let refreshSession = URLSession(configuration: .ephemeral)
         self.tokens = TokenStore(storage: KeychainTokenPersistence()) { refreshToken in
             let request = PoliMiOAuth.refreshRequest(refreshToken: refreshToken)
+            // Deliberately uses the fallback base rather than the live
+            // directory: refresh must work before anything else has loaded,
+            // and it is the one call that cannot afford a dependency cycle.
+            let base = ServiceDirectory.Service.app.fallback
             var components = URLComponents(
-                url: request.host.baseURL.appendingPathComponent(request.path),
+                url: base.appendingPathComponent(request.path),
                 resolvingAgainstBaseURL: false
             )!
             components.queryItems = request.query.isEmpty ? nil : request.query
@@ -50,11 +55,14 @@ final class Session {
             return try JSONDecoder().decode(PoliMiToken.self, from: data)
         }
 
-        self.api = PoliMiAPI(tokens: tokens)
+        self.api = PoliMiAPI(tokens: tokens, directory: directory)
     }
 
     /// Decides the opening screen: a stored token means we can go straight in.
     func restore() async {
+        // Learn where the services live before calling any of them.
+        await directory.load()
+
         if useMockData {
             state = .signedIn(MockData.student)
             return
@@ -65,7 +73,7 @@ final class Session {
         }
         do {
             let dto = try await api.send(
-                APIRequest(host: .app, path: "/rest/jaf/internal/user"),
+                APIRequest(host: .app, path: "/jaf/internal/user"),
                 as: PoliMiUserDTO.self
             )
             state = .signedIn(dto.toStudent())
@@ -86,7 +94,7 @@ final class Session {
             await tokens.set(token)
 
             let dto = try await api.send(
-                APIRequest(host: .app, path: "/rest/jaf/internal/user"),
+                APIRequest(host: .app, path: "/jaf/internal/user"),
                 as: PoliMiUserDTO.self
             )
             state = .signedIn(dto.toStudent())

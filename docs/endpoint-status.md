@@ -1,89 +1,128 @@
-# Politecnico endpoint status
+# Politecnico endpoints — how the official app does it
 
-Probed 2026-09-11 from the public internet. The signal is **401 vs 404**: an
-unauthenticated request to a path that exists returns 401, a path that is gone
-returns 404.
+Verified 2026-09-11. Signal: **401 = path exists, 404 = gone.**
 
-## polimiapp.polimi.it/polimi_app
+## The finding
 
-| Path | Status | |
-| --- | --- | --- |
-| `/rest/jaf/internal/user` | **401** | works — this is why login succeeds |
-| `/rest/jaf/oauth/token/get/{code}` | **401** (JSON) | works — token exchange |
-| `/rest/jaf/oauth/token/refresh/{token}` | assumed live | same family |
-| `/rest/jaf/public/linksalto` | **405** on GET | exists, wants POST |
-| `/agenda/api/me/{matricola}/events` | **404** | **gone** |
-| `/agenda/api/me/{matricola}/lectures/{id}` | **404** | **gone** |
-| `/rest/me/polimi/{matricola}` | **404** | **gone** |
-
-The host is alive (18.102.217.97) and the `jaf` API family survives. The agenda
-and gradebook APIs do not.
-
-A scan of plausible replacements under the surviving namespace —
-`/rest/jaf/internal/{agenda,orario,carriera,esami,libretto,pianostudente}`,
-`/rest/jaf/{agenda,orario,carriera}/me`, `/rest/v1/*`, `/rest/me*` — returned
-404 for every one.
-
-## www22.dmz.polimi.it/iae
-
-Resolves (131.175.187.18) but **refuses connections from the public internet**
-(`curl` reports HTTP 000). On a real device off-campus it fails earlier still,
-as a DNS error:
+**The official app does not hardcode service hosts.** On boot it fetches an
+unauthenticated config and reads every backend's base URL out of it:
 
 ```
-NSURLErrorDomain -1003 "A server with the specified hostname could not be found"
-NSErrorFailingURLStringKey=https://www22.dmz.polimi.it/iae/rest/v1/insegn?lang=IT
+GET https://polimiapp.polimi.it/polimi_app/rest/jaf/public/props   → 200, no auth
+
+{
+  "iae.base_url":             "https://api.polimi.it/iae",
+  "libretto.base_url":        "https://api.polimi.it/piano_studente",
+  "ws_aule.base_url":         "https://api.polimi.it/ws_aule",
+  "incattdid.base_url":       "https://api.polimi.it/incattdid",
+  "richiesta_ausili.base_url":"https://api.polimi.it/multichance_new",
+  "maps.base_url":            "https://onlineservices.polimi.it/maps_rest/rest"
+}
 ```
 
-`dmz` in the hostname is the clue: an internal host. It may be reachable on
-campus Wi-Fi or through the ateneo VPN — worth testing, but it cannot be relied
-on for an app used off-campus.
+That indirection is the whole story. The exams backend moved from
+`www22.dmz.polimi.it/iae` to `api.polimi.it/iae`; the official app followed
+automatically, and PoliFemo — which baked the old host into a constant in 2023
+and has not touched `src/api` since 2024-08-09 — simply broke.
 
-This is the course list (`/rest/v1/insegn`) and exam booking, so **courses,
-exam sittings and everything derived from them are unavailable** off-campus.
+PoliVerse now reads the same config (`Services/ServiceDirectory.swift`) with the
+current hosts as compiled-in fallbacks.
 
-## Where that leaves the app
+## How this was found
 
-| Feature | Source | State |
-| --- | --- | --- |
-| Login, user identity | `polimiapp` `jaf` | works |
-| WeBeep materials | `webeep.polimi.it` Moodle | works |
-| Courses | `www22` `/rest/v1/insegn` | unreachable off-campus |
-| Timetable | `polimiapp` `/agenda/...` | endpoint withdrawn |
-| Career, grades | `polimiapp` `/rest/me/polimi/...` | endpoint withdrawn |
-| Exam sittings | `www22` `/rest/v1/insegn` | unreachable off-campus |
+The official web app is a public SPA. Its bundle
+(`/polimi_app/app/assets/index-*.js`, ~8 MB) contains the route table, the env
+block and every path literal:
 
-## PoliFemo is in the same position
+```js
+REACT_APP_REST_PATH:        "/polimi_app/rest"
+REACT_APP_AGENDA_REST_PATH: "https://api.{env.}polimi.it/agenda"   // {env.} empty in prod
+```
 
-`PoliNetworkOrg/PoliFemo` still ships these exact paths — `git log` shows
-`src/api` untouched since 2024-08-09. It is not a newer source to copy from;
-it has the same dead endpoints and presumably the same broken features.
+No proxy or TLS interception needed — it is served to anyone who asks.
 
-## Finding the current endpoints
+## Current map
 
-They cannot be discovered from outside: there is no published API, and probing
-only distinguishes "exists" from "gone". The realistic route is to watch what
-the official Polimi app actually calls:
+### App / JAF — `https://polimiapp.polimi.it/polimi_app/rest`
 
-1. A proxy with TLS interception (mitmproxy, Charles, Proxyman) with its CA
-   trusted on the device.
-2. Open the official app, use the timetable and libretto.
-3. Read the hosts and paths off the flow list.
+| Path | |
+| --- | --- |
+| `/jaf/public/props` | **200, public** — the service map above |
+| `/jaf/public/app` | 200, public — version info |
+| `/jaf/public/i18n` | public strings |
+| `/jaf/public/linksalto` | POST — SSO jump into another service |
+| `/jaf/public/linklogout` | logout URL |
+| `/jaf/internal/user` | **401** — identity |
+| `/jaf/oauth/token/get`, `/jaf/oauth/token/refresh` | **401** — tokens |
+| `/jaf/internal/profiles`, `/jaf/internal/updateReturnUrl` | 401 |
 
-Certificate pinning may prevent this. If it does, the alternative is the
-`linksalto` endpoint — POST `target_service_id` and it returns a `jump_url`
-into the relevant service as an authenticated web page. That gives a web view,
-not JSON, so it would mean embedding those pages rather than building native
-screens for them.
+### IAE — `https://api.polimi.it/iae`
 
-## What the app does about it now
+| Path | |
+| --- | --- |
+| `/v1/insegn/` | **401** — teachings + `appelliEsame` |
+| `/v1/base/infoStud` | **401** |
+| `/v1/base/counters` | **401** — career totals |
+| `/v1/base/datas` | **401** |
+| `/v1/check/generiche` | **401** |
+| `/v1/iscriz/`, `/v1/prove/…` | exam enrolment and marks (in the bundle) |
 
-- **No mock fallback on a failed real request.** Previously a failure quietly
-  substituted sample data, so a user who had turned sample data off saw
-  invented courses and an invented weighted average presented as their own.
-  Now a failure shows an error and an empty state.
-- **Permanent failures are not retried.** DNS `-1003` was being retried with
-  backoff, three to six times per request, across two services calling the same
-  endpoint — burning battery and delaying the error. Only genuinely transient
-  codes retry now.
-- **404 reads as "service withdrawn"**, not "server error".
+### Agenda — `https://api.polimi.it/agenda`
+
+```
+GET /v1/matricola/{matricola}/events?start_date=yyyy-MM-dd&n_events=N   → 401
+GET /v1/matricola/{matricola}/events/deadlines
+```
+
+Without parameters it answers **400** and names them itself:
+
+```json
+{"violations":[{"field":"start_date","message":"la data di inizio non e' valida"},
+               {"field":"n_events","message":"Il numero degli eventi non pue' essere nullo"}]}
+```
+
+Those are the same parameter names PoliFemo used, so the query contract — and
+very likely the response shape — survived the move. Only the host and path
+changed.
+
+### Libretto — `https://api.polimi.it/piano_studente`
+
+| Path | |
+| --- | --- |
+| `/singoloinsegnamento/{id}` | **401** |
+| `/simulazionemedia/…`, `/mediaobiettivo/…`, `/sequenzamedia/…` | grade simulation (in the bundle) |
+
+## What moved
+
+| Was (PoliFemo, still shipping) | Now |
+| --- | --- |
+| `www22.dmz.polimi.it/iae/rest/v1/insegn` | `api.polimi.it/iae/v1/insegn/` |
+| `polimiapp…/polimi_app/agenda/api/me/{m}/events` | `api.polimi.it/agenda/v1/matricola/{m}/events` |
+| `polimiapp…/polimi_app/rest/me/polimi/{m}` | gone — `iae/v1/base/counters` is the likely successor |
+
+`www22.dmz.polimi.it` still resolves but refuses public connections; off-campus
+it fails as DNS `-1003`. `dmz` in the hostname was the clue.
+
+## Unverified
+
+`/v1/base/counters` is live and sits with the other career calls in the bundle,
+but its **response shape has not been seen**. If it does not match
+`GradeBookDTO`, `PoliMiAPI` logs the first 400 bytes of the body on a decode
+failure — read that and the real shape is obvious.
+
+Everything else is verified only as far as "the path exists and demands a
+token". The response shapes for `/v1/insegn/` and the agenda are assumed
+unchanged from PoliFemo's, which is plausible given the agenda kept its
+parameter names, but the first authenticated run is what will confirm it.
+
+## How the other apps handle this
+
+| App | Approach |
+| --- | --- |
+| Official web app | fetches `props`; survives migrations |
+| `PoliNetworkOrg/PoliFemo` | hardcoded 2023 hosts; `src/api` untouched since 2024-08-09; these features are presumably broken |
+| `matteovisotto/myPoliFile` | WeBeep only — avoids the problem entirely by talking to Moodle |
+| `toto04/webeep-sync` | WeBeep only, same |
+
+Only the official app solves it, and it solves it by not hardcoding. That is
+the pattern worth copying, and the reason `ServiceDirectory` exists.

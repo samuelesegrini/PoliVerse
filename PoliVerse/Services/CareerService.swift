@@ -4,9 +4,16 @@ import OSLog
 
 /// Career statistics and exam sittings.
 ///
-/// Two endpoints on two different hosts:
-/// - `GET /rest/me/polimi/{matricola}` (app host) — mean, CFU, exam counts
-/// - `GET /rest/v1/insegn` (exams host) — teachings, each with `appelliEsame`
+/// Two endpoints:
+/// - `GET {iae}/v1/base/counters` — career totals
+/// - `GET {iae}/v1/insegn/` — teachings, each with `appelliEsame`
+///
+/// - Important: `/rest/me/polimi/{matricola}`, which PoliFemo uses for the
+///   gradebook, now returns 404. `/v1/base/counters` is its most likely
+///   successor — it is live (401 unauthenticated) and sits with the other
+///   career calls in the official bundle — but its **response shape is
+///   unverified**. If it does not match ``GradeBookDTO`` the decode fails and
+///   `PoliMiAPI` logs the raw body, which is what to read on the first run.
 @Observable
 final class CareerService {
     private(set) var gradeBook: GradeBook = .empty
@@ -79,7 +86,7 @@ final class CareerService {
     private func loadGradeBook(matricola: String) async -> GradeBook? {
         do {
             let dto = try await session.api.send(
-                APIRequest(host: .app, path: "/rest/me/polimi/\(matricola)"),
+                APIRequest(host: .iae, path: "/v1/base/counters"),
                 as: GradeBookDTO.self
             )
             return dto.toGradeBook()
@@ -93,8 +100,8 @@ final class CareerService {
         do {
             let response = try await session.api.send(
                 APIRequest(
-                    host: .exams,
-                    path: "/rest/v1/insegn",
+                    host: .iae,
+                    path: "/v1/insegn/",
                     query: [.init(name: "lang", value: "IT")]
                 ),
                 as: TeachingsResponse.self

@@ -34,12 +34,11 @@ final class CourseService {
         }
 
         do {
-            // `/rest/v1/insegn` lives on the exams host but takes the same
-            // bearer token as the app host.
+            // `/v1/insegn/` on the IAE host, which takes the same bearer token.
             let response = try await session.api.send(
                 APIRequest(
-                    host: .exams,
-                    path: "/rest/v1/insegn",
+                    host: .iae,
+                    path: "/v1/insegn/",
                     query: [.init(name: "lang", value: "IT")]
                 ),
                 as: TeachingsResponse.self

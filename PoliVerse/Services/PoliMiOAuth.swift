@@ -53,16 +53,16 @@ nonisolated enum PoliMiOAuth {
         return components?.queryItems?.first(where: { $0.name == "code" })?.value
     }
 
-    /// `GET /rest/jaf/oauth/token/get/{authcode}` — exchange, no client secret.
+    /// `GET /jaf/oauth/token/get/{authcode}` on the app base — no client secret.
     static func tokenExchangeRequest(authCode: String) -> APIRequest {
         APIRequest(
             host: .app,
-            path: "/rest/jaf/oauth/token/get/\(authCode)",
+            path: "/jaf/oauth/token/get/\(authCode)",
             authenticated: false
         )
     }
 
-    /// `GET /rest/jaf/oauth/token/refresh/{refreshToken}`.
+    /// `GET /jaf/oauth/token/refresh/{refreshToken}` on the app base.
     ///
     /// Note the refresh token travels in the *path*, not a header or body — an
     /// upstream design choice worth knowing about, since it means the token can
@@ -70,7 +70,7 @@ nonisolated enum PoliMiOAuth {
     static func refreshRequest(refreshToken: String) -> APIRequest {
         APIRequest(
             host: .app,
-            path: "/rest/jaf/oauth/token/refresh/\(refreshToken)",
+            path: "/jaf/oauth/token/refresh/\(refreshToken)",
             authenticated: false
         )
     }
