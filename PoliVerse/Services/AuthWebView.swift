@@ -96,6 +96,9 @@ struct AuthWebView: UIViewRepresentable {
         /// this the CIE hand-off reported itself as a login failure and the
         /// host dismissed the web view. CieID would then return to nothing.
         private var cancelledDeliberately = false
+        /// URLs we have re-issued ourselves, so the re-issued navigation is
+        /// allowed through rather than bouncing forever.
+        private var reissued: Set<String> = []
 
         init(
             router: CieIDRouter,
@@ -121,6 +124,27 @@ struct AuthWebView: UIViewRepresentable {
             decidePolicyFor navigationAction: WKNavigationAction
         ) async -> WKNavigationActionPolicy {
             guard let url = navigationAction.request.url, !finished else { return .allow }
+
+            // Keep polimi.it navigations inside this web view.
+            //
+            // On a device with the official PoliMi app installed, iOS treats
+            // polimiapp.polimi.it as a universal link and hands the redirect to
+            // that app part-way through login — the web view reports it as a
+            // policy-change cancel and the flow simply stops. Re-issuing the
+            // request programmatically avoids that: `load()` never triggers
+            // universal link handling.
+            //
+            // Restricted to GET: re-issuing as `URLRequest(url:)` would turn a
+            // form POST into a GET, and the ateneo login page submits by POST.
+            if Self.shouldKeepInApp(url),
+               navigationAction.request.httpMethod == "GET",
+               !reissued.contains(url.absoluteString) {
+                reissued.insert(url.absoluteString)
+                cancelledDeliberately = true
+                log.debug("Re-issuing \(url.host ?? "?", privacy: .public) navigation in-app")
+                await MainActor.run { webView.load(URLRequest(url: url)) }
+                return .cancel
+            }
 
             // CIE hand-off must be caught before the web view follows it. Allow
             // it even once and iOS opens CieID without `sourceApp`, and the
@@ -171,6 +195,17 @@ struct AuthWebView: UIViewRepresentable {
             guard !finished, !Self.isBenign(nsError) else { return }
             log.error("Login navigation failed: \(nsError.domain) \(nsError.code)")
             onError(error)
+        }
+
+        /// The host whose navigations must not escape to another app.
+        ///
+        /// `polimiapp.polimi.it` is claimed as a universal link by the official
+        /// PoliMi app, so on a device where that app is installed iOS hands it
+        /// our redirect mid-login. Deliberately narrow: every other host in the
+        /// chain — the IdP, aunicalogin, the CIE provider — is left alone, so
+        /// this cannot disturb the parts of the login that already work.
+        static func shouldKeepInApp(_ url: URL) -> Bool {
+            url.scheme == "https" && url.host == "polimiapp.polimi.it"
         }
 
         /// Copies the login web view's cookies into the shared store.

@@ -179,3 +179,39 @@ struct CieIDBridgeTests {
         #expect(router.pendingURL == nil)
     }
 }
+
+/// On a device with the official PoliMi app installed, iOS claims
+/// `polimiapp.polimi.it` as a universal link and hands it our redirect
+/// mid-login. Re-issuing the navigation programmatically keeps it in the web
+/// view, since `load()` never triggers universal-link handling.
+@Suite("Universal link containment")
+struct KeepInAppTests {
+    @Test("The claimed host is kept in the web view")
+    func keepsClaimedHost() throws {
+        let url = try #require(URL(string:
+            "https://polimiapp.polimi.it/polimi_app/app?code=ABC&state=S"))
+        #expect(AuthWebView.Coordinator.shouldKeepInApp(url))
+    }
+
+    /// Deliberately narrow — the rest of the login chain already works and must
+    /// not be disturbed.
+    @Test("Other hosts in the login chain are left alone")
+    func leavesOtherHostsAlone() throws {
+        for candidate in [
+            "https://oauthidp.polimi.it/oauthidp/oauth2/auth",
+            "https://aunicalogin.polimi.it/aunicalogin/aunicalogin.jsp",
+            "https://idserver.servizicie.interno.gov.it/idp/login/livello2",
+            "https://webeep.polimi.it/my/",
+        ] {
+            let url = try #require(URL(string: candidate))
+            #expect(AuthWebView.Coordinator.shouldKeepInApp(url) == false,
+                    "\(candidate) should not be re-issued")
+        }
+    }
+
+    @Test("Non-https schemes are ignored")
+    func ignoresOtherSchemes() throws {
+        let url = try #require(URL(string: "http://polimiapp.polimi.it/polimi_app/app"))
+        #expect(AuthWebView.Coordinator.shouldKeepInApp(url) == false)
+    }
+}
