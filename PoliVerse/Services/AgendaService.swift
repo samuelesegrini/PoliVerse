@@ -26,6 +26,14 @@ final class AgendaService {
 
     private let session: Session
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "agenda")
+    private var window = LoadWindow()
+
+    /// Identifies the data currently held, so a change of account — or of the
+    /// sample-data toggle — always reloads instead of waiting out the window.
+    private var source: String {
+        session.useMockData ? "mock" : (session.student?.matricola ?? "anonymous")
+    }
+
 
     /// A cap rather than a target, now that the range is filtered server-side.
     /// A full timetable month is well under this.
@@ -42,8 +50,11 @@ final class AgendaService {
     }
 
     /// Fetches a window around `date`, replacing whatever was held.
-    func load(around date: Date = .now) async {
-        guard !isLoading else { return }
+    /// - Parameter force: set by pull-to-refresh; see ``LoadWindow``.
+    func load(around date: Date = .now, force: Bool = false) async {
+        guard !isLoading,
+              window.shouldLoad(force: force, source: source) || !covers(date)
+        else { return }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
@@ -55,6 +66,7 @@ final class AgendaService {
         if session.useMockData {
             events = MockData.agendaEvents(around: date)
             loadedRange = from...to
+            window.markLoaded(source: source)
             return
         }
 
@@ -85,17 +97,25 @@ final class AgendaService {
 
         events = merged.sorted { $0.start < $1.start }
         loadedRange = from...to
+        window.markLoaded(source: source)
+    }
+
+    /// Whether the held window already spans `date`.
+    private func covers(_ date: Date) -> Bool {
+        loadedRange?.contains(date) ?? false
     }
 
     /// Fetches only if `date` falls outside what is already held.
     func ensureLoaded(covering date: Date) async {
-        guard let loadedRange else {
+        guard loadedRange != nil else {
             await load(around: date)
             return
         }
-        guard !loadedRange.contains(date) else { return }
+        guard !covers(date) else { return }
         log.debug("Navigated outside the loaded window; fetching around it")
-        await load(around: date)
+        // Forced: the window genuinely does not hold this date, so freshness
+        // is beside the point.
+        await load(around: date, force: true)
     }
 
     private func fetchEvents(matricola: String, from: Date, to: Date) async -> [AgendaEvent]? {

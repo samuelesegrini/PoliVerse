@@ -19,7 +19,7 @@ struct CareerView: View {
             .navigationTitle("Carriera")
             .toolbarTitleDisplayMode(.inlineLarge)
             .task { await career.load() }
-            .refreshable { await career.load() }
+            .refreshable { await career.load(force: true) }
             .sheet(item: $selectedExam) { ExamDetailView(exam: $0) }
         }
     }

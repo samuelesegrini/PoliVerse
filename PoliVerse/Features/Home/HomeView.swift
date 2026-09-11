@@ -94,9 +94,9 @@ struct HomeView: View {
                 }
             }
             .refreshable {
-                await courses.load()
-                await agenda.load(around: .now)
-                await career.load()
+                await courses.load(force: true)
+                await agenda.load(around: .now, force: true)
+                await career.load(force: true)
             }
             .task {
                 await courses.load()

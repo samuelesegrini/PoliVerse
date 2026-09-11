@@ -104,7 +104,9 @@ struct WeBeepView: View {
                 }
             }
             .sheet(isPresented: $showingLogin) {
-                WeBeepLoginSheet { await courses.load() }
+                // Forced: connecting WeBeep is exactly the moment the held
+                // course list stopped being right.
+                WeBeepLoginSheet { await courses.load(force: true) }
             }
             .sheet(isPresented: $showingHidden) {
                 NavigationStack {

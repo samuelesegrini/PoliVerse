@@ -64,7 +64,7 @@ struct CalendarView: View {
                 }
             }
             .task { await agenda.load(around: .now) }
-            .refreshable { await agenda.load(around: weekStart) }
+            .refreshable { await agenda.load(around: weekStart, force: true) }
             // Stepping outside the fetched span pulls the next one in, so the
             // calendar is not silently empty a month out.
             .task(id: weekStart) { await agenda.ensureLoaded(covering: weekStart) }

@@ -25,6 +25,14 @@ final class CareerService {
 
     private let session: Session
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "career")
+    private var window = LoadWindow()
+
+    /// Identifies the data currently held, so a change of account — or of the
+    /// sample-data toggle — always reloads instead of waiting out the window.
+    private var source: String {
+        session.useMockData ? "mock" : (session.student?.matricola ?? "anonymous")
+    }
+
 
     init(session: Session) {
         self.session = session
@@ -73,8 +81,10 @@ final class CareerService {
         upcoming.filter { $0.status == .enrolled }
     }
 
-    func load() async {
-        guard !isLoading else { return }
+    /// - Parameter force: set by pull-to-refresh. Without it, a load that ran
+    ///   recently is skipped — see ``LoadWindow``.
+    func load(force: Bool = false) async {
+        guard !isLoading, window.shouldLoad(force: force, source: source) else { return }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
@@ -83,6 +93,7 @@ final class CareerService {
             gradeBook = MockData.gradeBook
             sessions = MockData.examSessions()
             libretto = MockData.libretto()
+            window.markLoaded(source: source)
             return
         }
 
@@ -128,7 +139,11 @@ final class CareerService {
             gradeBook = .empty
             sessions = []
             libretto = []
+            // Left unmarked on purpose: the next visit retries rather than
+            // sitting on an error for the whole window.
+            return
         }
+        window.markLoaded(source: source)
     }
 
     private func loadGradeBook(matricola: String) async -> GradeBook? {

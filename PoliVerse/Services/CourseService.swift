@@ -12,6 +12,14 @@ final class CourseService {
     private let session: Session
     private let weBeep: WeBeepService
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "courses")
+    private var window = LoadWindow()
+
+    /// Identifies the data currently held, so a change of account — or of the
+    /// sample-data toggle — always reloads instead of waiting out the window.
+    private var source: String {
+        session.useMockData ? "mock" : (session.student?.matricola ?? "anonymous")
+    }
+
     /// Local flags, used only for courses with no WeBeep counterpart. WeBeep
     /// itself is the source of truth for everything it knows about.
     private var favourites: Set<String> {
@@ -48,14 +56,16 @@ final class CourseService {
         }
     }
 
-    func load() async {
-        guard !isLoading else { return }
+    /// - Parameter force: set by pull-to-refresh; see ``LoadWindow``.
+    func load(force: Bool = false) async {
+        guard !isLoading, window.shouldLoad(force: force, source: source) else { return }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
 
         if session.useMockData {
             courses = applyFavourites(MockData.courses)
+            window.markLoaded(source: source)
             return
         }
 
@@ -73,6 +83,7 @@ final class CourseService {
             log.notice("WeBeep provided \(loaded.count, privacy: .public) enrolled courses")
             courses = applyFavourites(loaded)
             DiskCache.save(loaded, as: "courses")
+            window.markLoaded(source: source)
             return
         }
 
@@ -91,6 +102,7 @@ final class CourseService {
             log.notice("insegn returned \(response.teachings.count, privacy: .public) teachings, \(loaded.count, privacy: .public) usable")
             courses = applyFavourites(loaded)
             DiskCache.save(loaded, as: "courses")
+            window.markLoaded(source: source)
         } catch {
             errorMessage = error.localizedDescription
             // Never substitute mock data for a failed real request. The user
