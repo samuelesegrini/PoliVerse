@@ -6,8 +6,14 @@ import OSLog
 nonisolated enum AuthWebViewDecision {
     /// Let the web view proceed.
     case allow
-    /// The host recognised this URL and dealt with it; stop navigating.
-    case finish
+    /// The host recognised this URL. Stop navigating and run the action —
+    /// which runs *after* the web view's cookies have been adopted, so an
+    /// exchange kicked off here inherits the session the login established.
+    ///
+    /// The action is carried rather than performed inside `decide` so that
+    /// deciding stays free of side effects; an earlier version fired it twice
+    /// simply by asking the same question twice.
+    case finish(@MainActor () -> Void)
     /// Stop, and load this URL instead.
     case load(URL)
 }
@@ -129,9 +135,13 @@ struct AuthWebView: UIViewRepresentable {
             switch decide(url) {
             case .allow:
                 return .allow
-            case .finish:
+            case .finish(let action):
                 finished = true
                 cancelledDeliberately = true
+                // Cookies first: whatever the action does next runs against the
+                // session this web view just established.
+                await Self.adoptCookies(from: webView)
+                await MainActor.run(body: action)
                 return .cancel
             case .load(let next):
                 cancelledDeliberately = true
@@ -160,6 +170,29 @@ struct AuthWebView: UIViewRepresentable {
             guard !finished, !Self.isBenign(nsError) else { return }
             log.error("Login navigation failed: \(nsError.domain) \(nsError.code)")
             onError(error)
+        }
+
+        /// Copies the login web view's cookies into the shared store.
+        ///
+        /// The token exchange runs on `URLSession`, which has its own cookie
+        /// jar — empty. The official app exchanges the code from inside the
+        /// page that just authorized, so it carries the `polimiapp.polimi.it`
+        /// session established during the flow. If the backend correlates the
+        /// authorization code with that session, an exchange without it is a
+        /// different request entirely, which would explain a token that
+        /// authenticates but carries the wrong grant.
+        ///
+        /// Only `polimi.it` cookies are taken; nothing from the identity
+        /// providers is worth keeping past the login.
+        static func adoptCookies(from webView: WKWebView) async {
+            let cookies = await webView.configuration.websiteDataStore
+                .httpCookieStore.allCookies()
+            let relevant = cookies.filter { $0.domain.contains("polimi.it") }
+            for cookie in relevant {
+                HTTPCookieStorage.shared.setCookie(cookie)
+            }
+            Logger(subsystem: "one.wape.PoliVerse", category: "authweb")
+                .info("Adopted \(relevant.count, privacy: .public) polimi.it cookies for the token exchange")
         }
 
         /// Exposed so the classification can be tested; it is the difference

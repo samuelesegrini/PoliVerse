@@ -20,12 +20,13 @@ struct WeBeepLoginWebView: View {
             router: router,
             decide: { url in
                 if let scheme = url.scheme, WeBeepAuth.acceptedSchemes.contains(scheme) {
-                    do {
-                        onToken(try WeBeepAuth.token(from: url, passport: passport))
-                    } catch {
-                        onError(error)
+                    return .finish {
+                        do {
+                            onToken(try WeBeepAuth.token(from: url, passport: passport))
+                        } catch {
+                            onError(error)
+                        }
                     }
-                    return .finish
                 }
 
                 if !handedOffToLaunch, isLoggedInPage(url) {

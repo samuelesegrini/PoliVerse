@@ -57,8 +57,7 @@ struct PoliMiLoginWebView: View {
             router: router,
             decide: { url in
                 if let code = PoliMiOAuth.authCode(from: url) {
-                    onCode(code)
-                    return .finish
+                    return .finish { onCode(code) }
                 }
                 return .allow
             },

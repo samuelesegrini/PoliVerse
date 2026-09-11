@@ -108,7 +108,10 @@ struct OAuthScopeTests {
 
         #expect(components.host == "example.com")
         #expect(value("client_id") == "999")
-        #expect(value("scope") == "openid something_new")
+        // Form-encoded, so spaces read back as '+' here. The IdP decodes them
+        // as spaces — probing with %20 and + returns the same normalised
+        // redirect.
+        #expect(value("scope") == "openid+something_new")
     }
 
     /// The official app builds this with `URLSearchParams`, so every key is
@@ -173,5 +176,46 @@ struct OAuthScopeTests {
 
         #expect(restored.grantedScope == "openid agenda")
         #expect(restored.accessToken == "a")
+    }
+}
+
+@Suite("Authorize encoding")
+struct AuthorizeEncodingTests {
+    /// `URLComponents.queryItems` leaves `:` and `/` unescaped, so the
+    /// redirect_uri went over the wire raw while the official app sends it
+    /// fully escaped. Matching byte-for-byte removes a way our request can
+    /// differ from the one that works.
+    @Test("Values are form-encoded the way URLSearchParams does it")
+    func matchesURLSearchParams() {
+        #expect(PoliMiOAuth.formURLEncoded("https://polimiapp.polimi.it/polimi_app/app")
+                == "https%3A%2F%2Fpolimiapp.polimi.it%2Fpolimi_app%2Fapp")
+        // Spaces become '+', not %20.
+        #expect(PoliMiOAuth.formURLEncoded("openid polimi_app agenda")
+                == "openid+polimi_app+agenda")
+        #expect(PoliMiOAuth.formURLEncoded("") == "")
+        // Unreserved characters survive untouched.
+        #expect(PoliMiOAuth.formURLEncoded("a-b_c.d*e") == "a-b_c.d*e")
+    }
+
+    @Test("The authorize URL carries an escaped redirect and plus-joined scopes")
+    func authorizeURLIsEncoded() throws {
+        let params = ServiceDirectory.OAuthParams(
+            oauthServer: "https://oauthidp.polimi.it/oauthidp/oauth2",
+            clientId: "1057407812",
+            scope: "openid polimi_app agenda",
+            responseType: "code",
+            accessType: "offline"
+        )
+        let raw = PoliMiOAuth.authorizationURL(params: params, state: "S").absoluteString
+
+        #expect(raw.contains("redirect_uri=https%3A%2F%2Fpolimiapp.polimi.it%2Fpolimi_app%2Fapp"))
+        #expect(raw.contains("scope=openid+polimi_app+agenda"))
+        #expect(raw.contains("redirect_uri=https://") == false)
+
+        // Still parses back to the values we meant.
+        let components = try #require(URLComponents(string: raw))
+        let items = try #require(components.queryItems)
+        #expect(items.first { $0.name == "redirect_uri" }?.value
+                == "https://polimiapp.polimi.it/polimi_app/app")
     }
 }

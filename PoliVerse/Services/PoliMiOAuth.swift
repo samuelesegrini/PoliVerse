@@ -72,20 +72,40 @@ nonisolated enum PoliMiOAuth {
         // directly. An earlier guess that a non-empty value was required is
         // wrong: the IdP drops the parameter entirely, and the redirect it
         // returns is byte-identical either way.
-        components.queryItems = [
-            .init(name: "client_id", value: params.clientId),
-            .init(name: "redirect_uri", value: redirectURI),
-            .init(name: "access_type", value: params.accessType ?? "offline"),
-            .init(name: "response_type", value: params.responseType ?? "code"),
-            .init(name: "state", value: state),
-            .init(name: "matricola", value: ""),
-            .init(name: "al_pj_matricola", value: ""),
-            .init(name: "access_token", value: ""),
-            .init(name: "scope", value: params.scope),
-            .init(name: "al_id_srv", value: ""),
-            .init(name: "al_id_srv_chiamante", value: ""),
+        //
+        // Encoded by hand rather than through `queryItems`, which leaves `:`
+        // and `/` unescaped — so `redirect_uri` went over the wire raw while
+        // the official app, using `URLSearchParams`, sends it fully escaped
+        // with `+` for spaces. Matching that byte-for-byte removes one more
+        // way our authorize request can differ from the one that works.
+        let pairs: [(String, String)] = [
+            ("client_id", params.clientId),
+            ("redirect_uri", redirectURI),
+            ("access_type", params.accessType ?? "offline"),
+            ("response_type", params.responseType ?? "code"),
+            ("state", state),
+            ("matricola", ""),
+            ("al_pj_matricola", ""),
+            ("access_token", ""),
+            ("scope", params.scope),
+            ("al_id_srv", ""),
+            ("al_id_srv_chiamante", ""),
         ]
+        components.percentEncodedQuery = pairs
+            .map { "\($0.0)=\(formURLEncoded($0.1))" }
+            .joined(separator: "&")
         return components.url!
+    }
+
+    /// `application/x-www-form-urlencoded`, as `URLSearchParams` produces it:
+    /// spaces become `+`, everything outside the unreserved set is escaped.
+    static func formURLEncoded(_ value: String) -> String {
+        var allowed = CharacterSet.alphanumerics
+        allowed.insert(charactersIn: "*-._")
+        return value
+            .addingPercentEncoding(withAllowedCharacters: allowed)?
+            .replacingOccurrences(of: "%20", with: "+")
+            ?? value
     }
 
     /// Pulls the authcode out of a redirect.
