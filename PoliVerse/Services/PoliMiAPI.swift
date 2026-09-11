@@ -64,9 +64,21 @@ nonisolated final class PoliMiAPI: Sendable {
 
     private let maxRetries = 3
 
-    init(tokens: TokenStore, directory: ServiceDirectory, session: URLSession = .shared) {
+    /// Supplies the value of the `poliAuthProfile` header.
+    ///
+    /// Injected rather than fixed because the correct value is the signed-in
+    /// user's profile, which is only known after login.
+    private let profileID: @Sendable () async -> Int
+
+    init(
+        tokens: TokenStore,
+        directory: ServiceDirectory,
+        profileID: @escaping @Sendable () async -> Int = { PoliMiProfile.student },
+        session: URLSession = .shared
+    ) {
         self.tokens = tokens
         self.directory = directory
+        self.profileID = profileID
         self.session = session
     }
 
@@ -109,6 +121,21 @@ nonisolated final class PoliMiAPI: Sendable {
                     didRetryAuth = true
                     _ = try await tokens.forceRefresh()
                     continue
+
+                case 401:
+                    // A 401 that survived a refresh is not a stale token — it is
+                    // the service refusing this token for this resource, usually
+                    // a missing scope. The body says which, so log it: from the
+                    // outside "expired session" and "token has no authority
+                    // here" look identical.
+                    let body = String(data: data, encoding: .utf8) ?? ""
+                    log.error("""
+                        401 after refresh — host=\(request.host.rawValue, privacy: .public) \
+                        path=\(request.path, privacy: .public) \
+                        authHeader=\(urlRequest.value(forHTTPHeaderField: "Authorization") != nil, privacy: .public) \
+                        body=\(String(body.prefix(300)), privacy: .public)
+                        """)
+                    throw APIError.badStatus(401, body: String(body.prefix(300)))
 
                 case 500..<600:
                     attempt += 1
@@ -206,10 +233,16 @@ nonisolated final class PoliMiAPI: Sendable {
             //   n.headers.set("Authorization", `Bearer ${t}`)
             //   a && n.headers.set("poliAuthProfile", `${a.profile}`)
             //
-            // `props` reports profile "0" for both iae and libretto, which is
-            // the student profile. Sending it costs nothing and several of
-            // these services appear to branch on it.
-            urlRequest.setValue("0", forHTTPHeaderField: "poliAuthProfile")
+            // The value is the *user's* profile, from `/jaf/internal/profiles`:
+            //
+            //   L_e = n => n === 1   // student
+            //   T_e = n => n === 4   // alumni
+            //
+            // Not to be confused with the `iae.profile` / `libretto.profile`
+            // in `props`, which are 0 and mean something else entirely — they
+            // decide whether a call appends a `matricola` query parameter.
+            // Sending 0 here identifies no known profile at all.
+            urlRequest.setValue(String(await profileID()), forHTTPHeaderField: "poliAuthProfile")
         }
         urlRequest.timeoutInterval = 30
         return urlRequest

@@ -25,7 +25,12 @@ final class Session {
     let tokens: TokenStore
     let directory = ServiceDirectory()
     private(set) var api: PoliMiAPI!
+
+    /// Sent as `poliAuthProfile`. Defaults to the student profile and is
+    /// refined once `/jaf/internal/profiles` has been read.
+    private(set) var profileID: Int = PoliMiProfile.default
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "session")
+    private var profileBox: ProfileBox!
 
     init() {
         self.useMockData = UserDefaults.standard.object(forKey: "useMockData") as? Bool ?? true
@@ -55,7 +60,15 @@ final class Session {
             return try JSONDecoder().decode(PoliMiToken.self, from: data)
         }
 
-        self.api = PoliMiAPI(tokens: tokens, directory: directory)
+        // `profileID` is read through a closure so the API client always sees
+        // the current value, not whatever it was at construction.
+        let box = ProfileBox()
+        self.profileBox = box
+        self.api = PoliMiAPI(
+            tokens: tokens,
+            directory: directory,
+            profileID: { await box.value }
+        )
     }
 
     /// Decides the opening screen: a stored token means we can go straight in.
@@ -76,9 +89,15 @@ final class Session {
         // never widens them. If the Politecnico has added a scope since this
         // token was minted, it will 401 on the new service indefinitely, so
         // re-authenticate rather than leave the user on a half-broken session.
+        //
+        // A nil recorded scope counts as a mismatch, not as "fine": every token
+        // minted before the app started recording it is precisely the token
+        // that predates the scope change, so `if let` would skip exactly the
+        // case this check exists for.
         let currentScope = directory.oauth.scope
-        if let granted = await tokens.grantedScope, granted != currentScope {
-            log.notice("Stored token predates a scope change; signing out to re-authenticate")
+        let granted = await tokens.grantedScope
+        if granted != currentScope {
+            log.notice("Stored token scope differs from current (had scope: \(granted != nil, privacy: .public)); re-authenticating")
             await tokens.clear()
             state = .signedOut
             return
@@ -89,6 +108,7 @@ final class Session {
                 as: PoliMiUserDTO.self
             )
             state = .signedIn(dto.toStudent())
+            await loadProfile()
         } catch {
             log.error("Restore failed: \(error.localizedDescription)")
             state = .signedOut
@@ -113,6 +133,7 @@ final class Session {
                 as: PoliMiUserDTO.self
             )
             state = .signedIn(dto.toStudent())
+            await loadProfile()
         } catch {
             log.error("Code exchange failed: \(error.localizedDescription)")
             state = .failed(error.localizedDescription)
@@ -124,8 +145,44 @@ final class Session {
         state = useMockData ? .signedIn(MockData.student) : .signedOut
     }
 
+    /// Reads `/jaf/internal/profiles` to learn which profile to present.
+    ///
+    /// The response shape is unverified, so the raw body is logged once: that
+    /// log line is what turns the guesswork in ``PoliMiProfileDTO`` into a
+    /// definite answer.
+    private func loadProfile() async {
+        do {
+            let data = try await api.send(APIRequest(host: .app, path: "/jaf/internal/profiles"))
+            let raw = String(data: data.prefix(500), encoding: .utf8) ?? "<binary>"
+            log.notice("profiles payload: \(raw, privacy: .public)")
+
+            if let list = try? JSONDecoder().decode([PoliMiProfileDTO].self, from: data) {
+                let ids = list.compactMap(\.identifier)
+                // Prefer the student profile when the account has several.
+                if let chosen = ids.first(where: { $0 == PoliMiProfile.student }) ?? ids.first {
+                    profileID = chosen
+                    await profileBox.set(chosen)
+                    log.notice("Using poliAuthProfile \(chosen, privacy: .public)")
+                    return
+                }
+            }
+            log.notice("Could not read a profile id; keeping \(self.profileID, privacy: .public)")
+        } catch {
+            log.error("profiles fetch failed: \(error.localizedDescription)")
+        }
+    }
+
     var student: Student? {
         if case .signedIn(let student) = state { return student }
         return nil
     }
+}
+
+
+/// Carries the profile id across actor boundaries so ``PoliMiAPI`` — which is
+/// not main-actor bound — can read the current value without capturing
+/// ``Session``.
+actor ProfileBox {
+    private(set) var value: Int = PoliMiProfile.default
+    func set(_ newValue: Int) { value = newValue }
 }
