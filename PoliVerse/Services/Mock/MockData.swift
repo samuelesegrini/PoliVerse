@@ -196,6 +196,36 @@ nonisolated enum MockData {
         ]
     }
 
+    static func auleSites() -> [AuleSite] {
+        [
+            AuleSite(id: "MIA", name: "Milano Leonardo"),
+            AuleSite(id: "MIB", name: "Milano Bovisa"),
+        ]
+    }
+
+    static func roomSchedules(on day: Date) -> [RoomSchedule] {
+        let calendar = PoliMiDate.romeCalendar
+        func at(_ hour: Int, _ minute: Int = 0) -> Date {
+            calendar.date(bySettingHour: hour, minute: minute, second: 0, of: day) ?? day
+        }
+        return [
+            RoomSchedule(id: "3.0.1", name: "Aula 3.0.1", building: "Edificio 3",
+                         seats: 120, bookings: [
+                             RoomBooking(id: "a", start: at(8, 15), end: at(10, 15),
+                                         title: "Analisi Matematica 2"),
+                             RoomBooking(id: "b", start: at(14), end: at(16),
+                                         title: "Fisica Tecnica"),
+                         ]),
+            RoomSchedule(id: "2.1.4", name: "Aula 2.1.4", building: "Edificio 2",
+                         seats: 80, bookings: [
+                             RoomBooking(id: "c", start: at(10, 15), end: at(13, 15),
+                                         title: "Reti Logiche"),
+                         ]),
+            RoomSchedule(id: "B.2.2", name: "Aula B.2.2", building: "Edificio B",
+                         seats: 60, bookings: []),
+        ]
+    }
+
     static func weBeepSections(for course: Course) -> [WeBeepSection] {
         let base = Date.now
         func file(_ name: String, _ section: String, _ mb: Double, _ daysAgo: Int) -> WeBeepFile {

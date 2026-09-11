@@ -12,6 +12,7 @@ struct PoliVerseApp: App {
     @State private var rooms = RoomsService()
     @State private var notices: NoticeService
     @State private var news: NewsService
+    @State private var freeRooms: FreeRoomsService
 
     init() {
         // One Session, shared: every service reads its auth state and mock
@@ -23,6 +24,7 @@ struct PoliVerseApp: App {
         _career = State(initialValue: CareerService(session: session))
         _notices = State(initialValue: NoticeService(session: session))
         _news = State(initialValue: NewsService(session: session))
+        _freeRooms = State(initialValue: FreeRoomsService(session: session))
         let weBeep = WeBeepService(session: session)
         _weBeep = State(initialValue: weBeep)
         _courses = State(initialValue: CourseService(session: session, weBeep: weBeep))
@@ -41,6 +43,7 @@ struct PoliVerseApp: App {
                 .environment(rooms)
                 .environment(notices)
                 .environment(news)
+                .environment(freeRooms)
                 .tint(Theme.brand)
                 // Every user-facing string in the app is Italian, so pin the
                 // locale too — otherwise `.formatted(.relative(…))` renders

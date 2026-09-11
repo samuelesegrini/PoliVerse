@@ -21,18 +21,21 @@ struct RoomsView: View {
 
     var body: some View {
         List {
-            if !rooms.knowsOccupancy {
-                Section {
+            Section {
+                NavigationLink {
+                    FreeRoomsView()
+                } label: {
                     Label {
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("Disponibilità non disponibile")
+                            Text("Aule libere")
                                 .font(.subheadline.weight(.semibold))
-                            Text("Il Politecnico non espone pubblicamente quali aule siano libere: i servizi che lo sanno sono raggiungibili solo dalla rete d'ateneo. Qui trovi l'elenco completo con edificio, piano e capienza.")
+                            Text("Fasce libere per giorno, ricavate dalle lezioni prenotate.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                     } icon: {
-                        Image(systemName: "info.circle.fill").foregroundStyle(.blue)
+                        Image(systemName: "clock.badge.checkmark")
+                            .foregroundStyle(Theme.brand)
                     }
                 }
             }

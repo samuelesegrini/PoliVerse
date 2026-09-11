@@ -6,22 +6,21 @@ import OSLog
 ///
 /// ## On "aule libere"
 ///
-/// Live occupancy is **not available** to this app, and the catalogue is what
-/// remains. Every source that knows which rooms are busy is out of reach:
+/// Occupancy **is** available, and lives in ``FreeRoomsService``. This type
+/// stays the catalogue: every room on campus with its building, floor and
+/// capacity, public and needing no token.
 ///
-/// - `www7.ceda.polimi.it`, `www11.ceda.polimi.it` and `aule.polimi.it` all
-///   resolve but refuse connections from the public internet — campus-internal,
-///   the same way `www22.dmz.polimi.it` was.
-/// - PoliNetwork's `/v1/rooms/search`, which PoliFemo uses, now sits behind
-///   Cloudflare Access and redirects any request to a sign-in page.
-/// - The maps service exposes no occupancy endpoint; `/spazi/impegni`,
-///   `/spazi/prenotazioni` and `/spazi/occupazione` all return 500.
-/// - The agenda knows only *this student's* lectures, not what every room is
-///   doing.
+/// The distinction is worth keeping. The catalogue answers "where is room
+/// 3.0.1"; the bookings service answers "what is happening in it". They come
+/// from different backends — `maps_rest` and `ws_aule` — with different auth
+/// and different lifetimes, and joining them into one type would tie the
+/// catalogue's availability to a token it does not need.
 ///
-/// Showing a room as free without a source for that would be worse than not
-/// showing it, so the app says plainly that it cannot tell. If the internal
-/// hosts turn out to answer on campus Wi-Fi, that is the thread to pull.
+/// An earlier version of this comment asserted that occupancy was
+/// unreachable, having checked the CEDA hosts, PoliNetwork and `maps_rest`.
+/// All of those findings still hold; the conclusion drawn from them did not,
+/// because `props` lists a `ws_aule` service that was never probed. It answers
+/// 401, not 404.
 ///
 /// The catalogue itself is public and needs no token.
 @Observable
@@ -29,9 +28,6 @@ final class RoomsService {
     private(set) var rooms: [Classroom] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?
-
-    /// Live occupancy is unavailable; see the note above.
-    let knowsOccupancy = false
 
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "rooms")
     private let session: URLSession

@@ -75,6 +75,7 @@ final class Session {
             tokens: tokens,
             directory: directory,
             profileID: { await box.value },
+            matricola: { await box.matricola },
             onInvalidScope: { [weak self] in
                 // Deliberately does NOT sign the user out.
                 //
@@ -95,7 +96,7 @@ final class Session {
         await directory.load()
 
         if useMockData {
-            state = .signedIn(MockData.student)
+            await signIn(MockData.student)
             return
         }
         guard await tokens.hasToken else {
@@ -125,7 +126,7 @@ final class Session {
                 APIRequest(host: .app, path: "/jaf/internal/user"),
                 as: PoliMiUserDTO.self
             )
-            state = .signedIn(dto.toStudent())
+            await signIn(dto.toStudent())
             await loadProfile()
         } catch {
             log.error("Restore failed: \(error.localizedDescription)")
@@ -186,7 +187,7 @@ final class Session {
                 APIRequest(host: .app, path: "/jaf/internal/user"),
                 as: PoliMiUserDTO.self
             )
-            state = .signedIn(dto.toStudent())
+            await signIn(dto.toStudent())
             serviceAuthorizationFailed = false
             await loadProfile()
         } catch {
@@ -212,7 +213,7 @@ final class Session {
                 APIRequest(host: .app, path: "/jaf/internal/user"),
                 as: PoliMiUserDTO.self
             )
-            state = .signedIn(dto.toStudent())
+            await signIn(dto.toStudent())
             serviceAuthorizationFailed = false
             await loadProfile()
         } catch {
@@ -229,7 +230,12 @@ final class Session {
             _ = try? await api.send(PoliMiOAuth.revokeRequest)
         }
         await tokens.clear()
-        state = useMockData ? .signedIn(MockData.student) : .signedOut
+        if useMockData {
+            await signIn(MockData.student)
+        } else {
+            state = .signedOut
+            await profileBox.set(matricola: nil)
+        }
     }
 
     /// Reads `/jaf/internal/profiles` to learn which profile to present.
@@ -260,6 +266,17 @@ final class Session {
         }
     }
 
+    /// Signs the user in, keeping the matricola the API client reads in step
+    /// with the student on screen.
+    ///
+    /// Centralised because there are four ways in — restore, two exchange
+    /// paths and mock data — and a matricola set at three of them would fail
+    /// only on the fourth.
+    private func signIn(_ student: Student) async {
+        state = .signedIn(student)
+        await profileBox.set(matricola: student.matricola)
+    }
+
     var student: Student? {
         if case .signedIn(let student) = state { return student }
         return nil
@@ -273,4 +290,12 @@ final class Session {
 actor ProfileBox {
     private(set) var value: Int = PoliMiProfile.default
     func set(_ newValue: Int) { value = newValue }
+
+    /// The signed-in matricola, for the services that take it as a query
+    /// parameter. Kept beside the profile because both are known at the same
+    /// moment and read the same way — through a closure, so the API client
+    /// always sees the current value rather than whatever it was at
+    /// construction.
+    private(set) var matricola: String?
+    func set(matricola newValue: String?) { matricola = newValue }
 }

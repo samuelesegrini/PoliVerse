@@ -202,6 +202,20 @@ nonisolated enum PoliMiDate {
         return nil
     }
 
+    /// `hour:minute` on the same calendar day as `day`, in Rome.
+    ///
+    /// Deliberately not `Calendar.date(bySettingHour:of:)`. That method
+    /// searches *forward* for the next matching time, so asking for 08:00
+    /// from a date already past 08:00 returns tomorrow morning — silently,
+    /// and only when the clock happens to be late enough. It made the
+    /// teaching-day window jump a day whenever the app was opened after 8pm.
+    static func time(_ hour: Int, _ minute: Int = 0, on day: Date) -> Date {
+        let calendar = romeCalendar
+        let start = calendar.startOfDay(for: day)
+        return calendar.date(
+            byAdding: DateComponents(hour: hour, minute: minute), to: start) ?? day
+    }
+
     /// Combines an `HH:mm` (or `HH:mm:ss`) string with an existing date.
     ///
     /// The exams endpoint splits a sitting into `d_app` (the day) and `ora_ok`

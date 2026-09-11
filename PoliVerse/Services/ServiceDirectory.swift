@@ -40,12 +40,15 @@ final class ServiceDirectory {
         case libretto
         /// WeBeep's Moodle.
         case weBeep
+        /// The room catalogue with its bookings — what is busy and when.
+        case wsAule
 
         /// Key in the `props` payload, where one exists.
         var propsKey: String? {
             switch self {
             case .iae: "iae.base_url"
             case .libretto: "libretto.base_url"
+            case .wsAule: "ws_aule.base_url"
             case .app, .agenda, .weBeep: nil
             }
         }
@@ -61,6 +64,7 @@ final class ServiceDirectory {
             switch self {
             case .iae: "iae.profile"
             case .libretto: "libretto.profile"
+            case .wsAule: "ws_aule.profile"
             case .app, .agenda, .weBeep: nil
             }
         }
@@ -70,6 +74,10 @@ final class ServiceDirectory {
         var fallbackProfile: Int? {
             switch self {
             case .iae, .libretto: 0
+            // Not zero, unlike the others — and the difference is load
+            // bearing: a non-zero service profile is exactly the condition
+            // under which the official client appends `matricola`.
+            case .wsAule: 3
             case .app, .agenda, .weBeep: nil
             }
         }
@@ -83,6 +91,7 @@ final class ServiceDirectory {
             case .agenda: URL(string: "https://api.polimi.it/agenda")!
             case .libretto: URL(string: "https://api.polimi.it/piano_studente")!
             case .weBeep: URL(string: "https://webeep.polimi.it")!
+            case .wsAule: URL(string: "https://api.polimi.it/ws_aule")!
             }
         }
     }

@@ -92,6 +92,11 @@ nonisolated final class PoliMiAPI: Sendable {
     /// user's profile, which is only known after login.
     private let profileID: @Sendable () async -> Int
 
+    /// Supplies `matricola` for the services that require it as a query
+    /// parameter. Injected for the same reason as ``profileID``: it is only
+    /// known once the user has signed in.
+    private let matricola: @Sendable () async -> String?
+
     /// Called when the server says the token's scopes are wrong, so the app can
     /// drop it and send the user back to login rather than retrying forever.
     private let onInvalidScope: @Sendable () async -> Void
@@ -100,12 +105,14 @@ nonisolated final class PoliMiAPI: Sendable {
         tokens: TokenStore,
         directory: ServiceDirectory,
         profileID: @escaping @Sendable () async -> Int = { PoliMiProfile.student },
+        matricola: @escaping @Sendable () async -> String? = { nil },
         onInvalidScope: @escaping @Sendable () async -> Void = {},
         session: URLSession = .shared
     ) {
         self.tokens = tokens
         self.directory = directory
         self.profileID = profileID
+        self.matricola = matricola
         self.onInvalidScope = onInvalidScope
         self.session = session
     }
@@ -232,7 +239,7 @@ nonisolated final class PoliMiAPI: Sendable {
     /// differ only in how they treat `poliAuthD_profile`.
     static func usesAxiosClient(_ request: APIRequest) -> Bool {
         switch request.host {
-        case .iae, .libretto: true
+        case .iae, .libretto, .wsAule: true
         case .app: request.path.hasPrefix("/jaf/")
         case .agenda, .weBeep: false
         }
@@ -274,7 +281,18 @@ nonisolated final class PoliMiAPI: Sendable {
             url: base.appendingPathComponent(request.path),
             resolvingAgainstBaseURL: false
         )!
-        if !request.query.isEmpty { components.queryItems = request.query }
+        var query = request.query
+        // The rule the official client applies to every call:
+        //
+        //   profile === 0 ? client.get(path) : client.get(path, {params: {matricola}})
+        //
+        // `iae` and `libretto` report profile 0 and so need nothing, which is
+        // why this went unnoticed until `ws_aule` — profile 3 — became the
+        // first service where omitting it makes the call wrong.
+        if request.sendsMatricola, let value = await matricola() {
+            query.append(URLQueryItem(name: "matricola", value: value))
+        }
+        if !query.isEmpty { components.queryItems = query }
 
         var urlRequest = URLRequest(url: components.url!)
         urlRequest.httpMethod = request.method

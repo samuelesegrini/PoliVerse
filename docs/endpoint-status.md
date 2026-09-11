@@ -191,7 +191,7 @@ declares its own, yields 401 "Scope OAuth non valido … Code: 33" — an error
 that blames the token and is nothing to do with it. See
 [polimi-auth.md](polimi-auth.md#the-code-33-scope-error--resolved).
 
-## Rooms — catalogue yes, occupancy no
+## Rooms — catalogue and occupancy
 
 The maps service is **public and needs no token**:
 
@@ -204,18 +204,43 @@ GET .../spazi/campus, /spazi/sede, /spazi/piano                      → 200
 Rooms carry `sigla`, `capienza`, `posti_disabili` and the `csi*` codes that
 join them to a building, floor and campus. Every number is a string.
 
-**Live occupancy is not reachable.** Checked 2026-09-11:
+### Occupancy — `ws_aule`, VERIFIED live
 
-| Source | Result |
-| --- | --- |
-| `www7.ceda.polimi.it`, `www11.ceda.polimi.it`, `aule.polimi.it` | resolve, refuse connections — campus-internal, like `www22.dmz` |
-| PoliNetwork `/v1/rooms/search` (what PoliFemo uses) | 302 to Cloudflare Access sign-in |
-| `maps_rest` `/spazi/impegni`, `/spazi/prenotazioni`, `/spazi/occupazione` | 500 |
-| the agenda | only *this* student's lectures, not what rooms are doing |
+An earlier revision of this file concluded occupancy was unreachable. **That
+was wrong.** The findings behind it still hold — the CEDA hosts refuse
+connections off campus, PoliNetwork sits behind Cloudflare Access, and
+`maps_rest` 500s on `/spazi/impegni` — but they did not support the
+conclusion, because `props` has always listed a service that was never probed:
 
-So the app ships the catalogue and says plainly that it cannot tell which rooms
-are free. The internal hosts may well answer on campus Wi-Fi — that is the
-thread to pull if this is wanted.
+```
+ws_aule.base_url = https://api.polimi.it/ws_aule
+ws_aule.profile  = 3
+```
+
+The official bundle's `registroLezioni` chunk calls exactly two paths on it:
+
+```js
+getSedi: url: "/cata/sedi"
+getAule: url: `/cata/aule?inizio=${fmt(a)}&fine=${fmt(b)}&sede=${sede}`
+```
+
+Both answer **401** unauthenticated — byte-identical to `/iae/v1/insegn`,
+which this app already calls successfully — so they exist and take our token.
+Checked 2026-09-11.
+
+`inizio` / `fine` are `yyyy-MM-dd`: the bundle's formatter (`cAt`) emits no
+time component. The scope list already grants `aule` and `cataloghi_aule`.
+
+**`ws_aule.profile` is 3, not 0** — the first service where that matters. The
+official client appends `matricola` as a query parameter whenever a service's
+profile is non-zero, a rule `APIRequest.sendsMatricola` had encoded but never
+applied, because `iae` and `libretto` both report 0.
+
+Response shape is **not** verified. It is read leniently and logged as
+`aule payload shape:` / `sedi payload shape:`.
+
+Free time is **derived**, not requested: the service says what is booked, and
+the gaps between bookings are the answer.
 
 ## Unverified
 
