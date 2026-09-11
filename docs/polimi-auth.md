@@ -50,6 +50,63 @@ or an https callback on a domain we own via Associated Domains, and the redirect
 lands on `polimiapp.polimi.it`. Intercepting `WKWebView` navigation is the only
 option short of PoliMi registering a scheme for us.
 
+## The `Code: 33` scope error — resolved
+
+> `{"statusCode":401,"message":"jaf.model2.exceptions.JafUnauthorizedException:
+>   Scope OAuth non valido. Effettuare logout/login o disinstallare e
+>   reinstallare l'applicazione. Code: 33"}`
+
+**It was never the token. It was two missing/incorrect request headers.**
+
+The message is actively misleading: it names the OAuth scope and tells the user
+to log in again or reinstall, and none of that is the problem. The decisive
+experiment was reading a credential minted by the official app itself out of
+its own `sessionStorage` and watching *that* get `Code: 33` too. A token the
+official client is happily using cannot be a token problem.
+
+The official request interceptor:
+
+```js
+uxe = async n => {
+  const t = await B9(), a = Pa.getSnapshot().context.profile
+  n.headers.Authorization = `Bearer ${t}`
+  if (n.headers[PROFILE_PARAM]   === undefined) n.headers[PROFILE_PARAM]   = a?.profile  ?? 0
+  if (n.headers[D_PROFILE_PARAM] === undefined) n.headers[D_PROFILE_PARAM] = a?.dprofile ?? "JAF_D_PROFILE_VUOTO"
+  return n
+}
+```
+
+| Header | What we sent | What it wants |
+| --- | --- | --- |
+| `poliAuthD_profile` | *nothing* | always sent; `JAF_D_PROFILE_VUOTO` when the account has no secondary profile |
+| `poliAuthProfile` | the user's profile everywhere | the **service's** profile for `iae`/`libretto` (`0` from `props`); the user's only where the client presets none |
+
+The second is the subtle one. For those two hosts the client is built as
+
+```js
+Qr({baseURL: props["iae.base_url"], profile: Number(props["iae.profile"])})
+```
+
+and `Qr` presets `poliAuthProfile` from that argument, so the interceptor's
+`?? 0` fallback never runs. `iae.profile` is `"0"`, which is a *service*
+profile and has nothing to do with the user being profile `1`.
+
+Earlier attempts sent `0` everywhere, then `1` everywhere, and never sent
+`poliAuthD_profile` at all — so no attempt matched the real client.
+
+### Ruled out along the way
+
+Each was tested against a real account and was **not** the cause: a stale
+hardcoded scope list; a missing `al_id_srv` on authorize (the IdP drops it —
+probing with it empty and with `2428` returns a byte-identical redirect,
+signature included); query encoding; a stale grant replayed through the SSO
+cookie; and the browser session missing from the token exchange.
+
+Useful discrimination while hunting: the gateway's codes are distinct. No
+`Authorization` gives `POLIJ_033001`; an unparseable token gives *codice 15*;
+*codice 33* means the token parsed and the user resolved. That last one points
+at the request, not the credential — which in hindsight was the signal.
+
 ## Login: run the official app, take its credential
 
 Minting our own token does not work. The authorize request can be made

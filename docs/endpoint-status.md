@@ -136,6 +136,21 @@ Two consequences:
   The granted scope is stored with the token; when it no longer matches, the
   app signs out so the next login mints a token that covers the new service.
 
+## Required headers
+
+Every authenticated call needs all three, not just the first:
+
+```
+Authorization:     Bearer <token>
+poliAuthProfile:   <service profile from props, else the user's profile>
+poliAuthD_profile: <account's dprofile, else JAF_D_PROFILE_VUOTO>
+```
+
+Omitting `poliAuthD_profile`, or sending the user's profile where the service
+declares its own, yields 401 "Scope OAuth non valido … Code: 33" — an error
+that blames the token and is nothing to do with it. See
+[polimi-auth.md](polimi-auth.md#the-code-33-scope-error--resolved).
+
 ## Unverified
 
 `/v1/base/counters` is live and sits with the other career calls in the bundle,
