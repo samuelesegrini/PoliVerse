@@ -214,3 +214,58 @@ struct OAuthTests {
         #expect(value("scope")?.contains("carriera") == true)
     }
 }
+
+
+@Suite("API retry policy")
+struct RetryPolicyTests {
+    private func urlError(_ code: Int) -> NSError {
+        NSError(domain: NSURLErrorDomain, code: code)
+    }
+
+    /// A host that does not resolve will not resolve on the fourth attempt.
+    /// Retrying it produced six round trips per request and delayed the error
+    /// the user actually needed to see.
+    @Test("Permanent failures are not retried")
+    func permanentFailuresNotRetried() {
+        for code in [
+            NSURLErrorCannotFindHost,        // -1003
+            NSURLErrorBadURL,
+            NSURLErrorUnsupportedURL,
+            NSURLErrorNotConnectedToInternet,
+            NSURLErrorSecureConnectionFailed,
+        ] {
+            #expect(PoliMiAPI.isRetryableForTesting(urlError(code)) == false,
+                    "\(code) should not be retried")
+        }
+    }
+
+    @Test("Genuinely transient failures are retried")
+    func transientFailuresRetried() {
+        for code in [
+            NSURLErrorTimedOut,
+            NSURLErrorCannotConnectToHost,
+            NSURLErrorNetworkConnectionLost,
+            NSURLErrorDNSLookupFailed,
+        ] {
+            #expect(PoliMiAPI.isRetryableForTesting(urlError(code)),
+                    "\(code) should be retried")
+        }
+    }
+
+    @Test("Non-URL errors are not retried")
+    func otherDomainsNotRetried() {
+        #expect(PoliMiAPI.isRetryableForTesting(
+            NSError(domain: "SomethingElse", code: -1003)) == false)
+    }
+
+    /// A 404 is a different problem from a flaky network and the UI says so.
+    @Test("A withdrawn endpoint reports as permanent")
+    func endpointGoneIsPermanent() {
+        #expect(APIError.endpointGone("/agenda/api/me/1/events").isPermanent)
+        #expect(APIError.transport(
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotFindHost)).isPermanent)
+        #expect(APIError.badStatus(500, body: "").isPermanent == false)
+        #expect(APIError.transport(
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)).isPermanent == false)
+    }
+}

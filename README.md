@@ -17,8 +17,8 @@ history is not carried forward.
 | Token storage + refresh | Implemented (Keychain, serialised refresh) |
 | Course list | Implemented against `/rest/v1/insegn` |
 | WeBeep materials | Implemented via Moodle web services — see [docs/webeep.md](docs/webeep.md) |
-| Timetable / calendar | Implemented against `/agenda/api/me/{matricola}/events` |
-| Career / grades | Implemented — mean, CFU, exam sittings, published marks |
+| Timetable / calendar | Implemented, but the endpoint now returns 404 — see [docs/endpoint-status.md](docs/endpoint-status.md) |
+| Career / grades | Implemented, but the endpoint now returns 404 — see [docs/endpoint-status.md](docs/endpoint-status.md) |
 | Search | Across courses, agenda and exam sittings |
 
 The app ships with **mock data on by default** so every screen renders without

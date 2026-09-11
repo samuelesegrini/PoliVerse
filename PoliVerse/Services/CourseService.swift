@@ -49,9 +49,10 @@ final class CourseService {
             DiskCache.save(loaded, as: "courses")
         } catch {
             errorMessage = error.localizedDescription
-            // Falling back keeps the screen useful rather than blank while the
-            // endpoint shapes are still being verified against a real account.
-            if courses.isEmpty { courses = applyFavourites(MockData.courses) }
+            // Never substitute mock data for a failed real request. The user
+            // turned sample data off; showing invented courses as if they were
+            // theirs is worse than showing nothing. Cached real courses are
+            // fine to keep — they were genuinely theirs once.
         }
     }
 

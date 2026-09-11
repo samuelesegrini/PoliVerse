@@ -70,10 +70,9 @@ final class AgendaService {
         } catch {
             log.error("Agenda load failed: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
-            if events.isEmpty {
-                events = MockData.agendaEvents(around: startDate)
-                loadedFrom = startDate
-            }
+            // No mock fallback: sample lectures shown as real would send
+            // someone to a room that does not exist.
+            events = []
         }
     }
 

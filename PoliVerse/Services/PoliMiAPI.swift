@@ -32,6 +32,9 @@ nonisolated struct APIRequest {
 
 nonisolated enum APIError: LocalizedError {
     case badStatus(Int, body: String)
+    /// The path returned 404 — the service moved or was withdrawn, which is a
+    /// different problem from the network being down and deserves saying so.
+    case endpointGone(String)
     case transport(any Error)
     case decoding(any Error)
     case retriesExhausted(Int)
@@ -39,9 +42,20 @@ nonisolated enum APIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .badStatus(let code, _): "Il server ha risposto \(code)."
-        case .transport: "Connessione non riuscita."
+        case .endpointGone: "Questo servizio del Politecnico non è più disponibile a questo indirizzo."
+        case .transport: "Impossibile raggiungere i server del Politecnico."
         case .decoding: "Risposta del server non leggibile."
         case .retriesExhausted(let n): "Nessuna risposta dopo \(n) tentativi."
+        }
+    }
+
+    /// True when retrying or waiting will not help — the endpoint itself is the
+    /// problem.
+    var isPermanent: Bool {
+        switch self {
+        case .endpointGone: true
+        case .transport(let error): (error as NSError).code == NSURLErrorCannotFindHost
+        default: false
         }
     }
 }
@@ -112,6 +126,10 @@ nonisolated final class PoliMiAPI: Sendable {
                     try await Task.sleep(nanoseconds: delay)
                     continue
 
+                case 404:
+                    log.error("Endpoint gone: \(request.host.baseURL.absoluteString)\(request.path)")
+                    throw APIError.endpointGone(request.path)
+
                 default:
                     let body = String(data: data, encoding: .utf8) ?? ""
                     throw APIError.badStatus(http.statusCode, body: String(body.prefix(300)))
@@ -121,10 +139,51 @@ nonisolated final class PoliMiAPI: Sendable {
             } catch let error as AuthError {
                 throw error
             } catch {
+                // Retrying a permanent failure just burns battery and delays
+                // the error the user needs to see. A host that does not resolve
+                // will not resolve on the fourth attempt either.
+                guard Self.isRetryable(error) else {
+                    log.error("Not retrying \((error as NSError).code): \(error.localizedDescription)")
+                    throw APIError.transport(error)
+                }
                 attempt += 1
                 guard attempt <= maxRetries else { throw APIError.transport(error) }
                 try await Task.sleep(nanoseconds: UInt64(0.5 * pow(2, Double(attempt - 1)) * 1_000_000_000))
             }
+        }
+    }
+
+    /// Exposed for tests; the classification is what stopped a six-deep retry
+    /// storm against a host that no longer resolves.
+    static func isRetryableForTesting(_ error: any Error) -> Bool { isRetryable(error) }
+
+    /// Whether a transport failure is worth another attempt.
+    ///
+    /// DNS and TLS failures are verdicts, not hiccups. Treating them as
+    /// transient produced six round trips per request against a host that no
+    /// longer exists.
+    private static func isRetryable(_ error: any Error) -> Bool {
+        let nsError = error as NSError
+        guard nsError.domain == NSURLErrorDomain else { return false }
+
+        switch nsError.code {
+        case NSURLErrorTimedOut,
+             NSURLErrorCannotConnectToHost,
+             NSURLErrorNetworkConnectionLost,
+             NSURLErrorDNSLookupFailed,
+             NSURLErrorResourceUnavailable:
+            return true
+        case NSURLErrorCannotFindHost,          // -1003, NXDOMAIN
+             NSURLErrorBadURL,
+             NSURLErrorUnsupportedURL,
+             NSURLErrorNotConnectedToInternet,  // retrying offline is pointless
+             NSURLErrorCancelled,
+             NSURLErrorSecureConnectionFailed,
+             NSURLErrorServerCertificateUntrusted,
+             NSURLErrorAppTransportSecurityRequiresSecureConnection:
+            return false
+        default:
+            return false
         }
     }
 

@@ -69,10 +69,10 @@ final class CareerService {
 
         if book == nil && loadedSessions == nil {
             errorMessage = "Impossibile caricare i dati di carriera."
-            if sessions.isEmpty {
-                gradeBook = MockData.gradeBook
-                sessions = MockData.examSessions()
-            }
+            // No mock fallback — an invented weighted average is the last thing
+            // a student should see presented as their own.
+            gradeBook = .empty
+            sessions = []
         }
     }
 
