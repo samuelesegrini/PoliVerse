@@ -86,6 +86,45 @@ restarted. Persisting them would survive that but would leave an ateneo session
 on disk indefinitely. If restarts turn out to be common in practice, this is the
 knob to turn.
 
+## The bug that made it look like nothing happened
+
+Cancelling a navigation does **not** surface as `NSURLErrorCancelled`. It
+arrives in `didFailProvisionalNavigation` as:
+
+```
+domain=WebKitErrorDomain, code=102   // WebKitErrorFrameLoadInterruptedByPolicyChange
+```
+
+The first version filtered only `NSURLErrorCancelled` (-999) and
+`NSURLErrorUnsupportedURL` (-1002), so 102 fell through to `onError` — which in
+`LoginView` sets `showingWeb = false`. The web view was therefore torn down the
+instant the CIE hand-off was intercepted, and when CieID returned a minute later
+there was nothing left to resume into. The log showed the flow apparently
+working right up to `CieID returned; resuming the web session`, and then
+silence.
+
+`AuthWebView` now tracks cancels it asked for and ignores the resulting
+failure, with an error-domain allowlist as a second line of defence.
+
+### Reading the console
+
+Most of the WebKit noise around this flow is irrelevant:
+
+| Line | Meaning |
+| --- | --- |
+| `sandbox_extension_issue_file failed for //idserver…` | WebKit preparing file access for a URL that is not a file. Harmless; it logs the URL without its scheme, which makes it look worse than it is. |
+| `didFailProvisionalLoadForFrame … code=102` | our own `.cancel` |
+| `WebContent[…] Couldn't open <private>` | simulator sandbox noise |
+| `Error acquiring assertion … RBSServiceErrorDomain` | simulator process-management noise |
+| `Conversion error! {{0, 844}…}` | SwiftUI layout noise |
+| `cannot add handler to 0 from 0` | CoreAnimation noise |
+
+The lines worth watching are the app's own, under subsystem
+`one.wape.PoliVerse`: `Handing off to CieID for path=…`,
+`Incoming URL scheme=… prefix=…`, `Recovered return host=… path=…`, and
+`Resuming session after CieID`. These log at `info` so they persist in the
+device log.
+
 ## Verified
 
 - Both schemes are registered and iOS delivers them to PoliVerse; an

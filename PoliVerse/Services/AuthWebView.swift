@@ -55,8 +55,15 @@ struct AuthWebView: UIViewRepresentable {
         // A pending URL means CieID just handed control back. Loading it into
         // *this* web view is the whole point — it already holds the session the
         // IdP established.
-        if let resume = router.consume() {
+        //
+        // `consume()` clears observable state, which must not happen during a
+        // view update, so the whole thing hops to the next runloop turn.
+        guard router.pendingURL != nil else { return }
+        let router = router
+        Task { @MainActor in
+            guard let resume = router.consume() else { return }
             context.coordinator.resuming = true
+            context.coordinator.log.debug("Resuming session after CieID")
             webView.load(URLRequest(url: resume))
         }
     }
@@ -66,11 +73,18 @@ struct AuthWebView: UIViewRepresentable {
         private let decide: (URL) -> AuthWebViewDecision
         private let onError: (any Error) -> Void
         private let onCieIDMissing: () -> Void
-        private let log = Logger(subsystem: "one.wape.PoliVerse", category: "authweb")
+        let log = Logger(subsystem: "one.wape.PoliVerse", category: "authweb")
 
         weak var webView: WKWebView?
         var resuming = false
         private var finished = false
+        /// Set whenever we cancel a navigation on purpose.
+        ///
+        /// Cancelling surfaces in `didFailProvisionalNavigation` as
+        /// `WebKitErrorDomain` 102 — not as `NSURLErrorCancelled` — so without
+        /// this the CIE hand-off reported itself as a login failure and the
+        /// host dismissed the web view. CieID would then return to nothing.
+        private var cancelledDeliberately = false
 
         init(
             router: CieIDRouter,
@@ -95,6 +109,7 @@ struct AuthWebView: UIViewRepresentable {
             // authenticated session comes back in Safari instead of here.
             if CieIDBridge.isHandoffToCieID(url) {
                 log.debug("Intercepting CIE hand-off")
+                cancelledDeliberately = true
                 let opened = await router.openCieID(for: url)
                 if !opened { onCieIDMissing() }
                 return .cancel
@@ -105,8 +120,10 @@ struct AuthWebView: UIViewRepresentable {
                 return .allow
             case .finish:
                 finished = true
+                cancelledDeliberately = true
                 return .cancel
             case .load(let next):
+                cancelledDeliberately = true
                 await MainActor.run { webView.load(URLRequest(url: next)) }
                 return .cancel
             }
@@ -117,12 +134,43 @@ struct AuthWebView: UIViewRepresentable {
             didFailProvisionalNavigation navigation: WKNavigation!,
             withError error: any Error
         ) {
-            let code = (error as NSError).code
-            // Our own cancellations surface here, as does the unsupported-scheme
-            // error from the custom redirect.
-            guard !finished, code != NSURLErrorCancelled, code != NSURLErrorUnsupportedURL
-            else { return }
+            let nsError = error as NSError
+
+            // A cancel we asked for is not a failure. This is the single most
+            // important guard in the CIE flow: without it, intercepting the
+            // hand-off immediately reports an error, the host tears down the
+            // web view, and the session CieID hands back has nowhere to go.
+            if cancelledDeliberately {
+                cancelledDeliberately = false
+                log.debug("Ignoring navigation failure from our own cancel")
+                return
+            }
+
+            guard !finished, !Self.isBenign(nsError) else { return }
+            log.error("Login navigation failed: \(nsError.domain) \(nsError.code)")
             onError(error)
+        }
+
+        /// Exposed so the classification can be tested; it is the difference
+        /// between a working CIE login and one that dies on interception.
+        static func isBenignForTesting(_ error: NSError) -> Bool { isBenign(error) }
+
+        /// Failures that mean "we stopped this on purpose" rather than
+        /// "the login broke".
+        private static func isBenign(_ error: NSError) -> Bool {
+            switch error.domain {
+            case NSURLErrorDomain:
+                // -999 cancelled; -1002 unsupported scheme, which is how the
+                // custom-scheme redirects surface.
+                return [NSURLErrorCancelled, NSURLErrorUnsupportedURL].contains(error.code)
+            case "WebKitErrorDomain":
+                // 101 cannot show URL (custom scheme), 102 frame load
+                // interrupted by policy change (our decisionHandler(.cancel)),
+                // 204 plug-in will handle load.
+                return [101, 102, 204].contains(error.code)
+            default:
+                return false
+            }
         }
     }
 }

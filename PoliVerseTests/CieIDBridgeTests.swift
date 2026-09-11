@@ -142,6 +142,32 @@ struct CieIDBridgeTests {
         #expect(router.consume() == nil)
     }
 
+    /// Cancelling a navigation surfaces as WebKitErrorDomain 102, not as
+    /// NSURLErrorCancelled. Treating it as a real failure made the host tear
+    /// down the web view the moment the CIE hand-off was intercepted, so CieID
+    /// came back to nothing — the bug this guards.
+    @Test("A policy-change cancel is not reported as a login failure")
+    func policyCancelIsBenign() {
+        #expect(AuthWebView.Coordinator.isBenignForTesting(
+            NSError(domain: "WebKitErrorDomain", code: 102)))
+        #expect(AuthWebView.Coordinator.isBenignForTesting(
+            NSError(domain: "WebKitErrorDomain", code: 101)))
+        #expect(AuthWebView.Coordinator.isBenignForTesting(
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)))
+        #expect(AuthWebView.Coordinator.isBenignForTesting(
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorUnsupportedURL)))
+    }
+
+    @Test("A genuine network failure is still reported")
+    func realFailuresStillReported() {
+        #expect(AuthWebView.Coordinator.isBenignForTesting(
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)) == false)
+        #expect(AuthWebView.Coordinator.isBenignForTesting(
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)) == false)
+        #expect(AuthWebView.Coordinator.isBenignForTesting(
+            NSError(domain: "WebKitErrorDomain", code: 100)) == false)
+    }
+
     @Test("An error return sets the message and no pending URL")
     func routerSurfacesError() throws {
         let router = CieIDRouter()
