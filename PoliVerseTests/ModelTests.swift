@@ -347,7 +347,8 @@ struct MoodleCourseNameTests {
     func prefersPoliMiCode() {
         let course = Course(moodle: MoodleCourse(
             id: 4242, fullname: "097785 - BASI DI DATI [2025-26]",
-            shortname: nil, startdate: nil, enddate: nil))
+            shortname: nil, startdate: nil, enddate: nil,
+            isfavourite: nil, hidden: nil))
 
         // The Moodle id is the identity: several WeBeep courses share one
         // PoliMi code, and using the code collapsed them in SwiftUI.
@@ -363,7 +364,7 @@ struct MoodleCourseNameTests {
     func fallsBackToMoodleID() {
         let course = Course(moodle: MoodleCourse(
             id: 99, fullname: "Corso Di Prova", shortname: nil,
-            startdate: nil, enddate: nil))
+            startdate: nil, enddate: nil, isfavourite: nil, hidden: nil))
 
         #expect(course.id == "moodle-99")
         #expect(course.code == nil)
@@ -547,5 +548,75 @@ struct ClassroomTests {
         let json = #"{"csie":"X","nome":"Y"}"#
         let building = try JSONDecoder().decode(BuildingDTO.self, from: Data(json.utf8))
         #expect(building.fullAddress == nil)
+    }
+}
+
+/// WeBeep offers three states — favourite, hidden, neither — and groups the
+/// rest by year. All of it lives on Moodle, so the app reads and writes it
+/// there rather than keeping a private opinion.
+@Suite("WeBeep course states")
+struct CourseStateTests {
+    private func moodle(
+        _ id: Int, _ name: String, favourite: Bool? = nil,
+        hidden: Bool? = nil, start: Int? = nil
+    ) -> MoodleCourse {
+        MoodleCourse(id: id, fullname: name, shortname: nil,
+                     startdate: start, enddate: nil,
+                     isfavourite: favourite, hidden: hidden)
+    }
+
+    @Test("Moodle's own flags come through")
+    func flagsFromMoodle() {
+        let favourite = Course(moodle: moodle(1, "097785 - BASI DI DATI", favourite: true))
+        #expect(favourite.isFavourite)
+        #expect(favourite.isHidden == false)
+
+        let hidden = Course(moodle: moodle(2, "X", hidden: true))
+        #expect(hidden.isHidden)
+    }
+
+    /// Absent flags mean neither, not unknown.
+    @Test("A course with no flags is in the normal list")
+    func defaultsToNormal() {
+        let course = Course(moodle: moodle(3, "X"))
+        #expect(course.isFavourite == false)
+        #expect(course.isHidden == false)
+    }
+
+    /// The academic year runs from autumn, so a January course belongs to the
+    /// year that started the previous calendar year.
+    @Test("The academic year label follows the autumn start")
+    func academicYearLabel() {
+        var rome = PoliMiDate.romeCalendar
+        rome.timeZone = TimeZone(identifier: "Europe/Rome")!
+
+        let october = rome.date(from: DateComponents(year: 2025, month: 10, day: 1))!
+        #expect(Course.academicYearLabel(for: october) == "2025/26")
+
+        let january = rome.date(from: DateComponents(year: 2026, month: 1, day: 15))!
+        #expect(Course.academicYearLabel(for: january) == "2025/26")
+
+        let september = rome.date(from: DateComponents(year: 2026, month: 9, day: 20))!
+        #expect(Course.academicYearLabel(for: september) == "2026/27")
+    }
+
+    /// The bracketed year in the WeBeep title is more precise than the start
+    /// date, so it wins when present.
+    @Test("A title's year beats the derived one")
+    func titleYearWins() {
+        let start = Int(Date(timeIntervalSince1970: 1_700_000_000).timeIntervalSince1970)
+        let course = Course(moodle: moodle(4, "097785 - BASI DI DATI [2024-25]", start: start))
+        #expect(course.academicYear == "2024-25")
+    }
+
+    @Test("Without a title year the start date supplies one")
+    func derivedYearFallback() throws {
+        var rome = PoliMiDate.romeCalendar
+        rome.timeZone = TimeZone(identifier: "Europe/Rome")!
+        let october = try #require(rome.date(from: DateComponents(year: 2025, month: 10, day: 1)))
+
+        let course = Course(moodle: moodle(5, "Corso Senza Anno",
+                                           start: Int(october.timeIntervalSince1970)))
+        #expect(course.academicYear == "2025/26")
     }
 }

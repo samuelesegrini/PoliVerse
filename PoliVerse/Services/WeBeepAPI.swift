@@ -103,6 +103,43 @@ nonisolated final class WeBeepAPI: Sendable {
         )
     }
 
+    /// `core_course_set_favourite_courses`
+    ///
+    /// Parameters are the bracketed array form Moodle expects:
+    /// `courses[0][id]` and `courses[0][favourite]`
+    /// (`course/externallib.php`, `set_favourite_courses_parameters`).
+    func setFavourite(courseID: Int, favourite: Bool) async throws {
+        _ = try await call(
+            "core_course_set_favourite_courses",
+            parameters: [
+                "courses[0][id]": String(courseID),
+                "courses[0][favourite]": favourite ? "1" : "0",
+            ],
+            as: MoodleWarnings.self
+        )
+    }
+
+    /// Hides or unhides a course.
+    ///
+    /// Moodle has no dedicated call for this: "Remove from view" is a user
+    /// preference, `block_myoverview_hidden_course_{id}`, which
+    /// `core_enrol_get_users_courses` reads back as `hidden`.
+    ///
+    /// Sending no `value` unsets the preference, which is how a course is
+    /// un-hidden — setting it to `0` would leave the preference present.
+    func setHidden(courseID: Int, hidden: Bool) async throws {
+        var parameters = [
+            "preferences[0][type]": "block_myoverview_hidden_course_\(courseID)"
+        ]
+        if hidden { parameters["preferences[0][value]"] = "1" }
+
+        _ = try await call(
+            "core_user_update_user_preferences",
+            parameters: parameters,
+            as: MoodleWarnings.self
+        )
+    }
+
     /// Moodle file URLs are not public — the token goes on the query string.
     ///
     /// That means the token ends up in the URL of every download. Acceptable

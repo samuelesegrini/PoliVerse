@@ -63,6 +63,41 @@ final class WeBeepService {
         state = .needsLogin
     }
 
+    /// Marks a course favourite on WeBeep.
+    ///
+    /// - Returns: whether it stuck. The caller updates optimistically and
+    ///   reverts on false, so a failed write does not leave the UI claiming
+    ///   something the server disagrees with.
+    @discardableResult
+    func setFavourite(_ favourite: Bool, moodleID: Int) async -> Bool {
+        guard let api else { return false }
+        do {
+            try await api.setFavourite(courseID: moodleID, favourite: favourite)
+            if let index = courses.firstIndex(where: { $0.id == moodleID }) {
+                courses[index] = courses[index].withFavourite(favourite)
+            }
+            return true
+        } catch {
+            log.error("Could not set favourite: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    @discardableResult
+    func setHidden(_ hidden: Bool, moodleID: Int) async -> Bool {
+        guard let api else { return false }
+        do {
+            try await api.setHidden(courseID: moodleID, hidden: hidden)
+            if let index = courses.firstIndex(where: { $0.id == moodleID }) {
+                courses[index] = courses[index].withHidden(hidden)
+            }
+            return true
+        } catch {
+            log.error("Could not set hidden: \(error.localizedDescription)")
+            return false
+        }
+    }
+
     // MARK: - Loading
 
     /// Fetches the enrolled course list, establishing the user id on the way.

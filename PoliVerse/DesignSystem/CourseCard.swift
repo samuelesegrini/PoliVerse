@@ -11,6 +11,7 @@ struct CourseCard: View {
     let onOpen: () -> Void
     let onFavourite: () -> Void
     let onMaterials: () -> Void
+    var onHide: () -> Void = {}
 
     private var accent: Color { Theme.accent(for: course) }
 
@@ -46,6 +47,10 @@ struct CourseCard: View {
                    systemImage: course.isFavourite ? "star.slash" : "star",
                    action: onFavourite)
             Button("Apri materiali", systemImage: "folder", action: onMaterials)
+            Divider()
+            // Mirrors WeBeep's own "Rimuovi dalla vista": the course stays
+            // enrolled, it just stops crowding the list.
+            Button("Rimuovi dalla vista", systemImage: "eye.slash", action: onHide)
         } label: {
             Image(systemName: "ellipsis")
                 .frame(width: controlSize, height: controlSize)

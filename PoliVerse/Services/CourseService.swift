@@ -12,9 +12,31 @@ final class CourseService {
     private let session: Session
     private let weBeep: WeBeepService
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "courses")
+    /// Local flags, used only for courses with no WeBeep counterpart. WeBeep
+    /// itself is the source of truth for everything it knows about.
     private var favourites: Set<String> {
         get { Set(UserDefaults.standard.stringArray(forKey: "favouriteCourses") ?? []) }
         set { UserDefaults.standard.set(Array(newValue), forKey: "favouriteCourses") }
+    }
+
+    private var hiddenCourses: Set<String> {
+        get { Set(UserDefaults.standard.stringArray(forKey: "hiddenCourses") ?? []) }
+        set { UserDefaults.standard.set(Array(newValue), forKey: "hiddenCourses") }
+    }
+
+    /// Courses shown in the normal list: neither hidden nor filtered out.
+    var visibleCourses: [Course] { courses.filter { !$0.isHidden } }
+    var favouriteCourses: [Course] { visibleCourses.filter(\.isFavourite) }
+    var hiddenOnly: [Course] { courses.filter(\.isHidden) }
+
+    /// Academic years present, most recent first, for the year filter.
+    var academicYears: [String] {
+        Array(Set(visibleCourses.map(\.academicYear).filter { $0 != "—" })).sorted(by: >)
+    }
+
+    func courses(in year: String?) -> [Course] {
+        guard let year else { return visibleCourses }
+        return visibleCourses.filter { $0.academicYear == year }
     }
 
     init(session: Session, weBeep: WeBeepService) {
@@ -78,24 +100,74 @@ final class CourseService {
         }
     }
 
+    /// Toggles the favourite flag, writing it to WeBeep when the course came
+    /// from there so the change shows up on the web too.
     func toggleFavourite(_ course: Course) {
-        var current = favourites
-        if current.contains(course.id) { current.remove(course.id) } else { current.insert(course.id) }
-        favourites = current
-        courses = applyFavourites(courses)
+        let wanted = !course.isFavourite
+        apply(to: course) { $0.isFavourite = wanted }
+
+        guard let moodleID = course.moodleID else {
+            // A course with no WeBeep counterpart keeps the flag locally.
+            var current = favourites
+            if wanted { current.insert(course.id) } else { current.remove(course.id) }
+            favourites = current
+            return
+        }
+
+        Task {
+            if await !weBeep.setFavourite(wanted, moodleID: moodleID) {
+                // The server disagreed; do not leave the UI claiming otherwise.
+                apply(to: course) { $0.isFavourite = !wanted }
+            }
+        }
     }
 
+    /// Hides a course, mirroring WeBeep's "Remove from view".
+    func toggleHidden(_ course: Course) {
+        let wanted = !course.isHidden
+        apply(to: course) { $0.isHidden = wanted }
+
+        guard let moodleID = course.moodleID else {
+            var current = hiddenCourses
+            if wanted { current.insert(course.id) } else { current.remove(course.id) }
+            hiddenCourses = current
+            return
+        }
+
+        Task {
+            if await !weBeep.setHidden(wanted, moodleID: moodleID) {
+                apply(to: course) { $0.isHidden = !wanted }
+            }
+        }
+    }
+
+    private func apply(to course: Course, _ change: (inout Course) -> Void) {
+        guard let index = courses.firstIndex(where: { $0.id == course.id }) else { return }
+        change(&courses[index])
+        courses = sortCourses(courses)
+    }
+
+    /// Applies the locally-held flags, which matter only for courses WeBeep
+    /// does not know about — for the rest, WeBeep's own values already arrived
+    /// on the course and must not be overwritten.
     private func applyFavourites(_ input: [Course]) -> [Course] {
         let favs = favourites
-        return input
-            .map { course in
-                var copy = course
-                copy.isFavourite = favs.contains(course.id)
-                return copy
-            }
-            .sorted { lhs, rhs in
-                if lhs.isFavourite != rhs.isFavourite { return lhs.isFavourite }
-                return lhs.name < rhs.name
-            }
+        let hidden = hiddenCourses
+        return sortCourses(input.map { course in
+            guard course.moodleID == nil else { return course }
+            var copy = course
+            copy.isFavourite = favs.contains(course.id)
+            copy.isHidden = hidden.contains(course.id)
+            return copy
+        })
+    }
+
+    /// Favourites first, then most recent year, then by name.
+    private func sortCourses(_ input: [Course]) -> [Course] {
+        input.sorted { lhs, rhs in
+            if lhs.isFavourite != rhs.isFavourite { return lhs.isFavourite }
+            if lhs.academicYear != rhs.academicYear { return lhs.academicYear > rhs.academicYear }
+            return lhs.name < rhs.name
+        }
     }
 }

@@ -23,6 +23,11 @@ nonisolated struct Course: Identifiable, Sendable, Hashable, Codable {
     /// collapse those rows into one and warn about duplicate IDs.
     var code: String?
     var isFavourite: Bool = false
+    /// Hidden from the normal list, mirroring Moodle's "Remove from view".
+    /// Hidden courses are still reachable, just not in the way.
+    var isHidden: Bool = false
+    /// Start of the course, used to group by academic year.
+    var startDate: Date?
 
     /// Deterministic accent so a course keeps the same colour between launches
     /// without persisting anything. PoliFemo shipped 23 MB of stock wallpapers
@@ -48,6 +53,7 @@ nonisolated struct Course: Identifiable, Sendable, Hashable, Codable {
     /// resurrect a favourite the user has since removed.
     private enum CodingKeys: String, CodingKey {
         case id, name, teacher, cfu, semester, academicYear, teacherEmail, moodleID, code
+        case isHidden, startDate
     }
 
     /// "ARCHITETTURE DEI CALCOLATORI" reads badly in a title; fix it once here.
@@ -129,6 +135,18 @@ extension Course {
             return (nil, title)
         }
         return (candidate, parts.dropFirst().joined(separator: " - "))
+    }
+
+    /// The Politecnico year a date falls in, as `"2025/26"`.
+    ///
+    /// The academic year starts in autumn, so anything before September belongs
+    /// to the year that began the previous calendar year — a January lecture is
+    /// in 2025/26, not 2026/27.
+    static func academicYearLabel(for date: Date) -> String {
+        let calendar = PoliMiDate.romeCalendar
+        let year = calendar.component(.year, from: date)
+        let start = calendar.component(.month, from: date) >= 9 ? year : year - 1
+        return "\(start)/\(String(format: "%02d", (start + 1) % 100))"
     }
 
     static func academicYear(from fullname: String) -> String? {

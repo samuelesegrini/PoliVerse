@@ -9,6 +9,7 @@ struct HomeView: View {
 
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var selectedCourse: Course?
+    @State private var year: String?
 
     /// One column on iPhone, two on a regular-width iPad. Full-width cards on
     /// a 13" iPad leave a stripe of dead space between the title and buttons.
@@ -16,6 +17,10 @@ struct HomeView: View {
         sizeClass == .regular
             ? [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
             : [GridItem(.flexible())]
+    }
+
+    private var shownCourses: [Course] {
+        courses.courses(in: year)
     }
 
     private var todayEvents: [AgendaEvent] {
@@ -48,7 +53,11 @@ struct HomeView: View {
                         }
                     }
 
-                    section("I tuoi corsi", count: courses.courses.count) {
+                    if courses.academicYears.count > 1 {
+                        YearFilter(years: courses.academicYears, selection: $year)
+                    }
+
+                    section("I tuoi corsi", count: shownCourses.count) {
                         if courses.isLoading && courses.courses.isEmpty {
                             ForEach(0..<3, id: \.self) { _ in
                                 RoundedRectangle(cornerRadius: Theme.cardCorner)
@@ -58,12 +67,13 @@ struct HomeView: View {
                             }
                         } else {
                             LazyVGrid(columns: columns, spacing: 14) {
-                                ForEach(courses.courses) { course in
+                                ForEach(shownCourses) { course in
                                     CourseCard(
                                         course: course,
                                         onOpen: { selectedCourse = course },
                                         onFavourite: { courses.toggleFavourite(course) },
-                                        onMaterials: { selectedCourse = course }
+                                        onMaterials: { selectedCourse = course },
+                                        onHide: { courses.toggleHidden(course) }
                                     )
                                 }
                             }
@@ -277,5 +287,41 @@ struct ServiceAuthBanner: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.orange.opacity(0.15), in: .rect(cornerRadius: 16))
+    }
+}
+
+
+/// Filters the course list by academic year, mirroring WeBeep's own grouping.
+struct YearFilter: View {
+    let years: [String]
+    @Binding var selection: String?
+
+    var body: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                chip("Tutti", isOn: selection == nil) { selection = nil }
+                ForEach(years, id: \.self) { year in
+                    chip(year, isOn: selection == year) {
+                        // Tapping the active year clears it, so the filter is
+                        // never a one-way door.
+                        selection = selection == year ? nil : year
+                    }
+                }
+            }
+            .padding(.horizontal, 2)
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private func chip(_ title: String, isOn: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.caption.weight(.medium))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+        }
+        .buttonStyle(.plain)
+        .background(isOn ? Theme.brand : Color(.secondarySystemGroupedBackground), in: .capsule)
+        .foregroundStyle(isOn ? Theme.onAccent : .primary)
     }
 }
