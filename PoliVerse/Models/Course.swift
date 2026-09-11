@@ -106,6 +106,10 @@ extension Course {
         let full = moodle.fullname
         let (code, title) = Course.splitCode(from: full)
 
+        let start = moodle.startdate.flatMap {
+            $0 > 0 ? Date(timeIntervalSince1970: TimeInterval($0)) : nil
+        }
+
         self.init(
             // Moodle's id is the identity: the only value guaranteed unique.
             id: "moodle-\(moodle.id)",
@@ -113,9 +117,17 @@ extension Course {
             teacher: "—",
             cfu: 0,
             semester: "—",
-            academicYear: Course.academicYear(from: full) ?? "—",
+            // The title's bracketed year is the more precise label when it is
+            // there; the start date is the fallback.
+            academicYear: Course.academicYear(from: full)
+                ?? start.map(Course.academicYearLabel(for:))
+                ?? "—",
             moodleID: moodle.id,
-            code: code
+            code: code,
+            // WeBeep owns these three states, so they come straight from it.
+            isFavourite: moodle.isfavourite ?? false,
+            isHidden: moodle.hidden ?? false,
+            startDate: start
         )
     }
 
