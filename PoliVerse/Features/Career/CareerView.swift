@@ -108,6 +108,16 @@ struct CareerView: View {
                 StatTile(value: "\(book.examsPlanned)", label: "Insegnamenti", accent: .secondary, compact: true)
             }
 
+            if !career.passedExams.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Ultimi esiti")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    ForEach(career.passedExams.prefix(3)) { LibrettoRow(exam: $0) }
+                }
+                .padding(.top, 4)
+            }
+
             if let next = career.upcoming.first {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Prossimo appello")
@@ -143,17 +153,38 @@ struct CareerView: View {
 
     @ViewBuilder
     private func results(_ career: CareerService) -> some View {
-        if career.results.isEmpty {
+        if career.libretto.isEmpty {
             ContentUnavailableView("Nessun esito", systemImage: "checkmark.seal",
-                                   description: Text("Gli esiti pubblicati appariranno qui."))
+                                   description: Text("Il libretto non ha restituito insegnamenti."))
                 .padding(.top, 40)
         } else {
-            VStack(spacing: 10) {
-                ForEach(career.results) { exam in
-                    Button { selectedExam = exam } label: { ExamRow(exam: exam) }
-                        .buttonStyle(.plain)
+            VStack(spacing: 16) {
+                if !career.passedExams.isEmpty {
+                    VStack(spacing: 10) {
+                        sectionHeader("Superati", count: career.passedExams.count)
+                        ForEach(career.passedExams) { LibrettoRow(exam: $0) }
+                    }
+                }
+
+                if !career.pendingExams.isEmpty {
+                    VStack(spacing: 10) {
+                        sectionHeader("Da sostenere", count: career.pendingExams.count)
+                        ForEach(career.pendingExams) { LibrettoRow(exam: $0) }
+                    }
                 }
             }
+        }
+    }
+
+    private func sectionHeader(_ title: String, count: Int) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text("\(count)")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+            Spacer()
         }
     }
 }
@@ -182,6 +213,58 @@ private struct StatTile: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, compact ? 12 : 18)
+        .cardBackground()
+    }
+}
+
+/// One teaching from the libretto: the mark if it has been sat, the CFU, and
+/// when.
+private struct LibrettoRow: View {
+    let exam: LibrettoExam
+    @Environment(\.locale) private var locale
+
+    private var accent: Color { exam.isPassed ? .green : .secondary }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            // The mark is the thing being looked for, so it leads.
+            Text(exam.displayGrade)
+                .font(.title3.weight(.bold))
+                .fontDesign(.rounded)
+                .monospacedDigit()
+                .foregroundStyle(accent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(width: 52)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(exam.name)
+                    .font(.subheadline.weight(.medium))
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 8) {
+                    if let cfu = exam.cfu, cfu > 0 {
+                        Text("\(cfu) CFU")
+                            .font(.caption2.weight(.medium))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(accent.opacity(0.15), in: .capsule)
+                            .foregroundStyle(accent)
+                    }
+                    if let date = exam.date {
+                        Text(date.formatted(.dateTime.month(.abbreviated).year().locale(locale)).capitalized)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    } else if let status = exam.statusText, !status.isEmpty {
+                        Text(status).font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .cardBackground()
     }
 }

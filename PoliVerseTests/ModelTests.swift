@@ -374,3 +374,87 @@ struct MoodleCourseNameTests {
         #expect(title == "Analisi - Modulo 2")
     }
 }
+
+/// The libretto is where passed exams live. `/v1/insegn` lists sittings still
+/// open to register for, so it is empty exactly when a student most wants to
+/// see their results.
+@Suite("Libretto")
+struct LibrettoTests {
+    private func decode(_ json: String) throws -> [LibrettoEntryDTO] {
+        try JSONDecoder().decode([LibrettoEntryDTO].self, from: Data(json.utf8))
+    }
+
+    @Test("A passed exam decodes with its mark")
+    func passedExamDecodes() throws {
+        let json = """
+        [{"c_insegn":"084391","descrizione":"RETI LOGICHE","voto_esame":28,
+          "lode":"N","cfu":5,"data_esame":"2025-02-12T00:00:00",
+          "stato_esame_desc":"Superato","posins":"E"}]
+        """
+        let exam = try #require(decode(json).first?.toExam())
+
+        #expect(exam.id == "084391")
+        #expect(exam.name == "Reti Logiche")
+        #expect(exam.grade == 28)
+        #expect(exam.cfu == 5)
+        #expect(exam.displayGrade == "28")
+        #expect(exam.isPassed)
+    }
+
+    /// The official app renders honours by appending "L" when `lode === "S"`.
+    @Test("Honours render as 30L")
+    func lodeRenders() throws {
+        let json = """
+        [{"c_insegn":"086088","descrizione":"ANALISI E GEOMETRIA 1","voto_esame":30,
+          "lode":"S","cfu":10,"data_esame":"2024-01-20T00:00:00",
+          "stato_esame_desc":"Superato"}]
+        """
+        let exam = try #require(decode(json).first?.toExam())
+        #expect(exam.displayGrade == "30L")
+    }
+
+    /// A teaching not yet sat has no mark and must not read as passed.
+    @Test("An unsat teaching has no mark and is pending")
+    func pendingExam() throws {
+        let json = """
+        [{"c_insegn":"097785","descrizione":"BASI DI DATI","voto_esame":0,
+          "lode":"N","cfu":8,"data_esame":null,"stato_esame_desc":null}]
+        """
+        let exam = try #require(decode(json).first?.toExam())
+
+        #expect(exam.grade == nil)
+        #expect(exam.displayGrade == "—")
+        #expect(exam.isPassed == false)
+    }
+
+    /// These endpoints are inconsistent about quoting numbers, and being strict
+    /// would drop the whole row over a formatting choice.
+    @Test("Numbers quoted as strings still decode")
+    func tolerantNumbers() throws {
+        let json = """
+        [{"c_insegn":"1","descrizione":"TEST","voto_esame":"27","cfu":"6",
+          "lode":"N","data_esame":"2025-06-01T00:00:00","stato_esame_desc":"Superato"}]
+        """
+        let exam = try #require(decode(json).first?.toExam())
+        #expect(exam.grade == 27)
+        #expect(exam.cfu == 6)
+    }
+
+    /// A pass/fail teaching ("idoneità") records a date and status but no mark.
+    @Test("A pass without a mark still counts as passed")
+    func passWithoutMark() {
+        let exam = LibrettoExam(
+            id: "1", name: "Prova Finale", grade: nil, hasLode: false, cfu: 3,
+            date: .now, statusText: "Superato"
+        )
+        #expect(exam.isPassed)
+        #expect(exam.displayGrade == "—")
+    }
+
+    @Test("A row missing its identity is skipped, not faked")
+    func skipsUnusableRows() throws {
+        let json = #"[{"c_insegn":null,"descrizione":"X"},{"c_insegn":"2","descrizione":""}]"#
+        let exams = try decode(json).compactMap { $0.toExam() }
+        #expect(exams.isEmpty)
+    }
+}

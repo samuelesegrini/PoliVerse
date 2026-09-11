@@ -18,6 +18,8 @@ import OSLog
 final class CareerService {
     private(set) var gradeBook: GradeBook = .empty
     private(set) var sessions: [ExamSession] = []
+    /// The libretto: every teaching in the plan, with its result.
+    private(set) var libretto: [LibrettoExam] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?
 
@@ -28,11 +30,35 @@ final class CareerService {
         self.session = session
     }
 
-    /// Sittings with a published mark, most recent first.
-    var results: [ExamSession] {
-        sessions
-            .filter { $0.grade != nil }
+    /// Passed exams, most recent first.
+    ///
+    /// Sourced from the libretto rather than from exam sittings: sittings
+    /// disappear from `/v1/insegn` once there is nothing left to register for,
+    /// so a student who has passed everything would see an empty list.
+    var passedExams: [LibrettoExam] {
+        libretto
+            .filter(\.isPassed)
             .sorted { ($0.date ?? .distantPast) > ($1.date ?? .distantPast) }
+    }
+
+    /// Teachings in the plan with no result yet.
+    var pendingExams: [LibrettoExam] {
+        libretto.filter { !$0.isPassed }.sorted { $0.name < $1.name }
+    }
+
+    /// Average of the numeric marks actually recorded, weighted by CFU where
+    /// known. Shown only as a cross-check against the official mean.
+    var weightedMean: Double? {
+        let graded = libretto.compactMap { exam -> (Int, Int)? in
+            guard let grade = exam.grade, grade > 0 else { return nil }
+            return (grade, exam.cfu ?? 0)
+        }
+        guard !graded.isEmpty else { return nil }
+        let totalCFU = graded.reduce(0) { $0 + $1.1 }
+        guard totalCFU > 0 else {
+            return Double(graded.reduce(0) { $0 + $1.0 }) / Double(graded.count)
+        }
+        return graded.reduce(0.0) { $0 + Double($1.0 * $1.1) } / Double(totalCFU)
     }
 
     /// Sittings still ahead, soonest first.
@@ -56,6 +82,7 @@ final class CareerService {
         if session.useMockData {
             gradeBook = MockData.gradeBook
             sessions = MockData.examSessions()
+            libretto = MockData.libretto()
             return
         }
 
@@ -69,8 +96,12 @@ final class CareerService {
         async let bookTask = loadGradeBook(matricola: matricola)
         async let countersTask = loadCounters()
         async let sessionsTask = loadSessions()
+        async let librettoTask = loadLibretto(matricola: matricola)
 
-        let (book, counters, loadedSessions) = await (bookTask, countersTask, sessionsTask)
+        let (book, counters, loadedSessions, loadedLibretto) =
+            await (bookTask, countersTask, sessionsTask, librettoTask)
+
+        if let loadedLibretto { libretto = loadedLibretto }
 
         if var book {
             // The gradebook endpoint no longer carries exam counts; they come
@@ -96,6 +127,7 @@ final class CareerService {
             // a student should see presented as their own.
             gradeBook = .empty
             sessions = []
+            libretto = []
         }
     }
 
@@ -108,6 +140,23 @@ final class CareerService {
             return dto.toGradeBook()
         } catch {
             log.error("Gradebook failed: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    /// `GET {libretto}/elencoinsegnamenti/{matricola}` — the study plan with
+    /// results.
+    private func loadLibretto(matricola: String) async -> [LibrettoExam]? {
+        do {
+            let entries = try await session.api.send(
+                APIRequest(host: .libretto, path: "/elencoinsegnamenti/\(matricola)"),
+                as: [LibrettoEntryDTO].self
+            )
+            let exams = entries.compactMap { $0.toExam() }
+            log.notice("libretto returned \(entries.count, privacy: .public) entries, \(exams.count, privacy: .public) usable")
+            return exams
+        } catch {
+            log.error("Libretto failed: \(error.localizedDescription)")
             return nil
         }
     }

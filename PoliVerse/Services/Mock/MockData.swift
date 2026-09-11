@@ -36,6 +36,28 @@ nonisolated enum MockData {
         examsPlanned: 22, examsSubscribed: 2, examsGiven: 14
     )
 
+    static func libretto(now: Date = .now) -> [LibrettoExam] {
+        func exam(_ id: String, _ name: String, _ grade: Int?, _ cfu: Int,
+                  _ daysAgo: Int?, lode: Bool = false) -> LibrettoExam {
+            LibrettoExam(
+                id: id, name: name, grade: grade, hasLode: lode, cfu: cfu,
+                date: daysAgo.map { now.addingTimeInterval(TimeInterval(-$0 * 86_400)) },
+                statusText: daysAgo == nil ? nil : "Superato"
+            )
+        }
+        return [
+            exam("086088", "Analisi e Geometria 1", 30, 10, 640, lode: true),
+            exam("084391", "Reti Logiche", 28, 5, 520),
+            exam("083801", "Fisica Sperimentale", 25, 8, 430),
+            exam("083802", "Chimica", 27, 6, 360),
+            exam("085923", "Architetture dei Calcolatori", 26, 10, 250),
+            exam("086089", "Analisi e Geometria 2", 24, 8, 160),
+            exam("084392", "Informatica Teorica", 30, 8, 90),
+            exam("097785", "Basi di Dati", nil, 8, nil),
+            exam("089160", "Ingegneria del Software", nil, 12, nil),
+        ]
+    }
+
     static func examSessions(now: Date = .now) -> [ExamSession] {
         let calendar = PoliMiDate.romeCalendar
         func day(_ offset: Int, hour: Int = 9) -> Date {
