@@ -19,6 +19,12 @@ nonisolated struct Classroom: Identifiable, Sendable, Hashable, Codable {
     var address: String?
     /// Seats reserved for wheelchair users, where the catalogue records any.
     var accessibleSeats: Int?
+    /// `idaula` — the key the occupancy endpoint takes.
+    ///
+    /// Distinct from ``id``, which is the room's printed code (`2.0.1`).
+    /// `/ricerca/aula/occupazione` accepts only this numeric id; passing the
+    /// code or the `csiv` answers 500 or 404.
+    var occupancyID: String?
 
     /// The city or campus a room sits in, for grouping.
     var locationLabel: String {
@@ -32,6 +38,7 @@ nonisolated struct ClassroomDTO: Decodable, Sendable {
     let sigla: String?
     let csie: String?
     let csip: String?
+    let idaula: String?
     let capienza: String?
     let posti_disabili: String?
     let categoria: String?
@@ -52,7 +59,8 @@ nonisolated struct ClassroomDTO: Decodable, Sendable {
             capacity: seats,
             buildingCode: csie,
             floorCode: csip,
-            accessibleSeats: posti_disabili.flatMap(Int.init).flatMap { $0 > 0 ? $0 : nil }
+            accessibleSeats: posti_disabili.flatMap(Int.init).flatMap { $0 > 0 ? $0 : nil },
+            occupancyID: idaula
         )
     }
 }

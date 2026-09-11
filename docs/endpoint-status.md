@@ -215,7 +215,35 @@ GET .../spazi/campus, /spazi/sede, /spazi/piano                      → 200
 Rooms carry `sigla`, `capienza`, `posti_disabili` and the `csi*` codes that
 join them to a building, floor and campus. Every number is a string.
 
-### Occupancy — `ws_aule`, VERIFIED live
+### Occupancy — `maps_rest`, public, VERIFIED working
+
+**`GET /ricerca/aula/occupazione/{idaula}/{yyyy-MM-dd}`** → `200`, no token:
+
+```json
+[{"inizio":"08:15","fine":"10:15"},{"inizio":"10:15","fine":"12:15"}]
+```
+
+Busy bands, times only — the date is the one requested — as wall clock in
+Rome. Date-sensitive and real: 2026-12-25 and 2027-08-15 return `[]`, a
+teaching day returns the grid above.
+
+`{idaula}` is the catalogue's **`idaula`**, not `sigla` and not `csiv`: the
+code answers 500, the `csiv` 404. All 353 rooms carry one.
+
+Some rooms answer `MSG_OCCUPAZIONI_NASCOSTE` — the university hides those
+deliberately. They are reported as unknown, never as free.
+
+Related and also public: `/ricerca/aula/dotazioni/{id}` (projector, sockets,
+…) and `/ricerca/aula/software/{id}`.
+
+**How it was found, after two dead ends:** `maps_rest` publishes a WADL at
+`/rest/application.wadl` — 151 endpoints, machine-readable, unauthenticated.
+The 500s recorded earlier against `/spazi/impegni` and friends were just
+"unknown path" in disguise. Ask a service to describe itself before guessing
+at it; `POST /ricerca` and `/ricerca/v2` remain undocumented and were not
+needed.
+
+### Occupancy — `ws_aule`, staff only
 
 An earlier revision of this file concluded occupancy was unreachable. **That
 was wrong.** The findings behind it still hold — the CEDA hosts refuse

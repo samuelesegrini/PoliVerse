@@ -9,7 +9,7 @@ struct PoliVerseApp: App {
     @State private var weBeep: WeBeepService
     @State private var cieID = CieIDRouter()
     @State private var downloads = FileDownloadService()
-    @State private var rooms = RoomsService()
+    @State private var rooms: RoomsService
     @State private var notices: NoticeService
     @State private var news: NewsService
     @State private var freeRooms: FreeRoomsService
@@ -24,7 +24,11 @@ struct PoliVerseApp: App {
         _career = State(initialValue: CareerService(session: session))
         _notices = State(initialValue: NoticeService(session: session))
         _news = State(initialValue: NewsService(session: session))
-        _freeRooms = State(initialValue: FreeRoomsService(session: session))
+        // Reads the public catalogue rather than the API client: occupancy
+        // comes from maps_rest, which needs no token.
+        let rooms = RoomsService()
+        _rooms = State(initialValue: rooms)
+        _freeRooms = State(initialValue: FreeRoomsService(catalogue: rooms))
         let weBeep = WeBeepService(session: session)
         _weBeep = State(initialValue: weBeep)
         _courses = State(initialValue: CourseService(session: session, weBeep: weBeep))

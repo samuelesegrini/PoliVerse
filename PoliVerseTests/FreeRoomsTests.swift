@@ -196,3 +196,65 @@ struct RefusalTests {
         #expect(APIError.notEntitled("/cata/sedi", body: "").isPermanent)
     }
 }
+
+/// `/ricerca/aula/occupazione/{idaula}/{yyyy-MM-dd}` — the public endpoint the
+/// WADL gave up, after `ws_aule` turned out to be staff-only.
+@Suite("Occupancy bands")
+struct OccupancyBandTests {
+    private var day: Date {
+        PoliMiDate.romeCalendar.date(
+            from: DateComponents(year: 2026, month: 9, day: 11, hour: 12))!
+    }
+
+    private func bands(_ json: String) -> [RoomBooking] {
+        let decoded = (try? JSONDecoder().decode([OccupancyBand].self, from: Data(json.utf8))) ?? []
+        return decoded.enumerated().compactMap { index, band in
+            band.toBooking(roomID: "2.0.1", on: day, index: index)
+        }
+    }
+
+    /// The exact body a real room returned on a teaching day.
+    @Test("The real payload becomes bookings on the requested day")
+    func realPayload() {
+        let parsed = bands("""
+        [{"inizio":"08:15","fine":"10:15"},{"inizio":"10:15","fine":"12:15"},
+         {"inizio":"13:15","fine":"15:15"},{"inizio":"15:15","fine":"17:15"},
+         {"inizio":"17:15","fine":"19:15"}]
+        """)
+        #expect(parsed.count == 5)
+        #expect(RoomScheduleView.format(parsed[0].interval) == "08:15–10:15")
+        #expect(RoomScheduleView.format(parsed[4].interval) == "17:15–19:15")
+    }
+
+    /// A closed day: the service returns an empty array, and the room is free
+    /// all day rather than missing.
+    @Test("An empty day leaves the room free")
+    func closedDay() {
+        let room = RoomSchedule(id: "2.0.1", name: "2.0.1", building: nil,
+                                seats: nil, bookings: bands("[]"))
+        let window = DateInterval(start: PoliMiDate.time(8, on: day),
+                                  end: PoliMiDate.time(20, on: day))
+        #expect(room.freeSlots(in: window).count == 1)
+    }
+
+    @Test("The free gaps between real bands are found")
+    func gapsFromRealBands() {
+        let room = RoomSchedule(
+            id: "2.0.1", name: "2.0.1", building: nil, seats: nil,
+            bookings: bands("""
+            [{"inizio":"08:15","fine":"10:15"},{"inizio":"13:15","fine":"15:15"}]
+            """))
+        let window = DateInterval(start: PoliMiDate.time(8, on: day),
+                                  end: PoliMiDate.time(20, on: day))
+        #expect(room.freeSlots(in: window).map(RoomScheduleView.format)
+            == ["10:15–13:15", "15:15–20:00"])
+    }
+
+    @Test("A band missing either time is dropped rather than half-read")
+    func incompleteBand() {
+        let json = """
+        [{"inizio":"08:15"}]
+        """
+        #expect(bands(json).isEmpty)
+    }
+}

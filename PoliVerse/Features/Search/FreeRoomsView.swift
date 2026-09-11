@@ -13,10 +13,10 @@ struct FreeRoomsView: View {
         List {
             Section {
                 DatePicker("Giorno", selection: $aule.day, displayedComponents: .date)
-                if aule.sites.count > 1 {
-                    Picker("Sede", selection: $aule.siteID) {
-                        ForEach(aule.sites) { site in
-                            Text(site.name).tag(String?.some(site.id))
+                if aule.campuses.count > 1 {
+                    Picker("Sede", selection: $aule.campus) {
+                        ForEach(aule.campuses, id: \.self) { name in
+                            Text(name).tag(String?.some(name))
                         }
                     }
                 }
@@ -37,7 +37,7 @@ struct FreeRoomsView: View {
         .task { await aule.load() }
         // Re-fetches when the day or campus changes; the service keys its
         // cache on both, so flipping back to a day already seen costs nothing.
-        .task(id: "\(aule.day.timeIntervalSince1970)|\(aule.siteID ?? "")") {
+        .task(id: "\(aule.day.timeIntervalSince1970)|\(aule.campus ?? "")") {
             await aule.load()
         }
         .refreshable { await aule.load(force: true) }
@@ -53,25 +53,21 @@ struct FreeRoomsView: View {
 
     @ViewBuilder
     private var content: some View {
-        if aule.notEntitled {
-            // Said plainly rather than as a generic failure: this is a fact
-            // about the account, not a fault, and no amount of retrying or
-            // signing in again will change it.
-            ContentUnavailableView(
-                "Non disponibile per il tuo profilo",
-                systemImage: "lock",
-                description: Text("Il Politecnico riserva il servizio prenotazioni aule ad altri profili. L'elenco completo delle aule resta consultabile."))
-        } else if let message = aule.errorMessage {
+        if let message = aule.errorMessage {
             ContentUnavailableView("Aule non disponibili",
                                    systemImage: "building.2",
                                    description: Text(message))
-        } else if aule.payloadUnreadable {
-            ContentUnavailableView(
-                "Formato non riconosciuto",
-                systemImage: "questionmark.circle",
-                description: Text("Il Politecnico ha risposto in un formato che PoliVerse non sa ancora leggere."))
         } else if aule.isLoading && aule.rooms.isEmpty {
-            Section { ProgressView().frame(maxWidth: .infinity) }
+            Section {
+                VStack(spacing: 6) {
+                    ProgressView(
+                        value: Double(aule.progress.done),
+                        total: Double(max(aule.progress.total, 1)))
+                    Text("\(aule.progress.done) di \(aule.progress.total) aule")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
         } else if onlyNow && isToday {
             freeNowSection
         } else {
@@ -119,7 +115,15 @@ struct FreeRoomsView: View {
         } header: {
             Text("\(results.count) aule")
         } footer: {
-            Text("Fasce libere tra le 8:00 e le 20:00, ricavate dalle lezioni prenotate. Un'aula libera può comunque essere chiusa.")
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Fasce libere tra le 8:00 e le 20:00, ricavate dalle lezioni prenotate. Un'aula libera può comunque essere chiusa.")
+                if !aule.hiddenRooms.isEmpty {
+                    // Named rather than quietly omitted: these rooms are not
+                    // free, they are unknown, and a student should be told
+                    // which ones this screen cannot speak for.
+                    Text("Il Politecnico non pubblica le occupazioni di \(aule.hiddenRooms.count) aule, che non compaiono qui.")
+                }
+            }
         }
     }
 }

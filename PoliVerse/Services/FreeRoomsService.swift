@@ -4,74 +4,83 @@ import OSLog
 
 /// Which rooms are free, and when.
 ///
-/// ## Where this came from
+/// ## How this endpoint was found
 ///
-/// An earlier pass concluded that occupancy was unreachable: the CEDA hosts
-/// refuse connections off campus, PoliNetwork's search sits behind Cloudflare
-/// Access, and `maps_rest` answers 500 for anything about bookings. That
-/// conclusion was wrong, and the reason is worth recording — `props` has
-/// always listed a `ws_aule` service that was never probed:
+/// Two dead ends came first, and both are worth keeping written down.
+///
+/// The CEDA hosts and PoliNetwork are genuinely unreachable off campus. Then
+/// `ws_aule` — `/cata/aule?inizio=…&fine=…&sede=…`, straight out of the
+/// official bundle — turned out to exist but to be closed to student accounts:
+/// its own profile (3) answers "Utente non abilitato", and the account's own
+/// profile answers "Scope OAuth non valido". It backs `registroLezioni`, a
+/// lecture register, and is staff-only.
+///
+/// The answer was in neither place. `maps_rest` publishes a **WADL** at
+/// `/rest/application.wadl` — 151 endpoints, machine-readable, no token — and
+/// among them:
 ///
 /// ```
-/// ws_aule.base_url = https://api.polimi.it/ws_aule
-/// ws_aule.profile  = 3
+/// GET /ricerca/aula/occupazione/{idaula}/{yyyy-MM-dd}
+///   → [{"inizio":"08:15","fine":"10:15"}, …]
 /// ```
 ///
-/// The official app's `registroLezioni` chunk calls exactly two paths on it:
+/// Public, unauthenticated, date-sensitive: Christmas Day and mid-August
+/// return `[]`, a teaching day returns the booked bands. Some rooms answer
+/// `MSG_OCCUPAZIONI_NASCOSTE` — the university hides those deliberately, and
+/// they are reported as unknown rather than guessed at.
 ///
-/// ```js
-/// getSedi: url: "/cata/sedi"
-/// getAule: url: `/cata/aule?inizio=${fmt(a)}&fine=${fmt(b)}&sede=${sede}`
-/// ```
+/// The lesson for next time: ask the service to describe itself before
+/// guessing paths. One WADL fetch would have saved both dead ends.
 ///
-/// Both answer **401** unauthenticated — the same as `/iae/v1/insegn`, which
-/// this app already calls successfully — so they exist and take our token.
-/// `inizio` and `fine` are `yyyy-MM-dd`; the formatter in the bundle emits no
-/// time component.
+/// ## Cost
 ///
-/// ## What is still a guess
-///
-/// The response body, as ever. The shape is logged so one device run settles
-/// it. Free time is **derived** from the bookings rather than requested: the
-/// service says what is happening, and the gaps are the answer.
+/// Occupancy is per room, so a campus means one request each — 158 for Milano
+/// Leonardo, the largest. They run concurrently with a bounded pool and are
+/// cached per room and day, so a day already looked at costs nothing.
 @Observable
 final class FreeRoomsService {
-    private(set) var sites: [AuleSite] = []
     private(set) var rooms: [RoomSchedule] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?
-    private(set) var payloadUnreadable = false
-    /// Set when the Politecnico refuses this account the service outright.
-    /// Not a failure to retry, and not a reason to offer a login.
-    private(set) var notEntitled = false
+    /// Rooms whose occupancy the university does not publish. Named rather
+    /// than silently dropped: "we cannot tell" is not "it is free".
+    private(set) var hiddenRooms: [String] = []
+    /// How far through the fetch we are, for a screen that takes a moment.
+    private(set) var progress: (done: Int, total: Int) = (0, 0)
 
-    /// The profile that worked, once one has.
-    ///
-    /// `props` says `ws_aule.profile = 3` and the official client presets
-    /// that, but 3 is a profile a student does not hold — this account
-    /// reports only profile 1, "Student". The service answers "Utente non
-    /// abilitato" rather than naming the problem, so the service profile is
-    /// tried first (matching the official client) and the account's own
-    /// profile second, and whichever answers is remembered.
-    private var workingProfile: Int?
-
-    /// The day being shown, and the campus.
     var day: Date = .now
-    var siteID: String?
+    var campus: String?
 
-    private let session: Session
+    private let catalogue: RoomsService
+    private let session: URLSession
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "aule")
-    /// Keyed by day and site, so switching back to a day already fetched does
-    /// not refetch it.
+    private let base = URL(string: "https://onlineservices.polimi.it/maps_rest/rest")!
+
+    /// Occupancy already fetched, keyed by room and day. The timetable for a
+    /// past or present day does not change while the app is open.
+    private var cache: [String: [RoomBooking]] = [:]
     private var loadedKey: String?
 
-    init(session: Session) {
+    /// At most this many requests in flight. A campus is up to 158 rooms;
+    /// firing them all at once is rude to a public service and gets slower,
+    /// not faster.
+    private let concurrency = 8
+
+    init(catalogue: RoomsService, session: URLSession = .shared) {
+        self.catalogue = catalogue
         self.session = session
     }
 
-    /// Rooms with at least one usable gap, ordered by how much free time they
-    /// have — the room free all afternoon is more useful than the one free for
-    /// forty minutes.
+    var campuses: [String] { catalogue.campuses }
+
+    /// 08:00–20:00 in Rome. Outside those hours every room is trivially free,
+    /// which is true and useless — the building is shut.
+    var teachingDay: DateInterval {
+        let start = PoliMiDate.time(8, on: day)
+        let end = PoliMiDate.time(20, on: day)
+        return DateInterval(start: start, end: max(start, end))
+    }
+
     func freeRooms(minimumMinutes: Int = 30) -> [(room: RoomSchedule, slots: [DateInterval])] {
         let window = teachingDay
         return rooms
@@ -85,128 +94,158 @@ final class FreeRoomsService {
             }
     }
 
-    /// Rooms free *right now*, which is the question actually being asked when
-    /// someone opens this looking for somewhere to sit.
+    /// Rooms free right now — the question actually being asked by someone
+    /// looking for somewhere to sit.
     func freeNow() -> [RoomSchedule] {
         let now = Date.now
         guard teachingDay.contains(now) else { return [] }
-        let window = DateInterval(start: now, end: min(now.addingTimeInterval(1800), teachingDay.end))
+        let window = DateInterval(
+            start: now, end: min(now.addingTimeInterval(1800), teachingDay.end))
         return rooms.filter { $0.isFree(during: window) }.sorted { $0.name < $1.name }
     }
 
-    /// 08:00–20:00 in Rome. Outside those hours every room is trivially free,
-    /// which is true and useless — the building is shut.
-    var teachingDay: DateInterval {
-        let start = PoliMiDate.time(8, on: day)
-        let end = PoliMiDate.time(20, on: day)
-        return DateInterval(start: start, end: max(start, end))
-    }
-
-    func loadSites() async {
-        guard sites.isEmpty, !session.useMockData else {
-            if session.useMockData { sites = MockData.auleSites() }
-            return
-        }
-        do {
-            let data = try await fetch(
-                APIRequest(host: .wsAule, path: "/cata/sedi", sendsMatricola: true))
-            log.notice("sedi payload shape: \(JSONShape.describe(data), privacy: .public)")
-            sites = try JSONDecoder().decode(SediResponse.self, from: data).sites
-            log.notice("sedi: \(self.sites.count, privacy: .public) campuses")
-            if siteID == nil { siteID = sites.first?.id }
-        } catch let error as APIError {
-            if case .notEntitled = error { notEntitled = true }
-            log.error("Sedi failed: \(error.localizedDescription)")
-        } catch {
-            log.error("Sedi failed: \(error.localizedDescription)")
-        }
-    }
-
-    /// Sends a `ws_aule` request, trying the account's own profile if the
-    /// service's configured one is refused.
-    ///
-    /// Only the first refusal costs an extra round trip: the profile that
-    /// works is remembered for the rest of the session.
-    private func fetch(_ request: APIRequest) async throws -> Data {
-        var attempt = request
-        attempt.profileOverride = workingProfile
-
-        do {
-            let data = try await session.api.send(attempt)
-            return data
-        } catch let error as APIError {
-            // Both refusals mean the same thing here. Profile 3 answers
-            // "Utente non abilitato" because the account does not hold it;
-            // profile 1 answers "Scope OAuth non valido" because the service
-            // will not accept it. Neither is fixable by signing in again.
-            guard case .notEntitled = error, workingProfile == nil else { throw error }
-
-            // Second and last attempt: the signed-in user's own profile.
-            let mine = session.profileID
-            log.notice("ws_aule refused profile 3; retrying with \(mine, privacy: .public)")
-            attempt.profileOverride = mine
-            let data = try await session.api.send(attempt)
-            workingProfile = mine
-            return data
-        }
-    }
-
     func load(force: Bool = false) async {
-        let key = "\(PoliMiDate.queryString(day))|\(siteID ?? "-")|\(session.useMockData)"
+        await catalogue.load()
+        if campus == nil { campus = catalogue.campuses.first }
+
+        let key = "\(PoliMiDate.queryString(day))|\(campus ?? "-")"
         guard !isLoading, force || key != loadedKey else { return }
         isLoading = true
         errorMessage = nil
-        payloadUnreadable = false
+        hiddenRooms = []
         defer { isLoading = false }
 
-        if session.useMockData {
-            rooms = MockData.roomSchedules(on: day)
-            loadedKey = key
+        let wanted = catalogue.rooms(matching: "", campus: campus)
+            .filter { $0.occupancyID != nil }
+        guard !wanted.isEmpty else {
+            rooms = []
+            errorMessage = "Nessuna aula in questa sede."
             return
         }
 
-        await loadSites()
-        guard !notEntitled else {
-            errorMessage = nil
-            return
-        }
-        guard let siteID else {
-            errorMessage = "Nessuna sede disponibile."
-            return
+        let stamp = PoliMiDate.queryString(day)
+        progress = (0, wanted.count)
+
+        var loaded: [RoomSchedule] = []
+        var hidden: [String] = []
+
+        // Batched rather than one big task group: the whole of `load()` is
+        // main-actor isolated, and a group body cannot touch that state. A
+        // batch at a time keeps the cache and the progress counter here,
+        // where they belong, and still runs `concurrency` requests at once.
+        for batch in stride(from: 0, to: wanted.count, by: concurrency) {
+            let slice = Array(wanted[batch..<min(batch + concurrency, wanted.count)])
+            let pending = slice.filter { cache["\($0.occupancyID ?? "")|\(stamp)"] == nil }
+
+            var fetched: [String: OccupancyResult] = [:]
+            if !pending.isEmpty {
+                let day = day
+                let session = session
+                let base = base
+                fetched = await withTaskGroup(
+                    of: (String, OccupancyResult).self
+                ) { group in
+                    for room in pending {
+                        group.addTask {
+                            (room.id, await Self.occupancy(
+                                for: room, on: stamp, day: day,
+                                base: base, session: session))
+                        }
+                    }
+                    var results: [String: OccupancyResult] = [:]
+                    for await (id, result) in group { results[id] = result }
+                    return results
+                }
+            }
+
+            for room in slice {
+                let key = "\(room.occupancyID ?? "")|\(stamp)"
+                let result = cache[key].map(OccupancyResult.bookings)
+                    ?? fetched[room.id]
+                    ?? .failed
+                switch result {
+                case .bookings(let bookings):
+                    cache[key] = bookings
+                    loaded.append(RoomSchedule(
+                        id: room.id,
+                        name: room.id,
+                        building: room.buildingName,
+                        seats: room.capacity > 0 ? room.capacity : nil,
+                        bookings: bookings))
+                case .hidden:
+                    hidden.append(room.id)
+                case .failed:
+                    // Not listed as free: a room we could not ask about is a
+                    // room we know nothing about.
+                    break
+                }
+            }
+            progress = (min(batch + concurrency, wanted.count), wanted.count)
         }
 
+        rooms = loaded
+        hiddenRooms = hidden.sorted()
+        loadedKey = key
+        let booked = loaded.reduce(0) { $0 + $1.bookings.count }
+        log.notice("aule \(stamp, privacy: .public): \(loaded.count, privacy: .public) rooms, \(booked, privacy: .public) bookings, \(hidden.count, privacy: .public) hidden, \(self.freeRooms().count, privacy: .public) with free time")
+    }
+
+    private enum OccupancyResult: Sendable {
+        case bookings([RoomBooking])
+        /// `MSG_OCCUPAZIONI_NASCOSTE` — the university does not publish this
+        /// room's bookings.
+        case hidden
+        case failed
+    }
+
+    /// Static and parameterised so it carries no actor-isolated state and can
+    /// run concurrently off the main actor.
+    private static func occupancy(
+        for room: Classroom, on stamp: String, day: Date,
+        base: URL, session: URLSession
+    ) async -> OccupancyResult {
+        guard let id = room.occupancyID else { return .failed }
+        let url = base.appendingPathComponent("ricerca/aula/occupazione/\(id)/\(stamp)")
         do {
-            // One day at a time: `inizio` and `fine` are dates, and the
-            // official app passes the same value for both when it wants one.
-            let stamp = PoliMiDate.queryString(day)
-            let data = try await fetch(
-                APIRequest(
-                    host: .wsAule,
-                    path: "/cata/aule",
-                    query: [
-                        .init(name: "inizio", value: stamp),
-                        .init(name: "fine", value: stamp),
-                        .init(name: "sede", value: siteID),
-                    ],
-                    sendsMatricola: true
-                )
-            )
-            log.notice("aule payload shape: \(JSONShape.describe(data), privacy: .public)")
+            var request = URLRequest(url: url)
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            request.timeoutInterval = 20
+            let (data, response) = try await session.data(for: request)
+            let body = String(data: data, encoding: .utf8) ?? ""
 
-            let response = try JSONDecoder().decode(AuleResponse.self, from: data)
-            rooms = response.rooms
-            payloadUnreadable = response.rooms.isEmpty
-                && !(response.raw.arrayValue?.isEmpty ?? false)
-            let booked = rooms.reduce(0) { $0 + $1.bookings.count }
-            log.notice("aule: \(self.rooms.count, privacy: .public) rooms, \(booked, privacy: .public) bookings, \(self.freeRooms().count, privacy: .public) with free time")
-            loadedKey = key
-        } catch let error as APIError {
-            if case .notEntitled = error { notEntitled = true }
-            log.error("Aule failed: \(error.localizedDescription)")
-            errorMessage = error.localizedDescription
+            // The university hides some rooms' bookings deliberately. Reported
+            // as unknown, never as free — "we cannot tell" is not "it is
+            // empty", and the difference is someone walking into a lecture.
+            if body.contains("OCCUPAZIONI_NASCOSTE") { return .hidden }
+            if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+                return .failed
+            }
+
+            let bands = try JSONDecoder().decode([OccupancyBand].self, from: data)
+            return .bookings(bands.enumerated().compactMap { index, band in
+                band.toBooking(roomID: room.id, on: day, index: index)
+            })
         } catch {
-            log.error("Aule failed: \(error.localizedDescription)")
-            errorMessage = error.localizedDescription
+            return .failed
         }
+    }
+}
+
+/// One busy band, as `/ricerca/aula/occupazione` sends it.
+///
+/// Times only — the date is the one that was asked for — and they are wall
+/// clock in Rome like every other timestamp these services produce.
+nonisolated struct OccupancyBand: Decodable, Sendable {
+    let inizio: String?
+    let fine: String?
+
+    func toBooking(roomID: String, on day: Date, index: Int) -> RoomBooking? {
+        guard
+            let inizio, let fine,
+            let start = PoliMiDate.applying(time: inizio, to: day),
+            let end = PoliMiDate.applying(time: fine, to: day)
+        else { return nil }
+        return RoomBooking(
+            id: "\(roomID)-\(index)", start: start, end: max(start, end), title: nil)
     }
 }
