@@ -171,6 +171,7 @@ final class FreeRoomsService {
                         name: room.id,
                         building: room.buildingName,
                         seats: room.capacity > 0 ? room.capacity : nil,
+                        occupancyID: room.occupancyID,
                         bookings: bookings))
                 case .hidden:
                     hidden.append(room.id)

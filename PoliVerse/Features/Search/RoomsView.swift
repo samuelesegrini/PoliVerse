@@ -3,7 +3,6 @@ import SwiftUI
 /// Browse and search the room catalogue.
 struct RoomsView: View {
     @Environment(RoomsService.self) private var rooms
-    @Environment(\.openURL) private var openURL
 
     @State private var query = ""
     @State private var campus: String?
@@ -54,8 +53,10 @@ struct RoomsView: View {
             ForEach(grouped, id: \.building) { group in
                 Section {
                     ForEach(group.rooms) { room in
-                        RoomRow(room: room) {
-                            openInMaps(room)
+                        NavigationLink {
+                            ClassroomDetailView(room: room)
+                        } label: {
+                            RoomRow(room: room)
                         }
                     }
                 } header: {
@@ -85,21 +86,10 @@ struct RoomsView: View {
         .refreshable { await rooms.load(force: true) }
     }
 
-    /// The catalogue has street addresses but no coordinates, so hand the
-    /// address to Maps rather than pretending to a precise pin.
-    private func openInMaps(_ room: Classroom) {
-        guard
-            let address = room.address,
-            let encoded = address.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-            let url = URL(string: "http://maps.apple.com/?q=\(encoded)")
-        else { return }
-        openURL(url)
-    }
 }
 
 private struct RoomRow: View {
     let room: Classroom
-    let onOpenMap: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -126,14 +116,6 @@ private struct RoomRow: View {
             }
 
             Spacer(minLength: 0)
-
-            if room.address != nil {
-                Button(action: onOpenMap) {
-                    Image(systemName: "map")
-                }
-                .buttonStyle(.borderless)
-                .accessibilityLabel("Apri \(room.id) in Mappe")
-            }
         }
         .padding(.vertical, 2)
     }

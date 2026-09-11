@@ -233,8 +233,16 @@ code answers 500, the `csiv` 404. All 353 rooms carry one.
 Some rooms answer `MSG_OCCUPAZIONI_NASCOSTE` — the university hides those
 deliberately. They are reported as unknown, never as free.
 
-Related and also public: `/ricerca/aula/dotazioni/{id}` (projector, sockets,
-…) and `/ricerca/aula/software/{id}`.
+Two more, also public, also keyed on `idaula`, sharing one shape:
+
+```
+GET /ricerca/aula/dotazioni/{idaula} → [{"id":4,"it":"Video proiettore","en":"Video projector"}]
+GET /ricerca/aula/software/{idaula}  → [{"id":348,"it":"Overleaf","en":"Overleaf"}]
+```
+
+`[]` for most rooms; software only for the computer labs (rooms 67 and 1541
+among them). The `id` is an internal catalogue with no published key, so the
+UI matches icons on the wording instead.
 
 **How it was found, after two dead ends:** `maps_rest` publishes a WADL at
 `/rest/application.wadl` — 151 endpoints, machine-readable, unauthenticated.

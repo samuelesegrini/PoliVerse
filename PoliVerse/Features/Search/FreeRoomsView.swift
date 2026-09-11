@@ -175,6 +175,8 @@ struct RoomScheduleView: View {
                 }
             }
 
+            RoomFacilitiesSection(roomID: room.occupancyID)
+
             Section("Occupata") {
                 if room.bookings.isEmpty {
                     Text("Nessuna prenotazione.").foregroundStyle(.secondary)

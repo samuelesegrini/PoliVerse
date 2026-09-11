@@ -45,6 +45,8 @@ nonisolated struct RoomSchedule: Identifiable, Sendable, Hashable {
     let name: String
     let building: String?
     let seats: Int?
+    /// `idaula`, for the equipment and software lookups.
+    var occupancyID: String?
     var bookings: [RoomBooking]
 
     init?(fields: [String: JSONValue], index: Int) {
@@ -82,11 +84,13 @@ nonisolated struct RoomSchedule: Identifiable, Sendable, Hashable {
         )
     }
 
-    init(id: String, name: String, building: String?, seats: Int?, bookings: [RoomBooking]) {
+    init(id: String, name: String, building: String?, seats: Int?,
+         occupancyID: String? = nil, bookings: [RoomBooking]) {
         self.id = id
         self.name = name
         self.building = building
         self.seats = seats
+        self.occupancyID = occupancyID
         self.bookings = bookings.sorted { $0.start < $1.start }
     }
 
