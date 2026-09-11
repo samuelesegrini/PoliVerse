@@ -2,31 +2,49 @@ import SwiftUI
 import OSLog
 @preconcurrency import WebKit
 
-/// Signs in by running the **official Servizi Online web app** and reading the
+/// Signs in by driving the **official Servizi Online web app** and reading the
 /// credential it mints.
 ///
-/// ## Why not do the OAuth ourselves
+/// ## Why not mint our own token
 ///
-/// We did, and the token it produced was refused by every data service with
-/// "Scope OAuth non valido … Code: 33" while authenticating correctly against
-/// `/jaf/internal/user`. Ruled out by experiment, in order: the scope string
-/// (logged, 33 scopes including `agenda`), `al_id_srv` (the IdP drops it —
-/// probing with and without returns a byte-identical redirect), query
-/// encoding, ending the SSO session first, the `poliAuthProfile` header, and
-/// the web view's cookies (14 adopted, no change).
+/// We did, repeatedly. A token we mint authenticates correctly against
+/// `/jaf/internal/user` and is refused by every data service with
+/// "Scope OAuth non valido … Code: 33". Ruled out on a real device, in order:
+/// the scope string (logged live — 33 scopes, `agenda` included), `al_id_srv`
+/// (the IdP drops it), query encoding, ending the SSO session first, the
+/// `poliAuthProfile` header, and the browser cookies (14 adopted). Whatever
+/// binds a usable grant is not visible in the authorize request, so this stops
+/// guessing and uses the client that works.
 ///
-/// Whatever binds a usable grant, it is something the official client does
-/// that is not visible in its authorize request. So rather than keep guessing,
-/// this loads the real app and takes the token it ends up with — the same
-/// approach `myPoliFile` uses against WeBeep, and the only one that cannot
-/// diverge from the client that works.
+/// ## How it works
 ///
-/// The app stores credentials in `sessionStorage` under
-/// `{REACT_APP_C_APP}_oauthCredentials` — `24344_oauthCredentials` — as
-/// `{accessToken, refreshToken, accessTokenExpiration}`. Verified in the
-/// bundle: `Px.calculateKey` prefixes every key with `REACT_APP_C_APP + "_"`,
-/// and `persistOAuthCredentials` writes `Kpe = "oauthCredentials"` there.
+/// The app will not log in on its own. Its state machine reads
+///
+/// ```js
+/// bxe() ? "OAUTH_PARAMS" : NEe ? … : "ANONYMOUS"
+/// ```
+///
+/// where `bxe()` is true only when **both** `code` and `state` are present in
+/// `window.location.search`, and `NEe`
+/// (`REACT_APP_ANONYMOUS_CHECK_SSO`) is false in the shipping build. Loading
+/// the app bare therefore lands in anonymous mode and simply sits there — which
+/// is exactly what it did.
+///
+/// So it is handed what it needs, in three steps:
+///
+/// 1. **Bootstrap** — load the app once, so its origin exists and its
+///    `sessionStorage` is writable.
+/// 2. **Seed and authorize** — write our `state` into `24344_oauthCheck`, then
+///    navigate to the IdP. The app validates the returned `state` against that
+///    key (`if (n.state !== t && n.state !== void 0) throw`), so seeding it is
+///    what lets an externally-started flow pass its check.
+/// 3. **Harvest** — the app exchanges the code itself and stores
+///    `{accessToken, refreshToken, accessTokenExpiration}` in
+///    `24344_oauthCredentials`. We read it.
+///
+/// Keys are `REACT_APP_C_APP + "_" + name`, per `Px.calculateKey`.
 struct PoliMiAppLoginWebView: View {
+    let oauthParams: ServiceDirectory.OAuthParams
     let router: CieIDRouter
     let onCredentials: (PoliMiToken) -> Void
     let onError: (any Error) -> Void
@@ -34,53 +52,84 @@ struct PoliMiAppLoginWebView: View {
 
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "oauth")
 
-    /// Where the official SPA lives.
-    private var appURL: URL {
-        URL(string: "https://polimiapp.polimi.it/polimi_app/app/")!
-    }
+    private let appURL = URL(string: "https://polimiapp.polimi.it/polimi_app/app/")!
+    private let credentialsKey = "24344_oauthCredentials"
+    private let stateKey = "24344_oauthCheck"
 
-    /// `REACT_APP_C_APP` is 24344 in the shipping bundle.
-    private let storageKey = "24344_oauthCredentials"
+    @State private var state = UUID().uuidString
+    @State private var didStartAuthorize = false
+    @State private var didFinish = false
 
     var body: some View {
         AuthWebView(
             startURL: appURL,
             router: router,
-            // The app navigates itself; we only watch.
+            // The app drives its own navigation; the authorize redirect must
+            // reach it rather than being intercepted by us, because the app is
+            // the thing doing the code exchange.
             decide: { _ in .allow },
             onError: onError,
             onCieIDMissing: onCieIDMissing,
             onFinished: { webView, url in
-                guard url?.host == "polimiapp.polimi.it" else { return }
-                Task { await readCredentials(from: webView) }
+                guard !didFinish, url?.host == "polimiapp.polimi.it" else { return }
+                Task { await advance(webView, url: url) }
             }
         )
     }
 
-    /// Reads the credential the app has stored, if it has stored one yet.
-    ///
-    /// Called on every settled navigation because there is no signal for "the
-    /// app finished authenticating" — it is a single-page app, so the login
-    /// completes without a page load. Polling the key is the honest way to
-    /// notice.
     @MainActor
-    private func readCredentials(from webView: WKWebView) async {
-        let script = "window.sessionStorage.getItem('\(storageKey)')"
+    private func advance(_ webView: WKWebView, url: URL?) async {
+        // The app has run its exchange by now if it is going to; check first so
+        // a late navigation cannot restart the flow.
+        if await harvest(from: webView) { return }
+
+        let hasCode = url
+            .flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) }?
+            .queryItems?.contains { $0.name == "code" } ?? false
+
+        if hasCode {
+            // The app is mid-exchange. It is a single-page app, so there is no
+            // further navigation to wait on — poll briefly instead.
+            for _ in 0..<20 {
+                try? await Task.sleep(for: .milliseconds(400))
+                if await harvest(from: webView) { return }
+            }
+            log.error("The app received a code but stored no credentials")
+            onError(AuthError.codeExchangeFailed("Servizi Online non ha completato l'accesso."))
+            return
+        }
+
+        guard !didStartAuthorize else { return }
+        didStartAuthorize = true
+
+        // Seed the state the app will validate the redirect against.
+        let seed = "window.sessionStorage.setItem('\(stateKey)', '\(state)')"
+        _ = try? await webView.evaluateJavaScript(seed)
+
+        let authorize = PoliMiOAuth.authorizationURL(params: oauthParams, state: state)
+        log.notice("Handing the official app an authorize flow (\(oauthParams.scope.split(separator: " ").count, privacy: .public) scopes)")
+        webView.load(URLRequest(url: authorize))
+    }
+
+    /// Reads the credential if the app has stored one.
+    @MainActor
+    private func harvest(from webView: WKWebView) async -> Bool {
+        let script = "window.sessionStorage.getItem('\(credentialsKey)')"
         guard
             let raw = try? await webView.evaluateJavaScript(script) as? String,
             let data = raw.data(using: .utf8),
             let stored = try? JSONDecoder().decode(StoredCredentials.self, from: data)
-        else { return }
+        else { return false }
 
-        log.notice("Read credentials from the official app")
+        didFinish = true
+        log.notice("Read credentials minted by the official app")
         onCredentials(stored.token)
+        return true
     }
 
-    /// The shape the app persists.
-    ///
-    /// `accessTokenExpiration` is an absolute epoch in milliseconds
-    /// (`expiresIn * 1000 + Date.now()` in the bundle), so it is converted back
-    /// into the relative lifetime the rest of the app expects.
+    /// The shape the app persists. `accessTokenExpiration` is an absolute epoch
+    /// in milliseconds (`expiresIn * 1000 + Date.now()`), converted back into
+    /// the relative lifetime the rest of the app expects.
     private struct StoredCredentials: Decodable {
         let accessToken: String
         let refreshToken: String
