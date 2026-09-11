@@ -83,13 +83,18 @@ nonisolated extension Notice {
 
     /// Reads a string that may be a plain string or an `{it, en}` pair — the
     /// agenda sends every label the second way, so this endpoint may too.
+    ///
+    /// Markup is stripped here rather than at display time. These fields
+    /// arrive as HTML fragments — the news description reached the screen as
+    /// literal `<p>` and `&egrave;` — and doing it once on the way in means
+    /// every view, row and detail alike, shows text rather than source.
     static func text(from value: JSONValue) -> String? {
         if let fields = value.objectValue {
             let localised = fields.firstValue(["it", "ita", "italian"])?.stringValue
                 ?? fields.firstValue(["en", "eng", "english"])?.stringValue
-            return localised?.nonEmpty
+            return localised.map(HTMLText.plainIfNeeded)?.nonEmpty
         }
-        return value.stringValue?.nonEmpty
+        return value.stringValue.map(HTMLText.plainIfNeeded)?.nonEmpty
     }
 
     /// Reads a timestamp in any of the forms PoliMi's services actually use.
