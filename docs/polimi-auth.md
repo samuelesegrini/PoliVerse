@@ -50,6 +50,50 @@ or an https callback on a domain we own via Associated Domains, and the redirect
 lands on `polimiapp.polimi.it`. Intercepting `WKWebView` navigation is the only
 option short of PoliMi registering a scheme for us.
 
+## Login: run the official app, take its credential
+
+Minting our own token does not work. The authorize request can be made
+byte-identical to the official one and the resulting token still authenticates
+correctly against `/jaf/internal/user` while every data service refuses it:
+
+```
+401 {"statusCode":401,"message":"jaf.model2.exceptions.JafUnauthorizedException:
+     Scope OAuth non valido. Effettuare logout/login o disinstallare e
+     reinstallare l'applicazione. Code: 33"}
+```
+
+Ruled out by experiment, in this order:
+
+| Hypothesis | Result |
+| --- | --- |
+| Stale hardcoded scope list | Logged the live authorize URL: 33 scopes, `agenda`, `react_iae`, `pianostudente` all present |
+| Missing `al_id_srv` | IdP drops it — authorize with it empty and with `2428` returns a byte-identical 303, signature included |
+| Query encoding | `%20` and `+` normalise identically at the IdP |
+| Stale grant replayed via SSO cookie | Ended the SSO session via `/jaf/public/linklogout` before authorizing; no change |
+| Wrong `poliAuthProfile` | Corrected to `1` from `/jaf/internal/profiles`; no change |
+| Exchange missing the browser session | Adopted 14 `polimi.it` cookies into the exchange; no change |
+
+Whatever binds a usable grant is something the official client does that its
+authorize request does not reveal. Rather than keep guessing, PoliVerse loads
+the real Servizi Online app in the login web view, lets it authenticate, and
+reads the credential it stores:
+
+```js
+sessionStorage.getItem("24344_oauthCredentials")
+// {"accessToken": "...", "refreshToken": "...", "accessTokenExpiration": 1757...}
+```
+
+The key is `REACT_APP_C_APP + "_" + "oauthCredentials"`; `Px.calculateKey` in
+the bundle applies that prefix to everything it stores.
+
+This is the same technique `myPoliFile` uses against WeBeep, and it is the only
+approach that cannot diverge from the client that works. The cost is a
+dependency on the app's storage key and on that app continuing to be a web app.
+Both are checkable in one line, and the failure mode is visible immediately:
+no credential is read and login does not complete.
+
+There is no token exchange to perform — the app has already done it.
+
 ## Hosts
 
 | Host | Purpose |

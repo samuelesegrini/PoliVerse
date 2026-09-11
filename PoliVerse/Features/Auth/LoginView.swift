@@ -76,13 +76,11 @@ struct LoginView: View {
         .padding(28)
         .sheet(isPresented: $showingWeb) {
             NavigationStack {
-                PoliMiLoginWebView(
-                    oauthParams: session.directory.oauth,
+                PoliMiAppLoginWebView(
                     router: cieID,
-                    logoutURL: logoutURL,
-                    onCode: { code in
+                    onCredentials: { token in
                         showingWeb = false
-                        Task { await session.completeLogin(authCode: code) }
+                        Task { await session.completeLogin(token: token) }
                     },
                     onError: { error in
                         showingWeb = false
@@ -91,7 +89,7 @@ struct LoginView: View {
                     onCieIDMissing: { showingCieIDMissing = true }
                 )
                 .ignoresSafeArea(edges: .bottom)
-                .navigationTitle("Accesso Polimi")
+                .navigationTitle("Servizi Online")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {

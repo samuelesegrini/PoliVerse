@@ -170,6 +170,31 @@ final class Session {
         }
     }
 
+    /// Adopts a credential minted by the official web app.
+    ///
+    /// No code exchange: the app already did it, and the token it produced is
+    /// one the data services accept — which the one we minted ourselves was
+    /// not. See ``PoliMiAppLoginWebView`` for what was ruled out first.
+    func completeLogin(token: PoliMiToken) async {
+        state = .exchangingCode
+        await directory.load()
+        await tokens.set(token)
+        await tokens.setGrantedScope(directory.oauth.scope)
+
+        do {
+            let dto = try await api.send(
+                APIRequest(host: .app, path: "/jaf/internal/user"),
+                as: PoliMiUserDTO.self
+            )
+            state = .signedIn(dto.toStudent())
+            serviceAuthorizationFailed = false
+            await loadProfile()
+        } catch {
+            log.error("Could not read the user after login: \(error.localizedDescription)")
+            state = .failed(error.localizedDescription)
+        }
+    }
+
     /// Exchanges the authcode from the web flow for a token pair.
     func completeLogin(authCode: String) async {
         state = .exchangingCode
