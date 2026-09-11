@@ -22,6 +22,13 @@ nonisolated enum APIError: LocalizedError {
     /// The path returned 404 — the service moved or was withdrawn, which is a
     /// different problem from the network being down and deserves saying so.
     case endpointGone(String)
+    /// The token is valid but was not minted for this service.
+    ///
+    /// The backends report it as 401 with
+    /// "Scope OAuth non valido. Effettuare logout/login…  Code: 33", which no
+    /// amount of refreshing fixes — the scopes are fixed when the token is
+    /// created. Only a fresh login helps.
+    case invalidScope
     case transport(any Error)
     case decoding(any Error)
     case retriesExhausted(Int)
@@ -30,6 +37,7 @@ nonisolated enum APIError: LocalizedError {
         switch self {
         case .badStatus(let code, _): "Il server ha risposto \(code)."
         case .endpointGone: "Questo servizio del Politecnico non è più disponibile a questo indirizzo."
+        case .invalidScope: "L'accesso è scaduto. Accedi di nuovo per continuare."
         case .transport: "Impossibile raggiungere i server del Politecnico."
         case .decoding: "Risposta del server non leggibile."
         case .retriesExhausted(let n): "Nessuna risposta dopo \(n) tentativi."
@@ -40,7 +48,7 @@ nonisolated enum APIError: LocalizedError {
     /// problem.
     var isPermanent: Bool {
         switch self {
-        case .endpointGone: true
+        case .endpointGone, .invalidScope: true
         case .transport(let error): (error as NSError).code == NSURLErrorCannotFindHost
         default: false
         }
@@ -70,16 +78,32 @@ nonisolated final class PoliMiAPI: Sendable {
     /// user's profile, which is only known after login.
     private let profileID: @Sendable () async -> Int
 
+    /// Called when the server says the token's scopes are wrong, so the app can
+    /// drop it and send the user back to login rather than retrying forever.
+    private let onInvalidScope: @Sendable () async -> Void
+
     init(
         tokens: TokenStore,
         directory: ServiceDirectory,
         profileID: @escaping @Sendable () async -> Int = { PoliMiProfile.student },
+        onInvalidScope: @escaping @Sendable () async -> Void = {},
         session: URLSession = .shared
     ) {
         self.tokens = tokens
         self.directory = directory
         self.profileID = profileID
+        self.onInvalidScope = onInvalidScope
         self.session = session
+    }
+
+    /// Recognises the backends' "wrong scopes" 401.
+    ///
+    /// Matched on the message because the status code and `statusCode` field
+    /// are the same 401 used for an ordinary expired token, and the two need
+    /// opposite responses: refresh for one, re-login for the other.
+    static func isInvalidScope(_ body: String) -> Bool {
+        body.localizedCaseInsensitiveContains("Scope OAuth non valido")
+            || body.localizedCaseInsensitiveContains("JafUnauthorizedException")
     }
 
     func send<T: Decodable>(_ request: APIRequest, as type: T.Type) async throws -> T {
@@ -121,6 +145,15 @@ nonisolated final class PoliMiAPI: Sendable {
                     didRetryAuth = true
                     _ = try await tokens.forceRefresh()
                     continue
+
+                case 401 where Self.isInvalidScope(String(data: data, encoding: .utf8) ?? ""):
+                    let body = String(data: data, encoding: .utf8) ?? ""
+                    log.error("""
+                        Token rejected for scope — path=\(request.path, privacy: .public) \
+                        body=\(String(body.prefix(200)), privacy: .public)
+                        """)
+                    await onInvalidScope()
+                    throw APIError.invalidScope
 
                 case 401:
                     // A 401 that survived a refresh is not a stale token — it is

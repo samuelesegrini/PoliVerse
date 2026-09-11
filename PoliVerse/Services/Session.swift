@@ -64,10 +64,17 @@ final class Session {
         // the current value, not whatever it was at construction.
         let box = ProfileBox()
         self.profileBox = box
+        let store = self.tokens
         self.api = PoliMiAPI(
             tokens: tokens,
             directory: directory,
-            profileID: { await box.value }
+            profileID: { await box.value },
+            onInvalidScope: { [weak self] in
+                // The token cannot be repaired, so drop it; the next launch or
+                // the next view update lands on the login screen.
+                await store.clear()
+                await MainActor.run { self?.state = .signedOut }
+            }
         )
     }
 

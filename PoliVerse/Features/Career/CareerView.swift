@@ -3,6 +3,7 @@ import SwiftUI
 struct CareerView: View {
     @Environment(CareerService.self) private var career
     @State private var scope: Scope = .overview
+    @State private var selectedExam: ExamSession?
 
     enum Scope: String, CaseIterable, Identifiable {
         case overview = "Riepilogo"
@@ -19,6 +20,7 @@ struct CareerView: View {
             .toolbarTitleDisplayMode(.inlineLarge)
             .task { await career.load() }
             .refreshable { await career.load() }
+            .sheet(item: $selectedExam) { ExamDetailView(exam: $0) }
         }
     }
 
@@ -111,7 +113,8 @@ struct CareerView: View {
                     Text("Prossimo appello")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
-                    ExamRow(exam: next)
+                    Button { selectedExam = next } label: { ExamRow(exam: next) }
+                        .buttonStyle(.plain)
                 }
                 .padding(.top, 4)
             }
@@ -128,7 +131,10 @@ struct CareerView: View {
                 .padding(.top, 40)
         } else {
             VStack(spacing: 10) {
-                ForEach(career.upcoming) { ExamRow(exam: $0) }
+                ForEach(career.upcoming) { exam in
+                    Button { selectedExam = exam } label: { ExamRow(exam: exam) }
+                        .buttonStyle(.plain)
+                }
             }
         }
     }
@@ -143,7 +149,10 @@ struct CareerView: View {
                 .padding(.top, 40)
         } else {
             VStack(spacing: 10) {
-                ForEach(career.results) { ExamRow(exam: $0) }
+                ForEach(career.results) { exam in
+                    Button { selectedExam = exam } label: { ExamRow(exam: exam) }
+                        .buttonStyle(.plain)
+                }
             }
         }
     }

@@ -111,6 +111,32 @@ struct OAuthScopeTests {
         #expect(value("scope") == "openid something_new")
     }
 
+    /// Without `al_id_srv` the IdP mints a token the backends refuse with
+    /// "Scope OAuth non valido … Code: 33", however correct the scope string.
+    @Test("The authorize request identifies the service")
+    func authorizationCarriesServiceID() throws {
+        let components = try #require(URLComponents(
+            url: PoliMiOAuth.authorizationURL(), resolvingAgainstBaseURL: false))
+        let items = try #require(components.queryItems)
+        func value(_ n: String) -> String? { items.first { $0.name == n }?.value }
+
+        #expect(value("al_id_srv") == "2428")
+        #expect(value("state")?.isEmpty == false)
+        #expect(items.contains { $0.name == "al_id_srv_chiamante" })
+    }
+
+    /// An expired token and a wrongly-scoped one are both 401 and need opposite
+    /// responses — refresh versus re-login — so they must be told apart.
+    @Test("The wrong-scope 401 is distinguished from an expired token")
+    func detectsInvalidScope() {
+        let scopeError = #"{"statusCode":401,"message":"jaf.model2.exceptions.JafUnauthorizedException: Scope OAuth non valido. Effettuare logout/login o disinstallare e reinstallare l'applicazione. Code: 33"}"#
+        #expect(PoliMiAPI.isInvalidScope(scopeError))
+
+        #expect(PoliMiAPI.isInvalidScope(
+            #"{"statusCode":401,"message":"(POLIJ_033001) Il servizio richiede autenticazione"}"#) == false)
+        #expect(PoliMiAPI.isInvalidScope("") == false)
+    }
+
     /// The whole point of recording the scope: spotting a token that predates
     /// a change so the app can re-authenticate instead of 401-ing forever.
     @Test("A token remembers the scope it was granted")

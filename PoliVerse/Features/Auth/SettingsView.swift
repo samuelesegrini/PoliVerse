@@ -2,7 +2,10 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(Session.self) private var session
+    @Environment(WeBeepService.self) private var weBeep
     @State private var cacheBytes = DiskCache.sizeInBytes()
+    @State private var materialBytes = FileDownloadService.storageInBytes()
+    @State private var showingDiagnostics = false
 
     var body: some View {
         @Bindable var session = session
@@ -22,15 +25,55 @@ struct SettingsView: View {
                 Text("Con i dati di esempio l'app funziona senza collegarsi ai server del Politecnico. Disattivalo per usare il tuo account reale.")
             }
 
+            Section("WeBeep") {
+                LabeledContent("Accesso") {
+                    Text(weBeep.isAuthenticated ? "Collegato" : "Non collegato")
+                        .foregroundStyle(weBeep.isAuthenticated ? .green : .secondary)
+                }
+                if weBeep.isAuthenticated {
+                    Button("Scollega WeBeep", role: .destructive) { weBeep.signOut() }
+                }
+            }
+
             Section("Dati") {
                 LabeledContent("Cache") {
                     Text(ByteCountFormatter.string(
                         fromByteCount: Int64(cacheBytes), countStyle: .file))
                 }
+                LabeledContent("Materiali scaricati") {
+                    Text(ByteCountFormatter.string(
+                        fromByteCount: Int64(materialBytes), countStyle: .file))
+                }
                 Button("Svuota cache") {
                     DiskCache.clear()
                     cacheBytes = 0
                 }
+                Button("Elimina materiali scaricati", role: .destructive) {
+                    FileDownloadService.clearStorage()
+                    materialBytes = 0
+                }
+            }
+
+            Section {
+                DisclosureGroup("Diagnostica", isExpanded: $showingDiagnostics) {
+                    LabeledContent("Profilo", value: String(session.profileID))
+                    LabeledContent("Servizi") {
+                        Text(session.directory.didLoad ? "Caricati" : "Predefiniti")
+                    }
+                    ForEach(ServiceDirectory.Service.allCases, id: \.rawValue) { service in
+                        LabeledContent(service.rawValue) {
+                            Text(session.directory.baseURL(for: service).absoluteString)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.trailing)
+                        }
+                    }
+                    LabeledContent("Scope OAuth") {
+                        Text("\(session.directory.oauth.scope.split(separator: " ").count) ambiti")
+                    }
+                }
+            } footer: {
+                Text("Utile per segnalare un problema: mostra dove l'app sta cercando i servizi del Politecnico.")
             }
 
             Section {
@@ -52,7 +95,10 @@ struct SettingsView: View {
         }
         .navigationTitle("Impostazioni")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { cacheBytes = DiskCache.sizeInBytes() }
+        .onAppear {
+            cacheBytes = DiskCache.sizeInBytes()
+            materialBytes = FileDownloadService.storageInBytes()
+        }
     }
 }
 

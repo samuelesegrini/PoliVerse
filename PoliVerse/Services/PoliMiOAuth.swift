@@ -26,18 +26,25 @@ nonisolated enum PoliMiOAuth {
     /// with 401. Asking the Politecnico what to request means a scope change
     /// upstream costs a fetch, not a broken feature.
     static func authorizationURL(
-        params: ServiceDirectory.OAuthParams = .fallback
+        params: ServiceDirectory.OAuthParams = .fallback,
+        state: String = UUID().uuidString
     ) -> URL {
         var components = URLComponents(
             url: params.authorizationEndpoint ?? URL(string: "https://oauthidp.polimi.it/oauthidp/oauth2/auth")!,
             resolvingAgainstBaseURL: false
         )!
+        // Mirrors the official app's authorize request. `al_id_srv` matters:
+        // without it the IdP mints a token the backends refuse with
+        // "Scope OAuth non valido … Code: 33", regardless of the scope string.
         components.queryItems = [
             .init(name: "client_id", value: params.clientId),
             .init(name: "redirect_uri", value: redirectURI),
-            .init(name: "scope", value: params.scope),
             .init(name: "access_type", value: params.accessType ?? "offline"),
             .init(name: "response_type", value: params.responseType ?? "code"),
+            .init(name: "state", value: state),
+            .init(name: "scope", value: params.scope),
+            .init(name: "al_id_srv", value: params.serviceID),
+            .init(name: "al_id_srv_chiamante", value: ""),
         ]
         return components.url!
     }

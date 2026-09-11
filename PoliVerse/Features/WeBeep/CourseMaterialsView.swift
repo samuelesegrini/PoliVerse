@@ -6,10 +6,11 @@ struct CourseMaterialsView: View {
 
     @Environment(Session.self) private var session
     @Environment(WeBeepService.self) private var weBeep
-    @Environment(\.openURL) private var openURL
+    @Environment(FileDownloadService.self) private var downloads
 
     @State private var query = ""
     @State private var showingLogin = false
+    @State private var previewURL: URL?
 
     private var sections: [WeBeepSection] {
         guard !query.isEmpty else { return weBeep.sections }
@@ -64,8 +65,17 @@ struct CourseMaterialsView: View {
             ForEach(sections) { section in
                 Section(section.name) {
                     ForEach(section.files) { file in
-                        FileRow(file: file) {
-                            if let url = file.downloadURL { openURL(url) }
+                        FileRow(
+                            file: file,
+                            status: downloads.status(for: file),
+                            onTap: { Task { await open(file) } }
+                        )
+                        .swipeActions(edge: .trailing) {
+                            if case .downloaded = downloads.status(for: file) {
+                                Button("Rimuovi", systemImage: "trash", role: .destructive) {
+                                    downloads.delete(file)
+                                }
+                            }
                         }
                     }
                 }
@@ -84,24 +94,59 @@ struct CourseMaterialsView: View {
                                        description: Text("Questo corso non ha file pubblicati."))
             }
         }
+        .sheet(item: Binding(
+            get: { previewURL.map(PreviewItem.init) },
+            set: { previewURL = $0?.url }
+        )) { item in
+            NavigationStack {
+                FilePreview(url: item.url)
+                    .ignoresSafeArea()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Chiudi") { previewURL = nil }
+                        }
+                        ToolbarItem(placement: .primaryAction) {
+                            ShareLink(item: item.url)
+                        }
+                    }
+            }
+        }
         .sheet(isPresented: $showingLogin) {
             WeBeepLoginSheet { await weBeep.loadMaterials(for: course) }
         }
         .task { await weBeep.loadMaterials(for: course) }
         .refreshable { await weBeep.loadMaterials(for: course) }
     }
+
+    /// Downloads on first tap, previews thereafter.
+    private func open(_ file: WeBeepFile) async {
+        if case .downloaded(let url) = downloads.status(for: file) {
+            previewURL = url
+            return
+        }
+        if let url = await downloads.download(file) {
+            previewURL = url
+        }
+    }
+}
+
+/// `sheet(item:)` needs an Identifiable; a bare URL is not.
+private struct PreviewItem: Identifiable {
+    let url: URL
+    var id: String { url.path }
 }
 
 private struct FileRow: View {
     let file: WeBeepFile
-    let onOpen: () -> Void
+    let status: FileDownloadService.Status
+    let onTap: () -> Void
 
     // `Date.formatted` reads `Locale.current`, not the SwiftUI environment, so
     // the locale has to be threaded into the format style by hand.
     @Environment(\.locale) private var locale
 
     var body: some View {
-        Button(action: onOpen) {
+        Button(action: onTap) {
             HStack(spacing: 12) {
                 Image(systemName: file.icon)
                     .font(.title3)
@@ -113,16 +158,36 @@ private struct FileRow: View {
                         .font(.subheadline)
                         .lineLimit(2)
                         .foregroundStyle(.primary)
-                    Text("\(file.formattedSize) · \(file.modifiedAt.formatted(.relative(presentation: .named).locale(locale)))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if case .failed(let message) = status {
+                        Text(message)
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .lineLimit(2)
+                    } else {
+                        Text("\(file.formattedSize) · \(file.modifiedAt.formatted(.relative(presentation: .named).locale(locale)))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Spacer(minLength: 4)
 
-                if file.downloadURL != nil {
-                    Image(systemName: "arrow.down.circle")
-                        .foregroundStyle(.secondary)
+                switch status {
+                case .idle:
+                    if file.downloadURL != nil {
+                        Image(systemName: "arrow.down.circle")
+                            .foregroundStyle(.secondary)
+                    }
+                case .downloading(let progress):
+                    ProgressView(value: progress > 0 ? progress : nil)
+                        .progressViewStyle(.circular)
+                        .controlSize(.small)
+                case .downloaded:
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                case .failed:
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .foregroundStyle(.orange)
                 }
             }
             .padding(.vertical, 2)

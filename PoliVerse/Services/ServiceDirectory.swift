@@ -75,11 +75,27 @@ final class ServiceDirectory {
     /// That is exactly the failure a hardcoded scope list produces, and it is
     /// indistinguishable from a broken login until you compare the lists.
     nonisolated struct OAuthParams: Decodable, Sendable, Equatable {
+        private enum CodingKeys: String, CodingKey {
+            case oauthServer, clientId, scope, responseType, accessType
+        }
+
         let oauthServer: String
         let clientId: String
         let scope: String
         let responseType: String?
         let accessType: String?
+
+        /// The Politecnico service this token is being minted for.
+        ///
+        /// The official app sends `al_id_srv` on the authorize request and the
+        /// IdP appears to scope the token to it. Omitting it yields a token the
+        /// backends reject with "Scope OAuth non valido … Code: 33" even though
+        /// the requested scope string was correct.
+        ///
+        /// 2428 is PolimiApp: `/jaf/public/app?al_id_srv=2428` answers
+        /// `descSrvCorrente: {"it": "PoliMI APP"}`. It is also the value the
+        /// bundle hardcodes as `logout_service_id`.
+        var serviceID: String = "2428"
 
         /// Baked-in copy of the live values, used until the fetch lands.
         static let fallback = OAuthParams(
@@ -97,7 +113,8 @@ final class ServiceDirectory {
                 .replacingOccurrences(of: "  ", with: " ")
                 .trimmingCharacters(in: .whitespacesAndNewlines),
             responseType: "code",
-            accessType: "offline"
+            accessType: "offline",
+            serviceID: "2428"
         )
 
         var authorizationEndpoint: URL? { URL(string: oauthServer + "/auth") }
