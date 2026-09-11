@@ -6,6 +6,7 @@ struct HomeView: View {
     @Environment(AgendaService.self) private var agenda
     @Environment(CareerService.self) private var career
     @Environment(NoticeService.self) private var notices
+    @Environment(NewsService.self) private var news
     @Environment(\.locale) private var locale
 
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -81,6 +82,11 @@ struct HomeView: View {
                             }
                         }
                     }
+
+                    // Last on the screen: the student's own timetable,
+                    // exams and courses come first, and news is the part
+                    // they can scroll past without missing anything.
+                    NewsHighlights()
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 24)
@@ -100,6 +106,7 @@ struct HomeView: View {
                 await agenda.load(around: .now, force: true)
                 await career.load(force: true)
                 await notices.load(force: true)
+                await news.load(force: true)
             }
             .task {
                 await courses.load()
@@ -109,6 +116,7 @@ struct HomeView: View {
                 // an endpoint whose shape is still unconfirmed should not
                 // delay the content that is known to work.
                 await notices.load()
+                await news.load()
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

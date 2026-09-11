@@ -95,6 +95,23 @@ changed.
 | `/singoloinsegnamento/{id}` | **401** |
 | `/simulazionemedia/…`, `/mediaobiettivo/…`, `/sequenzamedia/…` | grade simulation (in the bundle) |
 
+## News
+
+`GET {agenda}/v1/persona/news?start_date=…&end_date=…` — path and query
+parameters VERIFIED from the bundle, response body not. `persona`, not
+`matricola/{m}`: the token alone identifies the reader, so no matricola is
+sent.
+
+It sits beside `/v1/matricola/{m}/events` on the same service, whose shape
+*is* known, so the agenda's names (`title: {it,en}`, `date_start`, `date_end`,
+`type.type_dn`, `tags[].denomination`) lead the candidate lists in `NewsItem`
+— as the likeliest answer, not an assumed one. Shape is logged the same way:
+`news payload shape: …`, keys and types only.
+
+An item is retired only by an *explicit* `date_end` in the past. Treating a
+missing one as expired would empty the screen the moment a field-name guess is
+wrong, which is the failure this design exists to avoid.
+
 ## Notifications: live, but shape unknown
 
 `/v1/notifications` is in the official bundle's own typed client and answers

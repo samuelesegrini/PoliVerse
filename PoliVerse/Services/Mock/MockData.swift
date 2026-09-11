@@ -179,6 +179,23 @@ nonisolated enum MockData {
         ]
     }
 
+    static func news(now: Date = .now) -> [NewsItem] {
+        [
+            NewsItem(id: "news-1", title: "Aperte le iscrizioni ai bandi di mobilità internazionale",
+                     summary: "Le candidature per lo scambio Erasmus+ si chiudono il 15 febbraio.",
+                     published: now.addingTimeInterval(-86400), expires: nil,
+                     category: "Internazionale", link: nil, imageURL: nil),
+            NewsItem(id: "news-2", title: "Nuovi spazi studio in Bovisa",
+                     summary: "Duecento posti in più, aperti fino alle 23.",
+                     published: now.addingTimeInterval(-86400 * 4), expires: nil,
+                     category: "Campus", link: nil, imageURL: nil),
+            NewsItem(id: "news-3", title: "Seminario: intelligenza artificiale e ricerca",
+                     summary: "Aula Rogers, giovedì alle 17.",
+                     published: now.addingTimeInterval(-86400 * 9), expires: nil,
+                     category: "Eventi", link: nil, imageURL: nil),
+        ]
+    }
+
     static func weBeepSections(for course: Course) -> [WeBeepSection] {
         let base = Date.now
         func file(_ name: String, _ section: String, _ mb: Double, _ daysAgo: Int) -> WeBeepFile {
