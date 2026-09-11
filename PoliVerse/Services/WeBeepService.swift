@@ -170,6 +170,10 @@ final class WeBeepService {
                 guard !files.isEmpty else { return nil }
                 return WeBeepSection(id: String(section.id), name: section.name, files: files)
             }
+            // Logged in the same shape as the other services, so a device run
+            // shows plainly whether the materials path ran — this one went
+            // unverified longest precisely because it said nothing.
+            log.notice("WeBeep course \(moodleID, privacy: .public): \(raw.count, privacy: .public) sections, \(self.sections.count, privacy: .public) with files, \(self.sections.reduce(0) { $0 + $1.files.count }, privacy: .public) files")
             state = .ready
         } catch let error as WeBeepAPI.Failure {
             handle(error)
