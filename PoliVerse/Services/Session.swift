@@ -29,6 +29,13 @@ final class Session {
     /// Sent as `poliAuthProfile`. Defaults to the student profile and is
     /// refined once `/jaf/internal/profiles` has been read.
     private(set) var profileID: Int = PoliMiProfile.default
+
+    /// True when the Politecnico accepted the login but refuses the token for
+    /// its data services ("Scope OAuth non valido … Code: 33").
+    ///
+    /// Kept separate from ``state`` because the two are genuinely different:
+    /// the session is fine, a subset of services is not.
+    var serviceAuthorizationFailed = false
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "session")
     private var profileBox: ProfileBox!
 
@@ -64,16 +71,20 @@ final class Session {
         // the current value, not whatever it was at construction.
         let box = ProfileBox()
         self.profileBox = box
-        let store = self.tokens
         self.api = PoliMiAPI(
             tokens: tokens,
             directory: directory,
             profileID: { await box.value },
             onInvalidScope: { [weak self] in
-                // The token cannot be repaired, so drop it; the next launch or
-                // the next view update lands on the login screen.
-                await store.clear()
-                await MainActor.run { self?.state = .signedOut }
+                // Deliberately does NOT sign the user out.
+                //
+                // The token is genuinely valid — /jaf/internal/user and
+                // /jaf/internal/profiles accept it — so the person is signed
+                // in. Only the api.polimi.it services refuse it. Signing out
+                // produced a loop: login, 401, sign out, login, and the user
+                // never got anywhere. Flag it instead and let them choose to
+                // retry the login from Settings.
+                await MainActor.run { self?.serviceAuthorizationFailed = true }
             }
         )
     }
@@ -140,6 +151,7 @@ final class Session {
                 as: PoliMiUserDTO.self
             )
             state = .signedIn(dto.toStudent())
+            serviceAuthorizationFailed = false
             await loadProfile()
         } catch {
             log.error("Code exchange failed: \(error.localizedDescription)")
@@ -148,6 +160,7 @@ final class Session {
     }
 
     func signOut() async {
+        serviceAuthorizationFailed = false
         await tokens.clear()
         state = useMockData ? .signedIn(MockData.student) : .signedOut
     }

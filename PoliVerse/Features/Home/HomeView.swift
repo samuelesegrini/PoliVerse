@@ -28,7 +28,9 @@ struct HomeView: View {
                 LazyVStack(alignment: .leading, spacing: 22) {
                     greeting
 
-                    if let message = courses.errorMessage {
+                    if session.serviceAuthorizationFailed {
+                        ServiceAuthBanner()
+                    } else if let message = courses.errorMessage {
                         banner(message)
                     }
 
@@ -243,5 +245,37 @@ private struct ExamSummaryCard: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .cardBackground()
+    }
+}
+
+
+/// Shown when the Politecnico accepts the login but refuses the token for its
+/// data services.
+///
+/// Worth its own banner rather than a generic error: nothing the user does in
+/// the app will fix it, and "accedi di nuovo" is the only lever — the same
+/// thing the server's own message asks for.
+struct ServiceAuthBanner: View {
+    @Environment(Session.self) private var session
+    @State private var isSigningOut = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Servizi non autorizzati", systemImage: "lock.trianglebadge.exclamationmark")
+                .font(.subheadline.weight(.semibold))
+            Text("Il Politecnico ha accettato l'accesso ma non autorizza questa app a leggere corsi, orario e carriera. WeBeep continua a funzionare.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Button("Accedi di nuovo") {
+                isSigningOut = true
+                Task { await session.signOut() }
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+            .disabled(isSigningOut)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.orange.opacity(0.15), in: .rect(cornerRadius: 16))
     }
 }

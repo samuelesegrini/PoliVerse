@@ -71,6 +71,10 @@ struct SettingsView: View {
                     LabeledContent("Scope OAuth") {
                         Text("\(session.directory.oauth.scope.split(separator: " ").count) ambiti")
                     }
+                    LabeledContent("Servizi dati") {
+                        Text(session.serviceAuthorizationFailed ? "Non autorizzati" : "OK")
+                            .foregroundStyle(session.serviceAuthorizationFailed ? .orange : .green)
+                    }
                 }
             } footer: {
                 Text("Utile per segnalare un problema: mostra dove l'app sta cercando i servizi del Politecnico.")
