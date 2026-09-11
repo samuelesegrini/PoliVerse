@@ -38,7 +38,7 @@ final class CourseService {
             let response = try await session.api.send(
                 APIRequest(
                     host: .iae,
-                    path: "/v1/insegn/",
+                    path: "/v1/insegn",
                     query: [.init(name: "lang", value: "IT")]
                 ),
                 as: TeachingsResponse.self

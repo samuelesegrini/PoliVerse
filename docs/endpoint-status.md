@@ -103,6 +103,39 @@ changed.
 `www22.dmz.polimi.it` still resolves but refuses public connections; off-campus
 it fails as DNS `-1003`. `dmz` in the hostname was the clue.
 
+## OAuth scopes are served too, and they drift
+
+```
+GET https://polimiapp.polimi.it/polimi_app/rest/jaf/oauth/params   → 200, no auth
+
+{"oauthServer":"https://oauthidp.polimi.it/oauthidp/oauth2",
+ "responseType":"code","clientId":"1057407812","accessType":"offline",
+ "scope":"aule policard portale_so incarichi orario account webmail compila_quest
+  openid rubrica richass guasti prenotazione code carriera alumni webeep
+  richieste_occupazione maps polimi_app teamwork faqappmobile rich_sing_occup
+  react_iae multichance_richieste_ausili pianostudente incattdid
+  presentazionepianireact cataloghi_aule agenda so2 prenotazioni presence_hub"}
+```
+
+Compared with the list PoliFemo hardcoded in 2023:
+
+- **added**: `agenda`, `so2`, `prenotazioni`, `presence_hub`, `cataloghi_aule`,
+  `portale_so`, `richieste_occupazione`, `incattdid`, `presentazionepianireact`
+- **removed**: `esami`, `incarichidocente`
+
+This is a nastier failure than a moved host. A token minted without `agenda`
+logs in fine, works for everything it does cover, and returns **401** from the
+agenda service — which looks exactly like a broken endpoint. It was the cause of
+`Agenda load failed: Il server ha risposto 401` after the paths were corrected.
+
+Two consequences:
+
+- The app fetches `/jaf/oauth/params` and builds the authorization URL from it,
+  so a scope added upstream costs a fetch rather than a broken feature.
+- **A token's scopes are fixed at creation and refreshing never widens them.**
+  The granted scope is stored with the token; when it no longer matches, the
+  app signs out so the next login mints a token that covers the new service.
+
 ## Unverified
 
 `/v1/base/counters` is live and sits with the other career calls in the bundle,

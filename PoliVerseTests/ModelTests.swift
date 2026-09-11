@@ -199,7 +199,7 @@ struct OAuthTests {
     @Test("The authorization URL carries the parameters the IdP requires")
     func authorizationURLShape() throws {
         let components = try #require(URLComponents(
-            url: PoliMiOAuth.authorizationURL, resolvingAgainstBaseURL: false))
+            url: PoliMiOAuth.authorizationURL(), resolvingAgainstBaseURL: false))
         let items = try #require(components.queryItems)
         func value(_ name: String) -> String? {
             items.first { $0.name == name }?.value
@@ -267,5 +267,64 @@ struct RetryPolicyTests {
         #expect(APIError.badStatus(500, body: "").isPermanent == false)
         #expect(APIError.transport(
             NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)).isPermanent == false)
+    }
+}
+
+@Suite("Career wire shapes")
+struct CareerWireTests {
+    /// Shape read off the official app's career card:
+    /// `d.mean`, `d.given_cfu`, `"/" + d.planned_cfu`.
+    @Test("The io-e-polimi payload decodes")
+    func gradeBookDecodes() throws {
+        let json = #"{"mean":27.43,"given_cfu":108,"planned_cfu":180}"#
+        let dto = try JSONDecoder().decode(GradeBookDTO.self, from: Data(json.utf8))
+        let book = dto.toGradeBook()
+
+        #expect(abs(book.mean - 27.43) < 0.001)
+        #expect(book.earnedCFU == 108)
+        #expect(book.plannedCFU == 180)
+        #expect(abs(book.progress - 0.6) < 0.001)
+        // 27.43 * 110 / 30
+        #expect(Int(book.baseGraduationMark.rounded()) == 101)
+    }
+
+    /// The new endpoint drops exam_stats, so its absence must not fail the
+    /// decode — the counts come from /v1/base/counters instead.
+    @Test("A payload without exam_stats still decodes")
+    func gradeBookWithoutExamStats() throws {
+        let json = #"{"mean":30,"given_cfu":12,"planned_cfu":180}"#
+        let dto = try JSONDecoder().decode(GradeBookDTO.self, from: Data(json.utf8))
+        #expect(dto.exam_stats == nil)
+        #expect(dto.toGradeBook().examsGiven == 0)
+    }
+
+    /// Shape read off the official app's exams card:
+    /// `v.num_iscriz` and `v.num_esiti`.
+    @Test("The counters payload decodes")
+    func countersDecode() throws {
+        let json = #"{"num_iscriz":2,"num_esiti":14}"#
+        let dto = try JSONDecoder().decode(ExamCountersDTO.self, from: Data(json.utf8))
+        #expect(dto.num_iscriz == 2)
+        #expect(dto.num_esiti == 14)
+    }
+
+    @Test("Missing counters degrade to nil rather than failing")
+    func countersTolerateMissingFields() throws {
+        let dto = try JSONDecoder().decode(ExamCountersDTO.self, from: Data("{}".utf8))
+        #expect(dto.num_iscriz == nil)
+        #expect(dto.num_esiti == nil)
+    }
+
+    /// The teachings envelope survived the host move unchanged.
+    @Test("The insegn envelope decodes")
+    func teachingsEnvelopeDecodes() throws {
+        let json = """
+        {"INSEGN":[{"c_insegn_piano":"097785","xdescrizione":"BASI DI DATI",
+        "docente_esame":"CERI STEFANO","aa_freq":"2025","semestre_freq":"2",
+        "appelliEsame":[]}]}
+        """
+        let response = try JSONDecoder().decode(TeachingsResponse.self, from: Data(json.utf8))
+        #expect(response.INSEGN.count == 1)
+        #expect(response.INSEGN[0].toCourse().name == "Basi di Dati")
     }
 }

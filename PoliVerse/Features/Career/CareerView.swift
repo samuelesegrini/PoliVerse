@@ -40,6 +40,12 @@ struct CareerView: View {
                         .foregroundStyle(.orange)
                 }
 
+                if career.gradeBook == .empty && career.sessions.isEmpty && !career.isLoading {
+                    ContentUnavailableView("Nessun dato di carriera", systemImage: "chart.bar",
+                                           description: Text("I servizi del Politecnico non hanno restituito dati."))
+                        .padding(.top, 30)
+                }
+
                 switch scope {
                 case .overview: overview(career)
                 case .upcoming: upcoming(career)
@@ -92,10 +98,12 @@ struct CareerView: View {
             .frame(maxWidth: .infinity)
             .cardBackground()
 
+            // Labels follow what the fields actually mean upstream:
+            // num_esiti is published results, num_iscriz is active enrolments.
             HStack(spacing: 12) {
-                StatTile(value: "\(book.examsGiven)", label: "Sostenuti", accent: .green, compact: true)
-                StatTile(value: "\(book.examsSubscribed)", label: "Iscritto", accent: .orange, compact: true)
-                StatTile(value: "\(book.examsPlanned)", label: "In piano", accent: .secondary, compact: true)
+                StatTile(value: "\(book.examsGiven)", label: "Esiti", accent: .green, compact: true)
+                StatTile(value: "\(book.examsSubscribed)", label: "Iscrizioni", accent: .orange, compact: true)
+                StatTile(value: "\(book.examsPlanned)", label: "Insegnamenti", accent: .secondary, compact: true)
             }
 
             if let next = career.upcoming.first {

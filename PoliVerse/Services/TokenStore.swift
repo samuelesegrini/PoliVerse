@@ -37,6 +37,17 @@ actor TokenStore {
 
     var hasToken: Bool { token != nil }
 
+    /// The scope the stored token was granted, if any.
+    var grantedScope: String? { token?.grantedScope }
+
+    /// Records the scope a freshly-exchanged token was minted with.
+    func setGrantedScope(_ scope: String) {
+        guard var current = token else { return }
+        current.grantedScope = scope
+        token = current
+        persist()
+    }
+
     func set(_ newToken: PoliMiToken) {
         token = newToken
         persist()
@@ -123,11 +134,11 @@ nonisolated struct KeychainTokenPersistence: TokenPersistence {
 
     func load() -> PoliMiToken? {
         guard let data = KeychainStore.load(account: account) else { return nil }
-        return try? JSONDecoder().decode(PoliMiToken.self, from: data)
+        return (try? JSONDecoder().decode(PoliMiToken.Stored.self, from: data))?.token
     }
 
     func save(_ token: PoliMiToken) {
-        guard let data = try? JSONEncoder().encode(token) else { return }
+        guard let data = try? JSONEncoder().encode(PoliMiToken.Stored(token)) else { return }
         try? KeychainStore.save(data, account: account)
     }
 

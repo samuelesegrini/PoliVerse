@@ -69,3 +69,59 @@ struct ServiceDirectoryTests {
         #expect(decoded["piani.base_url"] == "")
     }
 }
+
+@Suite("OAuth scope drift")
+struct OAuthScopeTests {
+    /// The live scope list as of 2026-09-11. A token minted without `agenda`
+    /// reaches the agenda service and is refused with 401 — the endpoint is
+    /// correct, the token simply has no authority over it.
+    @Test("The fallback scope includes what the services actually need")
+    func fallbackScopeCoversServices() {
+        let scope = ServiceDirectory.OAuthParams.fallback.scope
+        for required in ["agenda", "carriera", "webeep", "polimi_app", "pianostudente", "react_iae"] {
+            #expect(scope.contains(required), "scope must grant \(required)")
+        }
+    }
+
+    /// These were in PoliFemo's 2023 list and are gone from the live one.
+    @Test("Scopes the IdP no longer publishes are not requested")
+    func staleScopesDropped() {
+        let scope = ServiceDirectory.OAuthParams.fallback.scope
+        #expect(scope.contains("incarichidocente") == false)
+        // "esami" is gone as a standalone scope; guard against a bare match.
+        #expect(scope.split(separator: " ").contains("esami") == false)
+    }
+
+    @Test("The authorization URL carries the fetched scope, not a baked-in one")
+    func authorizationURLUsesParams() throws {
+        let custom = ServiceDirectory.OAuthParams(
+            oauthServer: "https://example.com/oauth2",
+            clientId: "999",
+            scope: "openid something_new",
+            responseType: "code",
+            accessType: "offline"
+        )
+        let components = try #require(URLComponents(
+            url: PoliMiOAuth.authorizationURL(params: custom), resolvingAgainstBaseURL: false))
+        let items = try #require(components.queryItems)
+        func value(_ n: String) -> String? { items.first { $0.name == n }?.value }
+
+        #expect(components.host == "example.com")
+        #expect(value("client_id") == "999")
+        #expect(value("scope") == "openid something_new")
+    }
+
+    /// The whole point of recording the scope: spotting a token that predates
+    /// a change so the app can re-authenticate instead of 401-ing forever.
+    @Test("A token remembers the scope it was granted")
+    func tokenRecordsScope() throws {
+        var token = PoliMiToken(accessToken: "a", refreshToken: "b", expiresIn: 3600)
+        token.grantedScope = "openid agenda"
+
+        let data = try JSONEncoder().encode(PoliMiToken.Stored(token))
+        let restored = try JSONDecoder().decode(PoliMiToken.Stored.self, from: data).token
+
+        #expect(restored.grantedScope == "openid agenda")
+        #expect(restored.accessToken == "a")
+    }
+}

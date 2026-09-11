@@ -63,7 +63,48 @@ final class ServiceDirectory {
         }
     }
 
+    /// OAuth client configuration, served by the Politecnico itself.
+    ///
+    /// The official app fetches this rather than hardcoding — and it matters:
+    /// the scope list changes. As of 2026-09-11 it grants `agenda`, `so2`,
+    /// `prenotazioni`, `presence_hub`, `cataloghi_aule` and others that did not
+    /// exist in 2023, and no longer lists `esami` or `incarichidocente`.
+    ///
+    /// A token minted without `agenda` is rejected by the agenda service with
+    /// 401 — the endpoint is right, the token simply has no authority over it.
+    /// That is exactly the failure a hardcoded scope list produces, and it is
+    /// indistinguishable from a broken login until you compare the lists.
+    nonisolated struct OAuthParams: Decodable, Sendable, Equatable {
+        let oauthServer: String
+        let clientId: String
+        let scope: String
+        let responseType: String?
+        let accessType: String?
+
+        /// Baked-in copy of the live values, used until the fetch lands.
+        static let fallback = OAuthParams(
+            oauthServer: "https://oauthidp.polimi.it/oauthidp/oauth2",
+            clientId: "1057407812",
+            scope: """
+            aule policard portale_so incarichi orario account webmail \
+            compila_quest openid rubrica richass guasti prenotazione code \
+            carriera alumni webeep richieste_occupazione maps polimi_app \
+            teamwork faqappmobile rich_sing_occup react_iae \
+            multichance_richieste_ausili pianostudente incattdid \
+            presentazionepianireact cataloghi_aule agenda so2 prenotazioni \
+            presence_hub
+            """.replacingOccurrences(of: "\n", with: " ")
+                .replacingOccurrences(of: "  ", with: " ")
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+            responseType: "code",
+            accessType: "offline"
+        )
+
+        var authorizationEndpoint: URL? { URL(string: oauthServer + "/auth") }
+    }
+
     private(set) var resolved: [Service: URL] = [:]
+    private(set) var oauth: OAuthParams = .fallback
     private(set) var didLoad = false
 
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "directory")
@@ -77,9 +118,12 @@ final class ServiceDirectory {
         resolved[service] ?? service.fallback
     }
 
-    /// Fetches the service map. Unauthenticated, so it can run before login.
+    /// Fetches the service map and OAuth config. Both are unauthenticated, so
+    /// this runs before login — which it must, since the OAuth config is what
+    /// the login is built from.
     func load() async {
         guard !didLoad else { return }
+        await loadOAuthParams()
 
         let url = Service.app.fallback.appendingPathComponent("/jaf/public/props")
         do {
@@ -117,6 +161,33 @@ final class ServiceDirectory {
         } catch {
             log.error("props fetch failed: \(error.localizedDescription); keeping fallbacks")
             didLoad = true
+        }
+    }
+
+    private func loadOAuthParams() async {
+        let url = Service.app.fallback.appendingPathComponent("/jaf/oauth/params")
+        do {
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 15
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+            let (data, response) = try await session.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+                log.error("oauth params returned a non-success status; keeping fallback")
+                return
+            }
+
+            let params = try JSONDecoder().decode(OAuthParams.self, from: data)
+            if params.scope != oauth.scope {
+                // Loud, because a scope change is what silently breaks a
+                // hardcoded client: the login still succeeds and individual
+                // services start answering 401.
+                log.notice("OAuth scopes changed upstream")
+            }
+            oauth = params
+            log.info("OAuth params loaded (client \(params.clientId, privacy: .public))")
+        } catch {
+            log.error("oauth params fetch failed: \(error.localizedDescription); keeping fallback")
         }
     }
 }

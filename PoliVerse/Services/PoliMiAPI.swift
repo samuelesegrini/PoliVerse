@@ -199,6 +199,17 @@ nonisolated final class PoliMiAPI: Sendable {
         if request.authenticated {
             let token = try await tokens.validToken()
             urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+            // The official app's request middleware sends this alongside the
+            // bearer token:
+            //
+            //   n.headers.set("Authorization", `Bearer ${t}`)
+            //   a && n.headers.set("poliAuthProfile", `${a.profile}`)
+            //
+            // `props` reports profile "0" for both iae and libretto, which is
+            // the student profile. Sending it costs nothing and several of
+            // these services appear to branch on it.
+            urlRequest.setValue("0", forHTTPHeaderField: "poliAuthProfile")
         }
         urlRequest.timeoutInterval = 30
         return urlRequest

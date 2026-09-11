@@ -61,6 +61,7 @@ struct LoginView: View {
         .sheet(isPresented: $showingWeb) {
             NavigationStack {
                 PoliMiLoginWebView(
+                    oauthParams: session.directory.oauth,
                     router: cieID,
                     onCode: { code in
                         showingWeb = false

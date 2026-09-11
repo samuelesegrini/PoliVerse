@@ -71,6 +71,18 @@ final class Session {
             state = .signedOut
             return
         }
+
+        // A token only carries the scopes it was granted at creation; refreshing
+        // never widens them. If the Politecnico has added a scope since this
+        // token was minted, it will 401 on the new service indefinitely, so
+        // re-authenticate rather than leave the user on a half-broken session.
+        let currentScope = directory.oauth.scope
+        if let granted = await tokens.grantedScope, granted != currentScope {
+            log.notice("Stored token predates a scope change; signing out to re-authenticate")
+            await tokens.clear()
+            state = .signedOut
+            return
+        }
         do {
             let dto = try await api.send(
                 APIRequest(host: .app, path: "/jaf/internal/user"),
@@ -86,12 +98,15 @@ final class Session {
     /// Exchanges the authcode from the web flow for a token pair.
     func completeLogin(authCode: String) async {
         state = .exchangingCode
+        // The login web view may have been opened before the directory landed.
+        await directory.load()
         do {
             let token = try await api.send(
                 PoliMiOAuth.tokenExchangeRequest(authCode: authCode),
                 as: PoliMiToken.self
             )
             await tokens.set(token)
+            await tokens.setGrantedScope(directory.oauth.scope)
 
             let dto = try await api.send(
                 APIRequest(host: .app, path: "/jaf/internal/user"),

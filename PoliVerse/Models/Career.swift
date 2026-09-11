@@ -1,6 +1,16 @@
 import Foundation
 
-/// Aggregate career statistics — `GET /rest/me/polimi/{matricola}`.
+/// Aggregate career statistics — `GET {app}/v1/io-e-polimi/{matricola}`.
+///
+/// PoliFemo's `/rest/me/polimi/{matricola}` now 404s. The official web app
+/// reads the same three numbers from `/v1/io-e-polimi/{registration_number}`:
+///
+/// ```js
+/// WBe = (n, t) => bh.useQuery("get", "/v1/io-e-polimi/{registration_number}", …)
+/// // rendered as: d.mean, d.given_cfu, "/" + d.planned_cfu
+/// ```
+///
+/// so the field names survived the move even though the path did not.
 nonisolated struct GradeBook: Sendable, Equatable {
     var mean: Double
     var earnedCFU: Int
@@ -37,6 +47,9 @@ nonisolated struct GradeBookDTO: Decodable, Sendable {
     let mean: Double?
     let given_cfu: Int?
     let planned_cfu: Int?
+    /// Present on the old endpoint; the official app does not read it from the
+    /// new one, so treat it as optional and fill the counts from
+    /// ``ExamCountersDTO`` instead.
     let exam_stats: ExamStats?
 
     func toGradeBook() -> GradeBook {
@@ -49,6 +62,20 @@ nonisolated struct GradeBookDTO: Decodable, Sendable {
             examsGiven: exam_stats?.given ?? 0
         )
     }
+}
+
+/// `GET {iae}/v1/base/counters` — how many exams the student is signed up for
+/// and how many results have been published.
+///
+/// Read straight off the official app's exams card:
+///
+/// ```js
+/// children: v.num_iscriz   // IOEPOLIMI_EXAMS_ISCRIZ
+/// children: v.num_esiti    // IOEPOLIMI_EXAMS_SOSTEN
+/// ```
+nonisolated struct ExamCountersDTO: Decodable, Sendable {
+    let num_iscriz: Int?
+    let num_esiti: Int?
 }
 
 // MARK: - Exam sessions
