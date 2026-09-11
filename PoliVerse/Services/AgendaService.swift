@@ -72,6 +72,7 @@ final class AgendaService {
             // Drop entries with unparseable timestamps rather than guessing at
             // a date and showing a lecture on the wrong day.
             let parsed = dtos.compactMap { $0.toEvent() }
+            log.notice("agenda returned \(dtos.count, privacy: .public) events, \(parsed.count, privacy: .public) usable")
             if parsed.count < dtos.count {
                 log.warning("Discarded \(dtos.count - parsed.count) agenda events with bad dates")
             }

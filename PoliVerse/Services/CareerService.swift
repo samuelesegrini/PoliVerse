@@ -134,7 +134,9 @@ final class CareerService {
                 ),
                 as: TeachingsResponse.self
             )
-            return response.INSEGN.flatMap { $0.toExamSessions() }
+            let sittings = response.teachings.flatMap { $0.toExamSessions() }
+            log.notice("insegn yielded \(sittings.count, privacy: .public) exam sittings")
+            return sittings
         } catch {
             log.error("Exam sessions failed: \(error.localizedDescription)")
             return nil

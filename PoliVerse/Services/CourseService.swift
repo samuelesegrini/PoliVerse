@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import OSLog
 
 /// Loads the student's enrolled teachings.
 @Observable
@@ -9,6 +10,7 @@ final class CourseService {
     private(set) var errorMessage: String?
 
     private let session: Session
+    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "courses")
     private var favourites: Set<String> {
         get { Set(UserDefaults.standard.stringArray(forKey: "favouriteCourses") ?? []) }
         set { UserDefaults.standard.set(Array(newValue), forKey: "favouriteCourses") }
@@ -43,7 +45,8 @@ final class CourseService {
                 ),
                 as: TeachingsResponse.self
             )
-            let loaded = response.INSEGN.map { $0.toCourse() }
+            let loaded = response.teachings.compactMap { $0.toCourse() }
+            log.notice("insegn returned \(response.teachings.count, privacy: .public) teachings, \(loaded.count, privacy: .public) usable")
             courses = applyFavourites(loaded)
             DiskCache.save(loaded, as: "courses")
         } catch {

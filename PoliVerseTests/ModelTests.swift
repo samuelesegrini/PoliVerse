@@ -324,7 +324,7 @@ struct CareerWireTests {
         "appelliEsame":[]}]}
         """
         let response = try JSONDecoder().decode(TeachingsResponse.self, from: Data(json.utf8))
-        #expect(response.INSEGN.count == 1)
-        #expect(response.INSEGN[0].toCourse().name == "Basi di Dati")
+        #expect(response.teachings.count == 1)
+        #expect(response.teachings[0].toCourse()?.name == "Basi di Dati")
     }
 }

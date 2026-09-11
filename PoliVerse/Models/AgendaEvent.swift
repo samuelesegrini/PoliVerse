@@ -109,9 +109,9 @@ nonisolated struct AgendaEventDTO: Decodable, Sendable {
         let calendar_dn: LocalizedText?
     }
 
-    let event_id: Int
-    let date_start: String
-    let date_end: String
+    let event_id: Int?
+    let date_start: String?
+    let date_end: String?
     let title: LocalizedText?
     let event_type: EventTypeDTO?
     let room: RoomDTO?
@@ -119,13 +119,15 @@ nonisolated struct AgendaEventDTO: Decodable, Sendable {
 
     func toEvent() -> AgendaEvent? {
         // An event we cannot place in time is worse than no event at all.
+        // Everything else degrades; only the timestamps are load-bearing.
         guard
+            let date_start, let date_end,
             let start = PoliMiDate.parse(date_start),
             let end = PoliMiDate.parse(date_end)
         else { return nil }
 
         return AgendaEvent(
-            id: event_id,
+            id: event_id ?? abs(date_start.hashValue),
             title: title?.preferred.isEmpty == false ? title!.preferred : "Evento",
             start: start,
             end: end,

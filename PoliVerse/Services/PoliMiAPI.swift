@@ -225,6 +225,19 @@ nonisolated final class PoliMiAPI: Sendable {
     /// storm against a host that no longer resolves.
     static func isRetryableForTesting(_ error: any Error) -> Bool { isRetryable(error) }
 
+    /// Which of the official app's two HTTP clients serves this request.
+    ///
+    /// The `jaf` layer and the `iae`/`libretto` services go through axios; the
+    /// `/v1/*` app endpoints and the agenda go through openapi-fetch. They
+    /// differ only in how they treat `poliAuthD_profile`.
+    static func usesAxiosClient(_ request: APIRequest) -> Bool {
+        switch request.host {
+        case .iae, .libretto: true
+        case .app: request.path.hasPrefix("/jaf/")
+        case .agenda, .weBeep: false
+        }
+    }
+
     /// Whether a transport failure is worth another attempt.
     ///
     /// DNS and TLS failures are verdicts, not hiccups. Treating them as
@@ -302,10 +315,25 @@ nonisolated final class PoliMiAPI: Sendable {
                 directory.profile(for: request.host, userProfile: user)
             }
             urlRequest.setValue(String(profile), forHTTPHeaderField: "poliAuthProfile")
-            urlRequest.setValue(
-                await MainActor.run { directory.dProfile } ?? PoliMiProfile.emptyDProfile,
-                forHTTPHeaderField: "poliAuthD_profile"
-            )
+
+            // The two official clients disagree about this header, so match
+            // whichever one serves the path.
+            //
+            //   axios (`Qr`/`uxe`, the /jaf/* and iae/libretto calls):
+            //     headers[D_PROFILE] = dprofile ?? "JAF_D_PROFILE_VUOTO"   // always
+            //
+            //   openapi-fetch (`Fhe`, the /v1/* and agenda calls):
+            //     a.dprofile && headers.set(D_PROFILE, a.dprofile)         // only if present
+            //
+            // An account with no secondary profile therefore gets the sentinel
+            // on one client and no header at all on the other.
+            let dProfile = await MainActor.run { directory.dProfile }
+            if let dProfile {
+                urlRequest.setValue(dProfile, forHTTPHeaderField: "poliAuthD_profile")
+            } else if Self.usesAxiosClient(request) {
+                urlRequest.setValue(PoliMiProfile.emptyDProfile,
+                                    forHTTPHeaderField: "poliAuthD_profile")
+            }
         }
         urlRequest.timeoutInterval = 30
         return urlRequest
