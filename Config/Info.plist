@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Schemes other apps use to hand control back to PoliVerse.
+	     "one.wape.PoliVerse" is the CieID return (the CieID SDK asks
+	     integrators to use the bundle identifier); "poliverse" is the Moodle
+	     tool_mobile token redirect. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>None</string>
+			<key>CFBundleURLName</key>
+			<string>one.wape.PoliVerse.cieid</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>one.wape.PoliVerse</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>None</string>
+			<key>CFBundleURLName</key>
+			<string>one.wape.PoliVerse.moodle</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>poliverse</string>
+			</array>
+		</dict>
+	</array>
+	<!-- Required before canOpenURL("CIEID://") will answer truthfully;
+	     without it iOS returns false and we would wrongly conclude the
+	     CieID app is not installed. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>CIEID</string>
+		<string>cieid</string>
+	</array>
+</dict>
+</plist>

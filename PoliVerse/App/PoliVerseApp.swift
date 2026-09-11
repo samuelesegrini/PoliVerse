@@ -7,6 +7,7 @@ struct PoliVerseApp: App {
     @State private var agenda: AgendaService
     @State private var career: CareerService
     @State private var weBeep: WeBeepService
+    @State private var cieID = CieIDRouter()
 
     init() {
         // One Session, shared: every service reads its auth state and mock
@@ -27,12 +28,19 @@ struct PoliVerseApp: App {
                 .environment(agenda)
                 .environment(career)
                 .environment(weBeep)
+                .environment(cieID)
                 .tint(Theme.brand)
                 // Every user-facing string in the app is Italian, so pin the
                 // locale too — otherwise `.formatted(.relative(…))` renders
                 // "4 weeks ago" next to "Lezioni". Revisit when a String
                 // Catalog adds real localisation.
                 .environment(\.locale, Locale(identifier: "it_IT"))
+                // CieID hands control back through our URL scheme. Route it to
+                // the router, which passes it to whichever login web view is
+                // on screen so the session can continue where it left off.
+                .onOpenURL { url in
+                    if cieID.handle(url) { return }
+                }
         }
     }
 }

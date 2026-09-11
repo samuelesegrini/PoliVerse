@@ -6,11 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		PV0000000000000000000A /* PoliVerse */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PoliVerse; sourceTree = "<group>"; };
-		PV00000000000000000020 /* PoliVerseTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PoliVerseTests; sourceTree = "<group>"; };
-/* End PBXFileSystemSynchronizedRootGroup section */
-
 /* Begin PBXContainerItemProxy section */
 		PV00000000000000000028 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -25,6 +20,19 @@
 		PV0000000000000000000B /* PoliVerse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PoliVerse.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		PV00000000000000000021 /* PoliVerseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PoliVerseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		PV0000000000000000000A /* PoliVerse */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PoliVerse;
+			sourceTree = "<group>";
+		};
+		PV00000000000000000020 /* PoliVerseTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PoliVerseTests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		PV0000000000000000000C /* Frameworks */ = {
@@ -280,9 +288,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"PoliVerse/Preview Content\"";
-				DEVELOPMENT_TEAM = XACF448K57;
+				DEVELOPMENT_TEAM = 8CHF29UD9Q;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -291,7 +300,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 2.0;
-				PRODUCT_BUNDLE_IDENTIFIER = one.wape.PoliVerse;
+				PRODUCT_BUNDLE_IDENTIFIER = segrini.samuele.PoliVerse;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -307,9 +316,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"PoliVerse/Preview Content\"";
-				DEVELOPMENT_TEAM = XACF448K57;
+				DEVELOPMENT_TEAM = 8CHF29UD9Q;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -318,7 +328,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 2.0;
-				PRODUCT_BUNDLE_IDENTIFIER = one.wape.PoliVerse;
+				PRODUCT_BUNDLE_IDENTIFIER = segrini.samuele.PoliVerse;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -365,20 +375,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		PV00000000000000000014 /* Build configuration list for PBXProject "PoliVerse" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				PV00000000000000000015 /* Debug */,
-				PV00000000000000000016 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		PV00000000000000000010 /* Build configuration list for PBXNativeTarget "PoliVerse" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				PV00000000000000000017 /* Debug */,
 				PV00000000000000000018 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		PV00000000000000000014 /* Build configuration list for PBXProject "PoliVerse" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				PV00000000000000000015 /* Debug */,
+				PV00000000000000000016 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

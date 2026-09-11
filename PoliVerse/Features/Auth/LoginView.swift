@@ -3,8 +3,10 @@ import SwiftUI
 /// Presents the Politecnico IdP and hands the authcode to ``Session``.
 struct LoginView: View {
     @Environment(Session.self) private var session
+    @Environment(CieIDRouter.self) private var cieID
     @State private var showingWeb = false
     @State private var webError: String?
+    @State private var showingCieIDMissing = false
 
     var body: some View {
         VStack(spacing: 24) {
@@ -58,8 +60,8 @@ struct LoginView: View {
         .padding(28)
         .sheet(isPresented: $showingWeb) {
             NavigationStack {
-                LoginWebView(
-                    url: PoliMiOAuth.authorizationURL,
+                PoliMiLoginWebView(
+                    router: cieID,
                     onCode: { code in
                         showingWeb = false
                         Task { await session.completeLogin(authCode: code) }
@@ -67,7 +69,8 @@ struct LoginView: View {
                     onError: { error in
                         showingWeb = false
                         webError = error.localizedDescription
-                    }
+                    },
+                    onCieIDMissing: { showingCieIDMissing = true }
                 )
                 .ignoresSafeArea(edges: .bottom)
                 .navigationTitle("Accesso Polimi")
@@ -76,6 +79,17 @@ struct LoginView: View {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Annulla") { showingWeb = false }
                     }
+                }
+                .overlay(alignment: .bottom) {
+                    if cieID.isAwaitingCieID {
+                        CieIDWaitingBanner()
+                    }
+                }
+                .alert("App CieID non installata", isPresented: $showingCieIDMissing) {
+                    Button("Apri App Store") { cieID.openAppStore() }
+                    Button("Annulla", role: .cancel) {}
+                } message: {
+                    Text("Per accedere con la Carta d'Identità Elettronica serve l'app CieID.")
                 }
             }
         }

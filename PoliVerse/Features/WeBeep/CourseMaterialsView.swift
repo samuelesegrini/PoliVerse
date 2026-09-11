@@ -135,16 +135,19 @@ private struct FileRow: View {
 /// Wraps ``WeBeepLoginView`` in a dismissible sheet.
 struct WeBeepLoginSheet: View {
     @Environment(WeBeepService.self) private var weBeep
+    @Environment(CieIDRouter.self) private var cieID
     @Environment(\.dismiss) private var dismiss
 
     /// Run after a successful login, so the caller can refresh.
     let onSuccess: () async -> Void
 
     @State private var errorMessage: String?
+    @State private var showingCieIDMissing = false
 
     var body: some View {
         NavigationStack {
-            WeBeepLoginView(
+            WeBeepLoginWebView(
+                router: cieID,
                 onToken: { token in
                     weBeep.store(token)
                     dismiss()
@@ -152,11 +155,14 @@ struct WeBeepLoginSheet: View {
                 },
                 onError: { error in
                     errorMessage = error.localizedDescription
-                }
+                },
+                onCieIDMissing: { showingCieIDMissing = true }
             )
             .ignoresSafeArea(edges: .bottom)
             .overlay(alignment: .bottom) {
-                if let errorMessage {
+                if cieID.isAwaitingCieID {
+                    CieIDWaitingBanner()
+                } else if let errorMessage {
                     Text(errorMessage)
                         .font(.footnote)
                         .padding(12)
@@ -172,6 +178,27 @@ struct WeBeepLoginSheet: View {
                     Button("Annulla") { dismiss() }
                 }
             }
+            .alert("App CieID non installata", isPresented: $showingCieIDMissing) {
+                Button("Apri App Store") { cieID.openAppStore() }
+                Button("Annulla", role: .cancel) {}
+            } message: {
+                Text("Per accedere con la Carta d'Identità Elettronica serve l'app CieID.")
+            }
         }
+    }
+}
+
+/// Shown while the user is over in CieID, so returning to a seemingly idle
+/// login page does not read as a failure.
+struct CieIDWaitingBanner: View {
+    var body: some View {
+        HStack(spacing: 10) {
+            ProgressView()
+            Text("Completa l'accesso nell'app CieID, poi torna qui.")
+                .font(.footnote)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity)
+        .background(.regularMaterial)
     }
 }

@@ -27,6 +27,13 @@ a network. Turn it off in Settings to use a real account.
 Courses are cached to Application Support, so the app opens with content and
 refreshes behind it. Tokens are never cached there — they live in the Keychain.
 
+## Login with CIE
+
+"Entra con CIE" needs special handling: left alone, the CieID app returns the
+authenticated session to Safari and the login is lost. PoliVerse intercepts the
+hand-off and attaches `sourceApp` so CieID comes back to the app instead. See
+[docs/cie-login.md](docs/cie-login.md).
+
 ## Design notes
 
 Colours are adaptive and contrast-checked. The brand navy scores 13:1 on white
