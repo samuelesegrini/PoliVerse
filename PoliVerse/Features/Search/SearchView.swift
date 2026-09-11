@@ -5,6 +5,7 @@ struct SearchView: View {
     @Environment(CourseService.self) private var courses
     @Environment(AgendaService.self) private var agenda
     @Environment(CareerService.self) private var career
+    @Environment(RoomsService.self) private var rooms
     @Environment(\.locale) private var locale
 
     @State private var query = ""
@@ -43,13 +44,44 @@ struct SearchView: View {
         }
     }
 
+    private var matchedRooms: [Classroom] {
+        guard trimmed.count >= 2 else { return [] }
+        return Array(rooms.rooms(matching: trimmed, campus: nil).prefix(8))
+    }
+
     private var isEmpty: Bool {
-        matchedCourses.isEmpty && matchedEvents.isEmpty && matchedExams.isEmpty
+        matchedCourses.isEmpty && matchedEvents.isEmpty
+            && matchedExams.isEmpty && matchedRooms.isEmpty
     }
 
     var body: some View {
         NavigationStack {
             List {
+                if trimmed.isEmpty {
+                    Section {
+                        NavigationLink {
+                            RoomsView()
+                        } label: {
+                            Label("Aule", systemImage: "building.2")
+                        }
+                    }
+                }
+
+                if !matchedRooms.isEmpty {
+                    Section("Aule") {
+                        ForEach(matchedRooms) { room in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(room.id).font(.subheadline.weight(.medium)).monospaced()
+                                Text(room.locationLabel.isEmpty
+                                     ? "\(room.capacity) posti"
+                                     : "\(room.locationLabel) · \(room.capacity) posti")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+
                 if !matchedCourses.isEmpty {
                     Section("Corsi") {
                         ForEach(matchedCourses) { course in
@@ -103,16 +135,12 @@ struct SearchView: View {
             .navigationDestination(for: Course.self) { CourseDetailView(course: $0) }
             .searchable(text: $query, prompt: "Corsi, docenti, aule, appelli")
             .overlay {
-                if trimmed.isEmpty {
-                    ContentUnavailableView(
-                        "Cerca", systemImage: "magnifyingglass",
-                        description: Text("Corsi, docenti, lezioni, aule e appelli.")
-                    )
-                } else if isEmpty {
+                if isEmpty && !trimmed.isEmpty {
                     ContentUnavailableView.search(text: trimmed)
                 }
             }
             .task {
+                await rooms.load()
                 await courses.load()
                 await agenda.load(around: .now)
                 await career.load()

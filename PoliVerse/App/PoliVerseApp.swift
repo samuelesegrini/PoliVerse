@@ -9,6 +9,7 @@ struct PoliVerseApp: App {
     @State private var weBeep: WeBeepService
     @State private var cieID = CieIDRouter()
     @State private var downloads = FileDownloadService()
+    @State private var rooms = RoomsService()
 
     init() {
         // One Session, shared: every service reads its auth state and mock
@@ -33,6 +34,7 @@ struct PoliVerseApp: App {
                 .environment(weBeep)
                 .environment(cieID)
                 .environment(downloads)
+                .environment(rooms)
                 .tint(Theme.brand)
                 // Every user-facing string in the app is Italian, so pin the
                 // locale too — otherwise `.formatted(.relative(…))` renders

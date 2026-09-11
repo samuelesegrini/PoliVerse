@@ -488,3 +488,64 @@ struct TitleCasingTests {
         #expect(Course.normalise("DI BASE") == "Di Base")
     }
 }
+
+/// The maps catalogue is three separate lists joined on `csi*` codes, and it
+/// contains rows that are not rooms anyone can be sent to.
+@Suite("Room catalogue")
+struct ClassroomTests {
+    private func decode(_ json: String) throws -> [ClassroomDTO] {
+        try JSONDecoder().decode([ClassroomDTO].self, from: Data(json.utf8))
+    }
+
+    /// Numbers arrive as strings throughout this service.
+    @Test("A room decodes with its capacity and codes")
+    func roomDecodes() throws {
+        let json = """
+        [{"sigla":"CR03.0.1","csiv":"CRG0203000001","csip":"CRG0203000",
+          "csie":"CRG0203","capienza":"42","posti_disabili":"2"}]
+        """
+        let room = try #require(decode(json).first?.toClassroom())
+
+        #expect(room.id == "CR03.0.1")
+        #expect(room.capacity == 42)
+        #expect(room.buildingCode == "CRG0203")
+        #expect(room.accessibleSeats == 2)
+    }
+
+    /// The catalogue keeps fictitious and decommissioned rows; a room with no
+    /// seats is not somewhere anyone can be sent.
+    @Test("Rooms with no seats or no code are dropped")
+    func dropsUnusableRooms() throws {
+        let json = """
+        [{"sigla":"X","csie":"A","csip":"B","capienza":"0"},
+         {"sigla":"","csie":"A","csip":"B","capienza":"10"},
+         {"sigla":"Y","csie":null,"csip":"B","capienza":"10"}]
+        """
+        #expect(try decode(json).compactMap { $0.toClassroom() }.isEmpty)
+    }
+
+    /// "0" means none, and should read as absent rather than as a figure.
+    @Test("Zero accessible seats reads as none")
+    func zeroAccessibleSeats() throws {
+        let json = #"[{"sigla":"A.1","csie":"E","csip":"P","capienza":"30","posti_disabili":"0"}]"#
+        #expect(try #require(decode(json).first?.toClassroom()).accessibleSeats == nil)
+    }
+
+    /// The address arrives in pieces and has to be reassembled.
+    @Test("A building address is assembled from its parts")
+    func buildingAddress() throws {
+        let json = """
+        {"csie":"MIA0605","csic":"MIA06","nome":"Edificio 32.5","indirizzo":"Colombo",
+         "prefissoToponomastico":"Via","numeroCivico":"40","cittaEdificio":"Milano"}
+        """
+        let building = try JSONDecoder().decode(BuildingDTO.self, from: Data(json.utf8))
+        #expect(building.fullAddress == "Via Colombo 40, Milano")
+    }
+
+    @Test("A building with no address parts yields none")
+    func missingAddress() throws {
+        let json = #"{"csie":"X","nome":"Y"}"#
+        let building = try JSONDecoder().decode(BuildingDTO.self, from: Data(json.utf8))
+        #expect(building.fullAddress == nil)
+    }
+}

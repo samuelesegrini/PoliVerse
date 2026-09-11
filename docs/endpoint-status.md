@@ -151,6 +151,32 @@ declares its own, yields 401 "Scope OAuth non valido … Code: 33" — an error
 that blames the token and is nothing to do with it. See
 [polimi-auth.md](polimi-auth.md#the-code-33-scope-error--resolved).
 
+## Rooms — catalogue yes, occupancy no
+
+The maps service is **public and needs no token**:
+
+```
+GET https://onlineservices.polimi.it/maps_rest/rest/spazi/aula       → 200, 353 rooms
+GET .../spazi/edificio                                               → 200, 152 buildings
+GET .../spazi/campus, /spazi/sede, /spazi/piano                      → 200
+```
+
+Rooms carry `sigla`, `capienza`, `posti_disabili` and the `csi*` codes that
+join them to a building, floor and campus. Every number is a string.
+
+**Live occupancy is not reachable.** Checked 2026-09-11:
+
+| Source | Result |
+| --- | --- |
+| `www7.ceda.polimi.it`, `www11.ceda.polimi.it`, `aule.polimi.it` | resolve, refuse connections — campus-internal, like `www22.dmz` |
+| PoliNetwork `/v1/rooms/search` (what PoliFemo uses) | 302 to Cloudflare Access sign-in |
+| `maps_rest` `/spazi/impegni`, `/spazi/prenotazioni`, `/spazi/occupazione` | 500 |
+| the agenda | only *this* student's lectures, not what rooms are doing |
+
+So the app ships the catalogue and says plainly that it cannot tell which rooms
+are free. The internal hosts may well answer on campus Wi-Fi — that is the
+thread to pull if this is wanted.
+
 ## Unverified
 
 `/v1/base/counters` is live and sits with the other career calls in the bundle,
