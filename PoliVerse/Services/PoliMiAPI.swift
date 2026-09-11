@@ -205,8 +205,14 @@ nonisolated final class PoliMiAPI: Sendable {
                         Token rejected for scope — path=\(request.path, privacy: .public) \
                         body=\(String(body.prefix(200)), privacy: .public)
                         """)
-                    await onInvalidScope()
-                    throw APIError.invalidScope
+                    // Only for services the app depends on. A service that
+                    // is refused by design must not flag the whole session as
+                    // unauthenticated — everything else is working.
+                    if request.host.refusalMeansBrokenSession {
+                        await onInvalidScope()
+                        throw APIError.invalidScope
+                    }
+                    throw APIError.notEntitled(request.path, body: String(body.prefix(200)))
 
                 case 401:
                     // A 401 that survived a refresh is not a stale token — it is

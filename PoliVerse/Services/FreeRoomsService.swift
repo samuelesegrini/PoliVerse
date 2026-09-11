@@ -135,6 +135,10 @@ final class FreeRoomsService {
             let data = try await session.api.send(attempt)
             return data
         } catch let error as APIError {
+            // Both refusals mean the same thing here. Profile 3 answers
+            // "Utente non abilitato" because the account does not hold it;
+            // profile 1 answers "Scope OAuth non valido" because the service
+            // will not accept it. Neither is fixable by signing in again.
             guard case .notEntitled = error, workingProfile == nil else { throw error }
 
             // Second and last attempt: the signed-in user's own profile.

@@ -152,3 +152,47 @@ struct FreeRoomsTests {
         #expect(sites[0].name == "Milano Leonardo")
     }
 }
+
+/// A 401 from the Politecnico means several different things, and the app
+/// reacted to all of them by offering a login. `ws_aule` exposed it: a service
+/// refused to student accounts by design put a re-authentication banner across
+/// an app in which everything else was working.
+@Suite("Refusal classification")
+struct RefusalTests {
+    private let notEnabled = """
+    {"statusCode":401,"message":"jaf.model2.exceptions.JafUnauthorizedException: \
+    Utente non abilitato Code: 6"}
+    """
+    private let badScope = """
+    {"statusCode":401,"message":"jaf.model2.exceptions.JafUnauthorizedException: \
+    Scope OAuth non valido. Effettuare logout/login o disinstallare e \
+    reinstallare l'applicazione. Code: 33"}
+    """
+
+    @Test("\"Utente non abilitato\" is not read as a dead session")
+    func notEnabledIsNotScope() {
+        #expect(PoliMiAPI.isNotEntitled(notEnabled))
+        #expect(!PoliMiAPI.isInvalidScope(notEnabled))
+    }
+
+    @Test("A genuine scope failure is still recognised")
+    func realScopeFailure() {
+        #expect(PoliMiAPI.isInvalidScope(badScope))
+        #expect(!PoliMiAPI.isNotEntitled(badScope))
+    }
+
+    /// The guard that keeps one optional service from speaking for the whole
+    /// session.
+    @Test("Only services the app depends on can invalidate the session")
+    func onlyEssentialServicesBreakTheSession() {
+        #expect(!APIHost.wsAule.refusalMeansBrokenSession)
+        for host in [APIHost.app, .iae, .agenda, .libretto, .weBeep] {
+            #expect(host.refusalMeansBrokenSession)
+        }
+    }
+
+    @Test("A refusal is permanent, so it is never retried")
+    func refusalIsPermanent() {
+        #expect(APIError.notEntitled("/cata/sedi", body: "").isPermanent)
+    }
+}

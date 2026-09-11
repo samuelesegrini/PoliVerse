@@ -255,11 +255,27 @@ answers 401:
  "message":"jaf.model2.exceptions.JafUnauthorizedException: Utente non abilitato Code: 6"}
 ```
 
-The token is fine — every other service accepts it in the same session. This
-is the *account* lacking the service, almost certainly because profile 3 is
-not a profile a student holds (this one reports only `1, Student`), and
-`registroLezioni` is a teaching-staff screen. The app tries the service
-profile first, then the account's own, and says plainly when both are refused.
+The token is fine — every other service accepts it in the same session.
+
+Retrying with the account's own profile (1) was tried and is also refused,
+with a *different* error:
+
+```
+Code 33 — "Scope OAuth non valido. Effettuare logout/login…"
+```
+
+So: **profile 3 → "you do not hold this profile" (Code 6); profile 1 → "this
+profile may not use this service" (Code 33).** Both closed, by two different
+mechanisms. The OAuth scope is not the problem — `/jaf/oauth/params` grants
+`aule`, `cataloghi_aule`, `prenotazione`, `prenotazioni`, `richieste_occupazione`
+and `rich_sing_occup` to this client, so the grant exists and the *account* is
+what the service is checking.
+
+Conclusion: `/cata/*` is staff-only. It backs `registroLezioni`, a lecture
+register, and `/cata/aule` is how a teacher finds a room to book. There is no
+student-facing equivalent in `props`. The code is correct and would work for
+an account that holds profile 3; it is kept, and the screen says plainly that
+the profile lacks access.
 
 Note the classification trap: this arrives as `JafUnauthorizedException`, the
 same exception as a genuinely bad token, so the scope check claimed the

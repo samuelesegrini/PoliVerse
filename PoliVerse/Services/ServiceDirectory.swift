@@ -69,6 +69,21 @@ final class ServiceDirectory {
             }
         }
 
+        /// Whether a 401 from this service means the session is broken.
+        ///
+        /// For most services it does: if `iae` refuses the token, the token
+        /// is the problem and the user needs to sign in again. `ws_aule` is
+        /// the exception — it is refused to student accounts by design, and
+        /// letting that refusal set the session-wide "authorisation failed"
+        /// flag put a re-login banner across an app in which everything else
+        /// was working perfectly.
+        var refusalMeansBrokenSession: Bool {
+            switch self {
+            case .wsAule: false
+            case .app, .iae, .agenda, .libretto, .weBeep: true
+            }
+        }
+
         /// Service profile used until `props` loads. `nil` means "use the
         /// signed-in user's profile".
         var fallbackProfile: Int? {
