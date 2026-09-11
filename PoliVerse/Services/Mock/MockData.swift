@@ -42,7 +42,8 @@ nonisolated enum MockData {
             LibrettoExam(
                 id: id, name: name, grade: grade, hasLode: lode, cfu: cfu,
                 date: daysAgo.map { now.addingTimeInterval(TimeInterval(-$0 * 86_400)) },
-                statusText: daysAgo == nil ? nil : "Superato"
+                statusText: daysAgo == nil ? nil : "Superato",
+                isPassed: daysAgo != nil
             )
         }
         return [

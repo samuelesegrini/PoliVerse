@@ -158,8 +158,9 @@ final class WeBeepService {
         if let direct = course.moodleID { return direct }
         if let cached = courseIDByCode[course.id] { return cached }
 
+        let searchCode = course.code ?? course.id
         if let byCode = courses.first(where: {
-            $0.fullname.contains(course.id) || ($0.shortname ?? "").contains(course.id)
+            $0.fullname.contains(searchCode) || ($0.shortname ?? "").contains(searchCode)
         }) {
             courseIDByCode[course.id] = byCode.id
             return byCode.id

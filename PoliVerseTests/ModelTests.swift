@@ -349,7 +349,10 @@ struct MoodleCourseNameTests {
             id: 4242, fullname: "097785 - BASI DI DATI [2025-26]",
             shortname: nil, startdate: nil, enddate: nil))
 
-        #expect(course.id == "097785")
+        // The Moodle id is the identity: several WeBeep courses share one
+        // PoliMi code, and using the code collapsed them in SwiftUI.
+        #expect(course.id == "moodle-4242")
+        #expect(course.code == "097785")
         #expect(course.moodleID == 4242)
         #expect(course.name == "Basi di Dati")
         #expect(course.academicYear == "2025-26")
@@ -363,6 +366,7 @@ struct MoodleCourseNameTests {
             startdate: nil, enddate: nil))
 
         #expect(course.id == "moodle-99")
+        #expect(course.code == nil)
         #expect(course.moodleID == 99)
     }
 
@@ -380,81 +384,107 @@ struct MoodleCourseNameTests {
 /// see their results.
 @Suite("Libretto")
 struct LibrettoTests {
-    private func decode(_ json: String) throws -> [LibrettoEntryDTO] {
-        try JSONDecoder().decode([LibrettoEntryDTO].self, from: Data(json.utf8))
+    private func decode(_ json: String) throws -> LibrettoResponse {
+        try JSONDecoder().decode(LibrettoResponse.self, from: Data(json.utf8))
     }
 
-    @Test("A passed exam decodes with its mark")
-    func passedExamDecodes() throws {
+    /// The real payload, confirmed against an account: an object with the
+    /// passed/pending split already done, epoch-millisecond dates, and no
+    /// course code at all.
+    @Test("The real envelope decodes and keeps the server's split")
+    func realEnvelopeDecodes() throws {
         let json = """
-        [{"c_insegn":"084391","descrizione":"RETI LOGICHE","voto_esame":28,
-          "lode":"N","cfu":5,"data_esame":"2025-02-12T00:00:00",
-          "stato_esame_desc":"Superato","posins":"E"}]
+        {"daSostenere":[{"id_riga":2,"descrizione":"BASI DI DATI","voto_esame":0,
+                         "data_esame":null,"stato_esame_desc":null,"cfu":8}],
+         "sostenuti":[{"id_riga":47314209,
+                       "descrizione":"ALGORITMI E PRINCIPI DELL'INFORMATICA",
+                       "descrizione_eng":"ALGORITHMS AND PRINCIPLES",
+                       "stato_esame":"S","stato_esame_desc":"SUPERATO",
+                       "cfu_conv_parz":0,"posins":"E",
+                       "data_esame":1750197600000,"data_esame_string":null,
+                       "voto_esame":30,"lode":"S","cfu":10}]}
         """
-        let exam = try #require(decode(json).first?.toExam())
+        let exams = try decode(json).allExams
+        #expect(exams.count == 2)
 
-        #expect(exam.id == "084391")
-        #expect(exam.name == "Reti Logiche")
-        #expect(exam.grade == 28)
-        #expect(exam.cfu == 5)
-        #expect(exam.displayGrade == "28")
-        #expect(exam.isPassed)
+        let passed = try #require(exams.first { $0.isPassed })
+        #expect(passed.name == "Algoritmi e Principi dell'Informatica")
+        #expect(passed.displayGrade == "30L")
+        #expect(passed.cfu == 10)
+
+        // 1750197600000 ms is June 2025.
+        var rome = Calendar(identifier: .gregorian)
+        rome.timeZone = try #require(TimeZone(identifier: "Europe/Rome"))
+        let date = try #require(passed.date)
+        #expect(rome.component(.year, from: date) == 2025)
+        #expect(rome.component(.month, from: date) == 6)
     }
 
-    /// The official app renders honours by appending "L" when `lode === "S"`.
-    @Test("Honours render as 30L")
-    func lodeRenders() throws {
-        let json = """
-        [{"c_insegn":"086088","descrizione":"ANALISI E GEOMETRIA 1","voto_esame":30,
-          "lode":"S","cfu":10,"data_esame":"2024-01-20T00:00:00",
-          "stato_esame_desc":"Superato"}]
-        """
-        let exam = try #require(decode(json).first?.toExam())
-        #expect(exam.displayGrade == "30L")
-    }
+    /// A pending row has no mark and must not read as passed, even though the
+    /// fields alone cannot say so — the list it came from does.
+    @Test("Pending rows come back as pending")
+    func pendingFromItsOwnList() throws {
+        let json = #"{"daSostenere":[{"id_riga":2,"descrizione":"BASI DI DATI","voto_esame":0}],"sostenuti":[]}"#
+        let exam = try #require(decode(json).allExams.first)
 
-    /// A teaching not yet sat has no mark and must not read as passed.
-    @Test("An unsat teaching has no mark and is pending")
-    func pendingExam() throws {
-        let json = """
-        [{"c_insegn":"097785","descrizione":"BASI DI DATI","voto_esame":0,
-          "lode":"N","cfu":8,"data_esame":null,"stato_esame_desc":null}]
-        """
-        let exam = try #require(decode(json).first?.toExam())
-
-        #expect(exam.grade == nil)
-        #expect(exam.displayGrade == "—")
         #expect(exam.isPassed == false)
-    }
-
-    /// These endpoints are inconsistent about quoting numbers, and being strict
-    /// would drop the whole row over a formatting choice.
-    @Test("Numbers quoted as strings still decode")
-    func tolerantNumbers() throws {
-        let json = """
-        [{"c_insegn":"1","descrizione":"TEST","voto_esame":"27","cfu":"6",
-          "lode":"N","data_esame":"2025-06-01T00:00:00","stato_esame_desc":"Superato"}]
-        """
-        let exam = try #require(decode(json).first?.toExam())
-        #expect(exam.grade == 27)
-        #expect(exam.cfu == 6)
-    }
-
-    /// A pass/fail teaching ("idoneità") records a date and status but no mark.
-    @Test("A pass without a mark still counts as passed")
-    func passWithoutMark() {
-        let exam = LibrettoExam(
-            id: "1", name: "Prova Finale", grade: nil, hasLode: false, cfu: 3,
-            date: .now, statusText: "Superato"
-        )
-        #expect(exam.isPassed)
         #expect(exam.displayGrade == "—")
     }
 
-    @Test("A row missing its identity is skipped, not faked")
+    /// An idoneità is passed with no numeric mark; the list it came from is the
+    /// only thing that says so.
+    @Test("A pass with no mark still counts as passed")
+    func passWithoutMark() throws {
+        let json = #"{"sostenuti":[{"id_riga":9,"descrizione":"PROVA FINALE","voto_esame":0,"stato_esame_desc":"SUPERATO"}],"daSostenere":[]}"#
+        let exam = try #require(decode(json).allExams.first)
+
+        #expect(exam.isPassed)
+        #expect(exam.grade == nil)
+    }
+
+    /// Credits appear under different names across these endpoints.
+    @Test("Credits are found under any of their spellings")
+    func creditSpellings() throws {
+        let json = #"{"sostenuti":[{"id_riga":1,"descrizione":"X","cfu_conv_parz":6,"voto_esame":28}],"daSostenere":[]}"#
+        #expect(try #require(decode(json).allExams.first).cfu == 6)
+    }
+
+    /// Rows have no course code, so identity comes from id_riga.
+    @Test("Rows without a course code are still uniquely identified")
+    func identityFromRowID() throws {
+        let json = #"{"sostenuti":[{"id_riga":47314209,"descrizione":"X","voto_esame":30}],"daSostenere":[]}"#
+        #expect(try #require(decode(json).allExams.first).id == "47314209")
+    }
+
+    @Test("A nameless row is skipped, not faked")
     func skipsUnusableRows() throws {
-        let json = #"[{"c_insegn":null,"descrizione":"X"},{"c_insegn":"2","descrizione":""}]"#
-        let exams = try decode(json).compactMap { $0.toExam() }
-        #expect(exams.isEmpty)
+        let json = #"{"sostenuti":[{"id_riga":1,"descrizione":""}],"daSostenere":[]}"#
+        #expect(try decode(json).allExams.isEmpty)
+    }
+}
+
+/// `String.capitalized` is wrong for Italian in two ways that show up in real
+/// course names, so titles go through `Course.normalise`.
+@Suite("Italian title casing")
+struct TitleCasingTests {
+    @Test("An elided article stays lowercase and its noun does not")
+    func elidedArticle() {
+        #expect(Course.normalise("ALGORITMI E PRINCIPI DELL'INFORMATICA")
+                == "Algoritmi e Principi dell'Informatica")
+        #expect(Course.normalise("FONDAMENTI DELL'AUTOMATICA")
+                == "Fondamenti dell'Automatica")
+    }
+
+    @Test("Articles and prepositions stay lowercase mid-title")
+    func minorWords() {
+        #expect(Course.normalise("ARCHITETTURE DEI CALCOLATORI")
+                == "Architetture dei Calcolatori")
+        #expect(Course.normalise("BASI DI DATI") == "Basi di Dati")
+    }
+
+    /// Only mid-title: a leading article still leads.
+    @Test("A leading minor word is still capitalised")
+    func leadingMinorWord() {
+        #expect(Course.normalise("DI BASE") == "Di Base")
     }
 }

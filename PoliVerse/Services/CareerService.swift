@@ -148,12 +148,12 @@ final class CareerService {
     /// results.
     private func loadLibretto(matricola: String) async -> [LibrettoExam]? {
         do {
-            let entries = try await session.api.send(
+            let response = try await session.api.send(
                 APIRequest(host: .libretto, path: "/elencoinsegnamenti/\(matricola)"),
-                as: [LibrettoEntryDTO].self
+                as: LibrettoResponse.self
             )
-            let exams = entries.compactMap { $0.toExam() }
-            log.notice("libretto returned \(entries.count, privacy: .public) entries, \(exams.count, privacy: .public) usable")
+            let exams = response.allExams
+            log.notice("libretto: \(response.sostenuti?.count ?? 0, privacy: .public) passed, \(response.daSostenere?.count ?? 0, privacy: .public) pending, \(exams.count, privacy: .public) usable")
             return exams
         } catch {
             log.error("Libretto failed: \(error.localizedDescription)")

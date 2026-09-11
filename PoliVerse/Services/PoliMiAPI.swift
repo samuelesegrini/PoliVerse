@@ -130,7 +130,7 @@ nonisolated final class PoliMiAPI: Sendable {
             // Log a slice of the body: when an endpoint moves, the shape often
             // moves with it, and guessing from the decoding error alone is
             // hopeless.
-            let preview = String(data: data.prefix(400), encoding: .utf8) ?? "<binary>"
+            let preview = String(data: data.prefix(1200), encoding: .utf8) ?? "<binary>"
             log.error("Decoding \(String(describing: T.self)) failed: \(error)")
             log.error("Body was: \(preview, privacy: .public)")
             throw APIError.decoding(error)

@@ -17,12 +17,10 @@ nonisolated struct LibrettoExam: Identifiable, Sendable, Hashable {
     /// Upstream's own status wording, e.g. "Superato".
     let statusText: String?
 
-    var isPassed: Bool {
-        if let grade { return grade >= 18 }
-        // A recorded status with a date and no mark is how pass/fail teachings
-        // ("idoneità") appear.
-        return date != nil && statusText?.isEmpty == false
-    }
+    /// Taken from which list the server returned this row in, rather than
+    /// inferred from the mark — a pass/fail teaching ("idoneità") is passed
+    /// with no numeric mark at all.
+    let isPassed: Bool
 
     /// `30L` for a mark with honours, matching how the official app renders it.
     var displayGrade: String {
@@ -33,37 +31,88 @@ nonisolated struct LibrettoExam: Identifiable, Sendable, Hashable {
 
 /// `GET {libretto}/elencoinsegnamenti/{matricola}`
 ///
-/// Field names taken from the official app's own rendering:
+/// The response is an object, not an array, and the server has already done
+/// the split this screen wants:
 ///
-/// ```js
-/// _.stato_esame_desc
-/// Im(_.data_esame).format("DD")  …  .format("MMM YYYY")
-/// _.voto_esame > 0 ? _.voto_esame : "-",  _.lode === "S" ? "L" : ""
+/// ```json
+/// {"daSostenere": [...], "sostenuti": [...]}
+/// ```
+nonisolated struct LibrettoResponse: Decodable, Sendable {
+    let sostenuti: [LibrettoEntryDTO]?
+    let daSostenere: [LibrettoEntryDTO]?
+
+    /// Passed first, then pending — each already flagged by which list it came
+    /// from, which is more reliable than inferring it from the fields.
+    var allExams: [LibrettoExam] {
+        (sostenuti ?? []).compactMap { $0.toExam(passed: true) }
+            + (daSostenere ?? []).compactMap { $0.toExam(passed: false) }
+    }
+}
+
+/// One row of the libretto.
+///
+/// Shape confirmed against a real account:
+///
+/// ```json
+/// {"id_riga":47314209,"descrizione":"ALGORITMI E PRINCIPI DELL'INFORMATICA",
+///  "descrizione_eng":"ALGORITHMS AND PRINCIPLES OF COMPUTER SCIENCE",
+///  "stato_esame":"S","stato_esame_desc":"SUPERATO","cfu_conv_parz":0,
+///  "posins":"E","posins_desc":"Effettivo",
+///  "data_esame":1750197600000,"data_esame_string":null,"voto_esame":…}
 /// ```
 nonisolated struct LibrettoEntryDTO: Decodable, Sendable {
+    /// The row's own identity. There is no course code in this payload, so
+    /// this is what makes a row unique.
+    let id_riga: LooseInt?
     let c_insegn: String?
     let descrizione: String?
     let descrizione_eng: String?
-    /// Numeric upstream, but tolerated as a string — see ``LooseInt``.
     let voto_esame: LooseInt?
     /// `"S"` for honours.
     let lode: String?
+    /// The plain credit count is not always present; several spellings appear
+    /// across these endpoints, so try each rather than lose the value.
     let cfu: LooseInt?
-    let data_esame: String?
+    let cfu_conv_parz: LooseInt?
+    let crediti: LooseInt?
+    /// **Epoch milliseconds**, not a date string. `data_esame_string` is the
+    /// textual form and is usually null.
+    let data_esame: LooseDouble?
+    let data_esame_string: String?
+    let stato_esame: String?
     let stato_esame_desc: String?
     let posins: String?
 
-    func toExam() -> LibrettoExam? {
-        guard let c_insegn, let descrizione, !descrizione.isEmpty else { return nil }
+    private var creditValue: Int? {
+        for candidate in [cfu?.value, crediti?.value, cfu_conv_parz?.value] {
+            if let candidate, candidate > 0 { return candidate }
+        }
+        return nil
+    }
+
+    private var examDate: Date? {
+        if let millis = data_esame?.value, millis > 0 {
+            return Date(timeIntervalSince1970: millis / 1000)
+        }
+        return data_esame_string.flatMap(PoliMiDate.parse)
+    }
+
+    /// - Parameter passed: which of the server's two lists this row came from.
+    ///   More reliable than inferring it, since a pass/fail teaching carries no
+    ///   numeric mark.
+    func toExam(passed: Bool) -> LibrettoExam? {
+        guard let descrizione, !descrizione.isEmpty else { return nil }
         let mark = voto_esame?.value
+
         return LibrettoExam(
-            id: c_insegn,
+            id: c_insegn ?? id_riga?.value.map(String.init) ?? descrizione,
             name: Course.normalise(descrizione),
             grade: (mark ?? 0) > 0 ? mark : nil,
             hasLode: lode?.uppercased() == "S",
-            cfu: cfu?.value,
-            date: data_esame.flatMap(PoliMiDate.parse),
-            statusText: stato_esame_desc
+            cfu: creditValue,
+            date: examDate,
+            statusText: stato_esame_desc?.capitalized,
+            isPassed: passed
         )
     }
 }

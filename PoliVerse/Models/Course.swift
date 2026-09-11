@@ -15,6 +15,13 @@ nonisolated struct Course: Identifiable, Sendable, Hashable, Codable {
     /// Having it removes the need to match a PoliMi course to a Moodle one by
     /// name, which was the weakest link in the materials lookup.
     var moodleID: Int?
+    /// The Politecnico teaching code, where the WeBeep title carries one.
+    ///
+    /// Kept separate from ``id`` because it is **not unique**: a real account
+    /// has several WeBeep courses sharing a code — the same teaching across
+    /// years, or a lecture and its lab. Using it as the identity made SwiftUI
+    /// collapse those rows into one and warn about duplicate IDs.
+    var code: String?
     var isFavourite: Bool = false
 
     /// Deterministic accent so a course keeps the same colour between launches
@@ -27,7 +34,9 @@ nonisolated struct Course: Identifiable, Sendable, Hashable, Codable {
     ///   FNV-1a is stable across processes and platforms.
     var colorSeed: Int {
         var hash: UInt64 = 0xcbf2_9ce4_8422_2325
-        for byte in id.utf8 {
+        // Seeded from the teaching code where there is one, so a course keeps
+        // its colour whether it came from WeBeep or from PoliMi.
+        for byte in (code ?? id).utf8 {
             hash ^= UInt64(byte)
             hash &*= 0x0000_0100_0000_01B3
         }
@@ -38,17 +47,45 @@ nonisolated struct Course: Identifiable, Sendable, Hashable, Codable {
     /// `UserDefaults` and is reapplied on load, so a stale cache can never
     /// resurrect a favourite the user has since removed.
     private enum CodingKeys: String, CodingKey {
-        case id, name, teacher, cfu, semester, academicYear, teacherEmail, moodleID
+        case id, name, teacher, cfu, semester, academicYear, teacherEmail, moodleID, code
     }
 
     /// "ARCHITETTURE DEI CALCOLATORI" reads badly in a title; fix it once here.
     static func normalise(_ raw: String) -> String {
-        let lower = raw.lowercased()
-        return lower.split(separator: " ").map { word -> String in
-            // Keep Italian articles and prepositions lowercase mid-title.
-            let minor: Set<String> = ["di", "dei", "delle", "della", "e", "ed", "in", "a", "al", "per", "con", "dai"]
-            return minor.contains(String(word)) ? String(word) : word.capitalized
+        // Two things `String.capitalized` gets wrong for Italian, both of which
+        // turn up constantly in real course names: it capitalises after an
+        // apostrophe, making `dell'informatica` into `Dell'Informatica`, and it
+        // capitalises articles and prepositions mid-title.
+        let minor: Set<String> = [
+            "di", "dei", "del", "delle", "della", "degli",
+            "e", "ed", "in", "a", "al", "ai", "alla", "per", "con", "da", "dai",
+            "dell'", "dall'", "all'", "sull'", "nell'", "l'", "d'",
+        ]
+
+        return raw.lowercased().split(separator: " ").enumerated().map { index, word in
+            let text = String(word)
+            // The first word always leads, whatever it is.
+            if index > 0, minor.contains(text) { return text }
+
+            // Capitalise only the first letter, so an elided article keeps the
+            // noun after it capitalised without capitalising itself:
+            // "dell'informatica" becomes "dell'Informatica".
+            if let apostrophe = text.firstIndex(where: { $0 == "'" || $0 == "\u{2019}" }) {
+                let article = String(text[text.startIndex...apostrophe])
+                let noun = String(text[text.index(after: apostrophe)...])
+                let head = index > 0 && minor.contains(article)
+                    ? article
+                    : Course.upperFirst(article)
+                return head + Course.upperFirst(noun)
+            }
+            return Course.upperFirst(text)
         }.joined(separator: " ")
+    }
+
+    /// Uppercases the first character only, leaving the rest untouched.
+    private static func upperFirst(_ value: String) -> String {
+        guard let first = value.first else { return value }
+        return first.uppercased() + value.dropFirst()
     }
 }
 
@@ -64,13 +101,15 @@ extension Course {
         let (code, title) = Course.splitCode(from: full)
 
         self.init(
-            id: code ?? "moodle-\(moodle.id)",
+            // Moodle's id is the identity: the only value guaranteed unique.
+            id: "moodle-\(moodle.id)",
             name: Course.normalise(title),
             teacher: "—",
             cfu: 0,
             semester: "—",
             academicYear: Course.academicYear(from: full) ?? "—",
-            moodleID: moodle.id
+            moodleID: moodle.id,
+            code: code
         )
     }
 
