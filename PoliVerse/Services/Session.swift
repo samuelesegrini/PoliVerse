@@ -244,6 +244,7 @@ final class Session {
             log.notice("profiles payload: \(raw, privacy: .public)")
 
             if let list = try? JSONDecoder().decode([PoliMiProfileDTO].self, from: data) {
+                directory.dProfile = list.compactMap(\.dprofile).first
                 let ids = list.compactMap(\.identifier)
                 // Prefer the student profile when the account has several.
                 if let chosen = ids.first(where: { $0 == PoliMiProfile.student }) ?? ids.first {

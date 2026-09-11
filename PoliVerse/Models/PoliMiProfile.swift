@@ -20,20 +20,28 @@ nonisolated enum PoliMiProfile {
 
     /// Fallback when the profile list cannot be read.
     static let `default` = student
+
+    /// What `poliAuthD_profile` carries when the account has no secondary
+    /// profile. A literal sentinel, not an empty string — `u_.D_PROFILE_VUOTO`
+    /// in the official bundle.
+    static let emptyDProfile = "JAF_D_PROFILE_VUOTO"
 }
 
 /// Wire shape of `/jaf/internal/profiles`.
 ///
-/// - Note: the exact field names are **unverified** — the endpoint needs a
-///   token, so it could not be inspected from outside. Every field is optional
-///   and several plausible spellings are accepted; `Session` logs the raw body
-///   on the first fetch so the real shape can be pinned down and this trimmed.
+/// Shape confirmed against a real account:
+///
+/// ```json
+/// [{"profile":1,"description":"Student","dprofile":null,
+///   "profileDescription":"Student","dprofileDescription":null,
+///   "dprofileValue":null}]
+/// ```
 nonisolated struct PoliMiProfileDTO: Decodable, Sendable {
     let profile: Int?
-    let idProfilo: Int?
-    let codiceProfilo: Int?
-    let tipoProfilo: Int?
+    let description: String?
+    /// Secondary profile, sent as `poliAuthD_profile`. Null for a plain
+    /// student account.
+    let dprofile: String?
 
-    /// First non-nil candidate.
-    var identifier: Int? { profile ?? idProfilo ?? codiceProfilo ?? tipoProfilo }
+    var identifier: Int? { profile }
 }

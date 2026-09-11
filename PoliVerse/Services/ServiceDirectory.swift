@@ -50,6 +50,30 @@ final class ServiceDirectory {
             }
         }
 
+        /// Key holding this service's own profile value in `props`.
+        ///
+        /// Distinct from the signed-in user's profile. The official app builds
+        /// its client for these hosts as
+        /// `Qr({baseURL, profile: Number(props["iae.profile"])})`, and `Qr`
+        /// presets `poliAuthProfile` from that — so calls to `iae` and
+        /// `libretto` carry the *service* profile (`0`), not the user's.
+        var profileKey: String? {
+            switch self {
+            case .iae: "iae.profile"
+            case .libretto: "libretto.profile"
+            case .app, .agenda, .weBeep: nil
+            }
+        }
+
+        /// Service profile used until `props` loads. `nil` means "use the
+        /// signed-in user's profile".
+        var fallbackProfile: Int? {
+            switch self {
+            case .iae, .libretto: 0
+            case .app, .agenda, .weBeep: nil
+            }
+        }
+
         /// Used until `props` is loaded, and if the fetch fails.
         /// Current as of 2026-09-11.
         var fallback: URL {
@@ -120,6 +144,10 @@ final class ServiceDirectory {
     }
 
     private(set) var resolved: [Service: URL] = [:]
+    /// Per-service `poliAuthProfile` values read from `props`.
+    private(set) var serviceProfiles: [Service: Int] = [:]
+    /// The signed-in account's secondary profile, if it has one.
+    var dProfile: String?
     private(set) var oauth: OAuthParams = .fallback
     private(set) var didLoad = false
 
@@ -132,6 +160,15 @@ final class ServiceDirectory {
 
     func baseURL(for service: Service) -> URL {
         resolved[service] ?? service.fallback
+    }
+
+    /// The `poliAuthProfile` to send for a service.
+    ///
+    /// A service that declares its own profile in `props` wins; otherwise the
+    /// signed-in user's profile is used, which is what the official app's
+    /// interceptor falls back to.
+    func profile(for service: Service, userProfile: Int) -> Int {
+        serviceProfiles[service] ?? service.fallbackProfile ?? userProfile
     }
 
     /// Fetches the service map and OAuth config. Both are unauthenticated, so
@@ -155,6 +192,15 @@ final class ServiceDirectory {
             }
 
             let props = try JSONDecoder().decode([String: String].self, from: data)
+            var profiles: [Service: Int] = [:]
+            for service in Service.allCases {
+                if let key = service.profileKey,
+                   let raw = props[key], let value = Int(raw) {
+                    profiles[service] = value
+                }
+            }
+            serviceProfiles = profiles
+
             var map: [Service: URL] = [:]
             for service in Service.allCases {
                 guard

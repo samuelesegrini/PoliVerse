@@ -219,3 +219,52 @@ struct AuthorizeEncodingTests {
                 == "https://polimiapp.polimi.it/polimi_app/app")
     }
 }
+
+/// The official interceptor:
+///
+///     if (headers[PROFILE_PARAM]   === undefined) headers[PROFILE_PARAM]   = profile?.profile  ?? 0
+///     if (headers[D_PROFILE_PARAM] === undefined) headers[D_PROFILE_PARAM] = profile?.dprofile ?? "JAF_D_PROFILE_VUOTO"
+///
+/// and for iae/libretto the client is created as
+/// `Qr({baseURL, profile: Number(props["iae.profile"])})`, which presets the
+/// first header to the service's own profile.
+@Suite("Profile headers")
+@MainActor
+struct ProfileHeaderTests {
+    @Test("iae and libretto carry the service profile, not the user's")
+    func serviceProfileWins() {
+        let directory = ServiceDirectory()
+        #expect(directory.profile(for: .iae, userProfile: 1) == 0)
+        #expect(directory.profile(for: .libretto, userProfile: 1) == 0)
+    }
+
+    /// Clients that preset nothing fall through to the user's profile — which
+    /// is what the interceptor's `?? 0` branch is for.
+    @Test("Hosts without a service profile use the user's")
+    func userProfileFallback() {
+        let directory = ServiceDirectory()
+        #expect(directory.profile(for: .app, userProfile: 1) == 1)
+        #expect(directory.profile(for: .agenda, userProfile: 1) == 1)
+        #expect(directory.profile(for: .agenda, userProfile: 4) == 4)
+    }
+
+    /// An account with no secondary profile still sends the header — carrying a
+    /// literal sentinel, not an empty value.
+    @Test("The empty secondary profile is a sentinel, not nothing")
+    func emptyDProfileSentinel() {
+        #expect(PoliMiProfile.emptyDProfile == "JAF_D_PROFILE_VUOTO")
+    }
+
+    @Test("The profiles payload decodes, dprofile included")
+    func profilesPayloadDecodes() throws {
+        let json = """
+        [{"profile":1,"description":"Student","dprofile":null,
+          "profileDescription":"Student","dprofileDescription":null,
+          "dprofileValue":null}]
+        """
+        let list = try JSONDecoder().decode([PoliMiProfileDTO].self, from: Data(json.utf8))
+        #expect(list.count == 1)
+        #expect(list[0].identifier == 1)
+        #expect(list[0].dprofile == nil)
+    }
+}

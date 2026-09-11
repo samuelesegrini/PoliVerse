@@ -280,16 +280,32 @@ nonisolated final class PoliMiAPI: Sendable {
             //   n.headers.set("Authorization", `Bearer ${t}`)
             //   a && n.headers.set("poliAuthProfile", `${a.profile}`)
             //
-            // The value is the *user's* profile, from `/jaf/internal/profiles`:
+            // Both profile headers, exactly as the official interceptor sets
+            // them:
             //
-            //   L_e = n => n === 1   // student
-            //   T_e = n => n === 4   // alumni
+            //   if (headers[PROFILE_PARAM]   === undefined) headers[PROFILE_PARAM]   = profile?.profile  ?? 0
+            //   if (headers[D_PROFILE_PARAM] === undefined) headers[D_PROFILE_PARAM] = profile?.dprofile ?? "JAF_D_PROFILE_VUOTO"
             //
-            // Not to be confused with the `iae.profile` / `libretto.profile`
-            // in `props`, which are 0 and mean something else entirely — they
-            // decide whether a call appends a `matricola` query parameter.
-            // Sending 0 here identifies no known profile at all.
-            urlRequest.setValue(String(await profileID()), forHTTPHeaderField: "poliAuthProfile")
+            // Two things that are easy to get wrong and were:
+            //
+            // `poliAuthD_profile` is *always* sent. When the account has no
+            // secondary profile — ours reports `dprofile: null` — it carries
+            // the literal `JAF_D_PROFILE_VUOTO`, not nothing.
+            //
+            // `poliAuthProfile` is not always the user's. For `iae` and
+            // `libretto` the official client is built as
+            // `Qr({baseURL, profile: Number(props["iae.profile"])})`, which
+            // presets the header to the *service's* profile (`0`); the user's
+            // profile is only the fallback for clients that set none.
+            let user = await profileID()
+            let profile = await MainActor.run {
+                directory.profile(for: request.host, userProfile: user)
+            }
+            urlRequest.setValue(String(profile), forHTTPHeaderField: "poliAuthProfile")
+            urlRequest.setValue(
+                await MainActor.run { directory.dProfile } ?? PoliMiProfile.emptyDProfile,
+                forHTTPHeaderField: "poliAuthD_profile"
+            )
         }
         urlRequest.timeoutInterval = 30
         return urlRequest
