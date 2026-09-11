@@ -62,8 +62,8 @@ private struct NewsRow: View {
                         .padding(.vertical, 2)
                         .background(Theme.brand.opacity(0.12), in: .capsule)
                 }
-                if let published = item.published {
-                    Text(published.formatted(.relative(presentation: .named)))
+                if let date = item.displayDate {
+                    Text(date.formatted(.relative(presentation: .named)))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -97,7 +97,14 @@ struct NewsDetailView: View {
                 Text(item.title)
                     .font(.title3.weight(.semibold))
 
-                if let published = item.published {
+                if let date = item.eventStart {
+                    // An announced event gets its full span, since "when" is
+                    // the whole question for a seminar or a deadline.
+                    Label(NewsItem.span(from: date, to: item.eventEnd),
+                          systemImage: "calendar")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Theme.brand)
+                } else if let published = item.published {
                     Text(published.formatted(date: .long, time: .omitted))
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -167,8 +174,8 @@ private struct NewsHighlightCard: View {
                     .font(.subheadline.weight(.medium))
                     .multilineTextAlignment(.leading)
                     .lineLimit(2)
-                if let published = item.published {
-                    Text(published.formatted(.relative(presentation: .named)))
+                if let date = item.displayDate {
+                    Text(date.formatted(.relative(presentation: .named)))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }

@@ -53,7 +53,15 @@ struct FreeRoomsView: View {
 
     @ViewBuilder
     private var content: some View {
-        if let message = aule.errorMessage {
+        if aule.notEntitled {
+            // Said plainly rather than as a generic failure: this is a fact
+            // about the account, not a fault, and no amount of retrying or
+            // signing in again will change it.
+            ContentUnavailableView(
+                "Non disponibile per il tuo profilo",
+                systemImage: "lock",
+                description: Text("Il Politecnico riserva il servizio prenotazioni aule ad altri profili. L'elenco completo delle aule resta consultabile."))
+        } else if let message = aule.errorMessage {
             ContentUnavailableView("Aule non disponibili",
                                    systemImage: "building.2",
                                    description: Text(message))

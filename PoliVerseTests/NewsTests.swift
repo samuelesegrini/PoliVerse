@@ -90,3 +90,65 @@ struct NewsTests {
         #expect(!item.isCurrent(now: now))
     }
 }
+
+/// The real payload, confirmed from a device run on 2026-09-11. The first cut
+/// guessed `date_start` from the agenda's events and read no date at all — all
+/// forty items came back undated and therefore unsorted.
+@Suite("News wire shape")
+struct NewsWireShapeTests {
+    private func items(_ json: String) -> [NewsItem] {
+        (try? JSONDecoder().decode(NewsResponse.self, from: Data(json.utf8)))?.items ?? []
+    }
+
+    private var real: String {
+        """
+        [{"news_id": 4412, "news_source_id": 3,
+          "title": {"it": "Seminario", "en": "Seminar"},
+          "text": {"it": "<p>Aula Rogers.</p>", "en": "<p>Rogers.</p>"},
+          "publication_start": "2026-09-01T00:00:00",
+          "publication_end": "2026-10-01T00:00:00",
+          "event_start": "2026-09-20T17:00:00",
+          "event_end": "2026-09-20T19:00:00",
+          "show_agenda": true,
+          "tags": [{"event_tag_id": 6, "denomination": {"it": "Eventi"}}]}]
+        """
+    }
+
+    @Test("Every field of the real shape is read")
+    func realShape() {
+        let parsed = items(real)
+        #expect(parsed.count == 1)
+        #expect(parsed[0].id == "4412")
+        #expect(parsed[0].title == "Seminario")
+        #expect(parsed[0].summary == "Aula Rogers.")
+        #expect(parsed[0].published != nil)
+        #expect(parsed[0].expires != nil)
+        #expect(parsed[0].eventStart != nil)
+        #expect(parsed[0].eventEnd != nil)
+        #expect(parsed[0].category == "Eventi")
+    }
+
+    /// The two date pairs mean different things, and confusing them would
+    /// retire a notice about next month's seminar the moment it went up.
+    @Test("Publication and event dates are kept apart")
+    func datePairsDistinct() {
+        let item = items(real)[0]
+        #expect(item.published != item.eventStart)
+        // The event is what a reader wants to know about.
+        #expect(item.displayDate == item.eventStart)
+    }
+
+    @Test("An item is retired by publication_end, not by its event date")
+    func expiryUsesPublicationEnd() {
+        let item = items(real)[0]
+        let afterEvent = Date(timeIntervalSince1970: 1_758_400_000)   // 2025
+        #expect(item.isCurrent(now: afterEvent))
+    }
+
+    @Test("A span across one day is not repeated")
+    func singleDaySpan() {
+        let item = items(real)[0]
+        let text = NewsItem.span(from: item.eventStart!, to: item.eventEnd!)
+        #expect(!text.contains("–"))
+    }
+}

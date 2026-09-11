@@ -29,6 +29,12 @@ nonisolated struct APIRequest {
     /// `matricola` would simply not work. Encoding the rule once means adding
     /// a service does not mean rediscovering it.
     var sendsMatricola: Bool = false
+    /// Overrides `poliAuthProfile` for this one call.
+    ///
+    /// Exists for `ws_aule`, whose configured profile (3) is a profile the
+    /// signed-in account may not hold — a student has profile 1 — and the
+    /// service answers "Utente non abilitato" rather than saying so.
+    var profileOverride: Int?
 }
 
 nonisolated enum APIError: LocalizedError {
@@ -36,6 +42,10 @@ nonisolated enum APIError: LocalizedError {
     /// The path returned 404 — the service moved or was withdrawn, which is a
     /// different problem from the network being down and deserves saying so.
     case endpointGone(String)
+    /// The account is not permitted to use this service, whatever the token
+    /// says. Permanent for this user, so retrying or re-authenticating is
+    /// pointless — the UI should say so rather than offer a login.
+    case notEntitled(String, body: String)
     /// The token is valid but was not minted for this service.
     ///
     /// The backends report it as 401 with
@@ -51,6 +61,7 @@ nonisolated enum APIError: LocalizedError {
         switch self {
         case .badStatus(let code, _): "Il server ha risposto \(code)."
         case .endpointGone: "Questo servizio del Politecnico non è più disponibile a questo indirizzo."
+        case .notEntitled: "Il tuo profilo non ha accesso a questo servizio del Politecnico."
         case .invalidScope: "L'accesso è scaduto. Accedi di nuovo per continuare."
         case .transport: "Impossibile raggiungere i server del Politecnico."
         case .decoding: "Risposta del server non leggibile."
@@ -62,7 +73,7 @@ nonisolated enum APIError: LocalizedError {
     /// problem.
     var isPermanent: Bool {
         switch self {
-        case .endpointGone, .invalidScope: true
+        case .endpointGone, .invalidScope, .notEntitled: true
         case .transport(let error): (error as NSError).code == NSURLErrorCannotFindHost
         default: false
         }
@@ -123,8 +134,22 @@ nonisolated final class PoliMiAPI: Sendable {
     /// are the same 401 used for an ordinary expired token, and the two need
     /// opposite responses: refresh for one, re-login for the other.
     static func isInvalidScope(_ body: String) -> Bool {
-        body.localizedCaseInsensitiveContains("Scope OAuth non valido")
+        guard !isNotEntitled(body) else { return false }
+        return body.localizedCaseInsensitiveContains("Scope OAuth non valido")
             || body.localizedCaseInsensitiveContains("JafUnauthorizedException")
+    }
+
+    /// "This account may not use this service", as distinct from "this token
+    /// is no good".
+    ///
+    /// Both arrive as 401 `JafUnauthorizedException`, so the generic check
+    /// above claimed the session had expired and sent the user back to login —
+    /// where nothing would change, because signing in again grants the same
+    /// account the same services. `ws_aule` is the case that exposed it: its
+    /// configured profile is 3, and a student holds profile 1.
+    static func isNotEntitled(_ body: String) -> Bool {
+        body.localizedCaseInsensitiveContains("Utente non abilitato")
+            || body.localizedCaseInsensitiveContains("Code: 6")
     }
 
     func send<T: Decodable>(_ request: APIRequest, as type: T.Type) async throws -> T {
@@ -166,6 +191,13 @@ nonisolated final class PoliMiAPI: Sendable {
                     didRetryAuth = true
                     _ = try await tokens.forceRefresh()
                     continue
+
+                case 401 where Self.isNotEntitled(String(data: data, encoding: .utf8) ?? ""):
+                    let denied = String(data: data, encoding: .utf8) ?? ""
+                    log.error("Service not permitted for this account — path=\(request.path, privacy: .public)")
+                    // Deliberately no `onInvalidScope`: the token is fine and
+                    // logging in again would grant exactly the same access.
+                    throw APIError.notEntitled(request.path, body: String(denied.prefix(200)))
 
                 case 401 where Self.isInvalidScope(String(data: data, encoding: .utf8) ?? ""):
                     let body = String(data: data, encoding: .utf8) ?? ""
@@ -329,9 +361,10 @@ nonisolated final class PoliMiAPI: Sendable {
             // presets the header to the *service's* profile (`0`); the user's
             // profile is only the fallback for clients that set none.
             let user = await profileID()
-            let profile = await MainActor.run {
+            let serviceProfile = await MainActor.run {
                 directory.profile(for: request.host, userProfile: user)
             }
+            let profile = request.profileOverride ?? serviceProfile
             urlRequest.setValue(String(profile), forHTTPHeaderField: "poliAuthProfile")
 
             // The two official clients disagree about this header, so match

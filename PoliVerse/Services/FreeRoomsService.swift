@@ -41,6 +41,19 @@ final class FreeRoomsService {
     private(set) var isLoading = false
     private(set) var errorMessage: String?
     private(set) var payloadUnreadable = false
+    /// Set when the Politecnico refuses this account the service outright.
+    /// Not a failure to retry, and not a reason to offer a login.
+    private(set) var notEntitled = false
+
+    /// The profile that worked, once one has.
+    ///
+    /// `props` says `ws_aule.profile = 3` and the official client presets
+    /// that, but 3 is a profile a student does not hold — this account
+    /// reports only profile 1, "Student". The service answers "Utente non
+    /// abilitato" rather than naming the problem, so the service profile is
+    /// tried first (matching the official client) and the account's own
+    /// profile second, and whichever answers is remembered.
+    private var workingProfile: Int?
 
     /// The day being shown, and the campus.
     var day: Date = .now
@@ -95,14 +108,42 @@ final class FreeRoomsService {
             return
         }
         do {
-            let data = try await session.api.send(
+            let data = try await fetch(
                 APIRequest(host: .wsAule, path: "/cata/sedi", sendsMatricola: true))
             log.notice("sedi payload shape: \(JSONShape.describe(data), privacy: .public)")
             sites = try JSONDecoder().decode(SediResponse.self, from: data).sites
             log.notice("sedi: \(self.sites.count, privacy: .public) campuses")
             if siteID == nil { siteID = sites.first?.id }
+        } catch let error as APIError {
+            if case .notEntitled = error { notEntitled = true }
+            log.error("Sedi failed: \(error.localizedDescription)")
         } catch {
             log.error("Sedi failed: \(error.localizedDescription)")
+        }
+    }
+
+    /// Sends a `ws_aule` request, trying the account's own profile if the
+    /// service's configured one is refused.
+    ///
+    /// Only the first refusal costs an extra round trip: the profile that
+    /// works is remembered for the rest of the session.
+    private func fetch(_ request: APIRequest) async throws -> Data {
+        var attempt = request
+        attempt.profileOverride = workingProfile
+
+        do {
+            let data = try await session.api.send(attempt)
+            return data
+        } catch let error as APIError {
+            guard case .notEntitled = error, workingProfile == nil else { throw error }
+
+            // Second and last attempt: the signed-in user's own profile.
+            let mine = session.profileID
+            log.notice("ws_aule refused profile 3; retrying with \(mine, privacy: .public)")
+            attempt.profileOverride = mine
+            let data = try await session.api.send(attempt)
+            workingProfile = mine
+            return data
         }
     }
 
@@ -121,6 +162,10 @@ final class FreeRoomsService {
         }
 
         await loadSites()
+        guard !notEntitled else {
+            errorMessage = nil
+            return
+        }
         guard let siteID else {
             errorMessage = "Nessuna sede disponibile."
             return
@@ -130,7 +175,7 @@ final class FreeRoomsService {
             // One day at a time: `inizio` and `fine` are dates, and the
             // official app passes the same value for both when it wants one.
             let stamp = PoliMiDate.queryString(day)
-            let data = try await session.api.send(
+            let data = try await fetch(
                 APIRequest(
                     host: .wsAule,
                     path: "/cata/aule",
@@ -151,6 +196,10 @@ final class FreeRoomsService {
             let booked = rooms.reduce(0) { $0 + $1.bookings.count }
             log.notice("aule: \(self.rooms.count, privacy: .public) rooms, \(booked, privacy: .public) bookings, \(self.freeRooms().count, privacy: .public) with free time")
             loadedKey = key
+        } catch let error as APIError {
+            if case .notEntitled = error { notEntitled = true }
+            log.error("Aule failed: \(error.localizedDescription)")
+            errorMessage = error.localizedDescription
         } catch {
             log.error("Aule failed: \(error.localizedDescription)")
             errorMessage = error.localizedDescription

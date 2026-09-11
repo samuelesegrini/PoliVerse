@@ -6,11 +6,21 @@ import Foundation
 /// optional `show_in_agenda` and `filter_by_interests` flags. The official app
 /// asks for today through a year ahead.
 ///
-/// The path and its query parameters are VERIFIED from the official bundle;
-/// the **response body is not**. It sits on the agenda service beside
-/// `/v1/matricola/{m}/events`, whose shape *is* known, so the field names
-/// there — `title: {it, en}`, `date_start`, `event_id` — head the candidate
-/// lists as the most likely answer rather than being assumed to be the answer.
+/// The response shape is now VERIFIED against a real account (2026-09-11):
+///
+/// ```json
+/// {"news_id": 123, "news_source_id": 4,
+///  "title": {"it": "…", "en": "…"}, "text": {"it": "…", "en": "…"},
+///  "publication_start": "…", "publication_end": "…",
+///  "event_start": "…", "event_end": "…",
+///  "show_agenda": true, "tags": [{…}]}
+/// ```
+///
+/// Two distinct date pairs, which the first cut of this file missed entirely
+/// by guessing `date_start` from the agenda's events: `publication_*` is when
+/// the item is on the board, `event_*` is when the thing it announces
+/// happens. Getting them confused would retire a notice about next month's
+/// seminar the moment it was published.
 nonisolated struct NewsItem: Identifiable, Sendable, Hashable {
     let id: String
     let title: String
@@ -20,9 +30,17 @@ nonisolated struct NewsItem: Identifiable, Sendable, Hashable {
     /// the detail view can render bold and links.
     var summaryHTML: String?
     let published: Date?
-    /// Where the news runs out: news carries an end date on the agenda host,
-    /// and something already over is not news.
+    /// When the item stops being posted — `publication_end`.
     let expires: Date?
+    /// When the thing being announced happens, which is a different date from
+    /// when the announcement went up and is often the one worth showing.
+    var eventStart: Date?
+    var eventEnd: Date?
+
+    /// The date to show: the event where there is one, otherwise publication.
+    /// A seminar's date is what a reader wants; the day the notice went up is
+    /// only interesting when it announces nothing scheduled.
+    var displayDate: Date? { eventStart ?? published }
     let category: String?
     let link: URL?
     let imageURL: URL?
@@ -60,14 +78,21 @@ nonisolated extension NewsItem {
             title: title ?? "Notizia",
             summary: rawSummary.map(HTMLText.plainIfNeeded)?.nonEmpty,
             summaryHTML: Notice.markup(rawSummary),
+            // `publication_start` is the real key; the rest are kept as
+            // fallbacks for the sibling endpoints that share this reader.
             published: fields.firstValue([
-                "date_start", "dateStart", "data_inizio", "date", "data",
-                "published_at", "data_pubblicazione", "start_date",
-                "created_at", "timestamp",
+                "publication_start", "date_start", "data_inizio", "date",
+                "data", "published_at", "data_pubblicazione", "created_at",
             ]).flatMap(Notice.date(from:)),
             expires: fields.firstValue([
-                "date_end", "dateEnd", "data_fine", "end_date", "expires_at",
+                "publication_end", "date_end", "data_fine", "expires_at",
                 "data_scadenza", "valid_until",
+            ]).flatMap(Notice.date(from:)),
+            eventStart: fields.firstValue([
+                "event_start", "data_evento", "start_date",
+            ]).flatMap(Notice.date(from:)),
+            eventEnd: fields.firstValue([
+                "event_end", "end_date",
             ]).flatMap(Notice.date(from:)),
             category: NewsItem.category(in: fields),
             link: fields.firstValue([
@@ -79,6 +104,15 @@ nonisolated extension NewsItem {
                 "picture", "media_url",
             ]).flatMap(NewsItem.url(from:))
         )
+    }
+
+    /// "10 marzo" or "10–12 marzo", skipping an end that adds nothing.
+    static func span(from start: Date, to end: Date?) -> String {
+        let startText = start.formatted(date: .long, time: .omitted)
+        guard let end, !PoliMiDate.romeCalendar.isDate(end, inSameDayAs: start) else {
+            return startText
+        }
+        return "\(startText) – \(end.formatted(date: .long, time: .omitted))"
     }
 
     /// The agenda expresses a category as a nested `{type_dn: {it, en}}` or as

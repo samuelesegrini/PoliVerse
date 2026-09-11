@@ -102,15 +102,22 @@ parameters VERIFIED from the bundle, response body not. `persona`, not
 `matricola/{m}`: the token alone identifies the reader, so no matricola is
 sent.
 
-It sits beside `/v1/matricola/{m}/events` on the same service, whose shape
-*is* known, so the agenda's names (`title: {it,en}`, `date_start`, `date_end`,
-`type.type_dn`, `tags[].denomination`) lead the candidate lists in `NewsItem`
-— as the likeliest answer, not an assumed one. Shape is logged the same way:
-`news payload shape: …`, keys and types only.
+Shape **VERIFIED** 2026-09-11, 40 items on a real account:
 
-An item is retired only by an *explicit* `date_end` in the past. Treating a
-missing one as expired would empty the screen the moment a field-name guess is
-wrong, which is the failure this design exists to avoid.
+```json
+{"news_id": 4412, "news_source_id": 3,
+ "title": {"it","en"}, "text": {"it","en"},
+ "publication_start": "…", "publication_end": "…",
+ "event_start": "…", "event_end": "…",
+ "show_agenda": true, "tags": [{…}]}
+```
+
+The body is `text`, not `description`. **There are two date pairs**, and the
+first cut of this app read neither: it guessed `date_start` from the agenda's
+events, so all forty items came back undated and unsorted. `publication_*` is
+when the item is on the board; `event_*` is when the announced thing happens.
+Expiry uses `publication_end`; the date shown is `event_start` where there is
+one, because "when is the seminar" is the question a reader has.
 
 ## Notifications: live, but shape unknown
 
@@ -125,8 +132,12 @@ matched ignoring case and underscores, and accepts either a bare array or an
 array behind any wrapper key. A wrong guess costs one field, not the screen.
 
 `NoticeService` logs the payload's **shape** — keys and types, never values —
-as `notifications payload shape: …`. One run on a real account replaces every
-guess above with fact. Values are deliberately excluded: a notification is the
+as `notifications payload shape: …`.
+
+A real account returned `array[0]` on 2026-09-11: the endpoint works and the
+inbox was simply empty, so the field names above remain unconfirmed. The empty
+case is at least verified to render as an empty inbox rather than as an
+error. Values are deliberately excluded: a notification is the
 student's own mail, and the log gets pasted into bug reports.
 
 Once a real shape is known, narrow the candidate lists to the true names and
@@ -236,8 +247,27 @@ official client appends `matricola` as a query parameter whenever a service's
 profile is non-zero, a rule `APIRequest.sendsMatricola` had encoded but never
 applied, because `iae` and `libretto` both report 0.
 
-Response shape is **not** verified. It is read leniently and logged as
-`aule payload shape:` / `sedi payload shape:`.
+**A student account is refused.** `/cata/sedi` with the service profile
+answers 401:
+
+```json
+{"statusCode":401,
+ "message":"jaf.model2.exceptions.JafUnauthorizedException: Utente non abilitato Code: 6"}
+```
+
+The token is fine — every other service accepts it in the same session. This
+is the *account* lacking the service, almost certainly because profile 3 is
+not a profile a student holds (this one reports only `1, Student`), and
+`registroLezioni` is a teaching-staff screen. The app tries the service
+profile first, then the account's own, and says plainly when both are refused.
+
+Note the classification trap: this arrives as `JafUnauthorizedException`, the
+same exception as a genuinely bad token, so the scope check claimed the
+session had expired and offered a login that would change nothing. "Utente non
+abilitato" / "Code: 6" is now matched first.
+
+Response shape is still **not** verified — no account here can reach it. It is
+read leniently and logged as `aule payload shape:` / `sedi payload shape:`.
 
 Free time is **derived**, not requested: the service says what is booked, and
 the gaps between bookings are the answer.

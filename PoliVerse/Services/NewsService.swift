@@ -73,7 +73,7 @@ final class NewsService {
             let response = try JSONDecoder().decode(NewsResponse.self, from: data)
             let current = response.items.filter { $0.isCurrent(now: now) }
             items = current.sorted {
-                ($0.published ?? .distantPast) > ($1.published ?? .distantPast)
+                ($0.displayDate ?? .distantPast) > ($1.displayDate ?? .distantPast)
             }
             payloadUnreadable = response.items.isEmpty
                 && !(response.raw.arrayValue?.isEmpty ?? false)
