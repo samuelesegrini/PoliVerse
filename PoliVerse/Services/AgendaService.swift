@@ -12,10 +12,10 @@ import OSLog
 /// `n_events` in its own 400 response, so the parameters, and very likely the
 /// response shape, are unchanged.
 ///
-/// The endpoint is count-based, not range-based: it returns the next `n_events`
-/// items from `start_date` with no end date, so asking for "this week" means
-/// over-fetching and filtering client-side. PoliFemo requests 200 and does the
-/// same.
+/// The endpoint filters server-side: alongside `start_date` and `n_events` it
+/// accepts `end_date`, which PoliFemo's version did not use. The official app
+/// asks for `start_date = today, end_date = today + 1 month`, so that is what
+/// this does — no more fetching 200 events and discarding most of them.
 @Observable
 final class AgendaService {
     private(set) var events: [AgendaEvent] = []
@@ -27,9 +27,12 @@ final class AgendaService {
     private let session: Session
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "agenda")
 
-    /// Matches PoliFemo's page size. Large enough for several weeks of a full
-    /// timetable, small enough to stay a quick request.
+    /// A cap rather than a target, now that the range is filtered server-side.
+    /// A full timetable month is well under this.
     private let pageSize = 200
+
+    /// How far ahead to ask for, matching the official app.
+    private let window = DateComponents(month: 1)
 
     init(session: Session) {
         self.session = session
@@ -59,6 +62,7 @@ final class AgendaService {
                     path: "/v1/matricola/\(matricola)/events",
                     query: [
                         .init(name: "start_date", value: PoliMiDate.queryString(startDate)),
+                        .init(name: "end_date", value: PoliMiDate.queryString(endDate(from: startDate))),
                         .init(name: "n_events", value: String(pageSize)),
                     ]
                 ),
@@ -80,6 +84,10 @@ final class AgendaService {
             // someone to a room that does not exist.
             events = []
         }
+    }
+
+    private func endDate(from start: Date) -> Date {
+        PoliMiDate.romeCalendar.date(byAdding: window, to: start) ?? start
     }
 
     /// Events on a given day, in Rome time.

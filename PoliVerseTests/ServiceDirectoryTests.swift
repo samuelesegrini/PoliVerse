@@ -111,18 +111,42 @@ struct OAuthScopeTests {
         #expect(value("scope") == "openid something_new")
     }
 
-    /// Without `al_id_srv` the IdP mints a token the backends refuse with
-    /// "Scope OAuth non valido … Code: 33", however correct the scope string.
-    @Test("The authorize request identifies the service")
-    func authorizationCarriesServiceID() throws {
+    /// The official app builds this with `URLSearchParams`, so every key is
+    /// present even when empty. Matching it exactly removes a whole class of
+    /// "maybe it is the missing parameter" guesswork.
+    ///
+    /// `al_id_srv` is deliberately empty: probing the IdP with it empty and
+    /// with `2428` returns a byte-identical redirect, signature included, so
+    /// the parameter is dropped and a non-empty value fixes nothing.
+    @Test("The authorize request mirrors the official one")
+    func authorizationMirrorsOfficial() throws {
         let components = try #require(URLComponents(
             url: PoliMiOAuth.authorizationURL(), resolvingAgainstBaseURL: false))
         let items = try #require(components.queryItems)
         func value(_ n: String) -> String? { items.first { $0.name == n }?.value }
 
-        #expect(value("al_id_srv") == "2428")
+        for key in ["client_id", "redirect_uri", "access_type", "response_type",
+                    "state", "matricola", "al_pj_matricola", "access_token",
+                    "scope", "al_id_srv", "al_id_srv_chiamante"] {
+            #expect(items.contains { $0.name == key }, "authorize must send \(key)")
+        }
+
+        #expect(value("al_id_srv") == "")
+        #expect(value("matricola") == "")
+        #expect(value("access_token") == "")
         #expect(value("state")?.isEmpty == false)
-        #expect(items.contains { $0.name == "al_id_srv_chiamante" })
+        // No trailing slash, no path, no query — the official value exactly.
+        #expect(value("redirect_uri") == "https://polimiapp.polimi.it/polimi_app/app")
+    }
+
+    /// The logout link ends the SSO session, which is what actually forces a
+    /// new grant; without it the IdP can replay the old one.
+    @Test("The logout link request is public and names the service")
+    func logoutLinkRequest() {
+        let request = PoliMiOAuth.logoutLinkRequest()
+        #expect(request.authenticated == false)
+        #expect(request.path == "/jaf/public/linklogout")
+        #expect(request.query.contains { $0.name == "logout_service_id" && $0.value == "2428" })
     }
 
     /// An expired token and a wrongly-scoped one are both 401 and need opposite

@@ -15,6 +15,20 @@ nonisolated struct APIRequest {
     var query: [URLQueryItem] = []
     var body: Data?
     var authenticated: Bool = true
+
+    /// Appends `matricola` when the service's configured profile is non-zero.
+    ///
+    /// The official client applies this rule to every call:
+    ///
+    /// ```js
+    /// profile === 0 ? client.get(path) : client.get(path, {params: {matricola}})
+    /// ```
+    ///
+    /// `props` reports `iae.profile` and `libretto.profile` as `0`, so those
+    /// need nothing — but `ws_aule.profile` is `3`, and a rooms call without
+    /// `matricola` would simply not work. Encoding the rule once means adding
+    /// a service does not mean rediscovering it.
+    var sendsMatricola: Bool = false
 }
 
 nonisolated enum APIError: LocalizedError {

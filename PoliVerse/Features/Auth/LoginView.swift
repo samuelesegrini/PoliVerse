@@ -7,6 +7,8 @@ struct LoginView: View {
     @State private var showingWeb = false
     @State private var webError: String?
     @State private var showingCieIDMissing = false
+    @State private var logoutURL: URL?
+    @State private var isPreparing = false
 
     var body: some View {
         VStack(spacing: 24) {
@@ -33,13 +35,27 @@ struct LoginView: View {
             } else {
                 Button {
                     webError = nil
-                    showingWeb = true
+                    isPreparing = true
+                    Task {
+                        // Clears any stored token and ends the SSO session, so
+                        // the IdP has to mint a new grant rather than replay
+                        // the old one.
+                        logoutURL = await session.prepareForLogin()
+                        isPreparing = false
+                        showingWeb = true
+                    }
                 } label: {
-                    Text("Accedi con account Polimi")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                    Group {
+                        if isPreparing {
+                            ProgressView().tint(Theme.onAccent)
+                        } else {
+                            Text("Accedi con account Polimi").font(.headline)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
                 }
+                .disabled(isPreparing)
                 .background(Theme.brand, in: .capsule)
                 .foregroundStyle(Theme.onAccent)
                 .buttonStyle(.plain)
@@ -63,6 +79,7 @@ struct LoginView: View {
                 PoliMiLoginWebView(
                     oauthParams: session.directory.oauth,
                     router: cieID,
+                    logoutURL: logoutURL,
                     onCode: { code in
                         showingWeb = false
                         Task { await session.completeLogin(authCode: code) }

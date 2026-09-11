@@ -133,6 +133,43 @@ final class Session {
         }
     }
 
+    /// Prepares for a genuinely fresh login.
+    ///
+    /// Does two things the user cannot do from inside the app:
+    ///
+    /// 1. Deletes any stored token. A token's scopes are fixed at creation and
+    ///    refreshing never widens them, so carrying one across a scope change
+    ///    keeps the old grant alive forever.
+    /// 2. Resolves the `aunicalogin` logout URL, so the login can end the SSO
+    ///    session before authorizing. With that session live the IdP may
+    ///    re-issue a code against the existing grant and ignore the wider scope
+    ///    we ask for — which is how "log in again" can return the same narrow
+    ///    token.
+    ///
+    /// - Returns: the logout URL, or nil to authorize directly.
+    func prepareForLogin() async -> URL? {
+        await directory.load()
+        await tokens.clear()
+
+        do {
+            let link = try await api.send(
+                PoliMiOAuth.logoutLinkRequest(serviceID: directory.oauth.serviceID),
+                as: PoliMiOAuth.LogoutLink.self
+            )
+            guard let target = link.targetURL, let url = URL(string: target) else {
+                log.notice("No SSO logout URL returned; authorizing directly")
+                return nil
+            }
+            log.info("Ending SSO session before authorizing")
+            return url
+        } catch {
+            // Not fatal: without it the login may reuse the old grant, but it
+            // is still better to try than to block the user entirely.
+            log.error("Could not resolve the SSO logout URL: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
     /// Exchanges the authcode from the web flow for a token pair.
     func completeLogin(authCode: String) async {
         state = .exchangingCode
@@ -161,6 +198,11 @@ final class Session {
 
     func signOut() async {
         serviceAuthorizationFailed = false
+        // Server-side invalidation, as the official app does. Best effort: the
+        // local token is dropped either way.
+        if await tokens.hasToken {
+            _ = try? await api.send(PoliMiOAuth.revokeRequest)
+        }
         await tokens.clear()
         state = useMockData ? .signedIn(MockData.student) : .signedOut
     }

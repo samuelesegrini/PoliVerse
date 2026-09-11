@@ -25,6 +25,37 @@ nonisolated enum PoliMiOAuth {
     /// without the `agenda` scope reaches the right endpoint and is refused
     /// with 401. Asking the Politecnico what to request means a scope change
     /// upstream costs a fetch, not a broken feature.
+    /// Public logout endpoint. Returns a `targetURL` on `aunicalogin` that
+    /// ends the **SSO session**, not just the app's own.
+    ///
+    /// This matters more than it looks. With a live `aunicalogin` session the
+    /// IdP can answer a new authorize request by re-issuing a code against the
+    /// *existing* grant, ignoring the widened `scope` — so a user who "logs in
+    /// again" gets the old narrow token back and the services keep returning
+    /// "Scope OAuth non valido". Ending the SSO session is precisely what the
+    /// server means by "effettuare logout/login".
+    static func logoutLinkRequest(serviceID: String = "2428") -> APIRequest {
+        APIRequest(
+            host: .app,
+            path: "/jaf/public/linklogout",
+            query: [
+                .init(name: "lang", value: "it"),
+                .init(name: "logout_service_id", value: serviceID),
+            ],
+            authenticated: false
+        )
+    }
+
+    nonisolated struct LogoutLink: Decodable, Sendable {
+        let targetURL: String?
+    }
+
+    /// Server-side invalidation of the current token, as the official app does
+    /// on logout.
+    static var revokeRequest: APIRequest {
+        APIRequest(host: .app, path: "/jaf/oauth/revoke", method: "POST")
+    }
+
     static func authorizationURL(
         params: ServiceDirectory.OAuthParams = .fallback,
         state: String = UUID().uuidString
@@ -33,17 +64,25 @@ nonisolated enum PoliMiOAuth {
             url: params.authorizationEndpoint ?? URL(string: "https://oauthidp.polimi.it/oauthidp/oauth2/auth")!,
             resolvingAgainstBaseURL: false
         )!
-        // Mirrors the official app's authorize request. `al_id_srv` matters:
-        // without it the IdP mints a token the backends refuse with
-        // "Scope OAuth non valido … Code: 33", regardless of the scope string.
+        // Mirrors the official app's authorize request exactly, including the
+        // keys it leaves empty — it builds them with `URLSearchParams`, so
+        // every key is present regardless.
+        //
+        // `al_id_srv` is sent empty, as the official app does when opened
+        // directly. An earlier guess that a non-empty value was required is
+        // wrong: the IdP drops the parameter entirely, and the redirect it
+        // returns is byte-identical either way.
         components.queryItems = [
             .init(name: "client_id", value: params.clientId),
             .init(name: "redirect_uri", value: redirectURI),
             .init(name: "access_type", value: params.accessType ?? "offline"),
             .init(name: "response_type", value: params.responseType ?? "code"),
             .init(name: "state", value: state),
+            .init(name: "matricola", value: ""),
+            .init(name: "al_pj_matricola", value: ""),
+            .init(name: "access_token", value: ""),
             .init(name: "scope", value: params.scope),
-            .init(name: "al_id_srv", value: params.serviceID),
+            .init(name: "al_id_srv", value: ""),
             .init(name: "al_id_srv_chiamante", value: ""),
         ]
         return components.url!

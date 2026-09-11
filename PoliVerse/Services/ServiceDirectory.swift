@@ -85,16 +85,15 @@ final class ServiceDirectory {
         let responseType: String?
         let accessType: String?
 
-        /// The Politecnico service this token is being minted for.
+        /// PolimiApp's service id, used for the **logout** link.
         ///
-        /// The official app sends `al_id_srv` on the authorize request and the
-        /// IdP appears to scope the token to it. Omitting it yields a token the
-        /// backends reject with "Scope OAuth non valido … Code: 33" even though
-        /// the requested scope string was correct.
+        /// `/jaf/public/app?al_id_srv=2428` answers
+        /// `descSrvCorrente: {"it": "PoliMI APP"}`, and the official bundle
+        /// passes the same value as `logout_service_id`.
         ///
-        /// 2428 is PolimiApp: `/jaf/public/app?al_id_srv=2428` answers
-        /// `descSrvCorrente: {"it": "PoliMI APP"}`. It is also the value the
-        /// bundle hardcodes as `logout_service_id`.
+        /// - Note: it is *not* used on authorize. The IdP drops `al_id_srv`
+        ///   there — probing with it empty and with `2428` returns a
+        ///   byte-identical redirect, signature included.
         var serviceID: String = "2428"
 
         /// Baked-in copy of the live values, used until the fetch lands.

@@ -27,9 +27,12 @@ struct AuthWebView: UIViewRepresentable {
     let onError: (any Error) -> Void
     /// Called when the IdP hand-off fails because CieID is not installed.
     var onCieIDMissing: () -> Void = {}
+    /// Called after each navigation settles, so a host can sequence steps.
+    var onFinished: (URL?) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(router: router, decide: decide, onError: onError, onCieIDMissing: onCieIDMissing)
+        Coordinator(router: router, decide: decide, onError: onError,
+                    onCieIDMissing: onCieIDMissing, onFinished: onFinished)
     }
 
     func makeUIView(context: Context) -> WKWebView {
@@ -73,6 +76,7 @@ struct AuthWebView: UIViewRepresentable {
         private let decide: (URL) -> AuthWebViewDecision
         private let onError: (any Error) -> Void
         private let onCieIDMissing: () -> Void
+        private let onFinished: (URL?) -> Void
         let log = Logger(subsystem: "one.wape.PoliVerse", category: "authweb")
 
         weak var webView: WKWebView?
@@ -90,12 +94,19 @@ struct AuthWebView: UIViewRepresentable {
             router: CieIDRouter,
             decide: @escaping (URL) -> AuthWebViewDecision,
             onError: @escaping (any Error) -> Void,
-            onCieIDMissing: @escaping () -> Void
+            onCieIDMissing: @escaping () -> Void,
+            onFinished: @escaping (URL?) -> Void
         ) {
             self.router = router
             self.decide = decide
             self.onError = onError
             self.onCieIDMissing = onCieIDMissing
+            self.onFinished = onFinished
+        }
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            guard !finished else { return }
+            onFinished(webView.url)
         }
 
         func webView(
