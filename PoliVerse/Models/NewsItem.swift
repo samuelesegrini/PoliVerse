@@ -14,7 +14,11 @@ import Foundation
 nonisolated struct NewsItem: Identifiable, Sendable, Hashable {
     let id: String
     let title: String
+    /// Plain text, for rows.
     let summary: String?
+    /// The same content with its markup intact, when it arrived as HTML, so
+    /// the detail view can render bold and links.
+    var summaryHTML: String?
     let published: Date?
     /// Where the news runs out: news carries an end date on the agenda host,
     /// and something already over is not news.
@@ -46,13 +50,16 @@ nonisolated extension NewsItem {
 
         guard rawID != nil || title != nil else { return nil }
 
+        let rawSummary = fields.firstValue([
+            "description", "descrizione", "summary", "abstract",
+            "sommario", "testo", "body", "content", "contenuto", "text",
+        ]).flatMap(Notice.rawText(from:))
+
         self.init(
             id: rawID ?? "news-\(index)",
             title: title ?? "Notizia",
-            summary: fields.firstValue([
-                "description", "descrizione", "summary", "abstract",
-                "sommario", "testo", "body", "content", "contenuto", "text",
-            ]).flatMap(Notice.text(from:)),
+            summary: rawSummary.map(HTMLText.plainIfNeeded)?.nonEmpty,
+            summaryHTML: Notice.markup(rawSummary),
             published: fields.firstValue([
                 "date_start", "dateStart", "data_inizio", "date", "data",
                 "published_at", "data_pubblicazione", "start_date",

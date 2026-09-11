@@ -17,8 +17,11 @@ nonisolated struct Notice: Identifiable, Sendable, Hashable {
     let id: String
     let title: String
     /// The summary or full text, where the list carries one. The detail
-    /// endpoint is what has the whole thing.
+    /// endpoint is what has the whole thing. Plain text, for rows.
     let body: String?
+    /// The same content with its markup intact, when it arrived as HTML, so
+    /// the detail view can render bold and links rather than flat text.
+    var bodyHTML: String?
     let date: Date?
     let category: String?
     /// Upstream's own read flag, when it sends one. Nil means it does not,
@@ -49,10 +52,11 @@ nonisolated extension Notice {
             "description", "header", "testata",
         ]).flatMap(Notice.text(from:))
 
-        let body = fields.firstValue([
+        let rawBody = fields.firstValue([
             "body", "testo", "text", "messaggio", "message", "contenuto",
             "content", "descrizione_estesa", "abstract", "summary", "html",
-        ]).flatMap(Notice.text(from:))
+        ]).flatMap(Notice.rawText(from:))
+        let body = rawBody.map(HTMLText.plainIfNeeded)?.nonEmpty
 
         // Neither addressable nor displayable: nothing to show and nothing to
         // fetch. Anything less complete than that is still worth a row.
@@ -65,6 +69,7 @@ nonisolated extension Notice {
             id: rawID ?? "notice-\(index)",
             title: title ?? "Comunicazione",
             body: body,
+            bodyHTML: Notice.markup(rawBody),
             date: fields.firstValue([
                 "date", "data", "data_inserimento", "dataInserimento",
                 "data_invio", "dataInvio", "timestamp", "created_at",
@@ -89,12 +94,28 @@ nonisolated extension Notice {
     /// literal `<p>` and `&egrave;` — and doing it once on the way in means
     /// every view, row and detail alike, shows text rather than source.
     static func text(from value: JSONValue) -> String? {
+        rawText(from: value).map(HTMLText.plainIfNeeded)?.nonEmpty
+    }
+
+    /// The same reading, with markup left in place.
+    ///
+    /// Kept for the fields a detail view renders richly — the plain form is
+    /// what rows and titles want, the original is what carries the bold and
+    /// the links.
+    static func rawText(from value: JSONValue) -> String? {
         if let fields = value.objectValue {
             let localised = fields.firstValue(["it", "ita", "italian"])?.stringValue
                 ?? fields.firstValue(["en", "eng", "english"])?.stringValue
-            return localised.map(HTMLText.plainIfNeeded)?.nonEmpty
+            return localised?.nonEmpty
         }
-        return value.stringValue.map(HTMLText.plainIfNeeded)?.nonEmpty
+        return value.stringValue?.nonEmpty
+    }
+
+    /// The original markup, but only when there is some — a plain string is
+    /// already its own best rendering and storing it twice helps nobody.
+    static func markup(_ raw: String?) -> String? {
+        guard let raw, HTMLText.containsMarkup(raw) else { return nil }
+        return raw
     }
 
     /// Reads a timestamp in any of the forms PoliMi's services actually use.

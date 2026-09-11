@@ -114,6 +114,7 @@ struct NoticeDetailView: View {
     @Environment(NoticeService.self) private var notices
     @Environment(\.openURL) private var openURL
 
+    /// The detail endpoint's body, markup intact.
     @State private var fullText: String?
     @State private var isLoading = false
 
@@ -133,10 +134,12 @@ struct NoticeDetailView: View {
                     ProgressView()
                 }
 
-                if let text = fullText ?? notice.body {
-                    Text(text)
-                        .font(.body)
-                        .textSelection(.enabled)
+                // The detail call's text wins where it arrived; otherwise
+                // the summary from the list stands.
+                if let markup = fullText ?? notice.bodyHTML {
+                    RichText(html: markup, plain: notice.body)
+                } else {
+                    RichText(html: nil, plain: notice.body)
                 }
 
                 if let link = notice.link {

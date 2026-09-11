@@ -103,11 +103,7 @@ struct NewsDetailView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                if let summary = item.summary {
-                    Text(summary)
-                        .font(.body)
-                        .textSelection(.enabled)
-                }
+                RichText(html: item.summaryHTML, plain: item.summary)
 
                 if let link = item.link {
                     Button {

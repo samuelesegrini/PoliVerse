@@ -100,10 +100,12 @@ final class NoticeService {
             log.notice("notification detail shape: \(JSONShape.describe(data), privacy: .public)")
             let value = try JSONDecoder().decode(JSONValue.self, from: data)
             guard let fields = value.objectValue else { return nil }
+            // Raw: the detail view renders it, so the markup has to survive
+            // the trip.
             return fields.firstValue([
                 "body", "testo", "text", "messaggio", "message", "contenuto",
                 "content", "descrizione_estesa", "html", "descrizione",
-            ]).flatMap(Notice.text(from:))
+            ]).flatMap(Notice.rawText(from:))
         } catch {
             log.error("Notification detail failed: \(error.localizedDescription)")
             return nil

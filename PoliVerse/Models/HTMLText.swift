@@ -15,11 +15,29 @@ import Foundation
 nonisolated enum HTMLText {
     /// Plain text, with block structure preserved as blank lines.
     static func plain(_ html: String) -> String {
-        var text = html
+        var text = markBlocks(stripNonContent(html))
 
-        // Script and style carry no reading content, and their bodies are not
-        // markup — dropping tags alone would leave CSS on screen.
-        text = removeElements(named: ["script", "style", "head"], from: text)
+        // Then every remaining tag.
+        text = text.replacingOccurrences(
+            of: "<[^>]+>", with: "", options: .regularExpression)
+
+        // Entities last, on purpose: an encoded `&lt;b&gt;` is text the author
+        // wrote, not markup, and decoding before stripping would turn it into
+        // a tag and delete it.
+        text = decodeEntities(text)
+
+        return tidy(text)
+    }
+
+    /// Script and style carry no reading content, and their bodies are not
+    /// markup — dropping tags alone would leave CSS on screen.
+    private static func stripNonContent(_ html: String) -> String {
+        removeElements(named: ["script", "style", "head"], from: html)
+    }
+
+    /// Replaces block-level tags with break marks, leaving inline tags alone.
+    private static func markBlocks(_ html: String) -> String {
+        var text = html
 
         // Block boundaries become newlines before the tags are dropped;
         // otherwise every paragraph runs into the next.
@@ -45,21 +63,171 @@ nonisolated enum HTMLText {
             of: "<li[^>]*>",
             with: "\(Self.breakMark)• ",
             options: [.regularExpression, .caseInsensitive])
+        // `</li>` deliberately contributes nothing: the opening `<li>` above
+        // already starts each item's line, and marking both would put a blank
+        // line between every bullet.
         text = text.replacingOccurrences(
-            of: "</li>|</ul>|</ol>",
-            with: Self.breakMark,
+            of: "</li>", with: "", options: [.regularExpression, .caseInsensitive])
+        // The list as a whole ends a block, like a paragraph.
+        text = text.replacingOccurrences(
+            of: "</ul>|</ol>",
+            with: "\(Self.breakMark)\(Self.breakMark)",
             options: [.regularExpression, .caseInsensitive])
 
-        // Then every remaining tag.
-        text = text.replacingOccurrences(
-            of: "<[^>]+>", with: "", options: .regularExpression)
+        return text
+    }
 
-        // Entities last, on purpose: an encoded `&lt;b&gt;` is text the author
-        // wrote, not markup, and decoding before stripping would turn it into
-        // a tag and delete it.
-        text = decodeEntities(text)
+    // MARK: - Rich text
 
-        return tidy(text)
+    /// The inline formatting these fragments actually use.
+    private struct Style: Equatable {
+        var bold = false
+        var italic = false
+        var link: URL?
+    }
+
+    /// Renders the fragment as styled text: bold, italic, headings and
+    /// tappable links.
+    ///
+    /// Still not `NSAttributedString`'s HTML importer — that one is
+    /// WebKit-backed and main-actor bound. This is a plain scan over the
+    /// string, so it is `nonisolated`, cheap, and cannot block a frame.
+    ///
+    /// Emphasis is expressed as `inlinePresentationIntent` rather than an
+    /// explicit `Font`. SwiftUI honours it and, crucially, the text keeps
+    /// whatever font the view gives it — so it still scales with Dynamic Type
+    /// instead of being pinned to a size chosen here.
+    static func attributed(_ html: String) -> AttributedString {
+        let source = markBlocks(stripNonContent(html))
+        var builder = Builder()
+        var style = Style()
+        var buffer = ""
+        var index = source.startIndex
+
+        func flush() {
+            guard !buffer.isEmpty else { return }
+            builder.add(decodeEntities(buffer), style: style)
+            buffer = ""
+        }
+
+        while index < source.endIndex {
+            guard source[index] == "<",
+                  let close = source[index...].firstIndex(of: ">")
+            else {
+                buffer.append(source[index])
+                index = source.index(after: index)
+                continue
+            }
+
+            flush()
+            apply(tag: String(source[source.index(after: index)..<close]), to: &style)
+            index = source.index(after: close)
+        }
+        flush()
+
+        return builder.finish()
+    }
+
+    /// Updates the running style for one tag. Unknown tags are ignored, which
+    /// is what makes an unexpected `<span class=…>` harmless.
+    private static func apply(tag: String, to style: inout Style) {
+        var body = tag.trimmingCharacters(in: .whitespaces)
+        let isClosing = body.hasPrefix("/")
+        if isClosing { body.removeFirst() }
+        let name = body.prefix { !$0.isWhitespace && $0 != "/" }.lowercased()
+
+        switch name {
+        case "b", "strong": style.bold = !isClosing
+        case "i", "em": style.italic = !isClosing
+        case "h1", "h2", "h3", "h4", "h5", "h6": style.bold = !isClosing
+        case "a": style.link = isClosing ? nil : href(in: body)
+        default: break
+        }
+    }
+
+    /// Pulls the URL out of an anchor, quoted or not.
+    ///
+    /// Relative hrefs are dropped rather than guessed at: there is no base URL
+    /// to resolve them against, and a link that silently goes nowhere is worse
+    /// than text that is plainly not a link.
+    private static func href(in tag: String) -> URL? {
+        guard
+            let match = tag.range(
+                of: "href\\s*=\\s*(\"[^\"]*\"|'[^']*'|[^\\s>]+)",
+                options: [.regularExpression, .caseInsensitive])
+        else { return nil }
+
+        var value = String(tag[match])
+        guard let equals = value.firstIndex(of: "=") else { return nil }
+        value = String(value[value.index(after: equals)...])
+            .trimmingCharacters(in: .whitespaces)
+        value = value.trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+
+        let decoded = decodeEntities(value)
+        guard let url = URL(string: decoded), url.scheme != nil else { return nil }
+        return url
+    }
+
+    /// Assembles the runs, applying HTML's whitespace rules as it goes.
+    ///
+    /// Collapsing afterwards is not an option once the string carries
+    /// attributes — the runs would have to be walked and re-spliced. Doing it
+    /// during the build keeps it to one pass and one rule.
+    private struct Builder {
+        private var result = AttributedString()
+        private var pendingBreaks = 0
+        /// Starts true so leading whitespace is dropped rather than indenting
+        /// the first line.
+        private var lastWasSpace = true
+        private var isEmpty = true
+
+        mutating func add(_ raw: String, style: Style) {
+            // Break marks inside the text are the block boundaries recorded
+            // earlier; everything between them is one run of inline content.
+            let parts = raw.components(separatedBy: HTMLText.breakMark)
+            for (offset, part) in parts.enumerated() {
+                if offset > 0, !isEmpty {
+                    // Accumulated, so the two marks a `</p>` leaves become a
+                    // blank line while a single `<br>` stays one newline.
+                    pendingBreaks = min(2, pendingBreaks + 1)
+                    lastWasSpace = true
+                }
+                append(part, style: style)
+            }
+        }
+
+        private mutating func append(_ raw: String, style: Style) {
+            var text = raw.replacingOccurrences(
+                of: "\\s+", with: " ", options: .regularExpression)
+            if lastWasSpace, text.hasPrefix(" ") { text.removeFirst() }
+            guard !text.isEmpty else { return }
+
+            if pendingBreaks > 0 {
+                result.append(AttributedString(String(repeating: "\n", count: pendingBreaks)))
+                pendingBreaks = 0
+            }
+
+            var piece = AttributedString(text)
+            var intent: InlinePresentationIntent = []
+            if style.bold { intent.insert(.stronglyEmphasized) }
+            if style.italic { intent.insert(.emphasized) }
+            if !intent.isEmpty { piece.inlinePresentationIntent = intent }
+            if let link = style.link { piece.link = link }
+            result.append(piece)
+
+            lastWasSpace = text.hasSuffix(" ")
+            isEmpty = false
+        }
+
+        /// Trailing breaks are simply never flushed; a trailing space can
+        /// survive the last run, so drop it here.
+        mutating func finish() -> AttributedString {
+            while let last = result.characters.indices.last,
+                  result.characters[last] == " " {
+                result.removeSubrange(last..<result.endIndex)
+            }
+            return result
+        }
     }
 
     /// Whether a string looks like it carries markup worth stripping.
