@@ -328,3 +328,49 @@ struct CareerWireTests {
         #expect(response.teachings[0].toCourse()?.name == "Basi di Dati")
     }
 }
+
+/// Courses come from WeBeep rather than `/v1/insegn`: that endpoint is exam
+/// registration, so it is empty once every exam is passed, while WeBeep keeps
+/// the enrolment.
+@Suite("WeBeep course names")
+struct MoodleCourseNameTests {
+    @Test("A code-prefixed WeBeep name splits into code and title")
+    func splitsCodeAndTitle() {
+        let (code, title) = Course.splitCode(from: "097785 - BASI DI DATI [2025-26]")
+        #expect(code == "097785")
+        #expect(title == "BASI DI DATI")
+    }
+
+    /// The code is what PoliMi's own endpoints key on, so keeping it aligns a
+    /// WeBeep course with a PoliMi one.
+    @Test("The course id prefers the PoliMi code")
+    func prefersPoliMiCode() {
+        let course = Course(moodle: MoodleCourse(
+            id: 4242, fullname: "097785 - BASI DI DATI [2025-26]",
+            shortname: nil, startdate: nil, enddate: nil))
+
+        #expect(course.id == "097785")
+        #expect(course.moodleID == 4242)
+        #expect(course.name == "Basi di Dati")
+        #expect(course.academicYear == "2025-26")
+    }
+
+    /// Without a code the Moodle id still has to identify the course uniquely.
+    @Test("A name with no code falls back to the Moodle id")
+    func fallsBackToMoodleID() {
+        let course = Course(moodle: MoodleCourse(
+            id: 99, fullname: "Corso Di Prova", shortname: nil,
+            startdate: nil, enddate: nil))
+
+        #expect(course.id == "moodle-99")
+        #expect(course.moodleID == 99)
+    }
+
+    /// A hyphen in the title must not be read as a code separator.
+    @Test("A hyphenated title is not mistaken for a code")
+    func hyphenInTitle() {
+        let (code, title) = Course.splitCode(from: "Analisi - Modulo 2")
+        #expect(code == nil)
+        #expect(title == "Analisi - Modulo 2")
+    }
+}

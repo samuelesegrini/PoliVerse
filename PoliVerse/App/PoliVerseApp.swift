@@ -15,10 +15,12 @@ struct PoliVerseApp: App {
         // flag, so they must all observe the same instance.
         let session = Session()
         _session = State(initialValue: session)
-        _courses = State(initialValue: CourseService(session: session))
+
         _agenda = State(initialValue: AgendaService(session: session))
         _career = State(initialValue: CareerService(session: session))
-        _weBeep = State(initialValue: WeBeepService(session: session))
+        let weBeep = WeBeepService(session: session)
+        _weBeep = State(initialValue: weBeep)
+        _courses = State(initialValue: CourseService(session: session, weBeep: weBeep))
     }
 
     var body: some Scene {

@@ -10,6 +10,11 @@ nonisolated struct Course: Identifiable, Sendable, Hashable, Codable {
     let semester: String
     let academicYear: String
     var teacherEmail: String?
+    /// Moodle's own course id, when this course came from WeBeep.
+    ///
+    /// Having it removes the need to match a PoliMi course to a Moodle one by
+    /// name, which was the weakest link in the materials lookup.
+    var moodleID: Int?
     var isFavourite: Bool = false
 
     /// Deterministic accent so a course keeps the same colour between launches
@@ -33,7 +38,7 @@ nonisolated struct Course: Identifiable, Sendable, Hashable, Codable {
     /// `UserDefaults` and is reapplied on load, so a stale cache can never
     /// resurrect a favourite the user has since removed.
     private enum CodingKeys: String, CodingKey {
-        case id, name, teacher, cfu, semester, academicYear, teacherEmail
+        case id, name, teacher, cfu, semester, academicYear, teacherEmail, moodleID
     }
 
     /// "ARCHITETTURE DEI CALCOLATORI" reads badly in a title; fix it once here.
@@ -44,6 +49,56 @@ nonisolated struct Course: Identifiable, Sendable, Hashable, Codable {
             let minor: Set<String> = ["di", "dei", "delle", "della", "e", "ed", "in", "a", "al", "per", "con", "dai"]
             return minor.contains(String(word)) ? String(word) : word.capitalized
         }.joined(separator: " ")
+    }
+}
+
+extension Course {
+    /// Builds a course from a WeBeep (Moodle) enrolment.
+    ///
+    /// WeBeep names courses like `"097785 - BASI DI DATI [2025-26]"`, so the
+    /// leading code is pulled out where present — it is what PoliMi's own
+    /// endpoints key on, and keeping the two identifiers aligned means a course
+    /// from either source refers to the same thing.
+    init(moodle: MoodleCourse) {
+        let full = moodle.fullname
+        let (code, title) = Course.splitCode(from: full)
+
+        self.init(
+            id: code ?? "moodle-\(moodle.id)",
+            name: Course.normalise(title),
+            teacher: "—",
+            cfu: 0,
+            semester: "—",
+            academicYear: Course.academicYear(from: full) ?? "—",
+            moodleID: moodle.id
+        )
+    }
+
+    /// Splits `"097785 - BASI DI DATI [2025-26]"` into its code and title.
+    static func splitCode(from fullname: String) -> (code: String?, title: String) {
+        var title = fullname
+        // Trim a trailing academic year in brackets.
+        if let bracket = title.range(of: " [", options: .backwards) {
+            title = String(title[title.startIndex..<bracket.lowerBound])
+        }
+        let parts = title.components(separatedBy: " - ")
+        guard parts.count > 1 else { return (nil, title) }
+
+        let candidate = parts[0].trimmingCharacters(in: .whitespaces)
+        // A course code is all digits; anything else is part of the title.
+        guard !candidate.isEmpty, candidate.allSatisfy(\.isNumber) else {
+            return (nil, title)
+        }
+        return (candidate, parts.dropFirst().joined(separator: " - "))
+    }
+
+    static func academicYear(from fullname: String) -> String? {
+        guard
+            let open = fullname.range(of: "[", options: .backwards),
+            let close = fullname.range(of: "]", options: .backwards),
+            open.upperBound < close.lowerBound
+        else { return nil }
+        return String(fullname[open.upperBound..<close.lowerBound])
     }
 }
 

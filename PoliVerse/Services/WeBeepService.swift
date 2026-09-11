@@ -153,6 +153,9 @@ final class WeBeepService {
     /// like "097785 - BASI DI DATI"), so try that first and fall back to
     /// comparing normalised names.
     private func moodleCourseID(for course: Course) -> Int? {
+        // A course sourced from WeBeep already knows its Moodle id; no matching
+        // required, and no chance of matching wrongly.
+        if let direct = course.moodleID { return direct }
         if let cached = courseIDByCode[course.id] { return cached }
 
         if let byCode = courses.first(where: {
