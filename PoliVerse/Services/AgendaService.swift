@@ -21,8 +21,8 @@ final class AgendaService {
     private(set) var events: [AgendaEvent] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?
-    /// Start of the window currently held, so we know when a scroll needs more.
-    private(set) var loadedFrom: Date?
+    /// The span currently held, so navigating past its edge can fetch more.
+    private(set) var loadedRange: ClosedRange<Date>?
 
     private let session: Session
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "agenda")
@@ -31,22 +31,30 @@ final class AgendaService {
     /// A full timetable month is well under this.
     private let pageSize = 200
 
-    /// How far ahead to ask for, matching the official app.
-    private let window = DateComponents(month: 1)
+    /// How far either side of the requested date to fetch. The official app
+    /// asks for a month ahead; a week behind costs nothing and means stepping
+    /// back a week does not trigger a round trip.
+    private let lookBehind = DateComponents(day: -7)
+    private let lookAhead = DateComponents(month: 1)
 
     init(session: Session) {
         self.session = session
     }
 
-    func load(from startDate: Date = .now) async {
+    /// Fetches a window around `date`, replacing whatever was held.
+    func load(around date: Date = .now) async {
         guard !isLoading else { return }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
 
+        let calendar = PoliMiDate.romeCalendar
+        let from = calendar.date(byAdding: lookBehind, to: date) ?? date
+        let to = calendar.date(byAdding: lookAhead, to: date) ?? date
+
         if session.useMockData {
-            events = MockData.agendaEvents(around: startDate)
-            loadedFrom = startDate
+            events = MockData.agendaEvents(around: date)
+            loadedRange = from...to
             return
         }
 
@@ -55,40 +63,90 @@ final class AgendaService {
             return
         }
 
+        // Lectures and deadlines are separate endpoints. Deadlines look a year
+        // ahead upstream because they are sparse and worth seeing early, so
+        // they are fetched over their own span rather than this window.
+        async let lectures = fetchEvents(matricola: matricola, from: from, to: to)
+        async let deadlines = fetchDeadlines(matricola: matricola, from: from)
+
+        let (fetched, fetchedDeadlines) = await (lectures, deadlines)
+
+        guard fetched != nil || fetchedDeadlines != nil else {
+            // No mock fallback: sample lectures shown as real would send
+            // someone to a room that does not exist.
+            events = []
+            return
+        }
+
+        // A deadline can also appear in the events feed; keep one of each.
+        var merged = fetched ?? []
+        let known = Set(merged.map(\.id))
+        merged += (fetchedDeadlines ?? []).filter { !known.contains($0.id) }
+
+        events = merged.sorted { $0.start < $1.start }
+        loadedRange = from...to
+    }
+
+    /// Fetches only if `date` falls outside what is already held.
+    func ensureLoaded(covering date: Date) async {
+        guard let loadedRange else {
+            await load(around: date)
+            return
+        }
+        guard !loadedRange.contains(date) else { return }
+        log.debug("Navigated outside the loaded window; fetching around it")
+        await load(around: date)
+    }
+
+    private func fetchEvents(matricola: String, from: Date, to: Date) async -> [AgendaEvent]? {
         do {
             let dtos = try await session.api.send(
                 APIRequest(
                     host: .agenda,
                     path: "/v1/matricola/\(matricola)/events",
                     query: [
-                        .init(name: "start_date", value: PoliMiDate.queryString(startDate)),
-                        .init(name: "end_date", value: PoliMiDate.queryString(endDate(from: startDate))),
+                        .init(name: "start_date", value: PoliMiDate.queryString(from)),
+                        .init(name: "end_date", value: PoliMiDate.queryString(to)),
                         .init(name: "n_events", value: String(pageSize)),
                     ]
                 ),
                 as: [AgendaEventDTO].self
             )
-
             // Drop entries with unparseable timestamps rather than guessing at
             // a date and showing a lecture on the wrong day.
             let parsed = dtos.compactMap { $0.toEvent() }
             log.notice("agenda returned \(dtos.count, privacy: .public) events, \(parsed.count, privacy: .public) usable")
-            if parsed.count < dtos.count {
-                log.warning("Discarded \(dtos.count - parsed.count) agenda events with bad dates")
-            }
-            events = parsed.sorted { $0.start < $1.start }
-            loadedFrom = startDate
+            return parsed
         } catch {
             log.error("Agenda load failed: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
-            // No mock fallback: sample lectures shown as real would send
-            // someone to a room that does not exist.
-            events = []
+            return nil
         }
     }
 
-    private func endDate(from start: Date) -> Date {
-        PoliMiDate.romeCalendar.date(byAdding: window, to: start) ?? start
+    /// Deadlines are their own endpoint and worth a longer horizon.
+    private func fetchDeadlines(matricola: String, from: Date) async -> [AgendaEvent]? {
+        let to = PoliMiDate.romeCalendar.date(byAdding: .year, value: 1, to: from) ?? from
+        do {
+            let dtos = try await session.api.send(
+                APIRequest(
+                    host: .agenda,
+                    path: "/v1/matricola/\(matricola)/events/deadlines",
+                    query: [
+                        .init(name: "start_date", value: PoliMiDate.queryString(from)),
+                        .init(name: "end_date", value: PoliMiDate.queryString(to)),
+                    ]
+                ),
+                as: [AgendaEventDTO].self
+            )
+            let parsed = dtos.compactMap { $0.toEvent() }
+            log.notice("agenda returned \(parsed.count, privacy: .public) deadlines")
+            return parsed
+        } catch {
+            // Not fatal: the timetable is the point, deadlines are a bonus.
+            log.error("Deadlines failed: \(error.localizedDescription)")
+            return nil
+        }
     }
 
     /// Events on a given day, in Rome time.
@@ -104,6 +162,11 @@ final class AgendaService {
     func daysWithEvents() -> Set<Date> {
         let calendar = PoliMiDate.romeCalendar
         return Set(events.map { calendar.startOfDay(for: $0.start) })
+    }
+
+    /// Lectures on a given day, which is what a timetable shows.
+    func lectures(on day: Date) -> [AgendaEvent] {
+        events(on: day).filter { $0.kind == .lecture }
     }
 
     /// The next event from now, for the Home screen summary.

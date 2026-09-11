@@ -9,17 +9,44 @@ struct CalendarView: View {
     /// Which week the strip is showing; moves independently of the selected day
     /// so paging back does not change the selection until the user taps.
     @State private var weekStart: Date = CalendarView.startOfWeek(for: .now)
+    @State private var selectedEvent: AgendaEvent?
+    @State private var filter: Filter = .all
+
+    /// Which entries to show. The agenda mixes lectures, exams, deadlines and
+    /// notices, and "what am I doing today" and "what is due" are different
+    /// questions.
+    enum Filter: String, CaseIterable, Identifiable {
+        case all = "Tutto"
+        case lectures = "Lezioni"
+        case deadlines = "Scadenze"
+        var id: String { rawValue }
+
+        func matches(_ event: AgendaEvent) -> Bool {
+            switch self {
+            case .all: true
+            case .lectures: event.kind == .lecture
+            case .deadlines: event.kind == .deadline || event.kind == .exam
+            }
+        }
+    }
 
     private var calendar: Calendar { PoliMiDate.romeCalendar }
 
     private var dayEvents: [AgendaEvent] {
-        agenda.events(on: selectedDay)
+        agenda.events(on: selectedDay).filter(filter.matches)
     }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 weekStrip
+                Picker("Filtro", selection: $filter) {
+                    ForEach(Filter.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.bottom, 10)
+                .background(Color(.systemBackground))
                 Divider()
                 dayList
             }
@@ -36,8 +63,12 @@ struct CalendarView: View {
                     .disabled(calendar.isDateInToday(selectedDay))
                 }
             }
-            .task { await agenda.load(from: .now) }
-            .refreshable { await agenda.load(from: weekStart) }
+            .task { await agenda.load(around: .now) }
+            .refreshable { await agenda.load(around: weekStart) }
+            // Stepping outside the fetched span pulls the next one in, so the
+            // calendar is not silently empty a month out.
+            .task(id: weekStart) { await agenda.ensureLoaded(covering: weekStart) }
+            .sheet(item: $selectedEvent) { EventDetailView(event: $0) }
         }
     }
 
@@ -84,7 +115,7 @@ struct CalendarView: View {
     private func dayCell(_ day: Date) -> some View {
         let isSelected = calendar.isDate(day, inSameDayAs: selectedDay)
         let isToday = calendar.isDateInToday(day)
-        let hasEvents = agenda.daysWithEvents().contains(calendar.startOfDay(for: day))
+        let hasEvents = !agenda.events(on: day).filter(filter.matches).isEmpty
 
         return Button {
             withAnimation(.snappy(duration: 0.2)) { selectedDay = day }
@@ -126,9 +157,10 @@ struct CalendarView: View {
             Spacer()
         } else if dayEvents.isEmpty {
             ContentUnavailableView {
-                Label("Niente in programma", systemImage: "calendar")
+                Label(filter == .lectures ? "Nessuna lezione" : "Niente in programma",
+                      systemImage: "calendar")
             } description: {
-                Text(selectedDay.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)))
+                Text(selectedDay.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)).capitalized)
             }
         } else {
             ScrollView {
@@ -143,7 +175,8 @@ struct CalendarView: View {
                     }
 
                     ForEach(dayEvents) { event in
-                        EventRow(event: event)
+                        Button { selectedEvent = event } label: { EventRow(event: event) }
+                            .buttonStyle(.plain)
                     }
                 }
                 .padding()

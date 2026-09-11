@@ -85,12 +85,12 @@ struct HomeView: View {
             }
             .refreshable {
                 await courses.load()
-                await agenda.load(from: .now)
+                await agenda.load(around: .now)
                 await career.load()
             }
             .task {
                 await courses.load()
-                await agenda.load(from: .now)
+                await agenda.load(around: .now)
                 await career.load()
             }
             .navigationDestination(item: $selectedCourse) { course in

@@ -106,7 +106,7 @@ struct CourseDetailView: View {
             }
         }
         .task {
-            await agenda.load(from: .now)
+            await agenda.load(around: .now)
             await career.load()
         }
     }

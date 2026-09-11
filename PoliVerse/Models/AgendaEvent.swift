@@ -42,6 +42,12 @@ nonisolated struct AgendaEvent: Identifiable, Sendable, Hashable {
     /// Short form shown in tight layouts, e.g. "R.0.1".
     let roomAcronym: String?
     let calendarName: String?
+    /// Free text the agenda attaches to some entries.
+    var details: String?
+    /// Teaching form — lecture, lab, tutorial — keyed as `LBL_FORMA_DIDATTICA_*`.
+    var subtype: String?
+    /// Labels the agenda attaches, used upstream to pick card artwork.
+    var tags: [String] = []
 
     /// Enforces `end >= start`.
     ///
@@ -58,7 +64,10 @@ nonisolated struct AgendaEvent: Identifiable, Sendable, Hashable {
         kind: EventKind,
         room: String? = nil,
         roomAcronym: String? = nil,
-        calendarName: String? = nil
+        calendarName: String? = nil,
+        details: String? = nil,
+        subtype: String? = nil,
+        tags: [String] = []
     ) {
         self.id = id
         self.title = title
@@ -68,6 +77,9 @@ nonisolated struct AgendaEvent: Identifiable, Sendable, Hashable {
         self.room = room
         self.roomAcronym = roomAcronym
         self.calendarName = calendarName
+        self.details = details
+        self.subtype = subtype
+        self.tags = tags
     }
 
     var duration: TimeInterval { end.timeIntervalSince(start) }
@@ -109,6 +121,11 @@ nonisolated struct AgendaEventDTO: Decodable, Sendable {
         let calendar_dn: LocalizedText?
     }
 
+    struct TagDTO: Decodable, Sendable {
+        let event_tag_id: Int?
+        let denomination: LocalizedText?
+    }
+
     let event_id: Int?
     let date_start: String?
     let date_end: String?
@@ -116,6 +133,9 @@ nonisolated struct AgendaEventDTO: Decodable, Sendable {
     let event_type: EventTypeDTO?
     let room: RoomDTO?
     let calendar: CalendarDTO?
+    let description: LocalizedText?
+    let event_subtype: String?
+    let tags: [TagDTO]?
 
     func toEvent() -> AgendaEvent? {
         // An event we cannot place in time is worse than no event at all.
@@ -134,7 +154,13 @@ nonisolated struct AgendaEventDTO: Decodable, Sendable {
             kind: EventKind(rawValue: event_type?.typeId ?? -1) ?? .custom,
             room: room?.room_dn,
             roomAcronym: room?.acronym_dn,
-            calendarName: calendar?.calendar_dn?.preferred
+            calendarName: calendar?.calendar_dn?.preferred,
+            details: description?.preferred.isEmpty == false ? description?.preferred : nil,
+            subtype: event_subtype,
+            tags: (tags ?? []).compactMap {
+                let name = $0.denomination?.preferred
+                return name?.isEmpty == false ? name : nil
+            }
         )
     }
 }

@@ -69,3 +69,40 @@ struct DateParsingTests {
         #expect(PoliMiDate.romeCalendar.firstWeekday == 2)
     }
 }
+
+/// The agenda mixes lectures, exams, deadlines and notices in one feed, so the
+/// calendar filters it — and the filter has to agree with the day dots, or the
+/// strip promises days that turn out empty.
+@Suite("Calendar filtering")
+struct CalendarFilterTests {
+    private func event(_ kind: EventKind) -> AgendaEvent {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        return AgendaEvent(
+            id: kind.rawValue, title: "x", start: start,
+            end: start.addingTimeInterval(3600), kind: kind
+        )
+    }
+
+    @Test("Everything matches the unfiltered view")
+    func allMatches() {
+        for kind in EventKind.allCases {
+            #expect(CalendarView.Filter.all.matches(event(kind)))
+        }
+    }
+
+    @Test("Lectures excludes anything that is not a lecture")
+    func lecturesOnly() {
+        #expect(CalendarView.Filter.lectures.matches(event(.lecture)))
+        for kind in [EventKind.exam, .deadline, .news, .custom] {
+            #expect(CalendarView.Filter.lectures.matches(event(kind)) == false)
+        }
+    }
+
+    /// Exams belong with deadlines: both are things with a date to prepare for.
+    @Test("Deadlines covers exams too")
+    func deadlinesIncludeExams() {
+        #expect(CalendarView.Filter.deadlines.matches(event(.deadline)))
+        #expect(CalendarView.Filter.deadlines.matches(event(.exam)))
+        #expect(CalendarView.Filter.deadlines.matches(event(.lecture)) == false)
+    }
+}
