@@ -5,10 +5,12 @@ struct HomeView: View {
     @Environment(CourseService.self) private var courses
     @Environment(AgendaService.self) private var agenda
     @Environment(CareerService.self) private var career
+    @Environment(NoticeService.self) private var notices
     @Environment(\.locale) private var locale
 
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var selectedCourse: Course?
+    @State private var showingNotices = false
     @State private var year: String?
 
     /// One column on iPhone, two on a regular-width iPad. Full-width cards on
@@ -97,12 +99,23 @@ struct HomeView: View {
                 await courses.load(force: true)
                 await agenda.load(around: .now, force: true)
                 await career.load(force: true)
+                await notices.load(force: true)
             }
             .task {
                 await courses.load()
                 await agenda.load(around: .now)
                 await career.load()
+                // Last: the bell is the least urgent thing on this screen, and
+                // an endpoint whose shape is still unconfirmed should not
+                // delay the content that is known to work.
+                await notices.load()
             }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NoticesToolbarButton(isPresented: $showingNotices)
+                }
+            }
+            .sheet(isPresented: $showingNotices) { NoticesView() }
             .navigationDestination(item: $selectedCourse) { course in
                 CourseDetailView(course: course)
             }

@@ -55,6 +55,9 @@ No proxy or TLS interception needed — it is served to anyone who asks.
 | `/jaf/internal/user` | **401** — identity |
 | `/jaf/oauth/token/get`, `/jaf/oauth/token/refresh` | **401** — tokens |
 | `/jaf/internal/profiles`, `/jaf/internal/updateReturnUrl` | 401 |
+| `/v1/notifications`, `/v1/notifications/{id_notice}` | **401** — the bell. Body shape unconfirmed; see below |
+| `/v1/io-e-polimi/{matricola}` | **401** — media, CFU. In use |
+| `/v1/settings`, `/v1/careers/list` | 401, not used |
 
 ### IAE — `https://api.polimi.it/iae`
 
@@ -91,6 +94,26 @@ changed.
 | --- | --- |
 | `/singoloinsegnamento/{id}` | **401** |
 | `/simulazionemedia/…`, `/mediaobiettivo/…`, `/sequenzamedia/…` | grade simulation (in the bundle) |
+
+## Notifications: live, but shape unknown
+
+`/v1/notifications` is in the official bundle's own typed client and answers
+401 unauthenticated, so it exists. Its **response body has never been
+captured** — the only field name known for certain is `id_notice`, from the
+detail path `/v1/notifications/{id_notice}`.
+
+`Notice` therefore reads fields by trying a list of candidate names
+(`id_notice`/`id`, `titolo`/`title`/`oggetto`, `testo`/`body`/`messaggio`, …)
+matched ignoring case and underscores, and accepts either a bare array or an
+array behind any wrapper key. A wrong guess costs one field, not the screen.
+
+`NoticeService` logs the payload's **shape** — keys and types, never values —
+as `notifications payload shape: …`. One run on a real account replaces every
+guess above with fact. Values are deliberately excluded: a notification is the
+student's own mail, and the log gets pasted into bug reports.
+
+Once a real shape is known, narrow the candidate lists to the true names and
+delete the rest.
 
 ## What moved
 
