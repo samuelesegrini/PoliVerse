@@ -6,6 +6,7 @@ struct PoliVerseApp: App {
     @State private var courses: CourseService
     @State private var agenda: AgendaService
     @State private var career: CareerService
+    @State private var weBeep: WeBeepService
 
     init() {
         // One Session, shared: every service reads its auth state and mock
@@ -15,6 +16,7 @@ struct PoliVerseApp: App {
         _courses = State(initialValue: CourseService(session: session))
         _agenda = State(initialValue: AgendaService(session: session))
         _career = State(initialValue: CareerService(session: session))
+        _weBeep = State(initialValue: WeBeepService(session: session))
     }
 
     var body: some Scene {
@@ -24,6 +26,7 @@ struct PoliVerseApp: App {
                 .environment(courses)
                 .environment(agenda)
                 .environment(career)
+                .environment(weBeep)
                 .tint(Theme.brand)
                 // Every user-facing string in the app is Italian, so pin the
                 // locale too — otherwise `.formatted(.relative(…))` renders

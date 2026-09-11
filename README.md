@@ -16,7 +16,7 @@ history is not carried forward.
 | PoliMi OAuth login | Implemented, needs testing against a live account |
 | Token storage + refresh | Implemented (Keychain, serialised refresh) |
 | Course list | Implemented against `/rest/v1/insegn` |
-| WeBeep materials | UI complete, backend unresolved — see [docs](docs/polimi-auth.md#webeep--unresolved) |
+| WeBeep materials | Implemented via Moodle web services — see [docs/webeep.md](docs/webeep.md) |
 | Timetable / calendar | Implemented against `/agenda/api/me/{matricola}/events` |
 | Career / grades | Implemented — mean, CFU, exam sittings, published marks |
 | Search | Across courses, agenda and exam sittings |

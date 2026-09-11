@@ -142,24 +142,9 @@ PoliFemo's free-room search (`/v1/rooms/search`, occupancy data) is served by
 SSO leg this app deliberately skips. Adding room search means reinstating that
 leg, which is a real cost: a second token to store, refresh and revoke.
 
-## WeBeep — unresolved
+## WeBeep
 
-**PoliFemo has no WeBeep integration.** `grep -ri webeep` across that repository
-returns exactly one hit: the scope string in the login URL. There was no logic
-to port.
-
-WeBeep is a stock Moodle. Moodle's REST API needs its own `wstoken`, which the
-PoliMi OAuth token is not. The intended path is the handshake the official
-Moodle app performs on SSO-only sites:
-
-1. `GET /admin/tool/mobile/launch.php?service=moodle_mobile_app&passport=<n>&urlscheme=poliverse`
-2. Moodle bounces through the institutional IdP (likely silent, since the user
-   just authenticated)
-3. Redirect to `poliverse://token=<base64>` decoding to `siteid:::wstoken:::privatetoken`
-4. Then `/webservice/rest/server.php?wstoken=…&wsfunction=core_course_get_contents`
-
-**Not yet implemented.** Two things must happen first: verify the passport
-signature (step 3's payload is signed against the value sent in step 1 — skipping
-that check would let another app replay the redirect), and confirm WeBeep has
-`tool_mobile` enabled at all. Until then `WeBeepService.isLive` is `false` and
-the UI says so on screen rather than pretending.
+Resolved — see [webeep.md](webeep.md). WeBeep is a stock Moodle and exposes a
+supported token handshake at `admin/tool/mobile/launch.php`; no scraping is
+needed. PoliFemo has no WeBeep code to borrow, but `toto04/webeep-sync` and
+`matteovisotto/myPoliFile` both do.
