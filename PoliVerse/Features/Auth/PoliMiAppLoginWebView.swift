@@ -79,30 +79,38 @@ struct PoliMiAppLoginWebView: View {
 
     @MainActor
     private func advance(_ webView: WKWebView, url: URL?) async {
-        // The app has run its exchange by now if it is going to; check first so
-        // a late navigation cannot restart the flow.
+        log.debug("Settled on \(url?.path ?? "?", privacy: .public) (authorizing: \(didStartAuthorize, privacy: .public))")
+
+        // Already done? Nothing to do — and this also stops a late navigation
+        // restarting the flow.
         if await harvest(from: webView) { return }
 
-        let hasCode = url
-            .flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) }?
-            .queryItems?.contains { $0.name == "code" } ?? false
-
-        if hasCode {
-            // The app is mid-exchange. It is a single-page app, so there is no
-            // further navigation to wait on — poll briefly instead.
-            for _ in 0..<20 {
+        // Once the flow is under way, every arrival back here is a chance for
+        // the credential to have appeared.
+        //
+        // Deliberately not conditional on `?code=` being in the URL: the app is
+        // a single-page app and rewrites its own address once it has consumed
+        // the code, so by the time the page settles the parameter is usually
+        // gone. Keying off it meant the one navigation that mattered fell
+        // through to a silent return, and the login simply stopped.
+        if didStartAuthorize {
+            for attempt in 0..<25 {
                 try? await Task.sleep(for: .milliseconds(400))
                 if await harvest(from: webView) { return }
+                if attempt == 12 {
+                    log.notice("Still waiting for Servizi Online to store a credential")
+                }
             }
-            log.error("The app received a code but stored no credentials")
-            onError(AuthError.codeExchangeFailed("Servizi Online non ha completato l'accesso."))
+            log.error("Servizi Online never stored a credential")
+            onError(AuthError.codeExchangeFailed(
+                "Servizi Online non ha completato l'accesso."))
             return
         }
 
-        guard !didStartAuthorize else { return }
         didStartAuthorize = true
 
-        // Seed the state the app will validate the redirect against.
+        // Seed the state the app will validate the redirect against. Without
+        // it the app rejects a flow it did not start itself.
         let seed = "window.sessionStorage.setItem('\(stateKey)', '\(state)')"
         _ = try? await webView.evaluateJavaScript(seed)
 
