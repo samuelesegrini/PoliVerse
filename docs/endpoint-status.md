@@ -175,9 +175,26 @@ new URLSearchParams({client_id, redirect_uri, access_type, response_type,
 
 So: same authorize machinery, different endpoint, the chosen matricola under
 **both** names, the current token as proof of identity, and an **empty scope**
-— it moves an existing grant rather than requesting a new one. The app reuses
-its login web view for exactly this, and never drops the session: a failed
-switch leaves the previous career signed in.
+— it moves an existing grant rather than requesting a new one.
+
+**`/careerChange` errors.** Reproduced 2026-09-12 in PoliVerse *and in the
+official app* for this account, so it is the Politecnico's own path that is
+broken, not our reproduction of it. The code is kept — the flow is right and
+the endpoint may recover — but it is not what the app offers.
+
+**What works instead:** set the favourite while the current token still
+functions, then sign out and back in.
+
+```
+PUT /v1/careers/favorite/{matricola}     ← with the working token
+   → sign out (ending the SSO session)
+   → log in again; the new token binds to the favourite
+```
+
+The authorize request additionally carries `matricola` / `al_pj_matricola` as
+a hint, with the **full scope** and no access token — a hinted login is still
+a login, and asking for an empty scope there would mint a token with no
+authority. The favourite is the lever; the hint is a courtesy.
 
 ## "Utente non abilitato Code: 6" is not only ws_aule
 

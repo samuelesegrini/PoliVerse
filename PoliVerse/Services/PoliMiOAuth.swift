@@ -56,24 +56,44 @@ nonisolated enum PoliMiOAuth {
         APIRequest(host: .app, path: "/jaf/oauth/revoke", method: "POST")
     }
 
-    /// - Parameters:
-    ///   - matricola: when given, this authorises a **career change** rather
-    ///     than a login. One person has one `codicePersona` and a matricola
-    ///     per enrolment, and the token is bound to one of them — which is why
-    ///     the other career's services answer "Utente non abilitato". The
-    ///     official app moves the grant by re-authorising against
-    ///     `/careerChange`, which is what this reproduces.
-    ///   - accessToken: the current token, which is the evidence of who is
-    ///     asking. Required for a career change; ignored for a login.
+    /// Which authorisation is being asked for.
+    ///
+    /// Made explicit because the two differ in four parameters at once —
+    /// endpoint, matricola, access token and scope — and getting one wrong
+    /// silently produces the other flow. A login asking for no scopes, or a
+    /// career change asking for all of them, both fail in ways that look
+    /// like something else.
+    nonisolated enum AuthorizationFlow: Sendable, Equatable {
+        /// A full login. `hintMatricola` asks the IdP to bind the new grant
+        /// to a particular enrolment; it is only a hint, and the reliable
+        /// lever is `PUT /v1/careers/favorite/{matricola}` set beforehand.
+        case login(hintMatricola: String? = nil)
+        /// Moves an existing grant to another enrolment without a new login.
+        ///
+        /// - Important: the Politecnico's own `/careerChange` currently errors
+        ///   for at least some accounts — reproduced in the official app — so
+        ///   the app offers re-login instead. Kept because the flow is correct
+        ///   and the endpoint may recover.
+        case careerChange(matricola: String, accessToken: String)
+
+        var matricola: String? {
+            switch self {
+            case .login(let hint): hint
+            case .careerChange(let matricola, _): matricola
+            }
+        }
+    }
+
     static func authorizationURL(
         params: ServiceDirectory.OAuthParams = .fallback,
         state: String = UUID().uuidString,
-        matricola: String? = nil,
-        accessToken: String? = nil
+        flow: AuthorizationFlow = .login()
     ) -> URL {
-        let endpoint = matricola == nil
-            ? params.authorizationEndpoint
-            : params.careerChangeEndpoint
+        let isCareerChange: Bool
+        if case .careerChange = flow { isCareerChange = true } else { isCareerChange = false }
+        let endpoint = isCareerChange
+            ? params.careerChangeEndpoint
+            : params.authorizationEndpoint
         var components = URLComponents(
             url: endpoint ?? URL(string: "https://oauthidp.polimi.it/oauthidp/oauth2/auth")!,
             resolvingAgainstBaseURL: false
@@ -98,14 +118,19 @@ nonisolated enum PoliMiOAuth {
             ("access_type", params.accessType ?? "offline"),
             ("response_type", params.responseType ?? "code"),
             ("state", state),
-            ("matricola", matricola ?? ""),
-            ("al_pj_matricola", matricola ?? ""),
-            ("access_token", matricola == nil ? "" : (accessToken ?? "")),
+            ("matricola", flow.matricola ?? ""),
+            ("al_pj_matricola", flow.matricola ?? ""),
+            // The token is the evidence of who is asking, and only a career
+            // change needs it — a login has nothing to prove yet.
+            ("access_token", {
+                if case .careerChange(_, let token) = flow { return token }
+                return ""
+            }()),
             // `scope: n ? "" : t.scope` in the bundle. A career change moves
-            // an existing grant rather than requesting a new one, and asking
-            // for the full scope list here turns a switch into a fresh
-            // consent prompt.
-            ("scope", matricola == nil ? params.scope : ""),
+            // an existing grant rather than requesting a new one; a login,
+            // including one hinting at a matricola, must ask for the full
+            // list or the new token comes back with no authority.
+            ("scope", isCareerChange ? "" : params.scope),
             ("al_id_srv", ""),
             ("al_id_srv_chiamante", ""),
         ]

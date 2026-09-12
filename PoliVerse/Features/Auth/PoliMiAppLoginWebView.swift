@@ -49,13 +49,10 @@ struct PoliMiAppLoginWebView: View {
     let onCredentials: (PoliMiToken) -> Void
     let onError: (any Error) -> Void
     var onCieIDMissing: () -> Void = {}
-    /// When set, this drives a **career change** rather than a login: the
-    /// same three phases, but authorising against `/careerChange` with the
-    /// chosen matricola and the token already held. The user stays signed in
-    /// throughout; only the enrolment the grant is bound to moves.
-    var switchingTo: Career?
-    /// The current token, which the IdP needs as proof of who is asking.
-    var currentToken: String?
+    /// Which authorisation this web view is driving. A login by default;
+    /// `.login(hintMatricola:)` to land on a particular enrolment, or
+    /// `.careerChange` to move an existing grant without signing in again.
+    var flow: PoliMiOAuth.AuthorizationFlow = .login()
 
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "oauth")
 
@@ -122,10 +119,9 @@ struct PoliMiAppLoginWebView: View {
         _ = try? await webView.evaluateJavaScript(seed)
 
         let authorize = PoliMiOAuth.authorizationURL(
-            params: oauthParams, state: state,
-            matricola: switchingTo?.matricola, accessToken: currentToken)
-        if let switchingTo {
-            log.notice("Changing career to matricola \(switchingTo.matricola, privacy: .public)")
+            params: oauthParams, state: state, flow: flow)
+        if let matricola = flow.matricola {
+            log.notice("Authorizing for matricola \(matricola, privacy: .public) (\(oauthParams.scope.split(separator: " ").count, privacy: .public) scopes)")
         } else {
             log.notice("Handing the official app an authorize flow (\(oauthParams.scope.split(separator: " ").count, privacy: .public) scopes)")
         }

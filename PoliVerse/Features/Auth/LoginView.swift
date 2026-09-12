@@ -81,13 +81,21 @@ struct LoginView: View {
                     router: cieID,
                     onCredentials: { token in
                         showingWeb = false
-                        Task { await session.completeLogin(token: token) }
+                        Task {
+                            await session.completeLogin(token: token)
+                            // Consumed either way: a hint that did not take is
+                            // not worth re-applying to every future login.
+                            session.pendingMatricola = nil
+                        }
                     },
                     onError: { error in
                         showingWeb = false
                         webError = error.localizedDescription
                     },
-                    onCieIDMissing: { showingCieIDMissing = true }
+                    onCieIDMissing: { showingCieIDMissing = true },
+                    // Carries the enrolment the user asked to switch to, if
+                    // they got here from the career switcher.
+                    flow: .login(hintMatricola: session.pendingMatricola)
                 )
                 .ignoresSafeArea(edges: .bottom)
                 .navigationTitle("Servizi Online")

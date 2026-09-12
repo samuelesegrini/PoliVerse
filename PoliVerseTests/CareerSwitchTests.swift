@@ -42,14 +42,29 @@ struct CareerSwitchTests {
     @Test("A career change authorises against /careerChange")
     func careerChangeEndpoint() {
         let url = PoliMiOAuth.authorizationURL(
-            state: "abc", matricola: "986617", accessToken: "tok")
+            state: "abc", flow: .careerChange(matricola: "986617", accessToken: "tok"))
         #expect(url.path.hasSuffix("/careerChange"))
+    }
+
+    /// The route actually used, now that /careerChange errors server-side:
+    /// a full login that asks to land on a particular enrolment. It must stay
+    /// on /auth and keep the full scope, or the new token has no authority.
+    @Test("A hinted login stays a login: /auth, full scope, no token")
+    func hintedLogin() {
+        let url = PoliMiOAuth.authorizationURL(
+            state: "abc", flow: .login(hintMatricola: "332218"))
+        #expect(url.path.hasSuffix("/auth"))
+        let found = query(url)
+        #expect(found["matricola"] == "332218")
+        #expect(found["al_pj_matricola"] == "332218")
+        #expect(found["access_token"] == "")
+        #expect(found["scope"]?.isEmpty == false)
     }
 
     @Test("The chosen matricola is sent under both names the IdP reads")
     func matricolaSentTwice() {
         let found = query(PoliMiOAuth.authorizationURL(
-            state: "abc", matricola: "986617", accessToken: "tok"))
+            state: "abc", flow: .careerChange(matricola: "986617", accessToken: "tok")))
         #expect(found["matricola"] == "986617")
         #expect(found["al_pj_matricola"] == "986617")
     }
@@ -59,7 +74,7 @@ struct CareerSwitchTests {
     @Test("The current access token is carried")
     func carriesToken() {
         let found = query(PoliMiOAuth.authorizationURL(
-            state: "abc", matricola: "986617", accessToken: "tok-123"))
+            state: "abc", flow: .careerChange(matricola: "986617", accessToken: "tok-123")))
         #expect(found["access_token"] == "tok-123")
     }
 
@@ -70,14 +85,14 @@ struct CareerSwitchTests {
     @Test("A career change requests no scopes")
     func emptyScope() {
         let found = query(PoliMiOAuth.authorizationURL(
-            state: "abc", matricola: "986617", accessToken: "tok"))
+            state: "abc", flow: .careerChange(matricola: "986617", accessToken: "tok")))
         #expect(found["scope"] == "")
     }
 
     @Test("The state is preserved so the response can be matched")
     func state() {
         let found = query(PoliMiOAuth.authorizationURL(
-            state: "xyz-1", matricola: "986617", accessToken: "tok"))
+            state: "xyz-1", flow: .careerChange(matricola: "986617", accessToken: "tok")))
         #expect(found["state"] == "xyz-1")
     }
 }

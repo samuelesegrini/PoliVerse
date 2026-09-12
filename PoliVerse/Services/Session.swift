@@ -196,6 +196,29 @@ final class Session {
         }
     }
 
+    /// The enrolment the next login should land on.
+    ///
+    /// Persisted, because the login it applies to happens after the app has
+    /// signed out and the in-memory state is gone. Cleared once used.
+    var pendingMatricola: String? {
+        get { UserDefaults.standard.string(forKey: "pendingMatricola") }
+        set { UserDefaults.standard.set(newValue, forKey: "pendingMatricola") }
+    }
+
+    /// Signs out so the user can sign back in on another enrolment.
+    ///
+    /// The Politecnico's own `/careerChange` errors for this account — in the
+    /// official app too — so the working route is a full re-login. The lever
+    /// that actually decides which enrolment the new token binds to is the
+    /// favourite, set through `PUT /v1/careers/favorite/{matricola}` while
+    /// the current token still works; the matricola on the authorize request
+    /// is only a hint on top of that.
+    func beginCareerRelogin(matricola: String) async {
+        pendingMatricola = matricola
+        log.notice("Signing out to re-authenticate on matricola \(matricola, privacy: .public)")
+        await signOut()
+    }
+
     /// Adopts a token minted for a different enrolment.
     ///
     /// Deliberately not ``completeLogin(token:)``: that moves the state to
