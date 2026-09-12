@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import OSLog
+import WidgetKit
 
 /// Which rooms are free, and when.
 ///
@@ -209,8 +210,42 @@ final class FreeRoomsService {
         rooms = loaded
         hiddenRooms = hidden.sorted()
         loadedKey = key
+        saveWidgetSnapshot()
         let booked = loaded.reduce(0) { $0 + $1.bookings.count }
         log.notice("aule \(stamp, privacy: .public): \(loaded.count, privacy: .public) rooms, \(booked, privacy: .public) bookings, \(hidden.count, privacy: .public) hidden, \(self.freeRooms().count, privacy: .public) with free time")
+    }
+
+    /// Publishes the day's bookings for the widget to read.
+    ///
+    /// Only for today, and only when there is something to say: a widget
+    /// showing "free now" from yesterday's bookings would be confidently
+    /// wrong, and the snapshot's own day check is the second line of defence,
+    /// not the first.
+    ///
+    /// Stored per campus rather than per account: rooms are not personal, and
+    /// keying them to a matricola would mean re-fetching 150 rooms on a career
+    /// switch for identical data.
+    private func saveWidgetSnapshot() {
+        guard let campus, Calendar.current.isDateInToday(day), !rooms.isEmpty
+        else { return }
+
+        let snapshot = FreeRoomsSnapshot(
+            day: day,
+            campus: campus,
+            rooms: rooms.map { room in
+                FreeRoomsSnapshot.Room(
+                    id: room.id,
+                    name: room.name,
+                    building: room.building,
+                    seats: room.seats,
+                    busy: room.bookings
+                        .map { .init(start: $0.start, end: max($0.start, $0.end)) }
+                        .sorted { $0.start < $1.start })
+            })
+        OfflineStore.shared.save(
+            snapshot, as: FreeRoomsSnapshot.cacheName, account: campus)
+        FreeRoomsSnapshot.knownCampuses = catalogue.campuses
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     /// One room's bookings for the day being shown.
