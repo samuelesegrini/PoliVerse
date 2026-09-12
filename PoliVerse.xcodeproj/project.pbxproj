@@ -476,6 +476,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8CHF29UD9Q;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/PoliVerseWidgets-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = PoliVerse;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -485,8 +486,6 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				INFOPLIST_KEY_CFBundleDisplayName = PoliVerse;
-				INFOPLIST_FILE = "Config/PoliVerseWidgets-Info.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = segrini.samuele.PoliVerse.Widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -509,6 +508,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8CHF29UD9Q;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/PoliVerseWidgets-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = PoliVerse;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -518,8 +518,6 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				INFOPLIST_KEY_CFBundleDisplayName = PoliVerse;
-				INFOPLIST_FILE = "Config/PoliVerseWidgets-Info.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = segrini.samuele.PoliVerse.Widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

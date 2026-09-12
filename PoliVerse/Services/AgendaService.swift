@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import OSLog
+import WidgetKit
 
 /// Lectures, exams and deadlines from the agenda endpoint.
 ///
@@ -115,6 +116,10 @@ final class AgendaService {
         loadedRange = from...to
         window.markLoaded(source: source)
         slot.save(events, for: session.useMockData ? nil : matricola)
+        // The widgets read this file; nothing else tells them it changed.
+        // Without this the Lock Screen keeps last night's lecture until the
+        // system happens to grant a reload, which can be hours.
+        WidgetCenter.shared.reloadAllTimelines()
         age = slot.age
     }
 

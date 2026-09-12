@@ -34,7 +34,7 @@ struct NextLectureProvider: TimelineProvider {
     /// the answer to "what's next" changes.
     func getTimeline(in context: Context, completion: @escaping (Timeline<NextLectureEntry>) -> Void) {
         let now = Date.now
-        let events = Self.load()
+        let events = WidgetAgenda.load()?.events ?? []
         var dates: [Date] = [now]
 
         for event in events where event.end > now {
@@ -55,7 +55,8 @@ struct NextLectureProvider: TimelineProvider {
     }
 
     private func entry(at date: Date, events: [AgendaEvent]? = nil) -> NextLectureEntry {
-        let all = events ?? Self.load()
+        let cached = WidgetAgenda.load()
+        let all = events ?? cached?.events ?? []
         let upcoming = all
             .filter { $0.end > date && $0.kind == .lecture }
             .sorted { $0.start < $1.start }
@@ -63,21 +64,10 @@ struct NextLectureProvider: TimelineProvider {
             date: date,
             lecture: upcoming.first,
             following: upcoming.dropFirst().first,
-            age: Self.age,
-            signedIn: SharedAccount.matricola != nil)
+            age: cached?.age,
+            signedIn: WidgetAgenda.isSignedIn)
     }
 
-    private static var store: OfflineStore { OfflineStore(groupIdentifier: OfflineStore.groupIdentifier) }
-
-    static func load() -> [AgendaEvent] {
-        guard let matricola = SharedAccount.matricola else { return [] }
-        return store.load([AgendaEvent].self, as: "agenda", account: matricola)?.value ?? []
-    }
-
-    static var age: TimeInterval? {
-        guard let matricola = SharedAccount.matricola else { return nil }
-        return store.load([AgendaEvent].self, as: "agenda", account: matricola)?.age
-    }
 }
 
 struct NextLectureWidget: Widget {
