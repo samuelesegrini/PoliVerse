@@ -199,3 +199,21 @@ struct RoomDayView: View {
         }
     }
 }
+
+// MARK: - Previews
+
+#Preview("Occupazione") {
+    let day = DateInterval(start: PoliMiDate.time(8, on: .now),
+                           end: PoliMiDate.time(20, on: .now))
+    return List {
+        Section("Oggi") {
+            OccupancyTimeline(
+                bookings: MockData.roomSchedules(on: .now)[0].bookings, day: day)
+        }
+    }
+    .previewEnvironment()
+}
+
+#Preview("Giornata aula") {
+    List { RoomDayView(room: MockData.classrooms()[0]) }.previewEnvironment()
+}

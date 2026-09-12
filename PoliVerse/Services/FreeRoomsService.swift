@@ -66,6 +66,14 @@ final class FreeRoomsService {
     /// not faster.
     private let concurrency = 8
 
+    convenience init(catalogue: RoomsService, preview rooms: [RoomSchedule]) {
+        self.init(catalogue: catalogue)
+        self.rooms = rooms
+        self.skipsLoading = true
+    }
+
+    private var skipsLoading = false
+
     init(catalogue: RoomsService, session: URLSession = .shared) {
         self.catalogue = catalogue
         self.session = session
@@ -105,6 +113,7 @@ final class FreeRoomsService {
     }
 
     func load(force: Bool = false) async {
+        guard !skipsLoading else { return }
         await catalogue.load()
         if campus == nil { campus = catalogue.campuses.first }
 

@@ -185,3 +185,9 @@ struct CourseDetailView: View {
         .cardBackground()
     }
 }
+
+// MARK: - Previews
+
+#Preview("Corso") {
+    CourseDetailView(course: MockData.courses[0]).previewInNavigation()
+}

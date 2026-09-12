@@ -349,3 +349,28 @@ struct YearFilter: View {
         .foregroundStyle(isOn ? Theme.onAccent : .primary)
     }
 }
+
+// MARK: - Previews
+
+#Preview("Home") {
+    HomeView().previewEnvironment()
+}
+
+#Preview("Componente · Prossima lezione") {
+    NextUpCard(event: MockData.agendaEvents(around: .now)[0])
+        .padding()
+        .previewEnvironment()
+}
+
+#Preview("Componente · Prossimo esame") {
+    ExamSummaryCard(exam: MockData.examSessions()[0])
+        .padding()
+        .previewEnvironment()
+}
+
+#Preview("Componente · Filtro anno") {
+    @Previewable @State var year: String?
+    return YearFilter(years: ["2025/26", "2024/25", "2023/24"], selection: $year)
+        .padding()
+        .previewEnvironment()
+}

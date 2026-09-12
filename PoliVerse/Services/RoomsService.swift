@@ -33,6 +33,17 @@ final class RoomsService {
     private let session: URLSession
     private let base = URL(string: "https://onlineservices.polimi.it/maps_rest/rest")!
 
+    /// Seeds the catalogue and stops it fetching. For previews only — the
+    /// maps service is unauthenticated and has no mock path of its own, so
+    /// without this every preview of a room screen would hit the network.
+    convenience init(preview rooms: [Classroom]) {
+        self.init()
+        self.rooms = rooms
+        self.skipsLoading = true
+    }
+
+    private var skipsLoading = false
+
     init(session: URLSession = .shared) {
         self.session = session
         if let cached = DiskCache.load([Classroom].self, as: "rooms") {
@@ -58,6 +69,7 @@ final class RoomsService {
     /// The catalogue changes rarely, so a cached copy is served immediately and
     /// only refreshed when it is missing or a refresh is asked for.
     func load(force: Bool = false) async {
+        guard !skipsLoading else { return }
         guard !isLoading, force || rooms.isEmpty else { return }
         isLoading = true
         errorMessage = nil

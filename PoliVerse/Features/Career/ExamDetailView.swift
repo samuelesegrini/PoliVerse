@@ -149,3 +149,9 @@ struct ExamDetailView: View {
         .cardBackground()
     }
 }
+
+// MARK: - Previews
+
+#Preview("Appello") {
+    ExamDetailView(exam: MockData.examSessions()[0]).previewInNavigation()
+}

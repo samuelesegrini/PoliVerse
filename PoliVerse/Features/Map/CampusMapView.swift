@@ -176,3 +176,9 @@ private struct BuildingSheet: View {
             .sorted { $0.floor < $1.floor }
     }
 }
+
+// MARK: - Previews
+
+#Preview("Mappa campus") {
+    CampusMapView().previewInNavigation()
+}

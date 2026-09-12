@@ -125,3 +125,9 @@ struct LoginView: View {
         return nil
     }
 }
+
+// MARK: - Previews
+
+#Preview("Accesso") {
+    LoginView().previewEnvironment()
+}

@@ -148,3 +148,9 @@ struct SearchView: View {
         }
     }
 }
+
+// MARK: - Previews
+
+#Preview("Cerca") {
+    SearchView().previewEnvironment()
+}

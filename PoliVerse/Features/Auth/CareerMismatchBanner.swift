@@ -43,3 +43,11 @@ struct CareerMismatchBanner: View {
         }
     }
 }
+
+// MARK: - Previews
+
+#Preview("Carriera sbagliata") {
+    CareerMismatchBanner()
+        .padding()
+        .previewInNavigation()
+}

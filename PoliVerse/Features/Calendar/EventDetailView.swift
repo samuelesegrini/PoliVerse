@@ -188,3 +188,17 @@ private struct FlowTags: View {
         }
     }
 }
+
+// MARK: - Previews
+
+#Preview("Lezione") {
+    EventDetailView(event: MockData.agendaEvents(around: .now)[0])
+        .previewInNavigation()
+}
+
+#Preview("Componente · Tag") {
+    FlowTags(tags: ["Lezione", "Informatica", "Aula 3.0.1", "Bovisa"],
+             accent: Theme.brand)
+        .padding()
+        .previewEnvironment()
+}

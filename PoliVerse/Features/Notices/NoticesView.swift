@@ -186,3 +186,21 @@ struct NoticesToolbarButton: View {
                 : "Notifiche")
     }
 }
+
+// MARK: - Previews
+
+#Preview("Notifiche") {
+    NoticesView().previewEnvironment()
+}
+
+#Preview("Notifica") {
+    NoticeDetailView(notice: MockData.notices()[0]).previewInNavigation()
+}
+
+#Preview("Componente · Riga notifica") {
+    List {
+        ForEach(MockData.notices()) { NoticeRow(notice: $0) }
+    }
+    .listStyle(.plain)
+    .previewEnvironment()
+}

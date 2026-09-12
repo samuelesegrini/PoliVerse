@@ -136,3 +136,9 @@ struct WeBeepView: View {
         }
     }
 }
+
+// MARK: - Previews
+
+#Preview("WeBeep") {
+    WeBeepView().previewEnvironment()
+}

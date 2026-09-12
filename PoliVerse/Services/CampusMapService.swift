@@ -31,6 +31,14 @@ final class CampusMapService {
     /// Fetched once: buildings do not move.
     private var locations: [String: BuildingLocation] = [:]
 
+    convenience init(catalogue: RoomsService, freeRooms: FreeRoomsService, preview pins: [MapPin]) {
+        self.init(catalogue: catalogue, freeRooms: freeRooms)
+        self.pins = pins
+        self.skipsLoading = true
+    }
+
+    private var skipsLoading = false
+
     init(catalogue: RoomsService, freeRooms: FreeRoomsService, session: URLSession = .shared) {
         self.catalogue = catalogue
         self.freeRooms = freeRooms
@@ -55,6 +63,7 @@ final class CampusMapService {
     }
 
     func load(campus: String?) async {
+        guard !skipsLoading else { return }
         guard !isLoading else { return }
         isLoading = true
         errorMessage = nil

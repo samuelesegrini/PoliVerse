@@ -136,3 +136,16 @@ private struct RoomRow: View {
         .padding(.vertical, 2)
     }
 }
+
+// MARK: - Previews
+
+#Preview("Catalogo aule") {
+    RoomsView().previewInNavigation()
+}
+
+#Preview("Componente · Riga aula") {
+    List {
+        ForEach(MockData.classrooms()) { RoomRow(room: $0) }
+    }
+    .previewEnvironment()
+}

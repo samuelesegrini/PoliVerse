@@ -29,3 +29,22 @@ struct RichText: View {
         }
     }
 }
+
+// MARK: - Previews
+
+#Preview("Testo con markup") {
+    ScrollView {
+        RichText(
+            html: "<p>Le domande si chiudono il <b>15 febbraio</b>.</p>"
+                + "<p>Info sul sito dell&rsquo;<a href=\"https://polimi.it\">ateneo</a>.</p>",
+            plain: nil)
+        .padding()
+    }
+    .previewEnvironment()
+}
+
+#Preview("Testo semplice") {
+    RichText(html: nil, plain: "Nessun markup, solo testo.")
+        .padding()
+        .previewEnvironment()
+}

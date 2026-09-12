@@ -202,3 +202,28 @@ struct RoomScheduleView: View {
         return "\(clock.string(from: interval.start))–\(clock.string(from: interval.end))"
     }
 }
+
+// MARK: - Previews
+
+#Preview("Aule libere") {
+    FreeRoomsView().previewInNavigation()
+}
+
+#Preview("Giornata di un'aula") {
+    RoomScheduleView(
+        room: MockData.roomSchedules(on: .now)[0],
+        day: DateInterval(start: PoliMiDate.time(8, on: .now),
+                          end: PoliMiDate.time(20, on: .now)))
+    .previewInNavigation()
+}
+
+#Preview("Componente · Aula libera") {
+    let day = DateInterval(start: PoliMiDate.time(8, on: .now),
+                           end: PoliMiDate.time(20, on: .now))
+    return List {
+        ForEach(MockData.roomSchedules(on: .now)) { room in
+            RoomFreeRow(room: room, slots: room.freeSlots(in: day))
+        }
+    }
+    .previewEnvironment()
+}

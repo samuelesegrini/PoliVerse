@@ -18,6 +18,15 @@ final class RoomFacilitiesService {
     private let base = URL(string: "https://onlineservices.polimi.it/maps_rest/rest/ricerca/aula")!
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "aule")
 
+    convenience init(preview facilities: [RoomFacility]) {
+        self.init()
+        // Keyed under the mock rooms' ids so any preview room shows something.
+        for id in MockData.classrooms().compactMap(\.occupancyID) {
+            equipment[id] = facilities
+            software[id] = []
+        }
+    }
+
     init(session: URLSession = .shared) {
         self.session = session
     }

@@ -191,3 +191,33 @@ private struct NewsHighlightCard: View {
         .background(.background.secondary, in: .rect(cornerRadius: 12))
     }
 }
+
+// MARK: - Previews
+
+#Preview("Notizie") {
+    NewsView().previewInNavigation()
+}
+
+#Preview("Notizia") {
+    NewsDetailView(item: MockData.news()[0]).previewInNavigation()
+}
+
+#Preview("In evidenza") {
+    ScrollView { NewsHighlights().padding() }.previewInNavigation()
+}
+
+#Preview("Componente · Riga notizia") {
+    List {
+        ForEach(MockData.news()) { NewsRow(item: $0) }
+    }
+    .listStyle(.plain)
+    .previewEnvironment()
+}
+
+#Preview("Componente · Card notizia") {
+    VStack(spacing: 10) {
+        ForEach(MockData.news()) { NewsHighlightCard(item: $0) }
+    }
+    .padding()
+    .previewEnvironment()
+}

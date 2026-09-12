@@ -304,3 +304,16 @@ private struct EventRow: View {
         }
     }
 }
+
+// MARK: - Previews
+
+#Preview("Calendario") {
+    CalendarView().previewEnvironment()
+}
+
+#Preview("Componente · Riga evento") {
+    List {
+        ForEach(MockData.agendaEvents(around: .now).prefix(4)) { EventRow(event: $0) }
+    }
+    .previewEnvironment()
+}

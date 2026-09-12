@@ -100,3 +100,9 @@ struct CareerSwitchView: View {
         }
     }
 }
+
+// MARK: - Previews
+
+#Preview("Scelta matricola") {
+    CareerSwitchView().previewInNavigation()
+}

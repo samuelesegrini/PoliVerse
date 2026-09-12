@@ -267,3 +267,9 @@ struct CieIDWaitingBanner: View {
         .background(.regularMaterial)
     }
 }
+
+// MARK: - Previews
+
+#Preview("Materiali") {
+    CourseMaterialsView(course: MockData.courses[0]).previewInNavigation()
+}

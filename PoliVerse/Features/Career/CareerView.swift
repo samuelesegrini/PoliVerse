@@ -381,3 +381,33 @@ private struct ExamRow: View {
         .cardBackground()
     }
 }
+
+// MARK: - Previews
+
+#Preview("Carriera") {
+    CareerView().previewEnvironment()
+}
+
+#Preview("Componente · Statistica") {
+    HStack {
+        StatTile(value: "27,4", label: "Media", accent: Theme.brand)
+        StatTile(value: "138", label: "CFU", accent: .green)
+        StatTile(value: "25", label: "Esami", accent: .orange, compact: true)
+    }
+    .padding()
+    .previewEnvironment()
+}
+
+#Preview("Componente · Riga libretto") {
+    List {
+        ForEach(MockData.libretto().prefix(4)) { LibrettoRow(exam: $0) }
+    }
+    .previewEnvironment()
+}
+
+#Preview("Componente · Riga appello") {
+    List {
+        ForEach(MockData.examSessions().prefix(3)) { ExamRow(exam: $0) }
+    }
+    .previewEnvironment()
+}

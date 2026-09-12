@@ -133,3 +133,9 @@ extension Bundle {
         return "\(short) (\(build))"
     }
 }
+
+// MARK: - Previews
+
+#Preview("Impostazioni") {
+    SettingsView().previewInNavigation()
+}

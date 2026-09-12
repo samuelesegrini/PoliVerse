@@ -103,3 +103,14 @@ struct ClassroomDetailView: View {
         openURL(url)
     }
 }
+
+// MARK: - Previews
+
+#Preview("Dettaglio aula") {
+    ClassroomDetailView(room: MockData.classrooms()[0]).previewInNavigation()
+}
+
+#Preview("Dotazioni") {
+    List { RoomFacilitiesSection(roomID: MockData.classrooms()[0].occupancyID) }
+        .previewEnvironment()
+}
