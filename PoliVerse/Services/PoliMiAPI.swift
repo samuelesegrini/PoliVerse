@@ -195,7 +195,16 @@ nonisolated final class PoliMiAPI: Sendable {
                     _ = try await tokens.forceRefresh()
                     continue
 
-                case 401 where Self.isNotEntitled(String(data: data, encoding: .utf8) ?? ""):
+                // Gated on the service being one the app can live without.
+                //
+                // Without that gate this branch swallowed `iae` and `libretto`
+                // too, and those are not optional: their 401 is the app's
+                // signal to drop the token and re-authenticate. Classifying it
+                // as "your profile lacks access" made a recoverable session
+                // failure permanent — never retried, never re-authenticated,
+                // and reported to the user as a fact about their account.
+                case 401 where !request.host.refusalMeansBrokenSession
+                    && Self.isNotEntitled(String(data: data, encoding: .utf8) ?? ""):
                     let denied = String(data: data, encoding: .utf8) ?? ""
                     log.error("Service not permitted for this account — path=\(request.path, privacy: .public)")
                     // Deliberately no `onInvalidScope`: the token is fine and

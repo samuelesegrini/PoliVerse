@@ -293,3 +293,33 @@ struct RefusalCodeTests {
         #expect(PoliMiAPI.isInvalidScope(scope))
     }
 }
+
+/// Which services may report a refusal as a fact about the account, and which
+/// must treat the same body as a broken session.
+///
+/// The distinction is not cosmetic: `iae` and `libretto` recover from a 401 by
+/// dropping the token and re-authenticating. Reading their refusal as a
+/// permissions problem removed that recovery — career went permanently blank
+/// with "your profile lacks access" while everything else worked.
+@Suite("Refusal routing")
+struct RefusalRoutingTests {
+    private let refusal = """
+    {"statusCode":401,"message":"jaf.model2.exceptions.JafUnauthorizedException: \
+    Utente non abilitato Code: 6"}
+    """
+
+    @Test("The body reads as a refusal whatever the host")
+    func bodyClassification() {
+        #expect(PoliMiAPI.isNotEntitled(refusal))
+    }
+
+    /// The routing that matters: only an optional service may keep it.
+    @Test("Essential services treat a refusal as a session to repair")
+    func essentialHostsRecover() {
+        for host in [APIHost.app, .iae, .agenda, .libretto, .weBeep] {
+            #expect(host.refusalMeansBrokenSession,
+                    "\(host) must be able to re-authenticate on a 401")
+        }
+        #expect(!APIHost.wsAule.refusalMeansBrokenSession)
+    }
+}
