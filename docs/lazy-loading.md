@@ -136,3 +136,53 @@ identity providers — CIE, SPID, aunicalogin — are pages the user actually re
 and taps, and their buttons are frequently images; blocking there would make
 the login unusable rather than fast. The SPA behind them is a page nobody
 reads: it exists to run its JavaScript and hand back a credential.
+
+---
+
+# Launch time, and what iOS 27 does not offer
+
+## The question asked
+
+"Can new iOS 27 APIs improve launch times?" The honest answer is **no**, and it
+is worth recording why so nobody re-does the search.
+
+The SwiftUI interface in SDK 27 carries 133 `iOS 27` availability markers. The
+only scene- or launch-adjacent ones are underscored private API
+(`_makeSceneAccessory`). There is no public launch, prewarm or scene-caching
+API added in this release, and raising the deployment target from 26 to 27
+would drop users for no launch benefit.
+
+## What was actually on the launch path
+
+`PoliVerseApp.init()` runs on the main thread before the first frame. It builds
+twelve services, and two of them read from disk.
+
+| Work | Measured | Verdict |
+| --- | --- | --- |
+| `DiskCache` room catalogue (353 rooms, 99 KB) | **1.28 ms** to decode | not worth moving |
+| `DiskCache` course list | smaller again | not worth moving |
+| `TokenStore` Keychain read | IPC to `securityd` | **moved** |
+| `BGTaskScheduler.register` | closure capture | negligible |
+| `WKWebsiteDataStore(forIdentifier:)` | lazy `static let` | already off the path |
+
+The JSON was the obvious suspect and the measurement cleared it. The Keychain
+read was the real one: `TokenStore.init` called `storage.load()`, and every
+accessor on that actor is already `async`, so the read now happens on first use
+— `Session.restore()`, after the first frame.
+
+"Not loaded yet" and "signed out" both look like a nil token, so writes mark
+the store loaded; otherwise a later read would go back to the Keychain and
+resurrect what was just cleared. That has a test.
+
+## Measurement is now part of the app
+
+Guessing produced one real finding and two false ones, so `LaunchMetrics` keeps
+the instruments:
+
+- **`OSSignposter`** intervals for named phases, for Instruments on a device.
+- **MetricKit** `MXAppLaunchMetric` for real launches in the field, logged
+  rather than uploaded — the app has no analytics backend and adding one to
+  measure launch would be a poor trade for the student whose data it would be.
+- **`ActivePrewarm`** is read and logged, because a prewarmed launch has
+  already paid for dynamic linking and its numbers are not comparable with a
+  cold one. Mistaking the two is how launch "improvements" get celebrated.

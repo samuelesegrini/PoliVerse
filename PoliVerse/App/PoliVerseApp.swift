@@ -98,6 +98,10 @@ struct PoliVerseApp: App {
                 .task {
                     UNUserNotificationCenter.current().delegate = notificationRouter
                     await notifications.refreshAuthorization()
+                    // After the first frame, deliberately: subscribing is not
+                    // free and nothing about it needs to happen before the UI
+                    // is on screen.
+                    LaunchMetrics.start()
                 }
                 // Asked for when the app leaves the screen, which is the
                 // moment iOS is deciding whether to grant one.

@@ -14,6 +14,9 @@ import Foundation
 /// `Task` instead of starting their own.
 actor TokenStore {
     private var token: PoliMiToken?
+    /// Whether the Keychain has been consulted yet. Distinct from `token`
+    /// being nil, which is also what "signed out" looks like.
+    private var didLoad = false
     /// The single in-flight refresh, if any. Concurrent callers join this.
     private var refreshTask: Task<PoliMiToken, Error>?
 
@@ -32,17 +35,36 @@ actor TokenStore {
     ) {
         self.storage = storage
         self.refresh = refresh
-        self.token = storage.load()
+        // Deliberately *not* loaded here.
+        //
+        // This initialiser runs inside `Session.init()`, which runs inside the
+        // App's own `init()` — on the main thread, before the first frame.
+        // Reading the Keychain means IPC to `securityd`, which is orders of
+        // magnitude slower than the JSON caches the app also reads at launch
+        // (measured at ~1 ms) and is the one piece of launch work genuinely
+        // worth moving.
+        //
+        // Every accessor is already `async`, so the read happens on first use
+        // — which is `Session.restore()`, after the first frame is on screen.
     }
 
-    var hasToken: Bool { token != nil }
+    /// The stored token, read from the Keychain the first time it is wanted.
+    private func current() -> PoliMiToken? {
+        if !didLoad {
+            token = storage.load()
+            didLoad = true
+        }
+        return token
+    }
+
+    var hasToken: Bool { current() != nil }
 
     /// The scope the stored token was granted, if any.
-    var grantedScope: String? { token?.grantedScope }
+    var grantedScope: String? { current()?.grantedScope }
 
     /// Records the scope a freshly-exchanged token was minted with.
     func setGrantedScope(_ scope: String) {
-        guard var current = token else { return }
+        guard var current = current() else { return }
         current.grantedScope = scope
         token = current
         persist()
@@ -50,11 +72,13 @@ actor TokenStore {
 
     func set(_ newToken: PoliMiToken) {
         token = newToken
+        didLoad = true
         persist()
     }
 
     func clear() {
         token = nil
+        didLoad = true
         refreshTask?.cancel()
         refreshTask = nil
         storage.delete()
@@ -62,7 +86,7 @@ actor TokenStore {
 
     /// Returns a token that is valid *now*, refreshing once if needed.
     func validToken() async throws -> String {
-        guard let current = token else { throw AuthError.notAuthenticated }
+        guard let current = current() else { throw AuthError.notAuthenticated }
 
         if !current.isExpired() { return current.accessToken }
 
@@ -95,7 +119,7 @@ actor TokenStore {
     /// Forces a refresh after a 401 that arrived despite a locally-valid token
     /// (clock skew, or server-side revocation).
     func forceRefresh() async throws -> String {
-        guard let current = token else { throw AuthError.notAuthenticated }
+        guard let current = current() else { throw AuthError.notAuthenticated }
         if let existing = refreshTask { return try await existing.value.accessToken }
 
         let task = Task<PoliMiToken, Error> { [refresh] in
