@@ -3,19 +3,30 @@ import SwiftUI
 /// Routes between login and the tab bar, and adapts to iPad width.
 struct RootView: View {
     @Environment(Session.self) private var session
+    @Environment(OnboardingState.self) private var onboarding
 
     var body: some View {
         Group {
             switch session.state {
             case .loading:
                 ProgressView()
+            // The first run explains the app before asking for an account, so
+            // it owns the sign-in rather than sitting in front of it. Once it
+            // has been through, a signed-out session is someone who already
+            // knows what this is — switching career, or coming back — and
+            // gets the plain login screen instead.
             case .signedOut, .failed, .exchangingCode:
-                LoginView()
+                if onboarding.isComplete { LoginView() } else { OnboardingView() }
             case .signedIn:
-                MainTabView()
+                if onboarding.isComplete { MainTabView() } else { OnboardingView() }
             }
         }
-        .task { await session.restore() }
+        .task {
+            await session.restore()
+            // After the restore, not before: a token in the Keychain is what
+            // says this install predates the onboarding.
+            if session.student != nil { onboarding.adoptExistingInstall() }
+        }
     }
 }
 
@@ -54,6 +65,10 @@ struct MainTabView: View {
                 SearchView()
             }
         }
+        // Above the tabs rather than on one screen: sample data replaces
+        // every one of them, so saying it once on the Home would leave the
+        // libretto looking like a real libretto.
+        .safeAreaInset(edge: .top, spacing: 0) { DemoModeBanner() }
         // Every way in from outside — Siri, Shortcuts, Spotlight's action row
         // — arrives as one notification, so the routing exists once.
         .onReceive(NotificationCenter.default.publisher(for: AppDestination.notification)) {

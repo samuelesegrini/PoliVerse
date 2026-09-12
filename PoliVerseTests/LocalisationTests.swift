@@ -56,4 +56,28 @@ struct LocalisationTests {
             #expect(resolved == "Aule libere")
         }
     }
+
+    /// The onboarding is the first English text anyone sees, and it is the
+    /// easiest to ship untranslated: the catalogue is only regenerated when
+    /// Xcode is opened, so a screen added from an editor arrives with its
+    /// Italian keys intact and no test noticing.
+    @Test("The onboarding screens are in the catalogue, not falling back to the keys")
+    func onboardingIsTranslated() {
+        let keys = [
+            "L'orario, senza cercarlo",
+            "Accedi con l'account del Politecnico",
+            "Promemoria per lezioni ed esami",
+            "Hai più di una carriera",
+            "Collega WeBeep",
+            "Tutto pronto",
+            "Dati di esempio",
+        ]
+        for key in keys {
+            let resolved = String(localized: String.LocalizationValue(key))
+            #expect(!resolved.isEmpty)
+            if PoliMiLanguage.current == .english {
+                #expect(resolved != key, "\(key) still reads as the Italian key in English")
+            }
+        }
+    }
 }

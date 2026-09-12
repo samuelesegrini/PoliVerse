@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(Session.self) private var session
+    @Environment(OnboardingState.self) private var onboarding
     @Environment(WeBeepService.self) private var weBeep
     @Environment(CareersService.self) private var careers
     @State private var cacheBytes = DiskCache.sizeInBytes()
@@ -43,6 +44,16 @@ struct SettingsView: View {
                 Toggle("Usa dati di esempio", isOn: $session.useMockData)
             } footer: {
                 Text("Con i dati di esempio l'app funziona senza collegarsi ai server del Politecnico. Disattivalo per usare il tuo account reale.")
+            }
+
+            Section {
+                Button {
+                    onboarding.restart()
+                } label: {
+                    Label("Rivedi l'introduzione", systemImage: "sparkles")
+                }
+            } footer: {
+                Text("Ripercorre cosa fa l'app e le impostazioni iniziali. Non ti disconnette.")
             }
 
             Section {

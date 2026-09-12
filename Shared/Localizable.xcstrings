@@ -565,6 +565,22 @@
         }
       }
     },
+    "Accedi con l'account del Politecnico": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with your Politecnico account"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi con l'account del Politecnico"
+          }
+        }
+      }
+    },
     "Accedi di nuovo": {
       "localizations": {
         "en": {
@@ -1223,6 +1239,22 @@
         }
       }
     },
+    "Calcolati sul tuo orario e programmati sul dispositivo. Niente esce dal telefono: non c'è un server che sa quando hai lezione.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Worked out from your timetable and scheduled on the device. Nothing leaves your phone: no server knows when you have lectures."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calcolati sul tuo orario e programmati sul dispositivo. Niente esce dal telefono: non c'è un server che sa quando hai lezione."
+          }
+        }
+      }
+    },
     "Calendario": {
       "localizations": {
         "en": {
@@ -1511,6 +1543,38 @@
         }
       }
     },
+    "Continua": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continua"
+          }
+        }
+      }
+    },
+    "Continua con questa": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue with this one"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continua con questa"
+          }
+        }
+      }
+    },
     "Conto alla rovescia e aula sulla schermata di blocco, fino a fine lezione.": {
       "localizations": {
         "en": {
@@ -1713,6 +1777,22 @@
         }
       }
     },
+    "Credenziali e SPID/CIE restano sulla pagina di ateneo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credentials and SPID/CIE stay on the university's page."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credenziali e SPID/CIE restano sulla pagina di ateneo."
+          }
+        }
+      }
+    },
     "Crediti": {
       "localizations": {
         "en": {
@@ -1867,6 +1947,38 @@
         }
       }
     },
+    "Dispense e registrazioni dei tuoi corsi, scaricabili per leggerle offline — in metropolitana, dove la rete del Politecnico non arriva.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Handouts and recordings from your courses, downloadable to read offline — on the metro, where the Politecnico's network doesn't reach."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispense e registrazioni dei tuoi corsi, scaricabili per leggerle offline — in metropolitana, dove la rete del Politecnico non arriva."
+          }
+        }
+      }
+    },
+    "Dispense, registrazioni e avvisi dei tuoi corsi. WeBeep ha una sessione sua, separata da quella dei Servizi Online, quindi serve un secondo accesso — una volta sola.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Handouts, recordings and announcements from your courses. WeBeep has its own session, separate from Servizi Online, so it needs a second sign-in — just once."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispense, registrazioni e avvisi dei tuoi corsi. WeBeep ha una sessione sua, separata da quella dei Servizi Online, quindi serve un secondo accesso — una volta sola."
+          }
+        }
+      }
+    },
     "Docenti": {
       "localizations": {
         "en": {
@@ -2011,6 +2123,38 @@
         }
       }
     },
+    "Esplora con dati di esempio": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore with sample data"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esplora con dati di esempio"
+          }
+        }
+      }
+    },
+    "Esplora l'app": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore the app"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esplora l'app"
+          }
+        }
+      }
+    },
     "Fasce libere per giorno, ricavate dalle lezioni prenotate.": {
       "localizations": {
         "en": {
@@ -2143,6 +2287,22 @@
         }
       }
     },
+    "Hai più di una carriera": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have more than one enrolment"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hai più di una carriera"
+          }
+        }
+      }
+    },
     "Ho capito": {
       "localizations": {
         "en": {
@@ -2175,6 +2335,54 @@
         }
       }
     },
+    "I dati scaricati restano sul telefono: non c'è un server di PoliVerse.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloaded data stays on your phone: there is no PoliVerse server."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I dati scaricati restano sul telefono: non c'è un server di PoliVerse."
+          }
+        }
+      }
+    },
+    "I dati si aggiornano da soli quando riapri l'app; trascina in giù per forzarlo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data refreshes itself when you reopen the app; pull down to force it."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I dati si aggiornano da soli quando riapri l'app; trascina in giù per forzarlo."
+          }
+        }
+      }
+    },
+    "I file si scaricano e restano leggibili offline.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files download and stay readable offline."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I file si scaricano e restano leggibili offline."
+          }
+        }
+      }
+    },
     "I materiali dei tuoi corsi.": {
       "localizations": {
         "en": {
@@ -2187,6 +2395,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "I materiali dei tuoi corsi."
+          }
+        }
+      }
+    },
+    "I materiali di WeBeep": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your WeBeep material"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I materiali di WeBeep"
           }
         }
       }
@@ -2379,6 +2603,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Il catalogo non ha restituito questa scheda."
+          }
+        }
+      }
+    },
+    "Il codice persona è uno solo, ma ogni immatricolazione ha la sua matricola — e i servizi del Politecnico rispondono solo per quella con cui hai fatto l'accesso.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your person code is one, but each enrolment has its own student number — and the Politecnico's services only answer for the one you signed in with."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il codice persona è uno solo, ma ogni immatricolazione ha la sua matricola — e i servizi del Politecnico rispondono solo per quella con cui hai fatto l'accesso."
           }
         }
       }
@@ -2595,6 +2835,22 @@
         }
       }
     },
+    "In uso": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In use"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In uso"
+          }
+        }
+      }
+    },
     "Indirizzo": {
       "localizations": {
         "en": {
@@ -2607,6 +2863,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Indirizzo"
+          }
+        }
+      }
+    },
+    "Inizia": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inizia"
           }
         }
       }
@@ -2685,6 +2957,22 @@
         }
       }
     },
+    "L'accesso avviene sulla pagina dei Servizi Online, nella stessa finestra che useresti dal browser. PoliVerse non vede la password: riceve solo un codice temporaneo e lo conserva nel portachiavi del dispositivo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signing in happens on the Servizi Online page, the same one you'd use in a browser. PoliVerse never sees your password: it receives a temporary code and keeps it in the device's keychain."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'accesso avviene sulla pagina dei Servizi Online, nella stessa finestra che useresti dal browser. PoliVerse non vede la password: riceve solo un codice temporaneo e lo conserva nel portachiavi del dispositivo."
+          }
+        }
+      }
+    },
     "L'accesso è scaduto. Accedi di nuovo per continuare.": {
       "localizations": {
         "en": {
@@ -2729,6 +3017,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "L'orario personalizzato è uno strumento informale del Politecnico: non sostituisce la presentazione del piano di studi."
+          }
+        }
+      }
+    },
+    "L'orario, senza cercarlo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your timetable, without looking for it"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'orario, senza cercarlo"
           }
         }
       }
@@ -2785,6 +3089,22 @@
         }
       }
     },
+    "Le aule libere restano reali: sono dati pubblici e non servono credenziali.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free rooms stay real: that data is public and needs no credentials."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le aule libere restano reali: sono dati pubblici e non servono credenziali."
+          }
+        }
+      }
+    },
     "Le comunicazioni dal Politecnico compaiono qui.": {
       "localizations": {
         "en": {
@@ -2801,6 +3121,22 @@
         }
       }
     },
+    "Le impostazioni raccolte qui si cambiano tutte da Impostazioni, l'icona in alto a destra nella Home.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything set up here can be changed in Settings, the icon at the top right of the Home screen."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le impostazioni raccolte qui si cambiano tutte da Impostazioni, l'icona in alto a destra nella Home."
+          }
+        }
+      }
+    },
     "Le iscrizioni agli appelli si gestiscono dai Servizi Online del Politecnico.": {
       "localizations": {
         "en": {
@@ -2813,6 +3149,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Le iscrizioni agli appelli si gestiscono dai Servizi Online del Politecnico."
+          }
+        }
+      }
+    },
+    "Le lezioni del giorno appena apri l'app, con l'aula e quanto manca. Sulla schermata di blocco e in Centro di Controllo, se vuoi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The day's lectures the moment you open the app, with the room and how long until it starts. On the Lock Screen and in Control Centre too, if you want."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le lezioni del giorno appena apri l'app, con l'aula e quanto manca. Sulla schermata di blocco e in Centro di Controllo, se vuoi."
           }
         }
       }
@@ -2965,6 +3317,22 @@
         }
       }
     },
+    "Libretto e simulazione": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcript and simulation"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Libretto e simulazione"
+          }
+        }
+      }
+    },
     "Lo scaglione è per cognome, dal primo incluso al secondo escluso. Scrivi il tuo cognome per vedere quale ti riguarda.": {
       "localizations": {
         "en": {
@@ -3105,6 +3473,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Matricola"
+          }
+        }
+      }
+    },
+    "Matricola e carriere · Impostazioni · Matricola.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Student number and enrolments · Settings · Student number."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matricola e carriere · Impostazioni · Matricola."
           }
         }
       }
@@ -3301,6 +3685,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nessun appello"
+          }
+        }
+      }
+    },
+    "Nessun collegamento ai server del Politecnico: orari, voti e materiali qui dentro sono inventati, così puoi vedere com'è fatta l'app senza account.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No connection to the Politecnico's servers: the timetables, marks and material in here are invented, so you can see what the app is like without an account."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun collegamento ai server del Politecnico: orari, voti e materiali qui dentro sono inventati, così puoi vedere com'è fatta l'app senza account."
           }
         }
       }
@@ -3593,6 +3993,22 @@
         }
       }
     },
+    "Nessuna statistica, nessun tracciamento, nessun account da creare.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No analytics, no tracking, no account to create."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna statistica, nessun tracciamento, nessun account da creare."
+          }
+        }
+      }
+    },
     "Niente in programma": {
       "localizations": {
         "en": {
@@ -3701,6 +4117,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Non hai effettuato l'accesso."
+          }
+        }
+      }
+    },
+    "Non ora": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non ora"
           }
         }
       }
@@ -4105,6 +4537,22 @@
         }
       }
     },
+    "Passo %lld di %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step %lld of %lld"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passo %lld di %lld"
+          }
+        }
+      }
+    },
     "Per accedere con la Carta d'Identità Elettronica serve l'app CieID.": {
       "localizations": {
         "en": {
@@ -4117,6 +4565,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Per accedere con la Carta d'Identità Elettronica serve l'app CieID."
+          }
+        }
+      }
+    },
+    "Per cambiare serve un nuovo accesso: lo trovi in Impostazioni · Matricola. Da lì l'app te lo spiega prima di farlo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changing it needs a new sign-in: you'll find it in Settings · Student number, where the app explains it before doing it."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per cambiare serve un nuovo accesso: lo trovi in Impostazioni · Matricola. Da lì l'app te lo spiega prima di farlo."
+          }
+        }
+      }
+    },
+    "Per passare al tuo account: Impostazioni · Usa dati di esempio.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To switch to your account: Settings · Use sample data."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per passare al tuo account: Impostazioni · Usa dati di esempio."
           }
         }
       }
@@ -4185,6 +4665,22 @@
         }
       }
     },
+    "Più tardi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Later"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Più tardi"
+          }
+        }
+      }
+    },
     "Poi": {
       "localizations": {
         "en": {
@@ -4223,6 +4719,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "PoliVerse non è affiliata al Politecnico di Milano."
+          }
+        }
+      }
+    },
+    "PoliVerse non è un'app ufficiale del Politecnico di Milano. Le credenziali si inseriscono solo nella pagina di ateneo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PoliVerse is not an official Politecnico di Milano app. Credentials are only ever entered on the university's own page."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PoliVerse non è un'app ufficiale del Politecnico di Milano. Le credenziali si inseriscono solo nella pagina di ateneo."
           }
         }
       }
@@ -4451,6 +4963,38 @@
         }
       }
     },
+    "Promemoria attivi · da Impostazioni · Promemoria cambi anticipo e tipi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders on · Settings · Reminders changes the lead time and the kinds."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promemoria attivi · da Impostazioni · Promemoria cambi anticipo e tipi."
+          }
+        }
+      }
+    },
+    "Promemoria non attivi · si accendono da Impostazioni · Promemoria.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders off · turn them on in Settings · Reminders."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promemoria non attivi · si accendono da Impostazioni · Promemoria."
+          }
+        }
+      }
+    },
     "Promemoria non consentiti": {
       "localizations": {
         "en": {
@@ -4463,6 +5007,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Promemoria non consentiti"
+          }
+        }
+      }
+    },
+    "Promemoria per lezioni ed esami": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders for lectures and exams"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promemoria per lezioni ed esami"
           }
         }
       }
@@ -4521,6 +5081,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Puoi ancora rifiutare questo voto dai servizi online."
+          }
+        }
+      }
+    },
+    "Quali aule sono libere adesso, in quale edificio e per quanto ancora. Dai dati pubblici del Politecnico, senza account.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which rooms are free right now, in which building, and for how much longer. From the Politecnico's public data, no account needed."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quali aule sono libere adesso, in quale edificio e per quanto ancora. Dai dati pubblici del Politecnico, senza account."
           }
         }
       }
@@ -4647,6 +5223,22 @@
         }
       }
     },
+    "Ripercorre cosa fa l'app e le impostazioni iniziali. Non ti disconnette.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walks through what the app does and the initial settings. It does not sign you out."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripercorre cosa fa l'app e le impostazioni iniziali. Non ti disconnette."
+          }
+        }
+      }
+    },
     "Risposta del server non leggibile.": {
       "localizations": {
         "en": {
@@ -4659,6 +5251,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Risposta del server non leggibile."
+          }
+        }
+      }
+    },
+    "Rivedi l'introduzione": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read the introduction again"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rivedi l'introduzione"
           }
         }
       }
@@ -4707,6 +5315,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Scadenze"
+          }
+        }
+      }
+    },
+    "Scadenze, appelli e chiusura iscrizioni alle 18:00 del giorno prima.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deadlines, exam sittings and enrolment closings at 18:00 the day before."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scadenze, appelli e chiusura iscrizioni alle 18:00 del giorno prima."
           }
         }
       }
@@ -4861,6 +5485,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sei sulla matricola %@"
+          }
+        }
+      }
+    },
+    "Senza aprire l'app": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without opening the app"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Senza aprire l'app"
           }
         }
       }
@@ -5025,6 +5665,38 @@
         }
       }
     },
+    "Si cambia quando vuoi da Impostazioni · Promemoria.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change it whenever you like in Settings · Reminders."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si cambia quando vuoi da Impostazioni · Promemoria."
+          }
+        }
+      }
+    },
+    "Si può fare più tardi: la trovi nella scheda WeBeep quando ti serve.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can do it later: it's in the WeBeep tab whenever you need it."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si può fare più tardi: la trovi nella scheda WeBeep quando ti serve."
+          }
+        }
+      }
+    },
     "Sigla aula, edificio o sede": {
       "localizations": {
         "en": {
@@ -5117,6 +5789,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Solo libere adesso"
+          }
+        }
+      }
+    },
+    "Stai guardando dati di esempio": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're looking at sample data"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stai guardando dati di esempio"
+          }
+        }
+      }
+    },
+    "Stai guardando dati di esempio, non il tuo account.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're looking at sample data, not your account."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stai guardando dati di esempio, non il tuo account."
           }
         }
       }
@@ -5253,6 +5957,22 @@
         }
       }
     },
+    "Tutto pronto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All set"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutto pronto"
+          }
+        }
+      }
+    },
     "Tutto resta sul dispositivo: i promemoria vengono calcolati dal tuo orario e programmati localmente, senza inviare nulla.": {
       "localizations": {
         "en": {
@@ -5281,6 +6001,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ultimi esiti"
+          }
+        }
+      }
+    },
+    "Un'aula dove studiare": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Somewhere to study"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un'aula dove studiare"
+          }
+        }
+      }
+    },
+    "Una notifica prima di ogni lezione, con l'aula.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A notification before each lecture, with the room."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una notifica prima di ogni lezione, con l'aula."
+          }
+        }
+      }
+    },
+    "Una striscia in cima a ogni schermata te lo ricorda.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A strip at the top of every screen reminds you."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una striscia in cima a ogni schermata te lo ricorda."
           }
         }
       }
@@ -5365,6 +6133,22 @@
         }
       }
     },
+    "Voti, media e crediti, con la simulazione di cosa succede alla media se il prossimo esame va in un certo modo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marks, average and credits, with a simulation of what happens to your average if the next exam goes a certain way."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voti, media e crediti, con la simulazione di cosa succede alla media se il prossimo esame va in un certo modo."
+          }
+        }
+      }
+    },
     "Voto di laurea": {
       "localizations": {
         "en": {
@@ -5413,6 +6197,38 @@
         }
       }
     },
+    "WeBeep collegato · i materiali sono nella scheda WeBeep.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeBeep connected · the material is in the WeBeep tab."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeBeep collegato · i materiali sono nella scheda WeBeep."
+          }
+        }
+      }
+    },
+    "WeBeep non collegato · si collega dalla scheda WeBeep.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeBeep not connected · connect it from the WeBeep tab."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeBeep non collegato · si collega dalla scheda WeBeep."
+          }
+        }
+      }
+    },
     "WeBeep usa un accesso separato da quello dei servizi d'ateneo. Serve una sola volta.": {
       "localizations": {
         "en": {
@@ -5425,6 +6241,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "WeBeep usa un accesso separato da quello dei servizi d'ateneo. Serve una sola volta."
+          }
+        }
+      }
+    },
+    "Widget con la prossima lezione e la media, controlli in Centro di Controllo e una Live Activity mentre sei in viaggio verso l'aula.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Widgets with your next lecture and your average, Control Centre buttons, and a Live Activity while you're on your way to the room."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Widget con la prossima lezione e la media, controlli in Centro di Controllo e una Live Activity mentre sei in viaggio verso l'aula."
+          }
+        }
+      }
+    },
+    "Widget e Centro di Controllo: tieni premuto sulla schermata Home per aggiungerli.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Widgets and Control Centre: press and hold on the Home Screen to add them."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Widget e Centro di Controllo: tieni premuto sulla schermata Home per aggiungerli."
           }
         }
       }

@@ -17,8 +17,14 @@ final class Session {
     private(set) var state: State = .loading
 
     /// Set when the app is built without a live backend, so every screen renders
-    /// with representative data. Toggled in Settings; defaults on until the
-    /// endpoints below are verified against a real account.
+    /// with representative data.
+    ///
+    /// **Defaults off.** It used to default on, from when the endpoints were
+    /// still being verified, and the cost of leaving it that way was that a
+    /// fresh install showed invented lectures to someone who had never been
+    /// told the setting existed. The first run now asks outright
+    /// (``WelcomeStepView``), and the answer is a choice rather than a
+    /// leftover.
     var useMockData: Bool {
         didSet { UserDefaults.standard.set(useMockData, forKey: "useMockData") }
     }
@@ -41,7 +47,7 @@ final class Session {
     private var profileBox: ProfileBox!
 
     init() {
-        self.useMockData = UserDefaults.standard.object(forKey: "useMockData") as? Bool ?? true
+        self.useMockData = UserDefaults.standard.object(forKey: "useMockData") as? Bool ?? false
 
         // The refresh closure is injected rather than reaching back into the
         // API client, which would be a retain cycle and would let a refresh
