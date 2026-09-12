@@ -219,7 +219,7 @@ struct WeBeepLoginSheet: View {
                     Task { await onSuccess() }
                 },
                 onError: { error in
-                    errorMessage = error.localizedDescription
+                    errorMessage = userFacingMessage(error)
                 },
                 onCieIDMissing: { showingCieIDMissing = true }
             )

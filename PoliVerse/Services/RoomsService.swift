@@ -109,7 +109,7 @@ final class RoomsService {
             DiskCache.save(joined, as: "rooms")
         } catch {
             log.error("Room catalogue failed: \(error.localizedDescription)")
-            errorMessage = error.localizedDescription
+            errorMessage = userFacingMessage(error)
         }
     }
 

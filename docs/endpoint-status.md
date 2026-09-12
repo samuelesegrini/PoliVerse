@@ -143,6 +143,32 @@ student's own mail, and the log gets pasted into bug reports.
 Once a real shape is known, narrow the candidate lists to the true names and
 delete the rest.
 
+## "Utente non abilitato Code: 6" is not only ws_aule
+
+Observed 2026-09-12 on `iae`, after a fresh login:
+
+```
+401 host=iae path=/v1/base/counters authHeader=true
+{"statusCode":401,"message":"...JafUnauthorizedException: Utente non abilitato Code: 6"}
+```
+
+`/v1/insegn` answers the same. The day before, both worked and `insegn`
+returned 0 sittings. Nothing in the app's request construction changed in
+between, and **re-authenticating does not clear it** — the run above had just
+re-minted the token.
+
+So Code 6 is the backend saying *this account is not enabled for this service
+right now*, not *this request is malformed* and not *this token is stale*. For
+`iae` (iscrizione appelli esami) the likeliest cause is the calendar: between
+sessions, or before enrolment is renewed for the new academic year, the
+service is closed to the student.
+
+Consequences encoded in the app:
+
+- never re-authenticate on Code 6 — it is a loop;
+- never retry it — the answer will not change within a session;
+- say what the server said, rather than "Il server ha risposto 401".
+
 ## What moved
 
 | Was (PoliFemo, still shipping) | Now |

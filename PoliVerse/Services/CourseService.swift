@@ -104,7 +104,7 @@ final class CourseService {
             DiskCache.save(loaded, as: "courses")
             window.markLoaded(source: source)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = userFacingMessage(error)
             // Never substitute mock data for a failed real request. The user
             // turned sample data off; showing invented courses as if they were
             // theirs is worse than showing nothing. Cached real courses are

@@ -142,7 +142,7 @@ final class AgendaService {
             return parsed
         } catch {
             log.error("Agenda load failed: \(error.localizedDescription)")
-            errorMessage = error.localizedDescription
+            errorMessage = userFacingMessage(error)
             return nil
         }
     }

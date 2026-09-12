@@ -81,7 +81,7 @@ final class NewsService {
             window.markLoaded(source: source)
         } catch {
             log.error("News failed: \(error.localizedDescription)")
-            errorMessage = error.localizedDescription
+            errorMessage = userFacingMessage(error)
         }
     }
 }

@@ -42,6 +42,11 @@ nonisolated enum APIError: LocalizedError {
     /// The path returned 404 — the service moved or was withdrawn, which is a
     /// different problem from the network being down and deserves saying so.
     case endpointGone(String)
+    /// The request was cancelled — almost always because the view that asked
+    /// for it went away. Not a failure, and must never reach the user: it was
+    /// surfacing as "Impossibile raggiungere i server del Politecnico" every
+    /// time someone left a tab while it was loading.
+    case cancelled
     /// The account is not permitted to use this service, whatever the token
     /// says. Permanent for this user, so retrying or re-authenticating is
     /// pointless — the UI should say so rather than offer a login.
@@ -61,7 +66,8 @@ nonisolated enum APIError: LocalizedError {
         switch self {
         case .badStatus(let code, _): "Il server ha risposto \(code)."
         case .endpointGone: "Questo servizio del Politecnico non è più disponibile a questo indirizzo."
-        case .notEntitled: "Il tuo profilo non ha accesso a questo servizio del Politecnico."
+        case .cancelled: "Richiesta annullata."
+        case .notEntitled: "Il Politecnico non abilita il tuo profilo a questo servizio."
         case .invalidScope: "L'accesso è scaduto. Accedi di nuovo per continuare."
         case .transport: "Impossibile raggiungere i server del Politecnico."
         case .decoding: "Risposta del server non leggibile."
@@ -73,7 +79,7 @@ nonisolated enum APIError: LocalizedError {
     /// problem.
     var isPermanent: Bool {
         switch self {
-        case .endpointGone, .invalidScope, .notEntitled: true
+        case .endpointGone, .invalidScope, .notEntitled, .cancelled: true
         case .transport(let error): (error as NSError).code == NSURLErrorCannotFindHost
         default: false
         }
@@ -89,6 +95,18 @@ nonisolated enum APIError: LocalizedError {
 ///    network and the battery. Here retries cap out and the delay grows.
 /// 2. **One refresh.** A 401 asks ``TokenStore`` for a token; the actor
 ///    collapses concurrent requests into a single refresh.
+/// The text to show the user for an error, or nil when there is nothing to
+/// say.
+///
+/// Cancellation returns nil: a request abandoned because its view went away is
+/// not a failure, and reporting it put "Impossibile raggiungere i server del
+/// Politecnico" on screen for anyone who left a tab mid-load.
+nonisolated func userFacingMessage(_ error: any Error) -> String? {
+    if let apiError = error as? APIError, case .cancelled = apiError { return nil }
+    if PoliMiAPI.isCancellation(error) { return nil }
+    return error.localizedDescription
+}
+
 nonisolated final class PoliMiAPI: Sendable {
     private let session: URLSession
     private let tokens: TokenStore
@@ -195,16 +213,13 @@ nonisolated final class PoliMiAPI: Sendable {
                     _ = try await tokens.forceRefresh()
                     continue
 
-                // Gated on the service being one the app can live without.
-                //
-                // Without that gate this branch swallowed `iae` and `libretto`
-                // too, and those are not optional: their 401 is the app's
-                // signal to drop the token and re-authenticate. Classifying it
-                // as "your profile lacks access" made a recoverable session
-                // failure permanent — never retried, never re-authenticated,
-                // and reported to the user as a fact about their account.
-                case 401 where !request.host.refusalMeansBrokenSession
-                    && Self.isNotEntitled(String(data: data, encoding: .utf8) ?? ""):
+                // Applies to every host, including the ones the app depends
+                // on. `iae` really does answer "Utente non abilitato Code: 6"
+                // for this account, and a fresh login returns the same answer
+                // — so routing it to re-authentication would be a loop, and
+                // reporting it as a bare 401 hides what the server actually
+                // said. It is never retried and never re-authenticates.
+                case 401 where Self.isNotEntitled(String(data: data, encoding: .utf8) ?? ""):
                     let denied = String(data: data, encoding: .utf8) ?? ""
                     log.error("Service not permitted for this account — path=\(request.path, privacy: .public)")
                     // Deliberately no `onInvalidScope`: the token is fine and
@@ -264,6 +279,10 @@ nonisolated final class PoliMiAPI: Sendable {
             } catch let error as AuthError {
                 throw error
             } catch {
+                // Cancellation first: it is not a failure, and retrying a
+                // cancelled task is doubly pointless — the caller has gone.
+                if Self.isCancellation(error) { throw APIError.cancelled }
+
                 // Retrying a permanent failure just burns battery and delays
                 // the error the user needs to see. A host that does not resolve
                 // will not resolve on the fourth attempt either.
@@ -300,6 +319,16 @@ nonisolated final class PoliMiAPI: Sendable {
     /// DNS and TLS failures are verdicts, not hiccups. Treating them as
     /// transient produced six round trips per request against a host that no
     /// longer exists.
+    /// Whether this error is the task being cancelled rather than anything
+    /// going wrong. Cancellation arrives in two shapes — Swift's own
+    /// `CancellationError` and `URLError` -999 — and both mean the caller
+    /// stopped caring, not that the Politecnico is unreachable.
+    static func isCancellation(_ error: any Error) -> Bool {
+        if error is CancellationError { return true }
+        let nsError = error as NSError
+        return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
+    }
+
     private static func isRetryable(_ error: any Error) -> Bool {
         let nsError = error as NSError
         guard nsError.domain == NSURLErrorDomain else { return false }

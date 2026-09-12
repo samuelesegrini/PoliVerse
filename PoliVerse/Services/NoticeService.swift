@@ -83,10 +83,10 @@ final class NoticeService {
             if case .endpointGone = error {
                 log.error("Notifications endpoint is gone")
             }
-            errorMessage = error.localizedDescription
+            errorMessage = userFacingMessage(error)
         } catch {
             log.error("Notifications failed: \(error.localizedDescription)")
-            errorMessage = error.localizedDescription
+            errorMessage = userFacingMessage(error)
         }
     }
 

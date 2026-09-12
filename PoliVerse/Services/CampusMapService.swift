@@ -130,7 +130,7 @@ final class CampusMapService {
             log.notice("map: \(self.locations.count, privacy: .public) building coordinates")
         } catch {
             log.error("Building coordinates failed: \(error.localizedDescription)")
-            errorMessage = error.localizedDescription
+            errorMessage = userFacingMessage(error)
         }
     }
 }

@@ -323,3 +323,35 @@ struct RefusalRoutingTests {
         #expect(!APIHost.wsAule.refusalMeansBrokenSession)
     }
 }
+
+/// Cancellation is not a failure, and was being shown as one.
+@Suite("Cancellation")
+struct CancellationTests {
+    @Test("Both shapes of cancellation are recognised")
+    func recognised() {
+        #expect(PoliMiAPI.isCancellation(CancellationError()))
+        #expect(PoliMiAPI.isCancellation(
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)))
+    }
+
+    @Test("A real transport failure is not mistaken for cancellation")
+    func notEverything() {
+        #expect(!PoliMiAPI.isCancellation(
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)))
+        #expect(!PoliMiAPI.isCancellation(APIError.badStatus(500, body: "")))
+    }
+
+    /// The point of the helper: a cancelled request must leave the screen
+    /// unchanged rather than claiming the servers are unreachable.
+    @Test("Cancellation produces no user-facing message")
+    func noMessage() {
+        #expect(userFacingMessage(CancellationError()) == nil)
+        #expect(userFacingMessage(APIError.cancelled) == nil)
+        #expect(userFacingMessage(APIError.badStatus(500, body: "")) != nil)
+    }
+
+    @Test("Cancellation is never retried")
+    func neverRetried() {
+        #expect(APIError.cancelled.isPermanent)
+    }
+}

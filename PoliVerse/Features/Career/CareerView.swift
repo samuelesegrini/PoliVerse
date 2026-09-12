@@ -43,9 +43,20 @@ struct CareerView: View {
                 }
 
                 if career.gradeBook == .empty && career.sessions.isEmpty && !career.isLoading {
-                    ContentUnavailableView("Nessun dato di carriera", systemImage: "chart.bar",
-                                           description: Text("I servizi del Politecnico non hanno restituito dati."))
-                        .padding(.top, 30)
+                    if career.examServicesRefused {
+                        // What the server actually said, rather than a generic
+                        // failure. Signing in again returns the same answer, so
+                        // offering that would waste the user's time.
+                        ContentUnavailableView(
+                            "Servizi esami non abilitati",
+                            systemImage: "lock",
+                            description: Text("Il Politecnico risponde «Utente non abilitato» per il tuo profilo su iscrizione appelli e libretto. Di solito accade tra una sessione e l'altra o prima del rinnovo dell'iscrizione. Rifare l'accesso non cambia la risposta."))
+                            .padding(.top, 30)
+                    } else {
+                        ContentUnavailableView("Nessun dato di carriera", systemImage: "chart.bar",
+                                               description: Text("I servizi del Politecnico non hanno restituito dati."))
+                            .padding(.top, 30)
+                    }
                 }
 
                 switch scope {

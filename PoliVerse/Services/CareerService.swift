@@ -22,6 +22,14 @@ final class CareerService {
     private(set) var libretto: [LibrettoExam] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?
+    /// Set when the Politecnico refuses this account the exam services
+    /// outright — "Utente non abilitato Code: 6" from `iae`.
+    ///
+    /// Kept apart from ``errorMessage`` because it is not a fault and a fresh
+    /// login does not clear it: the account is genuinely not enabled for exam
+    /// registration at the moment, which is a thing to explain rather than a
+    /// thing to retry.
+    private(set) var examServicesRefused = false
 
     private let session: Session
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "career")
@@ -87,6 +95,7 @@ final class CareerService {
         guard !isLoading, window.shouldLoad(force: force, source: source) else { return }
         isLoading = true
         errorMessage = nil
+        examServicesRefused = false
         defer { isLoading = false }
 
         if session.useMockData {
@@ -133,7 +142,9 @@ final class CareerService {
         }
 
         if book == nil && loadedSessions == nil {
-            errorMessage = "Impossibile caricare i dati di carriera."
+            errorMessage = examServicesRefused
+                ? nil
+                : "Impossibile caricare i dati di carriera."
             // No mock fallback — an invented weighted average is the last thing
             // a student should see presented as their own.
             gradeBook = .empty
@@ -154,6 +165,8 @@ final class CareerService {
             )
             return dto.toGradeBook()
         } catch {
+            guard !PoliMiAPI.isCancellation(error) else { return nil }
+            if case APIError.notEntitled = error { examServicesRefused = true }
             log.error("Gradebook failed: \(error.localizedDescription)")
             return nil
         }
@@ -171,6 +184,8 @@ final class CareerService {
             log.notice("libretto: \(response.sostenuti?.count ?? 0, privacy: .public) passed, \(response.daSostenere?.count ?? 0, privacy: .public) pending, \(exams.count, privacy: .public) usable")
             return exams
         } catch {
+            guard !PoliMiAPI.isCancellation(error) else { return nil }
+            if case APIError.notEntitled = error { examServicesRefused = true }
             log.error("Libretto failed: \(error.localizedDescription)")
             return nil
         }
@@ -183,6 +198,8 @@ final class CareerService {
                 as: ExamCountersDTO.self
             )
         } catch {
+            guard !PoliMiAPI.isCancellation(error) else { return nil }
+            if case APIError.notEntitled = error { examServicesRefused = true }
             log.error("Exam counters failed: \(error.localizedDescription)")
             return nil
         }
@@ -202,6 +219,8 @@ final class CareerService {
             log.notice("insegn yielded \(sittings.count, privacy: .public) exam sittings")
             return sittings
         } catch {
+            guard !PoliMiAPI.isCancellation(error) else { return nil }
+            if case APIError.notEntitled = error { examServicesRefused = true }
             log.error("Exam sessions failed: \(error.localizedDescription)")
             return nil
         }
