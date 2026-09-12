@@ -158,3 +158,78 @@ struct CachedAgendaTests {
         #expect(decoded == event)
     }
 }
+
+/// Moving the offline data into the App Group container.
+///
+/// A widget runs in its own process: it shares no Keychain, cannot sign in,
+/// and can only read what the app has written somewhere both can reach. The
+/// store lived in Application Support, which the extension cannot see — so
+/// every widget would have rendered an empty screen.
+///
+/// The move has to carry the existing files across. Without that, the offline
+/// support built over the last hours silently starts from nothing on the
+/// version that adds widgets, and a student opens the app on a train to find
+/// their timetable gone.
+@Suite("Offline store migration")
+struct OfflineStoreMigrationTests {
+    private func temp(_ name: String) -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(name)-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }
+
+    private nonisolated struct Payload: Codable, Equatable, Sendable { let value: String }
+
+    @Test("Existing files are carried into the new location")
+    func migrates() {
+        let old = temp("old"), new = temp("new")
+        let legacy = OfflineStore(directory: old)
+        legacy.save(Payload(value: "agenda"), as: "agenda", account: "111")
+
+        let moved = OfflineStore(directory: new, migratingFrom: old)
+        #expect(moved.load(Payload.self, as: "agenda", account: "111")?.value.value == "agenda")
+    }
+
+    /// The new location wins. A file already written by the widget-aware
+    /// build is newer than whatever the old one holds, and copying over it
+    /// would undo a refresh.
+    @Test("Migration never overwrites what is already in the new location")
+    func doesNotClobber() {
+        let old = temp("old"), new = temp("new")
+        OfflineStore(directory: old).save(Payload(value: "stale"), as: "x", account: "1")
+        OfflineStore(directory: new).save(Payload(value: "fresh"), as: "x", account: "1")
+
+        let moved = OfflineStore(directory: new, migratingFrom: old)
+        #expect(moved.load(Payload.self, as: "x", account: "1")?.value.value == "fresh")
+    }
+
+    @Test("Migrating twice is harmless")
+    func idempotent() {
+        let old = temp("old"), new = temp("new")
+        OfflineStore(directory: old).save(Payload(value: "a"), as: "x", account: "1")
+        _ = OfflineStore(directory: new, migratingFrom: old)
+        let again = OfflineStore(directory: new, migratingFrom: old)
+        #expect(again.load(Payload.self, as: "x", account: "1")?.value.value == "a")
+    }
+
+    /// A first install has nothing to migrate and must not treat that as a
+    /// failure.
+    @Test("Nothing to migrate is not an error")
+    func emptySource() {
+        let new = temp("new")
+        let store = OfflineStore(directory: new, migratingFrom: temp("missing"))
+        store.save(Payload(value: "a"), as: "x", account: "1")
+        #expect(store.load(Payload.self, as: "x", account: "1") != nil)
+    }
+
+    /// If the entitlement is missing — a build without the App Group, or a
+    /// provisioning profile that lacks it — the app must keep working on its
+    /// own container rather than losing its data.
+    @Test("Without a shared container the store still works")
+    func fallsBack() {
+        let store = OfflineStore(groupIdentifier: "group.does.not.exist")
+        store.save(Payload(value: "a"), as: "x", account: "1")
+        #expect(store.load(Payload.self, as: "x", account: "1")?.value.value == "a")
+    }
+}

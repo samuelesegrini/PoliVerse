@@ -26,15 +26,69 @@ nonisolated final class OfflineStore: Sendable {
         let age: TimeInterval
     }
 
-    static let shared = OfflineStore()
+    /// The container both the app and its extensions can reach.
+    ///
+    /// A widget runs in its own process: it shares no Keychain, cannot sign
+    /// in, and can only read what the app has written somewhere both can see.
+    /// Application Support is not that place.
+    static let groupIdentifier = "group.segrini.samuele.PoliVerse"
 
-    init(directory: URL? = nil) {
-        self.directory = directory ?? FileManager.default
+    static let shared = OfflineStore(groupIdentifier: groupIdentifier)
+
+    init(directory: URL? = nil, migratingFrom legacy: URL? = nil) {
+        self.directory = directory ?? Self.applicationSupportDirectory
+        try? FileManager.default.createDirectory(
+            at: self.directory, withIntermediateDirectories: true)
+        if let legacy { migrate(from: legacy) }
+    }
+
+    /// Uses the shared container, falling back to the app's own.
+    ///
+    /// The fallback is not politeness: a build without the entitlement, or a
+    /// provisioning profile that lacks the group, would otherwise lose every
+    /// cached record. Widgets would be empty in that case, which is a much
+    /// smaller problem than the app forgetting a student's timetable.
+    convenience init(groupIdentifier: String) {
+        let shared = FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier)?
+            .appendingPathComponent("PoliVerseOffline", isDirectory: true)
+        self.init(directory: shared ?? Self.applicationSupportDirectory,
+                  migratingFrom: shared == nil ? nil : Self.applicationSupportDirectory)
+    }
+
+    private static var applicationSupportDirectory: URL {
+        FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)
             .first!
             .appendingPathComponent("PoliVerseOffline", isDirectory: true)
-        try? FileManager.default.createDirectory(
-            at: self.directory, withIntermediateDirectories: true)
+    }
+
+    /// Carries files written before the move into the shared container.
+    ///
+    /// Copied, not moved, and never over a file that is already there: a file
+    /// in the new location was written by this build and is newer than
+    /// whatever the old one holds, so overwriting it would undo a refresh.
+    /// Leaving the originals in place means a downgrade still finds its data.
+    private func migrate(from legacy: URL) {
+        guard legacy != directory,
+              let files = try? FileManager.default.contentsOfDirectory(
+                at: legacy, includingPropertiesForKeys: nil)
+        else { return }
+
+        var moved = 0
+        for file in files where file.pathExtension == "json" {
+            let destination = directory.appendingPathComponent(file.lastPathComponent)
+            guard !FileManager.default.fileExists(atPath: destination.path) else { continue }
+            do {
+                try FileManager.default.copyItem(at: file, to: destination)
+                moved += 1
+            } catch {
+                log.error("offline migration of \(file.lastPathComponent, privacy: .public) failed: \(error.localizedDescription)")
+            }
+        }
+        if moved > 0 {
+            log.notice("offline: migrated \(moved, privacy: .public) files into the shared container")
+        }
     }
 
     private struct Stored<Value: Codable & Sendable>: Codable {
