@@ -37,6 +37,8 @@ struct HomeView: View {
                 LazyVStack(alignment: .leading, spacing: 22) {
                     greeting
 
+                    PendingChangesBar()
+
                     CareerMismatchBanner()
 
                     if session.serviceAuthorizationFailed {

@@ -55,6 +55,7 @@ final class CareerService {
 
 
     private var slot: CachedSlot<Cached>
+    var pending: PendingChanges?
 
     /// What is kept between launches. The libretto in particular is a
     /// student's exam record and there is no reason they should lose sight of
@@ -267,6 +268,10 @@ final class CareerService {
             return true
         } catch {
             log.error("Could not save the target: \(error.localizedDescription)")
+            // Kept locally and queued: the figure the student chose is theirs,
+            // and losing it because a tunnel arrived first would be rude.
+            officialTarget = media
+            pending?.record(.targetAverage(media))
             return false
         }
     }

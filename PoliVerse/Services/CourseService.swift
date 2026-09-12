@@ -14,6 +14,9 @@ final class CourseService {
     /// under the magistrale: a leak between two records belonging to the same
     /// person.
     private var slot = CachedSlot<[Course]>(name: "courses")
+    /// Where a change goes when it cannot be sent now. Assigned by the app,
+    /// because the queue needs the session and this service is built first.
+    var pending: PendingChanges?
 
     private func restoreCache() {
         guard let cached = slot.restore(for: session.student?.matricola) else { return }
@@ -142,9 +145,12 @@ final class CourseService {
         }
 
         Task {
+            // Offline, or the request failed: queue it rather than silently
+            // undoing the tap. Reverting was the old behaviour and it is
+            // indistinguishable, from the user's side, from the app ignoring
+            // them.
             if await !weBeep.setFavourite(wanted, moodleID: moodleID) {
-                // The server disagreed; do not leave the UI claiming otherwise.
-                apply(to: course) { $0.isFavourite = !wanted }
+                pending?.record(.courseFavourite(moodleID: moodleID, value: wanted))
             }
         }
     }
@@ -163,7 +169,7 @@ final class CourseService {
 
         Task {
             if await !weBeep.setHidden(wanted, moodleID: moodleID) {
-                apply(to: course) { $0.isHidden = !wanted }
+                pending?.record(.courseHidden(moodleID: moodleID, value: wanted))
             }
         }
     }

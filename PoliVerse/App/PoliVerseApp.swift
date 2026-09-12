@@ -19,7 +19,8 @@ struct PoliVerseApp: App {
     @State private var careers: CareersService
     @State private var notifications: NotificationService
     @State private var manifesti = ManifestiService()
-    @State private var network = NetworkMonitor()
+    @State private var network: NetworkMonitor
+    @State private var pending: PendingChanges
     private let notificationRouter = NotificationRouter()
     private let background = BackgroundRefresh()
     @Environment(\.scenePhase) private var scenePhase
@@ -42,7 +43,8 @@ struct PoliVerseApp: App {
         _campusMap = State(initialValue: CampusMapService(catalogue: rooms, freeRooms: freeRooms))
         let weBeep = WeBeepService(session: session)
         _weBeep = State(initialValue: weBeep)
-        _courses = State(initialValue: CourseService(session: session, weBeep: weBeep))
+        let courses = CourseService(session: session, weBeep: weBeep)
+        _courses = State(initialValue: courses)
 
         // Registered here, at the end of init: it has to happen before the
         // app finishes launching — registering later throws — and it captures
@@ -54,6 +56,20 @@ struct PoliVerseApp: App {
         _career = State(initialValue: career)
         let notifications = NotificationService()
         _notifications = State(initialValue: notifications)
+
+        // Built last: it needs the session, and the services it sends
+        // through are wired to it afterwards.
+        let network = NetworkMonitor()
+        _network = State(initialValue: network)
+        let pending = PendingChanges(session: session, network: network)
+        pending.weBeep = weBeep
+        pending.career = career
+        _pending = State(initialValue: pending)
+        // Through the locals, not the `@State` wrappers: those are only
+        // readable once the struct is fully initialised, and reading one too
+        // early is a compile error that moves as the file is edited.
+        courses.pending = pending
+        career.pending = pending
 
         background.register {
             await agenda.load(force: true)
@@ -85,6 +101,7 @@ struct PoliVerseApp: App {
                 .environment(notifications)
                 .environment(manifesti)
                 .environment(network)
+                .environment(pending)
                 .tint(Theme.brand)
                 // Every user-facing string in the app is Italian, so pin the
                 // locale too — otherwise `.formatted(.relative(…))` renders
@@ -111,6 +128,12 @@ struct PoliVerseApp: App {
                 // moment iOS is deciding whether to grant one.
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .background { background.schedule() }
+                    if phase == .active { Task { await pending.flush() } }
+                }
+                // The moment signal returns is the moment to send what was
+                // queued — not the next time the user happens to open a tab.
+                .onChange(of: network.isOnline) { _, online in
+                    if online { Task { await pending.flush() } }
                 }
         }
     }

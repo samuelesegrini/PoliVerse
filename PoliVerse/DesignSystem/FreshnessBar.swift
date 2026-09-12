@@ -34,6 +34,48 @@ struct FreshnessBar: View {
     }
 }
 
+/// Says that changes are waiting, and what was lost when one could not be
+/// sent.
+///
+/// The queue is invisible when it is working — which is most of the time —
+/// and that is deliberate: a badge counting background sync is the app talking
+/// about itself. It speaks up for the one case the user has to know about, a
+/// change the Politecnico refused three times, because a star that quietly
+/// un-stars itself several launches later is worse than being told.
+struct PendingChangesBar: View {
+    @Environment(PendingChanges.self) private var pending
+
+    var body: some View {
+        if !pending.failed.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                Label("\(pending.failed.count) modifiche non inviate",
+                      systemImage: "exclamationmark.arrow.triangle.2.circlepath")
+                    .font(.subheadline.weight(.semibold))
+                ForEach(pending.failed.indices, id: \.self) { index in
+                    Text(pending.failed[index].label)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Button("Ho capito") { pending.acknowledgeFailures() }
+                    .font(.caption)
+                    .buttonStyle(.borderless)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(.orange.opacity(0.12), in: .rect(cornerRadius: 14))
+        } else if pending.count > 0 {
+            Label(
+                pending.count == 1
+                    ? "1 modifica in attesa di connessione"
+                    : "\(pending.count) modifiche in attesa di connessione",
+                systemImage: "arrow.up.circle")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
 // MARK: - Previews
 
 #Preview("Online, dati recenti") {
@@ -46,4 +88,8 @@ struct FreshnessBar: View {
 
 #Preview("Mai scaricati") {
     FreshnessBar(age: nil).previewEnvironment()
+}
+
+#Preview("Modifiche in attesa") {
+    PendingChangesBar().padding().previewEnvironment()
 }

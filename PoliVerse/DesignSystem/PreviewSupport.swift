@@ -33,6 +33,7 @@ enum PreviewEnvironment {
     static let downloads = FileDownloadService()
     static let cieID = CieIDRouter()
     static let network = NetworkMonitor()
+    static let pending = PendingChanges(session: session, network: network)
     static let manifesti = ManifestiService()
 }
 
@@ -54,6 +55,7 @@ extension View {
             .environment(PreviewEnvironment.downloads)
             .environment(PreviewEnvironment.cieID)
             .environment(PreviewEnvironment.network)
+            .environment(PreviewEnvironment.pending)
             .environment(PreviewEnvironment.manifesti)
             .tint(Theme.brand)
             .environment(\.locale, Locale(identifier: "it_IT"))
