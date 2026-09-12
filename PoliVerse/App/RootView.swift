@@ -20,6 +20,20 @@ struct RootView: View {
 }
 
 struct MainTabView: View {
+    @Environment(\.scenePhase) private var scenePhase
+
+    /// One place every way in from outside lands: Siri, Shortcuts, Spotlight's
+    /// action row, and Control Center.
+    private func route(to destination: AppDestination) {
+        switch destination {
+        case .calendar: selection = "calendar"
+        case .career, .plan, .simulator: selection = "career"
+        case .weBeep: selection = "webeep"
+        case .search, .freeRooms, .map: selection = "search"
+        case .home: selection = "home"
+        }
+    }
+
     @Environment(CourseService.self) private var courses
     @Environment(RoomsService.self) private var rooms
     @Environment(CareerService.self) private var career
@@ -45,13 +59,21 @@ struct MainTabView: View {
         .onReceive(NotificationCenter.default.publisher(for: AppDestination.notification)) {
             guard let raw = $0.object as? String,
                   let destination = AppDestination(rawValue: raw) else { return }
-            switch destination {
-            case .calendar: selection = "calendar"
-            case .career, .plan, .simulator: selection = "career"
-            case .weBeep: selection = "webeep"
-            case .search, .freeRooms, .map: selection = "search"
-            case .home: selection = "home"
-            }
+            route(to: destination)
+        }
+        // A Control Center button runs its intent in the widget extension,
+        // where the notification above reaches nobody. The destination is left
+        // in the shared container instead and collected here, once the app is
+        // actually in front of the user.
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active, let destination = AppDestination.takePending()
+            else { return }
+            route(to: destination)
+        }
+        .task {
+            // Launching *because* of a control: the phase is already active by
+            // the time the view appears, so the change above never fires.
+            if let destination = AppDestination.takePending() { route(to: destination) }
         }
         // Indexed after the data lands, and only then: an index built from an
         // empty model would publish nothing and look like a broken feature.

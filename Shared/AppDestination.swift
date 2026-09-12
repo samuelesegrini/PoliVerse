@@ -16,7 +16,31 @@ nonisolated enum AppDestination: String, Sendable {
     static let notification = Notification.Name("one.wape.PoliVerse.navigate")
 
     func send() {
+        // Two channels, because the same intent can run in two processes.
+        //
+        // Tapping a Control Center button runs `perform()` in the *extension*,
+        // where a NotificationCenter post reaches nobody: the app is a
+        // separate process and may not even be running. Recording the
+        // destination in the shared container lets the app pick it up the
+        // moment it comes forward. When `perform()` does run in the app, the
+        // notification arrives first and the pending value is consumed as a
+        // no-op.
+        SharedAccount.defaults.set(rawValue, forKey: Self.pendingKey)
         NotificationCenter.default.post(name: Self.notification, object: rawValue)
+    }
+
+    private static let pendingKey = "pendingDestination"
+
+    /// The destination an out-of-process intent asked for, read once.
+    ///
+    /// Consuming rather than peeking: a destination left behind would send the
+    /// user back to the same screen on every activation for the rest of the
+    /// install.
+    static func takePending() -> AppDestination? {
+        let defaults = SharedAccount.defaults
+        guard let raw = defaults.string(forKey: pendingKey) else { return nil }
+        defaults.removeObject(forKey: pendingKey)
+        return AppDestination(rawValue: raw)
     }
 }
 
@@ -68,34 +92,3 @@ struct OpenMaterialsIntent: AppIntent {
     }
 }
 
-/// The phrases Siri accepts. Each needs `.applicationName` somewhere in it,
-/// so they read as "… in PoliVerse" rather than competing with every other
-/// app's "apri l'orario".
-struct PoliVerseShortcuts: AppShortcutsProvider {
-    static var appShortcuts: [AppShortcut] {
-        AppShortcut(
-            intent: OpenTimetableIntent(),
-            phrases: ["Apri l'orario in \(.applicationName)",
-                      "Lezioni di oggi in \(.applicationName)"],
-            shortTitle: "Orario",
-            systemImageName: "calendar")
-        AppShortcut(
-            intent: OpenFreeRoomsIntent(),
-            phrases: ["Trova un'aula libera in \(.applicationName)",
-                      "Aule libere in \(.applicationName)"],
-            shortTitle: "Aule libere",
-            systemImageName: "building.2")
-        AppShortcut(
-            intent: OpenCareerIntent(),
-            phrases: ["Apri la carriera in \(.applicationName)",
-                      "La mia media in \(.applicationName)"],
-            shortTitle: "Carriera",
-            systemImageName: "chart.bar")
-        AppShortcut(
-            intent: OpenMaterialsIntent(),
-            phrases: ["Apri WeBeep in \(.applicationName)",
-                      "Materiali dei corsi in \(.applicationName)"],
-            shortTitle: "WeBeep",
-            systemImageName: "books.vertical")
-    }
-}
