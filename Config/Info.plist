@@ -6,6 +6,14 @@
 	     "one.wape.PoliVerse" is the CieID return (the CieID SDK asks
 	     integrators to use the bundle identifier); "poliverse" is the Moodle
 	     tool_mobile token redirect. -->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>one.wape.PoliVerse.refresh</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

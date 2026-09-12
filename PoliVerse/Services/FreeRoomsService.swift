@@ -56,10 +56,21 @@ final class FreeRoomsService {
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "aule")
     private let base = URL(string: "https://onlineservices.polimi.it/maps_rest/rest")!
 
-    /// Occupancy already fetched, keyed by room and day. The timetable for a
-    /// past or present day does not change while the app is open.
-    private var cache: [String: [RoomBooking]] = [:]
     private var loadedKey: String?
+
+    /// Occupancy, keyed by room and day.
+    ///
+    /// Was a plain dictionary, which could not coalesce: opening a room from
+    /// search while the campus pass was still running fetched it twice. The
+    /// loader shares one request per room and lets the rest of the campus be
+    /// warmed in the background.
+    private let loader: ResourceLoader<OccupancyKey, [RoomBooking]>
+
+    nonisolated struct OccupancyKey: Hashable, Sendable {
+        let roomID: String
+        let occupancyID: String
+        let day: String
+    }
 
     /// At most this many requests in flight. A campus is up to 158 rooms;
     /// firing them all at once is rude to a public service and gets slower,
@@ -77,6 +88,23 @@ final class FreeRoomsService {
     init(catalogue: RoomsService, session: URLSession = .shared) {
         self.catalogue = catalogue
         self.session = session
+        let base = self.base
+        loader = ResourceLoader(
+            // A day's timetable does not change while the app is open, and a
+            // past day never changes at all.
+            lifetime: .seconds(1800),
+            capacity: 512
+        ) { key in
+            let day = PoliMiDate.romeCalendar.date(
+                from: PoliMiDate.romeCalendar.dateComponents(
+                    [.year, .month, .day],
+                    from: PoliMiDate.parse(key.day) ?? .now)) ?? .now
+            let result = await Self.occupancy(
+                occupancyID: key.occupancyID, roomID: key.roomID,
+                on: key.day, day: day, base: base, session: session)
+            guard case .bookings(let bookings) = result else { return nil }
+            return bookings
+        }
     }
 
     var campuses: [String] { catalogue.campuses }
@@ -138,43 +166,30 @@ final class FreeRoomsService {
         var loaded: [RoomSchedule] = []
         var hidden: [String] = []
 
-        // Batched rather than one big task group: the whole of `load()` is
-        // main-actor isolated, and a group body cannot touch that state. A
-        // batch at a time keeps the cache and the progress counter here,
-        // where they belong, and still runs `concurrency` requests at once.
+        // Batched rather than one big task group: `load()` is main-actor
+        // isolated and a group body cannot touch that state. A batch at a time
+        // keeps progress here, where the rest of the state lives, and still
+        // runs `concurrency` requests at once — now through the loader, so a
+        // room already being fetched for a detail screen is not fetched twice.
         for batch in stride(from: 0, to: wanted.count, by: concurrency) {
             let slice = Array(wanted[batch..<min(batch + concurrency, wanted.count)])
-            let pending = slice.filter { cache["\($0.occupancyID ?? "")|\(stamp)"] == nil }
 
-            var fetched: [String: OccupancyResult] = [:]
-            if !pending.isEmpty {
-                let day = day
-                let session = session
-                let base = base
-                fetched = await withTaskGroup(
-                    of: (String, OccupancyResult).self
-                ) { group in
-                    for room in pending {
-                        group.addTask {
-                            (room.id, await Self.occupancy(
-                                for: room, on: stamp, day: day,
-                                base: base, session: session))
-                        }
+            var fetched: [String: [RoomBooking]?] = [:]
+            await withTaskGroup(of: (String, [RoomBooking]?).self) { group in
+                for room in slice {
+                    guard let occupancyID = room.occupancyID else { continue }
+                    let key = OccupancyKey(
+                        roomID: room.id, occupancyID: occupancyID, day: stamp)
+                    group.addTask { [loader] in
+                        (room.id, await loader.value(for: key))
                     }
-                    var results: [String: OccupancyResult] = [:]
-                    for await (id, result) in group { results[id] = result }
-                    return results
                 }
+                for await (id, bookings) in group { fetched[id] = bookings }
             }
 
             for room in slice {
-                let key = "\(room.occupancyID ?? "")|\(stamp)"
-                let result = cache[key].map(OccupancyResult.bookings)
-                    ?? fetched[room.id]
-                    ?? .failed
-                switch result {
-                case .bookings(let bookings):
-                    cache[key] = bookings
+                switch fetched[room.id] {
+                case .some(.some(let bookings)):
                     loaded.append(RoomSchedule(
                         id: room.id,
                         name: room.id,
@@ -182,12 +197,10 @@ final class FreeRoomsService {
                         seats: room.capacity > 0 ? room.capacity : nil,
                         occupancyID: room.occupancyID,
                         bookings: bookings))
-                case .hidden:
+                default:
+                    // Hidden or failed: either way not listed as free. A room
+                    // we could not ask about is a room we know nothing about.
                     hidden.append(room.id)
-                case .failed:
-                    // Not listed as free: a room we could not ask about is a
-                    // room we know nothing about.
-                    break
                 }
             }
             progress = (min(batch + concurrency, wanted.count), wanted.count)
@@ -210,16 +223,27 @@ final class FreeRoomsService {
     /// Returns nil when the room's occupancy is hidden or the call fails —
     /// both mean "we cannot say", which the caller must not render as "free".
     func bookings(for room: Classroom) async -> [RoomBooking]? {
-        guard let id = room.occupancyID else { return nil }
-        let stamp = PoliMiDate.queryString(day)
-        let key = "\(id)|\(stamp)"
-        if let cached = cache[key] { return cached }
+        guard let occupancyID = room.occupancyID else { return nil }
+        let key = OccupancyKey(
+            roomID: room.id, occupancyID: occupancyID,
+            day: PoliMiDate.queryString(day))
+        return await loader.value(for: key)
+    }
 
-        let result = await Self.occupancy(
-            for: room, on: stamp, day: day, base: base, session: session)
-        guard case .bookings(let bookings) = result else { return nil }
-        cache[key] = bookings
-        return bookings
+    /// Warms the rooms around the one being looked at.
+    ///
+    /// Never awaited and at background priority: the room the user actually
+    /// opened must not wait on its neighbours.
+    func prefetch(_ rooms: some Sequence<Classroom>) {
+        let stamp = PoliMiDate.queryString(day)
+        let keys = rooms.compactMap { room -> OccupancyKey? in
+            guard let occupancyID = room.occupancyID else { return nil }
+            return OccupancyKey(roomID: room.id, occupancyID: occupancyID, day: stamp)
+        }
+        guard !keys.isEmpty else { return }
+        Task.detached(priority: .background) { [loader] in
+            await loader.prefetch(keys)
+        }
     }
 
     private enum OccupancyResult: Sendable {
@@ -233,10 +257,9 @@ final class FreeRoomsService {
     /// Static and parameterised so it carries no actor-isolated state and can
     /// run concurrently off the main actor.
     private static func occupancy(
-        for room: Classroom, on stamp: String, day: Date,
+        occupancyID id: String, roomID: String, on stamp: String, day: Date,
         base: URL, session: URLSession
     ) async -> OccupancyResult {
-        guard let id = room.occupancyID else { return .failed }
         let url = base.appendingPathComponent("ricerca/aula/occupazione/\(id)/\(stamp)")
         do {
             var request = URLRequest(url: url)
@@ -255,7 +278,7 @@ final class FreeRoomsService {
 
             let bands = try JSONDecoder().decode([OccupancyBand].self, from: data)
             return .bookings(bands.enumerated().compactMap { index, band in
-                band.toBooking(roomID: room.id, on: day, index: index)
+                band.toBooking(roomID: roomID, on: day, index: index)
             })
         } catch {
             return .failed

@@ -17,8 +17,10 @@ struct PoliVerseApp: App {
     @State private var facilities = RoomFacilitiesService()
     @State private var campusMap: CampusMapService
     @State private var careers: CareersService
-    @State private var notifications = NotificationService()
+    @State private var notifications: NotificationService
     private let notificationRouter = NotificationRouter()
+    private let background = BackgroundRefresh()
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         // One Session, shared: every service reads its auth state and mock
@@ -26,8 +28,6 @@ struct PoliVerseApp: App {
         let session = Session()
         _session = State(initialValue: session)
 
-        _agenda = State(initialValue: AgendaService(session: session))
-        _career = State(initialValue: CareerService(session: session))
         _notices = State(initialValue: NoticeService(session: session))
         _careers = State(initialValue: CareersService(session: session))
         _news = State(initialValue: NewsService(session: session))
@@ -41,6 +41,26 @@ struct PoliVerseApp: App {
         let weBeep = WeBeepService(session: session)
         _weBeep = State(initialValue: weBeep)
         _courses = State(initialValue: CourseService(session: session, weBeep: weBeep))
+
+        // Registered here, at the end of init: it has to happen before the
+        // app finishes launching — registering later throws — and it captures
+        // the services directly rather than through the State wrappers, which
+        // are not readable until the struct is fully initialised.
+        let agenda = AgendaService(session: session)
+        _agenda = State(initialValue: agenda)
+        let career = CareerService(session: session)
+        _career = State(initialValue: career)
+        let notifications = NotificationService()
+        _notifications = State(initialValue: notifications)
+
+        background.register {
+            await agenda.load(force: true)
+            await career.load(force: true)
+            // Reminders follow whatever the refresh found: a lecture moved
+            // overnight must not announce itself at the old time.
+            await notifications.reschedule(
+                events: agenda.events, exams: career.sessions)
+        }
     }
 
     var body: some Scene {
@@ -78,6 +98,11 @@ struct PoliVerseApp: App {
                 .task {
                     UNUserNotificationCenter.current().delegate = notificationRouter
                     await notifications.refreshAuthorization()
+                }
+                // Asked for when the app leaves the screen, which is the
+                // moment iOS is deciding whether to grant one.
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .background { background.schedule() }
                 }
         }
     }

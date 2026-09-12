@@ -3,6 +3,8 @@ import SwiftUI
 /// Browse and search the room catalogue.
 struct RoomsView: View {
     @Environment(RoomsService.self) private var rooms
+    @Environment(RoomFacilitiesService.self) private var facilities
+    @Environment(FreeRoomsService.self) private var freeRooms
 
     @State private var query = ""
     @State private var campus: String?
@@ -83,6 +85,13 @@ struct RoomsView: View {
                     }
                 }
             }
+        }
+        // Warms the equipment and occupancy of rows just off screen, so
+        // opening one is instant rather than a spinner.
+        .prefetching(results.map(\.id)) { ids in
+            let wanted = results.filter { ids.contains($0.id) }
+            facilities.prefetch(wanted)
+            freeRooms.prefetch(wanted)
         }
         .navigationTitle("Aule")
         .navigationBarTitleDisplayMode(.inline)
