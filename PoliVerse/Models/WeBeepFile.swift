@@ -1,7 +1,7 @@
 import Foundation
 
 /// A file published on WeBeep (the Moodle instance at `webeep.polimi.it`).
-nonisolated struct WeBeepFile: Identifiable, Sendable, Hashable {
+nonisolated struct WeBeepFile: Identifiable, Sendable, Hashable, Codable {
     let id: String
     let name: String
     let courseID: String
@@ -32,7 +32,7 @@ nonisolated struct WeBeepFile: Identifiable, Sendable, Hashable {
 }
 
 /// A WeBeep course section ("Lezione 1", "Materiale d'esame", …).
-nonisolated struct WeBeepSection: Identifiable, Sendable, Hashable {
+nonisolated struct WeBeepSection: Identifiable, Sendable, Hashable, Codable {
     let id: String
     let name: String
     let files: [WeBeepFile]

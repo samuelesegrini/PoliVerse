@@ -23,7 +23,7 @@ final class NewsService {
     private let session: Session
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "news")
     private var window = LoadWindow()
-    private let offline = OfflineStore.shared
+    private var slot = CachedSlot<[NewsItem]>(name: "news")
     private(set) var age: TimeInterval?
 
     private var source: String {
@@ -35,11 +35,12 @@ final class NewsService {
 
     init(session: Session) {
         self.session = session
-        if let entry = offline.load(
-            [NewsItem].self, as: "news", account: session.student?.matricola) {
-            items = entry.value
-            age = entry.age
-        }
+    }
+
+    private func restoreCache() {
+        guard let cached = slot.restore(for: session.student?.matricola) else { return }
+        items = cached
+        age = slot.age
     }
 
     func load(force: Bool = false) async {
@@ -47,6 +48,8 @@ final class NewsService {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
+
+        restoreCache()
 
         if session.useMockData {
             items = MockData.news()
@@ -86,9 +89,8 @@ final class NewsService {
                 && !(response.raw.arrayValue?.isEmpty ?? false)
             log.notice("news: \(response.items.count, privacy: .public) returned, \(self.items.count, privacy: .public) current")
             window.markLoaded(source: source)
-            age = 0
-            offline.save(items, as: "news",
-                         account: session.useMockData ? nil : session.student?.matricola)
+            slot.save(items, for: session.useMockData ? nil : session.student?.matricola)
+            age = slot.age
         } catch {
             log.error("News failed: \(error.localizedDescription)")
             errorMessage = userFacingMessage(error)

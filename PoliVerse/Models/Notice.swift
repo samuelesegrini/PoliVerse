@@ -13,7 +13,7 @@ import Foundation
 ///   reads fields by trying a list of plausible names rather than binding to
 ///   one, and ``NoticeService`` logs the payload's shape so the guess can be
 ///   replaced with fact after a single run.
-nonisolated struct Notice: Identifiable, Sendable, Hashable {
+nonisolated struct Notice: Identifiable, Sendable, Hashable, Codable {
     let id: String
     let title: String
     /// The summary or full text, where the list carries one. The detail

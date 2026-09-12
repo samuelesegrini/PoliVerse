@@ -54,7 +54,7 @@ final class CareerService {
     }
 
 
-    private let offline: OfflineStore
+    private var slot: CachedSlot<Cached>
 
     /// What is kept between launches. The libretto in particular is a
     /// student's exam record and there is no reason they should lose sight of
@@ -68,20 +68,22 @@ final class CareerService {
 
     init(session: Session, offline: OfflineStore = .shared) {
         self.session = session
-        self.offline = offline
-        restoreCache()
+        self.slot = CachedSlot(name: "career", store: offline)
     }
 
-    /// Shows the last known figures immediately, before any request.
+    /// Shows the last known figures before any request.
+    ///
+    /// Called from `load()`, not from `init()`: services are built inside the
+    /// App's initialiser, and the matricola is not known until
+    /// `Session.restore()` has run, which is later. Restoring at construction
+    /// asked for account nil and silently restored nothing.
     private func restoreCache() {
-        guard let entry = offline.load(
-            Cached.self, as: "career", account: session.student?.matricola)
-        else { return }
-        gradeBook = entry.value.gradeBook
-        libretto = entry.value.libretto
-        planHeader = entry.value.planHeader
-        officialTarget = entry.value.officialTarget
-        age = entry.age
+        guard let cached = slot.restore(for: session.student?.matricola) else { return }
+        gradeBook = cached.gradeBook
+        libretto = cached.libretto
+        planHeader = cached.planHeader
+        officialTarget = cached.officialTarget
+        age = slot.age
     }
 
     /// Passed exams, most recent first.
@@ -135,6 +137,8 @@ final class CareerService {
         errorMessage = nil
         examServicesRefused = false
         defer { isLoading = false }
+
+        restoreCache()
 
         if session.useMockData {
             gradeBook = MockData.gradeBook
@@ -201,11 +205,11 @@ final class CareerService {
             return
         }
         window.markLoaded(source: source)
-        age = 0
-        offline.save(
+        slot.save(
             Cached(gradeBook: gradeBook, libretto: libretto,
                    planHeader: planHeader, officialTarget: officialTarget),
-            as: "career", account: session.useMockData ? nil : matricola)
+            for: session.useMockData ? nil : matricola)
+        age = slot.age
     }
 
     /// `GET {libretto}/mediaobiettivo/{matricola}` — the target the student

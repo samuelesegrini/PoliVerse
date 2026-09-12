@@ -9,6 +9,17 @@ final class CourseService {
     private(set) var isLoading = false
     private(set) var errorMessage: String?
     private(set) var age: TimeInterval?
+    /// Keyed by matricola. Under a global name — which is how this was written
+    /// before the career switcher existed — the triennale's courses appeared
+    /// under the magistrale: a leak between two records belonging to the same
+    /// person.
+    private var slot = CachedSlot<[Course]>(name: "courses")
+
+    private func restoreCache() {
+        guard let cached = slot.restore(for: session.student?.matricola) else { return }
+        courses = applyFavourites(cached)
+        age = slot.age
+    }
 
     private let session: Session
     private let weBeep: WeBeepService
@@ -52,15 +63,8 @@ final class CourseService {
         self.session = session
         self.weBeep = weBeep
         // Show last known courses immediately; `load()` refreshes behind them.
-        // Keyed by matricola. Under a global name — which is how this was
-        // written before the career switcher existed — the triennale's
-        // courses appeared under the magistrale, which is a data leak between
-        // two records that happen to belong to the same person.
-        if let entry = OfflineStore.shared.load(
-            [Course].self, as: "courses", account: session.student?.matricola) {
-            courses = applyFavourites(entry.value)
-            age = entry.age
-        }
+        // Restored in `load()`, not here: the matricola is not known while
+        // the App's initialiser is still running.
     }
 
     /// - Parameter force: set by pull-to-refresh; see ``LoadWindow``.
@@ -69,6 +73,8 @@ final class CourseService {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
+
+        restoreCache()
 
         if session.useMockData {
             courses = applyFavourites(MockData.courses)
@@ -89,10 +95,8 @@ final class CourseService {
             let loaded = weBeep.courses.map(Course.init(moodle:))
             log.notice("WeBeep provided \(loaded.count, privacy: .public) enrolled courses")
             courses = applyFavourites(loaded)
-            OfflineStore.shared.save(
-                loaded, as: "courses",
-                account: session.useMockData ? nil : session.student?.matricola)
-            age = 0
+            slot.save(loaded, for: session.useMockData ? nil : session.student?.matricola)
+            age = slot.age
             window.markLoaded(source: source)
             return
         }
@@ -111,10 +115,8 @@ final class CourseService {
             let loaded = response.teachings.compactMap { $0.toCourse() }
             log.notice("insegn returned \(response.teachings.count, privacy: .public) teachings, \(loaded.count, privacy: .public) usable")
             courses = applyFavourites(loaded)
-            OfflineStore.shared.save(
-                loaded, as: "courses",
-                account: session.useMockData ? nil : session.student?.matricola)
-            age = 0
+            slot.save(loaded, for: session.useMockData ? nil : session.student?.matricola)
+            age = slot.age
             window.markLoaded(source: source)
         } catch {
             errorMessage = userFacingMessage(error)

@@ -28,6 +28,16 @@ final class NoticeService {
     private let session: Session
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "notices")
     private var window = LoadWindow()
+    private var slot = CachedSlot<[Notice]>(name: "notices")
+    private(set) var age: TimeInterval?
+
+    /// Restored in `load()` rather than `init()`: the matricola is not known
+    /// while the App's initialiser is running.
+    private func restoreCache() {
+        guard let cached = slot.restore(for: session.student?.matricola) else { return }
+        notices = applyReadState(cached)
+        age = slot.age
+    }
 
     /// Identifies the data currently held, so a change of account — or of the
     /// sample-data toggle — always reloads instead of waiting out the window.
@@ -55,6 +65,8 @@ final class NoticeService {
         errorMessage = nil
         defer { isLoading = false }
 
+        restoreCache()
+
         if session.useMockData {
             notices = applyReadState(MockData.notices())
             payloadUnreadable = false
@@ -77,6 +89,8 @@ final class NoticeService {
             payloadUnreadable = notices.isEmpty && !(response.raw.arrayValue?.isEmpty ?? false)
             log.notice("notifications: \(self.notices.count, privacy: .public) usable, \(self.unreadCount, privacy: .public) unread")
             window.markLoaded(source: source)
+            slot.save(notices, for: session.useMockData ? nil : session.student?.matricola)
+            age = slot.age
         } catch let error as APIError {
             // A withdrawn endpoint is worth saying plainly rather than as a
             // generic failure — it means this feature is gone, not broken.

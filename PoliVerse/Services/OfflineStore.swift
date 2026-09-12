@@ -141,3 +141,52 @@ nonisolated struct Freshness: Sendable, Equatable {
         return "\(hours / 24) giorni fa"
     }
 }
+
+/// One service's offline copy of one thing.
+///
+/// ## The mistake this prevents
+///
+/// The first version of offline support restored from disk in each service's
+/// initialiser. Those run inside `PoliVerseApp.init()`; `Session.restore()`
+/// runs later, from `RootView.task`. So at construction the matricola was
+/// still nil, every restore asked for account `nil`, and nothing was ever
+/// restored — a feature that looked finished and did nothing.
+///
+/// A slot restores **lazily**, keyed by the account it last restored for. It
+/// therefore cannot run before the account is known, and runs again when the
+/// account changes — which is one tap away now that careers can be switched.
+nonisolated struct CachedSlot<Value: Codable & Sendable>: Sendable {
+    let name: String
+    private let store: OfflineStore
+    /// The account the in-memory value belongs to, once there is one.
+    private var restoredFor: String?
+    /// Seconds since the value on screen was fetched, or nil if never.
+    private(set) var age: TimeInterval?
+
+    init(name: String, store: OfflineStore = .shared) {
+        self.name = name
+        self.store = store
+    }
+
+    /// The cached value, the first time it is asked for under a given account.
+    ///
+    /// Returns nil when there is nothing to restore *or* when this account has
+    /// already been restored — a second restore would overwrite a fresher
+    /// fetched value with what is on disk.
+    mutating func restore(for account: String?) -> Value? {
+        guard let account, !account.isEmpty, account != restoredFor else { return nil }
+        restoredFor = account
+        guard let entry = store.load(Value.self, as: name, account: account) else {
+            return nil
+        }
+        age = entry.age
+        return entry.value
+    }
+
+    mutating func save(_ value: Value, for account: String?) {
+        guard let account, !account.isEmpty else { return }
+        store.save(value, as: name, account: account)
+        restoredFor = account
+        age = 0
+    }
+}

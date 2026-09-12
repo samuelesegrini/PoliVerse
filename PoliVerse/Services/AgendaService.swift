@@ -27,7 +27,7 @@ final class AgendaService {
     private let session: Session
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "agenda")
     private var window = LoadWindow()
-    private let offline = OfflineStore.shared
+    private var slot = CachedSlot<[AgendaEvent]>(name: "agenda")
     /// How old the events on screen are.
     private(set) var age: TimeInterval?
 
@@ -50,13 +50,14 @@ final class AgendaService {
 
     init(session: Session) {
         self.session = session
-        // Last known timetable, shown before any request. Losing signal on the
-        // way to a lecture should not lose the lecture.
-        if let entry = offline.load(
-            [AgendaEvent].self, as: "agenda", account: session.student?.matricola) {
-            events = entry.value
-            age = entry.age
-        }
+    }
+
+    /// Last known timetable, shown before any request. Restored here rather
+    /// than in `init()`, where the matricola is not known yet.
+    private func restoreCache() {
+        guard let cached = slot.restore(for: session.student?.matricola) else { return }
+        events = cached
+        age = slot.age
     }
 
     /// Fetches a window around `date`, replacing whatever was held.
@@ -72,6 +73,8 @@ final class AgendaService {
         let calendar = PoliMiDate.romeCalendar
         let from = calendar.date(byAdding: lookBehind, to: date) ?? date
         let to = calendar.date(byAdding: lookAhead, to: date) ?? date
+
+        restoreCache()
 
         if session.useMockData {
             events = MockData.agendaEvents(around: date)
@@ -111,9 +114,8 @@ final class AgendaService {
         events = merged.sorted { $0.start < $1.start }
         loadedRange = from...to
         window.markLoaded(source: source)
-        age = 0
-        offline.save(events, as: "agenda",
-                     account: session.useMockData ? nil : matricola)
+        slot.save(events, for: session.useMockData ? nil : matricola)
+        age = slot.age
     }
 
     /// Whether the held window already spans `date`.

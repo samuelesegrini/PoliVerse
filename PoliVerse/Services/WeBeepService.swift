@@ -20,6 +20,13 @@ final class WeBeepService {
     private(set) var state: State = .needsLogin
     private(set) var courses: [MoodleCourse] = []
     private(set) var sections: [WeBeepSection] = []
+    /// Materials listings kept per course.
+    ///
+    /// Files already downloaded stay on disk, but without the listing they
+    /// cannot be found: the screen that shows them was empty offline, which
+    /// makes downloading for a train journey pointless. Cached per course,
+    /// since one course's materials say nothing about another's.
+    private var materialSlots: [String: CachedSlot<[WeBeepSection]>] = [:]
     private(set) var isLoadingMaterials = false
 
     private let session: Session
@@ -129,6 +136,10 @@ final class WeBeepService {
         isLoadingMaterials = true
         defer { isLoadingMaterials = false }
 
+        // Last known listing first, so the screen has content before the
+        // request and keeps it if the request fails.
+        restoreMaterials(for: course)
+
         if session.useMockData || api == nil {
             sections = MockData.weBeepSections(for: course)
             if api == nil && !session.useMockData { state = .needsLogin }
@@ -175,13 +186,32 @@ final class WeBeepService {
             // unverified longest precisely because it said nothing.
             log.notice("WeBeep course \(moodleID, privacy: .public): \(raw.count, privacy: .public) sections, \(self.sections.count, privacy: .public) with files, \(self.sections.reduce(0) { $0 + $1.files.count }, privacy: .public) files")
             state = .ready
+            saveMaterials(for: course)
         } catch let error as WeBeepAPI.Failure {
             handle(error)
-            sections = []
+            // Kept, not cleared: a cached listing is how a downloaded file is
+            // found again without signal.
         } catch {
-            state = .failed(error.localizedDescription)
-            sections = []
+            state = .failed(userFacingMessage(error) ?? "")
         }
+    }
+
+    private func slotName(for course: Course) -> String { "materials-\(course.id)" }
+
+    private func restoreMaterials(for course: Course) {
+        var slot = materialSlots[course.id]
+            ?? CachedSlot<[WeBeepSection]>(name: slotName(for: course))
+        if let cached = slot.restore(for: session.student?.matricola) {
+            sections = cached
+        }
+        materialSlots[course.id] = slot
+    }
+
+    private func saveMaterials(for course: Course) {
+        var slot = materialSlots[course.id]
+            ?? CachedSlot<[WeBeepSection]>(name: slotName(for: course))
+        slot.save(sections, for: session.useMockData ? nil : session.student?.matricola)
+        materialSlots[course.id] = slot
     }
 
     /// Matches a PoliMi course to its Moodle counterpart.
