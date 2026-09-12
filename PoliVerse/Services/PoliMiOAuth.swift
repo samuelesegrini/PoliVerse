@@ -39,7 +39,7 @@ nonisolated enum PoliMiOAuth {
             host: .app,
             path: "/jaf/public/linklogout",
             query: [
-                .init(name: "lang", value: "it"),
+                .init(name: "lang", value: PoliMiLanguage.current.lowercased),
                 .init(name: "logout_service_id", value: serviceID),
             ],
             authenticated: false

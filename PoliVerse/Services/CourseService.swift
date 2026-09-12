@@ -117,7 +117,7 @@ final class CourseService {
                 APIRequest(
                     host: .iae,
                     path: "/v1/insegn",
-                    query: [.init(name: "lang", value: "IT")]
+                    query: [.init(name: "lang", value: PoliMiLanguage.current.rawValue)]
                 ),
                 as: TeachingsResponse.self
             )

@@ -64,14 +64,14 @@ nonisolated enum APIError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .badStatus(let code, _): "Il server ha risposto \(code)."
-        case .endpointGone: "Questo servizio del Politecnico non è più disponibile a questo indirizzo."
-        case .cancelled: "Richiesta annullata."
-        case .notEntitled: "Il Politecnico non abilita il tuo profilo a questo servizio."
-        case .invalidScope: "L'accesso è scaduto. Accedi di nuovo per continuare."
-        case .transport: "Impossibile raggiungere i server del Politecnico."
-        case .decoding: "Risposta del server non leggibile."
-        case .retriesExhausted(let n): "Nessuna risposta dopo \(n) tentativi."
+        case .badStatus(let code, _): String(localized: "Il server ha risposto \(code).")
+        case .endpointGone: String(localized: "Questo servizio del Politecnico non è più disponibile a questo indirizzo.")
+        case .cancelled: String(localized: "Richiesta annullata.")
+        case .notEntitled: String(localized: "Il Politecnico non abilita il tuo profilo a questo servizio.")
+        case .invalidScope: String(localized: "L'accesso è scaduto. Accedi di nuovo per continuare.")
+        case .transport: String(localized: "Impossibile raggiungere i server del Politecnico.")
+        case .decoding: String(localized: "Risposta del server non leggibile.")
+        case .retriesExhausted(let n): String(localized: "Nessuna risposta dopo \(n) tentativi.")
         }
     }
 

@@ -217,10 +217,10 @@ nonisolated enum AuthError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .notAuthenticated: "Non hai effettuato l'accesso."
-        case .sessionExpired: "La sessione è scaduta. Accedi di nuovo."
-        case .loginCancelled: "Accesso annullato."
-        case .codeExchangeFailed(let detail): "Accesso non riuscito: \(detail)"
+        case .notAuthenticated: String(localized: "Non hai effettuato l'accesso.")
+        case .sessionExpired: String(localized: "La sessione è scaduta. Accedi di nuovo.")
+        case .loginCancelled: String(localized: "Accesso annullato.")
+        case .codeExchangeFailed(let detail): String(localized: "Accesso non riuscito: \(detail)")
         }
     }
 }

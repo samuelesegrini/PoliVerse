@@ -156,7 +156,7 @@ final class FreeRoomsService {
             .filter { $0.occupancyID != nil }
         guard !wanted.isEmpty else {
             rooms = []
-            errorMessage = "Nessuna aula in questa sede."
+            errorMessage = String(localized: "Nessuna aula in questa sede.")
             return
         }
 

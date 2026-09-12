@@ -69,7 +69,7 @@ final class ManifestiService {
             components.queryItems = [
                 .init(name: "evn_default", value: "evento"),
                 .init(name: "c_classe", value: classID),
-                .init(name: "lang", value: "IT"),
+                .init(name: "lang", value: PoliMiLanguage.current.rawValue),
             ]
             guard let url = components.url,
                   let html = await Self.page(url, session: session)
@@ -105,14 +105,14 @@ final class ManifestiService {
             "aree": "-1",
             "tipoInsegnamento": "ALL_TIPO_INSEGNAMENTO",
             "insegn_ricerca": trimmed,
-            "lang": "IT",
+            "lang": PoliMiLanguage.current.rawValue,
         ]
         form["jaf_currentWFID"] = "main"
 
         guard let html = await post(
             "ricerche/RicercaPerInsegnamentoPublic.do", form: form)
         else {
-            errorMessage = "Il catalogo del Politecnico non ha risposto."
+            errorMessage = String(localized: "Il catalogo del Politecnico non ha risposto.")
             return
         }
         results = ManifestoParser.searchResults(html)
@@ -142,7 +142,7 @@ final class ManifestiService {
             URLQueryItem(name: "k_corso_la", value: teaching.courseCode),
             URLQueryItem(name: "codDescr", value: teaching.code),
             URLQueryItem(name: "aa", value: teaching.year ?? year.code),
-            URLQueryItem(name: "lang", value: "IT"),
+            URLQueryItem(name: "lang", value: PoliMiLanguage.current.rawValue),
             URLQueryItem(name: "jaf_currentWFID", value: "main"),
         ]
         if let plan = teaching.planCode { items.append(.init(name: "k_indir", value: plan)) }
@@ -164,12 +164,12 @@ final class ManifestiService {
     func setName(_ fullName: String) async {
         let trimmed = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        _ = await page("ManifestoPublic.do?evn_gointrocarrello=evento&aa=\(year.code)&lang=IT&jaf_currentWFID=main")
+        _ = await page("ManifestoPublic.do?evn_gointrocarrello=evento&aa=\(year.code)&lang=\(PoliMiLanguage.current.rawValue)&jaf_currentWFID=main")
         _ = await post("ManifestoPublic.do", form: [
             "evn_setcognome": "Imposta cognome e nome",
             "cognome": trimmed,
             "aa": year.code,
-            "lang": "IT",
+            "lang": PoliMiLanguage.current.rawValue,
             "c_accordo": "",
         ])
         surname = trimmed
@@ -202,7 +202,7 @@ final class ManifestiService {
             "ac_ins": "0",
             "semestre": teaching.semester ?? "",
             "sezione": section,
-            "lang": "IT",
+            "lang": PoliMiLanguage.current.rawValue,
         ]) else { return false }
 
         if let count = HTMLScraper.firstMatch(
@@ -219,7 +219,7 @@ final class ManifestiService {
 
     /// Empties the personalised timetable.
     func clearTimetable() async {
-        _ = await page("ManifestoPublic.do?evn_eliminacarrello=evento&aa=\(year.code)&lang=IT&jaf_currentWFID=main")
+        _ = await page("ManifestoPublic.do?evn_eliminacarrello=evento&aa=\(year.code)&lang=\(PoliMiLanguage.current.rawValue)&jaf_currentWFID=main")
         cartCount = 0
     }
 
@@ -229,7 +229,7 @@ final class ManifestiService {
     /// data, and for 2026/27 the slots are not published yet. Showing the real
     /// page is honest where inventing a grid from nothing would not be.
     var timetableURL: URL {
-        URL(string: "\(base.absoluteString)/GestioneCarrelloPublic.do?EVN_DEFAULT=evento&aa=\(year.code)&lang=IT&jaf_currentWFID=main")!
+        URL(string: "\(base.absoluteString)/GestioneCarrelloPublic.do?EVN_DEFAULT=evento&aa=\(year.code)&lang=\(PoliMiLanguage.current.rawValue)&jaf_currentWFID=main")!
     }
 
     // MARK: - Transport
@@ -244,7 +244,7 @@ final class ManifestiService {
         request.timeoutInterval = 30
         // The service varies its output by language, and asks in Italian by
         // default only when told to.
-        request.setValue("it-IT,it;q=0.9", forHTTPHeaderField: "Accept-Language")
+        request.setValue(PoliMiLanguage.current.acceptLanguage, forHTTPHeaderField: "Accept-Language")
         do {
             let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
@@ -262,7 +262,7 @@ final class ManifestiService {
         request.httpMethod = "POST"
         request.timeoutInterval = 30
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request.setValue("it-IT,it;q=0.9", forHTTPHeaderField: "Accept-Language")
+        request.setValue(PoliMiLanguage.current.acceptLanguage, forHTTPHeaderField: "Accept-Language")
 
         var components = URLComponents()
         components.queryItems = form.map { URLQueryItem(name: $0.key, value: $0.value) }

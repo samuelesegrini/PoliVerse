@@ -120,11 +120,11 @@ nonisolated struct Freshness: Sendable, Equatable {
     /// Nil when there is nothing worth saying — online with recent data.
     var label: String? {
         if !isOnline {
-            guard let age else { return "Offline" }
-            return "Offline · \(Freshness.describe(age))"
+            guard let age else { return String(localized: "Offline") }
+            return String(localized: "Offline · \(Freshness.describe(age))")
         }
         guard let age, age > 900 else { return nil }
-        return "Aggiornato \(Freshness.describe(age))"
+        return String(localized: "Aggiornato \(Freshness.describe(age))")
     }
 
     /// True when the data is old enough that acting on it could mislead.
@@ -135,10 +135,10 @@ nonisolated struct Freshness: Sendable, Equatable {
 
     static func describe(_ age: TimeInterval) -> String {
         let minutes = Int(age / 60)
-        if minutes < 60 { return "\(max(minutes, 1)) min fa" }
+        if minutes < 60 { return String(localized: "\(max(minutes, 1)) min fa") }
         let hours = minutes / 60
-        if hours < 24 { return "\(hours) ore fa" }
-        return "\(hours / 24) giorni fa"
+        if hours < 24 { return String(localized: "\(hours) ore fa") }
+        return String(localized: "\(hours / 24) giorni fa")
     }
 }
 

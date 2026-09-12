@@ -58,7 +58,8 @@ extension View {
             .environment(PreviewEnvironment.pending)
             .environment(PreviewEnvironment.manifesti)
             .tint(Theme.brand)
-            .environment(\.locale, Locale(identifier: "it_IT"))
+            // Not pinned: previews render in whatever language the scheme
+            // is set to, which is how a translation gets looked at.
     }
 
     /// The same, wrapped in a navigation stack — for views that expect one

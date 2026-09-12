@@ -191,7 +191,7 @@ final class CareerService {
         if book == nil && loadedSessions == nil {
             errorMessage = examServicesRefused
                 ? nil
-                : "Impossibile caricare i dati di carriera."
+                : String(localized: "Impossibile caricare i dati di carriera.")
             // Deliberately **not** cleared any more.
             //
             // This used to set the gradebook, the sittings and the libretto
@@ -330,7 +330,7 @@ final class CareerService {
                 APIRequest(
                     host: .iae,
                     path: "/v1/insegn",
-                    query: [.init(name: "lang", value: "IT")]
+                    query: [.init(name: "lang", value: PoliMiLanguage.current.rawValue)]
                 ),
                 as: TeachingsResponse.self
             )

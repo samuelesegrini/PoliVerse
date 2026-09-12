@@ -32,13 +32,17 @@ nonisolated enum PendingAction: Codable, Sendable, Equatable {
     var label: String {
         switch self {
         case .courseFavourite(_, let value):
-            value ? "Corso aggiunto ai preferiti" : "Corso rimosso dai preferiti"
+            value
+                ? String(localized: "Corso aggiunto ai preferiti")
+                : String(localized: "Corso rimosso dai preferiti")
         case .courseHidden(_, let value):
-            value ? "Corso nascosto" : "Corso mostrato"
+            value
+                ? String(localized: "Corso nascosto")
+                : String(localized: "Corso mostrato")
         case .targetAverage(let media):
-            "Obiettivo media \(String(format: "%.1f", media))"
+            String(localized: "Obiettivo media \(String(format: "%.1f", media))")
         case .favouriteCareer(let matricola):
-            "Matricola preferita \(matricola)"
+            String(localized: "Matricola preferita \(matricola)")
         }
     }
 }
