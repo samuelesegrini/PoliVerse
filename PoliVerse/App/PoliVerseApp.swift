@@ -23,6 +23,8 @@ struct PoliVerseApp: App {
     @State private var pending: PendingChanges
     @State private var liveActivity = LiveActivityController()
     @State private var onboarding = OnboardingState()
+    @State private var spid = SPIDCatalogue()
+    @State private var loginMemory = LoginMethodMemory()
     @State private var freshness: FreshnessCoordinator
     private let notificationRouter = NotificationRouter()
     private let background = BackgroundRefresh()
@@ -123,6 +125,8 @@ struct PoliVerseApp: App {
                 .environment(liveActivity)
                 .environment(freshness)
                 .environment(onboarding)
+                .environment(spid)
+                .environment(loginMemory)
                 .tint(Theme.brand)
                 // The locale used to be pinned to it_IT, because every string
                 // was hardcoded Italian and `.formatted(.relative(…))` would

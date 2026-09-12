@@ -106,6 +106,36 @@ struct OnboardingFlowTests {
         #expect(after == .weBeep)
     }
 
+    /// Going back matters most on the step that spends something
+    /// irreversible: someone who reaches the notifications prompt and wants to
+    /// re-read what it is for should not have to reinstall to do it.
+    @Test("Each step can go back to the one before it")
+    func goesBack() {
+        let context = OnboardingFlow.Context(isSignedIn: true, hasCareerChoice: true)
+        #expect(OnboardingFlow.previous(before: .career, in: context) == .reminders)
+        #expect(OnboardingFlow.previous(before: .reminders, in: context) == .signIn)
+    }
+
+    @Test("The welcome has nothing before it")
+    func welcomeIsFirst() {
+        #expect(OnboardingFlow.previous(before: .welcome, in: .init()) == nil)
+    }
+
+    /// Once there is a session, going back to the sign-in would offer to sign
+    /// in again over a live one — which ends in the IdP replaying the grant and
+    /// the student wondering what they just did.
+    @Test("There is no way back into the sign-in once signed in")
+    func cannotReturnToSignIn() {
+        let context = OnboardingFlow.Context(isSignedIn: true)
+        #expect(OnboardingFlow.previous(before: .reminders, in: context) == .signIn)
+        #expect(OnboardingFlow.canGoBack(from: .reminders, in: context) == false)
+    }
+
+    @Test("Before signing in, the welcome is still reachable")
+    func canReturnToWelcome() {
+        #expect(OnboardingFlow.canGoBack(from: .signIn, in: .init()) == true)
+    }
+
     @Test("Choosing sample data at the welcome goes straight to the finish")
     func demoAdvancesToReady() {
         #expect(OnboardingFlow.next(after: .welcome, in: .init(isDemo: true)) == .ready)

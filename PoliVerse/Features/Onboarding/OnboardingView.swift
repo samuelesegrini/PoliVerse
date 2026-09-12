@@ -43,9 +43,22 @@ struct OnboardingView: View {
     var body: some View {
         VStack(spacing: 0) {
             if onboarding.step != .welcome {
-                OnboardingProgress(steps: steps, current: onboarding.step)
-                    .padding(.horizontal, 28)
-                    .padding(.top, 12)
+                HStack(spacing: 12) {
+                    if OnboardingFlow.canGoBack(from: onboarding.step, in: context) {
+                        Button {
+                            onboarding.goBack(in: context)
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.footnote.weight(.semibold))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("Torna al passo precedente")
+                    }
+                    OnboardingProgress(steps: steps, current: onboarding.step)
+                }
+                .padding(.horizontal, 28)
+                .padding(.top, 12)
             }
 
             Group {

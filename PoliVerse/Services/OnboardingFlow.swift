@@ -70,6 +70,28 @@ nonisolated enum OnboardingFlow {
         return steps
     }
 
+    /// The step before this one, or nil at the start.
+    static func previous(before step: Step, in context: Context) -> Step? {
+        let steps = steps(in: context)
+        guard let index = steps.firstIndex(of: step), index > 0 else { return nil }
+        return steps[index - 1]
+    }
+
+    /// Whether a back button belongs on this step.
+    ///
+    /// Not simply "is there a step behind it". Once there is a session, the
+    /// step behind is the sign-in, and offering to sign in again over a live
+    /// session ends with the IdP replaying the existing grant and the student
+    /// wondering what they just did. Everything else is re-readable, which is
+    /// the point: the notifications step spends a permission iOS grants once,
+    /// and someone who wants to re-read the page before spending it should be
+    /// able to.
+    static func canGoBack(from step: Step, in context: Context) -> Bool {
+        guard let previous = previous(before: step, in: context) else { return false }
+        if context.isSignedIn, previous == .signIn { return false }
+        return true
+    }
+
     /// The step to show after this one, or nil at the end.
     ///
     /// Tolerates a `step` that is no longer in the sequence — signing in can

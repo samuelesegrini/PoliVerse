@@ -38,6 +38,10 @@ enum PreviewEnvironment {
     static let liveActivity = LiveActivityController()
     /// Its own defaults suite, so opening a preview cannot mark the real
     /// install's onboarding as done.
+    static let spid = SPIDCatalogue(
+        defaults: UserDefaults(suiteName: "preview-spid") ?? .standard)
+    static let loginMemory = LoginMethodMemory(
+        defaults: UserDefaults(suiteName: "preview-login") ?? .standard)
     static let onboarding = OnboardingState(
         defaults: UserDefaults(suiteName: "preview-onboarding") ?? .standard)
     /// Wired to the same sample services, so a preview's `.task` refreshes
@@ -70,6 +74,8 @@ extension View {
             .environment(PreviewEnvironment.liveActivity)
             .environment(PreviewEnvironment.freshness)
             .environment(PreviewEnvironment.onboarding)
+            .environment(PreviewEnvironment.spid)
+            .environment(PreviewEnvironment.loginMemory)
             .tint(Theme.brand)
             // Not pinned: previews render in whatever language the scheme
             // is set to, which is how a translation gets looked at.

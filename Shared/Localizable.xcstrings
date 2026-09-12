@@ -1383,6 +1383,22 @@
         }
       }
     },
+    "Carico le tue carriere…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading your enrolments…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carico le tue carriere…"
+          }
+        }
+      }
+    },
     "Carriera": {
       "localizations": {
         "en": {
@@ -1619,6 +1635,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Completa l'accesso nell'app CieID, poi torna qui."
+          }
+        }
+      }
+    },
+    "Con CIE scegli «Entra con le tue credenziali CIE»: la scorciatoia con l'app CieID non funziona per questa app.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With CIE, choose “Entra con le tue credenziali CIE”: the CieID app shortcut does not work for this app."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con CIE scegli «Entra con le tue credenziali CIE»: la scorciatoia con l'app CieID non funziona per questa app."
           }
         }
       }
@@ -2219,6 +2251,54 @@
         }
       }
     },
+    "Entra con SPID · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with SPID · %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entra con SPID · %@"
+          }
+        }
+      }
+    },
+    "Entra con eIDAS": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with eIDAS"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entra con eIDAS"
+          }
+        }
+      }
+    },
+    "Entra con eduGAIN": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with eduGAIN"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entra con eduGAIN"
+          }
+        }
+      }
+    },
     "Esami": {
       "localizations": {
         "en": {
@@ -2427,6 +2507,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Giorno"
+          }
+        }
+      }
+    },
+    "Guarda l'app senza accedere": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Look around without signing in"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guarda l'app senza accedere"
           }
         }
       }
@@ -3749,6 +3845,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mostra"
+          }
+        }
+      }
+    },
+    "Mostra la pagina del Politecnico": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show the Politecnico's page"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra la pagina del Politecnico"
           }
         }
       }
@@ -6065,6 +6177,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Remove from the Lock Screen"
+          }
+        }
+      }
+    },
+    "Torna al passo precedente": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go back to the previous step"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torna al passo precedente"
           }
         }
       }

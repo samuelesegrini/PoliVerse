@@ -26,6 +26,8 @@ import SwiftUI
 struct PoliMiSignInButton: View {
     @Environment(Session.self) private var session
     @Environment(CieIDRouter.self) private var cieID
+    @Environment(SPIDCatalogue.self) private var spid
+    @Environment(LoginMethodMemory.self) private var loginMemory
 
     @State private var showingWeb = false
     @State private var showingCieIDMissing = false
@@ -42,12 +44,15 @@ struct PoliMiSignInButton: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
             } else {
-                Button { start(.password) } label: {
+                // Whatever they used last time, as the filled button. A
+                // student signs in with the same thing every term, and before
+                // this the app made them find it again each time.
+                Button { start(remembered) } label: {
                     Group {
                         if isPreparing {
                             ProgressView().tint(Theme.onAccent)
                         } else {
-                            Text("Codice persona e password").font(.headline)
+                            Text(primaryTitle).font(.headline)
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -57,6 +62,21 @@ struct PoliMiSignInButton: View {
                 .background(Theme.brand, in: .capsule)
                 .foregroundStyle(Theme.onAccent)
                 .buttonStyle(.plain)
+
+                // Offered alongside whenever the remembered method is
+                // something else: it is the route every account has.
+                if !isPasswordRemembered {
+                    Button { start(.password) } label: {
+                        Label("Codice persona e password", systemImage: "key")
+                            .font(.subheadline.weight(.medium))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                    }
+                    .disabled(isPreparing)
+                    .background(Color(.secondarySystemGroupedBackground), in: .capsule)
+                    .foregroundStyle(.primary)
+                    .buttonStyle(.plain)
+                }
 
                 Button { showingSPID = true } label: {
                     Label("Entra con SPID", systemImage: "person.badge.shield.checkmark")
@@ -79,6 +99,17 @@ struct PoliMiSignInButton: View {
                 .background(Color(.secondarySystemGroupedBackground), in: .capsule)
                 .foregroundStyle(.primary)
                 .buttonStyle(.plain)
+
+                // The Politecnico's own warning, said before the tap rather
+                // than in a paragraph on the page the student is about to be
+                // shown: "per ragioni indipendenti dal Politecnico l'accesso
+                // alla Polimi APP con CIE è possibile solo usando 'Entra con
+                // le tue credenziali CIE'". Getting this wrong costs a card, a
+                // PIN and a failure with no explanation.
+                Text("Con CIE scegli «Entra con le tue credenziali CIE»: la scorciatoia con l'app CieID non funziona per questa app.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
 
                 // Behind a tap: the Politecnico offers both, and between them
                 // they serve students with a non-Italian EU identity and staff
@@ -107,7 +138,7 @@ struct PoliMiSignInButton: View {
                 URL(string: "https://polimiapp.polimi.it/polimi_app/app/")!)
         }
         .sheet(isPresented: $showingSPID) {
-            SPIDProviderPicker { provider in
+            SPIDProviderPicker(providers: spid.providers) { provider in
                 showingSPID = false
                 start(.spid(provider))
             }
@@ -120,8 +151,29 @@ struct PoliMiSignInButton: View {
         .sheet(isPresented: $showingWeb) { webSheet }
     }
 
+    private var remembered: PoliMiLoginMethod { loginMemory.last(in: spid.providers) }
+
+    private var isPasswordRemembered: Bool {
+        if case .password = remembered { return true }
+        return false
+    }
+
+    private var primaryTitle: LocalizedStringKey {
+        switch remembered {
+        case .password: "Codice persona e password"
+        case .spid(let provider): "Entra con SPID · \(provider.name)"
+        case .cie: "Entra con CIE"
+        case .eidas: "Entra con eIDAS"
+        case .eduGAIN: "Entra con eduGAIN"
+        }
+    }
+
     private func start(_ chosen: PoliMiLoginMethod) {
         method = chosen
+        // Remembered on the attempt, not on success: the student's intent is
+        // the same either way, and a failed login is exactly when they least
+        // want to go hunting for the button again.
+        loginMemory.remember(chosen)
         webError = nil
         isPreparing = true
         Task {
@@ -157,7 +209,11 @@ struct PoliMiSignInButton: View {
                 // Carries the enrolment the user asked to switch to, if they
                 // got here from the career switcher.
                 flow: .login(hintMatricola: session.pendingMatricola),
-                method: method
+                method: method,
+                // Read off the page while we are there, so the list the app
+                // offers next time is the one the Politecnico is actually
+                // federating with.
+                onProvidersRead: { spid.adopt($0) }
             )
             .ignoresSafeArea(edges: .bottom)
             .navigationTitle("Servizi Online")
@@ -194,12 +250,13 @@ struct PoliMiSignInButton: View {
 /// twelve trademarks we have no licence to. Their names are the honest way to
 /// say the same thing.
 struct SPIDProviderPicker: View {
+    let providers: [SPIDProvider]
     let choose: (SPIDProvider) -> Void
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
-            List(SPIDProvider.all) { provider in
+            List(providers) { provider in
                 Button { choose(provider) } label: {
                     HStack {
                         Text(provider.name)
@@ -237,5 +294,5 @@ struct SPIDProviderPicker: View {
 }
 
 #Preview("SPID") {
-    SPIDProviderPicker { _ in }
+    SPIDProviderPicker(providers: SPIDProvider.all) { _ in }
 }

@@ -30,6 +30,13 @@ struct SignInStepView: View {
             }
         } actions: {
             PoliMiSignInButton()
+            // Skippable, like every other step: someone whose login keeps
+            // failing — an outage, a card they do not have on them — should be
+            // able to reach the sample data rather than be held at the door.
+            OnboardingSkipButton(title: "Guarda l'app senza accedere") {
+                session.useMockData = true
+                advance()
+            }
         }
         // The token arriving is the *only* thing that moves this step on —
         // the id changes at exactly that moment, and it covers the second

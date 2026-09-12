@@ -36,6 +36,14 @@ final class OnboardingState {
         step = next
     }
 
+    /// Steps back, where the flow allows it.
+    func goBack(in context: OnboardingFlow.Context) {
+        guard OnboardingFlow.canGoBack(from: step, in: context),
+              let previous = OnboardingFlow.previous(before: step, in: context)
+        else { return }
+        step = previous
+    }
+
     /// Ends the flow, from wherever it is, for good.
     ///
     /// There is no way back in. The intro runs once per install and what

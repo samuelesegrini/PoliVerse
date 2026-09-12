@@ -20,6 +20,19 @@ struct CareerStepView: View {
             detail: "Il codice persona è uno solo, ma ogni immatricolazione ha la sua matricola — e i servizi del Politecnico rispondono solo per quella con cui hai fatto l'accesso."
         ) {
             VStack(spacing: 10) {
+                // The step exists because the account has more than one
+                // enrolment, but the list itself can still be in flight — and
+                // an empty column under "Hai più di una carriera" reads as the
+                // app having lost them.
+                if careers.careers.isEmpty {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text("Carico le tue carriere…")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 8)
+                }
                 ForEach(careers.careers) { career in
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
                         VStack(alignment: .leading, spacing: 2) {
@@ -52,7 +65,9 @@ struct CareerStepView: View {
                     .padding(.top, 4)
             }
         } actions: {
-            OnboardingPrimaryButton(title: "Continua con questa") {
+            OnboardingPrimaryButton(
+                title: careers.careers.isEmpty ? "Continua" : "Continua con questa"
+            ) {
                 // Remembered so the mismatch banner knows this was a choice
                 // rather than an accident.
                 if let current = careers.current { careers.remember(current) }

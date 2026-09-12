@@ -57,6 +57,9 @@ struct PoliMiAppLoginWebView: View {
     /// than on the Politecnico's. The matching button on the chooser page is
     /// pressed from underneath; see ``PoliMiLoginMethod``.
     var method: PoliMiLoginMethod = .password
+    /// Handed the SPID provider list the page carries, as JSON, each time the
+    /// chooser loads. See ``SPIDCatalogue``.
+    var onProvidersRead: (String) -> Void = { _ in }
 
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "oauth")
 
@@ -134,7 +137,7 @@ struct PoliMiAppLoginWebView: View {
         .accessibilityHidden(!showsWebView)
         .overlay {
             if !showsWebView {
-                LoginWaitingView(method: method)
+                LoginWaitingView(method: method) { selectionFailed = true }
             }
         }
     }
@@ -143,6 +146,13 @@ struct PoliMiAppLoginWebView: View {
     /// page when the method's own form is part of it.
     @MainActor
     private func applyMethod(_ webView: WKWebView, trimming: Bool) async {
+        // Read before anything is pressed: pressing navigates away, and this
+        // page is the only place the list exists.
+        if let json = (try? await webView.evaluateJavaScript(
+            SPIDCatalogue.extractionScript)) as? String {
+            onProvidersRead(json)
+        }
+
         if trimming, let css = method.pageTrimmingCSS {
             // Applied every time the chooser renders, not once: the page comes
             // back after a wrong password, and it comes back untrimmed.

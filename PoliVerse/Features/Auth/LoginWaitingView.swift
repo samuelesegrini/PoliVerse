@@ -8,6 +8,13 @@ import SwiftUI
 /// a redirect chain is the part of a login that looks most like a failure.
 struct LoginWaitingView: View {
     let method: PoliMiLoginMethod
+    /// Uncovers the web view. Offered after a few seconds so that no spinner
+    /// here can ever be a dead end, whatever we failed to anticipate: the
+    /// student can always get to the Politecnico's own page and finish by
+    /// hand.
+    var reveal: () -> Void = {}
+
+    @State private var showsEscape = false
 
     var body: some View {
         VStack(spacing: 18) {
@@ -17,10 +24,26 @@ struct LoginWaitingView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+
+            if showsEscape {
+                Button("Mostra la pagina del Politecnico", action: reveal)
+                    .font(.footnote)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Theme.brand)
+                    .transition(.opacity)
+            }
         }
         .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground))
+        .animation(.snappy, value: showsEscape)
+        // Eight seconds: longer than any step of this login takes on a working
+        // connection, so the button is an admission of a problem rather than an
+        // invitation to interrupt a flow that is going fine.
+        .task {
+            try? await Task.sleep(for: .seconds(8))
+            showsEscape = true
+        }
     }
 
     private var message: LocalizedStringKey {
