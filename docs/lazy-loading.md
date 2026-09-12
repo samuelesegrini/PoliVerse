@@ -186,3 +186,55 @@ the instruments:
 - **`ActivePrewarm`** is read and logged, because a prewarmed launch has
   already paid for dynamic linking and its numbers are not comparable with a
   cold one. Mistaking the two is how launch "improvements" get celebrated.
+
+## Measured with Instruments, 2026-09-12
+
+Release build, iPhone 17 Pro simulator, iOS 27.0, *App Launch* template via
+`xctrace`, 3,485 samples.
+
+Share of samples whose stack passes through each image, in 200 ms buckets:
+
+| Window | Samples | dyld | SwiftUI + AttributeGraph | PoliVerse |
+| --- | --- | --- | --- | --- |
+| 0.0–2.0 s | ~590 | **100 %** | 0 % | **0 %** |
+| 2.2–2.4 s | 69 | 100 % | 10 % | 9 % |
+| 2.4–2.6 s | 113 | 100 % | 76 % | 50 % |
+| 2.6–3.0 s | 360 | 61–73 % | 39–49 % | 28–36 % |
+
+**The first two seconds are entirely the dynamic linker.** Not one sample in
+that window touches app code, SwiftUI, or anything we wrote. Our own code first
+appears at 2.2 s, by which point dyld has finished.
+
+Over the whole trace, PoliVerse accounts for 1,153 frames of which 510 are
+`main`/`$main` — the frame present on every stack. The rest:
+
+```
+15  PoliVerseApp.init()
+ 8  Session.restore()
+ 7  ServiceDirectory.load()
+ 5  Session.init()      5  RoomsService.init(session:)
+ 2  KeychainStore.load(account:)
+```
+
+`KeychainStore.load` now appears under `Session.restore()` — after launch,
+which is what the lazy change was for — and at two samples it was never going
+to be visible at this scale. The change was right; the expectation of a
+measurable win was not.
+
+### What this does and does not prove
+
+`dyld_sim` is the **simulator's** linker, without the optimised shared cache a
+real device has, so this over-states dyld badly. What it does establish is the
+ordering: there is nothing of ours in the pre-UI phase to optimise, and the app
+links no third-party frameworks to trim.
+
+Two limitations found the hard way:
+
+- The `life-cycle-period` table — the one holding the actual launch phases — is
+  **empty on the simulator**. That is the "table without a known input source"
+  warning `xctrace` prints. Time to first draw is not measurable here at all.
+- Only a device gives a representative number, which is what the MetricKit
+  subscription added alongside is for.
+
+**Conclusion: no further launch work is justified by this data.** The next real
+measurement has to come from a device.
