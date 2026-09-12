@@ -53,6 +53,10 @@ struct PoliMiAppLoginWebView: View {
     /// `.login(hintMatricola:)` to land on a particular enrolment, or
     /// `.careerChange` to move an existing grant without signing in again.
     var flow: PoliMiOAuth.AuthorizationFlow = .login()
+    /// How the student chose to identify themselves, on our screen rather
+    /// than on the Politecnico's. The matching button on the chooser page is
+    /// pressed from underneath; see ``PoliMiLoginMethod``.
+    var method: PoliMiLoginMethod = .password
 
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "oauth")
 
@@ -63,6 +67,24 @@ struct PoliMiAppLoginWebView: View {
     @State private var state = UUID().uuidString
     @State private var didStartAuthorize = false
     @State private var didFinish = false
+    /// The page currently loaded, which is what decides whether the student is
+    /// looking at the web view or at our own waiting screen.
+    @State private var currentURL: URL?
+    /// The chooser is pressed once. It is re-rendered on the way back from a
+    /// failed provider login, and pressing again would trap someone who wants
+    /// to pick differently.
+    @State private var didSelectMethod = false
+
+    /// Set when the chooser's markup has moved under us and the button could
+    /// not be pressed. From then on the page is shown as the Politecnico wrote
+    /// it: a login that looks less like ours is much better than one that does
+    /// not happen.
+    @State private var selectionFailed = false
+
+    private var stage: LoginStage {
+        LoginStage(url: currentURL, method: method, hasPressed: didSelectMethod)
+    }
+    private var showsWebView: Bool { selectionFailed || stage.showsWebView }
 
     var body: some View {
         AuthWebView(
@@ -73,9 +95,30 @@ struct PoliMiAppLoginWebView: View {
             // the thing doing the code exchange.
             decide: { _ in .allow },
             onError: onError,
-            onCieIDMissing: onCieIDMissing,
+            onCieIDMissing: {
+                // The hand-off cannot happen, so nothing more will navigate.
+                // Showing the page puts the student back on the Politecnico's
+                // own CIE screen, which offers the credential route the page
+                // itself recommends for this app.
+                selectionFailed = true
+                onCieIDMissing()
+            },
             onFinished: { webView, url in
-                guard !didFinish, url?.host == "polimiapp.polimi.it" else { return }
+                currentURL = url
+                guard !didFinish else { return }
+                // Built from `url` rather than read back from `currentURL`:
+                // the assignment above is a `@State` write and is not visible
+                // to this closure until the next render.
+                let settled = LoginStage(
+                    url: url, method: method, hasPressed: didSelectMethod)
+                // Only the chooser carries the buttons. An interstitial on the
+                // same host would find nothing to press, and latching the
+                // failure there would show the student the raw page before the
+                // chooser had even rendered.
+                if settled.isChooser {
+                    Task { await applyMethod(webView, trimming: settled.trimsPage) }
+                }
+                guard url?.host == "polimiapp.polimi.it" else { return }
                 Task { await advance(webView, url: url) }
             },
             // Pushed, not polled: the page tells us the moment it stores the
@@ -83,6 +126,70 @@ struct PoliMiAppLoginWebView: View {
             onCredential: { raw in adopt(raw) },
             credentialKey: credentialsKey
         )
+        // Hidden until the student is somewhere that has to be theirs. What
+        // is covered is the bootstrap, the chooser our own buttons replaced,
+        // and the redirect chain that exchanges the code — none of which
+        // anyone can act on, and all of which used to be the login.
+        .opacity(showsWebView ? 1 : 0)
+        .accessibilityHidden(!showsWebView)
+        .overlay {
+            if !showsWebView {
+                LoginWaitingView(method: method)
+            }
+        }
+    }
+
+    /// Presses the button for the method chosen on our screen, and trims the
+    /// page when the method's own form is part of it.
+    @MainActor
+    private func applyMethod(_ webView: WKWebView, trimming: Bool) async {
+        if trimming, let css = method.pageTrimmingCSS {
+            // Applied every time the chooser renders, not once: the page comes
+            // back after a wrong password, and it comes back untrimmed.
+            let script = """
+            (function () {
+              var id = 'poliverse-trim';
+              if (document.getElementById(id)) { return; }
+              var style = document.createElement('style');
+              style.id = id;
+              style.textContent = `\(css)`;
+              document.head.appendChild(style);
+            })()
+            """
+            _ = try? await webView.evaluateJavaScript(script)
+        }
+
+        guard !didSelectMethod, !method.selectionScript.isEmpty else { return }
+        didSelectMethod = true
+        let pressed = (try? await webView.evaluateJavaScript(method.selectionScript)) as? Bool
+        if pressed != true {
+            // The button was not found: the page's markup has moved. Showing
+            // the chooser is a worse experience and a working one, which is
+            // the right way round for a login.
+            log.notice("Could not press \(method.id, privacy: .public); showing the page")
+            selectionFailed = true
+            return
+        }
+
+        // CIE is exempt, and has to be: the hand-off to the CieID app is
+        // intercepted rather than navigated, so the page legitimately never
+        // moves, and the round trip through card and PIN always outlasts any
+        // timeout worth having. A watchdog here would fire on every successful
+        // CIE login and drop the student back onto the raw chooser.
+        if case .cie = method { return }
+        // Pressed, and now nothing is guaranteed to happen. A click that
+        // submits no form leaves the page exactly where it was, which means no
+        // further navigation, no further callback, and our spinner over a page
+        // that is waiting for the student. Six seconds is longer than the form
+        // post takes on a bad connection and far shorter than anyone's patience
+        // with a screen that never changes.
+        let pressedURL = currentURL
+        Task {
+            try? await Task.sleep(for: .seconds(6))
+            guard !didFinish, currentURL == pressedURL else { return }
+            log.notice("\(method.id, privacy: .public) pressed but the page did not move; showing it")
+            selectionFailed = true
+        }
     }
 
     @MainActor

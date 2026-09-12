@@ -853,6 +853,22 @@
         }
       }
     },
+    "Altri modi per accedere": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other ways to sign in"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Altri modi per accedere"
+          }
+        }
+      }
+    },
     "Anno": {
       "localizations": {
         "en": {
@@ -1113,6 +1129,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apri sul sito"
+          }
+        }
+      }
+    },
+    "Apro l'accesso EduGAIN…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening EduGAIN sign-in…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apro l'accesso EduGAIN…"
+          }
+        }
+      }
+    },
+    "Apro l'accesso con Carta d'Identità Elettronica…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening sign-in with your Electronic Identity Card…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apro l'accesso con Carta d'Identità Elettronica…"
+          }
+        }
+      }
+    },
+    "Apro l'accesso eIDAS…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening eIDAS sign-in…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apro l'accesso eIDAS…"
+          }
+        }
+      }
+    },
+    "Apro la pagina del Politecnico…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening the Politecnico's page…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apro la pagina del Politecnico…"
           }
         }
       }
@@ -1447,6 +1527,38 @@
         }
       }
     },
+    "Codice persona e password": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Person code and password"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codice persona e password"
+          }
+        }
+      }
+    },
+    "Codice persona, SPID, CIE: l'accesso avviene sempre sulla pagina del Politecnico o del tuo gestore. PoliVerse non vede la password, riceve solo un codice temporaneo e lo conserva nel portachiavi del dispositivo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Person code, SPID or CIE: signing in always happens on the Politecnico's page or your provider's. PoliVerse never sees your password — it receives a temporary code and keeps it in the device's keychain."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codice persona, SPID, CIE: l'accesso avviene sempre sulla pagina del Politecnico o del tuo gestore. PoliVerse non vede la password, riceve solo un codice temporaneo e lo conserva nel portachiavi del dispositivo."
+          }
+        }
+      }
+    },
     "Cognome e nome": {
       "localizations": {
         "en": {
@@ -1777,22 +1889,6 @@
         }
       }
     },
-    "Credenziali e SPID/CIE restano sulla pagina di ateneo.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Credentials and SPID/CIE stay on the university's page."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Credenziali e SPID/CIE restano sulla pagina di ateneo."
-          }
-        }
-      }
-    },
     "Crediti": {
       "localizations": {
         "en": {
@@ -2043,6 +2139,22 @@
         }
       }
     },
+    "EduGAIN · altro ateneo o ente di ricerca": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EduGAIN · another university or research body"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EduGAIN · altro ateneo o ente di ricerca"
+          }
+        }
+      }
+    },
     "Elimina materiali scaricati": {
       "localizations": {
         "en": {
@@ -2071,6 +2183,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Email"
+          }
+        }
+      }
+    },
+    "Entra con CIE": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with CIE"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entra con CIE"
+          }
+        }
+      }
+    },
+    "Entra con SPID": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with SPID"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entra con SPID"
           }
         }
       }
@@ -2957,22 +3101,6 @@
         }
       }
     },
-    "L'accesso avviene sulla pagina dei Servizi Online, nella stessa finestra che useresti dal browser. PoliVerse non vede la password: riceve solo un codice temporaneo e lo conserva nel portachiavi del dispositivo.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Signing in happens on the Servizi Online page, the same one you'd use in a browser. PoliVerse never sees your password: it receives a temporary code and keeps it in the device's keychain."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "L'accesso avviene sulla pagina dei Servizi Online, nella stessa finestra che useresti dal browser. PoliVerse non vede la password: riceve solo un codice temporaneo e lo conserva nel portachiavi del dispositivo."
-          }
-        }
-      }
-    },
     "L'accesso è scaduto. Accedi di nuovo per continuare.": {
       "localizations": {
         "en": {
@@ -3117,6 +3245,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Le comunicazioni dal Politecnico compaiono qui."
+          }
+        }
+      }
+    },
+    "Le credenziali si inseriscono solo sulla pagina di chi le verifica.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credentials are only ever entered on the page of whoever checks them."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le credenziali si inseriscono solo sulla pagina di chi le verifica."
           }
         }
       }
@@ -5335,6 +5479,22 @@
         }
       }
     },
+    "Scegli il gestore con cui hai fatto SPID. Le credenziali si inseriscono sulla sua pagina.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the provider you set SPID up with. Credentials are entered on their own page."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli il gestore con cui hai fatto SPID. Le credenziali si inseriscono sulla sua pagina."
+          }
+        }
+      }
+    },
     "Scegli la sede da mostrare.": {
       "localizations": {
         "en": {
@@ -5867,6 +6027,22 @@
         }
       }
     },
+    "Ti porto su %@…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taking you to %@…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ti porto su %@…"
+          }
+        }
+      }
+    },
     "Ti serve una media di": {
       "localizations": {
         "en": {
@@ -6251,6 +6427,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "of %lld"
+          }
+        }
+      }
+    },
+    "eIDAS · identità di un altro paese UE": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "eIDAS · an identity from another EU country"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "eIDAS · identità di un altro paese UE"
           }
         }
       }

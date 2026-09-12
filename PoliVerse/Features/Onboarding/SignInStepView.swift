@@ -15,12 +15,12 @@ struct SignInStepView: View {
         OnboardingStepLayout(
             symbol: "person.badge.key.fill",
             title: "Accedi con l'account del Politecnico",
-            detail: "L'accesso avviene sulla pagina dei Servizi Online, nella stessa finestra che useresti dal browser. PoliVerse non vede la password: riceve solo un codice temporaneo e lo conserva nel portachiavi del dispositivo."
+            detail: "Codice persona, SPID, CIE: l'accesso avviene sempre sulla pagina del Politecnico o del tuo gestore. PoliVerse non vede la password, riceve solo un codice temporaneo e lo conserva nel portachiavi del dispositivo."
         ) {
             VStack(alignment: .leading, spacing: 14) {
                 OnboardingPoint(
                     symbol: "lock.shield",
-                    text: "Credenziali e SPID/CIE restano sulla pagina di ateneo.")
+                    text: "Le credenziali si inseriscono solo sulla pagina di chi le verifica.")
                 OnboardingPoint(
                     symbol: "iphone",
                     text: "I dati scaricati restano sul telefono: non c'è un server di PoliVerse.")
