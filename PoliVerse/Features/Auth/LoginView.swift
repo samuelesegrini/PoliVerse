@@ -74,6 +74,13 @@ struct LoginView: View {
                 .multilineTextAlignment(.center)
         }
         .padding(28)
+        // The expensive part of this login is parsing 8 MB of JavaScript, and
+        // it can happen while the user is still reading this screen rather
+        // than after they have tapped and started waiting.
+        .task {
+            LoginWebKit.prewarm(
+                URL(string: "https://polimiapp.polimi.it/polimi_app/app/")!)
+        }
         .sheet(isPresented: $showingWeb) {
             NavigationStack {
                 PoliMiAppLoginWebView(

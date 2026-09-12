@@ -81,3 +81,58 @@ resource for the life of the app.
 
 The background refresh deliberately does **not** run the campus room pass: iOS
 grants roughly thirty seconds and 150 requests would be killed half-done.
+
+---
+
+# The login, and why it was slow
+
+## Measured
+
+`GET https://polimiapp.polimi.it/polimi_app/app/` pulls:
+
+| File | Size | Caching |
+| --- | --- | --- |
+| `index.html` | 3.4 KB | `private`, ETag, Last-Modified |
+| `index-*.js` | **8,269,045 B** | `private`, ETag, Last-Modified |
+| `index-*.css` | **5,425,236 B** | `private`, ETag, Last-Modified |
+
+**13.7 MB**, and the app has to run it: a token this app mints directly is
+rejected by the data services, while the one the SPA mints is accepted.
+
+Everything above is cacheable — `private` means "not in shared caches", not
+"do not store", and both files carry validators, so a second load should be
+two 304s. The web view used `WKWebsiteDataStore.nonPersistent()`, which
+discards the cache with the view, so **every login downloaded all 13.7 MB
+again**.
+
+## What changed
+
+| | Before | After |
+| --- | --- | --- |
+| Data store | non-persistent | persistent, app-scoped identifier |
+| Repeat login | 13.7 MB | revalidation only |
+| Credential detection | poll every 400 ms, up to 25 times | pushed from `setItem` |
+| Worst-case wait after success | ~10 s | none |
+| Images/media/fonts on the SPA host | downloaded | blocked |
+| Page load | starts when the user taps | starts when the login screen appears |
+
+## The trade that had to be preserved
+
+The non-persistent store was not careless: it guaranteed a Shibboleth session
+could never outlive the login. That property is kept by deleting **cookies,
+session storage and local storage** when the flow ends and on sign-out —
+`WKWebsiteDataTypeDiskCache` is deliberately not in that list, which is the
+whole point.
+
+It also fixes a real failure the old comment described but could not solve: the
+CieID detour backgrounds the app for as long as a card and PIN take, and if iOS
+reclaimed it in that window the in-memory cookies went with it and the login
+restarted from the top.
+
+## Blocking is scoped, deliberately
+
+Images, media and fonts are blocked **only on `polimiapp.polimi.it`**. The
+identity providers — CIE, SPID, aunicalogin — are pages the user actually reads
+and taps, and their buttons are frequently images; blocking there would make
+the login unusable rather than fast. The SPA behind them is a page nobody
+reads: it exists to run its JavaScript and hand back a credential.

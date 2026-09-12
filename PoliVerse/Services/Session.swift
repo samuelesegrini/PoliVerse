@@ -294,6 +294,9 @@ final class Session {
         // Same reason: reminders naming someone else's lectures would keep
         // arriving after they signed out.
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        // Cookies only: the login page's 13.7 MB of JavaScript and CSS stays
+        // cached, so signing back in is fast. Nothing identifying remains.
+        await LoginWebKit.endSession()
         if useMockData {
             await signIn(MockData.student)
         } else {

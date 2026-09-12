@@ -36,6 +36,12 @@ struct AuthWebView: UIViewRepresentable {
     /// Called after each navigation settles, so a host can sequence steps or
     /// inspect the page.
     var onFinished: (WKWebView, URL?) -> Void = { _, _ in }
+    /// Called with the raw credential the page stored, the moment it does.
+    /// Supplying this installs the observer script; omitting it leaves the
+    /// page untouched.
+    var onCredential: ((String) -> Void)?
+    /// The `sessionStorage` key to watch.
+    var credentialKey: String = ""
 
     func makeCoordinator() -> Coordinator {
         Coordinator(router: router, decide: decide, onError: onError,
@@ -44,20 +50,45 @@ struct AuthWebView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
-        // Non-persistent, so a Shibboleth session never outlives the login and
-        // "log out" genuinely logs out.
+        // A persistent store of this app's own, so the 13.7 MB of JavaScript
+        // and CSS the Servizi Online SPA weighs is cached between logins
+        // rather than downloaded again every time.
         //
-        // The trade-off is real: the CieID detour backgrounds PoliVerse for as
-        // long as the user takes to tap their card and enter a PIN, and if iOS
-        // reclaims the app in that window the in-memory cookies go with it and
-        // the login must be restarted. Persisting them would survive that but
-        // would leave an ateneo session on disk indefinitely.
-        configuration.websiteDataStore = .nonPersistent()
+        // The non-persistent store this replaced guaranteed that a Shibboleth
+        // session could never outlive the login — a property worth keeping,
+        // and one that does not require discarding the cache along with it.
+        // ``LoginWebKit/endSession()`` deletes the cookies when the flow ends,
+        // so the session dies exactly as before.
+        //
+        // It also fixes a real failure: the CieID detour backgrounds PoliVerse
+        // for as long as the card and PIN take, and if iOS reclaimed the app
+        // in that window the in-memory cookies went with it and the login had
+        // to be restarted from the top.
+        configuration.websiteDataStore = LoginWebKit.dataStore
+
+        // Tells us the instant the credential is written, instead of polling
+        // for it.
+        if let handler = onCredential {
+            configuration.userContentController.addUserScript(
+                LoginWebKit.credentialObserver(key: credentialKey))
+            configuration.userContentController.add(
+                context.coordinator, name: LoginWebKit.messageName)
+            context.coordinator.onCredential = handler
+        }
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
         context.coordinator.webView = webView
         webView.load(URLRequest(url: startURL))
+
+        // Compiled asynchronously; applied as soon as it is ready. The first
+        // login of a fresh install may start a moment before the rules exist,
+        // which costs bytes rather than correctness.
+        Task { @MainActor in
+            if let rules = await LoginWebKit.contentRules() {
+                webView.configuration.userContentController.add(rules)
+            }
+        }
         return webView
     }
 
@@ -78,7 +109,17 @@ struct AuthWebView: UIViewRepresentable {
         }
     }
 
-    final class Coordinator: NSObject, WKNavigationDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+        var onCredential: ((String) -> Void)?
+
+        func userContentController(
+            _ controller: WKUserContentController, didReceive message: WKScriptMessage
+        ) {
+            guard message.name == LoginWebKit.messageName,
+                  let raw = message.body as? String, !raw.isEmpty else { return }
+            onCredential?(raw)
+        }
+
         private let router: CieIDRouter
         private let decide: (URL) -> AuthWebViewDecision
         private let onError: (any Error) -> Void

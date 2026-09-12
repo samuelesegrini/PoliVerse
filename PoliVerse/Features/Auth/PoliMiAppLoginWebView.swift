@@ -77,7 +77,11 @@ struct PoliMiAppLoginWebView: View {
             onFinished: { webView, url in
                 guard !didFinish, url?.host == "polimiapp.polimi.it" else { return }
                 Task { await advance(webView, url: url) }
-            }
+            },
+            // Pushed, not polled: the page tells us the moment it stores the
+            // credential.
+            onCredential: { raw in adopt(raw) },
+            credentialKey: credentialsKey
         )
     }
 
@@ -98,16 +102,12 @@ struct PoliMiAppLoginWebView: View {
         // gone. Keying off it meant the one navigation that mattered fell
         // through to a silent return, and the login simply stopped.
         if didStartAuthorize {
-            for attempt in 0..<25 {
-                try? await Task.sleep(for: .milliseconds(400))
-                if await harvest(from: webView) { return }
-                if attempt == 12 {
-                    log.notice("Still waiting for Servizi Online to store a credential")
-                }
-            }
-            log.error("Servizi Online never stored a credential")
-            onError(AuthError.codeExchangeFailed(
-                "Servizi Online non ha completato l'accesso."))
+            // The observer script reports the credential the instant it is
+            // written, so there is nothing to wait for here. This remains only
+            // as the backstop for a page restored from the back-forward cache,
+            // where a document-start script does not run again — one check,
+            // not twenty-five.
+            _ = await harvest(from: webView)
             return
         }
 
@@ -128,6 +128,27 @@ struct PoliMiAppLoginWebView: View {
         webView.load(URLRequest(url: authorize))
     }
 
+    /// Accepts a credential handed over by the observer script.
+    ///
+    /// Idempotent: the script can fire more than once — a restored page posts
+    /// what it already had, and the SPA may rewrite the value — and completing
+    /// a login twice would exchange the same grant twice.
+    @MainActor
+    private func adopt(_ raw: String) {
+        guard !didFinish,
+              let data = raw.data(using: .utf8),
+              let stored = try? JSONDecoder().decode(StoredCredentials.self, from: data)
+        else { return }
+        didFinish = true
+        log.notice("Credential reported by Servizi Online")
+        Task {
+            // The session dies with the flow, as it always did; the cache does
+            // not, which is what makes the next login fast.
+            await LoginWebKit.endSession()
+        }
+        onCredentials(stored.token)
+    }
+
     /// Reads the credential if the app has stored one.
     @MainActor
     private func harvest(from webView: WKWebView) async -> Bool {
@@ -140,6 +161,7 @@ struct PoliMiAppLoginWebView: View {
 
         didFinish = true
         log.notice("Read credentials minted by the official app")
+        Task { await LoginWebKit.endSession() }
         onCredentials(stored.token)
         return true
     }
