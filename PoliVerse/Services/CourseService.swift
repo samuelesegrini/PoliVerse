@@ -17,6 +17,12 @@ final class CourseService {
     /// Where a change goes when it cannot be sent now. Assigned by the app,
     /// because the queue needs the session and this service is built first.
     var pending: PendingChanges?
+    /// Changes the user made that have not reached WeBeep yet.
+    ///
+    /// A third state between the cache and the server: newer than both,
+    /// because the user just made it, and dropped the moment the queue
+    /// delivers it so the server is the truth again.
+    private var optimistic = OptimisticFlags()
 
     private func restoreCache() {
         guard let cached = slot.restore(for: session.student?.matricola) else { return }
@@ -149,7 +155,13 @@ final class CourseService {
             // undoing the tap. Reverting was the old behaviour and it is
             // indistinguishable, from the user's side, from the app ignoring
             // them.
-            if await !weBeep.setFavourite(wanted, moodleID: moodleID) {
+            if await weBeep.setFavourite(wanted, moodleID: moodleID) {
+                // Accepted: the server is the truth again.
+                optimistic.clear(favouriteFor: course.id)
+            } else {
+                // Recorded before queueing, so a relaunch before the queue
+                // drains still shows what the user chose.
+                optimistic.set(favourite: wanted, for: course.id)
                 pending?.record(.courseFavourite(moodleID: moodleID, value: wanted))
             }
         }
@@ -168,7 +180,10 @@ final class CourseService {
         }
 
         Task {
-            if await !weBeep.setHidden(wanted, moodleID: moodleID) {
+            if await weBeep.setHidden(wanted, moodleID: moodleID) {
+                optimistic.clear(hiddenFor: course.id)
+            } else {
+                optimistic.set(hidden: wanted, for: course.id)
                 pending?.record(.courseHidden(moodleID: moodleID, value: wanted))
             }
         }
@@ -183,16 +198,43 @@ final class CourseService {
     /// Applies the locally-held flags, which matter only for courses WeBeep
     /// does not know about — for the rest, WeBeep's own values already arrived
     /// on the course and must not be overwritten.
+    /// Called by ``PendingChanges`` once a queued change reaches WeBeep.
+    ///
+    /// Dropping the override is the point: keeping it would make the app
+    /// ignore a favourite removed later from the web, forever.
+    func confirmDelivered(_ action: PendingAction) {
+        guard let course = courses.first(where: {
+            switch action {
+            case .courseFavourite(let id, _), .courseHidden(let id, _):
+                return $0.moodleID == id
+            default:
+                return false
+            }
+        }) else { return }
+
+        switch action {
+        case .courseFavourite: optimistic.clear(favouriteFor: course.id)
+        case .courseHidden: optimistic.clear(hiddenFor: course.id)
+        default: break
+        }
+    }
+
     private func applyFavourites(_ input: [Course]) -> [Course] {
         let favs = favourites
         let hidden = hiddenCourses
-        return sortCourses(input.map { course in
+        let withLocal = input.map { course -> Course in
+            // WeBeep owns these flags for the courses it knows; the local sets
+            // are only for courses it does not.
             guard course.moodleID == nil else { return course }
             var copy = course
             copy.isFavourite = favs.contains(course.id)
             copy.isHidden = hidden.contains(course.id)
             return copy
-        })
+        }
+        // Unsent changes go on top of everything, WeBeep courses included.
+        // Without this a star tapped offline came back off after a relaunch
+        // while the queue still intended to turn it on.
+        return sortCourses(optimistic.apply(to: withLocal))
     }
 
     /// Favourites first, then most recent year, then by name.

@@ -27,6 +27,7 @@ final class PendingChanges {
     var weBeep: WeBeepService?
     var careers: CareersService?
     var career: CareerService?
+    var courses: CourseService?
 
     init(session: Session, network: NetworkMonitor) {
         self.session = session
@@ -74,6 +75,8 @@ final class PendingChanges {
             let sent = await send(action)
             if sent {
                 queue.remove(action)
+                // The override exists only while the change is unsent.
+                courses?.confirmDelivered(action)
             } else {
                 queue.recordFailure(action)
                 // Stop at the first failure: if the network went away again,

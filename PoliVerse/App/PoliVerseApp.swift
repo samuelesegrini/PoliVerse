@@ -64,6 +64,7 @@ struct PoliVerseApp: App {
         let pending = PendingChanges(session: session, network: network)
         pending.weBeep = weBeep
         pending.career = career
+        pending.courses = courses
         _pending = State(initialValue: pending)
         // Through the locals, not the `@State` wrappers: those are only
         // readable once the struct is fully initialised, and reading one too
