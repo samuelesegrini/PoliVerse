@@ -21,6 +21,7 @@ struct PoliVerseApp: App {
     @State private var manifesti = ManifestiService()
     @State private var network: NetworkMonitor
     @State private var pending: PendingChanges
+    @State private var liveActivity = LiveActivityController()
     private let notificationRouter = NotificationRouter()
     private let background = BackgroundRefresh()
     @Environment(\.scenePhase) private var scenePhase
@@ -103,6 +104,7 @@ struct PoliVerseApp: App {
                 .environment(manifesti)
                 .environment(network)
                 .environment(pending)
+                .environment(liveActivity)
                 .tint(Theme.brand)
                 // The locale used to be pinned to it_IT, because every string
                 // was hardcoded Italian and `.formatted(.relative(…))` would

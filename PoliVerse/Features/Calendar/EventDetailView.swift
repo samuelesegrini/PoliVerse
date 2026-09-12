@@ -8,6 +8,7 @@ import SwiftUI
 struct EventDetailView: View {
     let event: AgendaEvent
 
+    @Environment(LiveActivityController.self) private var liveActivity
     @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
 
@@ -26,6 +27,10 @@ struct EventDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     header
+
+                    if LiveActivityController.canStart(event) {
+                        liveActivityButton
+                    }
 
                     section("Quando") {
                         row("Data",
@@ -93,6 +98,46 @@ struct EventDetailView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Chiudi") { dismiss() }
                 }
+            }
+        }
+    }
+
+    /// Offered rather than automatic: a Live Activity nobody asked for is
+    /// something on your Lock Screen you have to dismiss.
+    @ViewBuilder
+    private var liveActivityButton: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if liveActivity.isShowing(event) {
+                Button(role: .destructive) {
+                    liveActivity.end()
+                } label: {
+                    Label("Togli dalla schermata di blocco", systemImage: "stop.circle")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            } else {
+                Button {
+                    liveActivity.start(for: event)
+                } label: {
+                    Label("Sto andando a lezione", systemImage: "figure.walk")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!liveActivity.isAvailable)
+            }
+
+            if let message = liveActivity.errorMessage {
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if !liveActivity.isAvailable {
+                Text("Attiva le attività in tempo reale nelle impostazioni di iOS.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if !liveActivity.isShowing(event) {
+                Text("Conto alla rovescia e aula sulla schermata di blocco, fino a fine lezione.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }

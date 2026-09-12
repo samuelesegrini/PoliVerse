@@ -35,6 +35,7 @@ enum PreviewEnvironment {
     static let network = NetworkMonitor()
     static let pending = PendingChanges(session: session, network: network)
     static let manifesti = ManifestiService()
+    static let liveActivity = LiveActivityController()
 }
 
 extension View {
@@ -57,6 +58,7 @@ extension View {
             .environment(PreviewEnvironment.network)
             .environment(PreviewEnvironment.pending)
             .environment(PreviewEnvironment.manifesti)
+            .environment(PreviewEnvironment.liveActivity)
             .tint(Theme.brand)
             // Not pinned: previews render in whatever language the scheme
             // is set to, which is how a translation gets looked at.

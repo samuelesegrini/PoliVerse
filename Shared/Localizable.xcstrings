@@ -179,16 +179,16 @@
     },
     "%lld di %lld": {
       "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$lld di %2$lld"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld of %lld"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld di %2$lld"
           }
         }
       }
@@ -1117,6 +1117,16 @@
         }
       }
     },
+    "Attiva le attività in tempo reale nelle impostazioni di iOS.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn Live Activities on in iOS Settings."
+          }
+        }
+      }
+    },
     "Aule": {
       "localizations": {
         "en": {
@@ -1497,6 +1507,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Contesto"
+          }
+        }
+      }
+    },
+    "Conto alla rovescia e aula sulla schermata di blocco, fino a fine lezione.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Countdown and room on the Lock Screen, until the lecture ends."
           }
         }
       }
@@ -2055,6 +2075,16 @@
         }
       }
     },
+    "Finita": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Over"
+          }
+        }
+      }
+    },
     "Formato non riconosciuto": {
       "localizations": {
         "en": {
@@ -2545,6 +2575,16 @@
         }
       }
     },
+    "In corso · finisce tra": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Under way · ends in"
+          }
+        }
+      }
+    },
     "In corso · fino alle %@": {
       "localizations": {
         "en": {
@@ -2567,6 +2607,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Indirizzo"
+          }
+        }
+      }
+    },
+    "Inizia tra": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starts in"
           }
         }
       }
@@ -2715,6 +2765,16 @@
         }
       }
     },
+    "Le attività in tempo reale sono disattivate per PoliVerse.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live Activities are turned off for PoliVerse."
+          }
+        }
+      }
+    },
     "Le aule libere adesso, nella sede che scegli.": {
       "localizations": {
         "en": {
@@ -2827,6 +2887,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Leggi sul sito"
+          }
+        }
+      }
+    },
+    "Lezione": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lecture"
           }
         }
       }
@@ -5051,6 +5121,16 @@
         }
       }
     },
+    "Sto andando a lezione": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm heading to class"
+          }
+        }
+      }
+    },
     "Superati": {
       "localizations": {
         "en": {
@@ -5127,6 +5207,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ti serve una media di"
+          }
+        }
+      }
+    },
+    "Togli dalla schermata di blocco": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from the Lock Screen"
           }
         }
       }
