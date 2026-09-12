@@ -2,7 +2,7 @@ import Foundation
 
 /// What kind of entry an agenda item is. Values match the upstream
 /// `event_type.typeId` and must not be renumbered.
-nonisolated enum EventKind: Int, Sendable, CaseIterable {
+nonisolated enum EventKind: Int, Sendable, CaseIterable, Codable {
     case lecture = 1
     case exam = 2
     case news = 3
@@ -31,7 +31,7 @@ nonisolated enum EventKind: Int, Sendable, CaseIterable {
 }
 
 /// One entry in the student's agenda.
-nonisolated struct AgendaEvent: Identifiable, Sendable, Hashable {
+nonisolated struct AgendaEvent: Identifiable, Sendable, Hashable, Codable {
     let id: Int
     let title: String
     let start: Date
@@ -48,6 +48,29 @@ nonisolated struct AgendaEvent: Identifiable, Sendable, Hashable {
     var subtype: String?
     /// Labels the agenda attaches, used upstream to pick card artwork.
     var tags: [String] = []
+
+    /// Decoding goes through the same clamp as the initialiser.
+    ///
+    /// Synthesised `Codable` would assign the stored `end` directly, and an
+    /// inverted range traps the moment a view forms `start...end` — the crash
+    /// this type's initialiser was written to prevent. A cached file that
+    /// predates a fix, or one written by a future version, must not be able to
+    /// reintroduce it.
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            id: try container.decode(Int.self, forKey: .id),
+            title: try container.decode(String.self, forKey: .title),
+            start: try container.decode(Date.self, forKey: .start),
+            end: try container.decode(Date.self, forKey: .end),
+            kind: try container.decode(EventKind.self, forKey: .kind),
+            room: try container.decodeIfPresent(String.self, forKey: .room),
+            roomAcronym: try container.decodeIfPresent(String.self, forKey: .roomAcronym),
+            calendarName: try container.decodeIfPresent(String.self, forKey: .calendarName),
+            details: try container.decodeIfPresent(String.self, forKey: .details),
+            subtype: try container.decodeIfPresent(String.self, forKey: .subtype),
+            tags: try container.decodeIfPresent([String].self, forKey: .tags) ?? [])
+    }
 
     /// Enforces `end >= start`.
     ///

@@ -97,6 +97,7 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity)
             }
             .background(Color(.systemGroupedBackground))
+            .safeAreaInset(edge: .top, spacing: 0) { FreshnessBar(age: courses.age) }
             .navigationTitle("Home")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

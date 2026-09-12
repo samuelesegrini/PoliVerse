@@ -22,6 +22,9 @@ final class CareerService {
     private(set) var libretto: [LibrettoExam] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?
+    /// How old the data on screen is, so the UI can say so rather than
+    /// present a cached libretto as current.
+    private(set) var age: TimeInterval?
     /// Set when the Politecnico refuses this account the exam services
     /// outright — "Utente non abilitato Code: 6" from `iae`.
     ///
@@ -51,8 +54,34 @@ final class CareerService {
     }
 
 
-    init(session: Session) {
+    private let offline: OfflineStore
+
+    /// What is kept between launches. The libretto in particular is a
+    /// student's exam record and there is no reason they should lose sight of
+    /// it because they are on a train.
+    private nonisolated struct Cached: Codable, Sendable {
+        var gradeBook: GradeBook
+        var libretto: [LibrettoExam]
+        var planHeader: StudyPlanHeader?
+        var officialTarget: Double?
+    }
+
+    init(session: Session, offline: OfflineStore = .shared) {
         self.session = session
+        self.offline = offline
+        restoreCache()
+    }
+
+    /// Shows the last known figures immediately, before any request.
+    private func restoreCache() {
+        guard let entry = offline.load(
+            Cached.self, as: "career", account: session.student?.matricola)
+        else { return }
+        gradeBook = entry.value.gradeBook
+        libretto = entry.value.libretto
+        planHeader = entry.value.planHeader
+        officialTarget = entry.value.officialTarget
+        age = entry.age
     }
 
     /// Passed exams, most recent first.
@@ -158,16 +187,25 @@ final class CareerService {
             errorMessage = examServicesRefused
                 ? nil
                 : "Impossibile caricare i dati di carriera."
-            // No mock fallback — an invented weighted average is the last thing
-            // a student should see presented as their own.
-            gradeBook = .empty
-            sessions = []
-            libretto = []
+            // Deliberately **not** cleared any more.
+            //
+            // This used to set the gradebook, the sittings and the libretto
+            // to empty, which meant losing signal replaced a student's exam
+            // record with a blank screen. What is held is real data that was
+            // theirs; it is kept, and its age is shown instead.
+            //
+            // Still no mock fallback: an invented weighted average is the last
+            // thing anyone should see presented as their own.
             // Left unmarked on purpose: the next visit retries rather than
             // sitting on an error for the whole window.
             return
         }
         window.markLoaded(source: source)
+        age = 0
+        offline.save(
+            Cached(gradeBook: gradeBook, libretto: libretto,
+                   planHeader: planHeader, officialTarget: officialTarget),
+            as: "career", account: session.useMockData ? nil : matricola)
     }
 
     /// `GET {libretto}/mediaobiettivo/{matricola}` — the target the student

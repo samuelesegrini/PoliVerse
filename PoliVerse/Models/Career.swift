@@ -11,7 +11,7 @@ import Foundation
 /// ```
 ///
 /// so the field names survived the move even though the path did not.
-nonisolated struct GradeBook: Sendable, Equatable {
+nonisolated struct GradeBook: Sendable, Equatable, Codable {
     var mean: Double
     var earnedCFU: Int
     var plannedCFU: Int

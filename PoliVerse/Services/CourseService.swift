@@ -8,6 +8,7 @@ final class CourseService {
     private(set) var courses: [Course] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?
+    private(set) var age: TimeInterval?
 
     private let session: Session
     private let weBeep: WeBeepService
@@ -51,8 +52,14 @@ final class CourseService {
         self.session = session
         self.weBeep = weBeep
         // Show last known courses immediately; `load()` refreshes behind them.
-        if let cached = DiskCache.load([Course].self, as: "courses") {
-            courses = applyFavourites(cached.value)
+        // Keyed by matricola. Under a global name — which is how this was
+        // written before the career switcher existed — the triennale's
+        // courses appeared under the magistrale, which is a data leak between
+        // two records that happen to belong to the same person.
+        if let entry = OfflineStore.shared.load(
+            [Course].self, as: "courses", account: session.student?.matricola) {
+            courses = applyFavourites(entry.value)
+            age = entry.age
         }
     }
 
@@ -82,7 +89,10 @@ final class CourseService {
             let loaded = weBeep.courses.map(Course.init(moodle:))
             log.notice("WeBeep provided \(loaded.count, privacy: .public) enrolled courses")
             courses = applyFavourites(loaded)
-            DiskCache.save(loaded, as: "courses")
+            OfflineStore.shared.save(
+                loaded, as: "courses",
+                account: session.useMockData ? nil : session.student?.matricola)
+            age = 0
             window.markLoaded(source: source)
             return
         }
@@ -101,7 +111,10 @@ final class CourseService {
             let loaded = response.teachings.compactMap { $0.toCourse() }
             log.notice("insegn returned \(response.teachings.count, privacy: .public) teachings, \(loaded.count, privacy: .public) usable")
             courses = applyFavourites(loaded)
-            DiskCache.save(loaded, as: "courses")
+            OfflineStore.shared.save(
+                loaded, as: "courses",
+                account: session.useMockData ? nil : session.student?.matricola)
+            age = 0
             window.markLoaded(source: source)
         } catch {
             errorMessage = userFacingMessage(error)

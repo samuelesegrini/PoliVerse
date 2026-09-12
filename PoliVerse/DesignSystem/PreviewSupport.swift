@@ -32,6 +32,8 @@ enum PreviewEnvironment {
         catalogue: rooms, freeRooms: freeRooms, preview: MockData.mapPins())
     static let downloads = FileDownloadService()
     static let cieID = CieIDRouter()
+    static let network = NetworkMonitor()
+    static let manifesti = ManifestiService()
 }
 
 extension View {
@@ -51,6 +53,8 @@ extension View {
             .environment(PreviewEnvironment.campusMap)
             .environment(PreviewEnvironment.downloads)
             .environment(PreviewEnvironment.cieID)
+            .environment(PreviewEnvironment.network)
+            .environment(PreviewEnvironment.manifesti)
             .tint(Theme.brand)
             .environment(\.locale, Locale(identifier: "it_IT"))
     }

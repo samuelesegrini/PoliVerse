@@ -23,6 +23,8 @@ final class NewsService {
     private let session: Session
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "news")
     private var window = LoadWindow()
+    private let offline = OfflineStore.shared
+    private(set) var age: TimeInterval?
 
     private var source: String {
         session.useMockData ? "mock" : (session.student?.matricola ?? "anonymous")
@@ -33,6 +35,11 @@ final class NewsService {
 
     init(session: Session) {
         self.session = session
+        if let entry = offline.load(
+            [NewsItem].self, as: "news", account: session.student?.matricola) {
+            items = entry.value
+            age = entry.age
+        }
     }
 
     func load(force: Bool = false) async {
@@ -79,6 +86,9 @@ final class NewsService {
                 && !(response.raw.arrayValue?.isEmpty ?? false)
             log.notice("news: \(response.items.count, privacy: .public) returned, \(self.items.count, privacy: .public) current")
             window.markLoaded(source: source)
+            age = 0
+            offline.save(items, as: "news",
+                         account: session.useMockData ? nil : session.student?.matricola)
         } catch {
             log.error("News failed: \(error.localizedDescription)")
             errorMessage = userFacingMessage(error)

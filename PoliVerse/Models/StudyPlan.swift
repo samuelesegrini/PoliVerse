@@ -94,7 +94,7 @@ nonisolated struct StudyPlan: Sendable, Equatable {
 /// Shape unconfirmed, so every field is optional and read across candidate
 /// names; the header is decoration around the exam list, and a missing field
 /// must not cost the screen.
-nonisolated struct StudyPlanHeader: Sendable, Equatable {
+nonisolated struct StudyPlanHeader: Sendable, Equatable, Codable {
     let course: String?
     let year: String?
     let track: String?

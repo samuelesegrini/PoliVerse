@@ -21,7 +21,7 @@ import Foundation
 /// the item is on the board, `event_*` is when the thing it announces
 /// happens. Getting them confused would retire a notice about next month's
 /// seminar the moment it was published.
-nonisolated struct NewsItem: Identifiable, Sendable, Hashable {
+nonisolated struct NewsItem: Identifiable, Sendable, Hashable, Codable {
     let id: String
     let title: String
     /// Plain text, for rows.

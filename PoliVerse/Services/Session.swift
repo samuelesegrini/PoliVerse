@@ -297,6 +297,11 @@ final class Session {
         // Cookies only: the login page's 13.7 MB of JavaScript and CSS stays
         // cached, so signing back in is fast. Nothing identifying remains.
         await LoginWebKit.endSession()
+        // The offline copies are this student's record. Someone else signing
+        // in on the same device must not find them.
+        if let matricola = student?.matricola {
+            OfflineStore.shared.clear(account: matricola)
+        }
         if useMockData {
             await signIn(MockData.student)
         } else {

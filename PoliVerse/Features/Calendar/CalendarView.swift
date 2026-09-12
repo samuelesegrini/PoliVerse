@@ -51,6 +51,7 @@ struct CalendarView: View {
                 dayList
             }
             .background(Color(.systemGroupedBackground))
+            .safeAreaInset(edge: .top, spacing: 0) { FreshnessBar(age: agenda.age) }
             .navigationTitle("Calendario")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

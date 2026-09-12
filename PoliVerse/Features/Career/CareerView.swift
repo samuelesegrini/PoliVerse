@@ -16,6 +16,7 @@ struct CareerView: View {
         NavigationStack {
             content(career)
             .background(Color(.systemGroupedBackground))
+            .safeAreaInset(edge: .top, spacing: 0) { FreshnessBar(age: career.age) }
             .navigationTitle("Carriera")
             .toolbarTitleDisplayMode(.inlineLarge)
             .task { await career.load() }

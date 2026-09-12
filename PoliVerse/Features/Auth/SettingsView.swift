@@ -74,6 +74,7 @@ struct SettingsView: View {
                 }
                 Button("Svuota cache") {
                     DiskCache.clear()
+                    OfflineStore.shared.clearAll()
                     cacheBytes = 0
                 }
                 Button("Elimina materiali scaricati", role: .destructive) {
@@ -112,6 +113,7 @@ struct SettingsView: View {
                 Button("Esci", role: .destructive) {
                     Task {
                         DiskCache.clear()
+                    OfflineStore.shared.clearAll()
                         await session.signOut()
                     }
                 }
@@ -128,7 +130,7 @@ struct SettingsView: View {
         .navigationTitle("Impostazioni")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            cacheBytes = DiskCache.sizeInBytes()
+            cacheBytes = DiskCache.sizeInBytes() + OfflineStore.shared.sizeInBytes
             materialBytes = FileDownloadService.storageInBytes()
         }
     }

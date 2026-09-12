@@ -27,6 +27,9 @@ final class AgendaService {
     private let session: Session
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "agenda")
     private var window = LoadWindow()
+    private let offline = OfflineStore.shared
+    /// How old the events on screen are.
+    private(set) var age: TimeInterval?
 
     /// Identifies the data currently held, so a change of account — or of the
     /// sample-data toggle — always reloads instead of waiting out the window.
@@ -47,6 +50,13 @@ final class AgendaService {
 
     init(session: Session) {
         self.session = session
+        // Last known timetable, shown before any request. Losing signal on the
+        // way to a lecture should not lose the lecture.
+        if let entry = offline.load(
+            [AgendaEvent].self, as: "agenda", account: session.student?.matricola) {
+            events = entry.value
+            age = entry.age
+        }
     }
 
     /// Fetches a window around `date`, replacing whatever was held.
@@ -84,9 +94,12 @@ final class AgendaService {
         let (fetched, fetchedDeadlines) = await (lectures, deadlines)
 
         guard fetched != nil || fetchedDeadlines != nil else {
-            // No mock fallback: sample lectures shown as real would send
-            // someone to a room that does not exist.
-            events = []
+            // Kept, not cleared: what is held was really this student's
+            // timetable, and an empty calendar is indistinguishable from a
+            // free week. Its age is shown instead.
+            //
+            // Still no mock fallback: sample lectures shown as real would
+            // send someone to a room that does not exist.
             return
         }
 
@@ -98,6 +111,9 @@ final class AgendaService {
         events = merged.sorted { $0.start < $1.start }
         loadedRange = from...to
         window.markLoaded(source: source)
+        age = 0
+        offline.save(events, as: "agenda",
+                     account: session.useMockData ? nil : matricola)
     }
 
     /// Whether the held window already spans `date`.

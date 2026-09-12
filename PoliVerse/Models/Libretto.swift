@@ -6,7 +6,7 @@ import Foundation
 /// different thing from an exam *sitting*: `/v1/insegn` lists sittings still
 /// open to register for and is empty once everything is passed, which is
 /// exactly when a student most wants to see their results.
-nonisolated struct LibrettoExam: Identifiable, Sendable, Hashable {
+nonisolated struct LibrettoExam: Identifiable, Sendable, Hashable, Codable {
     let id: String
     let name: String
     /// Absent until the exam is sat; also absent for pass/fail teachings.
