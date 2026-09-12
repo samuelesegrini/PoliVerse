@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import OSLog
+import WidgetKit
 
 /// Career statistics and exam sittings.
 ///
@@ -211,6 +212,32 @@ final class CareerService {
                    planHeader: planHeader, officialTarget: officialTarget),
             for: session.useMockData ? nil : matricola)
         age = slot.age
+        saveWidgetSnapshot(for: session.useMockData ? nil : matricola)
+    }
+
+    /// Writes the narrow view of the career that the widgets read.
+    ///
+    /// Separate from `slot`, and deliberately so — see ``CareerSnapshot``.
+    private func saveWidgetSnapshot(for account: String?) {
+        guard let account else { return }
+        let next = sessions
+            .compactMap { session -> (String, Date)? in
+                guard let date = session.date, date > .now,
+                      session.grade == nil else { return nil }
+                return (session.courseName, date)
+            }
+            .min { $0.1 < $1.1 }
+
+        let snapshot = CareerSnapshot(
+            mean: gradeBook.mean,
+            earnedCFU: gradeBook.earnedCFU,
+            plannedCFU: gradeBook.plannedCFU,
+            examsGiven: gradeBook.examsGiven,
+            examsPlanned: gradeBook.examsPlanned,
+            nextExamName: next?.0,
+            nextExamDate: next?.1)
+        OfflineStore.shared.save(snapshot, as: CareerSnapshot.cacheName, account: account)
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     /// `GET {libretto}/mediaobiettivo/{matricola}` — the target the student
