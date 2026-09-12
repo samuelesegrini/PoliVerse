@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 import Testing
 @testable import PoliVerse
 
@@ -73,5 +74,84 @@ struct LazyTokenLoadTests {
         await store.set(PoliMiToken(accessToken: "new", refreshToken: "r2", expiresIn: 3600))
         #expect((try? await store.validToken()) == "new")
         #expect(storage.loads == 0)
+    }
+}
+
+/// Refreshing without a network must not end the session.
+///
+/// `validToken()` refreshed when the access token had expired and, on any
+/// failure, called `clear()` — deleting the token from the Keychain and
+/// routing the user back to login. In aeroplane mode that is catastrophic:
+/// pulling to refresh with an expired token **signed the student out**, and
+/// signing back in means the whole CIE dance with a card and a PIN.
+///
+/// A transport failure and a rejected refresh token are not the same event.
+/// One says "not now", the other says "never again".
+@Suite("Offline refresh keeps the session")
+struct OfflineRefreshTests {
+    private final class Persistence: TokenPersistence, @unchecked Sendable {
+        var stored: PoliMiToken?
+        var deleted = false
+        func load() -> PoliMiToken? { stored }
+        func save(_ token: PoliMiToken) { stored = token }
+        func delete() { deleted = true; stored = nil }
+    }
+
+    /// Already expired, so every call attempts a refresh.
+    private nonisolated func expired() -> PoliMiToken {
+        PoliMiToken(accessToken: "a", refreshToken: "r", expiresIn: -60)
+    }
+
+    @Test("A network failure leaves the token in place")
+    func offlineKeepsToken() async {
+        let storage = Persistence()
+        storage.stored = expired()
+        let store = TokenStore(storage: storage) { _ in
+            throw URLError(.notConnectedToInternet)
+        }
+
+        await #expect(throws: (any Error).self) { try await store.validToken() }
+        #expect(!storage.deleted)
+        #expect(await store.hasToken)
+    }
+
+    @Test("A timeout leaves the token in place too")
+    func timeoutKeepsToken() async {
+        let storage = Persistence()
+        storage.stored = expired()
+        let store = TokenStore(storage: storage) { _ in throw URLError(.timedOut) }
+
+        await #expect(throws: (any Error).self) { try await store.validToken() }
+        #expect(!storage.deleted)
+    }
+
+    /// The case the clearing was written for, which still has to work: the
+    /// Politecnico refusing the refresh token means the session really is over.
+    @Test("A rejected refresh token still ends the session")
+    func rejectedClearsToken() async {
+        let storage = Persistence()
+        storage.stored = expired()
+        let store = TokenStore(storage: storage) { _ in throw AuthError.sessionExpired }
+
+        await #expect(throws: (any Error).self) { try await store.validToken() }
+        #expect(storage.deleted)
+        #expect(!(await store.hasToken))
+    }
+
+    /// A failed offline refresh must not poison later attempts: once the
+    /// network is back, the same stored refresh token has to be usable.
+    @Test("A later attempt can succeed after an offline failure")
+    func recoversWhenBack() async {
+        let storage = Persistence()
+        storage.stored = expired()
+        let offline = Mutex(true)
+        let store = TokenStore(storage: storage) { _ in
+            if offline.withLock({ $0 }) { throw URLError(.notConnectedToInternet) }
+            return PoliMiToken(accessToken: "fresh", refreshToken: "r2", expiresIn: 3600)
+        }
+
+        await #expect(throws: (any Error).self) { try await store.validToken() }
+        offline.withLock { $0 = false }
+        #expect((try? await store.validToken()) == "fresh")
     }
 }

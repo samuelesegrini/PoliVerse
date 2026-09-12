@@ -60,6 +60,9 @@ final class Session {
             components.queryItems = request.query.isEmpty ? nil : request.query
             var urlRequest = URLRequest(url: components.url!)
             urlRequest.setValue("application/json", forHTTPHeaderField: "Accept")
+            // The only request in the app that had no timeout of its own, and
+            // the one every other request waits behind.
+            urlRequest.timeoutInterval = 20
 
             let (data, response) = try await refreshSession.data(for: urlRequest)
             guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {

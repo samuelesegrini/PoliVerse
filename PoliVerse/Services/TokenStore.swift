@@ -109,11 +109,31 @@ actor TokenStore {
             persist()
             return fresh.accessToken
         } catch {
-            // A failed refresh means the session is dead; drop it so the UI
-            // routes back to login instead of retrying forever.
+            // A transport failure and a rejected refresh token are not the
+            // same event: one says "not now", the other "never again".
+            //
+            // This used to clear on *any* failure, which meant pulling to
+            // refresh in aeroplane mode with an expired access token deleted
+            // the session — and getting back in means the whole CIE dance
+            // with a card and a PIN. The network being absent says nothing
+            // about whether the grant is still good.
+            if Self.isTransport(error) {
+                throw APIError.transport(error)
+            }
             clear()
             throw AuthError.sessionExpired
         }
+    }
+
+    /// Whether a refresh failed because the request never arrived.
+    ///
+    /// Cancellation counts: a caller going away is not the Politecnico
+    /// refusing anything.
+    static func isTransport(_ error: any Error) -> Bool {
+        if error is URLError { return true }
+        if PoliMiAPI.isCancellation(error) { return true }
+        let nsError = error as NSError
+        return nsError.domain == NSURLErrorDomain
     }
 
     /// Forces a refresh after a 401 that arrived despite a locally-valid token
@@ -134,6 +154,11 @@ actor TokenStore {
             persist()
             return fresh.accessToken
         } catch {
+            // Same distinction as `validToken()`: losing the network must not
+            // lose the session.
+            if Self.isTransport(error) {
+                throw APIError.transport(error)
+            }
             clear()
             throw AuthError.sessionExpired
         }

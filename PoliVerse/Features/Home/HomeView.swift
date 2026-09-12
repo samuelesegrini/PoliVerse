@@ -8,6 +8,7 @@ struct HomeView: View {
     @Environment(NoticeService.self) private var notices
     @Environment(NewsService.self) private var news
     @Environment(CareersService.self) private var careers
+    @Environment(NetworkMonitor.self) private var network
     @Environment(\.locale) private var locale
 
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -108,6 +109,11 @@ struct HomeView: View {
                 }
             }
             .refreshable {
+                // Nothing to fetch without a network, and five sequential
+                // round trips that cannot succeed leave the spinner hanging
+                // while the user watches. What is on screen is the cache, and
+                // the bar above already says so.
+                guard network.isOnline else { return }
                 await courses.load(force: true)
                 await agenda.load(around: .now, force: true)
                 await career.load(force: true)
