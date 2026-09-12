@@ -22,6 +22,22 @@ struct RoomsView: View {
         List {
             Section {
                 NavigationLink {
+                    CampusMapView()
+                } label: {
+                    Label {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Mappa del campus")
+                                .font(.subheadline.weight(.semibold))
+                            Text("Edifici e aule sulla mappa, con le piante ufficiali.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "map").foregroundStyle(Theme.brand)
+                    }
+                }
+
+                NavigationLink {
                     FreeRoomsView()
                 } label: {
                     Label {

@@ -191,6 +191,28 @@ final class FreeRoomsService {
         log.notice("aule \(stamp, privacy: .public): \(loaded.count, privacy: .public) rooms, \(booked, privacy: .public) bookings, \(hidden.count, privacy: .public) hidden, \(self.freeRooms().count, privacy: .public) with free time")
     }
 
+    /// One room's bookings for the day being shown.
+    ///
+    /// Serves the room detail, which must not pay for the campus-wide pass:
+    /// that one is 150 requests and its cache is keyed by campus and day, so
+    /// it cannot answer for a single room opened from anywhere else. Shares
+    /// the same per-room cache, so a room already seen costs nothing.
+    ///
+    /// Returns nil when the room's occupancy is hidden or the call fails —
+    /// both mean "we cannot say", which the caller must not render as "free".
+    func bookings(for room: Classroom) async -> [RoomBooking]? {
+        guard let id = room.occupancyID else { return nil }
+        let stamp = PoliMiDate.queryString(day)
+        let key = "\(id)|\(stamp)"
+        if let cached = cache[key] { return cached }
+
+        let result = await Self.occupancy(
+            for: room, on: stamp, day: day, base: base, session: session)
+        guard case .bookings(let bookings) = result else { return nil }
+        cache[key] = bookings
+        return bookings
+    }
+
     private enum OccupancyResult: Sendable {
         case bookings([RoomBooking])
         /// `MSG_OCCUPAZIONI_NASCOSTE` — the university does not publish this

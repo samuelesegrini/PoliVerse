@@ -25,6 +25,10 @@ nonisolated struct Classroom: Identifiable, Sendable, Hashable, Codable {
     /// `/ricerca/aula/occupazione` accepts only this numeric id; passing the
     /// code or the `csiv` answers 500 or 404.
     var occupancyID: String?
+    /// `csiv` — the room's own space code, which the floor-plan endpoint uses
+    /// to highlight it. Different again from ``id`` and ``occupancyID``: this
+    /// catalogue keys the same room three ways.
+    var roomCode: String?
 
     /// The city or campus a room sits in, for grouping.
     var locationLabel: String {
@@ -38,6 +42,7 @@ nonisolated struct ClassroomDTO: Decodable, Sendable {
     let sigla: String?
     let csie: String?
     let csip: String?
+    let csiv: String?
     let idaula: String?
     let capienza: String?
     let posti_disabili: String?
@@ -60,7 +65,8 @@ nonisolated struct ClassroomDTO: Decodable, Sendable {
             buildingCode: csie,
             floorCode: csip,
             accessibleSeats: posti_disabili.flatMap(Int.init).flatMap { $0 > 0 ? $0 : nil },
-            occupancyID: idaula
+            occupancyID: idaula,
+            roomCode: csiv
         )
     }
 }
@@ -96,4 +102,21 @@ nonisolated struct FloorDTO: Decodable, Sendable {
     let csip: String?
     let csie: String?
     let nome: String?
+}
+
+nonisolated extension Classroom {
+    /// The official floor plan, with this room highlighted where the catalogue
+    /// knows its space code.
+    ///
+    /// `GET /download/img/piano/{csip}` is the plain floor; adding `{csiv}`
+    /// returns the same drawing with one room filled in. Public, no token, and
+    /// the only room-accurate picture of the building that exists — the
+    /// geojson has no real footprints to draw instead.
+    var floorPlanURL: URL? {
+        guard !floorCode.isEmpty else { return nil }
+        var url = URL(string: "https://onlineservices.polimi.it/maps_rest/rest/download/img/piano")!
+        url.append(path: floorCode)
+        if let roomCode, !roomCode.isEmpty { url.append(path: roomCode) }
+        return url
+    }
 }

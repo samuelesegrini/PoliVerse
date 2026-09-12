@@ -71,6 +71,10 @@ struct ClassroomDetailView: View {
                 }
             }
 
+            RoomDayView(room: room)
+
+            FloorPlanView(room: room)
+
             RoomFacilitiesSection(roomID: room.occupancyID)
 
             if let address = room.address {

@@ -244,6 +244,21 @@ GET /ricerca/aula/software/{idaula}  → [{"id":348,"it":"Overleaf","en":"Overle
 among them). The `id` is an internal catalogue with no published key, so the
 UI matches icons on the wording instead.
 
+### Coordinates — real, unlike the outlines
+
+`GET /spazi/edificio/geojson?filter=` carries a bbox per building in
+`properties` (`SWLAT`/`SWLNG`/`NELAT`/`NELNG`) keyed by `POLIMI_ID_SPAZIO`,
+which is the catalogue's `csie`.
+
+**The polygons are not footprints.** Of 465 building features, 142 "detailed"
+rings are generated ellipses (checked: min/max radius from the centroid > 0.45
+for all 142) and the other 155 are axis-aligned boxes. Only the bbox centres
+are true, so the app pins those onto MapKit and draws no geometry of its own.
+
+`/spazi/campus/geojson`, `/spazi/sede/geojson` and `/spazi/edificio/geojson`
+all need `filter` present and **empty**; any value, or omitting it, returns
+500. `/spazi/geojson` works without it.
+
 **How it was found, after two dead ends:** `maps_rest` publishes a WADL at
 `/rest/application.wadl` — 151 endpoints, machine-readable, unauthenticated.
 The 500s recorded earlier against `/spazi/impegni` and friends were just
