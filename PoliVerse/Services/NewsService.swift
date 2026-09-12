@@ -22,7 +22,8 @@ final class NewsService {
 
     private let session: Session
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "news")
-    private var window = LoadWindow()
+    /// Fifteen minutes: the ateneo publishes a handful of items a week.
+    private var window = LoadWindow(interval: 900)
     private var slot = CachedSlot<[NewsItem]>(name: "news")
     private(set) var age: TimeInterval?
 

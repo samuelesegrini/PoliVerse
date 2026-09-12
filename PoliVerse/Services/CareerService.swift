@@ -46,7 +46,10 @@ final class CareerService {
 
     private let session: Session
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "career")
-    private var window = LoadWindow()
+    /// Fifteen minutes rather than the default five: a libretto changes when
+    /// a professor records a grade, which is a matter of days, not of tab
+    /// switches.
+    private var window = LoadWindow(interval: 900)
 
     /// Identifies the data currently held, so a change of account — or of the
     /// sample-data toggle — always reloads instead of waiting out the window.

@@ -9,6 +9,7 @@ struct HomeView: View {
     @Environment(NewsService.self) private var news
     @Environment(CareersService.self) private var careers
     @Environment(NetworkMonitor.self) private var network
+    @Environment(FreshnessCoordinator.self) private var freshness
     @Environment(\.locale) private var locale
 
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -114,22 +115,12 @@ struct HomeView: View {
                 // while the user watches. What is on screen is the cache, and
                 // the bar above already says so.
                 guard network.isOnline else { return }
-                await courses.load(force: true)
-                await agenda.load(around: .now, force: true)
-                await career.load(force: true)
-                await notices.load(force: true)
-                await news.load(force: true)
+                await freshness.revalidate(force: true)
             }
-            .task {
-                await courses.load()
-                await agenda.load(around: .now)
-                await career.load()
-                // Last: the bell is the least urgent thing on this screen, and
-                // an endpoint whose shape is still unconfirmed should not
-                // delay the content that is known to work.
-                await notices.load()
-                await news.load()
-            }
+            // The same list the coordinator runs on foregrounding and on
+            // reconnection, so this screen cannot drift from those. Order and
+            // window gating live there; see ``FreshnessCoordinator``.
+            .task { await freshness.revalidate() }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NoticesToolbarButton(isPresented: $showingNotices)

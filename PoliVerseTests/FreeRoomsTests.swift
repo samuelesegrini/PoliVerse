@@ -355,3 +355,28 @@ struct CancellationTests {
         #expect(APIError.cancelled.isPermanent)
     }
 }
+
+/// Free rooms was the one user-facing service with no freshness at all: the
+/// screen looked identical whether the occupancy had been fetched a second or
+/// an hour ago. It is also the service where acting on stale data means
+/// walking across campus to an occupied room, which is why it got an age.
+@Suite("Free rooms freshness")
+@MainActor
+struct FreeRoomsFreshnessTests {
+    private func service() -> FreeRoomsService {
+        FreeRoomsService(catalogue: RoomsService(preview: []), preview: [])
+    }
+
+    @Test("A service that has not fetched has no age")
+    func noAgeBeforeLoading() {
+        #expect(service().age(now: .now) == nil)
+    }
+
+    @Test("The age counts from the fetch, not from the screen appearing")
+    func ageCountsFromFetch() {
+        let service = service()
+        let fetched = Date(timeIntervalSince1970: 1_000_000)
+        service.markLoaded(at: fetched)
+        #expect(service.age(now: fetched.addingTimeInterval(1800)) == 1800)
+    }
+}

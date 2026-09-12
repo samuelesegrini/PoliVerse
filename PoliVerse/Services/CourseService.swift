@@ -33,7 +33,9 @@ final class CourseService {
     private let session: Session
     private let weBeep: WeBeepService
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "courses")
-    private var window = LoadWindow()
+    /// Fifteen minutes: the enrolled-course list changes at most once a
+    /// semester.
+    private var window = LoadWindow(interval: 900)
 
     /// Identifies the data currently held, so a change of account — or of the
     /// sample-data toggle — always reloads instead of waiting out the window.

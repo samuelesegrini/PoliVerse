@@ -32,6 +32,7 @@ struct FreeRoomsView: View {
 
             content
         }
+        .safeAreaInset(edge: .top, spacing: 0) { FreshnessBar(age: aule.age) }
         .navigationTitle("Aule libere")
         .navigationBarTitleDisplayMode(.inline)
         .task { await aule.load() }

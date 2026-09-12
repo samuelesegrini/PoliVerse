@@ -48,6 +48,12 @@ final class FreeRoomsService {
     private(set) var hiddenRooms: [String] = []
     /// How far through the fetch we are, for a screen that takes a moment.
     private(set) var progress: (done: Int, total: Int) = (0, 0)
+    /// When the occupancy on screen was fetched, or nil if it never was.
+    ///
+    /// Unlike the services backed by ``CachedSlot``, this is not persisted:
+    /// occupancy is never restored from disk here, so the only age worth
+    /// reporting is the one since this session's fetch.
+    private(set) var loadedAt: Date?
 
     var day: Date = .now
     var campus: String?
@@ -57,7 +63,12 @@ final class FreeRoomsService {
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "aule")
     private let base = URL(string: "https://onlineservices.polimi.it/maps_rest/rest")!
 
-    private var loadedKey: String?
+    /// Sixty seconds, not the usual five minutes, and keyed on the day and
+    /// campus being shown. Occupancy turns over on the lecture boundary, and
+    /// this is the one screen where stale data means walking across campus to
+    /// an occupied room — so a foregrounding a minute later is worth a refetch
+    /// here when it would be waste everywhere else.
+    private var window = LoadWindow(interval: 60)
 
     /// Occupancy, keyed by room and day.
     ///
@@ -110,6 +121,27 @@ final class FreeRoomsService {
 
     var campuses: [String] { catalogue.campuses }
 
+    /// Seconds since the occupancy was fetched, for ``FreshnessBar``.
+    ///
+    /// Computed from `loadedAt` rather than stored as a number, so that every
+    /// re-render of the screen reads the current answer rather than the one
+    /// that was true at fetch time. It is not a clock: nothing here ticks, so
+    /// the bar only moves when the view redraws for some other reason. That is
+    /// enough for the question it answers — "is what I am looking at from this
+    /// hour?" — and a timer for a bar that is silent under fifteen minutes
+    /// would be battery spent on nothing.
+    func age(now: Date = .now) -> TimeInterval? {
+        loadedAt.map { now.timeIntervalSince($0) }
+    }
+
+    var age: TimeInterval? { age(now: .now) }
+
+    /// Records a pass that produced rooms.
+    func markLoaded(at date: Date = .now) {
+        loadedAt = date
+        window.markLoaded(source: "\(PoliMiDate.queryString(day))|\(campus ?? "-")", at: date)
+    }
+
     /// 08:00–20:00 in Rome. Outside those hours every room is trivially free,
     /// which is true and useless — the building is shut.
     var teachingDay: DateInterval {
@@ -147,7 +179,7 @@ final class FreeRoomsService {
         if campus == nil { campus = catalogue.campuses.first }
 
         let key = "\(PoliMiDate.queryString(day))|\(campus ?? "-")"
-        guard !isLoading, force || key != loadedKey else { return }
+        guard !isLoading, window.shouldLoad(force: force, source: key) else { return }
         isLoading = true
         errorMessage = nil
         hiddenRooms = []
@@ -209,7 +241,11 @@ final class FreeRoomsService {
 
         rooms = loaded
         hiddenRooms = hidden.sorted()
-        loadedKey = key
+        // Only a pass that produced rooms counts. A campus where every request
+        // failed leaves `loaded` empty, and stamping that would both suppress
+        // the retry a minute later and print "ora" over an empty screen — the
+        // same rule ``LoadWindow`` follows for every other service.
+        if !loaded.isEmpty { markLoaded() }
         saveWidgetSnapshot()
         let booked = loaded.reduce(0) { $0 + $1.bookings.count }
         log.notice("aule \(stamp, privacy: .public): \(loaded.count, privacy: .public) rooms, \(booked, privacy: .public) bookings, \(hidden.count, privacy: .public) hidden, \(self.freeRooms().count, privacy: .public) with free time")

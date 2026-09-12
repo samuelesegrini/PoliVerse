@@ -22,6 +22,7 @@ struct PoliVerseApp: App {
     @State private var network: NetworkMonitor
     @State private var pending: PendingChanges
     @State private var liveActivity = LiveActivityController()
+    @State private var freshness: FreshnessCoordinator
     private let notificationRouter = NotificationRouter()
     private let background = BackgroundRefresh()
     @Environment(\.scenePhase) private var scenePhase
@@ -32,9 +33,14 @@ struct PoliVerseApp: App {
         let session = Session()
         _session = State(initialValue: session)
 
-        _notices = State(initialValue: NoticeService(session: session))
+        // Through locals, like the rest: the `@State` wrappers are not
+        // readable until the struct is fully initialised, and the freshness
+        // registrations below need the instances themselves.
+        let notices = NoticeService(session: session)
+        _notices = State(initialValue: notices)
         _careers = State(initialValue: CareersService(session: session))
-        _news = State(initialValue: NewsService(session: session))
+        let news = NewsService(session: session)
+        _news = State(initialValue: news)
         // Reads the public catalogue rather than the API client: occupancy
         // comes from maps_rest, which needs no token.
         let rooms = RoomsService()
@@ -73,6 +79,15 @@ struct PoliVerseApp: App {
         courses.pending = pending
         career.pending = pending
 
+        // Built here because this is the only place that holds every
+        // service; the order lives in the factory, next to the class.
+        _freshness = State(initialValue: FreshnessCoordinator.standard(
+            courses: courses, agenda: agenda, career: career,
+            notices: notices, news: news))
+
+        // Deliberately narrower than the coordinator's list: a background
+        // refresh gets about 30 seconds in total, so it warms the two screens
+        // a student opens to and leaves the rest to the next foregrounding.
         background.register {
             await agenda.load(force: true)
             await career.load(force: true)
@@ -105,6 +120,7 @@ struct PoliVerseApp: App {
                 .environment(network)
                 .environment(pending)
                 .environment(liveActivity)
+                .environment(freshness)
                 .tint(Theme.brand)
                 // The locale used to be pinned to it_IT, because every string
                 // was hardcoded Italian and `.formatted(.relative(…))` would
@@ -131,12 +147,29 @@ struct PoliVerseApp: App {
                 // moment iOS is deciding whether to grant one.
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .background { background.schedule() }
-                    if phase == .active { Task { await pending.flush() } }
+                    if phase == .active {
+                        Task {
+                            await pending.flush()
+                            // Not forced: `LoadWindow` makes a return from the
+                            // app switcher free and a return after lunch one
+                            // round trip. Forcing here would turn every glance
+                            // at the multitasking view into five requests.
+                            await freshness.revalidate()
+                        }
+                    }
                 }
                 // The moment signal returns is the moment to send what was
                 // queued — not the next time the user happens to open a tab.
                 .onChange(of: network.isOnline) { _, online in
-                    if online { Task { await pending.flush() } }
+                    if online {
+                        Task {
+                            await pending.flush()
+                            // Forced, unlike the foreground path: whatever is
+                            // on screen was fetched before the outage, and the
+                            // window has no way of knowing that.
+                            await freshness.revalidate(force: true)
+                        }
+                    }
                 }
                 // The queue is per matricola, so switching career must show
                 // that career's waiting changes rather than the last one's.

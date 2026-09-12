@@ -36,6 +36,11 @@ enum PreviewEnvironment {
     static let pending = PendingChanges(session: session, network: network)
     static let manifesti = ManifestiService()
     static let liveActivity = LiveActivityController()
+    /// Wired to the same sample services, so a preview's `.task` refreshes
+    /// mock data instead of finding an empty list.
+    static let freshness = FreshnessCoordinator.standard(
+        courses: courses, agenda: agenda, career: career,
+        notices: notices, news: news)
 }
 
 extension View {
@@ -59,6 +64,7 @@ extension View {
             .environment(PreviewEnvironment.pending)
             .environment(PreviewEnvironment.manifesti)
             .environment(PreviewEnvironment.liveActivity)
+            .environment(PreviewEnvironment.freshness)
             .tint(Theme.brand)
             // Not pinned: previews render in whatever language the scheme
             // is set to, which is how a translation gets looked at.
