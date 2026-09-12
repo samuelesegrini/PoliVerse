@@ -177,6 +177,22 @@
         }
       }
     },
+    "%lld di %lld": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld di %2$lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld of %lld"
+          }
+        }
+      }
+    },
     "%lld di %lld aule": {
       "localizations": {
         "en": {
@@ -369,6 +385,16 @@
         }
       }
     },
+    "+%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld"
+          }
+        }
+      }
+    },
     "1 modifica in attesa di connessione": {
       "localizations": {
         "en": {
@@ -493,6 +519,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "5 minuti"
+          }
+        }
+      }
+    },
+    "Accedi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in"
           }
         }
       }
@@ -897,6 +933,36 @@
         }
       }
     },
+    "Apre le aule libere adesso.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the rooms free right now."
+          }
+        }
+      }
+    },
+    "Apre le lezioni di oggi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens today's lectures."
+          }
+        }
+      }
+    },
+    "Apre media, CFU ed esami.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens average, credits and exams."
+          }
+        }
+      }
+    },
     "Apri": {
       "localizations": {
         "en": {
@@ -957,6 +1023,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apri WeBeep"
+          }
+        }
+      }
+    },
+    "Apri l'app per caricare le aule.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the app to load the rooms."
           }
         }
       }
@@ -1697,6 +1773,16 @@
         }
       }
     },
+    "Dati di un altro giorno. Apri l'app.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data from another day. Open the app."
+          }
+        }
+      }
+    },
     "Determina il mio scaglione": {
       "localizations": {
         "en": {
@@ -1981,6 +2067,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Formato non riconosciuto"
+          }
+        }
+      }
+    },
+    "Fuori orario di apertura.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Outside opening hours."
           }
         }
       }
@@ -2449,6 +2545,16 @@
         }
       }
     },
+    "In corso · fino alle %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Under way · until %@"
+          }
+        }
+      }
+    },
     "Indirizzo": {
       "localizations": {
         "en": {
@@ -2609,6 +2715,16 @@
         }
       }
     },
+    "Le aule libere adesso, nella sede che scegli.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The rooms free right now, at the campus you choose."
+          }
+        }
+      }
+    },
     "Le comunicazioni dal Politecnico compaiono qui.": {
       "localizations": {
         "en": {
@@ -2637,6 +2753,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Le iscrizioni agli appelli si gestiscono dai Servizi Online del Politecnico."
+          }
+        }
+      }
+    },
+    "Le lezioni e le scadenze della giornata.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The day's lectures and deadlines."
           }
         }
       }
@@ -2929,6 +3055,16 @@
         }
       }
     },
+    "Media %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Average %@"
+          }
+        }
+      }
+    },
     "Media attuale": {
       "localizations": {
         "en": {
@@ -2957,6 +3093,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Media finale"
+          }
+        }
+      }
+    },
+    "Media, CFU e prossimo appello.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Average, credits and next exam."
           }
         }
       }
@@ -3969,6 +4115,16 @@
         }
       }
     },
+    "Poi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next"
+          }
+        }
+      }
+    },
     "PoliVerse": {
       "localizations": {
         "en": {
@@ -4241,6 +4397,16 @@
         }
       }
     },
+    "Prossima lezione": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next lecture"
+          }
+        }
+      }
+    },
     "Prossime lezioni": {
       "localizations": {
         "en": {
@@ -4285,6 +4451,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Puoi ancora rifiutare questo voto dai servizi online."
+          }
+        }
+      }
+    },
+    "Quando e dove inizia la prossima lezione.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When and where the next lecture starts."
           }
         }
       }
@@ -4493,6 +4669,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Scaglione"
+          }
+        }
+      }
+    },
+    "Scegli la sede da mostrare.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the campus to show."
           }
         }
       }
@@ -5153,6 +5339,16 @@
         }
       }
     },
+    "di %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "of %lld"
+          }
+        }
+      }
+    },
     "iOS consente al massimo %lld promemoria in attesa: vengono tenuti i più vicini.": {
       "localizations": {
         "en": {
@@ -5181,6 +5377,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "il tuo"
+          }
+        }
+      }
+    },
+    "media": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "average"
           }
         }
       }
