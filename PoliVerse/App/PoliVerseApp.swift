@@ -18,6 +18,7 @@ struct PoliVerseApp: App {
     @State private var campusMap: CampusMapService
     @State private var careers: CareersService
     @State private var notifications: NotificationService
+    @State private var manifesti = ManifestiService()
     private let notificationRouter = NotificationRouter()
     private let background = BackgroundRefresh()
     @Environment(\.scenePhase) private var scenePhase
@@ -81,6 +82,7 @@ struct PoliVerseApp: App {
                 .environment(campusMap)
                 .environment(careers)
                 .environment(notifications)
+                .environment(manifesti)
                 .tint(Theme.brand)
                 // Every user-facing string in the app is Italian, so pin the
                 // locale too — otherwise `.formatted(.relative(…))` renders

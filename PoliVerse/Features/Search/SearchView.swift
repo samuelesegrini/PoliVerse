@@ -150,6 +150,16 @@ struct SearchView: View {
                             Label("Piano di studi", systemImage: "list.bullet.rectangle")
                         }
                         NavigationLink {
+                            ManifestiView()
+                        } label: {
+                            Label("Manifesto degli studi", systemImage: "books.vertical")
+                        }
+                        NavigationLink {
+                            PersonalTimetableView()
+                        } label: {
+                            Label("Orario personalizzato", systemImage: "calendar.badge.plus")
+                        }
+                        NavigationLink {
                             GradeSimulatorView()
                         } label: {
                             Label("Simulazione media", systemImage: "function")
