@@ -258,3 +258,38 @@ struct OccupancyBandTests {
         #expect(bands(json).isEmpty)
     }
 }
+
+/// The refusal codes are matched on text, so the matching has to be exact
+/// enough not to swallow neighbouring codes.
+@Suite("Refusal code matching")
+struct RefusalCodeTests {
+    private func body(_ code: Int, _ message: String) -> String {
+        """
+        {"statusCode":401,"message":"jaf.model2.exceptions.JafUnauthorizedException: \
+        \(message) Code: \(code)"}
+        """
+    }
+
+    @Test("Code 6 is a permissions refusal")
+    func codeSix() {
+        #expect(PoliMiAPI.isNotEntitled(body(6, "Utente non abilitato")))
+    }
+
+    /// The bug this pins: `contains("Code: 6")` also matches 60 and 66, which
+    /// would report a broken session as a permissions problem and never offer
+    /// the login that fixes it.
+    @Test("Codes starting with 6 are not mistaken for code 6")
+    func neighbouringCodes() {
+        for code in [60, 61, 66, 666] {
+            #expect(!PoliMiAPI.isNotEntitled(body(code, "Qualcos'altro")),
+                    "Code \(code) must not read as code 6")
+        }
+    }
+
+    @Test("Code 33 stays a scope failure, and still invalidates the session")
+    func codeThirtyThree() {
+        let scope = body(33, "Scope OAuth non valido.")
+        #expect(!PoliMiAPI.isNotEntitled(scope))
+        #expect(PoliMiAPI.isInvalidScope(scope))
+    }
+}

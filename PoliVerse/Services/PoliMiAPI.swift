@@ -148,8 +148,11 @@ nonisolated final class PoliMiAPI: Sendable {
     /// account the same services. `ws_aule` is the case that exposed it: its
     /// configured profile is 3, and a student holds profile 1.
     static func isNotEntitled(_ body: String) -> Bool {
-        body.localizedCaseInsensitiveContains("Utente non abilitato")
-            || body.localizedCaseInsensitiveContains("Code: 6")
+        if body.localizedCaseInsensitiveContains("Utente non abilitato") { return true }
+        // Anchored: a plain `contains("Code: 6")` also matches `Code: 60` and
+        // `Code: 66`, which would read a genuine session failure as a
+        // permissions one and never offer the login that would fix it.
+        return body.range(of: "Code:\\s*6(?![0-9])", options: .regularExpression) != nil
     }
 
     func send<T: Decodable>(_ request: APIRequest, as type: T.Type) async throws -> T {
