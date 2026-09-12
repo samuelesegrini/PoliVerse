@@ -143,6 +143,42 @@ student's own mail, and the log gets pasted into bug reports.
 Once a real shape is known, narrow the candidate lists to the true names and
 delete the rest.
 
+## One person, several matricole — and the token binds to one
+
+A `codicePersona` is stable; a **matricola is per enrolment**. Finishing a
+triennale and starting a magistrale gives one person two matricole, and nearly
+every endpoint here is parameterised by matricola.
+
+The OAuth token is bound to one of them. Point the app at the closed career
+and its services refuse the token outright — which is the real explanation for
+the Code 6 section below, and for an agenda that returns `0 events` while
+WeBeep and news work perfectly.
+
+```
+GET  /v1/careers/list            → [{matricola, desc_tipo_carriera:{it,en},
+                                      desc_stato_carriera:{it,en}}]
+PUT  /v1/careers/favorite/{matricola}   (405 on GET — it is a write)
+```
+
+Field names VERIFIED from the bundle, which renders each row as
+`L.matricola`, `L.desc_tipo_carriera?.[lang]`, `L.desc_stato_carriera?.[lang]`.
+
+**Switching is an OAuth flow, not a parameter.** From the bundle's
+`[Cambio Matricola]` path:
+
+```js
+const m = `${t.oauthServer}/${n ? "careerChange" : "auth"}`
+new URLSearchParams({client_id, redirect_uri, access_type, response_type,
+                     state, matricola: n, al_pj_matricola: n,
+                     access_token: a, scope: n ? "" : t.scope, ...})
+```
+
+So: same authorize machinery, different endpoint, the chosen matricola under
+**both** names, the current token as proof of identity, and an **empty scope**
+— it moves an existing grant rather than requesting a new one. The app reuses
+its login web view for exactly this, and never drops the session: a failed
+switch leaves the previous career signed in.
+
 ## "Utente non abilitato Code: 6" is not only ws_aule
 
 Observed 2026-09-12 on `iae`, after a fresh login:

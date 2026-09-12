@@ -226,6 +226,13 @@ nonisolated enum MockData {
         ]
     }
 
+    static func careers() -> [Career] {
+        [
+            Career(matricola: "986617", kind: "Laurea Triennale", status: "Chiusa"),
+            Career(matricola: "332218", kind: "Laurea Magistrale", status: "Attiva"),
+        ]
+    }
+
     static func weBeepSections(for course: Course) -> [WeBeepSection] {
         let base = Date.now
         func file(_ name: String, _ section: String, _ mb: Double, _ daysAgo: Int) -> WeBeepFile {

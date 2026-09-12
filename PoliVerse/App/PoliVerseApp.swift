@@ -15,6 +15,7 @@ struct PoliVerseApp: App {
     @State private var freeRooms: FreeRoomsService
     @State private var facilities = RoomFacilitiesService()
     @State private var campusMap: CampusMapService
+    @State private var careers: CareersService
 
     init() {
         // One Session, shared: every service reads its auth state and mock
@@ -25,6 +26,7 @@ struct PoliVerseApp: App {
         _agenda = State(initialValue: AgendaService(session: session))
         _career = State(initialValue: CareerService(session: session))
         _notices = State(initialValue: NoticeService(session: session))
+        _careers = State(initialValue: CareersService(session: session))
         _news = State(initialValue: NewsService(session: session))
         // Reads the public catalogue rather than the API client: occupancy
         // comes from maps_rest, which needs no token.
@@ -54,6 +56,7 @@ struct PoliVerseApp: App {
                 .environment(freeRooms)
                 .environment(facilities)
                 .environment(campusMap)
+                .environment(careers)
                 .tint(Theme.brand)
                 // Every user-facing string in the app is Italian, so pin the
                 // locale too — otherwise `.formatted(.relative(…))` renders

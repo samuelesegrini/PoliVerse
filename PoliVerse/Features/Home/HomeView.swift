@@ -7,6 +7,7 @@ struct HomeView: View {
     @Environment(CareerService.self) private var career
     @Environment(NoticeService.self) private var notices
     @Environment(NewsService.self) private var news
+    @Environment(CareersService.self) private var careers
     @Environment(\.locale) private var locale
 
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -35,6 +36,8 @@ struct HomeView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 22) {
                     greeting
+
+                    CareerMismatchBanner()
 
                     if session.serviceAuthorizationFailed {
                         ServiceAuthBanner()

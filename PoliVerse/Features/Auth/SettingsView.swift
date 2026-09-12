@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(Session.self) private var session
     @Environment(WeBeepService.self) private var weBeep
+    @Environment(CareersService.self) private var careers
     @State private var cacheBytes = DiskCache.sizeInBytes()
     @State private var materialBytes = FileDownloadService.storageInBytes()
     @State private var showingDiagnostics = false
@@ -14,9 +15,28 @@ struct SettingsView: View {
             if let student = session.student {
                 Section("Account") {
                     LabeledContent("Nome", value: student.fullName)
-                    LabeledContent("Matricola", value: student.matricola)
+                    LabeledContent("Codice persona", value: student.personCode)
+                    if careers.hasChoice {
+                        NavigationLink {
+                            CareerSwitchView()
+                        } label: {
+                            LabeledContent("Matricola") {
+                                VStack(alignment: .trailing, spacing: 1) {
+                                    Text(student.matricola)
+                                    if let current = careers.current {
+                                        Text(current.label)
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        LabeledContent("Matricola", value: student.matricola)
+                    }
                     LabeledContent("Email", value: student.email)
                 }
+                .task { await careers.load() }
             }
 
             Section {

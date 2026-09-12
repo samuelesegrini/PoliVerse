@@ -196,6 +196,40 @@ final class Session {
         }
     }
 
+    /// Adopts a token minted for a different enrolment.
+    ///
+    /// Deliberately not ``completeLogin(token:)``: that moves the state to
+    /// `.exchangingCode`, which drops the whole UI back to the login screen.
+    /// A career change is not a login — the person stays signed in, and only
+    /// the matricola their grant is bound to moves. If reading the user back
+    /// fails, the previous career is still signed in and working, so the old
+    /// state is kept rather than replaced with an error screen.
+    func adopt(_ token: PoliMiToken) async {
+        await tokens.set(token)
+        await tokens.setGrantedScope(directory.oauth.scope)
+        do {
+            let dto = try await api.send(
+                APIRequest(host: .app, path: "/jaf/internal/user"),
+                as: PoliMiUserDTO.self
+            )
+            await signIn(dto.toStudent())
+            serviceAuthorizationFailed = false
+            await loadProfile()
+            log.notice("Now on matricola \(dto.matricola, privacy: .public)")
+        } catch {
+            log.error("Career switch could not read the user: \(error.localizedDescription)")
+        }
+    }
+
+    /// The OAuth configuration, for views that drive their own flow.
+    var oauthParams: ServiceDirectory.OAuthParams { directory.oauth }
+
+    /// The token currently held, which the IdP requires as proof of identity
+    /// when moving a grant to another enrolment.
+    var currentAccessToken: String? {
+        get async { try? await tokens.validToken() }
+    }
+
     /// Exchanges the authcode from the web flow for a token pair.
     func completeLogin(authCode: String) async {
         state = .exchangingCode

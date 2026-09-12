@@ -56,12 +56,26 @@ nonisolated enum PoliMiOAuth {
         APIRequest(host: .app, path: "/jaf/oauth/revoke", method: "POST")
     }
 
+    /// - Parameters:
+    ///   - matricola: when given, this authorises a **career change** rather
+    ///     than a login. One person has one `codicePersona` and a matricola
+    ///     per enrolment, and the token is bound to one of them — which is why
+    ///     the other career's services answer "Utente non abilitato". The
+    ///     official app moves the grant by re-authorising against
+    ///     `/careerChange`, which is what this reproduces.
+    ///   - accessToken: the current token, which is the evidence of who is
+    ///     asking. Required for a career change; ignored for a login.
     static func authorizationURL(
         params: ServiceDirectory.OAuthParams = .fallback,
-        state: String = UUID().uuidString
+        state: String = UUID().uuidString,
+        matricola: String? = nil,
+        accessToken: String? = nil
     ) -> URL {
+        let endpoint = matricola == nil
+            ? params.authorizationEndpoint
+            : params.careerChangeEndpoint
         var components = URLComponents(
-            url: params.authorizationEndpoint ?? URL(string: "https://oauthidp.polimi.it/oauthidp/oauth2/auth")!,
+            url: endpoint ?? URL(string: "https://oauthidp.polimi.it/oauthidp/oauth2/auth")!,
             resolvingAgainstBaseURL: false
         )!
         // Mirrors the official app's authorize request exactly, including the
@@ -84,10 +98,14 @@ nonisolated enum PoliMiOAuth {
             ("access_type", params.accessType ?? "offline"),
             ("response_type", params.responseType ?? "code"),
             ("state", state),
-            ("matricola", ""),
-            ("al_pj_matricola", ""),
-            ("access_token", ""),
-            ("scope", params.scope),
+            ("matricola", matricola ?? ""),
+            ("al_pj_matricola", matricola ?? ""),
+            ("access_token", matricola == nil ? "" : (accessToken ?? "")),
+            // `scope: n ? "" : t.scope` in the bundle. A career change moves
+            // an existing grant rather than requesting a new one, and asking
+            // for the full scope list here turns a switch into a fresh
+            // consent prompt.
+            ("scope", matricola == nil ? params.scope : ""),
             ("al_id_srv", ""),
             ("al_id_srv_chiamante", ""),
         ]

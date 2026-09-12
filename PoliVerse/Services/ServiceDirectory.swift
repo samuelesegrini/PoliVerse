@@ -165,6 +165,8 @@ final class ServiceDirectory {
         )
 
         var authorizationEndpoint: URL? { URL(string: oauthServer + "/auth") }
+        /// Where the IdP moves an existing grant to another enrolment.
+        var careerChangeEndpoint: URL? { URL(string: oauthServer + "/careerChange") }
     }
 
     private(set) var resolved: [Service: URL] = [:]
