@@ -59,6 +59,17 @@ nonisolated struct ActionQueue: Sendable {
         var failures: Int
     }
 
+    /// Both halves in one file.
+    ///
+    /// The first version persisted only the pending entries. An abandoned
+    /// action was removed from that list and its loss recorded in memory, so
+    /// a relaunch left the change gone *and* the user never told — exactly the
+    /// silent loss the retry budget exists to prevent.
+    private struct Contents: Codable, Sendable {
+        var entries: [Entry] = []
+        var abandoned: [PendingAction] = []
+    }
+
     private let store: OfflineStore
     private let account: String?
     private var entries: [Entry] = []
@@ -74,10 +85,32 @@ nonisolated struct ActionQueue: Sendable {
     init(store: OfflineStore = .shared, account: String?) {
         self.store = store
         self.account = account
-        entries = store.load([Entry].self, as: "queue", account: account)?.value ?? []
+        let contents = store.load(Contents.self, as: "queue", account: account)?.value
+        entries = contents?.entries ?? []
+        abandoned = contents?.abandoned ?? []
+    }
+
+    /// Re-reads what is on disk, keeping this instance's view current.
+    ///
+    /// A flush holds an instance while it runs, and the user may tap something
+    /// in the meantime. Without this the flush would write back its stale
+    /// snapshot and silently discard that tap — a lost update with no failure
+    /// reported anywhere.
+    private mutating func reload() {
+        let contents = store.load(Contents.self, as: "queue", account: account)?.value
+        let disk = contents?.entries ?? []
+        // Anything on disk this instance has not seen is a change made while
+        // it was busy; keep it, and keep our own failure counts.
+        for entry in disk where !entries.contains(where: {
+            $0.action.targetKey == entry.action.targetKey
+        }) {
+            entries.append(entry)
+        }
+        abandoned = contents?.abandoned ?? abandoned
     }
 
     mutating func enqueue(_ action: PendingAction) {
+        reload()
         if let index = entries.firstIndex(where: { $0.action.targetKey == action.targetKey }) {
             // Replaced in place: a change made first must not jump ahead of
             // one made after it just because it was amended.
@@ -89,6 +122,7 @@ nonisolated struct ActionQueue: Sendable {
     }
 
     mutating func remove(_ action: PendingAction) {
+        reload()
         entries.removeAll { $0.action.targetKey == action.targetKey }
         persist()
     }
@@ -96,6 +130,7 @@ nonisolated struct ActionQueue: Sendable {
     /// Records an attempt that failed, abandoning the action once the budget
     /// is spent.
     mutating func recordFailure(_ action: PendingAction) {
+        reload()
         guard let index = entries.firstIndex(where: {
             $0.action.targetKey == action.targetKey
         }) else { return }
@@ -111,9 +146,12 @@ nonisolated struct ActionQueue: Sendable {
 
     mutating func clearAbandoned() {
         abandoned.removeAll()
+        // Persisted, or the same loss is reported again at every launch.
+        persist()
     }
 
     private func persist() {
-        store.save(entries, as: "queue", account: account)
+        store.save(Contents(entries: entries, abandoned: abandoned),
+                   as: "queue", account: account)
     }
 }

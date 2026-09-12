@@ -31,7 +31,18 @@ final class PendingChanges {
     init(session: Session, network: NetworkMonitor) {
         self.session = session
         self.network = network
-        count = queue().pending.count
+        refresh()
+    }
+
+    /// Reads what is waiting and what was lost.
+    ///
+    /// Losses are surfaced at launch, not only after a flush: a change
+    /// abandoned during the last session would otherwise stay unreported
+    /// until the next time the queue happened to run.
+    func refresh() {
+        let queue = queue()
+        count = queue.pending.count
+        failed = queue.abandoned
     }
 
     private func queue() -> ActionQueue {
@@ -83,6 +94,7 @@ final class PendingChanges {
         var queue = queue()
         queue.clearAbandoned()
         failed = []
+        count = queue.pending.count
     }
 
     private func send(_ action: PendingAction) async -> Bool {

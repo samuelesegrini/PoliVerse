@@ -135,6 +135,11 @@ struct PoliVerseApp: App {
                 .onChange(of: network.isOnline) { _, online in
                     if online { Task { await pending.flush() } }
                 }
+                // The queue is per matricola, so switching career must show
+                // that career's waiting changes rather than the last one's.
+                .onChange(of: session.student?.matricola) { _, _ in
+                    pending.refresh()
+                }
         }
     }
 }

@@ -162,3 +162,64 @@ struct ActionQueueTests {
         #expect(!PendingAction.favouriteCareer(matricola: "1").label.isEmpty)
     }
 }
+
+/// Two defects in the first version of the queue.
+@Suite("Action queue durability")
+struct ActionQueueDurabilityTests {
+    private func store() -> OfflineStore {
+        OfflineStore(directory: FileManager.default.temporaryDirectory
+            .appendingPathComponent("dur-\(UUID().uuidString)", isDirectory: true))
+    }
+
+    private let favourite = PendingAction.courseFavourite(moodleID: 42, value: true)
+
+    /// The first version kept abandoned actions in memory only. The entry was
+    /// removed from the persisted list and the record of its loss was not
+    /// written, so a relaunch left the change gone *and* the user never told —
+    /// precisely the silent loss the retry budget exists to prevent.
+    @Test("An abandoned change survives a relaunch so it can still be reported")
+    func abandonedPersists() {
+        let store = store()
+        var queue = ActionQueue(store: store, account: "1")
+        queue.enqueue(favourite)
+        for _ in 0..<ActionQueue.maxAttempts { queue.recordFailure(favourite) }
+        #expect(queue.abandoned.count == 1)
+
+        let reopened = ActionQueue(store: store, account: "1")
+        #expect(reopened.abandoned.count == 1)
+        #expect(reopened.pending.isEmpty)
+    }
+
+    @Test("Acknowledging a loss is remembered, not repeated at every launch")
+    func acknowledgePersists() {
+        let store = store()
+        var queue = ActionQueue(store: store, account: "1")
+        queue.enqueue(favourite)
+        for _ in 0..<ActionQueue.maxAttempts { queue.recordFailure(favourite) }
+        queue.clearAbandoned()
+
+        #expect(ActionQueue(store: store, account: "1").abandoned.isEmpty)
+    }
+
+    /// The second defect: `flush` read a snapshot, and a tap made while it ran
+    /// was written by `record` and then overwritten when the flush persisted
+    /// its stale copy. The user's change vanished with no failure anywhere.
+    @Test("A change made during a flush is not overwritten by it")
+    func noLostUpdate() {
+        let store = store()
+        var flushing = ActionQueue(store: store, account: "1")
+        flushing.enqueue(favourite)
+
+        // Another part of the app queues something while the flush holds its
+        // snapshot.
+        var other = ActionQueue(store: store, account: "1")
+        other.enqueue(.targetAverage(28))
+
+        // The flush completes its action and writes back.
+        flushing.remove(favourite)
+
+        let reopened = ActionQueue(store: store, account: "1")
+        #expect(reopened.pending.contains(.targetAverage(28)))
+        #expect(!reopened.pending.contains(favourite))
+    }
+}
