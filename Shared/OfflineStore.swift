@@ -244,3 +244,42 @@ nonisolated struct CachedSlot<Value: Codable & Sendable>: Sendable {
         age = 0
     }
 }
+
+/// The handful of values an extension needs before it can read anything.
+///
+/// A widget has no session: it cannot sign in, and it does not know which
+/// student's data it is looking at. The offline files are keyed by matricola,
+/// so without this pointer the widget would have a container full of records
+/// and no idea which one is the reader's.
+///
+/// Deliberately tiny and non-secret — a matricola and a display name. Nothing
+/// here is a credential; tokens stay in the Keychain, which an extension
+/// cannot reach anyway.
+nonisolated struct SharedAccount: Sendable {
+    private static let matricolaKey = "sharedMatricola"
+    private static let nameKey = "sharedFirstName"
+
+    static var defaults: UserDefaults {
+        UserDefaults(suiteName: OfflineStore.groupIdentifier) ?? .standard
+    }
+
+    /// Whose data the extension should read. Nil when signed out, which a
+    /// widget must render as "sign in" rather than as "no lectures".
+    static var matricola: String? {
+        get { defaults.string(forKey: matricolaKey) }
+        set { defaults.set(newValue, forKey: matricolaKey) }
+    }
+
+    static var firstName: String? {
+        get { defaults.string(forKey: nameKey) }
+        set { defaults.set(newValue, forKey: nameKey) }
+    }
+
+    /// Called by the app whenever the signed-in student changes — including
+    /// on sign-out and on a career switch, both of which change whose records
+    /// the widget should be showing.
+    static func update(matricola: String?, firstName: String?) {
+        self.matricola = matricola
+        self.firstName = firstName
+    }
+}

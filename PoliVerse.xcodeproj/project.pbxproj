@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		PV00000000000000000049 /* PoliVerseWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = PV00000000000000000041 /* PoliVerseWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		PV00000000000000000028 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -14,11 +18,33 @@
 			remoteGlobalIDString = PV0000000000000000000F;
 			remoteInfo = PoliVerse;
 		};
+		PV0000000000000000004B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = PV00000000000000000013 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = PV00000000000000000043;
+			remoteInfo = PoliVerseWidgets;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		PV00000000000000000048 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				PV00000000000000000049 /* PoliVerseWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		PV0000000000000000000B /* PoliVerse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PoliVerse.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		PV00000000000000000021 /* PoliVerseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PoliVerseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		PV00000000000000000041 /* PoliVerseWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PoliVerseWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -30,6 +56,16 @@
 		PV00000000000000000020 /* PoliVerseTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = PoliVerseTests;
+			sourceTree = "<group>";
+		};
+		PV00000000000000000040 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		PV00000000000000000042 /* PoliVerseWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PoliVerseWidgets;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -49,6 +85,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		PV00000000000000000045 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -56,6 +99,8 @@
 			isa = PBXGroup;
 			children = (
 				PV0000000000000000000A /* PoliVerse */,
+				PV00000000000000000042 /* PoliVerseWidgets */,
+				PV00000000000000000040 /* Shared */,
 				PV00000000000000000020 /* PoliVerseTests */,
 				PV0000000000000000000E /* Products */,
 			);
@@ -66,6 +111,7 @@
 			children = (
 				PV0000000000000000000B /* PoliVerse.app */,
 				PV00000000000000000021 /* PoliVerseTests.xctest */,
+				PV00000000000000000041 /* PoliVerseWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -80,13 +126,16 @@
 				PV00000000000000000011 /* Sources */,
 				PV0000000000000000000C /* Frameworks */,
 				PV00000000000000000012 /* Resources */,
+				PV00000000000000000048 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				PV0000000000000000004A /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				PV0000000000000000000A /* PoliVerse */,
+				PV00000000000000000040 /* Shared */,
 			);
 			name = PoliVerse;
 			packageProductDependencies = (
@@ -117,6 +166,29 @@
 			productName = PoliVerseTests;
 			productReference = PV00000000000000000021 /* PoliVerseTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		PV00000000000000000043 /* PoliVerseWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = PV00000000000000000046 /* Build configuration list for PBXNativeTarget "PoliVerseWidgets" */;
+			buildPhases = (
+				PV00000000000000000044 /* Sources */,
+				PV00000000000000000045 /* Frameworks */,
+				PV00000000000000000047 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				PV00000000000000000040 /* Shared */,
+				PV00000000000000000042 /* PoliVerseWidgets */,
+			);
+			name = PoliVerseWidgets;
+			packageProductDependencies = (
+			);
+			productName = PoliVerseWidgets;
+			productReference = PV00000000000000000041 /* PoliVerseWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -154,6 +226,7 @@
 			targets = (
 				PV0000000000000000000F /* PoliVerse */,
 				PV00000000000000000022 /* PoliVerseTests */,
+				PV00000000000000000043 /* PoliVerseWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -167,6 +240,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		PV00000000000000000026 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		PV00000000000000000047 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -190,6 +270,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		PV00000000000000000044 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -197,6 +284,11 @@
 			isa = PBXTargetDependency;
 			target = PV0000000000000000000F /* PoliVerse */;
 			targetProxy = PV00000000000000000028 /* PBXContainerItemProxy */;
+		};
+		PV0000000000000000004A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = PV00000000000000000043 /* PoliVerseWidgets */;
+			targetProxy = PV0000000000000000004B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -285,13 +377,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Config/PoliVerse.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"PoliVerse/Preview Content\"";
 				DEVELOPMENT_TEAM = 8CHF29UD9Q;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				CODE_SIGN_ENTITLEMENTS = Config/PoliVerse.entitlements;
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -314,13 +406,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Config/PoliVerse.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"PoliVerse/Preview Content\"";
 				DEVELOPMENT_TEAM = 8CHF29UD9Q;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				CODE_SIGN_ENTITLEMENTS = Config/PoliVerse.entitlements;
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -374,6 +466,72 @@
 			};
 			name = Release;
 		};
+		PV0000000000000000004C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = Config/PoliVerseWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8CHF29UD9Q;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = PoliVerse;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				INFOPLIST_KEY_CFBundleDisplayName = PoliVerse;
+				INFOPLIST_FILE = "Config/PoliVerseWidgets-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = segrini.samuele.PoliVerse.Widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		PV0000000000000000004D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = Config/PoliVerseWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8CHF29UD9Q;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = PoliVerse;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				INFOPLIST_KEY_CFBundleDisplayName = PoliVerse;
+				INFOPLIST_FILE = "Config/PoliVerseWidgets-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = segrini.samuele.PoliVerse.Widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -400,6 +558,15 @@
 			buildConfigurations = (
 				PV00000000000000000029 /* Debug */,
 				PV0000000000000000002A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		PV00000000000000000046 /* Build configuration list for PBXNativeTarget "PoliVerseWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				PV0000000000000000004C /* Debug */,
+				PV0000000000000000004D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

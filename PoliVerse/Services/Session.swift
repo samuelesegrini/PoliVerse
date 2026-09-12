@@ -310,6 +310,8 @@ final class Session {
         } else {
             state = .signedOut
             await profileBox.set(matricola: nil)
+            // A widget must show "sign in", not "no lectures".
+            SharedAccount.update(matricola: nil, firstName: nil)
         }
     }
 
@@ -350,6 +352,9 @@ final class Session {
     private func signIn(_ student: Student) async {
         state = .signedIn(student)
         await profileBox.set(matricola: student.matricola)
+        // Widgets read the offline files, which are keyed by matricola, and
+        // have no session of their own to ask.
+        SharedAccount.update(matricola: student.matricola, firstName: student.firstName)
     }
 
     var student: Student? {
