@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 @main
 struct PoliVerseApp: App {
@@ -16,6 +17,8 @@ struct PoliVerseApp: App {
     @State private var facilities = RoomFacilitiesService()
     @State private var campusMap: CampusMapService
     @State private var careers: CareersService
+    @State private var notifications = NotificationService()
+    private let notificationRouter = NotificationRouter()
 
     init() {
         // One Session, shared: every service reads its auth state and mock
@@ -57,6 +60,7 @@ struct PoliVerseApp: App {
                 .environment(facilities)
                 .environment(campusMap)
                 .environment(careers)
+                .environment(notifications)
                 .tint(Theme.brand)
                 // Every user-facing string in the app is Italian, so pin the
                 // locale too — otherwise `.formatted(.relative(…))` renders
@@ -68,6 +72,12 @@ struct PoliVerseApp: App {
                 // on screen so the session can continue where it left off.
                 .onOpenURL { url in
                     if cieID.handle(url) { return }
+                }
+                // Set once, here: a delegate assigned from a view would be
+                // replaced every time that view was rebuilt.
+                .task {
+                    UNUserNotificationCenter.current().delegate = notificationRouter
+                    await notifications.refreshAuthorization()
                 }
         }
     }

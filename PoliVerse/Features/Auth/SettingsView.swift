@@ -45,6 +45,14 @@ struct SettingsView: View {
                 Text("Con i dati di esempio l'app funziona senza collegarsi ai server del Politecnico. Disattivalo per usare il tuo account reale.")
             }
 
+            Section {
+                NavigationLink {
+                    NotificationSettingsView()
+                } label: {
+                    Label("Promemoria", systemImage: "bell")
+                }
+            }
+
             Section("WeBeep") {
                 LabeledContent("Accesso") {
                     Text(weBeep.isAuthenticated ? "Collegato" : "Non collegato")

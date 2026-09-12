@@ -27,6 +27,8 @@ struct MainTabView: View {
 
     @State private var selection = "home"
     @State private var spotlight = SpotlightIndex()
+    @Environment(NotificationService.self) private var notifications
+    @Environment(AgendaService.self) private var agenda
 
     var body: some View {
         TabView(selection: $selection) {
@@ -61,10 +63,22 @@ struct MainTabView: View {
                 teachers: Teacher.roster(courses: courses.courses, sessions: career.sessions),
                 exams: career.sessions)
         }
+        // Reminders follow the timetable: lectures move and exams are
+        // withdrawn, and a reminder for a lecture that no longer exists is
+        // invisible from inside the app.
+        .task(id: reminderKey) {
+            guard !session.useMockData else { return }
+            await notifications.reschedule(events: agenda.events, exams: career.sessions)
+        }
     }
 
     /// Re-indexes when the material actually changes, rather than on every
     /// appearance.
+    /// Rebuilt when the timetable or the sittings change.
+    private var reminderKey: String {
+        "\(agenda.events.count)-\(career.sessions.count)-\(agenda.loadedRange?.upperBound.timeIntervalSince1970 ?? 0)"
+    }
+
     private var indexKey: String {
         "\(courses.courses.count)-\(rooms.rooms.count)-\(career.sessions.count)-\(session.student?.matricola ?? "")"
     }

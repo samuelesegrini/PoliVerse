@@ -1,4 +1,5 @@
 import Foundation
+import UserNotifications
 import Observation
 import OSLog
 
@@ -290,6 +291,9 @@ final class Session {
         // Otherwise the next person to sign in on this device finds the
         // previous student's courses in Spotlight.
         SpotlightIndex().clear()
+        // Same reason: reminders naming someone else's lectures would keep
+        // arriving after they signed out.
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         if useMockData {
             await signIn(MockData.student)
         } else {
