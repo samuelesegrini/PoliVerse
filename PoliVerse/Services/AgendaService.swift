@@ -135,7 +135,10 @@ final class AgendaService {
             // Drop entries with unparseable timestamps rather than guessing at
             // a date and showing a lecture on the wrong day.
             let parsed = dtos.compactMap { $0.toEvent() }
-            log.notice("agenda returned \(dtos.count, privacy: .public) events, \(parsed.count, privacy: .public) usable")
+            // The range is logged with the count because the two are only
+            // meaningful together: an empty agenda and a window that has
+            // slipped past the events look identical without it.
+            log.notice("agenda \(PoliMiDate.queryString(from), privacy: .public)…\(PoliMiDate.queryString(to), privacy: .public): \(dtos.count, privacy: .public) events, \(parsed.count, privacy: .public) usable")
             return parsed
         } catch {
             log.error("Agenda load failed: \(error.localizedDescription)")
@@ -160,7 +163,7 @@ final class AgendaService {
                 as: [AgendaEventDTO].self
             )
             let parsed = dtos.compactMap { $0.toEvent() }
-            log.notice("agenda returned \(parsed.count, privacy: .public) deadlines")
+            log.notice("agenda \(PoliMiDate.queryString(from), privacy: .public)…\(PoliMiDate.queryString(to), privacy: .public): \(dtos.count, privacy: .public) deadlines, \(parsed.count, privacy: .public) usable")
             return parsed
         } catch {
             // Not fatal: the timetable is the point, deadlines are a bonus.
