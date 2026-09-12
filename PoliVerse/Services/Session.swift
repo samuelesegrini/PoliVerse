@@ -287,6 +287,9 @@ final class Session {
             _ = try? await api.send(PoliMiOAuth.revokeRequest)
         }
         await tokens.clear()
+        // Otherwise the next person to sign in on this device finds the
+        // previous student's courses in Spotlight.
+        SpotlightIndex().clear()
         if useMockData {
             await signIn(MockData.student)
         } else {
