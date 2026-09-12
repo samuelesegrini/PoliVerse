@@ -222,6 +222,41 @@ Consequences encoded in the app:
 - never retry it — the answer will not change within a session;
 - say what the server said, rather than "Il server ha risposto 401".
 
+## Study plan and grade simulation — libretto host
+
+All on `libretto.base_url` with `libretto.profile`, all **401** (so live),
+paths VERIFIED from the bundle's own axios calls:
+
+```
+GET /testatapiano/{matricola}                    plan header
+GET /elencoinsegnamenti/{matricola}              the plan itself (already used)
+GET /sequenzamedia/{matricola}, /sequenzamedia2/{matricola}
+GET /mediaobiettivo/{matricola}                  the student's target average
+PUT /mediaobiettivo/insertmediaobiettivo         {matricola, media}
+PUT /simulazionemedia/checkvotoobiettivo/        {matricola}
+GET /simulazionemedia/insegnsenzavoto/{matricola}  exams with no mark yet
+```
+
+The app reads the official target and writes it back on an explicit save. The
+**what-if arithmetic is local**: a weighted mean over the libretto, which has
+to move with a stepper rather than wait on a round trip. `30L` counts as 30,
+pass/fail teachings are excluded from the mean but counted in CFU, and an
+unreachable target reports the figure above 30 rather than clamping.
+
+## No staff directory exists
+
+`maps_rest /struttura/{personaId}` is **401** and takes an id the app never
+sees; there is no name-to-id lookup anywhere in `props`, and `/v1/rubrica` and
+friends are 404. `/struttura/publicdata/persone/{spazioId}` is public but
+answers `[]` for teaching rooms.
+
+So teacher search is assembled from where names actually appear — the course
+list and exam sittings — and links to the timetable through the teachings.
+Smaller than a directory, and the UI says what it covers.
+
+Also public and useful: `/ricerca/suggerimenti` is a complete term → space-code
+index, and `/ricerca/stopwords` the words it ignores.
+
 ## What moved
 
 | Was (PoliFemo, still shipping) | Now |

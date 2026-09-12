@@ -16,6 +16,8 @@ nonisolated struct LibrettoExam: Identifiable, Sendable, Hashable {
     let date: Date?
     /// Upstream's own status wording, e.g. "Superato".
     let statusText: String?
+    /// Academic year the teaching belongs to, for grouping a study plan.
+    var year: String?
 
     /// Taken from which list the server returned this row in, rather than
     /// inferred from the mark — a pass/fail teaching ("idoneità") is passed

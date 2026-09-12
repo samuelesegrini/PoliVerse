@@ -42,6 +42,28 @@ struct CareerView: View {
                         .foregroundStyle(.orange)
                 }
 
+                HStack(spacing: 10) {
+                    NavigationLink {
+                        StudyPlanView()
+                    } label: {
+                        Label("Piano di studi", systemImage: "list.bullet.rectangle")
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Theme.brand.opacity(0.12), in: .rect(cornerRadius: 12))
+                    }
+                    NavigationLink {
+                        GradeSimulatorView()
+                    } label: {
+                        Label("Simulazione", systemImage: "function")
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Theme.brand.opacity(0.12), in: .rect(cornerRadius: 12))
+                    }
+                }
+                .buttonStyle(.plain)
+
                 if career.gradeBook == .empty && career.sessions.isEmpty && !career.isLoading {
                     if career.examServicesRefused {
                         // What the server actually said, rather than a generic

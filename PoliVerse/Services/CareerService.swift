@@ -30,6 +30,15 @@ final class CareerService {
     /// registration at the moment, which is a thing to explain rather than a
     /// thing to retry.
     private(set) var examServicesRefused = false
+    /// The target average the student set on Servizi Online, where they have
+    /// one. Read rather than invented: the app's own slider is a what-if, and
+    /// this is the figure the Politecnico is holding.
+    private(set) var officialTarget: Double?
+    /// Header of the study plan — course name, year, track.
+    private(set) var planHeader: StudyPlanHeader?
+
+    /// Everything needed for the plan and the simulator.
+    var studyPlan: StudyPlan { StudyPlan(exams: libretto) }
 
     private let session: Session
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "career")
@@ -117,9 +126,13 @@ final class CareerService {
         async let countersTask = loadCounters()
         async let sessionsTask = loadSessions()
         async let librettoTask = loadLibretto(matricola: matricola)
+        async let targetTask = loadTarget(matricola: matricola)
+        async let headerTask = loadPlanHeader(matricola: matricola)
 
         let (book, counters, loadedSessions, loadedLibretto) =
             await (bookTask, countersTask, sessionsTask, librettoTask)
+        officialTarget = await targetTask
+        planHeader = await headerTask
 
         if let loadedLibretto { libretto = loadedLibretto }
 
@@ -155,6 +168,65 @@ final class CareerService {
             return
         }
         window.markLoaded(source: source)
+    }
+
+    /// `GET {libretto}/mediaobiettivo/{matricola}` — the target the student
+    /// set on Servizi Online. Shape unconfirmed, so it is read leniently and
+    /// logged; a missing target is the common case and not a failure.
+    private func loadTarget(matricola: String) async -> Double? {
+        do {
+            let data = try await session.api.send(
+                APIRequest(host: .libretto, path: "/mediaobiettivo/\(matricola)"))
+            log.notice("mediaobiettivo shape: \(JSONShape.describe(data), privacy: .public)")
+            let value = try JSONDecoder().decode(JSONValue.self, from: data)
+            let fields = value.objectValue ?? value.arrayValue?.first?.objectValue
+            return fields?.firstValue([
+                "media", "media_obiettivo", "mediaObiettivo", "valore", "target",
+            ])?.doubleValue
+        } catch {
+            guard !PoliMiAPI.isCancellation(error) else { return nil }
+            log.error("Target average failed: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    /// `GET {libretto}/testatapiano/{matricola}` — the plan's header.
+    private func loadPlanHeader(matricola: String) async -> StudyPlanHeader? {
+        do {
+            let data = try await session.api.send(
+                APIRequest(host: .libretto, path: "/testatapiano/\(matricola)"))
+            log.notice("testatapiano shape: \(JSONShape.describe(data), privacy: .public)")
+            let value = try JSONDecoder().decode(JSONValue.self, from: data)
+            return StudyPlanHeader(value: value)
+        } catch {
+            guard !PoliMiAPI.isCancellation(error) else { return nil }
+            log.error("Study plan header failed: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    /// Saves a target average back to Servizi Online.
+    ///
+    /// `PUT /mediaobiettivo/insertmediaobiettivo` with `{matricola, media}`,
+    /// exactly as the official app sends it. A write to the real system, so it
+    /// happens only when the user presses save — never from the slider.
+    func saveTarget(_ media: Double) async -> Bool {
+        guard let matricola = session.student?.matricola else { return false }
+        let body = try? JSONSerialization.data(
+            withJSONObject: ["matricola": matricola, "media": media])
+        do {
+            _ = try await session.api.send(APIRequest(
+                host: .libretto,
+                path: "/mediaobiettivo/insertmediaobiettivo",
+                method: "PUT",
+                body: body))
+            officialTarget = media
+            log.notice("Saved target average \(media, privacy: .public)")
+            return true
+        } catch {
+            log.error("Could not save the target: \(error.localizedDescription)")
+            return false
+        }
     }
 
     private func loadGradeBook(matricola: String) async -> GradeBook? {
