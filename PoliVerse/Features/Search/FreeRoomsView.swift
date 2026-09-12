@@ -3,6 +3,7 @@ import SwiftUI
 /// Which rooms are free, and for how long.
 struct FreeRoomsView: View {
     @Environment(FreeRoomsService.self) private var aule
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var minimumMinutes = 30
     @State private var onlyNow = true
@@ -42,6 +43,15 @@ struct FreeRoomsView: View {
             await aule.load()
         }
         .refreshable { await aule.load(force: true) }
+        // Free rooms is not in ``FreshnessCoordinator``: a campus pass is up
+        // to 158 requests, which is not something to spend every time the app
+        // comes forward. It is spent here, where the screen asking the
+        // question is the one on display, and the service's 60-second window
+        // makes a quick glance away and back free.
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task { await aule.load() }
+        }
         .onChange(of: aule.day) { _, _ in
             // "Free now" means nothing on a day that is not today.
             if !isToday { onlyNow = false }

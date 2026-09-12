@@ -380,3 +380,51 @@ struct FreeRoomsFreshnessTests {
         #expect(service.age(now: fetched.addingTimeInterval(1800)) == 1800)
     }
 }
+
+/// The free-rooms window is the one tuned away from the app's 300-second
+/// default, and both halves of that choice matter: a minute is short enough
+/// that returning to the screen re-asks, and the day-and-campus key is what
+/// stops a flick to tomorrow showing today's answer.
+@Suite("Free rooms window")
+struct FreeRoomsWindowTests {
+    private func key(_ day: String, _ campus: String) -> String { "\(day)|\(campus)" }
+
+    @Test("A pass from seconds ago is not repeated")
+    func recentPassSkipped() {
+        var window = LoadWindow(interval: 60)
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let source = key("2026-03-10", "Milano Leonardo")
+        window.markLoaded(source: source, at: now)
+        #expect(!window.shouldLoad(source: source, now: now.addingTimeInterval(30)))
+    }
+
+    /// Sixty seconds rather than five minutes: occupancy turns over on the
+    /// lecture boundary, and this is the screen where stale data means
+    /// walking across campus to an occupied room.
+    @Test("A pass from over a minute ago is repeated")
+    func stalePassRuns() {
+        var window = LoadWindow(interval: 60)
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let source = key("2026-03-10", "Milano Leonardo")
+        window.markLoaded(source: source, at: now)
+        #expect(window.shouldLoad(source: source, now: now.addingTimeInterval(61)))
+    }
+
+    @Test("Another day always reloads, however recent the last pass")
+    func changedDayReloads() {
+        var window = LoadWindow(interval: 60)
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        window.markLoaded(source: key("2026-03-10", "Milano Leonardo"), at: now)
+        #expect(window.shouldLoad(
+            source: key("2026-03-11", "Milano Leonardo"), now: now.addingTimeInterval(1)))
+    }
+
+    @Test("Another campus always reloads")
+    func changedCampusReloads() {
+        var window = LoadWindow(interval: 60)
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        window.markLoaded(source: key("2026-03-10", "Milano Leonardo"), at: now)
+        #expect(window.shouldLoad(
+            source: key("2026-03-10", "Milano Bovisa"), now: now.addingTimeInterval(1)))
+    }
+}

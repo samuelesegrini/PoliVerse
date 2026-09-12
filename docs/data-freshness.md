@@ -152,12 +152,44 @@ Three consequences, and they close off most of the textbook answers:
    subscription, a webhook, a long-poll, or a change feed. Every "push"
    option below therefore requires **a server this project does not have**.
 
-The authenticated hosts were not probed for validators, because a token is
-needed and the shapes in [endpoint-status.md](endpoint-status.md) show plain
-JSON with no conditional-request machinery in the official bundle's client
-either. **Unverified**: whether `api.polimi.it/agenda` or `iae` emit an `ETag`
-for an authenticated caller. Worth one `curl` with a live token before anyone
-builds on the assumption that they do not.
+### The authenticated hosts, measured
+
+**Measured 2026-09-12**, `curl -D -`, no token — the paths from
+[endpoint-status.md](endpoint-status.md):
+
+```
+GET https://api.polimi.it/agenda/v1/matricola/{matricola}/events?…  → 401
+GET https://api.polimi.it/piano_studente/elencoinsegnamenti/{matricola} → 401
+GET https://api.polimi.it/iae/v1/base/counters                      → 401
+GET https://webeep.polimi.it/login/index.php                        → 200
+```
+
+The three `api.polimi.it` services answer with **no `ETag`, no
+`Last-Modified`, no `Cache-Control`, no `Expires`, no `Vary`** — the gateway
+is a bare `Server: Apache` with no caching middleware in the response path at
+all. WeBeep, being a Moodle, is the opposite and worse: it answers `200` with
+
+```
+Cache-Control: no-store, no-cache, must-revalidate, no-transform
+Expires: Mon, 20 Aug 1969 09:23:00 GMT
+Last-Modified: <the moment of the request>
+```
+
+`no-store` forbids keeping the response at all, and a `Last-Modified` equal to
+now can never produce a `304`. So WeBeep actively rules out HTTP caching
+rather than merely omitting it.
+
+**How far this goes.** The `api.polimi.it` measurements are of `401`
+responses, because a signed-in call needs a token this repo cannot mint
+outside the app. A `401` from the gateway is strong evidence about the
+response pipeline — no layer in it adds validators — but it is not the same
+body as a `200`, so it is not proof that the authenticated `200` carries no
+`ETag`. It is, however, as far as a measurement can go without a live
+session, and combined with WeBeep's explicit `no-store` and the public
+endpoints' silence, nothing in this API surface supports conditional
+requests. **The remaining check**, for whoever next has a live token in a
+proxy: one authenticated `200` on `/agenda/v1/matricola/…/events`, looking
+for `ETag`.
 
 ---
 
@@ -197,6 +229,7 @@ blocked on infrastructure.
 | `FreeRoomsService.age`, derived from the fetch time, and a `FreshnessBar` on the screen. It is not a ticking clock — it re-reads on redraw, which is enough for a bar that stays silent under fifteen minutes | `Services/FreeRoomsService.swift`, `Features/Search/FreeRoomsView.swift` |
 | Per-service windows: 15 min for libretto, courses and news; 60 s for free rooms, replacing its key-only guard so a day already seen can still be refetched; 5 min kept for agenda and notices | `Services/CareerService.swift`, `CourseService.swift`, `NewsService.swift`, `FreeRoomsService.swift` |
 | A free-rooms pass that produced nothing does not stamp the fetch, following `LoadWindow`'s rule that a failed load must not suppress the retry | `Services/FreeRoomsService.swift` |
+| Free rooms revalidates on foreground from its own screen rather than app-wide, because a campus pass is up to 158 requests | `Features/Search/FreeRoomsView.swift` |
 
 Covered by `PoliVerseTests/FreshnessCoordinatorTests.swift` (ordering, force
 propagation, gentle runs joining the one in flight, and the rule that every
@@ -258,6 +291,9 @@ documented gesture, and staged revalidation does not replace it.
   foregrounds onto the Notices screen gets a stale bell.
 
 ### Later — and only if a server appears
+
+**There is no server, and none is planned.** Everything in this stage is
+recorded for whoever picks it up, not queued.
 
 Everything push-shaped is blocked on infrastructure, not on iOS. If this
 project ever runs a small server that polls the Politecnico on the student's
