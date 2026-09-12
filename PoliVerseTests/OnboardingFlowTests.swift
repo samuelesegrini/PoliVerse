@@ -155,15 +155,16 @@ struct OnboardingStateTests {
         #expect(OnboardingState(defaults: defaults).isComplete)
     }
 
-    @Test("Restarting puts it back at the welcome")
-    func restartReturnsToWelcome() {
+    /// The intro is a one-off: once finished, every later launch — and every
+    /// later sign-out — goes to the login screen instead.
+    @Test("Finishing is final")
+    func completionIsFinal() {
         let defaults = defaults()
         let state = OnboardingState(defaults: defaults)
         state.complete()
-        state.restart()
-        #expect(state.step == .welcome)
-        #expect(!state.isComplete)
-        #expect(!OnboardingState(defaults: defaults).isComplete)
+        state.advance(in: .init(isSignedIn: true))
+        #expect(state.isComplete)
+        #expect(OnboardingState(defaults: defaults).isComplete)
     }
 }
 
@@ -195,17 +196,14 @@ struct OnboardingAdoptionTests {
         #expect(!state.isComplete)
     }
 
-    /// "Rivedi l'introduzione" puts a signed-in student back at `.welcome`,
-    /// which is exactly the shape the adoption looks for. Without the
-    /// once-per-launch latch the button would close the tour as fast as it
-    /// opened it.
-    @Test("Re-running the tour from Settings is not undone by the launch check")
-    func restartSurvivesAdoption() {
-        let state = OnboardingState(defaults: defaults())
-        state.adoptExistingInstall()
-        state.restart()
-        state.adoptExistingInstall()
-        #expect(!state.isComplete)
-        #expect(state.step == .welcome)
+    /// Signing out to switch career leaves the flag alone, so the next
+    /// screen is the login rather than the tour.
+    @Test("A second launch after finishing never reopens it")
+    func secondLaunchStaysClosed() {
+        let defaults = defaults()
+        OnboardingState(defaults: defaults).complete()
+        let relaunched = OnboardingState(defaults: defaults)
+        relaunched.adoptExistingInstall()
+        #expect(relaunched.isComplete)
     }
 }

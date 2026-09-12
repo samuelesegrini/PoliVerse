@@ -17,8 +17,6 @@ final class OnboardingState {
     private(set) var isComplete: Bool
 
     private let defaults: UserDefaults
-    /// Whether the launch check below has already had its one chance.
-    private var hasConsideredLaunch = false
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -38,20 +36,16 @@ final class OnboardingState {
         step = next
     }
 
-    /// Ends the flow, from wherever it is. Every step past the sign-in is
-    /// skippable, and "più tardi" has to mean it.
+    /// Ends the flow, from wherever it is, for good.
+    ///
+    /// There is no way back in. The intro runs once per install and what
+    /// follows is the login screen — someone signing out to switch career is
+    /// not asking to be told what the app is again. Every setting it collects
+    /// is reachable from Settings afterwards, which is what its last screen
+    /// spends itself saying.
     func complete() {
         isComplete = true
         defaults.set(true, forKey: Self.completedKey)
-    }
-
-    /// Runs the flow again from the top, for the button in Settings. Does not
-    /// sign anyone out: a second pass is for reading, and for the settings it
-    /// collects.
-    func restart() {
-        step = .welcome
-        isComplete = false
-        defaults.set(false, forKey: Self.completedKey)
     }
 }
 
@@ -66,13 +60,7 @@ extension OnboardingState {
     /// a new student reaches the sign-in step before a token exists, so being
     /// still at `.welcome` with a live session means the session came from the
     /// Keychain rather than from this flow.
-    ///
-    /// Acts once per launch. "Rivedi l'introduzione" in Settings also puts the
-    /// flow back to `.welcome` with a live session, and without the latch this
-    /// would close it again the instant it opened.
     func adoptExistingInstall() {
-        guard !hasConsideredLaunch else { return }
-        hasConsideredLaunch = true
         guard !isComplete, step == .welcome else { return }
         complete()
     }

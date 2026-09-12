@@ -5223,22 +5223,6 @@
         }
       }
     },
-    "Ripercorre cosa fa l'app e le impostazioni iniziali. Non ti disconnette.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Walks through what the app does and the initial settings. It does not sign you out."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ripercorre cosa fa l'app e le impostazioni iniziali. Non ti disconnette."
-          }
-        }
-      }
-    },
     "Risposta del server non leggibile.": {
       "localizations": {
         "en": {
@@ -5251,22 +5235,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Risposta del server non leggibile."
-          }
-        }
-      }
-    },
-    "Rivedi l'introduzione": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Read the introduction again"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rivedi l'introduzione"
           }
         }
       }
