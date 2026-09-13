@@ -26,7 +26,9 @@ final class BackgroundRefresh {
     /// registering later throws.
     func register(refresh: @escaping @Sendable () async -> Void) {
         BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: Self.taskIdentifier, using: nil
+            // `.main`, not `nil`: with `nil` the handler runs on a background
+            // queue and `assumeIsolated` below aborts.
+            forTaskWithIdentifier: Self.taskIdentifier, using: .main
         ) { task in
             MainActor.assumeIsolated {
                 self.handle(task, refresh: refresh)

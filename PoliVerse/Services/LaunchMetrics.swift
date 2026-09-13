@@ -54,7 +54,12 @@ enum LaunchMetrics {
 /// Reported to the log rather than sent anywhere: the app has no analytics
 /// backend, and adding one to measure launch would be a poor trade for the
 /// student whose data it would be.
-private final class LaunchMetricCollector: NSObject, MXMetricManagerSubscriber {
+///
+/// `nonisolated` because MetricKit calls in on a queue of its own. Under the
+/// project's default `MainActor` isolation the runtime checks that call and
+/// aborts; each abort produces a diagnostic payload, delivered on the next
+/// launch, so one crash kept the app from ever opening again.
+nonisolated private final class LaunchMetricCollector: NSObject, MXMetricManagerSubscriber {
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "launch")
 
     func didReceive(_ payloads: [MXMetricPayload]) {
