@@ -55,6 +55,8 @@ struct ExamDetailView: View {
                         row("Codice", exam.courseCode, icon: "number")
                     }
 
+                    ExamTimelineSection(exam: exam)
+
                     if exam.grade == nil {
                         section("Iscrizione") {
                             row("Stato", exam.status.label, icon: "checkmark.circle")

@@ -40,11 +40,20 @@ final class CareerService {
     private(set) var officialTarget: Double?
     /// Header of the study plan — course name, year, track.
     private(set) var planHeader: StudyPlanHeader?
+    /// What changed about the student's exams, newest first — see
+    /// ``ExamUpdate``.
+    private(set) var updates: [ExamUpdate] = []
+    /// Handed the updates a load found for the first time, already decided by
+    /// ``ExamUpdatePolicy``. Wired to the notification service at launch.
+    @ObservationIgnored var onNewUpdates: (@MainActor ([ExamUpdate]) async -> Void)?
 
     /// Everything needed for the plan and the simulator.
     var studyPlan: StudyPlan { StudyPlan(exams: libretto) }
 
     private let session: Session
+    private let offline: OfflineStore
+    /// The account ``updates`` was read for.
+    private var updatesAccount: String?
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "career")
     /// Fifteen minutes rather than the default five: a libretto changes when
     /// a professor records a grade, which is a matter of days, not of tab
@@ -73,6 +82,7 @@ final class CareerService {
 
     init(session: Session, offline: OfflineStore = .shared) {
         self.session = session
+        self.offline = offline
         self.slot = CachedSlot(name: "career", store: offline)
     }
 
@@ -129,6 +139,18 @@ final class CareerService {
             .sorted { ($0.date ?? .distantFuture) < ($1.date ?? .distantFuture) }
     }
 
+    /// The last fortnight's updates: what changed since the student last
+    /// looked, which is the reason most visits happen.
+    var recentUpdates: [ExamUpdate] {
+        updates.filter { $0.detectedAt > .now.addingTimeInterval(-14 * 86400) }
+    }
+
+    /// The sitting an update is about, while it is still listed.
+    func sitting(for update: ExamUpdate) -> ExamSession? {
+        guard let id = update.examID else { return nil }
+        return sessions.first { $0.id == id }
+    }
+
     /// Sittings the student is signed up for.
     var enrolled: [ExamSession] {
         upcoming.filter { $0.status == .enrolled }
@@ -149,11 +171,22 @@ final class CareerService {
             gradeBook = MockData.gradeBook
             sessions = MockData.examSessions()
             libretto = MockData.libretto()
+            updates = MockData.examUpdates()
+            updatesAccount = "mock"
             window.markLoaded(source: source)
             return
         }
 
-        guard let matricola = session.student?.matricola else {
+        // Swapped before the account guard: signing out, or switching
+        // career, must not leave the previous student's feed on screen.
+        let account = session.student?.matricola
+        if updatesAccount != account {
+            updates = offline.load(ExamUpdateLog.self, as: ExamUpdateLog.name, account: account)?
+                .value.updates ?? []
+            updatesAccount = account
+        }
+
+        guard let matricola = account else {
             errorMessage = AuthError.notAuthenticated.localizedDescription
             return
         }
@@ -192,6 +225,8 @@ final class CareerService {
             }
         }
 
+        await recordUpdates(sessions: loadedSessions, libretto: loadedLibretto, account: matricola)
+
         if book == nil && loadedSessions == nil {
             errorMessage = examServicesRefused
                 ? nil
@@ -216,6 +251,31 @@ final class CareerService {
             for: session.useMockData ? nil : matricola)
         age = slot.age
         saveWidgetSnapshot(for: session.useMockData ? nil : matricola)
+    }
+
+    /// Compares this load with the last one and keeps what changed.
+    ///
+    /// Only called with real answers: a failed request arrives as nil and the
+    /// detector leaves that half of the snapshot alone, so losing signal can
+    /// never read as sittings withdrawn.
+    private func recordUpdates(sessions: [ExamSession]?, libretto: [LibrettoExam]?, account: String) async {
+        guard sessions != nil || libretto != nil else { return }
+        let now = Date.now
+        var history = offline.load(ExamUpdateLog.self, as: ExamUpdateLog.name, account: account)?.value
+            ?? ExamUpdateLog()
+        let detected = ExamChangeDetector.detect(
+            previous: history.state, sessions: sessions, libretto: libretto, now: now)
+        let decided = ExamUpdatePolicy.decide(
+            history.unseen(detected.updates), history: history.updates,
+            preferences: .stored, now: now)
+        let added = history.record(decided, state: detected.state, now: now)
+        offline.save(history, as: ExamUpdateLog.name, account: account)
+        updates = history.updates
+
+        guard !added.isEmpty else { return }
+        let kinds = added.map(\.kind.rawValue).joined(separator: ", ")
+        log.notice("Exam updates: \(kinds, privacy: .public)")
+        await onNewUpdates?(added)
     }
 
     /// Writes the narrow view of the career that the widgets read.

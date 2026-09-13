@@ -66,6 +66,9 @@ struct PoliVerseApp: App {
         _career = State(initialValue: career)
         let notifications = NotificationService()
         _notifications = State(initialValue: notifications)
+        // A change a load notices is news: delivered as it is found, from the
+        // foreground or from a background refresh alike.
+        career.onNewUpdates = { await notifications.deliver($0) }
 
         // Built last: it needs the session, and the services it sends
         // through are wired to it afterwards.
@@ -97,7 +100,7 @@ struct PoliVerseApp: App {
             // Reminders follow whatever the refresh found: a lecture moved
             // overnight must not announce itself at the old time.
             await notifications.reschedule(
-                events: agenda.events, exams: career.sessions)
+                events: agenda.events, exams: career.sessions, updates: career.updates)
         }
     }
 

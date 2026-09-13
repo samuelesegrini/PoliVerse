@@ -133,6 +133,9 @@ nonisolated struct ExamSession: Identifiable, Sendable, Equatable {
     let enrolledCount: Int?
     let kind: String?
     let status: ExamStatus
+    /// Whether the marked script can be looked at on Servizi Online —
+    /// `iscrizioneAttiva.hasCorrezioni`.
+    var hasCorrections = false
 
     var grade: ExamGrade? {
         if case .graded(let grade) = status { return grade }
@@ -149,6 +152,7 @@ nonisolated struct ExamDTO: Decodable, Sendable {
         let xverbEsito: String?
         let hasEsito: Bool?
         let rifiutabile: Bool?
+        var hasCorrezioni: Bool? = nil
     }
 
     let c_appello: Int
@@ -206,7 +210,8 @@ nonisolated struct ExamDTO: Decodable, Sendable {
             enrolmentCloses: d_chiusura.flatMap(PoliMiDate.parse),
             enrolledCount: numIscrittiAppello,
             kind: descTipoAppello,
-            status: status
+            status: status,
+            hasCorrections: subscription?.hasCorrezioni ?? false
         )
     }
 }

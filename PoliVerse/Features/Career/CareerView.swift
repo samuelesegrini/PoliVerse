@@ -101,6 +101,8 @@ struct CareerView: View {
     private func overview(_ career: CareerService) -> some View {
         let book = career.gradeBook
         return VStack(spacing: 16) {
+            recentUpdates(career)
+
             HStack(spacing: 12) {
                 StatTile(
                     value: book.mean > 0 ? String(format: "%.2f", book.mean) : "—",
@@ -161,6 +163,33 @@ struct CareerView: View {
                         .buttonStyle(.plain)
                 }
                 .padding(.top, 4)
+            }
+        }
+    }
+
+    /// The last fortnight's updates, at the top: this is what changed since
+    /// the student last looked, which is the reason most visits happen.
+    @ViewBuilder
+    private func recentUpdates(_ career: CareerService) -> some View {
+        let recent = career.recentUpdates
+        if !recent.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Novità")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    NavigationLink("Tutte") { ExamUpdatesView() }
+                        .font(.caption.weight(.semibold))
+                }
+                ForEach(recent.prefix(3)) { update in
+                    let sitting = career.sitting(for: update)
+                    Button { selectedExam = sitting } label: {
+                        ExamUpdateRow(update: update)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(sitting == nil)
+                }
             }
         }
     }

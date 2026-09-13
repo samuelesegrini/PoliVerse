@@ -9,6 +9,7 @@ struct CourseDetailView: View {
     @Environment(CourseService.self) private var courses
     @Environment(\.locale) private var locale
     @Environment(\.openURL) private var openURL
+    @State private var selectedExam: ExamSession?
 
     private var accent: Color { Theme.accent(for: course) }
 
@@ -55,11 +56,15 @@ struct CourseDetailView: View {
                 if !examSessions.isEmpty {
                     section("Appelli") {
                         ForEach(examSessions) { exam in
-                            row(
-                                title: exam.date?.formatted(.dateTime.day().month(.wide).year().locale(locale)) ?? "Data da definire",
-                                subtitle: exam.status.label,
-                                icon: "pencil.and.list.clipboard"
-                            )
+                            Button { selectedExam = exam } label: {
+                                row(
+                                    title: exam.date?.formatted(.dateTime.day().month(.wide).year().locale(locale)) ?? "Data da definire",
+                                    subtitle: exam.status.label,
+                                    icon: "pencil.and.list.clipboard",
+                                    chevron: true
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -105,6 +110,7 @@ struct CourseDetailView: View {
                 .accessibilityLabel(course.isFavourite ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti")
             }
         }
+        .sheet(item: $selectedExam) { ExamDetailView(exam: $0) }
         .task {
             await agenda.load(around: .now)
             await career.load()

@@ -111,6 +111,33 @@ nonisolated enum MockData {
         ]
     }
 
+    /// What the updates feed would hold a few days into a session, matching
+    /// ``examSessions(now:)``.
+    static func examUpdates(now: Date = .now) -> [ExamUpdate] {
+        let sessions = examSessions(now: now)
+        func update(_ kind: ExamUpdate.Kind, _ id: Int, hoursAgo: Double,
+                    old: String? = nil, new: String? = nil,
+                    delivery: ExamUpdate.Delivery = .inApp) -> ExamUpdate {
+            let session = sessions.first { $0.id == id }!
+            return ExamUpdate(
+                kind: kind, examID: id, courseCode: session.courseCode,
+                courseName: session.courseName,
+                detectedAt: now.addingTimeInterval(-hoursAgo * 3600), source: .exams,
+                evidence: "iae:/v1/insegn c_appello=\(id)", oldValue: old, newValue: new,
+                wasEnrolled: session.status == .enrolled || session.grade != nil,
+                examDate: session.date, delivery: delivery)
+        }
+        return [
+            update(.gradePublished, 909, hoursAgo: 3, new: "24", delivery: .urgent),
+            update(.refusalOpened, 909, hoursAgo: 3),
+            update(.roomChanged, 901, hoursAgo: 20, old: "B.2.1", new: "Aula Magna", delivery: .digest),
+            update(.enrolmentOpened, 902, hoursAgo: 50, delivery: .digest),
+            update(.enrolled, 901, hoursAgo: 190),
+            update(.roomPublished, 901, hoursAgo: 200, new: "B.2.1"),
+            update(.discovered, 903, hoursAgo: 220),
+        ]
+    }
+
     static func agendaEvents(around date: Date) -> [AgendaEvent] {
         let calendar = PoliMiDate.romeCalendar
         let weekStart = calendar.dateInterval(of: .weekOfYear, for: date)?.start

@@ -50,6 +50,12 @@ struct NotificationSettingsView: View {
                 }
 
                 Section {
+                    Toggle("Novità sugli esami", isOn: $notifications.preferences.examUpdates)
+                } footer: {
+                    Text("Esiti, aule, appelli spostati e finestre di rifiuto, appena l'app se ne accorge. Il resto arriva in un riepilogo alle 18:00, e di notte solo ciò che è urgente.")
+                }
+
+                Section {
                     Picker("Anticipo lezioni", selection: $notifications.preferences.leadMinutes) {
                         Text("5 minuti").tag(5)
                         Text("10 minuti").tag(10)
@@ -98,7 +104,8 @@ struct NotificationSettingsView: View {
     }
 
     private func reschedule() async {
-        await notifications.reschedule(events: agenda.events, exams: career.sessions)
+        await notifications.reschedule(
+            events: agenda.events, exams: career.sessions, updates: career.updates)
     }
 }
 

@@ -105,7 +105,8 @@ struct MainTabView: View {
         // invisible from inside the app.
         .task(id: reminderKey) {
             guard !session.useMockData else { return }
-            await notifications.reschedule(events: agenda.events, exams: career.sessions)
+            await notifications.reschedule(
+                events: agenda.events, exams: career.sessions, updates: career.updates)
         }
     }
 
@@ -113,7 +114,7 @@ struct MainTabView: View {
     /// appearance.
     /// Rebuilt when the timetable or the sittings change.
     private var reminderKey: String {
-        "\(agenda.events.count)-\(career.sessions.count)-\(agenda.loadedRange?.upperBound.timeIntervalSince1970 ?? 0)"
+        "\(agenda.events.count)-\(career.sessions.count)-\(career.updates.first?.id ?? "")-\(agenda.loadedRange?.upperBound.timeIntervalSince1970 ?? 0)"
     }
 
     private var indexKey: String {

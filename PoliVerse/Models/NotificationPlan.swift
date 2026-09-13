@@ -9,6 +9,9 @@ nonisolated struct NotificationPreferences: Sendable, Equatable, Codable {
     /// Minutes before a lecture. Anything nearer than this is skipped rather
     /// than fired late.
     var leadMinutes = 15
+    /// Pushes when something changes about an exam — a mark, a room, a moved
+    /// sitting. See ``ExamUpdatePolicy``.
+    var examUpdates = true
 
     static let key = "notificationPreferences"
 
@@ -26,10 +29,31 @@ nonisolated struct NotificationPreferences: Sendable, Equatable, Codable {
     }
 }
 
+extension NotificationPreferences {
+    private enum CodingKeys: String, CodingKey {
+        case lectures, deadlines, exams, enrolments, leadMinutes, examUpdates
+    }
+
+    /// Lenient, key by key: a build that adds a preference must not make the
+    /// stored ones unreadable, which would silently reset every choice.
+    nonisolated init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = NotificationPreferences()
+        lectures = try container.decodeIfPresent(Bool.self, forKey: .lectures) ?? defaults.lectures
+        deadlines = try container.decodeIfPresent(Bool.self, forKey: .deadlines) ?? defaults.deadlines
+        exams = try container.decodeIfPresent(Bool.self, forKey: .exams) ?? defaults.exams
+        enrolments = try container.decodeIfPresent(Bool.self, forKey: .enrolments) ?? defaults.enrolments
+        leadMinutes = try container.decodeIfPresent(Int.self, forKey: .leadMinutes) ?? defaults.leadMinutes
+        examUpdates = try container.decodeIfPresent(Bool.self, forKey: .examUpdates) ?? defaults.examUpdates
+    }
+}
+
 /// One reminder, decided but not yet scheduled.
 nonisolated struct PlannedNotification: Sendable, Equatable, Identifiable {
     nonisolated enum Kind: String, Sendable {
         case lecture, deadline, exam, enrolment
+        /// Something changed about an exam — see ``ExamUpdate``.
+        case update
     }
 
     /// Stable across rebuilds, so rescheduling replaces a reminder rather than
@@ -43,6 +67,12 @@ nonisolated struct PlannedNotification: Sendable, Equatable, Identifiable {
     /// earns that; a deadline tomorrow does not, and treating everything as
     /// urgent is how an app gets its notifications turned off entirely.
     let isTimeSensitive: Bool
+    /// Groups related notifications in Notification Centre. Defaults to the
+    /// kind.
+    var thread: String? = nil
+    /// Which notification leads a summary on the lock screen, 0…1. Nil keeps
+    /// the system default.
+    var relevance: Double? = nil
 }
 
 /// Decides what to schedule.
@@ -61,6 +91,7 @@ nonisolated enum NotificationPlan {
     static func build(
         events: [AgendaEvent],
         exams: [ExamSession],
+        updates: [ExamUpdate] = [],
         preferences: NotificationPreferences,
         now: Date = .now
     ) -> [PlannedNotification] {
@@ -133,6 +164,12 @@ nonisolated enum NotificationPlan {
                     fireDate: fire,
                     isTimeSensitive: false))
             }
+        }
+
+        // Evening summaries of exam updates that did not deserve a push of
+        // their own. Rebuilt from the log each time, like everything else here.
+        if preferences.examUpdates {
+            planned += ExamUpdatePolicy.digests(from: updates, now: now)
         }
 
         return prune(planned)

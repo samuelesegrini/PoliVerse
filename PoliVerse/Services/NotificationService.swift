@@ -52,38 +52,18 @@ final class NotificationService {
     /// Replace rather than add: the timetable changes, lectures move, exams
     /// are withdrawn. Adding would leave a reminder for a lecture that no
     /// longer exists, and there is no way to notice that from inside the app.
-    func reschedule(events: [AgendaEvent], exams: [ExamSession]) async {
+    func reschedule(events: [AgendaEvent], exams: [ExamSession], updates: [ExamUpdate] = []) async {
         await refreshAuthorization()
         guard authorization == .authorized || authorization == .provisional else { return }
 
         let plan = NotificationPlan.build(
-            events: events, exams: exams, preferences: preferences)
+            events: events, exams: exams, updates: updates, preferences: preferences)
 
         centre.removeAllPendingNotificationRequests()
         for item in plan {
-            let content = UNMutableNotificationContent()
-            content.title = item.title
-            content.body = item.body
-            content.sound = .default
-            content.categoryIdentifier = Self.categoryIdentifier
-            content.threadIdentifier = item.kind.rawValue
-            content.userInfo = ["kind": item.kind.rawValue]
-            // Only what is genuinely imminent pierces Focus. Marking
-            // everything urgent is how an app gets silenced altogether.
-            content.interruptionLevel = item.isTimeSensitive ? .timeSensitive : .active
-
             let components = PoliMiDate.romeCalendar.dateComponents(
                 [.year, .month, .day, .hour, .minute], from: item.fireDate)
-            let request = UNNotificationRequest(
-                identifier: item.id,
-                content: content,
-                trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false))
-
-            do {
-                try await centre.add(request)
-            } catch {
-                log.error("Could not schedule \(item.id, privacy: .public): \(error.localizedDescription)")
-            }
+            await add(item, trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false))
         }
 
         scheduled = plan
@@ -92,6 +72,42 @@ final class NotificationService {
             .sorted()
             .joined(separator: ", ")
         log.notice("Scheduled \(plan.count, privacy: .public) reminders (\(byKind, privacy: .public))")
+    }
+
+    /// Delivers exam updates the policy chose to push, right away.
+    ///
+    /// Not part of ``reschedule``: these are not planned for a moment, they
+    /// are news, and a nil trigger delivers them at once — so rebuilding the
+    /// pending plan afterwards cannot cancel them.
+    func deliver(_ decided: [ExamUpdate]) async {
+        await refreshAuthorization()
+        guard authorization == .authorized || authorization == .provisional else { return }
+        let immediate = ExamUpdatePolicy.notifications(for: decided, now: .now)
+        for item in immediate { await add(item, trigger: nil) }
+        if !immediate.isEmpty {
+            log.notice("Delivered \(immediate.count, privacy: .public) exam update notifications")
+        }
+    }
+
+    private func add(_ item: PlannedNotification, trigger: UNNotificationTrigger?) async {
+        let content = UNMutableNotificationContent()
+        content.title = item.title
+        content.body = item.body
+        content.sound = .default
+        content.categoryIdentifier = Self.categoryIdentifier
+        content.threadIdentifier = item.thread ?? item.kind.rawValue
+        content.userInfo = ["kind": item.kind.rawValue]
+        // Only what is genuinely imminent pierces Focus. Marking
+        // everything urgent is how an app gets silenced altogether.
+        content.interruptionLevel = item.isTimeSensitive ? .timeSensitive : .active
+        if let relevance = item.relevance { content.relevanceScore = relevance }
+
+        let request = UNNotificationRequest(identifier: item.id, content: content, trigger: trigger)
+        do {
+            try await centre.add(request)
+        } catch {
+            log.error("Could not schedule \(item.id, privacy: .public): \(error.localizedDescription)")
+        }
     }
 
     /// Drops everything — on sign-out, or when the user turns reminders off.
@@ -105,7 +121,7 @@ final class NotificationService {
     static func destination(for kind: String) -> AppDestination {
         switch PlannedNotification.Kind(rawValue: kind) {
         case .lecture, .deadline: .calendar
-        case .exam, .enrolment: .career
+        case .exam, .enrolment, .update: .career
         case nil: .home
         }
     }
