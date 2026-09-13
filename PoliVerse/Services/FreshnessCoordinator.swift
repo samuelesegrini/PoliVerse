@@ -40,7 +40,8 @@ final class FreshnessCoordinator {
         agenda: AgendaService,
         career: CareerService,
         notices: NoticeService,
-        news: NewsService
+        news: NewsService,
+        weBeep: WeBeepService
     ) -> FreshnessCoordinator {
         let coordinator = FreshnessCoordinator()
         coordinator.register("courses") { await courses.load(force: $0) }
@@ -51,6 +52,9 @@ final class FreshnessCoordinator {
         // the content that is known to work.
         coordinator.register("notices") { await notices.load(force: $0) }
         coordinator.register("news") { await news.load(force: $0) }
+        // After everything on screen: it reads several course pages, and
+        // what it finds lands in the feed rather than on any open screen.
+        coordinator.register("webeep-updates") { await weBeep.checkForUpdates(force: $0) }
         return coordinator
     }
 

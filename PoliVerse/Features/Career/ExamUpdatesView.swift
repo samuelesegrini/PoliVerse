@@ -6,19 +6,20 @@ import SwiftUI
 /// moved. It says only what official data said, and where it said it.
 struct ExamUpdatesView: View {
     @Environment(CareerService.self) private var career
+    @Environment(UpdateFeed.self) private var feed
     @Environment(\.locale) private var locale
     @State private var selectedExam: ExamSession?
 
     private var days: [(Date, [ExamUpdate])] {
         let calendar = PoliMiDate.romeCalendar
-        return Dictionary(grouping: career.updates) { calendar.startOfDay(for: $0.detectedAt) }
+        return Dictionary(grouping: feed.updates) { calendar.startOfDay(for: $0.detectedAt) }
             .sorted { $0.key > $1.key }
             .map { ($0.key, $0.value.sorted { $0.detectedAt > $1.detectedAt }) }
     }
 
     var body: some View {
         ScrollView {
-            if career.updates.isEmpty {
+            if feed.updates.isEmpty {
                 ContentUnavailableView(
                     "Nessuna novità",
                     systemImage: "bell.badge",
@@ -105,10 +106,11 @@ struct ExamUpdateRow: View {
 struct ExamTimelineSection: View {
     let exam: ExamSession
     @Environment(CareerService.self) private var career
+    @Environment(UpdateFeed.self) private var feed
     @Environment(\.locale) private var locale
 
     private var entries: [ExamTimelineEntry] {
-        ExamTimeline.entries(for: exam, sittings: career.sessions, updates: career.updates, now: .now)
+        ExamTimeline.entries(for: exam, sittings: career.sessions, updates: feed.updates, now: .now)
     }
 
     var body: some View {
@@ -181,6 +183,9 @@ extension ExamUpdate.Kind {
         case .withdrawn, .unenrolled: .red
         case .roomPublished, .enrolled, .correctionsAvailable: Theme.brand
         case .discovered, .enrolmentOpened: .indigo
+        case .resultsPosted: .green
+        case .solutionsPosted, .examNoticePosted: .teal
+        case .materialAdded: .secondary
         }
     }
 }

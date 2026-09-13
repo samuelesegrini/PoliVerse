@@ -73,4 +73,16 @@ struct ExamTimelineTests {
         #expect(first.allSatisfy { $0.update == nil })
         #expect(second.compactMap(\.update?.id) == [recorded.id])
     }
+
+    @Test("WeBeep results join the sitting before them; a notice joins the one ahead")
+    func weBeep() {
+        let results = update(.resultsPosted, exam: nil, at: 12)
+        let notice = update(.examNoticePosted, exam: nil, at: 5)
+        let late = update(.examNoticePosted, exam: nil, at: 11)       // after this sitting
+        let farAhead = update(.examNoticePosted, exam: nil, at: -30)  // weeks before it
+        let yearLater = update(.resultsPosted, exam: nil, at: 400)    // not this sitting's
+        let entries = ExamTimeline.entries(
+            for: exam, sittings: [exam], updates: [results, notice, late, farAhead, yearLater], now: day(500))
+        #expect(Set(entries.compactMap(\.update?.id)) == [results.id, notice.id])
+    }
 }

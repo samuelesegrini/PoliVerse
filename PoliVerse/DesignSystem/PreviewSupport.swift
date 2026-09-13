@@ -18,10 +18,11 @@ enum PreviewEnvironment {
         return session
     }()
 
-    static let weBeep = WeBeepService(session: session)
+    static let updates = UpdateFeed()
+    static let weBeep = WeBeepService(session: session, feed: updates)
     static let courses = CourseService(session: session, weBeep: weBeep)
     static let agenda = AgendaService(session: session)
-    static let career = CareerService(session: session)
+    static let career = CareerService(session: session, feed: updates)
     static let notices = NoticeService(session: session)
     static let news = NewsService(session: session)
     static let careers = CareersService(session: session)
@@ -48,7 +49,7 @@ enum PreviewEnvironment {
     /// mock data instead of finding an empty list.
     static let freshness = FreshnessCoordinator.standard(
         courses: courses, agenda: agenda, career: career,
-        notices: notices, news: news)
+        notices: notices, news: news, weBeep: weBeep)
 }
 
 extension View {
@@ -58,6 +59,7 @@ extension View {
             .environment(PreviewEnvironment.courses)
             .environment(PreviewEnvironment.agenda)
             .environment(PreviewEnvironment.career)
+            .environment(PreviewEnvironment.updates)
             .environment(PreviewEnvironment.weBeep)
             .environment(PreviewEnvironment.notices)
             .environment(PreviewEnvironment.news)

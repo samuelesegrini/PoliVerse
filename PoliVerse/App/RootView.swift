@@ -48,6 +48,7 @@ struct MainTabView: View {
     @Environment(CourseService.self) private var courses
     @Environment(RoomsService.self) private var rooms
     @Environment(CareerService.self) private var career
+    @Environment(UpdateFeed.self) private var feed
     @Environment(Session.self) private var session
 
     @State private var selection = "home"
@@ -106,7 +107,7 @@ struct MainTabView: View {
         .task(id: reminderKey) {
             guard !session.useMockData else { return }
             await notifications.reschedule(
-                events: agenda.events, exams: career.sessions, updates: career.updates)
+                events: agenda.events, exams: career.sessions, updates: feed.updates)
         }
     }
 
@@ -114,7 +115,7 @@ struct MainTabView: View {
     /// appearance.
     /// Rebuilt when the timetable or the sittings change.
     private var reminderKey: String {
-        "\(agenda.events.count)-\(career.sessions.count)-\(career.updates.first?.id ?? "")-\(agenda.loadedRange?.upperBound.timeIntervalSince1970 ?? 0)"
+        "\(agenda.events.count)-\(career.sessions.count)-\(feed.updates.first?.id ?? "")-\(agenda.loadedRange?.upperBound.timeIntervalSince1970 ?? 0)"
     }
 
     private var indexKey: String {

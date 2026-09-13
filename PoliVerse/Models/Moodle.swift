@@ -59,6 +59,9 @@ nonisolated struct MoodleModule: Decodable, Sendable {
 nonisolated struct MoodleContent: Decodable, Sendable {
     let type: String?
     let filename: String?
+    /// The folder inside the module, `/` at its root. Two files of a folder
+    /// module can share a name in different subfolders.
+    var filepath: String? = nil
     let filesize: Int?
     let fileurl: String?
     let timemodified: Int?

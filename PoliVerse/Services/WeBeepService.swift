@@ -30,6 +30,13 @@ final class WeBeepService {
     private(set) var isLoadingMaterials = false
 
     private let session: Session
+    private let feed: UpdateFeed
+    /// An hour: a course page changes when a teacher uploads, and every check
+    /// is one request per course.
+    private var updatesWindow = LoadWindow(interval: 3600)
+    /// Course pages checked per pass. A background refresh has about thirty
+    /// seconds for everything, and the career comes first.
+    static let watchLimit = 6
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "webeep")
     private let keychainAccount = "webeep"
 
@@ -38,8 +45,9 @@ final class WeBeepService {
     /// Course id per PoliMi course code, learned by matching names once.
     private var courseIDByCode: [String: Int] = [:]
 
-    init(session: Session) {
+    init(session: Session, feed: UpdateFeed) {
         self.session = session
+        self.feed = feed
         if let token = storedToken() {
             api = WeBeepAPI(token: token)
         }
@@ -157,6 +165,15 @@ final class WeBeepService {
             }
 
             let raw = try await api.contents(courseID: moodleID)
+            // The listing is already here; noticing what is new costs nothing.
+            // Only for a page the background pass would read anyway — this
+            // year's, linked by id — so opening an old course never announces
+            // its old results as news.
+            if let account = session.student?.matricola,
+               Self.isWatchable(course, now: .now), let watched = MaterialCourse(course) {
+                feed.show(account: account)
+                await feed.recordMaterials(course: watched, sections: raw, account: account)
+            }
             sections = raw.compactMap { section in
                 let files = (section.modules ?? []).flatMap { module in
                     (module.contents ?? []).compactMap { content -> WeBeepFile? in
@@ -194,6 +211,67 @@ final class WeBeepService {
         } catch {
             state = .failed(userFacingMessage(error) ?? "")
         }
+    }
+
+    /// Reads this academic year's course pages for new items — results,
+    /// solutions, notices — without the student opening each one.
+    ///
+    /// Favourites first, capped at ``watchLimit``: the cap is what lets it
+    /// fit in a background refresh, and a favourite is the student saying
+    /// which pages they care about. Every failure is quiet; the next pass
+    /// tries again.
+    func checkForUpdates(force: Bool = false) async {
+        guard !session.useMockData, api != nil, let account = session.student?.matricola,
+              updatesWindow.shouldLoad(force: force, source: account) else { return }
+
+        if courses.isEmpty { await loadCourses() }
+        guard let api else { return }
+        feed.show(account: account)
+
+        let watched = Self.watched(courses.map(Course.init(moodle:)), now: .now)
+        var checked = 0
+        for course in watched {
+            // A sign-out or a career switch mid-pass ends it: the rest would
+            // be weighed against somebody else's sittings.
+            guard !Task.isCancelled, session.student?.matricola == account,
+                  let target = MaterialCourse(course) else { break }
+            do {
+                let raw = try await api.contents(courseID: target.moodleID)
+                await feed.recordMaterials(course: target, sections: raw, account: account)
+                checked += 1
+            } catch let error as WeBeepAPI.Failure where error.isAuthFailure {
+                handle(error)
+                return
+            } catch {
+                log.error("Update check for course \(target.moodleID, privacy: .public) failed: \(error.localizedDescription)")
+            }
+        }
+        log.notice("Checked \(checked, privacy: .public) of \(watched.count, privacy: .public) course pages for updates")
+        // A pass that read nothing is retried next time, like any failed load.
+        if checked > 0 { updatesWindow.markLoaded(source: account) }
+    }
+
+    /// The course pages worth checking: this academic year's, not hidden,
+    /// favourites first.
+    static func watched(_ courses: [Course], now: Date) -> [Course] {
+        Array(courses
+            .filter { isWatchable($0, now: now) }
+            .sorted {
+                if $0.isFavourite != $1.isFavourite { return $0.isFavourite }
+                return ($0.moodleID ?? 0) < ($1.moodleID ?? 0)
+            }
+            .prefix(watchLimit))
+    }
+
+    /// This academic year's, visible, and linked to WeBeep by id.
+    static func isWatchable(_ course: Course, now: Date) -> Bool {
+        !course.isHidden && course.moodleID != nil
+            && startYear(of: course.academicYear) == startYear(of: Course.academicYearLabel(for: now))
+    }
+
+    /// `2025/26`, `2025-26` and `2025-2026` all start in 2025.
+    private static func startYear(of label: String) -> Int? {
+        Int(label.prefix(4))
     }
 
     private func slotName(for course: Course) -> String { "materials-\(course.id)" }

@@ -141,6 +141,16 @@ nonisolated struct ExamSession: Identifiable, Sendable, Equatable {
         if case .graded(let grade) = status { return grade }
         return nil
     }
+
+    /// Whether this sitting is of the given course.
+    ///
+    /// By code first; by name where the codes differ — WeBeep's title code,
+    /// the libretto's `c_insegn` and `/v1/insegn`'s `c_insegn_piano` are not
+    /// guaranteed to agree, while the names are normalised the same way.
+    func isOf(courseCode: String, courseName: String) -> Bool {
+        courseCode == self.courseCode
+            || Course.normalise(courseName).caseInsensitiveCompare(self.courseName) == .orderedSame
+    }
 }
 
 nonisolated struct ExamDTO: Decodable, Sendable {

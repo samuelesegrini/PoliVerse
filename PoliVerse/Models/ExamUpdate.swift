@@ -16,6 +16,8 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         case discovered, enrolmentOpened, enrolled, unenrolled
         case roomPublished, roomChanged, dateChanged, withdrawn
         case gradePublished, refusalOpened, correctionsAvailable, gradeRecorded
+        /// WeBeep, tagged from the file's name — see ``DocumentClassifier``.
+        case resultsPosted, solutionsPosted, examNoticePosted, materialAdded
 
         var symbol: String {
             switch self {
@@ -30,6 +32,10 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
             case .refusalOpened: "arrow.uturn.backward.circle"
             case .correctionsAvailable: "doc.text.magnifyingglass"
             case .gradeRecorded: "checkmark.seal"
+            case .resultsPosted: "tablecells"
+            case .solutionsPosted: "doc.text.magnifyingglass"
+            case .examNoticePosted: "megaphone"
+            case .materialAdded: "folder.badge.plus"
             }
         }
     }
@@ -39,11 +45,14 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         case exams
         /// `elencoinsegnamenti` — the libretto.
         case libretto
+        /// `core_course_get_contents` — a WeBeep course page.
+        case webeep
 
         var label: String {
             switch self {
             case .exams: String(localized: "Servizi Online · iscrizione esami")
             case .libretto: String(localized: "Servizi Online · libretto")
+            case .webeep: String(localized: "WeBeep · pagina del corso")
             }
         }
     }
@@ -55,6 +64,8 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         /// Inferred from an absence or a join by code — right almost always,
         /// but not a field saying so.
         case high
+        /// A name that fits more than one reading. Never pushed on its own.
+        case probable
     }
 
     /// What the student is told, decided once when the update is recorded.
@@ -98,8 +109,11 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
     init(kind: Kind, examID: Int?, courseCode: String, courseName: String,
          detectedAt: Date, source: Source, confidence: Confidence = .exact,
          evidence: String, oldValue: String? = nil, newValue: String? = nil,
+         identity: String? = nil,
          wasEnrolled: Bool, examDate: Date?, delivery: Delivery = .inApp) {
-        self.id = [kind.rawValue, examID.map(String.init) ?? courseCode, newValue ?? "-"]
+        // `identity` stands in for the value when the value alone would call
+        // two different changes the same — a file re-uploaded under its name.
+        self.id = [kind.rawValue, examID.map(String.init) ?? courseCode, identity ?? newValue ?? "-"]
             .joined(separator: "|")
         self.kind = kind
         self.examID = examID
@@ -130,6 +144,12 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         case .refusalOpened: String(localized: "Puoi rifiutare il voto")
         case .correctionsAvailable: String(localized: "Correzione disponibile")
         case .gradeRecorded: String(localized: "Voto registrato nel libretto")
+        // Worded as what was seen, not as what it probably means: a file
+        // named "Esiti" is not the student's grade.
+        case .resultsPosted: String(localized: "Pubblicato un file di esiti")
+        case .solutionsPosted: String(localized: "Pubblicate le soluzioni")
+        case .examNoticePosted: String(localized: "Nuovo avviso d'esame")
+        case .materialAdded: String(localized: "Nuovo materiale")
         }
     }
 
@@ -140,11 +160,18 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         case .roomChanged:
             if let oldValue, let newValue { String(localized: "Da \(oldValue) a \(newValue)") } else { nil }
         case .gradePublished, .gradeRecorded: newValue.map { String(localized: "Voto: \($0)") }
+        case .resultsPosted, .solutionsPosted, .examNoticePosted:
+            // A file put up again over an old one, or under a new name.
+            isReplacement ? newValue.map { String(localized: "\($0) (nuova versione)") } : newValue
+        case .materialAdded: newValue.flatMap(Int.init).map { String(localized: "\($0) nuovi file") }
         default: nil
         }
     }
 
     var sourceLabel: String { source.label }
+
+    /// A WeBeep file that replaced an earlier one of the same kind.
+    var isReplacement: Bool { source == .webeep && oldValue != nil }
 
     /// Said out loud when the fact is inferred rather than read, so it never
     /// looks as certain as a field.
@@ -152,6 +179,9 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         switch (confidence, kind) {
         case (.exact, _): nil
         case (.high, .withdrawn): String(localized: "Dedotto: assente in due letture consecutive")
+        case (.high, .resultsPosted), (.high, .solutionsPosted), (.high, .examNoticePosted),
+             (.high, .materialAdded): String(localized: "Dedotto dal nome del file")
+        case (.probable, _): String(localized: "Dal nome del file, ambiguo")
         case (.high, _): String(localized: "Dedotto: collegato per insegnamento")
         }
     }

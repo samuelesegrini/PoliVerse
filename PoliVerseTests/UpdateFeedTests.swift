@@ -1,0 +1,114 @@
+import Foundation
+import Testing
+@testable import PoliVerse
+
+/// The one log both the career and WeBeep write to.
+@MainActor
+@Suite("Update feed")
+struct UpdateFeedTests {
+    private let now = Date.now
+
+    private func store() -> OfflineStore {
+        OfflineStore(directory: FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString))
+    }
+
+    private func sitting(room: String? = nil, days: Double = 10, code: String = "097785") -> ExamSession {
+        ExamSession(
+            id: 1, courseName: "Basi di Dati", courseCode: code, teacher: nil,
+            date: now.addingTimeInterval(days * 86400), room: room,
+            enrolmentOpens: nil, enrolmentCloses: nil, enrolledCount: nil,
+            kind: nil, status: .enrolled)
+    }
+
+    private let course = MaterialCourse(moodleID: 55, code: "097785", name: "Basi di Dati")
+
+    private func listing(_ names: [String]) -> [MoodleSection] {
+        [MoodleSection(id: 1, name: "Esami", modules: names.enumerated().map { index, name in
+            MoodleModule(id: index + 1, name: name, modname: "resource", contents: [
+                MoodleContent(type: "file", filename: name, filesize: 10, fileurl: nil,
+                              timemodified: 1, mimetype: "application/pdf"),
+            ])
+        })]
+    }
+
+    @Test("A change is recorded, persisted and handed on once")
+    func recordsExams() async {
+        let offline = store()
+        let feed = UpdateFeed(offline: offline)
+        feed.show(account: "10123456")
+        var delivered: [ExamUpdate.Kind] = []
+        feed.onNewUpdates = { delivered += $0.map(\.kind) }
+
+        await feed.recordExams(sessions: [sitting()], libretto: nil, account: "10123456")
+        await feed.recordExams(sessions: [sitting(room: "B.3.2")], libretto: nil, account: "10123456")
+        await feed.recordExams(sessions: [sitting(room: "B.3.2")], libretto: nil, account: "10123456")
+
+        #expect(delivered == [.roomPublished])
+        #expect(feed.updates.map(\.kind) == [.roomPublished])
+        let reopened = UpdateFeed(offline: offline)
+        reopened.show(account: "10123456")
+        #expect(reopened.updates.map(\.kind) == [.roomPublished])
+    }
+
+    /// Written separately, each source would overwrite the other's snapshot
+    /// and every load would be a new baseline.
+    @Test("Exams and WeBeep share the log without erasing each other's snapshot")
+    func sharedLog() async {
+        let feed = UpdateFeed(offline: store())
+        feed.show(account: "1")
+        feed.sittings = { [sitting(days: -3)] }
+        await feed.recordExams(sessions: [sitting(days: -3)], libretto: nil, account: "1")
+        await feed.recordMaterials(course: course, sections: listing(["Lezione 01.pdf"]), account: "1")
+        await feed.recordExams(sessions: [sitting(room: "B.3.2", days: -3)], libretto: nil, account: "1")
+        await feed.recordMaterials(course: course, sections: listing(["Lezione 01.pdf", "Esiti.pdf"]), account: "1")
+
+        #expect(feed.updates.map(\.kind) == [.resultsPosted, .roomPublished])
+        // Just after the student's own sitting: worth a push.
+        #expect(feed.updates.first?.delivery == .push)
+    }
+
+    @Test("Switching account shows that account's feed, and signing out shows none")
+    func accounts() async {
+        let offline = store()
+        let feed = UpdateFeed(offline: offline)
+        feed.show(account: "A")
+        await feed.recordExams(sessions: [sitting()], libretto: nil, account: "A")
+        await feed.recordExams(sessions: [sitting(room: "B.3.2")], libretto: nil, account: "A")
+        #expect(!feed.updates.isEmpty)
+        feed.show(account: "B")
+        #expect(feed.updates.isEmpty)
+        feed.show(account: "A")
+        #expect(!feed.updates.isEmpty)
+        feed.show(account: nil)
+        #expect(feed.updates.isEmpty)
+    }
+
+    /// A pass that outlived a sign-out must not put the old account back.
+    @Test("A record for an account not on screen is kept but not shown or delivered")
+    func notShown() async {
+        let feed = UpdateFeed(offline: store())
+        var delivered = 0
+        feed.onNewUpdates = { delivered += $0.count }
+        feed.show(account: nil)
+        await feed.recordExams(sessions: [sitting()], libretto: nil, account: "A")
+        await feed.recordExams(sessions: [sitting(room: "B.3.2")], libretto: nil, account: "A")
+        #expect(feed.updates.isEmpty)
+        #expect(delivered == 0)
+        feed.show(account: "A")
+        #expect(feed.updates.map(\.kind) == [.roomPublished])
+    }
+
+    @Test("A course page's news is weighed against the student's nearest sitting")
+    func context() {
+        let upcoming = sitting(days: 5)
+        let past = sitting(days: -3)
+        #expect(UpdateFeed.context(for: course, among: [upcoming, past], now: now)
+                    == MaterialContext(lastSat: past.date, next: upcoming.date))
+        #expect(UpdateFeed.context(for: course, among: [sitting(days: 40)], now: now) == .none)
+        #expect(UpdateFeed.context(for: course, among: [sitting(days: 5, code: "999")], now: now)
+                    .next != nil)   // matched by name
+        let other = MaterialCourse(moodleID: 9, code: "111111", name: "Chimica")
+        #expect(UpdateFeed.context(for: other, among: [upcoming], now: now) == .none)
+    }
+}

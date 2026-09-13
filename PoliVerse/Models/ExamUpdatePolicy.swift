@@ -25,6 +25,10 @@ nonisolated enum ExamUpdatePolicy {
     static let roomHorizon: TimeInterval = 7 * 86400
     /// …and urgent within this.
     static let imminent: TimeInterval = 2 * 86400
+    /// A results file concerns a sitting held at most this long ago.
+    static let resultsWindow: TimeInterval = 60 * 86400
+    /// An exam notice concerns a sitting at most this far ahead.
+    static let noticeHorizon: TimeInterval = 14 * 86400
 
     static func decide(
         _ updates: [ExamUpdate],
@@ -86,8 +90,10 @@ nonisolated enum ExamUpdatePolicy {
 
         case .roomPublished, .roomChanged:
             // §11.2: only for a sitting the student is enrolled in, within
-            // the week; imminent enough to pierce Focus inside two days.
-            guard update.wasEnrolled, untilExam <= roomHorizon else { return .inApp }
+            // the week; imminent enough to pierce Focus inside two days. A
+            // sitting already held can still have its room edited upstream,
+            // and that is not worth anyone's attention.
+            guard update.wasEnrolled, (0...roomHorizon).contains(untilExam) else { return .inApp }
             return untilExam <= imminent ? .urgent : .priority
 
         case .dateChanged, .withdrawn:
@@ -113,6 +119,23 @@ nonisolated enum ExamUpdatePolicy {
 
         case .discovered, .enrolled, .unenrolled:
             // The student did it, or will see it with the enrolment opening.
+            return .inApp
+
+        case .resultsPosted:
+            // §11.2: worth a push only right after a sitting the student was
+            // enrolled in, and only for a name that says results plainly —
+            // otherwise it is somebody else's results, a correction, or a
+            // guess. §21: everything else from WeBeep is Bassa.
+            let justSat = update.wasEnrolled && (-resultsWindow...0).contains(untilExam)
+            let certain = update.confidence == .high && !update.isReplacement
+            return justSat && certain ? .push : .digest
+
+        case .solutionsPosted, .examNoticePosted:
+            // Bassa: the evening summary, for a course with a sitting in
+            // play; otherwise just the feed.
+            return update.wasEnrolled ? .digest : .inApp
+
+        case .materialAdded:
             return .inApp
         }
     }
@@ -227,6 +250,8 @@ nonisolated struct ExamUpdateLog: Sendable, Equatable, Codable {
     static let dedupWindow: TimeInterval = 3600
 
     var state: ExamWatchState?
+    /// Each WeBeep course's last listing, by Moodle course id.
+    var materials: [String: MaterialSnapshot]?
     /// Newest first.
     var updates: [ExamUpdate] = []
 
@@ -251,6 +276,9 @@ nonisolated struct ExamUpdateLog: Sendable, Equatable, Codable {
         let added = unseen(candidates)
         self.state = state
         let cutoff = now.addingTimeInterval(-Self.retention)
+        // A course page not read in the retention period is a course no
+        // longer followed; its listing goes too.
+        materials = materials?.filter { $0.value.takenAt >= cutoff }
         updates = Array(
             (added.reversed() + updates)
                 .filter { $0.detectedAt >= cutoff }

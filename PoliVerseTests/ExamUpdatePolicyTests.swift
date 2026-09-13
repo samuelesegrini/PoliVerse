@@ -52,6 +52,8 @@ struct ExamUpdatePolicyTests {
         #expect(decide([update(.roomChanged, inDays: 5)]) == [.priority])
         #expect(decide([update(.roomPublished, inDays: 20)]) == [.inApp])
         #expect(decide([update(.roomPublished, enrolled: false, inDays: 1)]) == [.inApp])
+        // Edited upstream after the sitting was held.
+        #expect(decide([update(.roomChanged, inDays: -1)]) == [.inApp])
     }
 
     @Test("A moved or withdrawn sitting is urgent only for those enrolled")
@@ -231,5 +233,45 @@ struct ExamUpdatePolicyTests {
         #expect(decoded.lectures == false)
         #expect(decoded.leadMinutes == 30)
         #expect(decoded.examUpdates)
+    }
+}
+
+/// WeBeep updates are read off file names: worth a push only when the
+/// student's own sitting makes them likely to matter.
+@Suite("Exam update policy · WeBeep")
+struct MaterialUpdatePolicyTests {
+    private let now = PoliMiDate.time(10, on: Date(timeIntervalSince1970: 1_772_000_000))
+
+    private func decide(_ kind: ExamUpdate.Kind, enrolled: Bool = true, examInDays days: Double?,
+                        confidence: ExamUpdate.Confidence = .high, replaced: Bool = false) -> ExamUpdate.Delivery? {
+        let update = ExamUpdate(
+            kind: kind, examID: nil, courseCode: "097785", courseName: "Basi di Dati",
+            detectedAt: now, source: .webeep, confidence: confidence, evidence: "test",
+            oldValue: replaced ? "10@1" : nil, newValue: "Esiti.pdf", wasEnrolled: enrolled,
+            examDate: days.map { now.addingTimeInterval($0 * 86400) })
+        return ExamUpdatePolicy.decide([update], history: [], preferences: NotificationPreferences(), now: now)
+            .first?.delivery
+    }
+
+    @Test("A results file pushes only after the student's own sitting")
+    func results() {
+        #expect(decide(.resultsPosted, examInDays: -4) == .push)
+        #expect(decide(.resultsPosted, enrolled: false, examInDays: -4) == .digest)
+        #expect(decide(.resultsPosted, examInDays: 10) == .digest)
+        #expect(decide(.resultsPosted, examInDays: -90) == .digest)
+        #expect(decide(.resultsPosted, examInDays: nil) == .digest)
+        // An ambiguous name, or a correction of a file already announced.
+        #expect(decide(.resultsPosted, examInDays: -4, confidence: .probable) == .digest)
+        #expect(decide(.resultsPosted, examInDays: -4, replaced: true) == .digest)
+    }
+
+    /// §21: from WeBeep, only results may push.
+    @Test("Notices and solutions wait for the evening, and only with a sitting in play")
+    func quiet() {
+        #expect(decide(.examNoticePosted, examInDays: 5) == .digest)
+        #expect(decide(.examNoticePosted, enrolled: false, examInDays: nil) == .inApp)
+        #expect(decide(.solutionsPosted, examInDays: -2) == .digest)
+        #expect(decide(.solutionsPosted, enrolled: false, examInDays: nil) == .inApp)
+        #expect(decide(.materialAdded, enrolled: false, examInDays: nil) == .inApp)
     }
 }

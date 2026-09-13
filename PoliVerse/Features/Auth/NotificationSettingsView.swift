@@ -6,6 +6,7 @@ struct NotificationSettingsView: View {
     @Environment(NotificationService.self) private var notifications
     @Environment(AgendaService.self) private var agenda
     @Environment(CareerService.self) private var career
+    @Environment(UpdateFeed.self) private var feed
     @Environment(\.openURL) private var openURL
     @Environment(\.locale) private var locale
 
@@ -105,7 +106,7 @@ struct NotificationSettingsView: View {
 
     private func reschedule() async {
         await notifications.reschedule(
-            events: agenda.events, exams: career.sessions, updates: career.updates)
+            events: agenda.events, exams: career.sessions, updates: feed.updates)
     }
 }
 

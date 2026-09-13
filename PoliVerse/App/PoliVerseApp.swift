@@ -7,6 +7,7 @@ struct PoliVerseApp: App {
     @State private var courses: CourseService
     @State private var agenda: AgendaService
     @State private var career: CareerService
+    @State private var updates: UpdateFeed
     @State private var weBeep: WeBeepService
     @State private var cieID = CieIDRouter()
     @State private var downloads = FileDownloadService()
@@ -51,7 +52,10 @@ struct PoliVerseApp: App {
         let freeRooms = FreeRoomsService(catalogue: rooms)
         _freeRooms = State(initialValue: freeRooms)
         _campusMap = State(initialValue: CampusMapService(catalogue: rooms, freeRooms: freeRooms))
-        let weBeep = WeBeepService(session: session)
+        // Before the two services that write to it.
+        let updates = UpdateFeed()
+        _updates = State(initialValue: updates)
+        let weBeep = WeBeepService(session: session, feed: updates)
         _weBeep = State(initialValue: weBeep)
         let courses = CourseService(session: session, weBeep: weBeep)
         _courses = State(initialValue: courses)
@@ -62,13 +66,15 @@ struct PoliVerseApp: App {
         // are not readable until the struct is fully initialised.
         let agenda = AgendaService(session: session)
         _agenda = State(initialValue: agenda)
-        let career = CareerService(session: session)
+        let career = CareerService(session: session, feed: updates)
         _career = State(initialValue: career)
         let notifications = NotificationService()
         _notifications = State(initialValue: notifications)
         // A change a load notices is news: delivered as it is found, from the
         // foreground or from a background refresh alike.
-        career.onNewUpdates = { await notifications.deliver($0) }
+        updates.onNewUpdates = { await notifications.deliver($0) }
+        // A WeBeep file is weighed against the student's own sittings.
+        updates.sittings = { career.sessions }
 
         // Built last: it needs the session, and the services it sends
         // through are wired to it afterwards.
@@ -89,7 +95,7 @@ struct PoliVerseApp: App {
         // service; the order lives in the factory, next to the class.
         _freshness = State(initialValue: FreshnessCoordinator.standard(
             courses: courses, agenda: agenda, career: career,
-            notices: notices, news: news))
+            notices: notices, news: news, weBeep: weBeep))
 
         // Deliberately narrower than the coordinator's list: a background
         // refresh gets about 30 seconds in total, so it warms the two screens
@@ -97,10 +103,13 @@ struct PoliVerseApp: App {
         background.register {
             await agenda.load(force: true)
             await career.load(force: true)
+            // Not forced: the hourly window keeps a burst of background runs
+            // from reading every course page each time.
+            await weBeep.checkForUpdates()
             // Reminders follow whatever the refresh found: a lecture moved
             // overnight must not announce itself at the old time.
             await notifications.reschedule(
-                events: agenda.events, exams: career.sessions, updates: career.updates)
+                events: agenda.events, exams: career.sessions, updates: updates.updates)
         }
     }
 
@@ -111,6 +120,7 @@ struct PoliVerseApp: App {
                 .environment(courses)
                 .environment(agenda)
                 .environment(career)
+                .environment(updates)
                 .environment(weBeep)
                 .environment(cieID)
                 .environment(downloads)

@@ -10,6 +10,7 @@ struct RemindersStepView: View {
     @Environment(NotificationService.self) private var notifications
     @Environment(AgendaService.self) private var agenda
     @Environment(CareerService.self) private var career
+    @Environment(UpdateFeed.self) private var feed
     let advance: () -> Void
 
     @State private var isAsking = false
@@ -56,7 +57,7 @@ struct RemindersStepView: View {
                         await notifications.requestAuthorization()
                         await notifications.reschedule(
                             events: agenda.events, exams: career.sessions,
-                            updates: career.updates)
+                            updates: feed.updates)
                         isAsking = false
                         // Stays on this step when granted: the preferences
                         // above have just appeared and are worth a look.

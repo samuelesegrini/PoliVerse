@@ -39,8 +39,14 @@ nonisolated enum ExamTimeline {
 
         let belonging = updates.filter { update in
             if update.examID == exam.id { return true }
-            guard update.kind == .gradeRecorded else { return false }
-            return latestSitting(before: update, among: sittings)?.id == exam.id
+            switch update.kind {
+            case .gradeRecorded, .resultsPosted, .solutionsPosted:
+                return latestSitting(before: update, among: sittings)?.id == exam.id
+            case .examNoticePosted:
+                return nextSitting(after: update, among: sittings)?.id == exam.id
+            default:
+                return false
+            }
         }
         entries += belonging.map {
             ExamTimelineEntry(
@@ -52,16 +58,36 @@ nonisolated enum ExamTimeline {
         return entries.sorted { $0.date < $1.date }
     }
 
-    /// The libretto has no sitting id. Its mark belongs to the course's most
-    /// recent sitting before the mark was seen — not to every earlier one,
-    /// or a January fail would show February's pass.
+    /// The libretto and WeBeep have no sitting id. A mark, a results file or
+    /// solutions belong to the course's most recent sitting before they were
+    /// seen — not to every earlier one, or a January fail would show
+    /// February's pass.
     ///
     /// Matched by code or by name: the libretto's id is `c_insegn` or, when
     /// that is absent, a row id that shares nothing with `/v1/insegn`.
+    ///
+    /// Within ``ExamUpdatePolicy/resultsWindow``: a file of results posted a
+    /// year after a sitting is not that sitting's.
     private static func latestSitting(before update: ExamUpdate, among sittings: [ExamSession]) -> ExamSession? {
         sittings
-            .filter { $0.courseCode == update.courseCode || $0.courseName == update.courseName }
-            .filter { ($0.date ?? .distantFuture) <= update.detectedAt }
+            .filter { $0.isOf(courseCode: update.courseCode, courseName: update.courseName) }
+            .filter {
+                guard let date = $0.date else { return false }
+                return date <= update.detectedAt
+                    && update.detectedAt.timeIntervalSince(date) <= ExamUpdatePolicy.resultsWindow
+            }
             .max { ($0.date ?? .distantPast) < ($1.date ?? .distantPast) }
+    }
+
+    /// A notice about rooms or instructions belongs to the sitting ahead.
+    private static func nextSitting(after update: ExamUpdate, among sittings: [ExamSession]) -> ExamSession? {
+        sittings
+            .filter { $0.isOf(courseCode: update.courseCode, courseName: update.courseName) }
+            .filter {
+                guard let date = $0.date else { return false }
+                return date >= update.detectedAt
+                    && date.timeIntervalSince(update.detectedAt) <= ExamUpdatePolicy.noticeHorizon
+            }
+            .min { ($0.date ?? .distantFuture) < ($1.date ?? .distantFuture) }
     }
 }

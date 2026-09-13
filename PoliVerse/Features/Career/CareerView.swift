@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CareerView: View {
     @Environment(CareerService.self) private var career
+    @Environment(UpdateFeed.self) private var feed
     @State private var scope: Scope = .overview
     @State private var selectedExam: ExamSession?
 
@@ -171,7 +172,7 @@ struct CareerView: View {
     /// the student last looked, which is the reason most visits happen.
     @ViewBuilder
     private func recentUpdates(_ career: CareerService) -> some View {
-        let recent = career.recentUpdates
+        let recent = feed.recent
         if !recent.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
