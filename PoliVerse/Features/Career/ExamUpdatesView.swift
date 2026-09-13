@@ -10,11 +10,13 @@ struct ExamUpdatesView: View {
     @Environment(\.locale) private var locale
     @State private var selectedExam: ExamSession?
 
-    private var days: [(Date, [ExamUpdate])] {
+    private var days: [(Date, [FeedItem])] {
         let calendar = PoliMiDate.romeCalendar
-        return Dictionary(grouping: feed.updates) { calendar.startOfDay(for: $0.detectedAt) }
-            .sorted { $0.key > $1.key }
-            .map { ($0.key, $0.value.sorted { $0.detectedAt > $1.detectedAt }) }
+        return Dictionary(grouping: FeedItem.items(from: feed.updates)) {
+            calendar.startOfDay(for: $0.update.detectedAt)
+        }
+        .sorted { $0.key > $1.key }
+        .map { ($0.key, $0.value.sorted { $0.update.detectedAt > $1.update.detectedAt }) }
     }
 
     var body: some View {
@@ -27,15 +29,17 @@ struct ExamUpdatesView: View {
                     .padding(.top, 40)
             } else {
                 LazyVStack(alignment: .leading, spacing: 18) {
-                    ForEach(days, id: \.0) { day, updates in
+                    ForEach(days, id: \.0) { day, items in
                         VStack(alignment: .leading, spacing: 8) {
                             Text(day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)).capitalized)
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.secondary)
-                            ForEach(updates) { update in
-                                let sitting = career.sitting(for: update)
+                            ForEach(items) { item in
+                                let sitting = career.sitting(for: item.update)
                                 Button { selectedExam = sitting } label: {
-                                    ExamUpdateRow(update: update)
+                                    // Under a day heading, the time says more
+                                    // than "3 days ago".
+                                    ExamUpdateRow(item: item, showsClockTime: true)
                                 }
                                 .buttonStyle(.plain)
                                 .disabled(sitting == nil)
@@ -47,7 +51,7 @@ struct ExamUpdatesView: View {
             }
 
             // Honest about what this can and cannot see.
-            Text("Le novità arrivano dai Servizi Online quando l'app si aggiorna: aprendola, o in background quando iOS lo consente. Email e avvisi su WeBeep non sono inclusi.")
+            Text("Le novità arrivano dai Servizi Online quando l'app si aggiorna: aprendola, o in background quando iOS lo consente. Le email dei docenti non sono incluse.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal)
@@ -63,8 +67,11 @@ struct ExamUpdatesView: View {
 
 /// One update: what changed, for which course, and when it was seen.
 struct ExamUpdateRow: View {
-    let update: ExamUpdate
+    let item: FeedItem
+    var showsClockTime = false
     @Environment(\.locale) private var locale
+
+    private var update: ExamUpdate { item.update }
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -77,7 +84,7 @@ struct ExamUpdateRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(update.title)
                     .font(.subheadline.weight(.semibold))
-                Text([update.courseName, update.detail].compactMap { $0 }.joined(separator: " · "))
+                Text([update.courseName, item.detail, item.note].compactMap { $0 }.joined(separator: " · "))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -90,7 +97,9 @@ struct ExamUpdateRow: View {
 
             Spacer(minLength: 0)
 
-            Text(update.detectedAt.formatted(.relative(presentation: .named).locale(locale)))
+            Text(showsClockTime
+                 ? update.detectedAt.formatted(.dateTime.hour().minute().locale(locale))
+                 : update.detectedAt.formatted(.relative(presentation: .named).locale(locale)))
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 .monospacedDigit()
@@ -98,6 +107,7 @@ struct ExamUpdateRow: View {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .cardBackground()
+        .opacity(item.isSuperseded ? 0.6 : 1)
         .accessibilityElement(children: .combine)
     }
 }
@@ -186,6 +196,7 @@ extension ExamUpdate.Kind {
         case .resultsPosted: .green
         case .solutionsPosted, .examNoticePosted: .teal
         case .materialAdded: .secondary
+        case .announcementPosted: Theme.brand
         }
     }
 }

@@ -54,6 +54,8 @@ nonisolated struct MoodleModule: Decodable, Sendable {
     /// `resource`, `folder`, `url`, `forum`, `page`, `label`, …
     let modname: String
     let contents: [MoodleContent]?
+    /// The activity's own id — what `mod_forum_*` calls a forum id.
+    var instance: Int? = nil
 }
 
 nonisolated struct MoodleContent: Decodable, Sendable {
@@ -66,6 +68,29 @@ nonisolated struct MoodleContent: Decodable, Sendable {
     let fileurl: String?
     let timemodified: Int?
     let mimetype: String?
+}
+
+/// `mod_forum_get_forum_discussions` — one discussion's first post.
+///
+/// Field names from `mod/forum/externallib.php` (MOODLE_405_STABLE,
+/// `get_forum_discussions_returns`). Everything optional but the id: a field
+/// missing on WeBeep must not cost the whole list.
+nonisolated struct MoodleDiscussion: Decodable, Sendable, Equatable {
+    let id: Int
+    let discussion: Int?
+    let name: String?
+    let subject: String?
+    let message: String?
+    let created: Int?
+    let timemodified: Int?
+    let userfullname: String?
+    let pinned: Bool?
+
+    var title: String { subject ?? name ?? "" }
+}
+
+nonisolated struct MoodleDiscussions: Decodable, Sendable {
+    let discussions: [MoodleDiscussion]?
 }
 
 /// Moodle answers errors with HTTP 200 and an error body, so every response has

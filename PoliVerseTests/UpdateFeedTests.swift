@@ -6,7 +6,8 @@ import Testing
 @MainActor
 @Suite("Update feed")
 struct UpdateFeedTests {
-    private let now = Date.now
+    /// 10:00 in Rome: outside quiet hours whenever the suite runs.
+    private let now = PoliMiDate.time(10, on: Date(timeIntervalSince1970: 1_772_000_000))
 
     private func store() -> OfflineStore {
         OfflineStore(directory: FileManager.default.temporaryDirectory
@@ -35,7 +36,7 @@ struct UpdateFeedTests {
     @Test("A change is recorded, persisted and handed on once")
     func recordsExams() async {
         let offline = store()
-        let feed = UpdateFeed(offline: offline)
+        let feed = UpdateFeed(offline: offline, clock: { [now] in now })
         feed.show(account: "10123456")
         var delivered: [ExamUpdate.Kind] = []
         feed.onNewUpdates = { delivered += $0.map(\.kind) }
@@ -46,7 +47,7 @@ struct UpdateFeedTests {
 
         #expect(delivered == [.roomPublished])
         #expect(feed.updates.map(\.kind) == [.roomPublished])
-        let reopened = UpdateFeed(offline: offline)
+        let reopened = UpdateFeed(offline: offline, clock: { [now] in now })
         reopened.show(account: "10123456")
         #expect(reopened.updates.map(\.kind) == [.roomPublished])
     }
@@ -55,7 +56,7 @@ struct UpdateFeedTests {
     /// and every load would be a new baseline.
     @Test("Exams and WeBeep share the log without erasing each other's snapshot")
     func sharedLog() async {
-        let feed = UpdateFeed(offline: store())
+        let feed = UpdateFeed(offline: store(), clock: { [now] in now })
         feed.show(account: "1")
         feed.sittings = { [sitting(days: -3)] }
         await feed.recordExams(sessions: [sitting(days: -3)], libretto: nil, account: "1")
@@ -71,7 +72,7 @@ struct UpdateFeedTests {
     @Test("Switching account shows that account's feed, and signing out shows none")
     func accounts() async {
         let offline = store()
-        let feed = UpdateFeed(offline: offline)
+        let feed = UpdateFeed(offline: offline, clock: { [now] in now })
         feed.show(account: "A")
         await feed.recordExams(sessions: [sitting()], libretto: nil, account: "A")
         await feed.recordExams(sessions: [sitting(room: "B.3.2")], libretto: nil, account: "A")
@@ -87,7 +88,7 @@ struct UpdateFeedTests {
     /// A pass that outlived a sign-out must not put the old account back.
     @Test("A record for an account not on screen is kept but not shown or delivered")
     func notShown() async {
-        let feed = UpdateFeed(offline: store())
+        let feed = UpdateFeed(offline: store(), clock: { [now] in now })
         var delivered = 0
         feed.onNewUpdates = { delivered += $0.count }
         feed.show(account: nil)
@@ -116,6 +117,7 @@ struct UpdateFeedTests {
 @MainActor
 @Suite("Update feed · results files")
 struct UpdateFeedResultsTests {
+    nonisolated private static let noon = PoliMiDate.time(12, on: Date(timeIntervalSince1970: 1_772_000_000))
     private func listing(_ names: [String]) -> [MoodleSection] {
         [MoodleSection(id: 1, name: "Esami", modules: names.enumerated().map { index, name in
             MoodleModule(id: index + 1, name: name, modname: "resource", contents: [
@@ -129,7 +131,7 @@ struct UpdateFeedResultsTests {
     @Test("A new results file is read only when allowed, and only the lookup is kept")
     func inspected() async {
         let feed = UpdateFeed(offline: OfflineStore(directory: FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)))
+            .appendingPathComponent(UUID().uuidString)), clock: { Self.noon })
         feed.show(account: "1")
         let course = MaterialCourse(moodleID: 55, code: "097785", name: "Basi di Dati")
         var asked: [String] = []
@@ -156,7 +158,7 @@ struct UpdateFeedResultsTests {
         let course = MaterialCourse(moodleID: 55, code: "097785", name: "Basi di Dati")
         func run(_ name: String, _ lookup: ResultsLookup) async -> ExamUpdate? {
             let feed = UpdateFeed(offline: OfflineStore(directory: FileManager.default.temporaryDirectory
-                .appendingPathComponent(UUID().uuidString)))
+                .appendingPathComponent(UUID().uuidString)), clock: { Self.noon })
             feed.show(account: "1")
             await feed.recordMaterials(course: course, sections: listing(["Lezione.pdf"]), account: "1")
             await feed.recordMaterials(course: course, sections: listing(["Lezione.pdf", name]), account: "1",

@@ -95,6 +95,17 @@ nonisolated final class WeBeepAPI: Sendable {
         )
     }
 
+    /// `mod_forum_get_forum_discussions` — a forum's first page of
+    /// discussions, in Moodle's default order: pinned first, then by last
+    /// activity. Not by creation — which is why the detector reads `created`.
+    func discussions(forumID: Int, perPage: Int = 10) async throws -> [MoodleDiscussion] {
+        try await call(
+            "mod_forum_get_forum_discussions",
+            parameters: ["forumid": String(forumID), "page": "0", "perpage": String(perPage)],
+            as: MoodleDiscussions.self
+        ).discussions ?? []
+    }
+
     func contents(courseID: Int) async throws -> [MoodleSection] {
         try await call(
             "core_course_get_contents",

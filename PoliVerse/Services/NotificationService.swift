@@ -82,6 +82,9 @@ final class NotificationService {
     func deliver(_ decided: [ExamUpdate]) async {
         await refreshAuthorization()
         guard authorization == .authorized || authorization == .provisional else { return }
+        let delivered = await centre.deliveredNotifications().map(\.request.identifier)
+        let obsolete = ExamUpdatePolicy.obsoleteNotificationIDs(for: decided, delivered: delivered)
+        if !obsolete.isEmpty { centre.removeDeliveredNotifications(withIdentifiers: obsolete) }
         let immediate = ExamUpdatePolicy.notifications(for: decided, now: .now)
         for item in immediate { await add(item, trigger: nil) }
         if !immediate.isEmpty {

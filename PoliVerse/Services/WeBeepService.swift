@@ -247,6 +247,16 @@ final class WeBeepService {
                 let raw = try await api.contents(courseID: target.moodleID)
                 await feed.recordMaterials(
                     course: target, sections: raw, account: account, inspect: resultsInspector())
+                // One more request, only where the page has an announcements
+                // forum. A failure here is the forum's, not the page's.
+                if let forum = AnnouncementDetector.forumInstances(in: raw).first {
+                    do {
+                        let posts = try await api.discussions(forumID: forum)
+                        await feed.recordAnnouncements(course: target, posts: posts, account: account)
+                    } catch {
+                        log.error("Announcements for course \(target.moodleID, privacy: .public) failed: \(error.localizedDescription)")
+                    }
+                }
                 checked += 1
             } catch let error as WeBeepAPI.Failure where error.isAuthFailure {
                 handle(error)

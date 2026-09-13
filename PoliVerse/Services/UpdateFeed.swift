@@ -28,14 +28,19 @@ final class UpdateFeed {
     private var account: String?
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "updates")
 
-    init(offline: OfflineStore = .shared) {
+    /// The time decisions are taken at. Quiet hours and the daily budget
+    /// depend on it, so tests fix it rather than depend on when they run.
+    private let clock: @Sendable () -> Date
+
+    init(offline: OfflineStore = .shared, clock: @escaping @Sendable () -> Date = { .now }) {
         self.offline = offline
+        self.clock = clock
     }
 
     /// The last fortnight: what changed since the student last looked, which
     /// is the reason most visits happen.
     var recent: [ExamUpdate] {
-        updates.filter { $0.detectedAt > .now.addingTimeInterval(-14 * 86400) }
+        updates.filter { $0.detectedAt > clock().addingTimeInterval(-14 * 86400) }
     }
 
     /// Shows this account's feed. Signing out, or switching career, must not
@@ -72,7 +77,7 @@ final class UpdateFeed {
         course: MaterialCourse, sections: [MoodleSection], account: String,
         inspect: (@MainActor (ResultsFileRef) async -> ResultsLookup?)? = nil
     ) async {
-        let context = Self.context(for: course, among: sittings(), now: .now)
+        let context = Self.context(for: course, among: sittings(), now: clock())
         let items = MaterialItem.items(from: sections)
         let key = String(course.moodleID)
 
@@ -82,7 +87,7 @@ final class UpdateFeed {
             // are new; the real record below compares again from scratch.
             let preview = MaterialChangeDetector.detect(
                 previous: load(account)?.materials?[key], current: items,
-                course: course, context: context, now: .now)
+                course: course, context: context, now: clock())
             for (id, file) in preview.files {
                 lookups[id] = await inspect(file)
             }
@@ -111,10 +116,23 @@ final class UpdateFeed {
         }
     }
 
+    /// New posts in a course's announcements forum.
+    func recordAnnouncements(course: MaterialCourse, posts: [MoodleDiscussion], account: String) async {
+        let context = Self.context(for: course, among: sittings(), now: clock())
+        await record(account: account) { log, now in
+            // Beside the course's files, under their own key.
+            let key = "forum-\(course.moodleID)"
+            let detected = AnnouncementDetector.detect(
+                previous: log.materials?[key], posts: posts, course: course, context: context, now: now)
+            log.materials = (log.materials ?? [:]).merging([key: detected.snapshot]) { _, new in new }
+            return detected.updates
+        }
+    }
+
     private func record(
         account: String, detect: (inout ExamUpdateLog, Date) -> [ExamUpdate]
     ) async {
-        let now = Date.now
+        let now = clock()
         var history = load(account) ?? ExamUpdateLog()
         let found = detect(&history, now)
         // Recorded for whoever it belongs to, but only the student on screen

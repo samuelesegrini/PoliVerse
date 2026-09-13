@@ -183,10 +183,10 @@ struct CareerView: View {
                     NavigationLink("Tutte") { ExamUpdatesView() }
                         .font(.caption.weight(.semibold))
                 }
-                ForEach(recent.prefix(3)) { update in
-                    let sitting = career.sitting(for: update)
+                ForEach(FeedItem.items(from: recent).prefix(3)) { item in
+                    let sitting = career.sitting(for: item.update)
                     Button { selectedExam = sitting } label: {
-                        ExamUpdateRow(update: update)
+                        ExamUpdateRow(item: item)
                     }
                     .buttonStyle(.plain)
                     .disabled(sitting == nil)

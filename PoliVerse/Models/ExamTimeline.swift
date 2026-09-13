@@ -44,6 +44,10 @@ nonisolated enum ExamTimeline {
                 return latestSitting(before: update, among: sittings)?.id == exam.id
             case .examNoticePosted:
                 return nextSitting(after: update, among: sittings)?.id == exam.id
+            case .announcementPosted:
+                // Only a post the detector already tied to a sitting's date.
+                guard let date = update.examDate else { return false }
+                return exam.date == date && exam.isOf(courseCode: update.courseCode, courseName: update.courseName)
             default:
                 return false
             }

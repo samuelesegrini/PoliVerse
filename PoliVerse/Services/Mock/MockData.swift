@@ -131,6 +131,12 @@ nonisolated enum MockData {
             update(.gradePublished, 909, hoursAgo: 3, new: "24", delivery: .urgent),
             update(.refusalOpened, 909, hoursAgo: 3),
             update(.roomChanged, 901, hoursAgo: 20, old: "B.2.1", new: "Aula Magna", delivery: .digest),
+            ExamUpdate(
+                kind: .announcementPosted, examID: nil, courseCode: "089160",
+                courseName: "Ingegneria del Software", detectedAt: now.addingTimeInterval(-22 * 3600),
+                source: .webeep, evidence: "webeep:mod_forum_get_forum_discussions",
+                newValue: "Istruzioni per lo scritto del 25 settembre", wasEnrolled: true,
+                examDate: sessions.first { $0.id == 901 }?.date, delivery: .push),
             update(.enrolmentOpened, 902, hoursAgo: 50, delivery: .digest),
             update(.enrolled, 901, hoursAgo: 190),
             update(.roomPublished, 901, hoursAgo: 200, new: "B.2.1"),

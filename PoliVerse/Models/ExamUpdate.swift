@@ -18,6 +18,8 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         case gradePublished, refusalOpened, correctionsAvailable, gradeRecorded
         /// WeBeep, tagged from the file's name — see ``DocumentClassifier``.
         case resultsPosted, solutionsPosted, examNoticePosted, materialAdded
+        /// A new post in a course's announcements forum.
+        case announcementPosted
 
         var symbol: String {
             switch self {
@@ -36,6 +38,7 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
             case .solutionsPosted: "doc.text.magnifyingglass"
             case .examNoticePosted: "megaphone"
             case .materialAdded: "folder.badge.plus"
+            case .announcementPosted: "text.bubble"
             }
         }
     }
@@ -154,6 +157,7 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         case .solutionsPosted: String(localized: "Pubblicate le soluzioni")
         case .examNoticePosted: String(localized: "Nuovo avviso d'esame")
         case .materialAdded: String(localized: "Nuovo materiale")
+        case .announcementPosted: String(localized: "Nuovo annuncio del docente")
         }
     }
 
@@ -172,11 +176,14 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
             // A file put up again over an old one, or under a new name.
             isReplacement ? newValue.map { String(localized: "\($0) (nuova versione)") } : newValue
         case .materialAdded: newValue.flatMap(Int.init).map { String(localized: "\($0) nuovi file") }
+        case .announcementPosted: newValue
         default: nil
         }
     }
 
-    var sourceLabel: String { source.label }
+    var sourceLabel: String {
+        kind == .announcementPosted ? String(localized: "WeBeep · forum Annunci") : source.label
+    }
 
     /// The same sighting read as another kind, once the file's content says
     /// what its name did not (§10.3): a "solutions" file holding a table of

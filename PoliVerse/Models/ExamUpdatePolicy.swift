@@ -126,11 +126,7 @@ nonisolated enum ExamUpdatePolicy {
             // unless the exam services already said it, or the file turned
             // out not to be a table of results at all (§10.3).
             guard let lookup = update.lookup, lookup.looksLikeResults || lookup.found else { return .inApp }
-            let announced = (history + batch).contains {
-                $0.kind == .gradePublished && ($0.courseCode == update.courseCode || $0.courseName == update.courseName)
-                    && now.timeIntervalSince($0.detectedAt) < resultsWindow
-            }
-            if announced { return .inApp }
+            if (history + batch).contains(where: { confirms($0, fileGrade: update) }) { return .inApp }
             // Found in a table of results: the student's own line. Found in
             // anything else is a mention, not a mark (§10.3).
             return lookup.found && lookup.looksLikeResults && !update.isReplacement ? .push : .digest
@@ -151,6 +147,34 @@ nonisolated enum ExamUpdatePolicy {
 
         case .materialAdded:
             return .inApp
+
+        case .announcementPosted:
+            // §11.2 teacherCommunication: Media, and worth a push when it
+            // talks about a sitting the student has in play (the detector
+            // only gives it one then). Rationed like any ordinary push.
+            return update.wasEnrolled ? .push : .digest
+        }
+    }
+
+    /// Whether an official mark is the same fact as a mark read from a file:
+    /// same course, the same sitting where both know one, and seen within the
+    /// results window of each other — in either order.
+    static func confirms(_ official: ExamUpdate, fileGrade file: ExamUpdate) -> Bool {
+        guard official.kind == .gradePublished || official.kind == .gradeRecorded,
+              official.courseCode == file.courseCode || official.courseName == file.courseName,
+              abs(official.detectedAt.timeIntervalSince(file.detectedAt)) <= resultsWindow
+        else { return false }
+        guard let sitting = file.examDate, let officialSitting = official.examDate else { return true }
+        return sitting == officialSitting
+    }
+
+    /// Delivered notifications an official mark makes obsolete: the "you are
+    /// in the results" ones for the same course. Removed rather than left
+    /// beside the new one — one notification per fact (§11.4).
+    static func obsoleteNotificationIDs(for decided: [ExamUpdate], delivered: [String]) -> [String] {
+        let courses = Set(decided.filter { $0.kind == .gradePublished || $0.kind == .gradeRecorded }.map(\.courseCode))
+        return delivered.filter { id in
+            courses.contains { id.hasPrefix("update-\(ExamUpdate.Kind.resultsPosted.rawValue)|\($0)|") }
         }
     }
 

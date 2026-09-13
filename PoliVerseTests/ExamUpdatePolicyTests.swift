@@ -311,3 +311,22 @@ struct ResultsLookupPolicyTests {
         #expect(decide(ResultsLookup(looksLikeResults: true, found: true, grade: "27"), history: [official]) == .inApp)
     }
 }
+
+@Suite("Exam update policy · announcements")
+struct AnnouncementPolicyTests {
+    private let now = PoliMiDate.time(10, on: Date(timeIntervalSince1970: 1_772_000_000))
+
+    @Test("A post about a sitting in play pushes; any other waits for the evening")
+    func announcements() {
+        func decide(examInDays days: Double?) -> ExamUpdate.Delivery? {
+            let update = ExamUpdate(
+                kind: .announcementPosted, examID: nil, courseCode: "097785", courseName: "Basi di Dati",
+                detectedAt: now, source: .webeep, evidence: "test", newValue: "Aule",
+                wasEnrolled: days != nil, examDate: days.map { now.addingTimeInterval($0 * 86400) })
+            return ExamUpdatePolicy.decide([update], history: [], preferences: NotificationPreferences(), now: now)
+                .first?.delivery
+        }
+        #expect(decide(examInDays: 4) == .push)
+        #expect(decide(examInDays: nil) == .digest)
+    }
+}
