@@ -33,6 +33,17 @@ nonisolated struct MaterialContext: Sendable, Equatable {
     static let none = MaterialContext(lastSat: nil, next: nil)
 }
 
+/// A results file that may be read, if the student allowed it.
+///
+/// The URL is the listing's own, without a token: the token is added only at
+/// the moment of download, and neither is ever stored.
+nonisolated struct ResultsFileRef: Sendable, Equatable {
+    let fileURL: String
+    let name: String
+    let mimetype: String?
+    var size: Int? = nil
+}
+
 /// One item of a WeBeep course page, reduced to what a change is made of.
 nonisolated struct MaterialItem: Sendable, Equatable {
     /// `cm:<module id><path><file name>` for a file, `cm:<module id>` for a
@@ -44,6 +55,8 @@ nonisolated struct MaterialItem: Sendable, Equatable {
     let size: Int?
     let modified: Int?
     let tags: Set<DocumentTag>
+    var fileURL: String? = nil
+    var mimetype: String? = nil
 
     /// Changes when the file does. Moodle's listing has no content hash; size
     /// and modification time are what it offers, and both are free.
@@ -74,7 +87,8 @@ nonisolated struct MaterialItem: Sendable, Equatable {
                         size: content.filesize, modified: content.timemodified,
                         tags: DocumentClassifier.tags(
                             fileName: name, moduleName: module.name, sectionName: section.name,
-                            modname: module.modname, mimetype: content.mimetype))
+                            modname: module.modname, mimetype: content.mimetype),
+                        fileURL: content.fileurl, mimetype: content.mimetype)
                 }
             }
         }
@@ -101,6 +115,8 @@ nonisolated enum MaterialChangeDetector {
     struct Result: Sendable {
         let updates: [ExamUpdate]
         let snapshot: MaterialSnapshot
+        /// The file behind each results update, by update id.
+        var files: [String: ResultsFileRef] = [:]
     }
 
     /// A snapshot older than this is a new baseline: a page last read months
@@ -126,6 +142,7 @@ nonisolated enum MaterialChangeDetector {
         guard !current.isEmpty else { return Result(updates: [], snapshot: previous) }
 
         var updates: [ExamUpdate] = []
+        var files: [String: ResultsFileRef] = [:]
         var ordinary: [MaterialItem] = []
         // Notable items gone from the listing: a file that reappears under a
         // new name is the same fact renamed, not a second one.
@@ -149,7 +166,7 @@ nonisolated enum MaterialChangeDetector {
                 replaced = true
             }
 
-            updates.append(update(
+            let found = update(
                 kind, course: course, context: context, now: now,
                 // A name carrying both results and solutions is ambiguous
                 // until something reads the file (§9.2, §10).
@@ -157,7 +174,12 @@ nonisolated enum MaterialChangeDetector {
                 evidence: "webeep:core_course_get_contents course=\(course.moodleID) cm=\(item.moduleID)",
                 oldValue: replaced ? (oldVersion ?? "renamed") : nil,
                 newValue: item.name,
-                identity: "\(item.name)@\(item.version)"))
+                identity: "\(item.name)@\(item.version)")
+            updates.append(found)
+            // Solutions too: a file named for solutions can hold the marks.
+            if kind == .resultsPosted || kind == .solutionsPosted, let url = item.fileURL {
+                files[found.id] = ResultsFileRef(fileURL: url, name: item.name, mimetype: item.mimetype, size: item.size)
+            }
         }
 
         if let first = ordinary.first {
@@ -167,7 +189,7 @@ nonisolated enum MaterialChangeDetector {
                 newValue: String(ordinary.count), identity: first.id))
         }
 
-        return Result(updates: updates, snapshot: snapshot)
+        return Result(updates: updates, snapshot: snapshot, files: files)
     }
 
     /// Results win over solutions and notices: they are what a student waits

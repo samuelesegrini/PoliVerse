@@ -64,15 +64,50 @@ final class UpdateFeed {
         }
     }
 
-    func recordMaterials(course: MaterialCourse, sections: [MoodleSection], account: String) async {
+    /// - Parameter inspect: reads a new results file for the student's own
+    ///   line, when they allowed it. Runs before the log is touched: it
+    ///   awaits a download, and a record must never await between reading
+    ///   and writing the log.
+    func recordMaterials(
+        course: MaterialCourse, sections: [MoodleSection], account: String,
+        inspect: (@MainActor (ResultsFileRef) async -> ResultsLookup?)? = nil
+    ) async {
         let context = Self.context(for: course, among: sittings(), now: .now)
+        let items = MaterialItem.items(from: sections)
+        let key = String(course.moodleID)
+
+        var lookups: [String: ResultsLookup] = [:]
+        if let inspect {
+            // A dry run against the log as it is now, to learn which files
+            // are new; the real record below compares again from scratch.
+            let preview = MaterialChangeDetector.detect(
+                previous: load(account)?.materials?[key], current: items,
+                course: course, context: context, now: .now)
+            for (id, file) in preview.files {
+                lookups[id] = await inspect(file)
+            }
+        }
+
         await record(account: account) { log, now in
-            let key = String(course.moodleID)
             let detected = MaterialChangeDetector.detect(
-                previous: log.materials?[key], current: MaterialItem.items(from: sections),
+                previous: log.materials?[key], current: items,
                 course: course, context: context, now: now)
             log.materials = (log.materials ?? [:]).merging([key: detected.snapshot]) { _, new in new }
-            return detected.updates
+            return detected.updates.map { update in
+                guard let lookup = lookups[update.id] else { return update }
+                switch update.kind {
+                case .solutionsPosted where lookup.looksLikeResults:
+                    return update.reclassified(as: .resultsPosted, lookup: lookup)
+                case .solutionsPosted:
+                    return update
+                case .resultsPosted where !lookup.looksLikeResults && !lookup.found:
+                    return update.reclassified(as: .examNoticePosted, lookup: nil)
+                default:
+                    var read = update
+                    read.lookup = lookup
+                    return read
+                }
+            }
         }
     }
 

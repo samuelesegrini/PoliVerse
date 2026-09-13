@@ -37,6 +37,12 @@ final class WeBeepService {
     /// Course pages checked per pass. A background refresh has about thirty
     /// seconds for everything, and the career comes first.
     static let watchLimit = 6
+    /// Counts passes, so courses past the cap take turns. Kept across
+    /// launches: a background refresh usually starts the app from cold.
+    private var watchPass: Int {
+        get { UserDefaults.standard.integer(forKey: "webeepWatchPass") }
+        set { UserDefaults.standard.set(newValue, forKey: "webeepWatchPass") }
+    }
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "webeep")
     private let keychainAccount = "webeep"
 
@@ -172,7 +178,8 @@ final class WeBeepService {
             if let account = session.student?.matricola,
                Self.isWatchable(course, now: .now), let watched = MaterialCourse(course) {
                 feed.show(account: account)
-                await feed.recordMaterials(course: watched, sections: raw, account: account)
+                await feed.recordMaterials(
+                    course: watched, sections: raw, account: account, inspect: resultsInspector())
             }
             sections = raw.compactMap { section in
                 let files = (section.modules ?? []).flatMap { module in
@@ -228,7 +235,8 @@ final class WeBeepService {
         guard let api else { return }
         feed.show(account: account)
 
-        let watched = Self.watched(courses.map(Course.init(moodle:)), now: .now)
+        let watched = Self.watched(courses.map(Course.init(moodle:)), now: .now, pass: watchPass)
+        watchPass += 1
         var checked = 0
         for course in watched {
             // A sign-out or a career switch mid-pass ends it: the rest would
@@ -237,7 +245,8 @@ final class WeBeepService {
                   let target = MaterialCourse(course) else { break }
             do {
                 let raw = try await api.contents(courseID: target.moodleID)
-                await feed.recordMaterials(course: target, sections: raw, account: account)
+                await feed.recordMaterials(
+                    course: target, sections: raw, account: account, inspect: resultsInspector())
                 checked += 1
             } catch let error as WeBeepAPI.Failure where error.isAuthFailure {
                 handle(error)
@@ -251,16 +260,51 @@ final class WeBeepService {
         if checked > 0 { updatesWindow.markLoaded(source: account) }
     }
 
-    /// The course pages worth checking: this academic year's, not hidden,
-    /// favourites first.
-    static func watched(_ courses: [Course], now: Date) -> [Course] {
-        Array(courses
+    /// Reads a new results file for the student's own line, if they turned
+    /// that on; nil otherwise, so nothing is downloaded.
+    ///
+    /// The file is fetched into memory, read, and dropped. Only the lookup —
+    /// found or not, and the student's own mark — outlives the call; the
+    /// URL with its token is never logged or stored.
+    private func resultsInspector() -> (@MainActor (ResultsFileRef) async -> ResultsLookup?)? {
+        let preferences = NotificationPreferences.stored
+        guard preferences.examUpdates, preferences.readResultsFiles,
+              let api, let student = session.student else { return nil }
+        let identifiers = [student.matricola, student.personCode]
+        return { file in
+            // Checked before downloading, from the listing's own size.
+            guard (file.size ?? 0) <= ResultsFileReader.maximumBytes,
+                  let url = api.authenticatedFileURL(file.fileURL) else { return nil }
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 15
+            // Ephemeral: the shared session's cache would write the file —
+            // other students' marks — to disk.
+            let session = URLSession(configuration: .ephemeral)
+            defer { session.finishTasksAndInvalidate() }
+            guard let (data, response) = try? await session.data(for: request),
+                  (response as? HTTPURLResponse)?.statusCode == 200
+            else { return nil }
+            return await ResultsFileReader.read(
+                data, mimetype: file.mimetype, fileName: file.name, identifiers: identifiers)
+        }
+    }
+
+    /// The course pages worth checking: this academic year's, not hidden.
+    ///
+    /// Favourites every pass; the rest of the ``watchLimit`` rotates through
+    /// the other courses, so a seventh course is read every few passes rather
+    /// than never.
+    static func watched(_ courses: [Course], now: Date, pass: Int = 0) -> [Course] {
+        let eligible = courses
             .filter { isWatchable($0, now: now) }
-            .sorted {
-                if $0.isFavourite != $1.isFavourite { return $0.isFavourite }
-                return ($0.moodleID ?? 0) < ($1.moodleID ?? 0)
-            }
-            .prefix(watchLimit))
+            .sorted { ($0.moodleID ?? 0) < ($1.moodleID ?? 0) }
+        let favourites = Array(eligible.filter(\.isFavourite).prefix(watchLimit))
+        let others = eligible.filter { !$0.isFavourite }
+        let room = watchLimit - favourites.count
+        guard room > 0, !others.isEmpty else { return favourites }
+        let start = (pass * room) % others.count
+        let rotated = Array(others[start...] + others[..<start])
+        return favourites + rotated.prefix(room)
     }
 
     /// This academic year's, visible, and linked to WeBeep by id.

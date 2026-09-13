@@ -12,6 +12,10 @@ nonisolated struct NotificationPreferences: Sendable, Equatable, Codable {
     /// Pushes when something changes about an exam — a mark, a room, a moved
     /// sitting. See ``ExamUpdatePolicy``.
     var examUpdates = true
+    /// Let the app open a newly posted results file to look for the
+    /// student's own matricola. Off until the student turns it on: the file
+    /// lists other students too. See ``ResultsFileReader``.
+    var readResultsFiles = false
 
     static let key = "notificationPreferences"
 
@@ -31,7 +35,7 @@ nonisolated struct NotificationPreferences: Sendable, Equatable, Codable {
 
 extension NotificationPreferences {
     private enum CodingKeys: String, CodingKey {
-        case lectures, deadlines, exams, enrolments, leadMinutes, examUpdates
+        case lectures, deadlines, exams, enrolments, leadMinutes, examUpdates, readResultsFiles
     }
 
     /// Lenient, key by key: a build that adds a preference must not make the
@@ -45,6 +49,8 @@ extension NotificationPreferences {
         enrolments = try container.decodeIfPresent(Bool.self, forKey: .enrolments) ?? defaults.enrolments
         leadMinutes = try container.decodeIfPresent(Int.self, forKey: .leadMinutes) ?? defaults.leadMinutes
         examUpdates = try container.decodeIfPresent(Bool.self, forKey: .examUpdates) ?? defaults.examUpdates
+        readResultsFiles = try container.decodeIfPresent(Bool.self, forKey: .readResultsFiles)
+            ?? defaults.readResultsFiles
     }
 }
 

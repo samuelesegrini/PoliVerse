@@ -25,3 +25,24 @@ struct WeBeepWatchTests {
         #expect(watched.count == WeBeepService.watchLimit)
     }
 }
+
+@Suite("WeBeep watched courses · rotation")
+struct WeBeepRotationTests {
+    private let now = Date(timeIntervalSince1970: 1_772_000_000)
+
+    @Test("Courses past the cap take turns; favourites are read every pass")
+    func rotation() {
+        let courses = (1...10).map {
+            Course(id: "moodle-\($0)", name: "C\($0)", teacher: "—", cfu: 0, semester: "—",
+                   academicYear: "2025-26", moodleID: $0, isFavourite: $0 == 7)
+        }
+        var seen: Set<Int> = []
+        for pass in 0..<3 {
+            let watched = WeBeepService.watched(courses, now: now, pass: pass)
+            #expect(watched.count == WeBeepService.watchLimit)
+            #expect(watched.first?.moodleID == 7)
+            seen.formUnion(watched.compactMap(\.moodleID))
+        }
+        #expect(seen.count == 10)
+    }
+}

@@ -57,6 +57,14 @@ struct NotificationSettingsView: View {
                 }
 
                 Section {
+                    Toggle("Cerca la mia matricola negli esiti", isOn: $notifications.preferences.readResultsFiles)
+                        .disabled(!notifications.preferences.examUpdates)
+                } footer: {
+                    // Said plainly: the file lists other students.
+                    Text("Quando un docente pubblica un file di esiti su WeBeep, l'app lo apre sul telefono e cerca solo la tua matricola. Conserva soltanto se compari e il tuo voto, che resta nell'app e non appare nelle notifiche; il file e i dati degli altri non vengono salvati né inviati. Funziona con PDF testuali e CSV.")
+                }
+
+                Section {
                     Picker("Anticipo lezioni", selection: $notifications.preferences.leadMinutes) {
                         Text("5 minuti").tag(5)
                         Text("10 minuti").tag(10)

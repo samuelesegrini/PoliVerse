@@ -105,6 +105,9 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
     let wasEnrolled: Bool
     let examDate: Date?
     var delivery: Delivery = .inApp
+    /// For a results file the student let the app read: whether they are in
+    /// it, and their own mark. Nothing about anyone else.
+    var lookup: ResultsLookup? = nil
 
     init(kind: Kind, examID: Int?, courseCode: String, courseName: String,
          detectedAt: Date, source: Source, confidence: Confidence = .exact,
@@ -146,6 +149,7 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         case .gradeRecorded: String(localized: "Voto registrato nel libretto")
         // Worded as what was seen, not as what it probably means: a file
         // named "Esiti" is not the student's grade.
+        case .resultsPosted where lookup?.found == true: String(localized: "Sei negli esiti")
         case .resultsPosted: String(localized: "Pubblicato un file di esiti")
         case .solutionsPosted: String(localized: "Pubblicate le soluzioni")
         case .examNoticePosted: String(localized: "Nuovo avviso d'esame")
@@ -160,6 +164,10 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         case .roomChanged:
             if let oldValue, let newValue { String(localized: "Da \(oldValue) a \(newValue)") } else { nil }
         case .gradePublished, .gradeRecorded: newValue.map { String(localized: "Voto: \($0)") }
+        case .resultsPosted where lookup?.found == true:
+            lookup?.grade.map { String(localized: "Voto nel file: \($0)") } ?? newValue
+        case .resultsPosted where lookup?.looksLikeResults == true:
+            String(localized: "Non compari nel file")
         case .resultsPosted, .solutionsPosted, .examNoticePosted:
             // A file put up again over an old one, or under a new name.
             isReplacement ? newValue.map { String(localized: "\($0) (nuova versione)") } : newValue
@@ -170,13 +178,30 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
 
     var sourceLabel: String { source.label }
 
+    /// The same sighting read as another kind, once the file's content says
+    /// what its name did not (§10.3): a "solutions" file holding a table of
+    /// marks is results; a "results" file with no table is a notice.
+    func reclassified(as kind: Kind, lookup: ResultsLookup?) -> ExamUpdate {
+        var copy = ExamUpdate(
+            kind: kind, examID: examID, courseCode: courseCode, courseName: courseName,
+            detectedAt: detectedAt, source: source, confidence: confidence, evidence: evidence,
+            oldValue: oldValue, newValue: newValue,
+            identity: id.split(separator: "|", maxSplits: 2).last.map(String.init),
+            wasEnrolled: wasEnrolled, examDate: examDate, delivery: delivery)
+        copy.lookup = lookup
+        return copy
+    }
+
     /// A WeBeep file that replaced an earlier one of the same kind.
     var isReplacement: Bool { source == .webeep && oldValue != nil }
 
     /// Said out loud when the fact is inferred rather than read, so it never
     /// looks as certain as a field.
     var confidenceNote: String? {
-        switch (confidence, kind) {
+        if lookup?.found == true {
+            return String(localized: "Letto dal file: da confermare sui Servizi Online")
+        }
+        return switch (confidence, kind) {
         case (.exact, _): nil
         case (.high, .withdrawn): String(localized: "Dedotto: assente in due letture consecutive")
         case (.high, .resultsPosted), (.high, .solutionsPosted), (.high, .examNoticePosted),

@@ -121,6 +121,20 @@ nonisolated enum ExamUpdatePolicy {
             // The student did it, or will see it with the enrolment opening.
             return .inApp
 
+        case .resultsPosted where update.lookup != nil:
+            // The file was read. The student's own line is what matters —
+            // unless the exam services already said it, or the file turned
+            // out not to be a table of results at all (§10.3).
+            guard let lookup = update.lookup, lookup.looksLikeResults || lookup.found else { return .inApp }
+            let announced = (history + batch).contains {
+                $0.kind == .gradePublished && ($0.courseCode == update.courseCode || $0.courseName == update.courseName)
+                    && now.timeIntervalSince($0.detectedAt) < resultsWindow
+            }
+            if announced { return .inApp }
+            // Found in a table of results: the student's own line. Found in
+            // anything else is a mention, not a mark (§10.3).
+            return lookup.found && lookup.looksLikeResults && !update.isReplacement ? .push : .digest
+
         case .resultsPosted:
             // §11.2: worth a push only right after a sitting the student was
             // enrolled in, and only for a name that says results plainly —
@@ -161,7 +175,10 @@ nonisolated enum ExamUpdatePolicy {
         return outgoing.map { update in
             let refusable = update.kind == .gradePublished
                 && decided.contains { $0.kind == .refusalOpened && $0.examID == update.examID }
-            let detail = [update.courseName, update.detail,
+            // A mark read from a file stays in the app: it is unconfirmed, and
+            // a lock screen is not private.
+            let shown = update.lookup?.found == true ? String(localized: "Apri l'app per vederlo") : update.detail
+            let detail = [update.courseName, shown,
                           refusable ? String(localized: "Puoi rifiutarlo") : nil]
                 .compactMap { $0 }
                 .joined(separator: " · ")

@@ -275,3 +275,39 @@ struct MaterialUpdatePolicyTests {
         #expect(decide(.materialAdded, enrolled: false, examInDays: nil) == .inApp)
     }
 }
+
+@Suite("Exam update policy · read results files")
+struct ResultsLookupPolicyTests {
+    private let now = PoliMiDate.time(10, on: Date(timeIntervalSince1970: 1_772_000_000))
+
+    private func decide(_ lookup: ResultsLookup, history: [ExamUpdate] = []) -> ExamUpdate.Delivery? {
+        var update = ExamUpdate(
+            kind: .resultsPosted, examID: nil, courseCode: "097785", courseName: "Basi di Dati",
+            detectedAt: now, source: .webeep, confidence: .probable, evidence: "test",
+            newValue: "Esiti.pdf", wasEnrolled: false, examDate: nil)
+        update.lookup = lookup
+        return ExamUpdatePolicy.decide([update], history: history, preferences: NotificationPreferences(), now: now)
+            .first?.delivery
+    }
+
+    @Test("Being in the file pushes, whatever the name or context said")
+    func found() {
+        #expect(decide(ResultsLookup(looksLikeResults: true, found: true, grade: "27")) == .push)
+    }
+
+    @Test("Not in it waits for the evening; not a results table stays in the app")
+    func notFound() {
+        #expect(decide(ResultsLookup(looksLikeResults: true, found: false, grade: nil)) == .digest)
+        #expect(decide(ResultsLookup(looksLikeResults: false, found: false, grade: nil)) == .inApp)
+    }
+
+    /// The exam services already said it: the file is the same fact again.
+    @Test("A mark already published officially is not announced again from the file")
+    func alreadyOfficial() {
+        let official = ExamUpdate(
+            kind: .gradePublished, examID: 1, courseCode: "097785", courseName: "Basi di Dati",
+            detectedAt: now.addingTimeInterval(-3600), source: .exams, evidence: "test",
+            wasEnrolled: true, examDate: nil, delivery: .urgent)
+        #expect(decide(ResultsLookup(looksLikeResults: true, found: true, grade: "27"), history: [official]) == .inApp)
+    }
+}

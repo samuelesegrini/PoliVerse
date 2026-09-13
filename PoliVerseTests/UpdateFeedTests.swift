@@ -112,3 +112,63 @@ struct UpdateFeedTests {
         #expect(UpdateFeed.context(for: other, among: [upcoming], now: now) == .none)
     }
 }
+
+@MainActor
+@Suite("Update feed · results files")
+struct UpdateFeedResultsTests {
+    private func listing(_ names: [String]) -> [MoodleSection] {
+        [MoodleSection(id: 1, name: "Esami", modules: names.enumerated().map { index, name in
+            MoodleModule(id: index + 1, name: name, modname: "resource", contents: [
+                MoodleContent(type: "file", filename: name, filesize: 10,
+                              fileurl: "https://webeep.polimi.it/f/\(index + 1)",
+                              timemodified: 1, mimetype: "application/pdf"),
+            ])
+        })]
+    }
+
+    @Test("A new results file is read only when allowed, and only the lookup is kept")
+    func inspected() async {
+        let feed = UpdateFeed(offline: OfflineStore(directory: FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)))
+        feed.show(account: "1")
+        let course = MaterialCourse(moodleID: 55, code: "097785", name: "Basi di Dati")
+        var asked: [String] = []
+        let inspect: @MainActor (ResultsFileRef) async -> ResultsLookup? = { file in
+            asked.append(file.name)
+            return ResultsLookup(looksLikeResults: true, found: true, grade: "27")
+        }
+
+        await feed.recordMaterials(course: course, sections: listing(["Lezione.pdf"]), account: "1", inspect: inspect)
+        #expect(asked.isEmpty)   // baseline: nothing new, nothing read
+        await feed.recordMaterials(course: course, sections: listing(["Lezione.pdf", "Esiti.pdf"]),
+                                   account: "1", inspect: inspect)
+
+        #expect(asked == ["Esiti.pdf"])
+        let update = feed.updates.first
+        #expect(update?.lookup == ResultsLookup(looksLikeResults: true, found: true, grade: "27"))
+        #expect(update?.delivery == .push)
+        #expect(update?.title == String(localized: "Sei negli esiti"))
+    }
+
+    /// §10.3: the content decides when it disagrees with the name.
+    @Test("A solutions file holding marks is results; a results file with no table is a notice")
+    func contentDecides() async {
+        let course = MaterialCourse(moodleID: 55, code: "097785", name: "Basi di Dati")
+        func run(_ name: String, _ lookup: ResultsLookup) async -> ExamUpdate? {
+            let feed = UpdateFeed(offline: OfflineStore(directory: FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString)))
+            feed.show(account: "1")
+            await feed.recordMaterials(course: course, sections: listing(["Lezione.pdf"]), account: "1")
+            await feed.recordMaterials(course: course, sections: listing(["Lezione.pdf", name]), account: "1",
+                                       inspect: { _ in lookup })
+            return feed.updates.first
+        }
+        let marks = await run("Soluzioni appello.pdf", ResultsLookup(looksLikeResults: true, found: false, grade: nil))
+        #expect(marks?.kind == .resultsPosted)
+        let notice = await run("Risultati orale.pdf", ResultsLookup(looksLikeResults: false, found: false, grade: nil))
+        #expect(notice?.kind == .examNoticePosted)
+        let mention = await run("Esiti.pdf", ResultsLookup(looksLikeResults: false, found: true, grade: nil))
+        #expect(mention?.kind == .resultsPosted)
+        #expect(mention?.delivery == .digest)   // found, but not in a table
+    }
+}
