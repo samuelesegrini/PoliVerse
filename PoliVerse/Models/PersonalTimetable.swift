@@ -184,6 +184,48 @@ nonisolated enum PersonalTimetableParser {
         return nil
     }
 
+    /// A teaching offered in sections the student picks, rather than by bracket.
+    struct SectionsLink: Sendable, Equatable {
+        let courseCode: String
+        let planCode: String
+        let yearOfCourse: String
+        let idItemOfferta: String
+        let idGruppo: String
+        let idRiga: String
+    }
+
+    static func sectionsLink(in html: String, code: String) -> SectionsLink? {
+        for match in groups(#"orario_td con_sezioni[^>]*>\s*<a[^>]*href="([^"]*)""#, in: html) {
+            let url = match[0].replacingOccurrences(of: "&amp;", with: "&")
+            guard HTMLScraper.queryValue("codDescr", in: url) == code,
+                  let course = HTMLScraper.queryValue("k_corso_la", in: url) else { continue }
+            func value(_ name: String) -> String { HTMLScraper.queryValue(name, in: url) ?? "" }
+            return SectionsLink(courseCode: course, planCode: value("k_indir"), yearOfCourse: value("anno_corso"),
+                                idItemOfferta: value("idItemOfferta"), idGruppo: value("idGruppo"), idRiga: value("idRiga"))
+        }
+        return nil
+    }
+
+    struct SectionOption: Sendable, Hashable, Identifiable {
+        var id: String { "\(semester)_\(name)" }
+        let semester: String
+        let name: String
+        let label: String
+        let isPreselected: Bool
+    }
+
+    /// The `evn_showsezioni` fragment: one radio per section.
+    static func sections(_ html: String) -> [SectionOption] {
+        groups(#"<input([^>]*name="sel_sezione"[^>]*)>(.*?)</tr>"#, in: html).compactMap { match in
+            guard let value = HTMLScraper.firstMatch(#"value="([^"]*)""#, in: match[0], group: 1),
+                  let separator = value.firstIndex(of: "_") else { return nil }
+            let label = clean(match[1].replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression))
+            let name = String(value[value.index(after: separator)...])
+            return SectionOption(semester: String(value[..<separator]), name: name,
+                                 label: label.isEmpty ? name : label, isPreselected: match[0].contains("checked"))
+        }
+    }
+
     enum CartReply: Sendable, Equatable {
         case added(count: Int)
         /// The service's own message, when it gave one.
@@ -254,6 +296,23 @@ nonisolated enum TimetableHandover {
 
     private static func key(_ title: String) -> String {
         title.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
+            .replacingOccurrences(of: "[^a-z0-9]+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
+    }
+}
+
+/// Whether a catalogue row is the student's degree course, by name: the
+/// career gives "Ingegneria Energetica", the catalogue
+/// "(1 liv.)(ord. 270) - BV (352) Ingegneria Energetica".
+nonisolated enum DegreeCourseMatch {
+    static func matches(_ degreeCourse: String?, plan: String?) -> Bool {
+        guard let degreeCourse, let plan else { return false }
+        let wanted = key(plan)
+        return !wanted.isEmpty && key(degreeCourse).contains(wanted)
+    }
+
+    private static func key(_ text: String) -> String {
+        text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
             .replacingOccurrences(of: "[^a-z0-9]+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespaces)
     }

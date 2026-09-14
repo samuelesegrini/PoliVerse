@@ -236,3 +236,44 @@ struct PersonalTimetableRefreshTests {
         #expect(!PersonalTimetableService.needsRefresh(timetable(builtDaysAgo: 8, lessonsEndInDays: -1), now: now))
     }
 }
+
+@Suite("Personal timetable choices")
+struct PersonalTimetableChoiceTests {
+    /// Modelled on the page's own script — `show_sezioni` reads
+    /// `input[name=sel_sezione]` valued "<semestre>_<sezione>" — since no
+    /// teaching offered sections when the fixtures were taken.
+    private let sections = """
+    <form><input type="hidden" name="c_insegn_sel_sezione" value="088715"/>
+    <input type="hidden" name="ac_sel_sezione" value="3"/>
+    <table><tr><td><input type="radio" name="sel_sezione" value="1_A" checked="checked"/></td><td>Sezione A - Rossi Mario</td></tr>
+    <tr><td><input type="radio" name="sel_sezione" value="1_B"/></td><td> Sezione B -  Bianchi Anna </td></tr></table></form>
+    """
+
+    @Test("A teaching page with sections links the dialog, with its keys")
+    func sectionsLink() throws {
+        let html = """
+        <td class="ElementInfoCard2 orario_td con_sezioni"><a name="k1" href="/manifesti/manifesti/controller/ManifestoPublic.do?evn_x=evento&aa=2026&k_corso_la=346&k_indir=M1A&codDescr=088715&anno_corso=3&idItemOfferta=1&idGruppo=2&idRiga=3"><img src="put.png"></a></td>
+        """
+        let link = try #require(PersonalTimetableParser.sectionsLink(in: html, code: "088715"))
+        #expect(link.courseCode == "346")
+        #expect(link.yearOfCourse == "3")
+        #expect(link.idGruppo == "2")
+        #expect(PersonalTimetableParser.sectionsLink(in: html, code: "000000") == nil)
+    }
+
+    @Test("The sections dialog lists each option with its semester and the preselected one")
+    func sectionOptions() {
+        let options = PersonalTimetableParser.sections(sections)
+        #expect(options.map(\.name) == ["A", "B"])
+        #expect(options.map(\.semester) == ["1", "1"])
+        #expect(options.map(\.label) == ["Sezione A - Rossi Mario", "Sezione B - Bianchi Anna"])
+        #expect(options.map(\.isPreselected) == [true, false])
+    }
+
+    @Test("A catalogue row belongs to the student's degree course when the names agree")
+    func degree() {
+        #expect(DegreeCourseMatch.matches("(1 liv.)(ord. 270) - BV (352) Ingegneria Energetica", plan: "INGEGNERIA ENERGETICA"))
+        #expect(!DegreeCourseMatch.matches("(1 liv.)(ord. 270) - MI (358) Ingegneria Informatica", plan: "Ingegneria Energetica"))
+        #expect(!DegreeCourseMatch.matches(nil, plan: "Ingegneria Energetica"))
+    }
+}

@@ -25,6 +25,18 @@ final class PersonalTimetableService {
     /// Teachings the service refused, with its reason when it gave one.
     private(set) var refused: [(teaching: ManifestoTeaching, reason: String?)] = []
 
+    /// A section the student chose, for a teaching offered in sections.
+    struct SectionChoice: Sendable, Equatable {
+        let link: PersonalTimetableParser.SectionsLink
+        let option: PersonalTimetableParser.SectionOption
+    }
+
+    /// Chosen sections, by teaching code.
+    private(set) var sectionChoices: [String: SectionChoice] = [:]
+    /// A teaching waiting for the student to pick its section.
+    var pendingSections: (teaching: ManifestoTeaching, link: PersonalTimetableParser.SectionsLink,
+                          options: [PersonalTimetableParser.SectionOption])?
+
     /// The service's own cap.
     static let capacity = 15
     private static let cacheName = "personal-timetable"
@@ -59,7 +71,29 @@ final class PersonalTimetableService {
             selection.remove(at: index)
         } else if selection.count < Self.capacity {
             selection.append(teaching)
+            // Most teachings are bracketed by name; the few offered in
+            // sections ask which, and only a named session can see that.
+            if manifesti.surname != nil {
+                Task { await askForSections(teaching) }
+            }
         }
+    }
+
+    private func askForSections(_ teaching: ManifestoTeaching) async {
+        guard let found = await manifesti.sections(for: teaching), isSelected(teaching) else { return }
+        pendingSections = (teaching, found.link, found.options)
+    }
+
+    func choose(_ option: PersonalTimetableParser.SectionOption?, for teaching: ManifestoTeaching,
+                link: PersonalTimetableParser.SectionsLink) {
+        sectionChoices[teaching.code] = option.map { SectionChoice(link: link, option: $0) }
+        pendingSections = nil
+    }
+
+    /// Sets the name on the service ahead of the build, so choosing teachings
+    /// can find those offered in sections.
+    func prepare(name: String) async {
+        await manifesti.setName(name)
     }
 
     // MARK: - Building
@@ -110,8 +144,16 @@ final class PersonalTimetableService {
         for (index, teaching) in teachings.enumerated() {
             guard !Task.isCancelled else { break }
             progress = .adding(done: index, total: teachings.count)
-            let link = await manifesti.cartLink(for: teaching)
-            switch await manifesti.addToTimetable(teaching, link: link) {
+            let reply: PersonalTimetableParser.CartReply
+            if let choice = sectionChoices[teaching.code] {
+                let link = PersonalTimetableParser.CartLink(
+                    courseCode: choice.link.courseCode, planCode: choice.link.planCode,
+                    semester: choice.option.semester, yearOfCourse: choice.link.yearOfCourse)
+                reply = await manifesti.addToTimetable(teaching, link: link, section: choice.option.name)
+            } else {
+                reply = await manifesti.addToTimetable(teaching, link: await manifesti.cartLink(for: teaching))
+            }
+            switch reply {
             case .added: added += 1
             case .refused(let reason): refused.append((teaching, reason))
             }

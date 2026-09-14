@@ -238,12 +238,24 @@ private struct PersonalTimetableBuilder: View {
     @Environment(CourseService.self) private var courses
     @Environment(\.dismiss) private var dismiss
     @AppStorage("manifestoSurname") private var surname = ""
-    @AppStorage("personalTimetableName") private var storedName = ""
+    @AppStorage("personalTimetableFirstName") private var storedFirstName = ""
+    @Environment(CareerService.self) private var career
 
     enum Step { case name, teachings, build }
     @State private var step: Step = .name
-    @State private var name = ""
+    @State private var lastName = ""
+    @State private var firstName = ""
     @State private var query = ""
+    @State private var onlyMyDegree = true
+
+    /// "Cognome Nome", the single field the service takes. Asked for in two
+    /// so a compound surname — "De Luca" — is never split in the wrong place.
+    private var name: String {
+        [lastName, firstName].map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }.joined(separator: " ")
+    }
+
+    private var myDegree: String? { career.planHeader?.course }
 
     var body: some View {
         @Bindable var manifesti = manifesti
@@ -264,9 +276,10 @@ private struct PersonalTimetableBuilder: View {
         }
         .task {
             personal.resetProgress()
-            if name.isEmpty {
-                name = !storedName.isEmpty ? storedName
-                    : session.student.map { "\($0.lastName) \($0.firstName)" } ?? personal.timetable?.name ?? ""
+            await career.load()
+            if lastName.isEmpty {
+                lastName = !surname.isEmpty ? surname : session.student?.lastName ?? ""
+                firstName = !storedFirstName.isEmpty ? storedFirstName : session.student?.firstName ?? ""
             }
         }
     }
@@ -276,10 +289,14 @@ private struct PersonalTimetableBuilder: View {
     private func nameStep(year: Binding<AcademicYear>) -> some View {
         Form {
             Section {
-                TextField("Cognome e nome", text: $name)
+                TextField("Cognome", text: $lastName)
                     .textInputAutocapitalization(.words)
                     .autocorrectionDisabled()
-                    .textContentType(.name)
+                    .textContentType(.familyName)
+                TextField("Nome", text: $firstName)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .textContentType(.givenName)
             } header: {
                 Text("Chi sei")
             } footer: {
@@ -296,11 +313,13 @@ private struct PersonalTimetableBuilder: View {
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Avanti") {
-                    storedName = name.trimmingCharacters(in: .whitespaces)
-                    surname = name.split(separator: " ").first.map(String.init) ?? name
+                    surname = lastName.trimmingCharacters(in: .whitespaces)
+                    storedFirstName = firstName.trimmingCharacters(in: .whitespaces)
                     step = .teachings
+                    Task { await personal.prepare(name: name) }
                 }
-                .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                .disabled(lastName.trimmingCharacters(in: .whitespaces).isEmpty
+                          || firstName.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
     }
@@ -313,6 +332,13 @@ private struct PersonalTimetableBuilder: View {
         }
     }
 
+    /// The search results, narrowed to the student's degree course when asked
+    /// — the same teaching has different times in different courses.
+    private var results: [ManifestoTeaching] {
+        guard onlyMyDegree, let myDegree else { return manifesti.results }
+        return manifesti.results.filter { DegreeCourseMatch.matches($0.degreeCourse, plan: myDegree) }
+    }
+
     private var teachingsStep: some View {
         List {
             Section {
@@ -322,7 +348,14 @@ private struct PersonalTimetableBuilder: View {
                 }
                 ForEach(personal.selection) { teaching in
                     HStack {
-                        ManifestoRow(teaching: teaching)
+                        VStack(alignment: .leading, spacing: 2) {
+                            ManifestoRow(teaching: teaching)
+                            if let section = personal.sectionChoices[teaching.code] {
+                                Label(section.option.label, systemImage: "person.2")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                         Spacer()
                         Button("Rimuovi", systemImage: "minus.circle.fill") { personal.toggle(teaching) }
                             .labelStyle(.iconOnly)
@@ -351,11 +384,22 @@ private struct PersonalTimetableBuilder: View {
                 }
             }
 
+            if let myDegree {
+                Section {
+                    Toggle(isOn: $onlyMyDegree) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Solo il mio corso di studi")
+                            Text(myDegree).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+
             if manifesti.isSearching {
                 Section { ProgressView().frame(maxWidth: .infinity) }
             } else if !query.isEmpty, !manifesti.results.isEmpty {
-                Section("Risultati") {
-                    ForEach(manifesti.results) { teaching in
+                Section {
+                    ForEach(results) { teaching in
                         Button { personal.toggle(teaching) } label: {
                             HStack {
                                 ManifestoRow(teaching: teaching)
@@ -368,6 +412,21 @@ private struct PersonalTimetableBuilder: View {
                         .disabled(!personal.isSelected(teaching)
                                   && personal.selection.count >= PersonalTimetableService.capacity)
                     }
+                } header: {
+                    Text("Risultati")
+                } footer: {
+                    if results.isEmpty {
+                        Text("Nessun risultato nel tuo corso di studi: disattiva il filtro per vedere gli altri corsi.")
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: Binding(get: { personal.pendingSections != nil },
+                                    set: { if !$0, let pending = personal.pendingSections {
+                                        personal.choose(nil, for: pending.teaching, link: pending.link) } })) {
+            if let pending = personal.pendingSections {
+                SectionPicker(teaching: pending.teaching, options: pending.options) { option in
+                    personal.choose(option, for: pending.teaching, link: pending.link)
                 }
             }
         }
@@ -444,6 +503,38 @@ private struct PersonalTimetableBuilder: View {
                 Button("Fine") { dismiss() }.disabled(personal.progress != .finished)
             }
         }
+    }
+}
+
+/// Which section of a teaching offered in sections.
+private struct SectionPicker: View {
+    let teaching: ManifestoTeaching
+    let options: [PersonalTimetableParser.SectionOption]
+    let onChoose: (PersonalTimetableParser.SectionOption) -> Void
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(options) { option in
+                        Button { onChoose(option) } label: {
+                            HStack {
+                                Text(option.label)
+                                Spacer()
+                                if option.isPreselected {
+                                    Text("Suggerita").font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+                } footer: {
+                    Text("Questo insegnamento è diviso in sezioni: scegli quella che frequenti. Se non scegli, il Politecnico usa quella del tuo scaglione.")
+                }
+            }
+            .navigationTitle(teaching.name)
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .presentationDetents([.medium, .large])
     }
 }
 

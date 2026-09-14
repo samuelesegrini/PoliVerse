@@ -283,6 +283,30 @@ final class ManifestiService {
         return PersonalTimetableParser.cartLink(in: html, code: teaching.code)
     }
 
+    /// The sections a teaching asks the student to choose between, if any.
+    ///
+    /// Read on the cart's session, like the add link: the page offers the
+    /// choice only once a name is set.
+    func sections(for teaching: ManifestoTeaching)
+        async -> (link: PersonalTimetableParser.SectionsLink, options: [PersonalTimetableParser.SectionOption])? {
+        guard let html = await page("ManifestoPublic.do?\(detailQuery(teaching))"),
+              let link = PersonalTimetableParser.sectionsLink(in: html, code: teaching.code) else { return nil }
+        // The dialog's school, which the page writes into its own script.
+        let school = HTMLScraper.firstMatch(#"k_cf:\s*([0-9]+)"#, in: html, group: 1) ?? "-1"
+        var components = URLComponents()
+        components.queryItems = [
+            .init(name: "evn_showsezioni", value: "evento"), .init(name: "aa", value: teaching.year ?? year.code),
+            .init(name: "k_cf", value: school), .init(name: "k_corso_la", value: link.courseCode),
+            .init(name: "k_indir", value: link.planCode), .init(name: "codDescr", value: teaching.code),
+            .init(name: "ac_ins", value: link.yearOfCourse), .init(name: "idItemOfferta", value: link.idItemOfferta),
+            .init(name: "idGruppo", value: link.idGruppo), .init(name: "idRiga", value: link.idRiga),
+            .init(name: "lang", value: PoliMiLanguage.current.rawValue),
+        ]
+        guard let fragment = await page("ManifestoPublic.do?\(components.percentEncodedQuery ?? "")") else { return nil }
+        let options = PersonalTimetableParser.sections(fragment)
+        return options.isEmpty ? nil : (link, options)
+    }
+
     /// Adds a teaching to the personalised timetable.
     ///
     /// Answers a small XML document rather than a page: `<success>` with the
