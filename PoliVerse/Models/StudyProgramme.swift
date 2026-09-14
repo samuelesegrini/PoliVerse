@@ -68,6 +68,20 @@ nonisolated struct StudyProgrammeStore: @unchecked Sendable {
         write(programme, key(matricola) + "-other-" + year)
     }
 
+    /// Matricole the app has been signed in with, per codice persona: the
+    /// careers list can leave one out, and a career never listed could not
+    /// otherwise be given a programme.
+    func seenMatricole(person: String) -> [String] {
+        defaults.stringArray(forKey: "seenMatricole-\(person)") ?? []
+    }
+
+    func remember(_ matricola: String, person: String) {
+        var seen = seenMatricole(person: person)
+        guard !seen.contains(matricola) else { return }
+        seen.append(matricola)
+        defaults.set(seen, forKey: "seenMatricole-\(person)")
+    }
+
     private func write(_ programme: StudyProgramme?, _ key: String) {
         guard let programme, let data = try? JSONEncoder().encode(programme) else {
             defaults.removeObject(forKey: key)

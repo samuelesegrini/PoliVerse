@@ -60,6 +60,10 @@ final class StudyProgrammeService {
     /// there is none and checking the one there is. Cheap once done.
     func prepare() async {
         guard let matricola else { return }
+        if let person = session.student?.personCode, !store.seenMatricole(person: person).contains(matricola) {
+            store.remember(matricola, person: person)
+            revision += 1
+        }
         if loadedFor != matricola {
             loadedFor = matricola
             programme = store.programme(for: matricola)
@@ -194,8 +198,10 @@ final class StudyProgrammeService {
     /// observable, the rows built from it must still refresh.
     private(set) var revision = 0
 
+    /// The careers listed, and every matricola the app has been signed in with.
     private var careerMatricole: [String] {
-        careers?.careers.map(\.matricola) ?? []
+        let seen = session.student.map { store.seenMatricole(person: $0.personCode) } ?? []
+        return seen + (careers?.careers.map(\.matricola) ?? []).filter { !seen.contains($0) }
     }
 
     /// Every career with its programme, the one in use first.

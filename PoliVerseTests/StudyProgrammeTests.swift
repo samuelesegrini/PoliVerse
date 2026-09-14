@@ -109,3 +109,19 @@ struct CareerProgrammesTests {
         #expect(others.map(\.selection.degree) == ["542"])
     }
 }
+
+@Suite("Matricole seen")
+struct SeenMatricoleTests {
+    @Test("Every matricola signed in with is remembered per person, in order, once")
+    func seen() throws {
+        let defaults = try #require(UserDefaults(suiteName: "seen-matricole-tests"))
+        defaults.removePersistentDomain(forName: "seen-matricole-tests")
+        let store = StudyProgrammeStore(defaults: defaults)
+        store.remember("986617", person: "10712345")
+        store.remember("337940", person: "10712345")
+        store.remember("986617", person: "10712345")
+        store.remember("111111", person: "99999999")
+        #expect(store.seenMatricole(person: "10712345") == ["986617", "337940"])
+        #expect(store.seenMatricole(person: "99999999") == ["111111"])
+    }
+}
