@@ -1,6 +1,13 @@
 import CoreLocation
 import Foundation
 
+extension MapPin {
+    /// The pin before availability was counted.
+    nonisolated var uncoloured: MapPin {
+        MapPin(id: id, name: name, coordinate: coordinate, freeRooms: nil, totalRooms: totalRooms)
+    }
+}
+
 /// Where the map's pins go, worked out away from the main thread.
 ///
 /// Pure, so ``CampusMapService`` can call it every time something arrives —

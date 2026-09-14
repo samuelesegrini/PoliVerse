@@ -433,13 +433,15 @@ final class WeBeepService {
 
     func discussions(in forum: CourseForum) async throws -> [MoodleDiscussion] {
         if session.useMockData { return MockData.discussions }
-        guard let api else { throw WeBeepAPI.Failure.moodle(code: "invalidtoken", message: "") }
+        // Not connected: the forum screen offers the login before asking.
+        guard let api else { throw URLError(.userAuthenticationRequired) }
         return try await api.discussions(forumID: forum.id, perPage: 30)
     }
 
     func posts(in discussion: MoodleDiscussion) async throws -> [MoodlePosts.Post] {
         if session.useMockData { return MockData.posts(for: discussion) }
-        guard let api else { throw WeBeepAPI.Failure.moodle(code: "invalidtoken", message: "") }
+        // Not connected: the forum screen offers the login before asking.
+        guard let api else { throw URLError(.userAuthenticationRequired) }
         return try await api.discussionPosts(discussionID: discussion.discussion ?? discussion.id).chronological
     }
 

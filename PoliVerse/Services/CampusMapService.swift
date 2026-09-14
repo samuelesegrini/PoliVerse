@@ -93,7 +93,12 @@ final class CampusMapService {
         guard !locations.isEmpty, !catalogue.rooms.isEmpty else { return }
         let placed = await MapPlacement.pinsInBackground(
             rooms: catalogue.rooms, locations: locations, campus: campus)
-        if placed != pins { pins = placed }
+        // Placing again drops any colouring, so say so rather than keep a
+        // legend over grey pins.
+        if placed != pins.map(\.uncoloured) {
+            pins = placed
+            showsAvailability = false
+        }
     }
 
     /// Whether this launch has fetched the geojson; cached coordinates are

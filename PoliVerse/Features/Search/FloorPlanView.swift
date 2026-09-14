@@ -11,6 +11,7 @@ struct FloorPlanView: View {
     @State private var image: UIImage?
     @State private var failed = false
     @State private var fullScreen = false
+    @State private var loadedURL: URL?
 
     var body: some View {
         if let url = room.floorPlanURL, !failed {
@@ -46,12 +47,14 @@ struct FloorPlanView: View {
     /// Loaded as a `UIImage` rather than through `AsyncImage`: the zooming
     /// scroll view below is UIKit, and wants the bitmap itself.
     private func load(_ url: URL) async {
-        guard image == nil else { return }
+        guard loadedURL != url else { return }
+        image = nil
         do {
             let (data, response) = try await URLSession.shared.data(from: url)
             guard (response as? HTTPURLResponse)?.statusCode ?? 200 == 200,
                   let decoded = UIImage(data: data) else { failed = true; return }
             image = await decoded.byPreparingForDisplay() ?? decoded
+            loadedURL = url
         } catch {
             // Removed rather than left as a broken frame: a plan that will not
             // load is not worth a permanent gap.

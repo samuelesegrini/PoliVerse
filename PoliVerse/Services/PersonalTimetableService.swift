@@ -86,6 +86,11 @@ final class PersonalTimetableService {
             case .refused(let reason): refused.append((teaching, reason))
             }
         }
+        // Closed mid-build: a timetable missing the rest would pass for complete.
+        guard !Task.isCancelled else {
+            progress = .idle
+            return
+        }
         guard added > 0 else {
             progress = .failed(String(localized: "Il Politecnico non ha accettato nessun insegnamento."))
             return
