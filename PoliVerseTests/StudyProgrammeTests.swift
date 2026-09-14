@@ -125,3 +125,45 @@ struct SeenMatricoleTests {
         #expect(store.seenMatricole(person: "99999999") == ["111111"])
     }
 }
+
+/// Integrated courses: one entry with a bracket, its modules listed beneath it
+/// with none — live, Design 2026: 063154 is DISEGNO INDUSTRIALE DEL PRODOTTO
+/// (6 CFU, Ingaramo) with two modules by Rampino, and a single scheda for all.
+@Suite("Integrated courses")
+struct IntegratedCourseTests {
+    private func module(_ code: String, _ name: String, _ from: String?, _ to: String?, _ teacher: String,
+                        _ credits: Double, _ scheda: String?) -> ManifestoModule {
+        ManifestoModule(code: code, name: name, teachers: [ManifestoTeacher(name: teacher, kDoc: nil)], credits: credits,
+                        period: nil, language: nil, scaglioneFrom: from, scaglioneTo: to, syllabusID: scheda)
+    }
+
+    private var lab: [ManifestoModule] {
+        [module("099428", "DISEGNO INDUSTRIALE DEL PRODOTTO", "A", "ZZZZ", "Ingaramo Matteo Oreste", 6, "881029"),
+         module("099432", "DISEGNO INDUSTRIALE DEL PRODOTTO (INT. DI)", nil, nil, "Rampino Lucia Rosa Elena", 4, nil),
+         module("099435", "TEORIA E PRATICA DEL DESIGN DI PRODOTTO", nil, nil, "Rampino Lucia Rosa Elena", 2, nil)]
+    }
+
+    @Test("The modules under a bracketed entry are its parts")
+    func parts() throws {
+        let chosen = try #require(SyllabusPicker.module(in: lab, bracket: nil, surname: "Segrini"))
+        #expect(SyllabusPicker.parts(of: chosen, in: lab).map(\.code) == ["099428", "099432", "099435"])
+    }
+
+    @Test("With several brackets, each takes only the modules beneath it")
+    func split() {
+        let split = [module("1", "LAB", "A", "L", "Alfa", 6, "10"), module("2", "INT", nil, nil, "Beta", 4, nil),
+                     module("3", "LAB", "L", "ZZZZ", "Gamma", 6, "11"), module("4", "INT", nil, nil, "Delta", 4, nil)]
+        #expect(SyllabusPicker.parts(of: split[2], in: split).map(\.code) == ["3", "4"])
+        #expect(SyllabusPicker.parts(of: split[0], in: split).map(\.code) == ["1", "2"])
+    }
+
+    @Test("A pick carries every lecturer of the course once, in order")
+    func teachers() throws {
+        let chosen = try #require(SyllabusPicker.module(in: lab, bracket: nil, surname: "Segrini"))
+        let pick = SyllabusPicker.Pick(degreeCourse: nil, module: chosen, matchesDegree: true,
+                                       parts: SyllabusPicker.parts(of: chosen, in: lab))
+        #expect(pick.teachers == ["Ingaramo Matteo Oreste", "Rampino Lucia Rosa Elena"])
+        #expect(pick.isIntegrated)
+        #expect(!SyllabusPicker.Pick(degreeCourse: nil, module: chosen, matchesDegree: true).isIntegrated)
+    }
+}

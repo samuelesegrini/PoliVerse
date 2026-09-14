@@ -17,6 +17,28 @@ nonisolated enum SyllabusPicker {
         /// Whether the student's own degree course was found among the rows;
         /// otherwise this is the first row with a scheda, and the UI says so.
         let matchesDegree: Bool
+        /// The modules of an integrated course, the entry first; empty for a
+        /// single-module teaching. PoliMi publishes one scheda for the whole
+        /// course, so the parts are listed rather than opened.
+        var parts: [ManifestoModule] = []
+
+        init(degreeCourse: String?, module: ManifestoModule, matchesDegree: Bool, parts: [ManifestoModule] = []) {
+            self.degreeCourse = degreeCourse
+            self.module = module
+            self.matchesDegree = matchesDegree
+            self.parts = parts.count > 1 ? parts : []
+        }
+
+        var isIntegrated: Bool { parts.count > 1 }
+
+        /// Every lecturer of the course, the entry's first, each once.
+        var teachers: [String] {
+            var names: [String] = []
+            for name in ([module] + parts).flatMap({ $0.teachers.map(\.name) }) where !names.contains(name) {
+                names.append(name)
+            }
+            return names
+        }
     }
 
     static func pick(_ details: [ManifestoDetail], surname: String?, degreeName: String?) -> Pick? {
@@ -27,10 +49,23 @@ nonisolated enum SyllabusPicker {
             let withScheda = detail.modules.filter { $0.syllabusID != nil }
             let mine = surname.flatMap { name in withScheda.first { $0.covers(surname: name) } }
             if let module = mine ?? withScheda.first {
-                return Pick(degreeCourse: detail.degreeCourse, module: module, matchesDegree: matches(detail, degree))
+                return Pick(degreeCourse: detail.degreeCourse, module: module, matchesDegree: matches(detail, degree),
+                            parts: parts(of: module, in: detail.modules))
             }
         }
         return nil
+    }
+
+    /// The modules of an integrated course: the entry, and those listed under
+    /// it with no bracket of their own, up to the next bracketed entry.
+    static func parts(of entry: ManifestoModule, in modules: [ManifestoModule]) -> [ManifestoModule] {
+        guard let start = modules.firstIndex(of: entry) else { return [entry] }
+        var parts = [entry]
+        for module in modules[modules.index(after: start)...] {
+            guard module.scaglioneFrom == nil, module.scaglioneTo == nil else { break }
+            parts.append(module)
+        }
+        return parts
     }
 
     /// The module whose scheda is the student's, on a row already known to be

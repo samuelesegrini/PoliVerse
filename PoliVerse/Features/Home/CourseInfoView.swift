@@ -75,7 +75,7 @@ struct CourseInfoView: View {
                 // may be another degree course, with other lecturers.
                 if let pick, pick.matchesDegree {
                     let module = pick.module
-                    if !module.teachers.isEmpty { pickTeachers = module.teachers.map(\.name).joined(separator: ", ") }
+                    if !pick.teachers.isEmpty { pickTeachers = pick.teachers.joined(separator: ", ") }
                     if let from = module.scaglioneFrom, let to = module.scaglioneTo, from != "A" || to != "ZZZZ" {
                         pickBracket = "\(from) – \(to)"
                     }

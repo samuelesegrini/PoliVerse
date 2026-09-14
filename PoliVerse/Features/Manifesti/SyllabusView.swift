@@ -210,8 +210,8 @@ struct CourseSyllabusView: View {
                         if let from = pick.module.scaglioneFrom, let to = pick.module.scaglioneTo, to != "ZZZZ" || from != "A" {
                             LabeledContent("Scaglione", value: "\(from) – \(to)")
                         }
-                        if let teachers = pick.module.teachers.map(\.name).nonEmptyJoined {
-                            LabeledContent("Docente", value: teachers)
+                        if let teachers = pick.teachers.nonEmptyJoined {
+                            LabeledContent(pick.teachers.count > 1 ? "Docenti" : "Docente", value: teachers)
                         }
                         if let code = bracketCode, programmes.programme?.brackets[code] == nil,
                            programmes.programme?.inferredBrackets[code] != nil {
@@ -230,6 +230,23 @@ struct CourseSyllabusView: View {
                         } else {
                             Text("Il tuo corso di studi non risulta tra quelli che offrono questo insegnamento: questa è la scheda del primo che lo offre. Controlla che sia la tua.")
                         }
+                    }
+                }
+                if let pick, pick.isIntegrated {
+                    Section {
+                        ForEach(Array(pick.parts.enumerated()), id: \.offset) { _, part in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(part.name.capitalized).font(.subheadline.weight(.medium))
+                                Text([part.code,
+                                      part.credits.flatMap { $0 > 0 ? String(localized: "\($0.formatted()) CFU") : nil },
+                                      part.teachers.map(\.name).nonEmptyJoined].compactMap { $0 }.joined(separator: " · "))
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    } header: {
+                        Text("Moduli")
+                    } footer: {
+                        Text("Corso integrato: il Politecnico pubblica una sola scheda per tutti i moduli, qui sotto.")
                     }
                 }
                 SyllabusSections(syllabus: syllabus)

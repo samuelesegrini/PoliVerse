@@ -10388,6 +10388,38 @@
           }
         }
       }
+    },
+    "Moduli" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modules"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moduli"
+          }
+        }
+      }
+    },
+    "Corso integrato: il Politecnico pubblica una sola scheda per tutti i moduli, qui sotto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Integrated course: the Politecnico publishes one syllabus for all its modules, below."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Corso integrato: il Politecnico pubblica una sola scheda per tutti i moduli, qui sotto."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

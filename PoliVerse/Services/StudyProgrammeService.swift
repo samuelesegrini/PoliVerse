@@ -418,7 +418,8 @@ final class StudyProgrammeService {
             // The row's own degree course: the programme's, or the other plan
             // the course was found in.
             return SyllabusPicker.Pick(degreeCourse: detail.degreeCourse ?? programme?.degreeLabel,
-                                       module: module, matchesDegree: true)
+                                       module: module, matchesDegree: true,
+                                       parts: SyllabusPicker.parts(of: module, in: detail.modules))
         }
         guard let teachingCode else { return nil }
         return await manifesti.syllabusPick(teachingCode: teachingCode, surname: surname,

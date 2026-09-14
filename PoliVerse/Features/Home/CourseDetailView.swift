@@ -124,7 +124,7 @@ struct CourseDetailView: View {
                                                 yearCode: course.academicYearStart, courseID: course.id) {
                 // Only from the student's own plan: the catalogue-wide fallback
                 // may be another degree course, with other lecturers.
-                let names = pick.module.teachers.map(\.name)
+                let names = pick.teachers
                 if pick.matchesDegree, !names.isEmpty { bracketTeacher = names.joined(separator: ", ") }
                 if let id = pick.module.syllabusID { _ = await manifesti.syllabus(for: id) }
             }
