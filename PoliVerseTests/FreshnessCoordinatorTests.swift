@@ -87,14 +87,30 @@ struct FreshnessCoordinatorTests {
     func forcedRunFollowsGentleRun() async {
         let coordinator = FreshnessCoordinator()
         let calls = Recorder()
+        let (gentleStarted, gentleStartedSignal) = AsyncStream.makeStream(of: Void.self)
+        let (forcedArrived, forcedArrivedSignal) = AsyncStream.makeStream(of: Void.self)
         coordinator.register("agenda") { force in
             calls.record(force ? "forced" : "gentle")
-            await Task.yield()
+            guard !force else { return }
+            // Hold the gentle pass open until the forced call has arrived, so
+            // the forced one is guaranteed to find it in flight.
+            gentleStartedSignal.yield()
+            for await _ in forcedArrived { break }
         }
 
-        async let gentle: Void = coordinator.revalidate()
-        async let forced: Void = coordinator.revalidate(force: true)
-        _ = await (gentle, forced)
+        // Starting both at once leaves their order to the scheduler; start the
+        // forced one only once the gentle pass is really running.
+        let gentle = Task { await coordinator.revalidate() }
+        for await _ in gentleStarted { break }
+        let forced = Task {
+            // Everything here shares the main actor, so the gentle pass cannot
+            // resume before `revalidate` reaches its first suspension, by which
+            // point the forced call has already seen the run in flight.
+            forcedArrivedSignal.yield()
+            await coordinator.revalidate(force: true)
+        }
+        await gentle.value
+        await forced.value
 
         // Chained, not raced: two passes writing the same service's cache from
         // two directions is the bug the ordering avoids.
