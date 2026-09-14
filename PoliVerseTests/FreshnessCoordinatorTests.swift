@@ -55,14 +55,8 @@ struct FreshnessCoordinatorTests {
     func coalescesConcurrentRuns() async {
         let coordinator = FreshnessCoordinator()
         let calls = Recorder()
-        coordinator.register("agenda") { _ in
-            calls.record("agenda")
-            await Task.yield()
-        }
 
-        async let first: Void = coordinator.revalidate()
-        async let second: Void = coordinator.revalidate()
-        _ = await (first, second)
+        await overlap(coordinator, first: false, then: [false]) { _ in calls.record("agenda") }
 
         #expect(calls.names == ["agenda"])
     }
@@ -87,30 +81,10 @@ struct FreshnessCoordinatorTests {
     func forcedRunFollowsGentleRun() async {
         let coordinator = FreshnessCoordinator()
         let calls = Recorder()
-        let (gentleStarted, gentleStartedSignal) = AsyncStream.makeStream(of: Void.self)
-        let (forcedArrived, forcedArrivedSignal) = AsyncStream.makeStream(of: Void.self)
-        coordinator.register("agenda") { force in
-            calls.record(force ? "forced" : "gentle")
-            guard !force else { return }
-            // Hold the gentle pass open until the forced call has arrived, so
-            // the forced one is guaranteed to find it in flight.
-            gentleStartedSignal.yield()
-            for await _ in forcedArrived { break }
-        }
 
-        // Starting both at once leaves their order to the scheduler; start the
-        // forced one only once the gentle pass is really running.
-        let gentle = Task { await coordinator.revalidate() }
-        for await _ in gentleStarted { break }
-        let forced = Task {
-            // Everything here shares the main actor, so the gentle pass cannot
-            // resume before `revalidate` reaches its first suspension, by which
-            // point the forced call has already seen the run in flight.
-            forcedArrivedSignal.yield()
-            await coordinator.revalidate(force: true)
+        await overlap(coordinator, first: false, then: [true]) { force in
+            calls.record(force ? "forced" : "gentle")
         }
-        await gentle.value
-        await forced.value
 
         // Chained, not raced: two passes writing the same service's cache from
         // two directions is the bug the ordering avoids.
@@ -125,15 +99,8 @@ struct FreshnessCoordinatorTests {
     func everyForcedRunFetches() async {
         let coordinator = FreshnessCoordinator()
         let calls = Recorder()
-        coordinator.register("agenda") { _ in
-            calls.record("agenda")
-            await Task.yield()
-        }
 
-        async let first: Void = coordinator.revalidate(force: true)
-        async let second: Void = coordinator.revalidate(force: true)
-        async let third: Void = coordinator.revalidate(force: true)
-        _ = await (first, second, third)
+        await overlap(coordinator, first: true, then: [true, true]) { _ in calls.record("agenda") }
 
         #expect(calls.names == ["agenda", "agenda", "agenda"])
     }
@@ -144,17 +111,53 @@ struct FreshnessCoordinatorTests {
     func gentleRunsJoin() async {
         let coordinator = FreshnessCoordinator()
         let calls = Recorder()
-        coordinator.register("agenda") { _ in
-            calls.record("agenda")
-            await Task.yield()
-        }
 
-        async let first: Void = coordinator.revalidate()
-        async let second: Void = coordinator.revalidate()
-        async let third: Void = coordinator.revalidate()
-        _ = await (first, second, third)
+        await overlap(coordinator, first: false, then: [false, false]) { _ in calls.record("agenda") }
 
         #expect(calls.names == ["agenda"])
+    }
+
+    /// Registers a load that records each pass, starts a revalidation, and
+    /// starts the `then` ones only once its pass is really running, holding
+    /// that pass open until every one of them has arrived.
+    ///
+    /// Starting them all at once with `async let` leaves their order to the
+    /// scheduler, and a later call that happens to start after the first pass
+    /// has finished tests nothing. Everything here shares the main actor, so
+    /// the held pass cannot resume between a later task announcing itself and
+    /// its `revalidate` reaching its first suspension — by which point that
+    /// call has already seen the pass in flight.
+    private func overlap(
+        _ coordinator: FreshnessCoordinator,
+        first: Bool,
+        then later: [Bool],
+        record: @escaping @MainActor (_ force: Bool) -> Void
+    ) async {
+        let (started, startedSignal) = AsyncStream.makeStream(of: Void.self)
+        let (arrived, arrivalSignal) = AsyncStream.makeStream(of: Void.self)
+        let passes = Recorder()
+        coordinator.register("agenda") { force in
+            record(force)
+            passes.record("pass")
+            guard passes.names.count == 1 else { return }
+            startedSignal.yield()
+            var waiting = later.count
+            for await _ in arrived {
+                waiting -= 1
+                if waiting == 0 { break }
+            }
+        }
+
+        let firstRun = Task { await coordinator.revalidate(force: first) }
+        for await _ in started { break }
+        let laterRuns = later.map { force in
+            Task {
+                arrivalSignal.yield()
+                await coordinator.revalidate(force: force)
+            }
+        }
+        await firstRun.value
+        for run in laterRuns { await run.value }
     }
 
     @MainActor
