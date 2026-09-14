@@ -17,6 +17,8 @@ final class CourseService {
     /// Where a change goes when it cannot be sent now. Assigned by the app,
     /// because the queue needs the session and this service is built first.
     var pending: PendingChanges?
+    /// Fills in teaching codes from the student's plan. Assigned by the app.
+    var programme: StudyProgrammeService?
     /// Changes the user made that have not reached WeBeep yet.
     ///
     /// A third state between the cache and the server: newer than both,
@@ -109,6 +111,7 @@ final class CourseService {
             slot.save(loaded, for: session.useMockData ? nil : session.student?.matricola)
             age = slot.age
             window.markLoaded(source: source)
+            await fillCodes()
             return
         }
 
@@ -136,6 +139,23 @@ final class CourseService {
             // theirs is worse than showing nothing. Cached real courses are
             // fine to keep — they were genuinely theirs once.
         }
+    }
+
+    /// Teaching codes for WeBeep pages titled with a name only, from the plan
+    /// of each course's year — so their scheda, sittings and study-plan label
+    /// work like those of any other course. Applied by id, over whatever the
+    /// list holds by the time the plan pages arrive.
+    private func fillCodes() async {
+        guard let programme else { return }
+        let codes = await programme.codes(for: courses)
+        guard !codes.isEmpty else { return }
+        courses = courses.map { course in
+            guard course.code == nil || course.teachingCode == nil, let code = codes[course.id] else { return course }
+            var copy = course
+            copy.code = code
+            return copy
+        }
+        log.notice("study plan gave codes to \(codes.count, privacy: .public) WeBeep courses")
     }
 
     /// Toggles the favourite flag, writing it to WeBeep when the course came

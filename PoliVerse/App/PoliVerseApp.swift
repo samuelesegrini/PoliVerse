@@ -21,6 +21,7 @@ struct PoliVerseApp: App {
     @State private var notifications: NotificationService
     @State private var manifesti: ManifestiService
     @State private var personalTimetable: PersonalTimetableService
+    @State private var programmes: StudyProgrammeService
     @State private var network: NetworkMonitor
     @State private var pending: PendingChanges
     @State private var liveActivity = LiveActivityController()
@@ -76,6 +77,9 @@ struct PoliVerseApp: App {
         _personalTimetable = State(initialValue: PersonalTimetableService(manifesti: manifesti, agenda: agenda))
         let career = CareerService(session: session, feed: updates)
         _career = State(initialValue: career)
+        let programmes = StudyProgrammeService(manifesti: manifesti, session: session, career: career)
+        _programmes = State(initialValue: programmes)
+        courses.programme = programmes
         let notifications = NotificationService()
         _notifications = State(initialValue: notifications)
         // A change a load notices is news: delivered as it is found, from the
@@ -150,6 +154,7 @@ struct PoliVerseApp: App {
                 .environment(notifications)
                 .environment(manifesti)
                 .environment(personalTimetable)
+                .environment(programmes)
                 .environment(network)
                 .environment(pending)
                 .environment(liveActivity)

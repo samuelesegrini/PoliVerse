@@ -282,6 +282,23 @@ final class ManifestiService {
         return CatalogueParser.page(html)
     }
 
+    /// The page of a degree course, found by the name the career gives it:
+    /// every school's list is read, across all campuses, and the first that
+    /// names it is opened on its default plan.
+    func locateDegree(named degree: String) async -> CataloguePage? {
+        guard let first = await cataloguePage(nil), let start = first.selection,
+              let schools = first.level(.school)?.options else { return nil }
+        for school in schools {
+            let base = start.setting(.campus, to: "ALL_SEDI").setting(.school, to: school.value)
+            guard let schoolPage = await cataloguePage(base) else { continue }
+            let options = schoolPage.level(.degree)?.options ?? []
+            if let match = options.first(where: { DegreeCourseMatch.matches($0.label, plan: degree) }) {
+                return await cataloguePage(base.setting(.degree, to: match.value))
+            }
+        }
+        return nil
+    }
+
     /// The brackets a teaching is split into, with their lecturers; empty
     /// when it has one for everyone.
     func brackets(for teaching: ManifestoTeaching) async -> [BracketChoice] {

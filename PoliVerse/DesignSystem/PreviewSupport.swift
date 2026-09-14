@@ -37,6 +37,7 @@ enum PreviewEnvironment {
     static let network = NetworkMonitor()
     static let pending = PendingChanges(session: session, network: network)
     static let manifesti = ManifestiService()
+    static let programmes = StudyProgrammeService(manifesti: manifesti, session: session, career: career)
     static let personalTimetable = PersonalTimetableService(manifesti: manifesti, agenda: agenda, preview: MockData.personalTimetable)
     static let liveActivity = LiveActivityController()
     /// Its own defaults suite, so opening a preview cannot mark the real
@@ -77,6 +78,7 @@ extension View {
             .environment(PreviewEnvironment.pending)
             .environment(PreviewEnvironment.manifesti)
             .environment(PreviewEnvironment.personalTimetable)
+            .environment(PreviewEnvironment.programmes)
             .environment(PreviewEnvironment.liveActivity)
             .environment(PreviewEnvironment.freshness)
             .environment(PreviewEnvironment.onboarding)

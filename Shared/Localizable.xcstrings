@@ -10043,6 +10043,166 @@
           }
         }
       }
+    },
+    "Cambia corso di studi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change degree course"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambia corso di studi"
+          }
+        }
+      }
+    },
+    "Con corso di studi e piano la scheda è quella del tuo piano, non una scelta per nome." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With your degree course and plan, the syllabus is the one of your plan, not a guess by name."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con corso di studi e piano la scheda è quella del tuo piano, non una scelta per nome."
+          }
+        }
+      }
+    },
+    "Dedotto dal nome del tuo corso di studi: controlla che corso e piano siano i tuoi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Worked out from your degree course name: check that course and plan are yours."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dedotto dal nome del tuo corso di studi: controlla che corso e piano siano i tuoi."
+          }
+        }
+      }
+    },
+    "Il tuo corso di studi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your degree course"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo corso di studi"
+          }
+        }
+      }
+    },
+    "Salva" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salva"
+          }
+        }
+      }
+    },
+    "Scegli il tuo corso di studi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose your degree course"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli il tuo corso di studi"
+          }
+        }
+      }
+    },
+    "Questo corso non ha un codice d'insegnamento: scegli il tuo corso di studi per trovarlo nel tuo piano." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This course has no teaching code: choose your degree course to find it in your plan."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo corso non ha un codice d'insegnamento: scegli il tuo corso di studi per trovarlo nel tuo piano."
+          }
+        }
+      }
+    },
+    "Scegli un altro scaglione" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose another bracket"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli un altro scaglione"
+          }
+        }
+      }
+    },
+    "Scheda del tuo piano di studi, nello scaglione del tuo cognome o in quello che hai scelto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Syllabus from your study plan, in your surname's bracket or the one you chose."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scheda del tuo piano di studi, nello scaglione del tuo cognome o in quello che hai scelto."
+          }
+        }
+      }
+    },
+    "È il mio corso di studi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is my degree course"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "È il mio corso di studi"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

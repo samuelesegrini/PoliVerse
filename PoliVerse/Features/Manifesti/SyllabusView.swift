@@ -189,37 +189,36 @@ struct CourseSyllabusView: View {
     let course: Course
 
     @Environment(ManifestiService.self) private var manifesti
+    @Environment(StudyProgrammeService.self) private var programmes
     @Environment(Session.self) private var session
-    @Environment(CareerService.self) private var career
     @State private var pick: SyllabusPicker.Pick?
     @State private var syllabus: Syllabus?
     @State private var loading = true
-
+    @State private var changingProgramme = false
+    @State private var choosingBracket = false
 
     var body: some View {
         List {
+            programmeSection
             if loading {
                 Section { ProgressView().frame(maxWidth: .infinity) }
-            } else if course.teachingCode == nil {
-                Section {
-                    Text("Questo corso non ha un codice d'insegnamento del Politecnico, quindi non si trova nel Manifesto degli studi.")
-                        .foregroundStyle(.secondary)
-                }
             } else if let syllabus, !syllabus.isEmpty {
                 if let pick {
                     Section {
-                        if let degree = pick.degreeCourse {
-                            LabeledContent("Corso di studi", value: degree)
-                        }
                         if let from = pick.module.scaglioneFrom, let to = pick.module.scaglioneTo, to != "ZZZZ" || from != "A" {
                             LabeledContent("Scaglione", value: "\(from) – \(to)")
                         }
+                        if let teachers = pick.module.teachers.map(\.name).nonEmptyJoined {
+                            LabeledContent("Docente", value: teachers)
+                        }
+                        if programmes.programme != nil {
+                            Button("Scegli un altro scaglione") { choosingBracket = true }
+                        }
                     } footer: {
-                        // Which row was chosen is a guess from the career and
-                        // the surname: say so, and say when the degree was not
-                        // found at all.
+                        // Which row was chosen: from the plan when there is
+                        // one, a guess otherwise — say which.
                         if pick.matchesDegree {
-                            Text("Scheda scelta in base al tuo corso di studi e al tuo cognome, dal Manifesto degli studi.")
+                            Text("Scheda del tuo piano di studi, nello scaglione del tuo cognome o in quello che hai scelto.")
                         } else {
                             Text("Il tuo corso di studi non risulta tra quelli che offrono questo insegnamento: questa è la scheda del primo che lo offre. Controlla che sia la tua.")
                         }
@@ -228,23 +227,68 @@ struct CourseSyllabusView: View {
                 SyllabusSections(syllabus: syllabus)
             } else {
                 Section {
-                    Text("Non trovo la scheda di questo insegnamento nel Manifesto degli studi.")
+                    Text(programmes.programme == nil && course.teachingCode == nil
+                         ? "Questo corso non ha un codice d'insegnamento: scegli il tuo corso di studi per trovarlo nel tuo piano."
+                         : "Non trovo la scheda di questo insegnamento nel Manifesto degli studi.")
                         .foregroundStyle(.secondary)
                 }
             }
         }
         .navigationTitle("Programma")
         .navigationBarTitleDisplayMode(.inline)
-        .task {
-            if let code = course.teachingCode {
-                pick = await manifesti.syllabusPick(
-                    teachingCode: code, surname: session.student?.lastName,
-                    degreeName: career.planHeader?.course, yearCode: course.academicYearStart)
-                if let id = pick?.module.syllabusID { syllabus = await manifesti.syllabus(for: id) }
-            }
-            loading = false
+        .task(id: programmes.programme) { await load() }
+        .sheet(isPresented: $changingProgramme) { StudyProgrammeSheet() }
+        .sheet(isPresented: $choosingBracket) {
+            BracketPicker(title: course.name, surname: session.student?.lastName ?? "",
+                          chosen: bracketCode.flatMap { programmes.programme?.brackets[$0] },
+                          load: { await programmes.brackets(teachingCode: course.teachingCode, name: course.name,
+                                                            yearCode: course.academicYearStart)?.1 ?? [] },
+                          onChoose: { bracket in
+                              if let code = bracketCode { programmes.choose(bracket: bracket, forTeaching: code) }
+                          })
         }
     }
+
+    /// The plan teaching's code, which brackets are stored under.
+    private var bracketCode: String? { course.teachingCode ?? pick?.module.code }
+
+    @ViewBuilder
+    private var programmeSection: some View {
+        if !session.useMockData {
+            Section {
+                if let programme = programmes.programme {
+                    LabeledContent("Corso di studi", value: programme.degreeLabel)
+                    LabeledContent("Piano", value: programme.planLabel)
+                    if !programme.isConfirmed {
+                        Button("È il mio corso di studi") { programmes.confirm() }
+                    }
+                    Button("Cambia corso di studi") { changingProgramme = true }
+                } else if programmes.isLocating {
+                    ProgressView().frame(maxWidth: .infinity)
+                } else {
+                    Button("Scegli il tuo corso di studi") { changingProgramme = true }
+                }
+            } footer: {
+                if programmes.programme?.isConfirmed == false {
+                    Text("Dedotto dal nome del tuo corso di studi: controlla che corso e piano siano i tuoi.")
+                } else if programmes.programme == nil {
+                    Text("Con corso di studi e piano la scheda è quella del tuo piano, non una scelta per nome.")
+                }
+            }
+        }
+    }
+
+    private func load() async {
+        loading = true
+        defer { loading = false }
+        pick = await programmes.pick(teachingCode: course.teachingCode, name: course.name, yearCode: course.academicYearStart)
+        syllabus = nil
+        if let id = pick?.module.syllabusID { syllabus = await manifesti.syllabus(for: id) }
+    }
+}
+
+private extension Array where Element == String {
+    var nonEmptyJoined: String? { isEmpty ? nil : joined(separator: ", ") }
 }
 
 // MARK: - Previews

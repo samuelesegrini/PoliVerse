@@ -6,6 +6,7 @@ struct CourseInfoView: View {
     let course: Course
 
     @Environment(ManifestiService.self) private var manifesti
+    @Environment(StudyProgrammeService.self) private var programmes
     @Environment(Session.self) private var session
     @Environment(CareerService.self) private var career
     @Environment(AgendaService.self) private var agenda
@@ -64,9 +65,7 @@ struct CourseInfoView: View {
         .task {
             await agenda.load(around: .now)
             if let code = course.teachingCode {
-                let pick = await manifesti.syllabusPick(
-                    teachingCode: code, surname: session.student?.lastName,
-                    degreeName: career.planHeader?.course, yearCode: course.academicYearStart)
+                let pick = await programmes.pick(teachingCode: code, name: course.name, yearCode: course.academicYearStart)
                 if let id = pick?.module.syllabusID { syllabus = await manifesti.syllabus(for: id) }
             }
             loading = false

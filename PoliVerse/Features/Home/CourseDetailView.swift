@@ -10,6 +10,7 @@ struct CourseDetailView: View {
     @Environment(\.locale) private var locale
     @Environment(UpdateFeed.self) private var feed
     @Environment(ManifestiService.self) private var manifesti
+    @Environment(StudyProgrammeService.self) private var programmes
     @Environment(Session.self) private var session
     @State private var selectedExam: ExamSession?
 
@@ -118,11 +119,7 @@ struct CourseDetailView: View {
             // The scheda takes a few pages to find: start now, so "Programma"
             // opens on an answer rather than a spinner. After the career, so
             // the degree course is known and the tap asks the same question.
-            if let code = course.teachingCode {
-                manifesti.prefetchSyllabus(
-                    teachingCode: code, surname: session.student?.lastName,
-                    degreeName: career.planHeader?.course, yearCode: course.academicYearStart)
-            }
+            programmes.prefetch(teachingCode: course.teachingCode, name: course.name, yearCode: course.academicYearStart)
             await lectures
         }
     }

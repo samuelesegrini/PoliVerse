@@ -10,6 +10,7 @@ struct ExamFormatSection: View {
     let exam: ExamSession
 
     @Environment(ManifestiService.self) private var manifesti
+    @Environment(StudyProgrammeService.self) private var programmes
     @Environment(Session.self) private var session
     @Environment(CareerService.self) private var career
     @State private var syllabus: Syllabus?
@@ -60,9 +61,7 @@ struct ExamFormatSection: View {
             // The scheda of the sitting's own academic year: a September
             // sitting belongs to the year that is ending.
             let year = exam.date.map { String(Course.academicYearLabel(for: $0).prefix(4)) }
-            let pick = await manifesti.syllabusPick(
-                teachingCode: exam.courseCode, surname: session.student?.lastName,
-                degreeName: career.planHeader?.course, yearCode: year)
+            let pick = await programmes.pick(teachingCode: exam.courseCode, name: exam.courseName, yearCode: year)
             guard let id = pick?.module.syllabusID else { return }
             classID = id
             syllabus = await manifesti.syllabus(for: id)

@@ -10,6 +10,7 @@ struct WeBeepView: View {
     @State private var year: String?
     @State private var showingHidden = false
     @Environment(CareerService.self) private var career
+    @Environment(StudyProgrammeService.self) private var programmes
     @Environment(CareersService.self) private var careers
     @State private var originFilter: OriginFilter = .all
     @State private var overrides = EnrolmentOverrides.all()
@@ -23,8 +24,13 @@ struct WeBeepView: View {
     @State private var otherPlans: [EnrolmentOrigin.Plan] = []
 
     private var plans: [EnrolmentOrigin.Plan] {
-        [EnrolmentOrigin.Plan(matricola: session.student?.matricola ?? "", isCurrent: true,
-                              libretto: career.libretto)] + otherPlans
+        // The libretto, and the teachings of the plan pages read for this
+        // career: a course of the plan counts even before the libretto lists it.
+        let current = EnrolmentOrigin.Plan(matricola: session.student?.matricola ?? "", isCurrent: true,
+                                           libretto: career.libretto)
+        return [EnrolmentOrigin.Plan(matricola: current.matricola, isCurrent: true,
+                                     codes: current.codes.union(programmes.planCodes),
+                                     names: Set(career.libretto.map(\.name)))] + otherPlans
     }
 
     private func origin(_ course: Course, plans: [EnrolmentOrigin.Plan]) -> EnrolmentOrigin {
@@ -170,6 +176,12 @@ struct WeBeepView: View {
                     }
                 }
                 await career.load()
+                // The plan of every year the list covers, so its courses read
+                // as "del piano" by the plan itself, not only by the libretto.
+                await programmes.prepare()
+                for year in Set(courses.courses.compactMap(\.academicYearStart)) {
+                    _ = await programmes.plan(forYear: year)
+                }
                 // Only pages outside every plan need asking how they enrol.
                 let plans = plans
                 let unplanned = courses.courses.filter {

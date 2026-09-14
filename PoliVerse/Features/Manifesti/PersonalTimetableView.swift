@@ -247,8 +247,7 @@ private struct PersonalTimetableBuilder: View {
     @State private var lastName = ""
     @State private var firstName = ""
     @State private var page: CataloguePage?
-    @State private var loadingCatalogue = false
-    @State private var catalogueMessage: String?
+    @Environment(StudyProgrammeService.self) private var programmes
     @State private var yearOfCourse: String?
     @State private var bracketTeaching: ManifestoTeaching?
 
@@ -325,128 +324,33 @@ private struct PersonalTimetableBuilder: View {
 
     // Step 2: where in the manifesto
 
-    private static let levels: [(CatalogueField, LocalizedStringKey)] = [
-        (.year, "Anno accademico"), (.campus, "Sede"), (.school, "Scuola"),
-        (.degree, "Corso di studi"), (.plan, "Piano di studi"),
-    ]
-
     private var courseStep: some View {
         Form {
-            if let page {
-                Section {
-                    ForEach(Self.levels, id: \.0) { field, title in
-                        if let level = page.level(field) {
-                            levelPicker(level, title: title)
-                        }
-                    }
-                } footer: {
-                    Text("Come nel Manifesto degli studi: ogni scelta restringe la successiva. Il piano è quello preventivamente approvato (PSPA) che segui.")
-                }
-                if let catalogueMessage {
-                    Section { Label(catalogueMessage, systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }
-                }
-            } else if let catalogueMessage {
-                Section {
-                    Label(catalogueMessage, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
-                    Button("Riprova") { Task { await openCatalogue() } }
-                }
-            }
-            if loadingCatalogue {
-                Section { ProgressView().frame(maxWidth: .infinity) }
-            }
+            CatalogueCascade(page: Binding(get: { page }, set: { found in
+                page = found
+                personal.catalogue = found?.selection
+                yearOfCourse = nil
+            }), initial: personal.catalogue ?? programmes.programme?.selection)
         }
-        .disabled(loadingCatalogue)
         .navigationTitle("Corso di studi")
         .navigationBarTitleDisplayMode(.inline)
-        .task { if page == nil { await openCatalogue() } }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Indietro") { step = .name }
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button("Avanti") { step = .teachings }
-                    .disabled(page?.teachings.isEmpty ?? true)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func levelPicker(_ level: CatalogueLevel, title: LocalizedStringKey) -> some View {
-        let binding = Binding(get: { level.selected ?? "" },
-                              set: { value in Task { await change(level.field, to: value) } })
-        let groups = level.options.reduce(into: [String?]()) { groups, option in
-            if !groups.contains(option.group) { groups.append(option.group) }
-        }
-        if level.options.count == 1 {
-            LabeledContent(title, value: level.options[0].label)
-        } else {
-            Picker(title, selection: binding) {
-                ForEach(groups, id: \.self) { group in
-                    Section(group ?? "") {
-                        ForEach(level.options.filter { $0.group == group }) { Text($0.label).tag($0.value) }
+                Button("Avanti") {
+                    // Picked here with nothing confirmed yet: this is the
+                    // student's own programme, so the course pages use it too.
+                    if let page, programmes.programme?.isConfirmed != true {
+                        programmes.set(page, confirmed: true)
                     }
+                    step = .teachings
                 }
-            }
-            .pickerStyle(.navigationLink)
-        }
-    }
-
-    /// Opens where the student was last, or on their own degree course when
-    /// the career names it, or as the manifesto first shows itself.
-    private func openCatalogue() async {
-        loadingCatalogue = true
-        defer { loadingCatalogue = false }
-        catalogueMessage = nil
-        if let saved = personal.catalogue, let found = await manifesti.cataloguePage(saved) {
-            show(found)
-            return
-        }
-        guard let first = await manifesti.cataloguePage(nil) else {
-            catalogueMessage = String(localized: "Il Manifesto degli studi non risponde. Riprova tra poco.")
-            return
-        }
-        show(first)
-        if let degree = career.planHeader?.course, let located = await locate(degree: degree, from: first) {
-            show(located)
-        }
-    }
-
-    /// The school whose list names the student's degree course, searched
-    /// across every campus.
-    private func locate(degree: String, from first: CataloguePage) async -> CataloguePage? {
-        guard let start = first.selection, let schools = first.level(.school)?.options else { return nil }
-        for school in schools {
-            let base = start.setting(.campus, to: "ALL_SEDI").setting(.school, to: school.value)
-            guard let schoolPage = await manifesti.cataloguePage(base) else { continue }
-            let options = schoolPage.level(.degree)?.options ?? []
-            if let match = options.first(where: { DegreeCourseMatch.matches($0.label, plan: degree) }) {
-                return await manifesti.cataloguePage(base.setting(.degree, to: match.value))
+                .disabled(page?.teachings.isEmpty ?? true)
             }
         }
-        return nil
-    }
-
-    private func change(_ field: CatalogueField, to value: String) async {
-        guard let current = page?.selection, current[field] != value else { return }
-        loadingCatalogue = true
-        defer { loadingCatalogue = false }
-        if let found = await manifesti.cataloguePage(current.setting(field, to: value)) {
-            catalogueMessage = nil
-            show(found)
-        } else {
-            // The service answers with an error page when a campus offers
-            // nothing that year: say so and keep the last good choice.
-            catalogueMessage = String(localized: "Nessun corso di studi con questa scelta. Prova un'altra sede o un altro anno.")
-        }
-    }
-
-    private func show(_ found: CataloguePage) {
-        page = found
-        personal.catalogue = found.selection
-        yearOfCourse = nil
-        if found.teachings.isEmpty, found.selection != nil {
-            catalogueMessage = String(localized: "Questo piano non elenca insegnamenti.")
-        }
+        .task { await programmes.prepare() }
     }
 
     // Step 3: the plan's teachings
@@ -498,7 +402,10 @@ private struct PersonalTimetableBuilder: View {
             }
         }
         .sheet(item: $bracketTeaching) { teaching in
-            BracketPicker(teaching: teaching, surname: lastName)
+            BracketPicker(title: teaching.name, surname: lastName,
+                          chosen: personal.bracketChoices[teaching.code],
+                          load: { await manifesti.brackets(for: teaching) },
+                          onChoose: { personal.choose(bracket: $0, for: teaching) })
         }
         .sheet(item: Binding(get: { personal.pendingSections.map { PendingID(code: $0.teaching.code) } },
                              set: { if $0 == nil, let pending = personal.pendingSections {
@@ -621,61 +528,6 @@ private struct PersonalTimetableBuilder: View {
                 Button("Fine") { dismiss() }.disabled(personal.progress != .finished)
             }
         }
-    }
-}
-
-/// Which bracket of a teaching to follow: the student's own by default, or
-/// another lecturer's.
-private struct BracketPicker: View {
-    let teaching: ManifestoTeaching
-    let surname: String
-
-    @Environment(PersonalTimetableService.self) private var personal
-    @Environment(ManifestiService.self) private var manifesti
-    @Environment(\.dismiss) private var dismiss
-    @State private var brackets: [BracketChoice]?
-
-    var body: some View {
-        NavigationStack {
-            List {
-                if let brackets {
-                    if brackets.isEmpty {
-                        Text("Questo insegnamento ha un solo scaglione per tutti.").foregroundStyle(.secondary)
-                    }
-                    Section {
-                        ForEach(brackets, id: \.self) { bracket in
-                            let mine = bracket.covers(surname: surname)
-                            let chosen = personal.bracketChoices[teaching.code].map { $0 == bracket } ?? mine
-                            Button {
-                                personal.choose(bracket: mine ? nil : bracket, for: teaching)
-                                dismiss()
-                            } label: {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(bracket.label).font(.subheadline.weight(.medium))
-                                        Text(bracket.teachers.joined(separator: ", ")).font(.caption).foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    if mine { Text("Il tuo").font(.caption).foregroundStyle(.secondary) }
-                                    if chosen { Image(systemName: "checkmark").foregroundStyle(Theme.brand) }
-                                }
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    } footer: {
-                        if !brackets.isEmpty {
-                            Text("Il tuo scaglione dipende dal cognome. Sceglierne un altro vale solo per questo insegnamento.")
-                        }
-                    }
-                } else {
-                    ProgressView().frame(maxWidth: .infinity)
-                }
-            }
-            .navigationTitle(teaching.name)
-            .navigationBarTitleDisplayMode(.inline)
-            .task { brackets = await manifesti.brackets(for: teaching) }
-        }
-        .presentationDetents([.medium, .large])
     }
 }
 
