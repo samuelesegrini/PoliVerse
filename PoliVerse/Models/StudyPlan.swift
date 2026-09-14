@@ -99,13 +99,18 @@ nonisolated struct StudyPlanHeader: Sendable, Equatable, Codable {
     let year: String?
     let track: String?
     let totalCFU: Int?
+    /// `k_corso_la` and `k_indir`, if the service sends them: the manifesto's
+    /// own keys, which make finding the programme exact. Unconfirmed names,
+    /// read leniently; the payload's shape is logged in debug builds.
+    var degreeCode: String? = nil
+    var planCode: String? = nil
 
     init?(value: JSONValue) {
         guard let fields = value.objectValue ?? value.arrayValue?.first?.objectValue else {
             return nil
         }
         course = fields.firstValue([
-            "descrizione_corso", "desc_corso", "corso", "nome_corso",
+            "descrizione_corso", "desc_corso", "descrizioneCDL", "corso", "nome_corso",
             "descrizione", "cds",
         ]).flatMap(Notice.text(from:))
         year = fields.firstValue([
@@ -118,8 +123,14 @@ nonisolated struct StudyPlanHeader: Sendable, Equatable, Codable {
             "cfu_totali", "cfu", "crediti", "totale_cfu",
         ])?.intValue
 
+        let code = { (value: JSONValue) -> String? in
+            value.intValue.map(String.init) ?? Notice.text(from: value)
+        }
+        degreeCode = fields.firstValue(["k_corso_la", "kCorsoLa", "codiceCDL", "codCorsoStudi", "cod_corso"]).flatMap(code)
+        planCode = fields.firstValue(["k_indir", "kIndir", "codicePiano", "codPiano", "cod_indirizzo"]).flatMap(code)
+
         // Nothing readable at all is not a header.
-        if course == nil && year == nil && track == nil && totalCFU == nil {
+        if course == nil && year == nil && track == nil && totalCFU == nil && degreeCode == nil {
             return nil
         }
     }

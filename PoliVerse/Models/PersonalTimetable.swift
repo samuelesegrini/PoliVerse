@@ -329,6 +329,27 @@ nonisolated enum DegreeCourseMatch {
         return !wanted.isEmpty && key(degreeCourse).contains(wanted)
     }
 
+    /// The degree course among a school's options: the name exactly, before
+    /// a longer name containing it ("Ingegneria Informatica Online"), and the
+    /// career's level — "Laurea Magistrale" — between equals.
+    static func best(_ options: [CatalogueOption], name: String, kind: String?) -> CatalogueOption? {
+        let wanted = key(name)
+        guard !wanted.isEmpty else { return nil }
+        let label = { (option: CatalogueOption) in
+            key(option.label.replacingOccurrences(of: #"\([0-9]+\)\s*$"#, with: "", options: .regularExpression))
+        }
+        let exact = options.filter { label($0) == wanted || label($0).hasSuffix(" " + wanted) }
+        let candidates = exact.isEmpty ? options.filter { key($0.label).contains(wanted) } : exact
+        let master = kind.map { key($0).contains("magistrale") || key($0).contains("master") }
+        if let master, let byLevel = candidates.first(where: { option in
+            let group = key(option.group ?? "")
+            return (group.contains("magistrale") || group.contains("master")) == master
+        }) {
+            return byLevel
+        }
+        return candidates.first
+    }
+
     private static func key(_ text: String) -> String {
         text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
             .replacingOccurrences(of: "[^a-z0-9]+", with: " ", options: .regularExpression)

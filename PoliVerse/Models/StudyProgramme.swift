@@ -15,6 +15,21 @@ nonisolated struct StudyProgramme: Sendable, Equatable, Codable {
     var isConfirmed: Bool
     /// Brackets chosen per teaching code, when not the one the surname gives.
     var brackets: [String: BracketChoice] = [:]
+    /// Brackets read from the lecturers of the student's WeBeep pages. Below
+    /// a choice, above the surname: attending a lecturer's page is the
+    /// clearest sign of whose lessons they follow.
+    var inferredBrackets: [String: BracketChoice] = [:]
+    /// Courses linked by hand to a teaching of the plan, course id to code,
+    /// for the few that neither code nor name can place.
+    var links: [String: String] = [:]
+    /// Set when the records stopped fitting it — a new degree course, a plan
+    /// gone from the manifesto — so the student is asked again.
+    var needsReview = false
+
+    /// The bracket a teaching is read in, if not the surname's.
+    func bracket(for code: String) -> BracketChoice? {
+        brackets[code] ?? inferredBrackets[code]
+    }
 
     /// The plan page of a given academic year: a course taken in 2025/26 is
     /// in the 2025/26 manifesto, under the same degree course and plan.
@@ -71,5 +86,54 @@ nonisolated enum PlanCourseMatch {
             .replacingOccurrences(of: #"\[[^\]]*\]|\([^)]*\)"#, with: " ", options: .regularExpression)
             .replacingOccurrences(of: "[^a-z0-9]+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespaces)
+    }
+}
+
+/// The programme the student's own records point to.
+///
+/// The libretto lists teaching codes; each plan page lists teaching codes. The
+/// plan sharing most of them is the student's, however the degree course is
+/// named — which is what makes this better than any match by name.
+nonisolated enum ProgrammeInference {
+    struct Result: Sendable, Equatable {
+        let selection: CatalogueSelection
+        let overlap: Int
+        /// Enough shared teachings to take it as the answer without asking.
+        let isConfident: Bool
+    }
+
+    static func best(libretto: Set<String>, candidates: [(CatalogueSelection, [String])]) -> Result? {
+        guard !libretto.isEmpty else { return nil }
+        let scored = candidates.map { selection, codes in (selection, libretto.intersection(codes).count) }
+        guard let top = scored.max(by: { $0.1 < $1.1 }), top.1 > 0 else { return nil }
+        let runnerUp = scored.filter { $0.0 != top.0 }.map(\.1).max() ?? 0
+        let confident = top.1 >= 3 && Double(top.1) >= Double(min(libretto.count, 10)) * 0.5 && top.1 > runnerUp
+        return Result(selection: top.0, overlap: top.1, isConfident: confident)
+    }
+
+    /// False once a libretto with enough rows shares nothing with the plan.
+    static func stillFits(libretto: Set<String>, plan: Set<String>) -> Bool {
+        guard libretto.count >= 3, !plan.isEmpty else { return true }
+        return !libretto.isDisjoint(with: plan)
+    }
+}
+
+/// The bracket a WeBeep page belongs to, from its lecturers.
+nonisolated enum BracketInference {
+    static func bracket(contacts: [String], brackets: [BracketChoice]) -> BracketChoice? {
+        let people = contacts.map(tokens)
+        let matching = brackets.filter { bracket in
+            bracket.teachers.map(tokens).contains { teacher in
+                people.contains { person in person.intersection(teacher).count >= min(2, teacher.count) }
+            }
+        }
+        return matching.count == 1 ? matching[0] : nil
+    }
+
+    /// Names as sets of words, so "De Martino Antonino" and "Antonino De
+    /// Martino" are the same person.
+    private static func tokens(_ name: String) -> Set<String> {
+        Set(name.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
+            .split(whereSeparator: { !$0.isLetter }).map(String.init).filter { $0.count > 1 })
     }
 }

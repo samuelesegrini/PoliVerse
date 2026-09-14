@@ -9,7 +9,7 @@ import Foundation
 /// It answers questions the authenticated services cannot: what a course
 /// actually covers, which books it uses, who teaches which alphabetical
 /// bracket, and what a teaching looks like *before* you enrol in it.
-nonisolated struct ManifestoTeaching: Identifiable, Sendable, Hashable {
+nonisolated struct ManifestoTeaching: Identifiable, Sendable, Hashable, Codable {
     /// Composed, because no single field identifies a row: the same teaching
     /// code appears under several degree courses and study plans.
     var id: String { "\(courseCode)-\(code)-\(planCode ?? "")" }

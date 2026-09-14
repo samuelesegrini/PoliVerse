@@ -74,7 +74,7 @@ nonisolated struct CatalogueSelection: Sendable, Hashable, Codable {
 }
 
 /// A teaching as the plan page lists it.
-nonisolated struct PlanTeaching: Sendable, Hashable, Identifiable {
+nonisolated struct PlanTeaching: Sendable, Hashable, Identifiable, Codable {
     var id: String { teaching.id }
     let teaching: ManifestoTeaching
     /// "1", "2", … from the heading above the row.
