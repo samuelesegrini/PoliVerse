@@ -63,7 +63,7 @@ struct PersonalTimetableView: View {
 
     private func statuses(_ timetable: PersonalTimetable) -> [String: TimetableHandover.Status] {
         Dictionary(uniqueKeysWithValues: timetable.entries.map {
-            ($0.code, TimetableHandover.status(of: $0, agenda: agenda.events))
+            ($0.code, TimetableHandover.status(of: $0, agenda: agenda.officialEvents))
         })
     }
 

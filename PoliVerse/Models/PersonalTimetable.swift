@@ -258,3 +258,43 @@ nonisolated enum TimetableHandover {
             .trimmingCharacters(in: .whitespaces)
     }
 }
+
+/// Personal lessons in the agenda, alongside the official ones.
+///
+/// A teaching the agenda already confirms is left to the agenda, so nothing
+/// shows twice; one it lacks is added with ``tag``, which the calendar badges
+/// and which lets a cached agenda be told apart from what the server sent.
+nonisolated enum TimetableMerge {
+    static let tag = "orario-personalizzato"
+
+    static func merge(official: [AgendaEvent], timetable: PersonalTimetable?, in interval: DateInterval) -> [AgendaEvent] {
+        guard let timetable, timetable.retiredAt == nil else { return official }
+        let confirmed = Set(timetable.entries.filter {
+            TimetableHandover.status(of: $0, agenda: official) == .confirmed
+        }.map(\.code))
+        var remaining = timetable
+        remaining.hiddenCodes.formUnion(confirmed)
+        let personal = remaining.lessons(in: interval).map { lesson in
+            AgendaEvent(id: id(code: lesson.entry.code, start: lesson.start), title: lesson.entry.title,
+                        start: lesson.start, end: lesson.end, kind: .lecture, room: lesson.slot.room,
+                        roomAcronym: lesson.slot.room, calendarName: String(localized: "Orario personalizzato"),
+                        details: lesson.slot.address, tags: [tag])
+        }
+        guard !personal.isEmpty else { return official }
+        return (official + personal).sorted { ($0.start, $0.id) < ($1.start, $1.id) }
+    }
+
+    static func officialOnly(_ events: [AgendaEvent]) -> [AgendaEvent] {
+        events.filter { !$0.tags.contains(tag) }
+    }
+
+    /// Negative, so it can never collide with the agenda's own ids; FNV-1a,
+    /// because `hashValue` changes between launches.
+    static func id(code: String, start: Date) -> Int {
+        var hash: UInt64 = 0xcbf29ce484222325
+        for byte in "\(code)|\(Int(start.timeIntervalSince1970))".utf8 {
+            hash = (hash ^ UInt64(byte)) &* 0x100000001b3
+        }
+        return -Int(hash % UInt64(Int32.max)) - 1
+    }
+}

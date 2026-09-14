@@ -30,12 +30,15 @@ final class PersonalTimetableService {
     private static let cacheName = "personal-timetable"
 
     private let manifesti: ManifestiService
+    private let agenda: AgendaService?
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "manifesti")
 
-    init(manifesti: ManifestiService, preview: PersonalTimetable? = nil) {
+    init(manifesti: ManifestiService, agenda: AgendaService? = nil, preview: PersonalTimetable? = nil) {
         self.manifesti = manifesti
+        self.agenda = agenda
         timetable = preview ?? DiskCache.load(PersonalTimetable.self, as: Self.cacheName)?.value
         selection = timetable?.sources.map(\.teaching) ?? []
+        agenda?.personalTimetable = timetable
     }
 
     var isBuilding: Bool {
@@ -142,6 +145,7 @@ final class PersonalTimetableService {
 
     func delete() {
         timetable = nil
+        agenda?.personalTimetable = nil
         selection = []
         progress = .idle
         // An empty entry, which no longer decodes as a timetable.
@@ -150,6 +154,7 @@ final class PersonalTimetableService {
 
     private func save(_ value: PersonalTimetable) {
         timetable = value
+        agenda?.personalTimetable = value
         DiskCache.save(value, as: Self.cacheName)
     }
 }

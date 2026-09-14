@@ -28,6 +28,19 @@ final class AgendaService {
     /// pass on write is cheaper than seven on read, every frame something
     /// changes (`docs/metrickit-performance.md` §3.2).
     private var eventsByDay: [Date: [AgendaEvent]] = [:]
+    /// What the Politecnico's agenda said, without personal lessons: the
+    /// hand-over compares against this, or personal lessons would confirm
+    /// themselves.
+    private(set) var officialEvents: [AgendaEvent] = []
+    /// The personal timetable, whose lessons join ``events`` until the
+    /// official agenda has them.
+    var personalTimetable: PersonalTimetable? {
+        didSet {
+            guard personalTimetable != oldValue else { return }
+            rebuild()
+            saveForWidgets()
+        }
+    }
     private(set) var isLoading = false
     private(set) var errorMessage: String?
     /// The span currently held, so navigating past its edge can fetch more.
@@ -65,7 +78,8 @@ final class AgendaService {
     /// than in `init()`, where the matricola is not known yet.
     private func restoreCache() {
         guard let cached = slot.restore(for: session.student?.matricola) else { return }
-        events = cached
+        officialEvents = TimetableMerge.officialOnly(cached)
+        rebuild()
         age = slot.age
     }
 
@@ -91,8 +105,9 @@ final class AgendaService {
         restoreCache()
 
         if session.useMockData {
-            events = MockData.agendaEvents(around: date)
             loadedRange = from...to
+            officialEvents = MockData.agendaEvents(around: date)
+            rebuild()
             window.markLoaded(source: source)
             return
         }
@@ -125,15 +140,30 @@ final class AgendaService {
         let known = Set(merged.map(\.id))
         merged += (fetchedDeadlines ?? []).filter { !known.contains($0.id) }
 
-        events = merged.sorted { $0.start < $1.start }
         loadedRange = from...to
+        officialEvents = merged.sorted { $0.start < $1.start }
+        rebuild()
         window.markLoaded(source: source)
-        slot.save(events, for: session.useMockData ? nil : matricola)
+        saveForWidgets()
+        age = slot.age
+    }
+
+    private func rebuild() {
+        let calendar = PoliMiDate.romeCalendar
+        let interval = loadedRange.map { DateInterval(start: $0.lowerBound, end: $0.upperBound) }
+            ?? DateInterval(start: calendar.date(byAdding: lookBehind, to: .now) ?? .now,
+                            end: calendar.date(byAdding: lookAhead, to: .now) ?? .now)
+        events = TimetableMerge.merge(official: officialEvents, timetable: personalTimetable, in: interval)
+    }
+
+    /// Saved merged: the widgets show personal lessons too.
+    private func saveForWidgets() {
+        guard !session.useMockData, let matricola = session.student?.matricola, loadedRange != nil else { return }
+        slot.save(events, for: matricola)
         // The widgets read this file; nothing else tells them it changed.
         // Without this the Lock Screen keeps last night's lecture until the
         // system happens to grant a reload, which can be hours.
         WidgetReloader.request(WidgetKind.agenda)
-        age = slot.age
     }
 
     /// Whether the held window already spans `date`.

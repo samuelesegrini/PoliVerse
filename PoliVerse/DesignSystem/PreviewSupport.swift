@@ -37,7 +37,7 @@ enum PreviewEnvironment {
     static let network = NetworkMonitor()
     static let pending = PendingChanges(session: session, network: network)
     static let manifesti = ManifestiService()
-    static let personalTimetable = PersonalTimetableService(manifesti: manifesti, preview: MockData.personalTimetable)
+    static let personalTimetable = PersonalTimetableService(manifesti: manifesti, agenda: agenda, preview: MockData.personalTimetable)
     static let liveActivity = LiveActivityController()
     /// Its own defaults suite, so opening a preview cannot mark the real
     /// install's onboarding as done.

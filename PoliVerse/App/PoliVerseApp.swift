@@ -56,7 +56,6 @@ struct PoliVerseApp: App {
         _rooms = State(initialValue: rooms)
         let manifesti = ManifestiService()
         _manifesti = State(initialValue: manifesti)
-        _personalTimetable = State(initialValue: PersonalTimetableService(manifesti: manifesti))
         let freeRooms = FreeRoomsService(catalogue: rooms)
         _freeRooms = State(initialValue: freeRooms)
         _campusMap = State(initialValue: CampusMapService(catalogue: rooms, freeRooms: freeRooms))
@@ -74,6 +73,7 @@ struct PoliVerseApp: App {
         // are not readable until the struct is fully initialised.
         let agenda = AgendaService(session: session)
         _agenda = State(initialValue: agenda)
+        _personalTimetable = State(initialValue: PersonalTimetableService(manifesti: manifesti, agenda: agenda))
         let career = CareerService(session: session, feed: updates)
         _career = State(initialValue: career)
         let notifications = NotificationService()

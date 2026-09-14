@@ -283,6 +283,13 @@ private struct EventRow: View {
                     }
                 }
 
+                // From the personal timetable, not the Politecnico's agenda.
+                if event.tags.contains(TimetableMerge.tag) {
+                    Label("Orario personalizzato", systemImage: "calendar.badge.plus")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
                 if let room = event.room, room != event.roomAcronym {
                     Text(room)
                         .font(.caption2)
