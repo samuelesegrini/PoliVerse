@@ -7958,6 +7958,106 @@
           }
         }
       }
+    },
+    "Alle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Until"
+          }
+        }
+      }
+    },
+    "Anche da WeBeep" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also from WeBeep"
+          }
+        }
+      }
+    },
+    "Come si svolge" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How the exam works"
+          }
+        }
+      }
+    },
+    "Dalla scheda dell'insegnamento nel Manifesto degli studi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From the course's page in the study programme catalogue."
+          }
+        }
+      }
+    },
+    "Dalle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From"
+          }
+        }
+      }
+    },
+    "In queste ore arriva solo ciò che è urgente, come un esito o un appello spostato; il resto aspetta la fine del silenzio. Stessa ora per inizio e fine: nessun silenzio." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "During these hours only urgent news comes through, like a result or a moved exam; the rest waits until the quiet hours end. Same start and end hour: no quiet hours."
+          }
+        }
+      }
+    },
+    "Scheda completa: programma e libri" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full course page: syllabus and books"
+          }
+        }
+      }
+    },
+    "Silenzio notturno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quiet hours"
+          }
+        }
+      }
+    },
+    "Insegnamento in italiano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taught in Italian"
+          }
+        }
+      }
+    },
+    "Insegnamento in inglese" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taught in English"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

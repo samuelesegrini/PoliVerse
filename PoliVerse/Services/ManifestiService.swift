@@ -132,6 +132,25 @@ final class ManifestiService {
     func syllabusPick(teachingCode: String, surname: String?, degreeName: String?,
                       yearCode: String? = nil) async -> SyllabusPicker.Pick? {
         guard teachingCode.range(of: "^[0-9]{6}$", options: .regularExpression) != nil else { return nil }
+        let key = [teachingCode, surname ?? "", degreeName ?? "", yearCode ?? year.code].joined(separator: "|")
+        // Kept for the session, found or not: the course page and the exam
+        // sheet ask for the same teaching, and each answer costs up to nine
+        // pages.
+        if let cached = picks[key] { return cached }
+        guard let answer = await findPick(teachingCode: teachingCode, surname: surname,
+                                          degreeName: degreeName, yearCode: yearCode)
+        else { return nil }   // not reached: asked again next time, not remembered as "none"
+        picks[key] = answer
+        return answer
+    }
+
+    /// Answers the catalogue actually gave — a scheda, or a real "none".
+    @ObservationIgnored private var picks: [String: SyllabusPicker.Pick?] = [:]
+
+    /// - Returns: nil when the catalogue could not be reached; otherwise its
+    ///   answer, which may itself be no pick.
+    private func findPick(teachingCode: String, surname: String?, degreeName: String?,
+                          yearCode: String?) async -> SyllabusPicker.Pick?? {
         let form = [
             "evn_default": "Esegui Ricerca", "aa": yearCode ?? year.code, "k_cf": "-1", "sede": "ALL_SEDI",
             "tipoCorso": "ALL_TIPO_CORSO", "ac_ins": "0", "semestre": "ALL_SEMESTRI", "aree": "-1",
@@ -155,9 +174,12 @@ final class ManifestiService {
             for await (index, detail) in group { if let detail { found.append((index, detail)) } }
             return found.sorted { $0.0 < $1.0 }.map(\.1)
         }
+        // Rows found but no detail read: the pages did not load, which is
+        // not an answer.
+        if !rows.isEmpty && details.isEmpty { return nil }
         let pick = SyllabusPicker.pick(details, surname: surname, degreeName: degreeName)
         log.notice("manifesti: scheda for \(teachingCode, privacy: .public) from \(details.count, privacy: .public) degree courses: \(pick?.module.syllabusID ?? "none", privacy: .public)")
-        return pick
+        return .some(pick)
     }
 
     /// Degree courses read to find a student's scheda. A common teaching is

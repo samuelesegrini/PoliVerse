@@ -52,8 +52,19 @@ struct NotificationSettingsView: View {
 
                 Section {
                     Toggle("Novità sugli esami", isOn: $notifications.preferences.examUpdates)
+                    Toggle("Anche da WeBeep", isOn: $notifications.preferences.weBeepUpdates)
+                        .disabled(!notifications.preferences.examUpdates)
                 } footer: {
                     Text("Esiti, aule, appelli spostati e finestre di rifiuto, appena l'app se ne accorge. Il resto arriva in un riepilogo alle 18:00, e di notte solo ciò che è urgente.")
+                }
+
+                Section {
+                    hourPicker("Dalle", selection: $notifications.preferences.quietFrom)
+                    hourPicker("Alle", selection: $notifications.preferences.quietUntil)
+                } header: {
+                    Text("Silenzio notturno")
+                } footer: {
+                    Text("In queste ore arriva solo ciò che è urgente, come un esito o un appello spostato; il resto aspetta la fine del silenzio. Stessa ora per inizio e fine: nessun silenzio.")
                 }
 
                 if !notifications.preferences.mutedCourses.isEmpty {
@@ -122,6 +133,16 @@ struct NotificationSettingsView: View {
         // Any change to what or how far ahead reschedules the lot.
         .onChange(of: notifications.preferences) { _, _ in
             Task { await reschedule() }
+        }
+    }
+
+    private func hourPicker(_ title: LocalizedStringKey, selection: Binding<Int>) -> some View {
+        Picker(title, selection: selection) {
+            ForEach(0..<24, id: \.self) { hour in
+                // In the reader's own clock style, on Rome's hours.
+                Text(PoliMiDate.time(hour, on: .now).formatted(.dateTime.hour().minute().locale(locale)))
+                    .tag(hour)
+            }
         }
     }
 

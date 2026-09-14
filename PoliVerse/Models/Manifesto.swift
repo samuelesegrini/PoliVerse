@@ -53,6 +53,15 @@ nonisolated enum TeachingLanguage: String, Sendable, Hashable, Codable, CaseIter
         case .english: String(localized: "Inglese")
         }
     }
+
+    /// A whole phrase per language: languages are capitalised differently
+    /// mid-sentence in Italian and English.
+    var taughtIn: String {
+        switch self {
+        case .italian: String(localized: "Insegnamento in italiano")
+        case .english: String(localized: "Insegnamento in inglese")
+        }
+    }
 }
 
 /// One module of a teaching, with the alphabetical bracket it serves.

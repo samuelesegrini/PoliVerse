@@ -16,6 +16,21 @@ nonisolated struct NotificationPreferences: Sendable, Equatable, Codable {
     /// student's own matricola. Off until the student turns it on: the file
     /// lists other students too. See ``ResultsFileReader``.
     var readResultsFiles = false
+    /// Rome hours between which only urgent news goes out. Equal hours mean
+    /// no quiet hours at all.
+    var quietFrom = 23
+    var quietUntil = 7
+    /// News read from WeBeep — files, announcements, assignments — as
+    /// notifications. Off keeps it in the feed only.
+    var weBeepUpdates = true
+
+    func isQuiet(hour: Int) -> Bool {
+        guard quietFrom != quietUntil else { return false }
+        return quietFrom < quietUntil
+            ? (quietFrom..<quietUntil).contains(hour)
+            : hour >= quietFrom || hour < quietUntil
+    }
+
     /// Courses whose news stays in the app and never notifies (§11.1).
     var mutedCourses: [MutedCourse] = []
 
@@ -51,6 +66,7 @@ nonisolated struct NotificationPreferences: Sendable, Equatable, Codable {
 extension NotificationPreferences {
     private enum CodingKeys: String, CodingKey {
         case lectures, deadlines, exams, enrolments, leadMinutes, examUpdates, readResultsFiles, mutedCourses
+        case quietFrom, quietUntil, weBeepUpdates
     }
 
     /// Lenient, key by key: a build that adds a preference must not make the
@@ -68,6 +84,9 @@ extension NotificationPreferences {
             ?? defaults.readResultsFiles
         mutedCourses = try container.decodeIfPresent([MutedCourse].self, forKey: .mutedCourses)
             ?? defaults.mutedCourses
+        quietFrom = try container.decodeIfPresent(Int.self, forKey: .quietFrom) ?? defaults.quietFrom
+        quietUntil = try container.decodeIfPresent(Int.self, forKey: .quietUntil) ?? defaults.quietUntil
+        weBeepUpdates = try container.decodeIfPresent(Bool.self, forKey: .weBeepUpdates) ?? defaults.weBeepUpdates
     }
 }
 
@@ -221,7 +240,8 @@ nonisolated enum NotificationPlan {
             // Filtered here, not only when decided: muting a course also
             // silences the summary it had already been queued for.
             planned += ExamUpdatePolicy.digests(
-                from: updates.filter { !preferences.isMuted(code: $0.courseCode, name: $0.courseName) }, now: now)
+                from: updates.filter { !preferences.isMuted(code: $0.courseCode, name: $0.courseName) },
+                now: now, preferences: preferences)
         }
 
         return prune(planned)

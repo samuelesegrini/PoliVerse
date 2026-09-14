@@ -147,7 +147,7 @@ struct ExamUpdatePolicyTests {
         let morning = [update(.enrolmentOpened, delivery: .digest),
                        update(.enrolmentOpened, exam: 2, delivery: .digest),
                        update(.gradePublished, exam: 3, delivery: .urgent)]
-        let digests = ExamUpdatePolicy.digests(from: morning, now: now)
+        let digests = ExamUpdatePolicy.digests(from: morning, now: now, preferences: NotificationPreferences())
         #expect(digests.count == 1)
         #expect(digests[0].fireDate == PoliMiDate.time(18, on: now))
         #expect(digests[0].body.contains("Fisica"))
@@ -155,16 +155,16 @@ struct ExamUpdatePolicyTests {
         // Seen after 18:00: tomorrow's summary.
         let evening = PoliMiDate.time(20, on: now)
         let late = ExamUpdatePolicy.digests(
-            from: [update(.enrolmentOpened, at: evening, delivery: .digest)], now: evening)
+            from: [update(.enrolmentOpened, at: evening, delivery: .digest)], now: evening, preferences: NotificationPreferences())
         #expect(late.first?.fireDate == PoliMiDate.time(18, on: now.addingTimeInterval(86400)))
 
         // Already delivered.
-        #expect(ExamUpdatePolicy.digests(from: morning, now: PoliMiDate.time(19, on: now)).isEmpty)
+        #expect(ExamUpdatePolicy.digests(from: morning, now: PoliMiDate.time(19, on: now), preferences: NotificationPreferences()).isEmpty)
 
         // Held overnight: out at 07:00, not at the next evening.
         let night = PoliMiDate.time(23, 30, on: now)
         let deferred = ExamUpdatePolicy.digests(
-            from: [update(.roomChanged, at: night, delivery: .morning)], now: night)
+            from: [update(.roomChanged, at: night, delivery: .morning)], now: night, preferences: NotificationPreferences())
         #expect(deferred.first?.fireDate == PoliMiDate.time(7, on: now.addingTimeInterval(86400)))
     }
 

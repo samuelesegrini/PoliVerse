@@ -64,6 +64,8 @@ struct ExamDetailView: View {
                         row("Codice", exam.courseCode, icon: "number")
                     }
 
+                    ExamFormatSection(exam: exam)
+
                     ExamTimelineSection(exam: exam)
 
                     if exam.grade == nil {

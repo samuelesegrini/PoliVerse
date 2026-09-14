@@ -1,0 +1,42 @@
+{
+  "sourceLanguage" : "it",
+  "strings" : {
+    "Apri l'orario in ${applicationName}" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Open the timetable in ${applicationName}" } } }
+    },
+    "Lezioni di oggi in ${applicationName}" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Today's lectures in ${applicationName}" } } }
+    },
+    "Trova un'aula libera in ${applicationName}" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Find a free room in ${applicationName}" } } }
+    },
+    "Aule libere in ${applicationName}" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Free rooms in ${applicationName}" } } }
+    },
+    "Apri la carriera in ${applicationName}" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Open my career in ${applicationName}" } } }
+    },
+    "La mia media in ${applicationName}" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "My average in ${applicationName}" } } }
+    },
+    "Novità sui miei esami in ${applicationName}" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Updates on my exams in ${applicationName}" } } }
+    },
+    "Ci sono esiti nuovi in ${applicationName}" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Any new results in ${applicationName}" } } }
+    },
+    "Quando è il prossimo esame in ${applicationName}" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "When is my next exam in ${applicationName}" } } }
+    },
+    "Prossimo esame in ${applicationName}" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Next exam in ${applicationName}" } } }
+    },
+    "Apri WeBeep in ${applicationName}" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Open WeBeep in ${applicationName}" } } }
+    },
+    "Materiali dei corsi in ${applicationName}" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Course materials in ${applicationName}" } } }
+    }
+  },
+  "version" : "1.0"
+}

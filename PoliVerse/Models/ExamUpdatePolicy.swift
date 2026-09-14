@@ -11,9 +11,6 @@ import Foundation
 /// result to `UNUserNotificationCenter`. Table and rationale in
 /// `docs/academic-intelligence-layer.md` §11.
 nonisolated enum ExamUpdatePolicy {
-    /// Rome hours in which only urgent updates go out.
-    static let quietFrom = 23
-    static let quietUntil = 7
     /// Ordinary pushes per day. Urgent ones do not count and are not capped:
     /// a published mark should never wait for tomorrow's allowance.
     static let dailyBudget = 3
@@ -36,14 +33,16 @@ nonisolated enum ExamUpdatePolicy {
         preferences: NotificationPreferences,
         now: Date
     ) -> [ExamUpdate] {
-        let hour = PoliMiDate.romeCalendar.component(.hour, from: now)
-        let isQuiet = hour >= quietFrom || hour < quietUntil
+        let isQuiet = preferences.isQuiet(hour: PoliMiDate.romeCalendar.component(.hour, from: now))
         var seen = history
 
         return updates.map { update in
             var decided = update
-            // Off altogether, or this course silenced (§11.3): the feed only.
-            guard preferences.examUpdates, !preferences.isMuted(code: update.courseCode, name: update.courseName) else {
+            // Off altogether, WeBeep off, or this course silenced (§11.3):
+            // the feed only.
+            guard preferences.examUpdates,
+                  preferences.weBeepUpdates || update.source != .webeep,
+                  !preferences.isMuted(code: update.courseCode, name: update.courseName) else {
                 decided.delivery = .inApp
                 return decided
             }
@@ -237,12 +236,20 @@ nonisolated enum ExamUpdatePolicy {
     /// Derived from the log rather than remembered: an update's slot follows
     /// from when it was seen. Rebuilding the plan therefore never loses or
     /// duplicates a summary.
-    static func digests(from log: [ExamUpdate], now: Date) -> [PlannedNotification] {
+    static func digests(from log: [ExamUpdate], now: Date, preferences: NotificationPreferences) -> [PlannedNotification] {
         let held = log.compactMap { update -> (Date, ExamUpdate)? in
             switch update.delivery {
-            case .digest: (next(NotificationPlan.eveningHour, after: update.detectedAt), update)
-            case .morning: (next(quietUntil, after: update.detectedAt), update)
-            default: nil
+            case .digest:
+                // The evening summary waits out quiet hours too, if the
+                // student's start before 18:00 (§11.3).
+                let evening = next(NotificationPlan.eveningHour, after: update.detectedAt)
+                return preferences.isQuiet(hour: NotificationPlan.eveningHour)
+                    ? (next(preferences.quietUntil, after: evening), update)
+                    : (evening, update)
+            case .morning:
+                return (next(preferences.quietUntil, after: update.detectedAt), update)
+            default:
+                return nil
             }
         }
         let bySlot = Dictionary(grouping: held, by: \.0)
