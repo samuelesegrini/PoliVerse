@@ -42,4 +42,30 @@ struct PartialExamsTests {
                         sitting(3, kind: "PROVA INTERMEDIA"), sitting(4, kind: nil), sitting(5, kind: "Prova parziale")]
         #expect(PartialExams.sittings(sittings).map(\.id) == [2, 3, 5])
     }
+
+    @Test("Agenda exams named as partial exams join the timeline, lectures do not")
+    func agenda() {
+        let start = Date(timeIntervalSince1970: 1_790_000_000)
+        let events = [
+            AgendaEvent(id: 1, title: "Analisi 1 - Prima prova in itinere", start: start, end: start, kind: .exam),
+            AgendaEvent(id: 2, title: "Analisi 1 - Appello", start: start, end: start, kind: .exam),
+            AgendaEvent(id: 3, title: "Prova in itinere: ripasso", start: start, end: start, kind: .lecture),
+        ]
+        #expect(PartialExams.agendaEvents(events).map(\.id) == [1])
+    }
+
+    @Test("A results file for a partial exam is picked out, with the student's mark when found")
+    func resultsFiles() {
+        func posted(_ file: String, grade: String?) -> ExamUpdate {
+            var update = ExamUpdate(kind: .resultsPosted, examID: nil, courseCode: "1", courseName: "Analisi",
+                                    detectedAt: .now, source: .webeep, evidence: "t", newValue: file,
+                                    wasEnrolled: false, examDate: nil)
+            update.lookup = ResultsLookup(looksLikeResults: true, found: grade != nil, grade: grade)
+            return update
+        }
+        let files = PartialExams.resultsFiles([posted("Risultati prima prova in itinere.pdf", grade: "24"),
+                                               posted("Esiti appello febbraio.pdf", grade: "28")])
+        #expect(files.map(\.newValue) == ["Risultati prima prova in itinere.pdf"])
+        #expect(files.first?.lookup?.grade == "24")
+    }
 }

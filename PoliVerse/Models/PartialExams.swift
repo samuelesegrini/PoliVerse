@@ -38,6 +38,16 @@ nonisolated enum PartialExams {
         sessions.filter { $0.kind.map { matches(fold($0)) } ?? false }
     }
 
+    /// Exams on the agenda whose title or notes name a partial exam.
+    static func agendaEvents(_ events: [AgendaEvent]) -> [AgendaEvent] {
+        events.filter { $0.kind == .exam && matches(fold([$0.title, $0.details ?? ""].joined(separator: " "))) }
+    }
+
+    /// Results files posted on WeBeep whose name names a partial exam.
+    static func resultsFiles(_ updates: [ExamUpdate]) -> [ExamUpdate] {
+        updates.filter { $0.kind == .resultsPosted && matches(fold($0.newValue ?? "")) }
+    }
+
     private static func matches(_ folded: String) -> Bool {
         folded.range(of: mention, options: .regularExpression) != nil
     }

@@ -8,6 +8,8 @@ struct CourseInfoView: View {
     @Environment(ManifestiService.self) private var manifesti
     @Environment(Session.self) private var session
     @Environment(CareerService.self) private var career
+    @Environment(AgendaService.self) private var agenda
+    @Environment(UpdateFeed.self) private var feed
     @Environment(\.locale) private var locale
     @Environment(\.openURL) private var openURL
     @State private var syllabus: Syllabus?
@@ -16,6 +18,20 @@ struct CourseInfoView: View {
     private var partialSittings: [ExamSession] {
         PartialExams.sittings(career.sessions.filter { $0.isOf(courseCode: course.id, courseName: course.name) })
             .sorted { ($0.date ?? .distantFuture) < ($1.date ?? .distantFuture) }
+    }
+
+    /// Agenda exams of this course named as partial exams, matched by title
+    /// like the course page's lectures.
+    private var partialEvents: [AgendaEvent] {
+        let target = course.name.lowercased()
+        return PartialExams.agendaEvents(agenda.officialEvents.filter { event in
+            let title = event.title.lowercased()
+            return title.contains(target) || target.contains(title)
+        })
+    }
+
+    private var partialResults: [ExamUpdate] {
+        PartialExams.resultsFiles(FeedItem.items(from: feed.recent, for: course).map(\.update))
     }
 
     var body: some View {
@@ -45,6 +61,7 @@ struct CourseInfoView: View {
         .navigationTitle("Informazioni")
         .navigationBarTitleDisplayMode(.inline)
         .task {
+            await agenda.load(around: .now)
             if let code = course.teachingCode {
                 let pick = await manifesti.syllabusPick(
                     teachingCode: code, surname: session.student?.lastName,
@@ -71,6 +88,32 @@ struct CourseInfoView: View {
             }
             ForEach(quotes, id: \.self) { quote in
                 Text("«\(quote)»").font(.callout).italic()
+            }
+            ForEach(partialEvents) { event in
+                Label {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(event.title).font(.subheadline.weight(.medium))
+                        Text([event.start.formatted(.dateTime.weekday(.wide).day().month(.wide).hour().minute().locale(locale)),
+                              event.room].compactMap { $0 }.joined(separator: " · "))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                } icon: {
+                    Image(systemName: "calendar")
+                }
+            }
+            ForEach(partialResults) { update in
+                Label {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(update.newValue ?? "").font(.subheadline.weight(.medium))
+                        if let grade = update.lookup?.grade {
+                            Text("Nel file: \(grade) (non ancora ufficiale)").font(.caption).foregroundStyle(.secondary)
+                        } else if update.lookup?.looksLikeResults == true {
+                            Text("Non ho trovato la tua riga nel file").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                } icon: {
+                    Image(systemName: "tablecells")
+                }
             }
             ForEach(partialSittings) { sitting in
                 VStack(alignment: .leading, spacing: 2) {
