@@ -54,8 +54,16 @@ struct NotificationSettingsView: View {
                     Toggle("Novità sugli esami", isOn: $notifications.preferences.examUpdates)
                     Toggle("Anche da WeBeep", isOn: $notifications.preferences.weBeepUpdates)
                         .disabled(!notifications.preferences.examUpdates)
+                    ForEach(UpdateCategory.allCases) { category in
+                        Toggle(category.label, isOn: Binding(
+                            get: { notifications.preferences.isEnabled(category) },
+                            set: { notifications.preferences.setCategory(category, enabled: $0) }))
+                        .disabled(!notifications.preferences.examUpdates)
+                    }
+                    hourPicker("Riepilogo alle", selection: $notifications.preferences.digestHour)
+                        .disabled(!notifications.preferences.examUpdates)
                 } footer: {
-                    Text("Esiti, aule, appelli spostati e finestre di rifiuto, appena l'app se ne accorge. Il resto arriva in un riepilogo alle 18:00, e di notte solo ciò che è urgente.")
+                    Text("Ciò che conta — un esito, un'aula, un appello spostato — arriva appena l'app se ne accorge; il resto nel riepilogo, e di notte solo ciò che è urgente. Un tipo spento non notifica ma resta visibile nell'app.")
                 }
 
                 Section {

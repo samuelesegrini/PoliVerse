@@ -42,6 +42,7 @@ nonisolated enum ExamUpdatePolicy {
             // the feed only.
             guard preferences.examUpdates,
                   preferences.weBeepUpdates || update.source != .webeep,
+                  preferences.isEnabled(update.kind.category),
                   !preferences.isMuted(code: update.courseCode, name: update.courseName) else {
                 decided.delivery = .inApp
                 return decided
@@ -240,10 +241,10 @@ nonisolated enum ExamUpdatePolicy {
         let held = log.compactMap { update -> (Date, ExamUpdate)? in
             switch update.delivery {
             case .digest:
-                // The evening summary waits out quiet hours too, if the
-                // student's start before 18:00 (§11.3).
-                let evening = next(NotificationPlan.eveningHour, after: update.detectedAt)
-                return preferences.isQuiet(hour: NotificationPlan.eveningHour)
+                // The summary waits out quiet hours too, when the student's
+                // chosen hour falls inside them (§11.3).
+                let evening = next(preferences.digestHour, after: update.detectedAt)
+                return preferences.isQuiet(hour: preferences.digestHour)
                     ? (next(preferences.quietUntil, after: evening), update)
                     : (evening, update)
             case .morning:

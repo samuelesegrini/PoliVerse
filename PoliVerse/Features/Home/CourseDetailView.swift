@@ -9,6 +9,7 @@ struct CourseDetailView: View {
     @Environment(CourseService.self) private var courses
     @Environment(\.locale) private var locale
     @Environment(\.openURL) private var openURL
+    @Environment(UpdateFeed.self) private var feed
     @State private var selectedExam: ExamSession?
 
     private var accent: Color { Theme.accent(for: course) }
@@ -63,6 +64,25 @@ struct CourseDetailView: View {
                                     icon: "pencil.and.list.clipboard",
                                     chevron: true
                                 )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
+                let news = FeedItem.items(from: feed.recent, for: course)
+                if !news.isEmpty {
+                    section("Novità") {
+                        ForEach(news.prefix(3)) { item in
+                            ExamUpdateRow(item: item, isUnread: item.isUnread(since: feed.seenAt))
+                        }
+                        if news.count > 3 {
+                            NavigationLink {
+                                ExamUpdatesView()
+                            } label: {
+                                row(title: String(localized: "Tutte le novità esami"),
+                                    subtitle: String(localized: "Di tutti i corsi"),
+                                    icon: "bell.badge", chevron: true)
                             }
                             .buttonStyle(.plain)
                         }

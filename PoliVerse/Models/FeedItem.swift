@@ -45,6 +45,20 @@ nonisolated struct FeedItem: Identifiable, Sendable, Equatable {
         }
     }
 
+    /// A course's own rows: matched by code, or by name where the sources
+    /// give the same teaching different codes (§3) — only then, so two
+    /// teachings that share a name but both have a real code stay apart.
+    static func items(from updates: [ExamUpdate], for course: Course) -> [FeedItem] {
+        let codes = Set([course.id, course.code, course.teachingCode].compactMap { $0 })
+        let name = MutedCourse.key(course.name)
+        let isTeachingCode = { (code: String) in code.range(of: "^[0-9]{6}$", options: .regularExpression) != nil }
+        return items(from: updates.filter { update in
+            if codes.contains(update.courseCode) { return true }
+            let bothCoded = isTeachingCode(update.courseCode) && course.teachingCode != nil
+            return !bothCoded && MutedCourse.key(update.courseName) == name
+        })
+    }
+
     /// Rows the student has not seen: newer than their last visit, and not a
     /// file's mark the official one has already replaced.
     static func unreadCount(_ items: [FeedItem], seenAt: Date?) -> Int {

@@ -239,6 +239,40 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
     }
 }
 
+/// The kinds of news a student can switch off one by one (§13).
+nonisolated enum UpdateCategory: String, Sendable, Codable, CaseIterable, Identifiable {
+    case results, roomsAndDates, enrolments, teachers, coursework
+
+    var id: String { rawValue }
+
+    var kinds: Set<ExamUpdate.Kind> {
+        Set(ExamUpdate.Kind.allCases.filter { $0.category == self })
+    }
+
+    var label: String {
+        switch self {
+        case .results: String(localized: "Esiti e voti")
+        case .roomsAndDates: String(localized: "Aule e date degli appelli")
+        case .enrolments: String(localized: "Iscrizioni agli appelli")
+        case .teachers: String(localized: "Annunci, avvisi e soluzioni")
+        case .coursework: String(localized: "Materiali e consegne")
+        }
+    }
+}
+
+extension ExamUpdate.Kind {
+    /// A switch, so a new kind does not compile until it has a category.
+    nonisolated var category: UpdateCategory {
+        switch self {
+        case .gradePublished, .refusalOpened, .gradeRecorded, .resultsPosted, .correctionsAvailable: .results
+        case .roomPublished, .roomChanged, .dateChanged, .withdrawn: .roomsAndDates
+        case .discovered, .enrolmentOpened, .enrolled, .unenrolled: .enrolments
+        case .announcementPosted, .examNoticePosted, .solutionsPosted: .teachers
+        case .materialAdded, .assignmentAdded, .deadlineChanged: .coursework
+        }
+    }
+}
+
 /// What the detector remembers between looks.
 nonisolated struct ExamWatchState: Sendable, Equatable, Codable {
     /// The last good snapshot of sittings, by `c_appello`. Nil until one has

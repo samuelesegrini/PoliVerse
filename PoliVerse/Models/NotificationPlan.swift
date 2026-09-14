@@ -23,6 +23,18 @@ nonisolated struct NotificationPreferences: Sendable, Equatable, Codable {
     /// News read from WeBeep — files, announcements, assignments — as
     /// notifications. Off keeps it in the feed only.
     var weBeepUpdates = true
+    /// Categories switched off, by raw value — strings, so a renamed
+    /// category can never make stored preferences unreadable.
+    var disabledCategories: [String] = []
+    /// Rome hour of the daily summary.
+    var digestHour = 18
+
+    func isEnabled(_ category: UpdateCategory) -> Bool { !disabledCategories.contains(category.rawValue) }
+
+    mutating func setCategory(_ category: UpdateCategory, enabled: Bool) {
+        disabledCategories.removeAll { $0 == category.rawValue }
+        if !enabled { disabledCategories.append(category.rawValue) }
+    }
 
     func isQuiet(hour: Int) -> Bool {
         guard quietFrom != quietUntil else { return false }
@@ -66,7 +78,7 @@ nonisolated struct NotificationPreferences: Sendable, Equatable, Codable {
 extension NotificationPreferences {
     private enum CodingKeys: String, CodingKey {
         case lectures, deadlines, exams, enrolments, leadMinutes, examUpdates, readResultsFiles, mutedCourses
-        case quietFrom, quietUntil, weBeepUpdates
+        case quietFrom, quietUntil, weBeepUpdates, disabledCategories, digestHour
     }
 
     /// Lenient, key by key: a build that adds a preference must not make the
@@ -87,6 +99,9 @@ extension NotificationPreferences {
         quietFrom = try container.decodeIfPresent(Int.self, forKey: .quietFrom) ?? defaults.quietFrom
         quietUntil = try container.decodeIfPresent(Int.self, forKey: .quietUntil) ?? defaults.quietUntil
         weBeepUpdates = try container.decodeIfPresent(Bool.self, forKey: .weBeepUpdates) ?? defaults.weBeepUpdates
+        disabledCategories = try container.decodeIfPresent([String].self, forKey: .disabledCategories)
+            ?? defaults.disabledCategories
+        digestHour = try container.decodeIfPresent(Int.self, forKey: .digestHour) ?? defaults.digestHour
     }
 }
 
@@ -237,10 +252,15 @@ nonisolated enum NotificationPlan {
         // Evening summaries of exam updates that did not deserve a push of
         // their own. Rebuilt from the log each time, like everything else here.
         if preferences.examUpdates {
-            // Filtered here, not only when decided: muting a course also
-            // silences the summary it had already been queued for.
+            // Filtered here, not only when decided: muting a course, or
+            // switching a kind of news off, also silences the summary it had
+            // already been queued for.
             planned += ExamUpdatePolicy.digests(
-                from: updates.filter { !preferences.isMuted(code: $0.courseCode, name: $0.courseName) },
+                from: updates.filter {
+                    !preferences.isMuted(code: $0.courseCode, name: $0.courseName)
+                        && preferences.isEnabled($0.kind.category)
+                        && (preferences.weBeepUpdates || $0.source != .webeep)
+                },
                 now: now, preferences: preferences)
         }
 

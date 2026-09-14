@@ -55,6 +55,8 @@ struct ExamFormatSection: View {
             }
         }
         .task {
+            // Sample data has invented codes: no catalogue lookups for it.
+            guard !session.useMockData else { return }
             // The scheda of the sitting's own academic year: a September
             // sitting belongs to the year that is ending.
             let year = exam.date.map { String(Course.academicYearLabel(for: $0).prefix(4)) }
