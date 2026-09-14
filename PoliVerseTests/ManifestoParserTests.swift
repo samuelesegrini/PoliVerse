@@ -185,6 +185,25 @@ struct ManifestoParserTests {
         #expect(results[0].idRiga == "354946")
     }
 
+    /// Live markup, 2026-09-14: the degree course is a heading row above its
+    /// teachings, not a column of them.
+    @Test("Each row takes the degree course of the heading above it")
+    func searchDegreeCourse() {
+        let html = """
+        <TR><TD class="ElementSimpleCard1" colspan="7">Corso di Studi <i><a target="_blank" href="/manifesti/manifesti/controller/ManifestoPublic.do?evn_default=evento&aa=2026&k_corso_la=553&lang=IT">
+            Ing. Ind-Inf (Mag.)(ord. 96/23) - MI (553) Mathematical Engineering
+        </a></i></TD></TR>
+        <TR><TD class="ElementInfoCard2">Monodisciplinare</TD><TD class="ElementInfoCard2"><b>052496</b></TD><TD class="ElementInfoCard2">ALGORITHMS AND PARALLEL COMPUTING</TD>
+        <TD class="ElementInfoCard2"><a href="/manifesti/manifesti/controller/ManifestoPublic.do?EVN_DETTAGLIO_RIGA_MANIFESTO=evento&k_corso_la=553&k_indir=MST&codDescr=052496&semestre=1&aa=2026"><img src="m.gif"/></a></TD></TR>
+        <TR><TD class="ElementSimpleCard1" colspan="7">Corso di Studi <i><a href="/manifesti/manifesti/controller/ManifestoPublic.do?evn_default=evento&aa=2026&k_corso_la=508&lang=IT">Ing. Ind-Inf (1 liv.)(ord. 270) - MI (508) Ingegneria Aerospaziale</a></i></TD></TR>
+        <TR><TD><a href="/manifesti/manifesti/controller/ManifestoPublic.do?EVN_DETTAGLIO_RIGA_MANIFESTO=evento&k_corso_la=508&k_indir=M1A&codDescr=059156&aa=2026">ANALISI</a></TD></TR>
+        """
+        let results = ManifestoParser.searchResults(html)
+        #expect(results.first?.name == "ALGORITHMS AND PARALLEL COMPUTING")
+        #expect(results.map(\.degreeCourse) == ["Ing. Ind-Inf (Mag.)(ord. 96/23) - MI (553) Mathematical Engineering",
+                                                "Ing. Ind-Inf (1 liv.)(ord. 270) - MI (508) Ingegneria Aerospaziale"])
+    }
+
     /// The same teaching appears once per module; the list must not repeat it.
     @Test("Repeated rows for one teaching collapse")
     func searchDeduplicates() {

@@ -16,8 +16,19 @@ nonisolated enum ManifestoParser {
     static func searchResults(_ html: String) -> [ManifestoTeaching] {
         var found: [ManifestoTeaching] = []
         var seen: Set<String> = []
+        // The degree course heads its group of rows rather than being a column.
+        var degree: String?
 
         for row in HTMLScraper.rows(in: html) {
+            if let heading = row.first(where: { $0.contains("Corso di Studi") || $0.contains("Programme") }),
+               !heading.localizedCaseInsensitiveContains("EVN_DETTAGLIO_RIGA_MANIFESTO"),
+               heading.range(of: "k_corso_la=", options: .caseInsensitive) != nil {
+                let text = HTMLScraper.text(heading)
+                    .replacingOccurrences(of: #"^\s*(Corso di Studi|Programme)\s*"#, with: "", options: .regularExpression)
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                degree = text.isEmpty ? nil : text
+                continue
+            }
             guard
                 let linkCell = row.first(where: {
                     $0.localizedCaseInsensitiveContains("EVN_DETTAGLIO_RIGA_MANIFESTO")
@@ -28,7 +39,11 @@ nonisolated enum ManifestoParser {
             else { continue }
 
             let cells = row.map(HTMLScraper.text)
+            // The name is the column after the code; the first long cell is
+            // the type ("Monodisciplinare") on the live page.
+            let afterCode = cells.firstIndex(of: code).flatMap { cells.indices.contains($0 + 1) ? cells[$0 + 1] : nil }
             let name = HTMLScraper.text(linkCell).nonEmpty
+                ?? afterCode?.nonEmpty
                 ?? cells.first { $0.count > 6 && $0 != code } ?? code
 
             let teaching = ManifestoTeaching(
@@ -42,7 +57,7 @@ nonisolated enum ManifestoParser {
                 year: HTMLScraper.queryValue("aa", in: href),
                 credits: cells.compactMap(credits(from:)).first,
                 school: nil,
-                degreeCourse: cells.first { $0.contains("(") && $0.count > 12 })
+                degreeCourse: degree ?? cells.first { $0.contains("(") && $0.count > 12 })
 
             // The same teaching appears once per module row; keep the first.
             guard seen.insert(teaching.id).inserted else { continue }

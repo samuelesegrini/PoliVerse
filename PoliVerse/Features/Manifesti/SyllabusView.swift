@@ -208,7 +208,7 @@ struct CourseSyllabusView: View {
             } else if let syllabus, !syllabus.isEmpty {
                 if let pick {
                     Section {
-                        if let degree = pick.detail.degreeCourse {
+                        if let degree = pick.degreeCourse {
                             LabeledContent("Corso di studi", value: degree)
                         }
                         if let from = pick.module.scaglioneFrom, let to = pick.module.scaglioneTo, to != "ZZZZ" || from != "A" {

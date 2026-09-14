@@ -77,6 +77,11 @@ final class ManifestiService {
 
         let syllabusBase = self.syllabusBase
         syllabusLoader = ResourceLoader(lifetime: .seconds(86400), capacity: 128) { classID in
+            // A scheda changes at most once a year: a stored copy younger than
+            // a week is the answer, without a page.
+            let stored = "syllabus-\(classID)-\(PoliMiLanguage.current.rawValue)"
+            let cached = DiskCache.load(Syllabus.self, as: stored)
+            if let cached, cached.isFresh(within: Self.storedLifetime) { return cached.value }
             var components = URLComponents(url: syllabusBase, resolvingAgainstBaseURL: false)!
             components.queryItems = [
                 .init(name: "evn_default", value: "evento"),
@@ -85,12 +90,14 @@ final class ManifestiService {
             ]
             guard let url = components.url,
                   let html = await Self.page(url, session: session)
-            else { return nil }
+            else { return cached?.value }   // offline: last week's scheda beats none
             let parsed = ManifestoParser.syllabus(html)
             // An empty parse is a failure, not an answer: the service returns
             // its search page when a class id is unknown, and caching that as
             // "this teaching has no syllabus" would be wrong.
-            return parsed.isEmpty ? nil : parsed
+            guard !parsed.isEmpty else { return cached?.value }
+            DiskCache.save(parsed, as: stored)
+            return parsed
         }
     }
 
@@ -149,6 +156,12 @@ final class ManifestiService {
         // sheet ask for the same teaching, and each answer costs up to nine
         // pages.
         if let cached = picks[key] { return cached }
+        // Found on an earlier launch: shown at once, looked up again only
+        // once it is a week old.
+        if let stored = await Self.storedPick(key), stored.isFresh(within: Self.storedLifetime) {
+            picks[key] = stored.value
+            return stored.value
+        }
         // The course page starts this before the student taps "Programma":
         // the tap joins that search instead of starting a second one.
         if let running = pending[key] { return await running.value ?? nil }
@@ -158,9 +171,27 @@ final class ManifestiService {
         let answer = await task.value
         pending[key] = nil
         // Not reached: asked again next time, not remembered as "none".
-        guard let answer else { return nil }
+        guard let answer else { return await Self.storedPick(key)?.value }
         picks[key] = answer
+        if let found = answer { await Self.storePick(found, key) }
         return answer
+    }
+
+    /// A week: schede change once a year, the picked row almost never.
+    nonisolated static let storedLifetime: TimeInterval = 7 * 86400
+
+    @concurrent
+    private nonisolated static func storedPick(_ key: String) async -> DiskCache.Entry<SyllabusPicker.Pick>? {
+        DiskCache.load(SyllabusPicker.Pick.self, as: pickFile(key))
+    }
+
+    @concurrent
+    private nonisolated static func storePick(_ pick: SyllabusPicker.Pick, _ key: String) async {
+        DiskCache.save(pick, as: pickFile(key))
+    }
+
+    private nonisolated static func pickFile(_ key: String) -> String {
+        "syllabus-pick-" + key.map { $0.isLetter || $0.isNumber ? String($0) : "_" }.joined()
     }
 
     /// Starts finding a teaching's scheda, and its syllabus, without waiting.
@@ -191,13 +222,34 @@ final class ManifestiService {
                                     session: catalogue) else { return nil }
         var seen: Set<String> = []
         var rows: [ManifestoTeaching] = []
-        for teaching in ManifestoParser.searchResults(html) where teaching.code == teachingCode {
+        // The student's degree course first, so it is never cut by the cap.
+        let found = ManifestoParser.searchResults(html).filter { $0.code == teachingCode }
+        for teaching in SyllabusPicker.ordered(found, degreeName: degreeName) {
             // One per degree course and plan: plans can bracket differently.
             if seen.insert("\(teaching.courseCode)-\(teaching.planCode ?? "")").inserted { rows.append(teaching) }
             if rows.count == Self.pickCandidates { break }
         }
-        // Read together: one at a time, the course page waited for each.
-        let details = await withTaskGroup(of: (Int, ManifestoDetail?).self) { group in
+        // The student's own degree course alone first: when it answers, the
+        // other degree courses' pages are never read.
+        let mine = rows.filter { DegreeCourseMatch.matches($0.degreeCourse, plan: degreeName) }
+        if !mine.isEmpty, let early = SyllabusPicker.pick(await details(of: mine), surname: surname, degreeName: degreeName),
+           early.matchesDegree {
+            log.notice("manifesti: scheda for \(teachingCode, privacy: .public) from its own degree course: \(early.module.syllabusID ?? "none", privacy: .public)")
+            return .some(early)
+        }
+        let details = await details(of: rows)
+        // Rows found but no detail read: the pages did not load, which is
+        // not an answer.
+        if !rows.isEmpty && details.isEmpty { return nil }
+        let pick = SyllabusPicker.pick(details, surname: surname, degreeName: degreeName)
+        log.notice("manifesti: scheda for \(teachingCode, privacy: .public) from \(details.count, privacy: .public) degree courses: \(pick?.module.syllabusID ?? "none", privacy: .public)")
+        return .some(pick)
+    }
+
+    /// Read together: one at a time, the course page waited for each. Already
+    /// read pages come from the detail loader's cache.
+    private func details(of rows: [ManifestoTeaching]) async -> [ManifestoDetail] {
+        await withTaskGroup(of: (Int, ManifestoDetail?).self) { group in
             for (index, teaching) in rows.enumerated() {
                 group.addTask { (index, await self.detail(for: teaching)) }
             }
@@ -205,12 +257,6 @@ final class ManifestiService {
             for await (index, detail) in group { if let detail { found.append((index, detail)) } }
             return found.sorted { $0.0 < $1.0 }.map(\.1)
         }
-        // Rows found but no detail read: the pages did not load, which is
-        // not an answer.
-        if !rows.isEmpty && details.isEmpty { return nil }
-        let pick = SyllabusPicker.pick(details, surname: surname, degreeName: degreeName)
-        log.notice("manifesti: scheda for \(teachingCode, privacy: .public) from \(details.count, privacy: .public) degree courses: \(pick?.module.syllabusID ?? "none", privacy: .public)")
-        return .some(pick)
     }
 
     /// Degree courses read to find a student's scheda. A common teaching is

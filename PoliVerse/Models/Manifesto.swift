@@ -70,7 +70,7 @@ nonisolated enum TeachingLanguage: String, Sendable, Hashable, Codable, CaseIter
 /// one a student belongs to decides their lecturer and their timetable. It is
 /// the single most consequential field on the page and the one no other
 /// Politecnico service exposes.
-nonisolated struct ManifestoModule: Identifiable, Sendable, Hashable {
+nonisolated struct ManifestoModule: Identifiable, Sendable, Hashable, Codable {
     var id: String { code }
     let code: String
     let name: String
@@ -104,7 +104,7 @@ nonisolated struct ManifestoModule: Identifiable, Sendable, Hashable {
     }
 }
 
-nonisolated struct ManifestoTeacher: Identifiable, Sendable, Hashable {
+nonisolated struct ManifestoTeacher: Identifiable, Sendable, Hashable, Codable {
     /// `k_doc`, the catalogue's own id — the name-to-id lookup that was
     /// missing when teacher search was first built from course lists.
     var id: String { kDoc ?? name.lowercased() }
@@ -158,14 +158,14 @@ nonisolated struct ManifestoDetail: Sendable, Hashable {
 }
 
 /// One degree course's bracket for a teaching, from the syllabus summary.
-nonisolated struct SyllabusBracket: Sendable, Hashable {
+nonisolated struct SyllabusBracket: Sendable, Hashable, Codable {
     let degreeCourse: String
     let from: String?
     let to: String?
 }
 
 /// A book in the syllabus bibliography.
-nonisolated struct SyllabusBook: Sendable, Hashable, Identifiable {
+nonisolated struct SyllabusBook: Sendable, Hashable, Identifiable, Codable {
     var id: String { "\(title)-\(authors ?? "")" }
     let authors: String?
     let title: String
@@ -177,13 +177,13 @@ nonisolated struct SyllabusBook: Sendable, Hashable, Identifiable {
 }
 
 /// Hours of one kind of teaching: lectures, labs, projects.
-nonisolated struct TeachingForm: Sendable, Hashable {
+nonisolated struct TeachingForm: Sendable, Hashable, Codable {
     let name: String
     let minutes: Int
 }
 
 /// What an Italian or English-taught course offers in English.
-nonisolated enum EnglishSupport: String, Sendable, Hashable, CaseIterable {
+nonisolated enum EnglishSupport: String, Sendable, Hashable, CaseIterable, Codable {
     case slides, books, exam, tutoring
 
     var label: String {
@@ -258,6 +258,53 @@ nonisolated struct Syllabus: Sendable, Hashable {
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(sections.count)
+    }
+}
+
+/// Stored so a scheda opens instantly on the next launch; the sections are
+/// written as pairs, since tuples have no `Codable`.
+extension Syllabus: Codable {
+    private struct Section: Codable { let title: String; let body: String }
+
+    private enum CodingKeys: String, CodingKey {
+        case sections, teachers, credits, teachingType, brackets, assessment, assessmentNotes, books, software,
+             teachingForms, assistedMinutes, selfStudyMinutes, language, englishSupport
+    }
+
+    nonisolated init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(sections: try c.decode([Section].self, forKey: .sections).map { (title: $0.title, body: $0.body) })
+        teachers = try c.decode([ManifestoTeacher].self, forKey: .teachers)
+        credits = try c.decodeIfPresent(Double.self, forKey: .credits)
+        teachingType = try c.decodeIfPresent(String.self, forKey: .teachingType)
+        brackets = try c.decode([SyllabusBracket].self, forKey: .brackets)
+        assessment = try c.decode([String].self, forKey: .assessment)
+        assessmentNotes = try c.decodeIfPresent(String.self, forKey: .assessmentNotes)
+        books = try c.decode([SyllabusBook].self, forKey: .books)
+        software = try c.decodeIfPresent(String.self, forKey: .software)
+        teachingForms = try c.decode([TeachingForm].self, forKey: .teachingForms)
+        assistedMinutes = try c.decodeIfPresent(Int.self, forKey: .assistedMinutes)
+        selfStudyMinutes = try c.decodeIfPresent(Int.self, forKey: .selfStudyMinutes)
+        language = try c.decodeIfPresent(TeachingLanguage.self, forKey: .language)
+        englishSupport = try c.decode([EnglishSupport].self, forKey: .englishSupport)
+    }
+
+    nonisolated func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(sections.map { Section(title: $0.title, body: $0.body) }, forKey: .sections)
+        try c.encode(teachers, forKey: .teachers)
+        try c.encodeIfPresent(credits, forKey: .credits)
+        try c.encodeIfPresent(teachingType, forKey: .teachingType)
+        try c.encode(brackets, forKey: .brackets)
+        try c.encode(assessment, forKey: .assessment)
+        try c.encodeIfPresent(assessmentNotes, forKey: .assessmentNotes)
+        try c.encode(books, forKey: .books)
+        try c.encodeIfPresent(software, forKey: .software)
+        try c.encode(teachingForms, forKey: .teachingForms)
+        try c.encodeIfPresent(assistedMinutes, forKey: .assistedMinutes)
+        try c.encodeIfPresent(selfStudyMinutes, forKey: .selfStudyMinutes)
+        try c.encodeIfPresent(language, forKey: .language)
+        try c.encode(englishSupport, forKey: .englishSupport)
     }
 }
 

@@ -244,4 +244,39 @@ struct SyllabusPickerTests {
         #expect(SyllabusPicker.pick([detail(degree: "X", modules: [module(nil, nil, syllabus: nil)])],
                                     surname: "Rossi", degreeName: nil) == nil)
     }
+
+    private func row(_ course: String, degree: String?) -> ManifestoTeaching {
+        ManifestoTeaching(code: "097683", name: "MACHINE LEARNING", courseCode: course, planCode: nil,
+                          idItemOfferta: nil, idRiga: nil, semester: nil, year: nil, credits: nil, school: nil,
+                          degreeCourse: degree)
+    }
+
+    @Test("The student's degree course is read first, keeping the service's order otherwise")
+    func ordering() {
+        let rows = [row("511", degree: "(Mag.) - MI (511) Geoinformatics Engineering"),
+                    row("542", degree: "(Mag.) - MI (542) Computer Science and Engineering"),
+                    row("600", degree: nil)]
+        #expect(SyllabusPicker.ordered(rows, degreeName: "Computer Science and Engineering").map(\.courseCode)
+            == ["542", "511", "600"])
+        #expect(SyllabusPicker.ordered(rows, degreeName: nil).map(\.courseCode) == ["511", "542", "600"])
+    }
+
+    @Test("A pick survives the disk cache")
+    func pickRoundTrip() throws {
+        let picked = try #require(SyllabusPicker.pick(details, surname: "Rossi", degreeName: "Computer Science and Engineering"))
+        let decoded = try JSONDecoder().decode(SyllabusPicker.Pick.self, from: JSONEncoder().encode(picked))
+        #expect(decoded == picked)
+    }
+
+    @Test("A syllabus survives the disk cache")
+    func syllabusRoundTrip() throws {
+        var syllabus = Syllabus(sections: [(title: "Obiettivi", body: "Imparare")])
+        syllabus.assessment = ["Prova scritta obbligatoria"]
+        syllabus.books = [SyllabusBook(authors: "Bishop", title: "PRML", details: nil, url: nil, isRequired: true)]
+        syllabus.englishSupport = [.slides]
+        syllabus.teachers = [ManifestoTeacher(name: "Rossi", kDoc: "1")]
+        let decoded = try JSONDecoder().decode(Syllabus.self, from: JSONEncoder().encode(syllabus))
+        #expect(decoded == syllabus)
+        #expect(decoded.objectives == "Imparare")
+    }
 }

@@ -9,8 +9,10 @@ import Foundation
 /// then the bracket their surname falls in; then the first row that has a
 /// scheda at all.
 nonisolated enum SyllabusPicker {
-    struct Pick: Sendable {
-        let detail: ManifestoDetail
+    /// Kept small enough to store: the degree course's name, not its whole
+    /// page, so a found scheda survives a relaunch.
+    struct Pick: Sendable, Codable, Equatable {
+        let degreeCourse: String?
         let module: ManifestoModule
         /// Whether the student's own degree course was found among the rows;
         /// otherwise this is the first row with a scheda, and the UI says so.
@@ -25,10 +27,18 @@ nonisolated enum SyllabusPicker {
             let withScheda = detail.modules.filter { $0.syllabusID != nil }
             let mine = surname.flatMap { name in withScheda.first { $0.covers(surname: name) } }
             if let module = mine ?? withScheda.first {
-                return Pick(detail: detail, module: module, matchesDegree: matches(detail, degree))
+                return Pick(degreeCourse: detail.degreeCourse, module: module, matchesDegree: matches(detail, degree))
             }
         }
         return nil
+    }
+
+    /// Rows of the student's degree course first, the service's order kept
+    /// within each group: usually the first detail read is the answer.
+    static func ordered(_ rows: [ManifestoTeaching], degreeName: String?) -> [ManifestoTeaching] {
+        guard let degreeName else { return rows }
+        let mine = rows.filter { DegreeCourseMatch.matches($0.degreeCourse, plan: degreeName) }
+        return mine + rows.filter { !DegreeCourseMatch.matches($0.degreeCourse, plan: degreeName) }
     }
 
     private static func matches(_ detail: ManifestoDetail, _ degree: String?) -> Bool {
