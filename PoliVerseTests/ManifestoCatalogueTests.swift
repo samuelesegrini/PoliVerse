@@ -46,6 +46,18 @@ struct ManifestoCatalogueTests {
         #expect(only.selected == "1014")
     }
 
+    /// Live, Architecture school 2026: "*** - Non diversificato" can be chosen
+    /// and lists nothing; the real plans sit beside it.
+    @Test("The empty non-differentiated plan is not offered when real plans exist")
+    func nonDifferentiated() throws {
+        let html = #"<select name="k_indir"><option value="***" SELECTED>*** - Non diversificato</option><option value="IE1" >IE1 - Curriculum - IEC</option></SELECT>"#
+        let level = try #require(CatalogueParser.level(.plan, in: html))
+        #expect(level.options.map(\.value) == ["IE1"])
+        #expect(level.selected == "***")
+        let only = try #require(CatalogueParser.level(.plan, in: #"<select name="k_indir"><option value="***" SELECTED>*** - Non diversificato</option></select>"#))
+        #expect(only.options.map(\.value) == ["***"])
+    }
+
     @Test("The service's error page is no page")
     func errorPage() {
         #expect(CatalogueParser.page("<html><body><a href='x'>Errore interno, fai click per effettuare il logout e ricominciare</a></body></html>") == nil)

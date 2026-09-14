@@ -137,6 +137,12 @@ nonisolated enum CatalogueParser {
                 }
             }
             guard !options.isEmpty else { return nil }
+            // "*** - Non diversificato" lists nothing where real plans exist
+            // beside it (the Architecture school offers it as a choice).
+            // The page's own choice is kept, so a caller can move off it.
+            if field == .plan, options.contains(where: { $0.value != "***" }) {
+                options.removeAll { $0.value == "***" }
+            }
             return CatalogueLevel(field: field, options: options, selected: selected ?? options.first?.value)
         }
         // One choice only: the page writes its label and a hidden input.

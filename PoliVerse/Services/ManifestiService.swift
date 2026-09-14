@@ -291,8 +291,14 @@ final class ManifestiService {
         for school in schools {
             let base = start.setting(.campus, to: "ALL_SEDI").setting(.school, to: school.value)
             guard let schoolPage = await cataloguePage(base) else { continue }
-            if let match = choose(schoolPage.level(.degree)?.options ?? []) {
-                return await cataloguePage(base.setting(.degree, to: match.value))
+            if let match = choose(schoolPage.level(.degree)?.options ?? []),
+               let found = await cataloguePage(base.setting(.degree, to: match.value)) {
+                // Not the empty non-differentiated plan: its first real one.
+                if found.selection?.plan == "***", let real = found.level(.plan)?.options.first?.value, real != "***",
+                   let selection = found.selection {
+                    return await cataloguePage(selection.setting(.plan, to: real)) ?? found
+                }
+                return found
             }
         }
         return nil

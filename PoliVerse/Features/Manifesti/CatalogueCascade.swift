@@ -109,6 +109,10 @@ struct CatalogueCascade: View {
     }
 
     private func show(_ found: CataloguePage) {
+        // Landed on the empty non-differentiated plan: open the first real one.
+        if found.selection?.plan == "***", let real = found.level(.plan)?.options.first?.value, real != "***" {
+            Task { await change(.plan, to: real) }
+        }
         page = found
         message = found.teachings.isEmpty && found.selection != nil
             ? String(localized: "Questo piano non elenca insegnamenti.") : nil
