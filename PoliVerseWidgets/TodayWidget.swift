@@ -62,7 +62,7 @@ struct TodayProvider: TimelineProvider {
 
 struct TodayWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "Today", provider: TodayProvider()) { entry in
+        StaticConfiguration(kind: WidgetKind.today.rawValue, provider: TodayProvider()) { entry in
             TodayView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }

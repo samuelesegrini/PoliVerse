@@ -72,7 +72,7 @@ struct NextLectureProvider: TimelineProvider {
 
 struct NextLectureWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "NextLecture", provider: NextLectureProvider()) { entry in
+        StaticConfiguration(kind: WidgetKind.nextLecture.rawValue, provider: NextLectureProvider()) { entry in
             NextLectureView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }

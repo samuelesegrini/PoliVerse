@@ -1,7 +1,6 @@
 import Foundation
 import Observation
 import OSLog
-import WidgetKit
 
 /// Lectures, exams and deadlines from the agenda endpoint.
 ///
@@ -19,7 +18,16 @@ import WidgetKit
 /// this does — no more fetching 200 events and discarding most of them.
 @Observable
 final class AgendaService {
-    private(set) var events: [AgendaEvent] = []
+    private(set) var events: [AgendaEvent] = [] {
+        didSet { eventsByDay = Self.index(events) }
+    }
+    /// `events`, grouped by Rome day and sorted, rebuilt whenever they change.
+    ///
+    /// The week strip asked for each of its seven days on every body pass, and
+    /// each ask filtered and sorted the whole window on the main thread. One
+    /// pass on write is cheaper than seven on read, every frame something
+    /// changes (`docs/metrickit-performance.md` §3.2).
+    private var eventsByDay: [Date: [AgendaEvent]] = [:]
     private(set) var isLoading = false
     private(set) var errorMessage: String?
     /// The span currently held, so navigating past its edge can fetch more.
@@ -124,7 +132,7 @@ final class AgendaService {
         // The widgets read this file; nothing else tells them it changed.
         // Without this the Lock Screen keeps last night's lecture until the
         // system happens to grant a reload, which can be hours.
-        WidgetCenter.shared.reloadAllTimelines()
+        WidgetReloader.request(WidgetKind.agenda)
         age = slot.age
     }
 
@@ -202,17 +210,19 @@ final class AgendaService {
 
     /// Events on a given day, in Rome time.
     func events(on day: Date) -> [AgendaEvent] {
+        eventsByDay[PoliMiDate.romeCalendar.startOfDay(for: day)] ?? []
+    }
+
+    static func index(_ events: [AgendaEvent]) -> [Date: [AgendaEvent]] {
         let calendar = PoliMiDate.romeCalendar
-        return events
-            .filter { calendar.isDate($0.start, inSameDayAs: day) }
-            .sorted { $0.start < $1.start }
+        return Dictionary(grouping: events) { calendar.startOfDay(for: $0.start) }
+            .mapValues { $0.sorted { $0.start < $1.start } }
     }
 
     /// Days in the loaded window that actually have something on them, used to
     /// dot the week strip.
     func daysWithEvents() -> Set<Date> {
-        let calendar = PoliMiDate.romeCalendar
-        return Set(events.map { calendar.startOfDay(for: $0.start) })
+        Set(eventsByDay.keys)
     }
 
     /// Lectures on a given day, which is what a timetable shows.

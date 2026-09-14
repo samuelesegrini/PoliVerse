@@ -1,7 +1,6 @@
 import Foundation
 import Observation
 import OSLog
-import WidgetKit
 
 /// Which rooms are free, and when.
 ///
@@ -281,7 +280,7 @@ final class FreeRoomsService {
         OfflineStore.shared.save(
             snapshot, as: FreeRoomsSnapshot.cacheName, account: campus)
         FreeRoomsSnapshot.knownCampuses = catalogue.campuses
-        WidgetCenter.shared.reloadAllTimelines()
+        WidgetReloader.request([.freeRooms])
     }
 
     /// One room's bookings for the day being shown.
@@ -347,7 +346,7 @@ final class FreeRoomsService {
                 return .failed
             }
 
-            let bands = try JSONDecoder().decode([OccupancyBand].self, from: data)
+            let bands = try await BackgroundJSON.decode([OccupancyBand].self, from: data)
             return .bookings(bands.enumerated().compactMap { index, band in
                 band.toBooking(roomID: roomID, on: day, index: index)
             })

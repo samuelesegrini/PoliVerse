@@ -273,7 +273,7 @@ nonisolated enum HTMLText {
     }
 
     private static func decodeNumeric(_ text: String) -> String {
-        guard let regex = try? NSRegularExpression(pattern: "&#(x?)([0-9a-fA-F]+);") else {
+        guard let regex = RegexCache.regex("&#(x?)([0-9a-fA-F]+);") else {
             return text
         }
         var result = text

@@ -119,6 +119,9 @@ struct PoliVerseApp: App {
             // overnight must not announce itself at the old time.
             await notifications.reschedule(
                 events: agenda.events, exams: career.sessions, assignments: updates.deadlines, updates: updates.updates)
+            // Before iOS is told the task is done: it may suspend the app with
+            // saves still queued and the widget reload still gathering.
+            await WidgetReloader.flush()
         }
     }
 
@@ -170,7 +173,10 @@ struct PoliVerseApp: App {
                 // Asked for when the app leaves the screen, which is the
                 // moment iOS is deciding whether to grant one.
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .background { background.schedule() }
+                    if phase == .background {
+                        background.schedule()
+                        Task { await WidgetReloader.appDidEnterBackground() }
+                    }
                     if phase == .active {
                         Task {
                             await pending.flush()

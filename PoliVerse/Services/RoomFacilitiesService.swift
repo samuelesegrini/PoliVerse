@@ -103,7 +103,7 @@ final class RoomFacilitiesService {
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
                 return nil
             }
-            return try JSONDecoder().decode([RoomFacility].self, from: data)
+            return try await BackgroundJSON.decode([RoomFacility].self, from: data)
                 .filter { !$0.name.isEmpty }
         } catch {
             return nil

@@ -134,6 +134,6 @@ final class RoomsService {
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw APIError.badStatus((response as? HTTPURLResponse)?.statusCode ?? -1, body: "")
         }
-        return try JSONDecoder().decode(T.self, from: data)
+        return try await BackgroundJSON.decode(T.self, from: data)
     }
 }

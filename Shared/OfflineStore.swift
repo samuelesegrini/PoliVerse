@@ -19,6 +19,21 @@ nonisolated final class OfflineStore: Sendable {
     private let directory: URL
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "offline")
 
+    /// Where encoding and writing happen: off the main thread, one at a time.
+    ///
+    /// Every service saves from the main actor straight after a load, and a
+    /// foreground revalidation runs five of them back to back, so a synchronous
+    /// encode and atomic write each was main-thread disk I/O on every return to
+    /// the app. Serial, so two saves of one slot land in the order they were
+    /// made; everything that reads or deletes waits for it first, so no caller
+    /// can observe a write that has not happened yet — or have a pending one
+    /// bring back a file that sign-out just removed.
+    ///
+    /// One queue for the process, not one per store: two stores can name the
+    /// same directory — the migration does — and each must see the other's
+    /// writes as finished.
+    private static let writes = DispatchQueue(label: "one.wape.PoliVerse.offline-writes", qos: .utility)
+
     /// What came back, and how old it is.
     struct Entry<Value: Codable & Sendable>: Sendable {
         let value: Value
@@ -70,6 +85,7 @@ nonisolated final class OfflineStore: Sendable {
     /// whatever the old one holds, so overwriting it would undo a refresh.
     /// Leaving the originals in place means a downgrade still finds its data.
     private func migrate(from legacy: URL) {
+        flush()
         guard legacy != directory,
               let files = try? FileManager.default.contentsOfDirectory(
                 at: legacy, includingPropertiesForKeys: nil)
@@ -91,7 +107,7 @@ nonisolated final class OfflineStore: Sendable {
         }
     }
 
-    private struct Stored<Value: Codable & Sendable>: Codable {
+    private struct Stored<Value: Codable & Sendable>: Codable, Sendable {
         let value: Value
         let storedAt: Date
     }
@@ -99,9 +115,19 @@ nonisolated final class OfflineStore: Sendable {
     /// Keyed by account, so two enrolments on one device cannot see each
     /// other's data.
     private func url(_ name: String, account: String) -> URL {
-        let safe = account.replacingOccurrences(
-            of: "[^A-Za-z0-9_-]", with: "", options: .regularExpression)
-        return directory.appendingPathComponent("\(safe)-\(name).json")
+        directory.appendingPathComponent("\(Self.safe(account))-\(name).json")
+    }
+
+    /// The account with anything but `A-Z a-z 0-9 _ -` removed. A character
+    /// filter rather than the regex it replaces, which was compiled again on
+    /// every read and every write.
+    static func safe(_ account: String) -> String {
+        String(account.unicodeScalars.filter { scalar in
+            switch scalar {
+            case "A"..."Z", "a"..."z", "0"..."9", "_", "-": true
+            default: false
+            }
+        }.map(Character.init))
     }
 
     /// - Parameter account: the matricola. **Nil is refused**: an anonymous
@@ -109,18 +135,45 @@ nonisolated final class OfflineStore: Sendable {
     ///   belongs on disk pretending to be somebody's record.
     func save<Value: Codable & Sendable>(_ value: Value, as name: String, account: String?) {
         guard let account, !account.isEmpty else { return }
-        do {
-            let data = try JSONEncoder().encode(Stored(value: value, storedAt: .now))
-            try data.write(to: url(name, account: account), options: .atomic)
-        } catch {
-            log.error("offline write \(name, privacy: .public) failed: \(error.localizedDescription)")
+        // Stamped now, not when the queue gets to it: the age shown later is
+        // the age of the fetch.
+        let stored = Stored(value: value, storedAt: .now)
+        let url = url(name, account: account)
+        let log = log
+        Self.writes.async {
+            do {
+                let data = try JSONEncoder().encode(stored)
+                try data.write(to: url, options: .atomic)
+            } catch {
+                log.error("offline write \(name, privacy: .public) failed: \(error.localizedDescription)")
+            }
         }
+    }
+
+    /// Returns once every save made so far is on disk.
+    func flush() {
+        Self.writes.sync {}
+    }
+
+    /// The same, without blocking: for a background task about to tell iOS it
+    /// is done, which may suspend the process with writes still queued.
+    func flushed() async {
+        await withCheckedContinuation { continuation in
+            Self.writes.async { continuation.resume() }
+        }
+    }
+
+    /// Runs `body` once every save made so far is on disk — so a widget told
+    /// to reload reads the file just written, not the one before it.
+    func afterPendingWrites(_ body: @escaping @Sendable () -> Void) {
+        Self.writes.async(execute: body)
     }
 
     func load<Value: Codable & Sendable>(
         _ type: Value.Type, as name: String, account: String?
     ) -> Entry<Value>? {
         guard let account, !account.isEmpty else { return nil }
+        flush()
         guard let data = try? Data(contentsOf: url(name, account: account)) else { return nil }
         // A shape change between releases must discard rather than crash or
         // half-decode.
@@ -133,12 +186,13 @@ nonisolated final class OfflineStore: Sendable {
 
     /// Testing seam: writes raw bytes so a corrupt file can be exercised.
     func write(_ data: Data, as name: String, account: String) {
+        flush()
         try? data.write(to: url(name, account: account), options: .atomic)
     }
 
     func clear(account: String) {
-        let safe = account.replacingOccurrences(
-            of: "[^A-Za-z0-9_-]", with: "", options: .regularExpression)
+        flush()
+        let safe = Self.safe(account)
         guard let files = try? FileManager.default.contentsOfDirectory(
             at: directory, includingPropertiesForKeys: nil) else { return }
         for file in files where file.lastPathComponent.hasPrefix("\(safe)-") {
@@ -147,12 +201,14 @@ nonisolated final class OfflineStore: Sendable {
     }
 
     func clearAll() {
+        flush()
         try? FileManager.default.removeItem(at: directory)
         try? FileManager.default.createDirectory(
             at: directory, withIntermediateDirectories: true)
     }
 
     var sizeInBytes: Int {
+        flush()
         guard let files = try? FileManager.default.contentsOfDirectory(
             at: directory, includingPropertiesForKeys: [.fileSizeKey]) else { return 0 }
         return files.reduce(0) {

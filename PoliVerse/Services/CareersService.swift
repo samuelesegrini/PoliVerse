@@ -52,8 +52,12 @@ final class CareersService {
         do {
             let data = try await session.api.send(
                 APIRequest(host: .app, path: "/v1/careers/list"))
+            // Parses the payload a second time, on the main actor: a question
+            // for a debugger, not a cost every student should pay.
+            #if DEBUG
             log.notice("careers payload shape: \(JSONShape.describe(data), privacy: .public)")
-            careers = try JSONDecoder().decode(CareersResponse.self, from: data).careers
+            #endif
+            careers = try await BackgroundJSON.decode(CareersResponse.self, from: data).careers
             log.notice("careers: \(self.careers.count, privacy: .public) — \(self.careers.map { "\($0.matricola) \($0.status ?? "?")" }.joined(separator: ", "), privacy: .public)")
         } catch {
             log.error("Careers list failed: \(error.localizedDescription)")

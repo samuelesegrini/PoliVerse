@@ -1,7 +1,6 @@
 import Foundation
 import Observation
 import OSLog
-import WidgetKit
 
 /// Career statistics and exam sittings.
 ///
@@ -260,7 +259,7 @@ final class CareerService {
             nextExamName: next?.0,
             nextExamDate: next?.1)
         OfflineStore.shared.save(snapshot, as: CareerSnapshot.cacheName, account: account)
-        WidgetCenter.shared.reloadAllTimelines()
+        WidgetReloader.request([.career])
     }
 
     /// `GET {libretto}/mediaobiettivo/{matricola}` — the target the student
@@ -270,8 +269,12 @@ final class CareerService {
         do {
             let data = try await session.api.send(
                 APIRequest(host: .libretto, path: "/mediaobiettivo/\(matricola)"))
+            // Parses the payload a second time, on the main actor: a question
+            // for a debugger, not a cost every student should pay.
+            #if DEBUG
             log.notice("mediaobiettivo shape: \(JSONShape.describe(data), privacy: .public)")
-            let value = try JSONDecoder().decode(JSONValue.self, from: data)
+            #endif
+            let value = try await BackgroundJSON.decode(JSONValue.self, from: data)
             let fields = value.objectValue ?? value.arrayValue?.first?.objectValue
             return fields?.firstValue([
                 "media", "media_obiettivo", "mediaObiettivo", "valore", "target",
@@ -288,8 +291,12 @@ final class CareerService {
         do {
             let data = try await session.api.send(
                 APIRequest(host: .libretto, path: "/testatapiano/\(matricola)"))
+            // Parses the payload a second time, on the main actor: a question
+            // for a debugger, not a cost every student should pay.
+            #if DEBUG
             log.notice("testatapiano shape: \(JSONShape.describe(data), privacy: .public)")
-            let value = try JSONDecoder().decode(JSONValue.self, from: data)
+            #endif
+            let value = try await BackgroundJSON.decode(JSONValue.self, from: data)
             return StudyPlanHeader(value: value)
         } catch {
             guard !PoliMiAPI.isCancellation(error) else { return nil }

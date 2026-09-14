@@ -118,7 +118,7 @@ nonisolated enum ResultsFileReader {
     /// Every match of an ICU pattern. ICU rather than `Regex`: the rules need
     /// lookbehind, which Swift's engine does not support.
     private static func matches(_ pattern: String, in text: String) -> [String] {
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        guard let regex = RegexCache.regex(pattern) else { return [] }
         let range = NSRange(text.startIndex..., in: text)
         return regex.matches(in: text, range: range).compactMap {
             Range($0.range, in: text).map { String(text[$0]) }

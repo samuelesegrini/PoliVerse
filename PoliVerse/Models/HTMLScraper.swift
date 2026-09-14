@@ -100,7 +100,7 @@ nonisolated enum HTMLScraper {
         var options: NSRegularExpression.Options = [.dotMatchesLineSeparators]
         if caseInsensitive { options.insert(.caseInsensitive) }
         guard
-            let regex = try? NSRegularExpression(pattern: pattern, options: options),
+            let regex = RegexCache.regex(pattern, options: options),
             let match = regex.firstMatch(
                 in: html, range: NSRange(html.startIndex..., in: html)),
             let range = Range(match.range(at: group), in: html)
@@ -109,8 +109,8 @@ nonisolated enum HTMLScraper {
     }
 
     static func matches(_ pattern: String, in html: String) -> [[String]] {
-        guard let regex = try? NSRegularExpression(
-            pattern: pattern, options: [.dotMatchesLineSeparators, .caseInsensitive])
+        guard let regex = RegexCache.regex(
+            pattern, options: [.dotMatchesLineSeparators, .caseInsensitive])
         else { return [] }
         return regex.matches(in: html, range: NSRange(html.startIndex..., in: html))
             .map { match in

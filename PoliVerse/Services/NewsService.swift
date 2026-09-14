@@ -79,9 +79,13 @@ final class NewsService {
                     ]
                 )
             )
+            // Parses the payload a second time, on the main actor: a question
+            // for a debugger, not a cost every student should pay.
+            #if DEBUG
             log.notice("news payload shape: \(JSONShape.describe(data), privacy: .public)")
+            #endif
 
-            let response = try JSONDecoder().decode(NewsResponse.self, from: data)
+            let response = try await BackgroundJSON.decode(NewsResponse.self, from: data)
             let current = response.items.filter { $0.isCurrent(now: now) }
             items = current.sorted {
                 ($0.displayDate ?? .distantPast) > ($1.displayDate ?? .distantPast)

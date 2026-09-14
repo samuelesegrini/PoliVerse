@@ -75,13 +75,16 @@ final class NoticeService {
         }
 
         do {
-            // Fetched as raw bytes first: the shape log is the whole point of
-            // this call on its first run, and it has to survive a decode that
-            // reads nothing.
+            // Fetched as raw bytes first: in a debug build the shape log below
+            // has to survive a decode that reads nothing.
             let data = try await session.api.send(APIRequest(host: .app, path: "/v1/notifications"))
+            // Parses the payload a second time, on the main actor: a question
+            // for a debugger, not a cost every student should pay.
+            #if DEBUG
             log.notice("notifications payload shape: \(JSONShape.describe(data), privacy: .public)")
+            #endif
 
-            let response = try JSONDecoder().decode(NoticesResponse.self, from: data)
+            let response = try await BackgroundJSON.decode(NoticesResponse.self, from: data)
             notices = applyReadState(response.notices).sorted {
                 ($0.date ?? .distantPast) > ($1.date ?? .distantPast)
             }
@@ -111,8 +114,12 @@ final class NoticeService {
         do {
             let data = try await session.api.send(
                 APIRequest(host: .app, path: "/v1/notifications/\(notice.id)"))
+            // Parses the payload a second time, on the main actor: a question
+            // for a debugger, not a cost every student should pay.
+            #if DEBUG
             log.notice("notification detail shape: \(JSONShape.describe(data), privacy: .public)")
-            let value = try JSONDecoder().decode(JSONValue.self, from: data)
+            #endif
+            let value = try await BackgroundJSON.decode(JSONValue.self, from: data)
             guard let fields = value.objectValue else { return nil }
             // Raw: the detail view renders it, so the markup has to survive
             // the trip.

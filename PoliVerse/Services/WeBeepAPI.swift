@@ -69,14 +69,14 @@ nonisolated final class WeBeepAPI: Sendable {
         }
 
         // Errors arrive as HTTP 200. Sniff before decoding.
-        if let error = try? JSONDecoder().decode(MoodleError.self, from: data),
+        if let error = try? await BackgroundJSON.decode(MoodleError.self, from: data),
            let code = error.errorcode {
             log.error("Moodle \(function) failed: \(code)")
             throw Failure.moodle(code: code, message: error.message ?? "Errore WeBeep.")
         }
 
         do {
-            return try JSONDecoder().decode(T.self, from: data)
+            return try await BackgroundJSON.decode(T.self, from: data)
         } catch {
             log.error("Decoding \(function) failed: \(error)")
             throw Failure.decoding(error)

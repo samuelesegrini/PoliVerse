@@ -94,7 +94,7 @@ struct FreeRoomsProvider: AppIntentTimelineProvider {
 
 struct FreeRoomsWidget: Widget {
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: "FreeRooms",
+        AppIntentConfiguration(kind: WidgetKind.freeRooms.rawValue,
                                intent: FreeRoomsConfiguration.self,
                                provider: FreeRoomsProvider()) { entry in
             FreeRoomsWidgetView(entry: entry)

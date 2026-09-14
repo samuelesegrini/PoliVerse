@@ -173,12 +173,10 @@ nonisolated final class PoliMiAPI: Sendable {
         return body.range(of: "Code:\\s*6(?![0-9])", options: .regularExpression) != nil
     }
 
-    func send<T: Decodable>(_ request: APIRequest, as type: T.Type) async throws -> T {
+    func send<T: Decodable & Sendable>(_ request: APIRequest, as type: T.Type) async throws -> T {
         let data = try await send(request)
         do {
-            let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .iso8601
-            return try decoder.decode(T.self, from: data)
+            return try await BackgroundJSON.decode(T.self, from: data, iso8601Dates: true)
         } catch {
             // Log a slice of the body: when an endpoint moves, the shape often
             // moves with it, and guessing from the decoding error alone is

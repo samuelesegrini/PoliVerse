@@ -217,7 +217,7 @@ final class ServiceDirectory {
                 return
             }
 
-            let props = try JSONDecoder().decode([String: String].self, from: data)
+            let props = try await BackgroundJSON.decode([String: String].self, from: data)
             var profiles: [Service: Int] = [:]
             for service in Service.allCases {
                 if let key = service.profileKey,
@@ -265,7 +265,7 @@ final class ServiceDirectory {
                 return
             }
 
-            let params = try JSONDecoder().decode(OAuthParams.self, from: data)
+            let params = try await BackgroundJSON.decode(OAuthParams.self, from: data)
             if params.scope != oauth.scope {
                 // Loud, because a scope change is what silently breaks a
                 // hardcoded client: the login still succeeds and individual

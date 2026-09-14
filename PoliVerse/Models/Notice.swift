@@ -124,6 +124,16 @@ nonisolated extension Notice {
     /// sends epoch **milliseconds**, the agenda sends timezone-less wall clock
     /// in Europe/Rome, and other services send ISO 8601. Guessing one would be
     /// a coin flip, so try them in order of how unambiguous they are.
+    /// Built once: two formatters used to be allocated for every date in
+    /// every payload. `ISO8601DateFormatter` is documented as thread-safe,
+    /// which is what makes sharing it across decodes sound.
+    private nonisolated(unsafe) static let isoPlain = ISO8601DateFormatter()
+    private nonisolated(unsafe) static let isoFractional: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
     static func date(from value: JSONValue) -> Date? {
         if let number = value.doubleValue, number > 0 {
             // Seconds and milliseconds are told apart by magnitude: epoch
@@ -134,10 +144,8 @@ nonisolated extension Notice {
                 : Date(timeIntervalSince1970: number)
         }
         guard let text = value.stringValue?.nonEmpty else { return nil }
-        if let iso = ISO8601DateFormatter().date(from: text) { return iso }
-        let fractional = ISO8601DateFormatter()
-        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let iso = fractional.date(from: text) { return iso }
+        if let iso = isoPlain.date(from: text) { return iso }
+        if let iso = isoFractional.date(from: text) { return iso }
         // Falls through to the agenda's reading: wall clock, Europe/Rome.
         if let wallClock = PoliMiDate.parse(text) { return wallClock }
         // The agenda separates date from time with `T`; JAF's own services

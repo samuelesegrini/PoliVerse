@@ -47,7 +47,7 @@ enum WidgetCareer {
 
 struct CareerWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "Career", provider: CareerProvider()) { entry in
+        StaticConfiguration(kind: WidgetKind.career.rawValue, provider: CareerProvider()) { entry in
             CareerView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }

@@ -133,7 +133,7 @@ final class CampusMapService {
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
                 throw URLError(.badServerResponse)
             }
-            let decoded = try JSONDecoder().decode(BuildingGeoJSON.self, from: data)
+            let decoded = try await BackgroundJSON.decode(BuildingGeoJSON.self, from: data)
             locations = Dictionary(
                 decoded.locations.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
             log.notice("map: \(self.locations.count, privacy: .public) building coordinates")
