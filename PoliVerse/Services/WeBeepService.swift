@@ -403,6 +403,26 @@ final class WeBeepService {
         return nil
     }
 
+    // MARK: - Enrolment
+
+    /// Whether each course page takes self-enrolment, asked once a launch.
+    private(set) var selfEnrolment: [Int: Bool] = [:]
+
+    /// Asks the pages not already asked, a few at a time.
+    func loadSelfEnrolment(for moodleIDs: [Int]) async {
+        guard let api, !session.useMockData else { return }
+        for id in moodleIDs where selfEnrolment[id] == nil {
+            guard !Task.isCancelled else { return }
+            if let methods = try? await api.enrolmentMethods(courseID: id) {
+                selfEnrolment[id] = MoodleEnrolmentMethod.allowsSelfEnrolment(methods)
+            }
+        }
+    }
+
+    func moodleCourse(id: Int) -> MoodleCourse? {
+        courses.first { $0.id == id }
+    }
+
     // MARK: - Forums
 
     /// Course pages read recently, so the hub's forums and the materials

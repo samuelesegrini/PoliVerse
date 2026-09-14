@@ -25,19 +25,51 @@ nonisolated struct MoodleCourse: Decodable, Sendable {
     let enddate: Int?
     let isfavourite: Bool?
     let hidden: Bool?
+    /// The course's external id, set by the enrolment sync; may carry the
+    /// teaching code.
+    var idnumber: String? = nil
 
     /// Copies with the flag changed, so a successful write is reflected without
     /// a refetch.
     func withFavourite(_ value: Bool) -> MoodleCourse {
         MoodleCourse(id: id, fullname: fullname, shortname: shortname,
                      startdate: startdate, enddate: enddate,
-                     isfavourite: value, hidden: hidden)
+                     isfavourite: value, hidden: hidden, idnumber: idnumber)
     }
 
     func withHidden(_ value: Bool) -> MoodleCourse {
         MoodleCourse(id: id, fullname: fullname, shortname: shortname,
                      startdate: startdate, enddate: enddate,
-                     isfavourite: isfavourite, hidden: value)
+                     isfavourite: isfavourite, hidden: value, idnumber: idnumber)
+    }
+}
+
+/// `core_enrol_get_course_enrolment_methods` — the enrolment instances a
+/// course offers. Says what the page allows, not how this student joined.
+nonisolated struct MoodleEnrolmentMethod: Decodable, Sendable {
+    let id: Int
+    let type: String
+    let name: String?
+    /// "1"/true when enabled; Moodle's versions disagree on the type.
+    let isEnabled: Bool
+
+    private enum CodingKeys: String, CodingKey { case id, type, name, status }
+
+    init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(Int.self, forKey: .id)
+        type = try c.decode(String.self, forKey: .type)
+        name = try c.decodeIfPresent(String.self, forKey: .name)
+        if let flag = try? c.decode(Bool.self, forKey: .status) {
+            isEnabled = flag
+        } else {
+            let text = (try? c.decode(String.self, forKey: .status)) ?? ""
+            isEnabled = text == "1" || text.lowercased() == "true"
+        }
+    }
+
+    static func allowsSelfEnrolment(_ methods: [MoodleEnrolmentMethod]) -> Bool {
+        methods.contains { $0.type == "self" && $0.isEnabled }
     }
 }
 

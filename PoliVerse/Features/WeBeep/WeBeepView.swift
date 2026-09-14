@@ -28,8 +28,11 @@ struct WeBeepView: View {
     }
 
     private func origin(_ course: Course, plans: [EnrolmentOrigin.Plan]) -> EnrolmentOrigin {
-        EnrolmentOrigin.classify(code: course.teachingCode, name: course.name, plans: plans,
-                                 override: overrides[course.id])
+        let moodle = course.moodleID.flatMap(weBeep.moodleCourse(id:))
+        return EnrolmentOrigin.classify(
+            codes: EnrolmentOrigin.codes(in: [course.teachingCode, moodle?.idnumber, moodle?.shortname]),
+            name: course.name, plans: plans, override: overrides[course.id],
+            selfEnrolmentOpen: course.moodleID.flatMap { weBeep.selfEnrolment[$0] })
     }
 
     private func filtered(_ list: [Course]) -> [Course] {
@@ -37,7 +40,7 @@ struct WeBeepView: View {
         let plans = plans
         return list.filter { course in
             switch (origin(course, plans: plans), originFilter) {
-            case (.currentPlan, .plan), (.otherCareer, .otherCareer), (.outsidePlan, .byChoice): true
+            case (.currentPlan, .plan), (.otherCareer, .otherCareer), (.outsidePlan, .byChoice), (.selfEnrolled, .byChoice): true
             default: false
             }
         }
@@ -48,6 +51,7 @@ struct WeBeepView: View {
         case .currentPlan, .unknown: nil
         case .otherCareer(let matricola): String(localized: "Piano della matricola \(matricola)")
         case .outsidePlan: String(localized: "Fuori dal piano di studi")
+        case .selfEnrolled: String(localized: "Probabile iscrizione libera")
         }
     }
 
@@ -166,6 +170,13 @@ struct WeBeepView: View {
                     }
                 }
                 await career.load()
+                // Only pages outside every plan need asking how they enrol.
+                let plans = plans
+                let unplanned = courses.courses.filter {
+                    if case .outsidePlan = origin($0, plans: plans) { return true }
+                    return false
+                }.compactMap(\.moodleID)
+                await weBeep.loadSelfEnrolment(for: unplanned)
             }
             .overlay {
                 if needsLogin {

@@ -106,6 +106,11 @@ nonisolated final class WeBeepAPI: Sendable {
         ).discussions ?? []
     }
 
+    func enrolmentMethods(courseID: Int) async throws -> [MoodleEnrolmentMethod] {
+        try await call("core_enrol_get_course_enrolment_methods",
+                       parameters: ["courseid": String(courseID)], as: [MoodleEnrolmentMethod].self)
+    }
+
     /// `mod_forum_get_discussion_posts` — one thread, opening post and replies.
     func discussionPosts(discussionID: Int) async throws -> MoodlePosts {
         try await call(

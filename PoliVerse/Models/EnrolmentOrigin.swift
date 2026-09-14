@@ -12,6 +12,9 @@ nonisolated enum EnrolmentOrigin: Sendable, Hashable {
     case currentPlan
     case otherCareer(String)
     case outsidePlan
+    /// Outside every plan, on a page that takes self-enrolment: most likely
+    /// joined out of interest.
+    case selfEnrolled
     case unknown
 
     /// One career's plan, as its libretto lists it.
@@ -36,8 +39,8 @@ nonisolated enum EnrolmentOrigin: Sendable, Hashable {
 
         var isEmpty: Bool { codes.isEmpty && names.isEmpty }
 
-        func contains(code: String?, name: String) -> Bool {
-            if let code, codes.contains(code) { return true }
+        func contains(codes candidates: [String], name: String) -> Bool {
+            if candidates.contains(where: codes.contains) { return true }
             return names.contains(EnrolmentOrigin.key(name))
         }
     }
@@ -46,20 +49,34 @@ nonisolated enum EnrolmentOrigin: Sendable, Hashable {
         case plan, byChoice
     }
 
-    static func classify(code: String?, name: String, plans: [Plan], override: Override?) -> EnrolmentOrigin {
+    static func classify(codes: [String], name: String, plans: [Plan], override: Override?,
+                         selfEnrolmentOpen: Bool?) -> EnrolmentOrigin {
         switch override {
         case .plan: return .currentPlan
         case .byChoice: return .outsidePlan
         case nil: break
         }
-        if let current = plans.first(where: \.isCurrent), current.contains(code: code, name: name) {
+        if let current = plans.first(where: \.isCurrent), current.contains(codes: codes, name: name) {
             return .currentPlan
         }
-        if let other = plans.first(where: { !$0.isCurrent && $0.contains(code: code, name: name) }) {
+        if let other = plans.first(where: { !$0.isCurrent && $0.contains(codes: codes, name: name) }) {
             return .otherCareer(other.matricola)
         }
         guard let current = plans.first(where: \.isCurrent), !current.isEmpty else { return .unknown }
-        return .outsidePlan
+        return selfEnrolmentOpen == true ? .selfEnrolled : .outsidePlan
+    }
+
+    /// Six-digit teaching codes in whatever WeBeep carries: the title,
+    /// `idnumber`, `shortname`.
+    static func codes(in fields: [String?]) -> [String] {
+        var found: [String] = []
+        for field in fields.compactMap({ $0 }) {
+            // Runs of digits, kept only when exactly six long.
+            for run in field.split(whereSeparator: { !$0.isNumber }) where run.count == 6 && !found.contains(String(run)) {
+                found.append(String(run))
+            }
+        }
+        return found
     }
 
     static func key(_ name: String) -> String {
