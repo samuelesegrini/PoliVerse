@@ -72,6 +72,13 @@ final class CareerService {
         var officialTarget: Double?
     }
 
+    /// The study plan another career last showed, read from its cache. The
+    /// token is bound to one matricola, so this is the only way to see a
+    /// second career's plan without switching to it.
+    static func cachedLibretto(account: String, store: OfflineStore = .shared) -> [LibrettoExam]? {
+        store.load(Cached.self, as: "career", account: account)?.value.libretto
+    }
+
     init(session: Session, feed: UpdateFeed, offline: OfflineStore = .shared) {
         self.session = session
         self.feed = feed

@@ -9,6 +9,47 @@ struct WeBeepView: View {
     @State private var showingLogin = false
     @State private var year: String?
     @State private var showingHidden = false
+    @Environment(CareerService.self) private var career
+    @Environment(CareersService.self) private var careers
+    @State private var originFilter: OriginFilter = .all
+    @State private var overrides = EnrolmentOverrides.all()
+
+    enum OriginFilter: Hashable {
+        case all, plan, otherCareer, byChoice
+    }
+
+    /// Other careers' plans, read from their caches once rather than on
+    /// every redraw.
+    @State private var otherPlans: [EnrolmentOrigin.Plan] = []
+
+    private var plans: [EnrolmentOrigin.Plan] {
+        [EnrolmentOrigin.Plan(matricola: session.student?.matricola ?? "", isCurrent: true,
+                              libretto: career.libretto)] + otherPlans
+    }
+
+    private func origin(_ course: Course, plans: [EnrolmentOrigin.Plan]) -> EnrolmentOrigin {
+        EnrolmentOrigin.classify(code: course.teachingCode, name: course.name, plans: plans,
+                                 override: overrides[course.id])
+    }
+
+    private func filtered(_ list: [Course]) -> [Course] {
+        guard originFilter != .all else { return list }
+        let plans = plans
+        return list.filter { course in
+            switch (origin(course, plans: plans), originFilter) {
+            case (.currentPlan, .plan), (.otherCareer, .otherCareer), (.outsidePlan, .byChoice): true
+            default: false
+            }
+        }
+    }
+
+    private func originLabel(_ origin: EnrolmentOrigin) -> String? {
+        switch origin {
+        case .currentPlan, .unknown: nil
+        case .otherCareer(let matricola): String(localized: "Piano della matricola \(matricola)")
+        case .outsidePlan: String(localized: "Fuori dal piano di studi")
+        }
+    }
 
     /// WeBeep is the source of the course list, so when it is not connected the
     /// list is empty for a reason the user can actually fix — say so rather
@@ -18,7 +59,7 @@ struct WeBeepView: View {
     }
 
     @ViewBuilder
-    private func row(_ course: Course) -> some View {
+    private func row(_ course: Course, origin: EnrolmentOrigin) -> some View {
         NavigationLink(value: course) {
             HStack(spacing: 12) {
                 RoundedRectangle(cornerRadius: 8)
@@ -26,7 +67,8 @@ struct WeBeepView: View {
                     .frame(width: 6, height: 38)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(course.name).font(.subheadline.weight(.medium)).lineLimit(2)
-                    Text(course.academicYear == "—" ? course.teacher : course.academicYear)
+                    Text([course.academicYear == "—" ? course.teacher : course.academicYear,
+                          originLabel(origin)].compactMap { $0 }.joined(separator: " · "))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
@@ -49,6 +91,19 @@ struct WeBeepView: View {
                 courses.toggleHidden(course)
             }
         }
+        .contextMenu {
+            // A guess from the study plans: the student can always correct it.
+            Button("Del mio piano di studi", systemImage: "checkmark.seal") { setOverride(.plan, course) }
+            Button("Iscrizione libera", systemImage: "hand.raised") { setOverride(.byChoice, course) }
+            if overrides[course.id] != nil {
+                Button("Deduci automaticamente", systemImage: "wand.and.stars") { setOverride(nil, course) }
+            }
+        }
+    }
+
+    private func setOverride(_ value: EnrolmentOrigin.Override?, _ course: Course) {
+        EnrolmentOverrides.set(value, for: course.id)
+        overrides = EnrolmentOverrides.all()
     }
 
     var body: some View {
@@ -61,17 +116,31 @@ struct WeBeepView: View {
                     }
                 }
 
-                let favourites = courses.courses(in: year).filter(\.isFavourite)
-                let others = courses.courses(in: year).filter { !$0.isFavourite }
+                Section {
+                    Picker("Mostra", selection: $originFilter) {
+                        Text("Tutti").tag(OriginFilter.all)
+                        Text("Del piano").tag(OriginFilter.plan)
+                        if careers.hasChoice { Text("Altra carriera").tag(OriginFilter.otherCareer) }
+                        Text("Iscrizione libera").tag(OriginFilter.byChoice)
+                    }
+                } footer: {
+                    if originFilter != .all {
+                        Text("Dedotto confrontando i corsi con il piano di studi di ogni tua matricola. Tieni premuto un corso per correggerlo.")
+                    }
+                }
+
+                let plans = plans
+                let favourites = filtered(courses.courses(in: year)).filter(\.isFavourite)
+                let others = filtered(courses.courses(in: year)).filter { !$0.isFavourite }
 
                 if !favourites.isEmpty {
                     Section("Preferiti") {
-                        ForEach(favourites) { row($0) }
+                        ForEach(favourites) { row($0, origin: origin($0, plans: plans)) }
                     }
                 }
 
                 Section(favourites.isEmpty ? "" : "Altri corsi") {
-                    ForEach(others) { row($0) }
+                    ForEach(others) { row($0, origin: origin($0, plans: plans)) }
                 }
 
                 if !courses.hiddenOnly.isEmpty {
@@ -87,7 +156,17 @@ struct WeBeepView: View {
             }
             .navigationTitle("WeBeep")
             .navigationDestination(for: Course.self) { CourseMaterialsView(course: $0) }
-            .task { await courses.load() }
+            .task {
+                await courses.load()
+                await careers.load()
+                let current = session.student?.matricola
+                otherPlans = careers.careers.filter { $0.matricola != current }.compactMap { other in
+                    CareerService.cachedLibretto(account: other.matricola).map {
+                        EnrolmentOrigin.Plan(matricola: other.matricola, isCurrent: false, libretto: $0)
+                    }
+                }
+                await career.load()
+            }
             .overlay {
                 if needsLogin {
                     ContentUnavailableView {
