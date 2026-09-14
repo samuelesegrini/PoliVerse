@@ -80,4 +80,27 @@ struct LocalisationTests {
             }
         }
     }
+
+    /// The updates feed, its notifications and Siri's answers, read from the
+    /// English localisation directly — whatever language the test device
+    /// runs in, a key that fell back to Italian shows up here.
+    @Test("The updates feature is translated into English, plurals included")
+    func updatesTranslated() throws {
+        let path = try #require(Bundle.main.path(forResource: "en", ofType: "lproj"))
+        let english = try #require(Bundle(path: path))
+        let keys = [
+            "Esito pubblicato", "Puoi rifiutare il voto", "Aula cambiata", "Sei negli esiti",
+            "Pubblicato un file di esiti", "Nuovo annuncio del docente", "Nuova consegna",
+            "Consegna domani", "Novità esami", "Cronologia", "Aggiungi al calendario",
+            "Corsi silenziati", "Cerca la mia matricola negli esiti", "Voto confermato sui Servizi Online",
+        ]
+        for key in keys {
+            let resolved = english.localizedString(forKey: key, value: nil, table: "Localizable")
+            #expect(resolved != key, "\(key) is not translated into English")
+        }
+        let one = String(localized: "\(1) nuovi file", bundle: english, locale: Locale(identifier: "en"))
+        let many = String(localized: "\(3) nuovi file", bundle: english, locale: Locale(identifier: "en"))
+        #expect(one == "1 new file")
+        #expect(many == "3 new files")
+    }
 }
