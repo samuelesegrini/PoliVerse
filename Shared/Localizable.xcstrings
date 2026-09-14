@@ -10203,6 +10203,102 @@
           }
         }
       }
+    },
+    "Collega a un altro insegnamento del piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link to another teaching in the plan"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collega a un altro insegnamento del piano"
+          }
+        }
+      }
+    },
+    "Collega a un insegnamento del piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link to a teaching in the plan"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collega a un insegnamento del piano"
+          }
+        }
+      }
+    },
+    "Il tuo libretto non corrisponde più a questo piano, o il piano non c'è più quest'anno." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your record no longer matches this plan, or the plan is gone this year."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo libretto non corrisponde più a questo piano, o il piano non c'è più quest'anno."
+          }
+        }
+      }
+    },
+    "Il tuo piano non ha insegnamenti nell'anno di questo corso." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your plan has no teachings in this course's year."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo piano non ha insegnamenti nell'anno di questo corso."
+          }
+        }
+      }
+    },
+    "Rimuovi il collegamento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove link"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi il collegamento"
+          }
+        }
+      }
+    },
+    "Scaglione dei docenti della tua pagina WeBeep" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bracket of the lecturers on your WeBeep page"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scaglione dei docenti della tua pagina WeBeep"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

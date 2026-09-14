@@ -65,7 +65,7 @@ struct CourseInfoView: View {
         .task {
             await agenda.load(around: .now)
             if let code = course.teachingCode {
-                let pick = await programmes.pick(teachingCode: code, name: course.name, yearCode: course.academicYearStart)
+                let pick = await programmes.pick(teachingCode: code, name: course.name, yearCode: course.academicYearStart, courseID: course.id)
                 if let id = pick?.module.syllabusID { syllabus = await manifesti.syllabus(for: id) }
             }
             loading = false

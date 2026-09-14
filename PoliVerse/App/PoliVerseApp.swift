@@ -48,7 +48,8 @@ struct PoliVerseApp: App {
         // registrations below need the instances themselves.
         let notices = NoticeService(session: session)
         _notices = State(initialValue: notices)
-        _careers = State(initialValue: CareersService(session: session))
+        let careers = CareersService(session: session)
+        _careers = State(initialValue: careers)
         let news = NewsService(session: session)
         _news = State(initialValue: news)
         // Reads the public catalogue rather than the API client: occupancy
@@ -77,7 +78,8 @@ struct PoliVerseApp: App {
         _personalTimetable = State(initialValue: PersonalTimetableService(manifesti: manifesti, agenda: agenda))
         let career = CareerService(session: session, feed: updates)
         _career = State(initialValue: career)
-        let programmes = StudyProgrammeService(manifesti: manifesti, session: session, career: career)
+        let programmes = StudyProgrammeService(manifesti: manifesti, session: session, career: career,
+                                               careers: careers)
         _programmes = State(initialValue: programmes)
         courses.programme = programmes
         let notifications = NotificationService()

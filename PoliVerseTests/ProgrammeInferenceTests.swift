@@ -22,6 +22,15 @@ struct ProgrammeInferenceTests {
         #expect(result.isConfident)
     }
 
+    @Test("A tie is reported, so the career's track can settle it")
+    func tie() throws {
+        let result = try #require(ProgrammeInference.best(libretto: ["1", "2", "3"], candidates: [
+            (selection("I3C"), ["1", "2", "3", "7"]), (selection("I3I"), ["1", "2", "3", "8"]),
+        ]))
+        #expect(!result.isConfident)
+        #expect(result.tied.map(\.plan) == ["I3C", "I3I"])
+    }
+
     @Test("A thin overlap is a guess, not an answer")
     func weak() throws {
         let result = try #require(ProgrammeInference.best(libretto: ["1", "2", "3", "4", "5", "6"],

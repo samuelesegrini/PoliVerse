@@ -196,6 +196,7 @@ struct CourseSyllabusView: View {
     @State private var loading = true
     @State private var changingProgramme = false
     @State private var choosingBracket = false
+    @State private var linking = false
 
     var body: some View {
         List {
@@ -211,8 +212,14 @@ struct CourseSyllabusView: View {
                         if let teachers = pick.module.teachers.map(\.name).nonEmptyJoined {
                             LabeledContent("Docente", value: teachers)
                         }
+                        if let code = bracketCode, programmes.programme?.brackets[code] == nil,
+                           programmes.programme?.inferredBrackets[code] != nil {
+                            Label("Scaglione dei docenti della tua pagina WeBeep", systemImage: "books.vertical")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
                         if programmes.programme != nil {
                             Button("Scegli un altro scaglione") { choosingBracket = true }
+                            Button("Collega a un altro insegnamento del piano") { linking = true }
                         }
                     } footer: {
                         // Which row was chosen: from the plan when there is
@@ -227,6 +234,9 @@ struct CourseSyllabusView: View {
                 SyllabusSections(syllabus: syllabus)
             } else {
                 Section {
+                    if programmes.programme != nil {
+                        Button("Collega a un insegnamento del piano") { linking = true }
+                    }
                     Text(programmes.programme == nil && course.teachingCode == nil
                          ? "Questo corso non ha un codice d'insegnamento: scegli il tuo corso di studi per trovarlo nel tuo piano."
                          : "Non trovo la scheda di questo insegnamento nel Manifesto degli studi.")
@@ -238,11 +248,12 @@ struct CourseSyllabusView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task(id: programmes.programme) { await load() }
         .sheet(isPresented: $changingProgramme) { StudyProgrammeSheet() }
+        .sheet(isPresented: $linking) { PlanLinkSheet(course: course) }
         .sheet(isPresented: $choosingBracket) {
             BracketPicker(title: course.name, surname: session.student?.lastName ?? "",
-                          chosen: bracketCode.flatMap { programmes.programme?.brackets[$0] },
+                          chosen: bracketCode.flatMap { programmes.programme?.bracket(for: $0) },
                           load: { await programmes.brackets(teachingCode: course.teachingCode, name: course.name,
-                                                            yearCode: course.academicYearStart)?.1 ?? [] },
+                                                            yearCode: course.academicYearStart, courseID: course.id)?.1 ?? [] },
                           onChoose: { bracket in
                               if let code = bracketCode { programmes.choose(bracket: bracket, forTeaching: code) }
                           })
@@ -259,6 +270,11 @@ struct CourseSyllabusView: View {
                 if let programme = programmes.programme {
                     LabeledContent("Corso di studi", value: programme.degreeLabel)
                     LabeledContent("Piano", value: programme.planLabel)
+                    if programme.needsReview {
+                        Label("Il tuo libretto non corrisponde più a questo piano, o il piano non c'è più quest'anno.",
+                              systemImage: "exclamationmark.triangle")
+                            .font(.caption).foregroundStyle(.orange)
+                    }
                     if !programme.isConfirmed {
                         Button("È il mio corso di studi") { programmes.confirm() }
                     }
@@ -281,9 +297,66 @@ struct CourseSyllabusView: View {
     private func load() async {
         loading = true
         defer { loading = false }
-        pick = await programmes.pick(teachingCode: course.teachingCode, name: course.name, yearCode: course.academicYearStart)
+        pick = await programmes.pick(teachingCode: course.teachingCode, name: course.name,
+                                     yearCode: course.academicYearStart, courseID: course.id)
         syllabus = nil
         if let id = pick?.module.syllabusID { syllabus = await manifesti.syllabus(for: id) }
+    }
+}
+
+/// Links a course to a teaching of the plan by hand, for the few that code
+/// and name cannot place.
+private struct PlanLinkSheet: View {
+    let course: Course
+    @Environment(StudyProgrammeService.self) private var programmes
+    @Environment(\.dismiss) private var dismiss
+    @State private var plan: [PlanTeaching]?
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if let plan {
+                    if programmes.programme?.links[course.id] != nil {
+                        Button("Rimuovi il collegamento", role: .destructive) {
+                            programmes.link(courseID: course.id, to: nil)
+                            dismiss()
+                        }
+                    }
+                    ForEach(Array(Set(plan.map { $0.yearOfCourse ?? "" })).sorted(), id: \.self) { year in
+                        Section(year.isEmpty ? String(localized: "Insegnamenti") : String(localized: "\(year)° anno")) {
+                            ForEach(plan.filter { ($0.yearOfCourse ?? "") == year }) { row in
+                                Button {
+                                    programmes.link(courseID: course.id, to: row.teaching.code)
+                                    dismiss()
+                                } label: {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(row.teaching.name).font(.subheadline)
+                                            Text(row.teaching.code).font(.caption).foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        if programmes.programme?.links[course.id] == row.teaching.code {
+                                            Image(systemName: "checkmark").foregroundStyle(Theme.brand)
+                                        }
+                                    }
+                                    .contentShape(.rect)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    if plan.isEmpty {
+                        Text("Il tuo piano non ha insegnamenti nell'anno di questo corso.").foregroundStyle(.secondary)
+                    }
+                } else {
+                    ProgressView().frame(maxWidth: .infinity)
+                }
+            }
+            .navigationTitle(course.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Chiudi") { dismiss() } } }
+            .task { plan = await programmes.plan(forYear: course.academicYearStart) }
+        }
     }
 }
 

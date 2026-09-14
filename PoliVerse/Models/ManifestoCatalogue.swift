@@ -65,11 +65,13 @@ nonisolated struct CatalogueSelection: Sendable, Hashable, Codable {
         return copy
     }
 
-    var queryItems: [URLQueryItem] {
+    var queryItems: [URLQueryItem] { queryItems(language: .current) }
+
+    func queryItems(language: PoliMiLanguage) -> [URLQueryItem] {
         [.init(name: "evn_default", value: "Aggiorna")]
             + CatalogueField.allCases.map { .init(name: $0.rawValue, value: self[$0]) }
             // Every year of course: the app groups by year itself.
-            + [.init(name: "ac_ins", value: "0"), .init(name: "lang", value: PoliMiLanguage.current.rawValue)]
+            + [.init(name: "ac_ins", value: "0"), .init(name: "lang", value: language.rawValue)]
     }
 }
 

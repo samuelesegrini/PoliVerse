@@ -274,29 +274,32 @@ final class ManifestiService {
     /// One step of the manifesto's cascade. Nil selection: the page as the
     /// service first shows it. Read without the cart's cookie, like every
     /// catalogue page.
-    func cataloguePage(_ selection: CatalogueSelection?) async -> CataloguePage? {
+    func cataloguePage(_ selection: CatalogueSelection?, language: PoliMiLanguage = .current) async -> CataloguePage? {
         var components = URLComponents()
-        components.queryItems = selection?.queryItems ?? [.init(name: "lang", value: PoliMiLanguage.current.rawValue)]
+        components.queryItems = selection?.queryItems(language: language) ?? [.init(name: "lang", value: language.rawValue)]
         guard let url = URL(string: "\(base.absoluteString)/ManifestoPublic.do?\(components.percentEncodedQuery ?? "")"),
               let html = await Self.page(url, session: catalogue) else { return nil }
         return CatalogueParser.page(html)
     }
 
-    /// The page of a degree course, found by the name the career gives it:
-    /// every school's list is read, across all campuses, and the first that
-    /// names it is opened on its default plan.
-    func locateDegree(named degree: String) async -> CataloguePage? {
+    /// The page of a degree course, found in whichever school lists it: every
+    /// school is read, across all campuses, and `choose` picks among each
+    /// school's degree courses.
+    func locateDegree(choosing choose: ([CatalogueOption]) -> CatalogueOption?) async -> CataloguePage? {
         guard let first = await cataloguePage(nil), let start = first.selection,
               let schools = first.level(.school)?.options else { return nil }
         for school in schools {
             let base = start.setting(.campus, to: "ALL_SEDI").setting(.school, to: school.value)
             guard let schoolPage = await cataloguePage(base) else { continue }
-            let options = schoolPage.level(.degree)?.options ?? []
-            if let match = options.first(where: { DegreeCourseMatch.matches($0.label, plan: degree) }) {
+            if let match = choose(schoolPage.level(.degree)?.options ?? []) {
                 return await cataloguePage(base.setting(.degree, to: match.value))
             }
         }
         return nil
+    }
+
+    func locateDegree(named degree: String, kind: String? = nil) async -> CataloguePage? {
+        await locateDegree { DegreeCourseMatch.best($0, name: degree, kind: kind) }
     }
 
     /// The brackets a teaching is split into, with their lecturers; empty

@@ -100,6 +100,8 @@ nonisolated enum ProgrammeInference {
         let overlap: Int
         /// Enough shared teachings to take it as the answer without asking.
         let isConfident: Bool
+        /// Every plan sharing as many, the answer among them, in order.
+        var tied: [CatalogueSelection] = []
     }
 
     static func best(libretto: Set<String>, candidates: [(CatalogueSelection, [String])]) -> Result? {
@@ -108,7 +110,8 @@ nonisolated enum ProgrammeInference {
         guard let top = scored.max(by: { $0.1 < $1.1 }), top.1 > 0 else { return nil }
         let runnerUp = scored.filter { $0.0 != top.0 }.map(\.1).max() ?? 0
         let confident = top.1 >= 3 && Double(top.1) >= Double(min(libretto.count, 10)) * 0.5 && top.1 > runnerUp
-        return Result(selection: top.0, overlap: top.1, isConfident: confident)
+        let tied = scored.filter { $0.1 == top.1 }.map(\.0)
+        return Result(selection: tied.first ?? top.0, overlap: top.1, isConfident: confident, tied: tied)
     }
 
     /// False once a libretto with enough rows shares nothing with the plan.

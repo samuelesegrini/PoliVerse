@@ -106,6 +106,16 @@ nonisolated final class WeBeepAPI: Sendable {
         ).discussions ?? []
     }
 
+    /// `core_course_get_courses_by_field` with `field=ids`: the courses'
+    /// contacts — their lecturers — in one request.
+    func contacts(courseIDs: [Int]) async throws -> [Int: [String]] {
+        let response = try await call("core_course_get_courses_by_field",
+                                      parameters: ["field": "ids", "value": courseIDs.map(String.init).joined(separator: ",")],
+                                      as: MoodleCoursesByField.self)
+        return Dictionary((response.courses ?? []).map { ($0.id, ($0.contacts ?? []).compactMap(\.fullname)) },
+                          uniquingKeysWith: { first, _ in first })
+    }
+
     func enrolmentMethods(courseID: Int) async throws -> [MoodleEnrolmentMethod] {
         try await call("core_enrol_get_course_enrolment_methods",
                        parameters: ["courseid": String(courseID)], as: [MoodleEnrolmentMethod].self)

@@ -44,6 +44,15 @@ nonisolated struct MoodleCourse: Decodable, Sendable {
     }
 }
 
+nonisolated struct MoodleCoursesByField: Decodable, Sendable {
+    nonisolated struct Course: Decodable, Sendable {
+        nonisolated struct Contact: Decodable, Sendable { let fullname: String? }
+        let id: Int
+        let contacts: [Contact]?
+    }
+    let courses: [Course]?
+}
+
 /// `core_enrol_get_course_enrolment_methods` — the enrolment instances a
 /// course offers. Says what the page allows, not how this student joined.
 nonisolated struct MoodleEnrolmentMethod: Decodable, Sendable {

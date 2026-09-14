@@ -420,6 +420,24 @@ final class WeBeepService {
         }
     }
 
+    /// Lecturers of each course page, asked once a launch.
+    private(set) var contacts: [Int: [String]] = [:]
+
+    func loadContacts(for moodleIDs: [Int]) async {
+        guard let api, !session.useMockData else { return }
+        let missing = moodleIDs.filter { contacts[$0] == nil }
+        guard !missing.isEmpty else { return }
+        do {
+            // Chunked: one request carries the ids in its query string.
+            for start in stride(from: 0, to: missing.count, by: 20) {
+                let found = try await api.contacts(courseIDs: Array(missing[start..<min(start + 20, missing.count)]))
+                contacts.merge(found) { _, new in new }
+            }
+        } catch {
+            log.error("Course contacts failed: \(error.localizedDescription)")
+        }
+    }
+
     func moodleCourse(id: Int) -> MoodleCourse? {
         courses.first { $0.id == id }
     }

@@ -441,7 +441,17 @@ private struct PersonalTimetableBuilder: View {
             row.group.map { String(localized: "A scelta · \($0)") },
         ].compactMap { $0 }
         return HStack(spacing: 12) {
-            Button { personal.toggle(row) } label: {
+            Button {
+                let adding = !personal.isSelected(row.teaching)
+                personal.toggle(row)
+                // A bracket already chosen, or read from WeBeep, for this
+                // teaching: the timetable follows it without asking again.
+                if adding, personal.bracketChoices[row.teaching.code] == nil,
+                   let known = programmes.programme?.bracket(for: row.teaching.code),
+                   !known.covers(surname: lastName) {
+                    personal.choose(bracket: known, for: row.teaching)
+                }
+            } label: {
                 HStack(spacing: 12) {
                     Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                         .foregroundStyle(selected ? Color.green : Color.secondary)

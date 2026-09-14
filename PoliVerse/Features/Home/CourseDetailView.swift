@@ -119,7 +119,8 @@ struct CourseDetailView: View {
             // The scheda takes a few pages to find: start now, so "Programma"
             // opens on an answer rather than a spinner. After the career, so
             // the degree course is known and the tap asks the same question.
-            programmes.prefetch(teachingCode: course.teachingCode, name: course.name, yearCode: course.academicYearStart)
+            programmes.prefetch(teachingCode: course.teachingCode, name: course.name, yearCode: course.academicYearStart,
+                                courseID: course.id)
             await lectures
         }
     }

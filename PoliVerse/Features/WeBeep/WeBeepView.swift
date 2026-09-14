@@ -182,6 +182,11 @@ struct WeBeepView: View {
                 for year in Set(courses.courses.compactMap(\.academicYearStart)) {
                     _ = await programmes.plan(forYear: year)
                 }
+                // This year's lecturers say which bracket each course is followed in.
+                let thisYear = AcademicYear.recent().first?.code
+                let thisYearCourses = courses.courses.filter { $0.academicYearStart == thisYear }
+                await weBeep.loadContacts(for: thisYearCourses.compactMap(\.moodleID))
+                await programmes.inferBrackets(courses: thisYearCourses, contacts: weBeep.contacts)
                 // Only pages outside every plan need asking how they enrol.
                 let plans = plans
                 let unplanned = courses.courses.filter {
