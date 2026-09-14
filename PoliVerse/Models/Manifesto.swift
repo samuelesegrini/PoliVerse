@@ -132,6 +132,11 @@ nonisolated struct ManifestoDetail: Sendable, Hashable {
     /// table has no code column to parse modules from.
     let languages: [TeachingLanguage]
 
+    /// "Corso di Studi" from the context card: which degree course this row is.
+    var degreeCourse: String? {
+        context.first { $0.label.localizedCaseInsensitiveContains("Corso di Studi") }?.value
+    }
+
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.code == rhs.code && lhs.name == rhs.name
             && lhs.modules == rhs.modules && lhs.ssd == rhs.ssd && lhs.languages == rhs.languages
@@ -143,19 +148,82 @@ nonisolated struct ManifestoDetail: Sendable, Hashable {
     }
 }
 
+/// One degree course's bracket for a teaching, from the syllabus summary.
+nonisolated struct SyllabusBracket: Sendable, Hashable {
+    let degreeCourse: String
+    let from: String?
+    let to: String?
+}
+
+/// A book in the syllabus bibliography.
+nonisolated struct SyllabusBook: Sendable, Hashable, Identifiable {
+    var id: String { "\(title)-\(authors ?? "")" }
+    let authors: String?
+    let title: String
+    /// Publisher, year, ISBN, as the page writes them.
+    let details: String?
+    let url: URL?
+    /// "Risorsa bibliografica obbligatoria" rather than "facoltativa".
+    let isRequired: Bool
+}
+
+/// Hours of one kind of teaching: lectures, labs, projects.
+nonisolated struct TeachingForm: Sendable, Hashable {
+    let name: String
+    let minutes: Int
+}
+
+/// What an Italian or English-taught course offers in English.
+nonisolated enum EnglishSupport: String, Sendable, Hashable, CaseIterable {
+    case slides, books, exam, tutoring
+
+    var label: String {
+        switch self {
+        case .slides: String(localized: "Slide e materiale in inglese")
+        case .books: String(localized: "Libri di testo in inglese")
+        case .exam: String(localized: "Esame sostenibile in inglese")
+        case .tutoring: String(localized: "Supporto didattico in inglese")
+        }
+    }
+}
+
 /// The syllabus — `SchedaPublic.do?c_classe=…`, a different service again.
 ///
 /// This is where the books are. It is public, and reachable directly: the
 /// catalogue links it through `aunicalogin`, but that only redirects to the
 /// same page with two throwaway tokens, so the app skips the round trip.
 nonisolated struct Syllabus: Sendable, Hashable {
-    /// Section title to body, in the order the page presents them —
+    /// The prose sections, title to body, in the order the page presents them —
     /// obiettivi, risultati di apprendimento attesi, argomenti trattati,
-    /// prerequisiti, modalità di valutazione, bibliografia.
-    let sections: [(title: String, body: String)]
+    /// prerequisiti, modalità di valutazione. Everything the page states as
+    /// data is read into the fields below instead.
+    var sections: [(title: String, body: String)]
+
+    /// Titolare first, then co-titolari.
+    var teachers: [ManifestoTeacher] = []
+    var credits: Double?
+    /// "Monodisciplinare", "Integrato", …
+    var teachingType: String?
+    /// The bracket this teaching serves in each degree course that offers it.
+    var brackets: [SyllabusBracket] = []
+    /// How the exam works, as the page lists it: "Prova scritta obbligatoria,
+    /// senza prove in itinere", "Prova orale condizionata".
+    var assessment: [String] = []
+    /// The teacher's own description of the exam, when there is one.
+    var assessmentNotes: String?
+    var books: [SyllabusBook] = []
+    var software: String?
+    /// Only the forms with hours, in page order.
+    var teachingForms: [TeachingForm] = []
+    var assistedMinutes: Int?
+    var selfStudyMinutes: Int?
+    var language: TeachingLanguage?
+    /// What is available in English. Listed only when it applies.
+    var englishSupport: [EnglishSupport] = []
 
     var bibliography: String? {
         sections.first { $0.title.localizedCaseInsensitiveContains("bibliograf") }?.body
+            ?? (books.isEmpty ? nil : books.map(\.title).joined(separator: "; "))
     }
 
     var objectives: String? {
@@ -166,10 +234,17 @@ nonisolated struct Syllabus: Sendable, Hashable {
         sections.first { $0.title.localizedCaseInsensitiveContains("argomenti") }?.body
     }
 
-    var isEmpty: Bool { sections.isEmpty }
+    /// Nothing read at all — the service's search page, typically, which it
+    /// returns for an unknown class id.
+    var isEmpty: Bool {
+        sections.isEmpty && assessment.isEmpty && books.isEmpty && teachers.isEmpty
+            && teachingForms.isEmpty && software == nil && language == nil && brackets.isEmpty
+    }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.sections.map(\.title) == rhs.sections.map(\.title)
+        lhs.sections.map(\.title) == rhs.sections.map(\.title) && lhs.sections.map(\.body) == rhs.sections.map(\.body)
+            && lhs.assessment == rhs.assessment && lhs.books == rhs.books && lhs.teachers == rhs.teachers
+            && lhs.language == rhs.language && lhs.englishSupport == rhs.englishSupport
     }
 
     func hash(into hasher: inout Hasher) {

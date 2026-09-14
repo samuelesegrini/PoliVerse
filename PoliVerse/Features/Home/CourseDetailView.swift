@@ -69,6 +69,20 @@ struct CourseDetailView: View {
                     }
                 }
 
+                section("Programma") {
+                    NavigationLink {
+                        CourseSyllabusView(course: course)
+                    } label: {
+                        row(
+                            title: String(localized: "Programma, esame e libri"),
+                            subtitle: String(localized: "Dalla scheda del Manifesto degli studi"),
+                            icon: "book.closed",
+                            chevron: true
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 section("Materiali") {
                     NavigationLink {
                         CourseMaterialsView(course: course)

@@ -119,6 +119,52 @@ final class ManifestiService {
         log.notice("manifesti: \(self.results.count, privacy: .public) insegnamenti per «\(trimmed, privacy: .public)»")
     }
 
+    // MARK: - A student's own teaching
+
+    /// The scheda of one of the student's own teachings, found from its code.
+    ///
+    /// A code search returns one row per degree course and plan; the details
+    /// of a few distinct degree courses are read (cached), and
+    /// ``SyllabusPicker`` chooses by the student's degree and surname. Does
+    /// not touch ``results``: that is the search screen's state.
+    /// - Parameter yearCode: the academic year the course belongs to, e.g.
+    ///   `2025` for 2025/26 — last year's course has last year's scheda.
+    func syllabusPick(teachingCode: String, surname: String?, degreeName: String?,
+                      yearCode: String? = nil) async -> SyllabusPicker.Pick? {
+        guard teachingCode.range(of: "^[0-9]{6}$", options: .regularExpression) != nil else { return nil }
+        let form = [
+            "evn_default": "Esegui Ricerca", "aa": yearCode ?? year.code, "k_cf": "-1", "sede": "ALL_SEDI",
+            "tipoCorso": "ALL_TIPO_CORSO", "ac_ins": "0", "semestre": "ALL_SEMESTRI", "aree": "-1",
+            "tipoInsegnamento": "ALL_TIPO_INSEGNAMENTO", "insegn_ricerca": teachingCode,
+            "lang": PoliMiLanguage.current.rawValue, "jaf_currentWFID": "main",
+        ]
+        guard let html = await post("ricerche/RicercaPerInsegnamentoPublic.do", form: form) else { return nil }
+        var seen: Set<String> = []
+        var rows: [ManifestoTeaching] = []
+        for teaching in ManifestoParser.searchResults(html) where teaching.code == teachingCode {
+            // One per degree course and plan: plans can bracket differently.
+            if seen.insert("\(teaching.courseCode)-\(teaching.planCode ?? "")").inserted { rows.append(teaching) }
+            if rows.count == Self.pickCandidates { break }
+        }
+        // Read together: one at a time, the course page waited for each.
+        let details = await withTaskGroup(of: (Int, ManifestoDetail?).self) { group in
+            for (index, teaching) in rows.enumerated() {
+                group.addTask { (index, await self.detail(for: teaching)) }
+            }
+            var found: [(Int, ManifestoDetail)] = []
+            for await (index, detail) in group { if let detail { found.append((index, detail)) } }
+            return found.sorted { $0.0 < $1.0 }.map(\.1)
+        }
+        let pick = SyllabusPicker.pick(details, surname: surname, degreeName: degreeName)
+        log.notice("manifesti: scheda for \(teachingCode, privacy: .public) from \(details.count, privacy: .public) degree courses: \(pick?.module.syllabusID ?? "none", privacy: .public)")
+        return pick
+    }
+
+    /// Degree courses read to find a student's scheda. A common teaching is
+    /// offered in dozens; the student's is usually among the first few, and
+    /// every one costs a page.
+    static let pickCandidates = 8
+
     // MARK: - Detail and syllabus
 
     func detail(for teaching: ManifestoTeaching) async -> ManifestoDetail? {

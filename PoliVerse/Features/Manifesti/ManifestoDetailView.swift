@@ -165,6 +165,7 @@ private struct ModuleRow: View {
                 Text(module.code).monospaced()
                 if let credits = module.credits { Text("\(credits, format: .number) CFU") }
                 if let period = module.period { Text(period) }
+                if let language = module.language { Text(language.label) }
             }
             .font(.caption2)
             .foregroundStyle(.tertiary)

@@ -154,6 +154,18 @@ extension Course {
     /// The academic year starts in autumn, so anything before September belongs
     /// to the year that began the previous calendar year — a January lecture is
     /// in 2025/26, not 2026/27.
+    /// The year the course's academic year starts in, `2025` for "2025-26"
+    /// or "2025/26" — how the manifesto names its years.
+    var academicYearStart: String? {
+        let prefix = academicYear.prefix(4)
+        return prefix.count == 4 && prefix.allSatisfy(\.isNumber) ? String(prefix) : nil
+    }
+
+    /// The six-digit Politecnico teaching code, where the course has one.
+    var teachingCode: String? {
+        [code, id].compactMap { $0 }.first { $0.range(of: "^[0-9]{6}$", options: .regularExpression) != nil }
+    }
+
     static func academicYearLabel(for date: Date) -> String {
         let calendar = PoliMiDate.romeCalendar
         let year = calendar.component(.year, from: date)

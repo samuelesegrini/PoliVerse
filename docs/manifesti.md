@@ -69,6 +69,41 @@ implements exactly that: a bracket `CAS`–`FER` takes Casati and not Ferrari.
 Matching folds case and accents, because a student types their name the way
 they write it and the registry stores it shouted and unaccented.
 
+## What the pages carry, and what the app reads
+
+Inventoried 2026-09-14 against the live pages of 097683 Machine Learning
+(taught in English) and 889303 Metodi analitici e numerici (taught in Italian).
+
+**Teaching detail** (`ManifestoPublic.do?EVN_DETTAGLIO_RIGA_MANIFESTO`)
+
+| On the page | Read |
+| --- | --- |
+| Contesto: anno accademico, scuola, corso di studi, piano, anno di corso | yes (`context`, `degreeCourse`) |
+| Scheda: codice, denominazione, tipo, CFU, periodo, programma sintetico | yes (`facts`, `summary`) |
+| SSD table: attività formativa, codice, descrizione, CFU | yes — including 2024 codes like `IINF-05/A`, which the first version rejected |
+| Module rows: scaglione, docenti (`k_doc`), lingua offerta, link to the scheda | yes — also for single-module teachings, whose row has no code column and was skipped before |
+| "Orario didattico" tab (`evn_DETTAGLIO_ORARIO_AJAX`) | no: empty until timetables are published (see below) |
+| Didattica innovativa CFU icon | no |
+
+**Scheda insegnamento** (`SchedaPublic.do?c_classe=…`), one `TitleInfoCard` per section
+
+| Section | Read as |
+| --- | --- |
+| Scheda Riassuntiva: CFU, tipo, docenti titolare e co-titolari, scaglione per ogni corso di studi | fields: `credits`, `teachingType`, `teachers`, `brackets` |
+| Obiettivi, Risultati di apprendimento attesi (Dublin descriptors), Argomenti, Prerequisiti | prose `sections` |
+| Modalità di valutazione | the service's list (`assessment`: "Prova scritta obbligatoria, senza prove in itinere"…) apart from the teacher's text (`assessmentNotes`) |
+| Bibliografia | `books`: authors, title, publisher/year/ISBN, link, obbligatoria or facoltativa |
+| Software utilizzato | `software` |
+| Forme didattiche | `teachingForms` with hours, `assistedMinutes`, `selfStudyMinutes` |
+| Informazioni in lingua inglese | `language` (`bandiera_inglese.png`/`bandiera_italiana.png`) and `englishSupport` — only the items that apply are listed |
+
+**A student's own teaching.** The course page finds its scheda from the
+teaching code: a search by code (it works, one row per degree course and
+plan), the details of up to 8 of them read concurrently, then
+`SyllabusPicker` — the student's degree course from the career's plan
+header, then the bracket their surname falls in. When the degree course is not
+among the rows, the page says the scheda shown is the first one's.
+
 ## Language of instruction
 
 Verified 2026-09-14 on the detail page of 057949 (Machine Learning and
