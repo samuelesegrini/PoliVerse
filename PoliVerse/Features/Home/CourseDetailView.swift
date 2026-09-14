@@ -131,15 +131,16 @@ struct CourseDetailView: View {
 
     /// The course in one place: every part of it one tap from the top.
     private func hub(_ reader: ScrollViewProxy) -> some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 8)], spacing: 8) {
+        let badges = CourseHubBadges(items: FeedItem.items(from: feed.recent, for: course), seenAt: feed.seenAt)
+        return LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 8)], spacing: 8) {
             NavigationLink { CourseForumsView(course: course, kind: .announcements) } label: {
-                tile("Avvisi", "megaphone.fill")
+                tile("Avvisi", "megaphone.fill", badge: badges.announcements)
             }
             NavigationLink { CourseForumsView(course: course, kind: .discussion) } label: {
                 tile("Forum", "bubble.left.and.bubble.right.fill")
             }
             NavigationLink { CourseMaterialsView(course: course) } label: {
-                tile("Materiali", "folder.fill")
+                tile("Materiali", "folder.fill", badge: badges.materials)
             }
             NavigationLink { CourseSyllabusView(course: course) } label: {
                 tile("Programma", "book.closed.fill")
@@ -150,14 +151,14 @@ struct CourseDetailView: View {
             Button {
                 withAnimation { reader.scrollTo(Self.examsAnchor, anchor: .top) }
             } label: {
-                tile("Appelli", "pencil.and.list.clipboard")
+                tile("Appelli", "pencil.and.list.clipboard", badge: badges.exams)
             }
             .disabled(examSessions.isEmpty)
         }
         .buttonStyle(.plain)
     }
 
-    private func tile(_ title: LocalizedStringKey, _ icon: String) -> some View {
+    private func tile(_ title: LocalizedStringKey, _ icon: String, badge: Int = 0) -> some View {
         VStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.title3)
@@ -170,6 +171,18 @@ struct CourseDetailView: View {
         .frame(maxWidth: .infinity, minHeight: 64)
         .padding(.vertical, 6)
         .cardBackground()
+        .overlay(alignment: .topTrailing) {
+            if badge > 0 {
+                Text(badge, format: .number)
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.red, in: .capsule)
+                    .padding(6)
+                    .accessibilityLabel(Text("\(badge) non lette"))
+            }
+        }
         .contentShape(.rect)
     }
 
