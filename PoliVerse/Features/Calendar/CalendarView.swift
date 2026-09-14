@@ -176,7 +176,8 @@ struct CalendarView: View {
                     }
 
                     ForEach(dayEvents) { event in
-                        Button { selectedEvent = event } label: { EventRow(event: event) }
+                        Button { selectedEvent = event } label: { EventRow(event: event,
+                            marksOfficial: TimetableMerge.marksOfficial(event, timetable: agenda.personalTimetable)) }
                             .buttonStyle(.plain)
                     }
                 }
@@ -231,6 +232,7 @@ struct CalendarView: View {
 
 private struct EventRow: View {
     let event: AgendaEvent
+    var marksOfficial = false
     @Environment(\.locale) private var locale
 
     private var accent: Color {
@@ -288,6 +290,10 @@ private struct EventRow: View {
                     Label("Orario personalizzato", systemImage: "calendar.badge.plus")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
+                } else if marksOfficial {
+                    Label("Ufficiale", systemImage: "checkmark.seal")
+                        .font(.caption2)
+                        .foregroundStyle(.green)
                 }
 
                 if let room = event.room, room != event.roomAcronym {

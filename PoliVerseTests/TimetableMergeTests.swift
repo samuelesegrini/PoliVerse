@@ -67,3 +67,26 @@ struct TimetableMergeTests {
         #expect(TimetableMerge.officialOnly(merged).map(\.id) == [1])
     }
 }
+
+@Suite("Official badge")
+struct OfficialBadgeTests {
+    private let lecture = AgendaEvent(id: 1, title: "X", start: .now, end: .now, kind: .lecture)
+
+    @Test("Official lectures are marked only while a personal timetable is in use")
+    func badge() {
+        var timetable = PersonalTimetable(name: "A", yearCode: "2026", entries: [], builtAt: .now)
+        #expect(TimetableMerge.marksOfficial(lecture, timetable: timetable))
+        timetable.retiredAt = .now
+        #expect(!TimetableMerge.marksOfficial(lecture, timetable: timetable))
+        #expect(!TimetableMerge.marksOfficial(lecture, timetable: nil))
+    }
+
+    @Test("Personal lessons and non-lectures are never marked official")
+    func notMarked() {
+        let timetable = PersonalTimetable(name: "A", yearCode: "2026", entries: [], builtAt: .now)
+        let personal = AgendaEvent(id: -1, title: "X", start: .now, end: .now, kind: .lecture, tags: [TimetableMerge.tag])
+        let exam = AgendaEvent(id: 2, title: "X", start: .now, end: .now, kind: .exam)
+        #expect(!TimetableMerge.marksOfficial(personal, timetable: timetable))
+        #expect(!TimetableMerge.marksOfficial(exam, timetable: timetable))
+    }
+}

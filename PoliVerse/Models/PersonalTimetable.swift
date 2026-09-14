@@ -351,6 +351,13 @@ nonisolated enum TimetableMerge {
         return (official + personal).sorted { ($0.start, $0.id) < ($1.start, $1.id) }
     }
 
+    /// Whether a lecture should say it comes from the Politecnico: only while
+    /// personal lessons share the agenda, where the two need telling apart.
+    static func marksOfficial(_ event: AgendaEvent, timetable: PersonalTimetable?) -> Bool {
+        guard let timetable, timetable.retiredAt == nil else { return false }
+        return event.kind == .lecture && !event.tags.contains(tag)
+    }
+
     static func officialOnly(_ events: [AgendaEvent]) -> [AgendaEvent] {
         events.filter { !$0.tags.contains(tag) }
     }
