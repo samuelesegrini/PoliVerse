@@ -21,6 +21,13 @@ nonisolated struct PersonalTimetable: Codable, Sendable, Equatable {
     /// Sections chosen for teachings offered in sections, by teaching code,
     /// so a rebuild keeps them.
     var sections: [String: SectionChoice] = [:]
+    /// Brackets chosen for teachings, by code, when not the student's own.
+    var brackets: [String: BracketChoice] = [:]
+    /// Where in the manifesto the teachings were picked, to reopen it there.
+    var catalogue: CatalogueSelection?
+    /// The surname alone, for deciding which chosen brackets are the
+    /// student's own. Absent in timetables built before it was kept.
+    var surname: String?
 
     struct SectionChoice: Sendable, Equatable, Codable {
         let link: PersonalTimetableParser.SectionsLink
@@ -39,11 +46,14 @@ nonisolated struct PersonalTimetable: Codable, Sendable, Equatable {
         let semester: String?
         let year: String?
         let degreeCourse: String?
+        /// The year of course the plan lists it under, which the cart needs.
+        var yearOfCourse: String?
 
-        init(_ teaching: ManifestoTeaching) {
+        init(_ teaching: ManifestoTeaching, yearOfCourse: String? = nil) {
             code = teaching.code; name = teaching.name; courseCode = teaching.courseCode
             planCode = teaching.planCode; idItemOfferta = teaching.idItemOfferta; idRiga = teaching.idRiga
             semester = teaching.semester; year = teaching.year; degreeCourse = teaching.degreeCourse
+            self.yearOfCourse = yearOfCourse
         }
 
         var teaching: ManifestoTeaching {

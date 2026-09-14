@@ -214,6 +214,13 @@ nonisolated struct BracketChoice: Sendable, Hashable, Codable {
         self.init(from: from, to: to, teachers: module.teachers.map(\.name))
     }
 
+    /// A name that falls at the start of the bracket. Surname and name, as
+    /// the service wants them: a bare "CON" is refused with "Orario non
+    /// ancora definito", "CON A" is placed in CON–FOT.
+    var cartName: String {
+        "\(from.trimmingCharacters(in: .whitespaces)) A"
+    }
+
     func covers(surname: String) -> Bool {
         ManifestoModule(code: "", name: "", teachers: [], credits: nil, period: nil, language: nil,
                         scaglioneFrom: from, scaglioneTo: to, syllabusID: nil).covers(surname: surname)
@@ -229,7 +236,9 @@ nonisolated struct BracketChoice: Sendable, Hashable, Codable {
 /// Setting a name on the service empties its cart, and the bracket of every
 /// teaching in it follows the name set when the timetable is read. So each
 /// bracket other than the student's own is its own cart, named by where that
-/// bracket starts, and the timetables are merged afterwards.
+/// bracket starts, and the timetables are merged afterwards. Checked live on
+/// 2026-09-14: "Conti Mario" and "CON A" both read Analisi 1 with the CON–FOT
+/// lecturer; back to "Rossi Mario", the cart is empty.
 nonisolated enum CartBatches {
     struct Batch: Sendable, Equatable {
         let cartName: String
@@ -244,7 +253,7 @@ nonisolated enum CartBatches {
         var batches: [Batch] = []
         for teaching in teachings {
             let cartName = brackets[teaching.code].flatMap { bracket in
-                bracket.covers(surname: surname) ? nil : bracket.from.trimmingCharacters(in: .whitespaces)
+                bracket.covers(surname: surname) ? nil : bracket.cartName
             } ?? name
             if let index = batches.firstIndex(where: { $0.cartName == cartName }) {
                 batches[index].teachings.append(teaching)

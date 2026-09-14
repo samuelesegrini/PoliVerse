@@ -242,12 +242,15 @@ private struct PersonalTimetableBuilder: View {
     @AppStorage("personalTimetableFirstName") private var storedFirstName = ""
     @Environment(CareerService.self) private var career
 
-    enum Step { case name, teachings, build }
+    enum Step { case name, course, teachings, build }
     @State private var step: Step = .name
     @State private var lastName = ""
     @State private var firstName = ""
-    @State private var query = ""
-    @State private var onlyMyDegree = true
+    @State private var page: CataloguePage?
+    @State private var loadingCatalogue = false
+    @State private var catalogueMessage: String?
+    @State private var yearOfCourse: String?
+    @State private var bracketTeaching: ManifestoTeaching?
 
     /// "Cognome Nome", the single field the service takes. Asked for in two
     /// so a compound surname — "De Luca" — is never split in the wrong place.
@@ -259,11 +262,11 @@ private struct PersonalTimetableBuilder: View {
     private var myDegree: String? { career.planHeader?.course }
 
     var body: some View {
-        @Bindable var manifesti = manifesti
         NavigationStack {
             Group {
                 switch step {
-                case .name: nameStep(year: $manifesti.year)
+                case .name: nameStep
+                case .course: courseStep
                 case .teachings: teachingsStep
                 case .build: buildStep
                 }
@@ -287,7 +290,7 @@ private struct PersonalTimetableBuilder: View {
 
     // Step 1
 
-    private func nameStep(year: Binding<AcademicYear>) -> some View {
+    private var nameStep: some View {
         Form {
             Section {
                 TextField("Cognome", text: $lastName)
@@ -303,11 +306,6 @@ private struct PersonalTimetableBuilder: View {
             } footer: {
                 Text("Il Politecnico usa cognome **e** nome per scegliere il tuo scaglione, cioè docente e orario. Con il solo cognome può sbagliare.")
             }
-            Section("Anno accademico") {
-                Picker("Anno accademico", selection: year) {
-                    ForEach(AcademicYear.recent()) { Text($0.label).tag($0) }
-                }
-            }
         }
         .navigationTitle("Orario personalizzato")
         .navigationBarTitleDisplayMode(.inline)
@@ -316,7 +314,7 @@ private struct PersonalTimetableBuilder: View {
                 Button("Avanti") {
                     surname = lastName.trimmingCharacters(in: .whitespaces)
                     storedFirstName = firstName.trimmingCharacters(in: .whitespaces)
-                    step = .teachings
+                    step = .course
                     Task { await personal.prepare(name: name) }
                 }
                 .disabled(lastName.trimmingCharacters(in: .whitespaces).isEmpty
@@ -325,102 +323,182 @@ private struct PersonalTimetableBuilder: View {
         }
     }
 
-    // Step 2
+    // Step 2: where in the manifesto
 
-    private var suggestions: [Course] {
-        courses.visibleCourses.filter { course in
-            course.teachingCode != nil && !personal.selection.contains { $0.code == course.teachingCode }
+    private static let levels: [(CatalogueField, LocalizedStringKey)] = [
+        (.year, "Anno accademico"), (.campus, "Sede"), (.school, "Scuola"),
+        (.degree, "Corso di studi"), (.plan, "Piano di studi"),
+    ]
+
+    private var courseStep: some View {
+        Form {
+            if let page {
+                Section {
+                    ForEach(Self.levels, id: \.0) { field, title in
+                        if let level = page.level(field) {
+                            levelPicker(level, title: title)
+                        }
+                    }
+                } footer: {
+                    Text("Come nel Manifesto degli studi: ogni scelta restringe la successiva. Il piano è quello preventivamente approvato (PSPA) che segui.")
+                }
+                if let catalogueMessage {
+                    Section { Label(catalogueMessage, systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }
+                }
+            } else if let catalogueMessage {
+                Section {
+                    Label(catalogueMessage, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+                    Button("Riprova") { Task { await openCatalogue() } }
+                }
+            }
+            if loadingCatalogue {
+                Section { ProgressView().frame(maxWidth: .infinity) }
+            }
+        }
+        .disabled(loadingCatalogue)
+        .navigationTitle("Corso di studi")
+        .navigationBarTitleDisplayMode(.inline)
+        .task { if page == nil { await openCatalogue() } }
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Indietro") { step = .name }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Avanti") { step = .teachings }
+                    .disabled(page?.teachings.isEmpty ?? true)
+            }
         }
     }
 
-    /// The search results, narrowed to the student's degree course when asked
-    /// — the same teaching has different times in different courses.
-    private var results: [ManifestoTeaching] {
-        guard onlyMyDegree, let myDegree else { return manifesti.results }
-        return manifesti.results.filter { DegreeCourseMatch.matches($0.degreeCourse, plan: myDegree) }
+    @ViewBuilder
+    private func levelPicker(_ level: CatalogueLevel, title: LocalizedStringKey) -> some View {
+        let binding = Binding(get: { level.selected ?? "" },
+                              set: { value in Task { await change(level.field, to: value) } })
+        let groups = level.options.reduce(into: [String?]()) { groups, option in
+            if !groups.contains(option.group) { groups.append(option.group) }
+        }
+        if level.options.count == 1 {
+            LabeledContent(title, value: level.options[0].label)
+        } else {
+            Picker(title, selection: binding) {
+                ForEach(groups, id: \.self) { group in
+                    Section(group ?? "") {
+                        ForEach(level.options.filter { $0.group == group }) { Text($0.label).tag($0.value) }
+                    }
+                }
+            }
+            .pickerStyle(.navigationLink)
+        }
+    }
+
+    /// Opens where the student was last, or on their own degree course when
+    /// the career names it, or as the manifesto first shows itself.
+    private func openCatalogue() async {
+        loadingCatalogue = true
+        defer { loadingCatalogue = false }
+        catalogueMessage = nil
+        if let saved = personal.catalogue, let found = await manifesti.cataloguePage(saved) {
+            show(found)
+            return
+        }
+        guard let first = await manifesti.cataloguePage(nil) else {
+            catalogueMessage = String(localized: "Il Manifesto degli studi non risponde. Riprova tra poco.")
+            return
+        }
+        show(first)
+        if let degree = career.planHeader?.course, let located = await locate(degree: degree, from: first) {
+            show(located)
+        }
+    }
+
+    /// The school whose list names the student's degree course, searched
+    /// across every campus.
+    private func locate(degree: String, from first: CataloguePage) async -> CataloguePage? {
+        guard let start = first.selection, let schools = first.level(.school)?.options else { return nil }
+        for school in schools {
+            let base = start.setting(.campus, to: "ALL_SEDI").setting(.school, to: school.value)
+            guard let schoolPage = await manifesti.cataloguePage(base) else { continue }
+            let options = schoolPage.level(.degree)?.options ?? []
+            if let match = options.first(where: { DegreeCourseMatch.matches($0.label, plan: degree) }) {
+                return await manifesti.cataloguePage(base.setting(.degree, to: match.value))
+            }
+        }
+        return nil
+    }
+
+    private func change(_ field: CatalogueField, to value: String) async {
+        guard let current = page?.selection, current[field] != value else { return }
+        loadingCatalogue = true
+        defer { loadingCatalogue = false }
+        if let found = await manifesti.cataloguePage(current.setting(field, to: value)) {
+            catalogueMessage = nil
+            show(found)
+        } else {
+            // The service answers with an error page when a campus offers
+            // nothing that year: say so and keep the last good choice.
+            catalogueMessage = String(localized: "Nessun corso di studi con questa scelta. Prova un'altra sede o un altro anno.")
+        }
+    }
+
+    private func show(_ found: CataloguePage) {
+        page = found
+        personal.catalogue = found.selection
+        yearOfCourse = nil
+        if found.teachings.isEmpty, found.selection != nil {
+            catalogueMessage = String(localized: "Questo piano non elenca insegnamenti.")
+        }
+    }
+
+    // Step 3: the plan's teachings
+
+    private var yearsOfCourse: [String] {
+        Array(Set(page?.teachings.compactMap(\.yearOfCourse) ?? [])).sorted()
     }
 
     private var teachingsStep: some View {
-        List {
-            Section {
-                if personal.selection.isEmpty {
-                    Text("Cerca un insegnamento per nome o codice e toccalo per aggiungerlo.")
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(personal.selection) { teaching in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            ManifestoRow(teaching: teaching)
-                            if let section = personal.sectionChoices[teaching.code] {
-                                Label(section.option.label, systemImage: "person.2")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        Spacer()
-                        Button("Rimuovi", systemImage: "minus.circle.fill") { personal.toggle(teaching) }
-                            .labelStyle(.iconOnly)
-                            .foregroundStyle(.red)
-                            .buttonStyle(.borderless)
-                    }
-                }
-            } header: {
-                Text("Selezionati \(personal.selection.count)/\(PersonalTimetableService.capacity)")
-            } footer: {
-                if !personal.selection.isEmpty {
-                    Text("Scegli la riga del tuo corso di studi: lo stesso insegnamento può avere orari diversi in corsi diversi.")
-                }
-            }
-
-            if query.isEmpty, !suggestions.isEmpty {
-                Section("Dai tuoi corsi") {
-                    ForEach(suggestions.prefix(8)) { course in
-                        Button {
-                            query = course.teachingCode ?? course.name
-                            Task { await manifesti.search(query) }
-                        } label: {
-                            Label(course.name, systemImage: "magnifyingglass")
-                        }
-                    }
-                }
-            }
-
-            if let myDegree {
+        let rows = (page?.teachings ?? []).filter { yearOfCourse == nil || $0.yearOfCourse == yearOfCourse }
+        let listed = Set((page?.teachings ?? []).map(\.teaching.code))
+        let elsewhere = personal.selection.filter { !listed.contains($0.code) }
+        return List {
+            if yearsOfCourse.count > 1 {
                 Section {
-                    Toggle(isOn: $onlyMyDegree) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Solo il mio corso di studi")
-                            Text(myDegree).font(.caption).foregroundStyle(.secondary)
-                        }
+                    Picker("Anno di corso", selection: $yearOfCourse) {
+                        Text("Tutti").tag(String?.none)
+                        ForEach(yearsOfCourse, id: \.self) { Text("\($0)° anno").tag(String?.some($0)) }
                     }
+                    .pickerStyle(.segmented)
                 }
             }
 
-            if manifesti.isSearching {
-                Section { ProgressView().frame(maxWidth: .infinity) }
-            } else if !query.isEmpty, !manifesti.results.isEmpty {
+            ForEach(Array(Set(rows.map { $0.yearOfCourse ?? "" })).sorted(), id: \.self) { year in
                 Section {
-                    ForEach(results) { teaching in
-                        Button { personal.toggle(teaching) } label: {
-                            HStack {
-                                ManifestoRow(teaching: teaching)
-                                Spacer()
-                                Image(systemName: personal.isSelected(teaching) ? "checkmark.circle.fill" : "plus.circle")
-                                    .foregroundStyle(personal.isSelected(teaching) ? Color.green : Theme.brand)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(!personal.isSelected(teaching)
-                                  && personal.selection.count >= PersonalTimetableService.capacity)
+                    ForEach(rows.filter { ($0.yearOfCourse ?? "") == year }) { row in
+                        teachingRow(row)
                     }
                 } header: {
-                    Text("Risultati")
-                } footer: {
-                    if results.isEmpty {
-                        Text("Nessun risultato nel tuo corso di studi: disattiva il filtro per vedere gli altri corsi.")
-                    }
+                    Text(year.isEmpty ? String(localized: "Insegnamenti") : String(localized: "\(year)° anno"))
                 }
             }
+
+            if !elsewhere.isEmpty {
+                Section {
+                    ForEach(elsewhere) { teaching in
+                        HStack {
+                            ManifestoRow(teaching: teaching)
+                            Spacer()
+                            Button("Rimuovi", systemImage: "minus.circle.fill") { personal.toggle(teaching) }
+                                .labelStyle(.iconOnly)
+                                .foregroundStyle(.red)
+                                .buttonStyle(.borderless)
+                        }
+                    }
+                } header: {
+                    Text("Da altri piani")
+                }
+            }
+        }
+        .sheet(item: $bracketTeaching) { teaching in
+            BracketPicker(teaching: teaching, surname: lastName)
         }
         .sheet(item: Binding(get: { personal.pendingSections.map { PendingID(code: $0.teaching.code) } },
                              set: { if $0 == nil, let pending = personal.pendingSections {
@@ -431,20 +509,59 @@ private struct PersonalTimetableBuilder: View {
                 }
             }
         }
-        .searchable(text: $query, prompt: "Nome o codice dell'insegnamento")
-        .onSubmit(of: .search) { Task { await manifesti.search(query) } }
-        .navigationTitle("Insegnamenti")
+        .navigationTitle("Selezionati \(personal.selection.count)/\(PersonalTimetableService.capacity)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Indietro") { step = .name }
+                Button("Indietro") { step = .course }
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Calcola") {
                     step = .build
-                    Task { await personal.build(name: name) }
+                    Task { await personal.build(name: name, surname: lastName) }
                 }
                 .disabled(personal.selection.isEmpty)
+            }
+        }
+    }
+
+    private func teachingRow(_ row: PlanTeaching) -> some View {
+        let selected = personal.isSelected(row.teaching)
+        let details: [String] = [
+            row.teaching.code,
+            row.teaching.semester.map { String(localized: "\($0)° sem") },
+            row.credits.map { String(localized: "\($0.formatted()) CFU") },
+            row.group.map { String(localized: "A scelta · \($0)") },
+        ].compactMap { $0 }
+        return HStack(spacing: 12) {
+            Button { personal.toggle(row) } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(selected ? Color.green : Color.secondary)
+                        .font(.title3)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(row.teaching.name).font(.subheadline.weight(.medium))
+                        Text(details.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                        if let bracket = personal.bracketChoices[row.teaching.code] {
+                            Label(String(localized: "Scaglione \(bracket.label)"), systemImage: "person.2")
+                                .font(.caption).foregroundStyle(Theme.brand)
+                        }
+                        if let section = personal.sectionChoices[row.teaching.code] {
+                            Label(section.option.label, systemImage: "person.2")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .disabled(!selected && personal.selection.count >= PersonalTimetableService.capacity)
+
+            if selected, !row.hasSections {
+                Button("Scaglione", systemImage: "person.2.badge.gearshape") { bracketTeaching = row.teaching }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.borderless)
             }
         }
     }
@@ -475,7 +592,7 @@ private struct PersonalTimetableBuilder: View {
                     }
                 case .failed(let message):
                     Label(message, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-                    Button("Riprova") { Task { await personal.build(name: name) } }
+                    Button("Riprova") { Task { await personal.build(name: name, surname: lastName) } }
                 }
             }
 
@@ -504,6 +621,61 @@ private struct PersonalTimetableBuilder: View {
                 Button("Fine") { dismiss() }.disabled(personal.progress != .finished)
             }
         }
+    }
+}
+
+/// Which bracket of a teaching to follow: the student's own by default, or
+/// another lecturer's.
+private struct BracketPicker: View {
+    let teaching: ManifestoTeaching
+    let surname: String
+
+    @Environment(PersonalTimetableService.self) private var personal
+    @Environment(ManifestiService.self) private var manifesti
+    @Environment(\.dismiss) private var dismiss
+    @State private var brackets: [BracketChoice]?
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if let brackets {
+                    if brackets.isEmpty {
+                        Text("Questo insegnamento ha un solo scaglione per tutti.").foregroundStyle(.secondary)
+                    }
+                    Section {
+                        ForEach(brackets, id: \.self) { bracket in
+                            let mine = bracket.covers(surname: surname)
+                            let chosen = personal.bracketChoices[teaching.code].map { $0 == bracket } ?? mine
+                            Button {
+                                personal.choose(bracket: mine ? nil : bracket, for: teaching)
+                                dismiss()
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(bracket.label).font(.subheadline.weight(.medium))
+                                        Text(bracket.teachers.joined(separator: ", ")).font(.caption).foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if mine { Text("Il tuo").font(.caption).foregroundStyle(.secondary) }
+                                    if chosen { Image(systemName: "checkmark").foregroundStyle(Theme.brand) }
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    } footer: {
+                        if !brackets.isEmpty {
+                            Text("Il tuo scaglione dipende dal cognome. Sceglierne un altro vale solo per questo insegnamento.")
+                        }
+                    }
+                } else {
+                    ProgressView().frame(maxWidth: .infinity)
+                }
+            }
+            .navigationTitle(teaching.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .task { brackets = await manifesti.brackets(for: teaching) }
+        }
+        .presentationDetents([.medium, .large])
     }
 }
 

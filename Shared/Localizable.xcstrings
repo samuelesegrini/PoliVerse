@@ -9819,6 +9819,230 @@
           }
         }
       }
+    },
+    "%@° anno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Year %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@° anno"
+          }
+        }
+      }
+    },
+    "%@° sem" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@° sem"
+          }
+        }
+      }
+    },
+    "A scelta · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elective · %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A scelta · %@"
+          }
+        }
+      }
+    },
+    "Anno di corso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Year of course"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anno di corso"
+          }
+        }
+      }
+    },
+    "Come nel Manifesto degli studi: ogni scelta restringe la successiva. Il piano è quello preventivamente approvato (PSPA) che segui." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As in the Manifesto degli studi: each choice narrows the next. The plan is the pre-approved study plan (PSPA) you follow."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Come nel Manifesto degli studi: ogni scelta restringe la successiva. Il piano è quello preventivamente approvato (PSPA) che segui."
+          }
+        }
+      }
+    },
+    "Da altri piani" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From other plans"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Da altri piani"
+          }
+        }
+      }
+    },
+    "Il Manifesto degli studi non risponde. Riprova tra poco." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Manifesto degli studi is not responding. Try again shortly."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il Manifesto degli studi non risponde. Riprova tra poco."
+          }
+        }
+      }
+    },
+    "Il tuo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yours"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo"
+          }
+        }
+      }
+    },
+    "Il tuo scaglione dipende dal cognome. Sceglierne un altro vale solo per questo insegnamento." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your bracket follows your surname. Choosing another applies to this teaching only."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo scaglione dipende dal cognome. Sceglierne un altro vale solo per questo insegnamento."
+          }
+        }
+      }
+    },
+    "Nessun corso di studi con questa scelta. Prova un'altra sede o un altro anno." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No degree course for this choice. Try another campus or year."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun corso di studi con questa scelta. Prova un'altra sede o un altro anno."
+          }
+        }
+      }
+    },
+    "Questo insegnamento ha un solo scaglione per tutti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This teaching has a single bracket for everyone."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo insegnamento ha un solo scaglione per tutti."
+          }
+        }
+      }
+    },
+    "Questo piano non elenca insegnamenti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This plan lists no teachings."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo piano non elenca insegnamenti."
+          }
+        }
+      }
+    },
+    "Scaglione %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bracket %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scaglione %@"
+          }
+        }
+      }
+    },
+    "Scuola" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "School"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scuola"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

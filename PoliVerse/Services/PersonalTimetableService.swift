@@ -36,6 +36,12 @@ final class PersonalTimetableService {
 
     /// Chosen sections, by teaching code.
     private(set) var sectionChoices: [String: SectionChoice] = [:]
+    /// Chosen brackets, by teaching code, when not the student's own.
+    private(set) var bracketChoices: [String: BracketChoice] = [:]
+    /// The year of course each picked teaching is listed under.
+    private(set) var yearsOfCourse: [String: String] = [:]
+    /// Where the student last was in the manifesto.
+    var catalogue: CatalogueSelection?
     /// Questions in the order teachings were picked; the sheet shows the first.
     private(set) var sectionQuestions: [SectionQuestion] = []
     var pendingSections: SectionQuestion? { sectionQuestions.first }
@@ -54,6 +60,10 @@ final class PersonalTimetableService {
         timetable = preview ?? DiskCache.load(PersonalTimetable.self, as: Self.cacheName)?.value
         selection = timetable?.sources.map(\.teaching) ?? []
         sectionChoices = timetable?.sections ?? [:]
+        bracketChoices = timetable?.brackets ?? [:]
+        catalogue = timetable?.catalogue
+        yearsOfCourse = Dictionary(timetable?.sources.compactMap { source in source.yearOfCourse.map { (source.code, $0) } } ?? [],
+                                   uniquingKeysWith: { first, _ in first })
         agenda?.personalTimetable = timetable
     }
 
@@ -68,6 +78,18 @@ final class PersonalTimetableService {
 
     func isSelected(_ teaching: ManifestoTeaching) -> Bool {
         selection.contains { $0.code == teaching.code }
+    }
+
+    /// A teaching picked from its plan page, which knows its year of course.
+    func toggle(_ row: PlanTeaching) {
+        if let year = row.yearOfCourse { yearsOfCourse[row.teaching.code] = year }
+        toggle(row.teaching)
+    }
+
+    /// The student's bracket choice for a teaching; nil goes back to the one
+    /// their name falls in.
+    func choose(bracket: BracketChoice?, for teaching: ManifestoTeaching) {
+        bracketChoices[teaching.code] = bracket
     }
 
     func toggle(_ teaching: ManifestoTeaching) {
@@ -108,8 +130,9 @@ final class PersonalTimetableService {
     // MARK: - Building
 
     /// Recreates the cart from the selection and reads the timetable back.
-    func build(name: String) async {
-        await build(name: name, teachings: selection, yearCode: manifesti.year.code)
+    func build(name: String, surname: String) async {
+        await build(name: name, surname: surname, teachings: selection,
+                    yearCode: catalogue?.year ?? manifesti.year.code)
     }
 
     /// A week: rooms move in the first weeks of term, and nothing announces it.
@@ -126,7 +149,9 @@ final class PersonalTimetableService {
     func refreshIfStale(now: Date = .now) async {
         guard let current = timetable, !isBuilding, Self.needsRefresh(current, now: now) else { return }
         // In the timetable's own year, whatever the catalogue is browsing.
-        await build(name: current.name, teachings: current.sources.map(\.teaching), yearCode: current.yearCode)
+        await build(name: current.name,
+                    surname: current.surname ?? String(current.name.split(separator: " ").first ?? ""),
+                    teachings: current.sources.map(\.teaching), yearCode: current.yearCode)
         // A timetable already in the Calendar app follows the recalculation.
         if progress == .finished, CalendarExporter.canSyncQuietly, let updated = timetable {
             _ = await CalendarExporter.sync(CalendarExport.drafts(for: updated))
@@ -137,7 +162,7 @@ final class PersonalTimetableService {
         if progress == .finished { progress = .idle }
     }
 
-    private func build(name: String, teachings: [ManifestoTeaching], yearCode: String) async {
+    private func build(name: String, surname: String, teachings: [ManifestoTeaching], yearCode: String) async {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !teachings.isEmpty, !isBuilding else { return }
         refused = []
@@ -146,26 +171,40 @@ final class PersonalTimetableService {
         // Cleared first: the cart outlives the app on the server's session,
         // and a leftover teaching would reappear in the result.
         await manifesti.clearTimetable(yearCode: yearCode)
-        await manifesti.setName(trimmed, yearCode: yearCode)
 
-        // One at a time: the service serialises a session's requests anyway,
-        // and the cart's count is only meaningful in order.
+        let batches = CartBatches.batches(name: trimmed, surname: surname, teachings: teachings, brackets: bracketChoices)
         var added = 0
-        for (index, teaching) in teachings.enumerated() {
+        var done = 0
+        var readAny = false
+        var entries: [PersonalTimetable.Entry] = []
+        for batch in batches {
             guard !Task.isCancelled else { break }
-            progress = .adding(done: index, total: teachings.count)
-            let reply: PersonalTimetableParser.CartReply
-            if let choice = sectionChoices[teaching.code] {
-                let link = PersonalTimetableParser.CartLink(
-                    courseCode: choice.link.courseCode, planCode: choice.link.planCode,
-                    semester: choice.option.semester, yearOfCourse: choice.link.yearOfCourse)
-                reply = await manifesti.addToTimetable(teaching, link: link, section: choice.option.name)
-            } else {
-                reply = await manifesti.addToTimetable(teaching, link: await manifesti.cartLink(for: teaching))
+            // Setting the name empties the cart: each bracket is its own run.
+            await manifesti.setName(batch.cartName, yearCode: yearCode)
+            var addedHere = 0
+            // One at a time: the service serialises a session's requests
+            // anyway, and the cart's count is only meaningful in order.
+            for teaching in batch.teachings {
+                guard !Task.isCancelled else { break }
+                progress = .adding(done: done, total: teachings.count)
+                done += 1
+                let reply = await add(teaching)
+                log.notice("personal timetable: \(teaching.code, privacy: .public) into cart \(batch.cartName == trimmed ? "own" : batch.cartName, privacy: .public): \(String(describing: reply), privacy: .public)")
+                switch reply {
+                case .added: addedHere += 1
+                case .refused(let reason): refused.append((teaching, reason))
+                }
             }
-            switch reply {
-            case .added: added += 1
-            case .refused(let reason): refused.append((teaching, reason))
+            guard addedHere > 0, !Task.isCancelled else { continue }
+            added += addedHere
+
+            progress = .reading
+            for semester in [1, 2] {
+                guard let html = await manifesti.textTimetable(semester: semester, yearCode: yearCode) else { continue }
+                readAny = true
+                for entry in PersonalTimetableParser.entries(html) where !entries.contains(where: { $0.code == entry.code }) {
+                    entries.append(entry)
+                }
             }
         }
         // Closed mid-build: a timetable missing the rest would pass for complete.
@@ -177,30 +216,41 @@ final class PersonalTimetableService {
             progress = .failed(String(localized: "Il Politecnico non ha accettato nessun insegnamento."))
             return
         }
-
-        progress = .reading
-        var entries: [PersonalTimetable.Entry] = []
-        var readAny = false
-        for semester in [1, 2] {
-            guard let html = await manifesti.textTimetable(semester: semester, yearCode: yearCode) else { continue }
-            readAny = true
-            for entry in PersonalTimetableParser.entries(html) where !entries.contains(where: { $0.code == entry.code }) {
-                entries.append(entry)
-            }
-        }
         guard readAny else {
             progress = .failed(String(localized: "Il Politecnico non ha risposto. Riprova tra poco."))
             return
         }
+        // The name the student gave, whatever the carts were named.
+        if batches.first?.cartName != trimmed { await manifesti.setName(trimmed, yearCode: yearCode) }
 
         var built = PersonalTimetable(name: trimmed, yearCode: yearCode, entries: entries, builtAt: .now)
-        built.sources = teachings.map(PersonalTimetable.Source.init)
+        built.sources = teachings.map { PersonalTimetable.Source($0, yearOfCourse: yearsOfCourse[$0.code]) }
+        built.brackets = bracketChoices.filter { code, _ in teachings.contains { $0.code == code } }
+        built.catalogue = catalogue
+        built.surname = surname
         built.sections = sectionChoices.filter { code, _ in teachings.contains { $0.code == code } }
         // A rebuild keeps what the student decided about each teaching.
         built.hiddenCodes = timetable?.hiddenCodes.intersection(entries.map(\.code)) ?? []
         save(built)
         log.notice("personal timetable: \(added, privacy: .public) added, \(entries.count, privacy: .public) read, \(entries.reduce(0) { $0 + $1.slots.count }, privacy: .public) slots")
         progress = .finished
+    }
+
+    /// One teaching into the cart: its chosen section, else the row's own
+    /// link when it came from a plan page, else the link on its detail page.
+    private func add(_ teaching: ManifestoTeaching) async -> PersonalTimetableParser.CartReply {
+        if let choice = sectionChoices[teaching.code] {
+            let link = PersonalTimetableParser.CartLink(
+                courseCode: choice.link.courseCode, planCode: choice.link.planCode,
+                semester: choice.option.semester, yearOfCourse: choice.link.yearOfCourse)
+            return await manifesti.addToTimetable(teaching, link: link, section: choice.option.name)
+        }
+        if let year = yearsOfCourse[teaching.code] {
+            let link = PersonalTimetableParser.CartLink(courseCode: teaching.courseCode, planCode: teaching.planCode ?? "",
+                                                        semester: teaching.semester ?? "", yearOfCourse: year)
+            return await manifesti.addToTimetable(teaching, link: link)
+        }
+        return await manifesti.addToTimetable(teaching, link: await manifesti.cartLink(for: teaching))
     }
 
     func resetProgress() {
@@ -234,6 +284,8 @@ final class PersonalTimetableService {
         timetable = nil
         agenda?.personalTimetable = nil
         selection = []
+        bracketChoices = [:]
+        yearsOfCourse = [:]
         progress = .idle
         // An empty entry, which no longer decodes as a timetable.
         DiskCache.save(Optional<PersonalTimetable>.none, as: Self.cacheName)

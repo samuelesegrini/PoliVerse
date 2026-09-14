@@ -108,7 +108,7 @@ struct CartBatchTests {
         let batches = CartBatches.batches(name: "Rossi Mario", surname: "Rossi",
                                           teachings: [teaching("1"), teaching("2"), teaching("3"), teaching("4")],
                                           brackets: brackets)
-        #expect(batches.map(\.cartName) == ["Rossi Mario", "CON"])
+        #expect(batches.map(\.cartName) == ["Rossi Mario", "CON A"])
         #expect(batches.map { $0.teachings.map(\.code) } == [["1", "4"], ["2", "3"]])
     }
 
@@ -116,7 +116,7 @@ struct CartBatchTests {
     func first() {
         let batches = CartBatches.batches(name: "Zanetti Luca", surname: "Zanetti", teachings: [teaching("1")],
                                           brackets: ["1": BracketChoice(from: "A", to: "BRU", teachers: [])])
-        #expect(batches.map(\.cartName) == ["A"])
+        #expect(batches.map(\.cartName) == ["A A"])
         #expect(ManifestoModule(code: "1", name: "", teachers: [], credits: nil, period: nil, language: nil,
                                 scaglioneFrom: "A", scaglioneTo: "BRU", syllabusID: nil).covers(surname: "A"))
     }
