@@ -40,7 +40,8 @@ struct PersonalTimetableView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu("Opzioni", systemImage: "ellipsis.circle") {
                         Button("Modifica insegnamenti", systemImage: "pencil") { building = true }
-                        Button("Aggiungi al Calendario", systemImage: "calendar.badge.plus") { confirmingExport = true }
+                        Button(CalendarExporter.canSyncQuietly ? "Aggiorna nel Calendario" : "Aggiungi al Calendario",
+                               systemImage: "calendar.badge.plus") { confirmingExport = true }
                         Button("Elimina orario", systemImage: "trash", role: .destructive) { confirmingDelete = true }
                     }
                 }
@@ -49,13 +50,13 @@ struct PersonalTimetableView: View {
         .sheet(isPresented: $building) {
             PersonalTimetableBuilder()
         }
-        .confirmationDialog("Aggiungere le lezioni al Calendario?", isPresented: $confirmingExport, titleVisibility: .visible) {
-            Button("Aggiungi") {
+        .confirmationDialog("Mettere le lezioni nel Calendario?", isPresented: $confirmingExport, titleVisibility: .visible) {
+            Button("Sincronizza") {
                 guard let timetable = personal.timetable else { return }
-                Task { exportOutcome = await CalendarExporter.export(CalendarExport.drafts(for: timetable)) }
+                Task { exportOutcome = await CalendarExporter.sync(CalendarExport.drafts(for: timetable)) }
             }
         } message: {
-            Text("Ogni lezione diventa un evento settimanale fino alla fine delle lezioni. Se le hai già aggiunte, verranno duplicate.")
+            Text("Le lezioni vanno in un calendario \"Orario personalizzato\", come eventi settimanali fino alla fine delle lezioni. Si aggiorna quando l'orario viene ricalcolato e sparisce se lo archivi o lo elimini.")
         }
         .alert(exportTitle, isPresented: Binding(get: { exportOutcome != nil }, set: { if !$0 { exportOutcome = nil } })) {
             Button("OK") { exportOutcome = nil }
@@ -76,14 +77,14 @@ struct PersonalTimetableView: View {
     }
 
     private var exportTitle: String {
-        if case .added = exportOutcome { return String(localized: "Lezioni aggiunte") }
+        if case .synced = exportOutcome { return String(localized: "Calendario aggiornato") }
         return String(localized: "Calendario non aggiornato")
     }
 
     private var exportMessage: String {
         switch exportOutcome {
-        case .added(let count): String(localized: "\(count) eventi settimanali nel calendario predefinito.")
-        case .denied: String(localized: "Consenti a PoliVerse di aggiungere eventi in Impostazioni › Privacy › Calendari.")
+        case .synced(let count): String(localized: "\(count) eventi settimanali nel calendario «Orario personalizzato».")
+        case .denied: String(localized: "Consenti a PoliVerse l'accesso completo in Impostazioni › Privacy › Calendari.")
         case .failed(let message): message
         case nil: ""
         }

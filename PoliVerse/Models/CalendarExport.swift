@@ -6,8 +6,8 @@ nonisolated enum CalendarExport {
         let title: String
         let start: Date
         let end: Date
-        /// The day after the last day of lessons: EventKit's recurrence end is
-        /// exclusive of nothing, and a lesson on the last day must still repeat.
+        /// The day after the last day of lessons, so a lesson on that last day
+        /// is still inside the recurrence whatever time it starts.
         let repeatsUntil: Date
         let location: String?
         let notes: String?

@@ -127,6 +127,10 @@ final class PersonalTimetableService {
         guard let current = timetable, !isBuilding, Self.needsRefresh(current, now: now) else { return }
         // In the timetable's own year, whatever the catalogue is browsing.
         await build(name: current.name, teachings: current.sources.map(\.teaching), yearCode: current.yearCode)
+        // A timetable already in the Calendar app follows the recalculation.
+        if progress == .finished, CalendarExporter.canSyncQuietly, let updated = timetable {
+            _ = await CalendarExporter.sync(CalendarExport.drafts(for: updated))
+        }
         // Quiet: a failed background refresh keeps the timetable it had and
         // does not leave an error on the builder.
         if case .failed = progress { progress = .idle }
@@ -209,17 +213,24 @@ final class PersonalTimetableService {
         guard var current = timetable else { return }
         if hidden { current.hiddenCodes.insert(code) } else { current.hiddenCodes.remove(code) }
         save(current)
+        // A hidden teaching leaves the synced calendar as well.
+        if CalendarExporter.canSyncQuietly {
+            Task { _ = await CalendarExporter.sync(CalendarExport.drafts(for: current)) }
+        }
     }
 
     /// Hands over to the official agenda, keeping the file in case it is
     /// needed again.
     func retire(_ retired: Bool) {
         guard var current = timetable else { return }
+        // Archived for the official agenda: its lessons leave the calendar too.
+        if retired { CalendarExporter.remove() }
         current.retiredAt = retired ? .now : nil
         save(current)
     }
 
     func delete() {
+        CalendarExporter.remove()
         timetable = nil
         agenda?.personalTimetable = nil
         selection = []
