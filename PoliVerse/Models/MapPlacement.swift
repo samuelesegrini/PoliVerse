@@ -41,6 +41,12 @@ nonisolated enum MapPlacement {
     }
 
     @concurrent
+    static func colouredInBackground(_ pins: [MapPin], rooms: [Classroom], covered: Set<String>,
+                                     free: Set<String>) async -> [MapPin] {
+        coloured(pins, rooms: rooms, covered: covered, free: free)
+    }
+
+    @concurrent
     static func pinsInBackground(rooms: [Classroom], locations: [String: BuildingLocation],
                                  campus: String?) async -> [MapPin] {
         pins(rooms: rooms, locations: locations, campus: campus)

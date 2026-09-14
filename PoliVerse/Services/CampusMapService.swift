@@ -123,7 +123,7 @@ final class CampusMapService {
         let free = Set(freeRooms.freeNow().map(\.id))
         guard !free.isEmpty || !freeRooms.rooms.isEmpty else { return }
 
-        pins = MapPlacement.coloured(
+        pins = await MapPlacement.colouredInBackground(
             pins, rooms: catalogue.rooms, covered: Set(freeRooms.rooms.map(\.id)), free: free)
         showsAvailability = true
     }

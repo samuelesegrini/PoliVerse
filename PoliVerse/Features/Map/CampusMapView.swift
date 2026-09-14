@@ -18,6 +18,8 @@ struct CampusMapView: View {
         center: CLLocationCoordinate2D(latitude: 45.4786, longitude: 9.2272),
         span: MKCoordinateSpan(latitudeDelta: 0.03, longitudeDelta: 0.03)))
     @State private var selected: MapPin?
+    /// The campus the camera last framed; nil before any framing.
+    @State private var framedCampus: String??
     @State private var loadingAvailability = false
 
     var body: some View {
@@ -41,8 +43,19 @@ struct CampusMapView: View {
         // The map is drawn at once; pins arrive as they are placed, and the
         // camera frames them the first time there are any.
         .task { await map.load(campus: campus) }
-        .onChange(of: map.pins.isEmpty) { _, isEmpty in
-            if !isEmpty { recentre() }
+        // Framed once per campus, as soon as its pins are placed — not on
+        // every re-placement, which would pull the camera from under a pan.
+        .onChange(of: map.pins.map(\.id)) { _, ids in
+            guard !ids.isEmpty, framedCampus != .some(campus) else { return }
+            framedCampus = campus
+            recentre()
+        }
+        .onAppear {
+            // Pins kept from an earlier visit: open on them, not on Milano.
+            if let region = map.region {
+                position = .region(region)
+                framedCampus = campus
+            }
         }
         .sheet(item: $selected) { pin in
             NavigationStack { BuildingSheet(pin: pin) }
@@ -80,7 +93,7 @@ struct CampusMapView: View {
         .padding(12)
         .background(.bar)
         .onChange(of: campus) { _, _ in
-            Task { await map.load(campus: campus); recentre() }
+            Task { await map.load(campus: campus) }
         }
     }
 
