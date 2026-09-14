@@ -232,4 +232,23 @@ struct ManifestoParserTests {
         #expect(list.count == 6)
         #expect(list.first?.code == "2026")
     }
+
+    // MARK: - Language
+
+    /// Real fragments from the detail page of 057949 Machine Learning and
+    /// Artificial Intelligence (2026): the legend, which shows both flags,
+    /// and a module row flagged English.
+    private let languageLegend = """
+    <TH colspan="2" class="HeadColumn1" style="text-align:center">Lingua d'erogazione</TH><TR><TD width="5%" class="ElementInfoCard1" style="text-align:center"><img border="0" align="abs_bottom" src="/manifesti/images/flags/it.png" height="16"></TD><TD width="95%" class="ElementInfoCard2" style="text-align:center">Insegnamento completamente offerto in lingua italiana</TD></TR><TR><TD width="5%" class="ElementInfoCard1" style="text-align:center"><img border="0" align="abs_bottom" src="/manifesti/images/flags/en.png" height="16"></TD><TD width="95%" class="ElementInfoCard2" style="text-align:center">Insegnamento completamente offerto in lingua inglese</TD></TR>
+    """
+
+    private let englishRow = """
+    <TR><TD id=""width="3%" class="ElementInfoCard2 orario_td scaglioni" style="text-align:center">---</TD><TD id=""width="10%" class="ElementInfoCard2" style="text-align:center">A</TD><TD id=""width="10%" class="ElementInfoCard2" style="text-align:center">ZZZZ</TD><TD width="25%" class="ElementInfoCard2" style="text-align:left"><a href="/manifesti/manifesti/controller/ricerche/RicercaPerDocentiPublic.do?evn_didattica=evento&k_doc=138695&aa=2026&lang=IT&jaf_currentWFID=main">Restelli Marcello</a></TD><TD width="5%" class="ElementInfoCard2" style="text-align:center"><img src="/manifesti/images/flags/en.png" border="none" height="16px"></TD></TR>
+    """
+
+    @Test("The language comes from the rows, never from the legend")
+    func languages() {
+        #expect(ManifestoParser.languages(languageLegend).isEmpty)
+        #expect(ManifestoParser.languages(languageLegend + englishRow) == [.english])
+    }
 }

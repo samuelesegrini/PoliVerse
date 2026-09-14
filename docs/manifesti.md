@@ -69,6 +69,22 @@ implements exactly that: a bracket `CAS`–`FER` takes Casati and not Ferrari.
 Matching folds case and accents, because a student types their name the way
 they write it and the registry stores it shouted and unaccented.
 
+## Language of instruction
+
+Verified 2026-09-14 on the detail page of 057949 (Machine Learning and
+Artificial Intelligence). The module table has a "Lingua offerta" column whose
+cell is a flag image, `/manifesti/images/flags/en.png` or `…/it.png`, inside an
+`ElementInfoCard2` cell; "Non definita" shows as `--`. The page's legend shows
+both flags too, in `ElementInfoCard1` cells, so only data cells are read
+(`ManifestoParser.languages`).
+
+It is **per row, not per teaching**: the same teaching can be in English for
+one degree course and Italian for another, and a split teaching can run one
+bracket in each. So the app shows it where it is certain — the teaching's
+detail — and does not branch on it elsewhere: the rules that read teachers'
+file names, announcements and results lists (`DocumentClassifier`,
+`AnnouncementDetector`, `ResultsFileReader`) read Italian and English always.
+
 ## What is not implemented, and why
 
 **The weekly grid is shown as the university renders it**, in the same cookie

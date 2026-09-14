@@ -86,12 +86,16 @@ nonisolated enum AnnouncementDetector {
         return text.range(of: examWords, options: .regularExpression) != nil
     }
 
-    private static let examWords = #"\b(esam[ei]|appell[oi]|iscrizion[ei]|esit[oi]|vot[oi]|risultati|oral[ei]|compitin[oi]|itinere|verbalizzazion[ei]|exams?|midterms?|grades|results)\b"#
+    /// Italian and English, since English-taught courses announce in English.
+    private static let examWords = #"\b(esam[ei]|appell[oi]|iscrizion[ei]|esit[oi]|vot[oi]|risultati|oral[ei]|compitin[oi]|itinere|verbalizzazion[ei]|exams?|midterms?|grades|results|orals?|registration|resits?|retakes?)\b"#
 
     private static let months = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio",
                                  "agosto", "settembre", "ottobre", "novembre", "dicembre"]
+    private static let englishMonths = ["january", "february", "march", "april", "may", "june", "july",
+                                        "august", "september", "october", "november", "december"]
 
-    /// Whether a post names a sitting's day: "12/02", "12.2.2026", "12 febbraio".
+    /// Whether a post names a sitting's day: "12/02", "12.2.2026", "12 febbraio",
+    /// "12 February", "February 12th".
     static func mentions(_ date: Date, in post: MoodleDiscussion) -> Bool {
         let calendar = PoliMiDate.romeCalendar
         let day = calendar.component(.day, from: date)
@@ -100,8 +104,17 @@ nonisolated enum AnnouncementDetector {
         // `normalise` turns dots and dashes into spaces: "12.02" is "12 02".
         let numeric = #"(?<!\d)0?\#(day)[ /]0?\#(month)(?!\d)"#
         let written = #"(?<!\d)0?\#(day) \#(months[month - 1])\b"#
-        return text.range(of: numeric, options: .regularExpression) != nil
-            || text.range(of: written, options: .regularExpression) != nil
+        // "may" and "march" are verbs too: "exercise 3 may be skipped" is not
+        // the third of May. Those two need a clearer date around them.
+        let english = englishMonths[month - 1]
+        let verbLike = english == "may" || english == "march"
+        let dayFirst = verbLike
+            ? #"(?<!\d)0?\#(day)(st|nd|rd|th)? (of )?\#(english)(?! (be|not|have|also|to|on|in)\b)\b"#
+            : #"(?<!\d)0?\#(day)(st|nd|rd|th)? (of )?\#(english)\b"#
+        let monthFirst = #"\b\#(english) 0?\#(day)(st|nd|rd|th)?(?!\d)"#
+        return [numeric, written, dayFirst, monthFirst].contains {
+            text.range(of: $0, options: .regularExpression) != nil
+        }
     }
 
     private static func key(_ post: MoodleDiscussion) -> String { "post:\(post.discussion ?? post.id)" }

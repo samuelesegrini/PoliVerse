@@ -79,7 +79,8 @@ nonisolated enum ManifestoParser {
             },
             summary: summary,
             ssd: ssd(html),
-            modules: modules(html))
+            modules: modules(html),
+            languages: languages(html))
     }
 
     /// The SSD table: attività formativa, code, description, credits.
@@ -132,10 +133,28 @@ nonisolated enum ManifestoParser {
                 teachers: teachers,
                 credits: cells.compactMap(credits(from:)).first,
                 period: cells.first { $0.contains("sem") || $0.contains("trim") },
+                // Not read per module: the real rows that carry a language
+                // flag have no code column, so they are not parsed as modules
+                // here. The page's languages are in `ManifestoDetail.languages`.
                 language: nil,
                 scaglioneFrom: bounds.first,
                 scaglioneTo: bounds.count > 1 ? bounds[1] : nil,
                 syllabusID: row.compactMap(syllabusID(in:)).first))
+        }
+        return found
+    }
+
+    /// The languages flagged in the page's rows, in order and without repeats.
+    ///
+    /// Only data cells (`ElementInfoCard2`) count: the legend at the side of
+    /// the page shows both flags in `ElementInfoCard1` cells, and reading it
+    /// would call every teaching bilingual.
+    static func languages(_ html: String) -> [TeachingLanguage] {
+        var found: [TeachingLanguage] = []
+        for groups in HTMLScraper.matches(#"<td[^>]*ElementInfoCard2[^>]*>\s*<img[^>]*flags/([a-z]{2})\.png"#, in: html) {
+            guard let language = groups.first.flatMap(TeachingLanguage.init(flag:)),
+                  !found.contains(language) else { continue }
+            found.append(language)
         }
         return found
     }

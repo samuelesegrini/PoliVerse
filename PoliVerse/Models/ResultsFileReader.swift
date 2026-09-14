@@ -82,21 +82,30 @@ nonisolated enum ResultsFileReader {
             .replacingOccurrences(of: #"\b\d{1,2}[/.\-]\d{1,2}[/.\-]\d{2,4}\b"#, with: " ", options: .regularExpression)
             .replacingOccurrences(of: #"\b\d{1,2}:\d{2}\b"#, with: " ", options: .regularExpression)
 
+        // Italian and English: English-taught courses publish English lists.
+        // Negations before what they negate, and the earliest word on the
+        // line wins: "Passed (failed first attempt)" passed.
         let words: [(String, String)] = [
-            (#"\bnon ammess[oa]\b"#, String(localized: "Non ammesso")),
-            (#"\binsuff\w*"#, String(localized: "Insufficiente")),
-            (#"\b(ritirat[oa]|rit)\b"#, String(localized: "Ritirato")),
-            (#"\b(assente|ass)\b"#, String(localized: "Assente")),
-            (#"\brespint[oa]\b"#, String(localized: "Respinto")),
-            (#"(\bn\.\s?c\.|\bnc\b|non classificat[oa])"#, String(localized: "Non classificato")),
-            (#"\bammess[oa]\b"#, String(localized: "Ammesso")),
-            (#"\bsuperat[oa]\b"#, String(localized: "Superato")),
+            (#"\b(non ammess[oa]|not admitted)\b"#, String(localized: "Non ammesso")),
+            (#"\b(non superat[oa]|not passed)\b"#, String(localized: "Insufficiente")),
+            (#"\b(insuff\w*|fail(ed)?)\b"#, String(localized: "Insufficiente")),
+            (#"\b(ritirat[oa]|rit|withdrawn)\b"#, String(localized: "Ritirato")),
+            (#"\b(assente|ass|absent)\b"#, String(localized: "Assente")),
+            (#"\b(respint[oa]|rejected)\b"#, String(localized: "Respinto")),
+            (#"(\bn\.\s?c\.|\bnc\b|non classificat[oa]|not graded)"#, String(localized: "Non classificato")),
+            (#"\b(ammess[oa]|admitted)\b"#, String(localized: "Ammesso")),
+            (#"\b(superat[oa]|passed)\b"#, String(localized: "Superato")),
             (#"\bidone[oa]\b"#, String(localized: "Idoneo")),
         ]
-        for (pattern, label) in words where folded.range(of: pattern, options: .regularExpression) != nil {
-            return label
+        let hits = words.enumerated().compactMap { index, word -> (String.Index, Int, String)? in
+            folded.range(of: word.0, options: .regularExpression).map { ($0.lowerBound, index, word.1) }
         }
-        if folded.range(of: #"\b30\s*(e\s*lode|l)\b"#, options: .regularExpression) != nil { return "30L" }
+        // Earliest on the line; at the same position, the more specific rule
+        // (listed first) — "not passed" over "passed".
+        if let first = hits.min(by: { ($0.0, $0.1) < ($1.0, $1.1) }) { return first.2 }
+        if folded.range(of: #"\b30\s*(e\s*lode|l|cum laude|with honou?rs)\b"#, options: .regularExpression) != nil {
+            return "30L"
+        }
         if let outOf30 = matches(#"(?<!\d)([0-9]|[12][0-9]|30)\s*/\s*30(?!\d)"#, in: folded).first {
             return outOf30.components(separatedBy: "/").first?.trimmingCharacters(in: .whitespaces)
         }

@@ -42,20 +42,24 @@ nonisolated enum DocumentClassifier {
         return tags
     }
 
-    // R1 — results. "ammessi" covers "ammessi all'orale".
-    private static let results = #"\b(esit[oi]|risultati|valutazioni|vot[oi]|graduatoria|ammessi|results|grades|marks)\b"#
+    // Every rule reads Italian and English: a teaching's language is per
+    // module and per degree course (see `TeachingLanguage`), and teachers of
+    // English-taught courses name their files in English.
+    // R1 — results. "ammessi" covers "ammessi all'orale"; "z scores" is
+    // statistics, not marks.
+    private static let results = #"\b(esit[oi]|risultati|valutazioni|vot[oi]|graduatoria|ammessi|results|grades|marks|(?<!z )scores|admitted)\b"#
     /// Syllabi call their learning outcomes "risultati di apprendimento".
-    private static let learningOutcomes = #"risultati (di apprendimento|attesi)"#
+    private static let learningOutcomes = #"(risultati (di apprendimento|attesi)|learning outcomes)"#
     // R2 — solutions.
-    private static let solutions = #"\b(soluzion[ei]|svolt[oaie]|correzion[ei]|solutions?|solved|risolt[oiae])\b"#
+    private static let solutions = #"\b(soluzion[ei]|svolt[oaie]|correzion[ei]|solutions?|solved|risolt[oiae]|answer keys?|answers)\b"#
     // R3 — the text of an exam.
-    private static let examText = #"\b(testo|tema|traccia|compito)\b"#
+    private static let examText = #"\b(testo|tema|traccia|compito|exam papers?|exam texts?|past exams?)\b"#
     // R4 — notices: rooms, lists, instructions.
-    private static let notice = #"\b(aule?|suddivisione|ripartizione|convocazion[ei]|istruzioni|avvis[oi]|orari[oa]? (dell )?esame)\b"#
+    private static let notice = #"\b(aule?|suddivisione|ripartizione|convocazion[ei]|istruzioni|avvis[oi]|orari[oa]? (dell )?esame|rooms?|room allocation|seating|instructions|notices?|exam schedule)\b"#
     // R6, R7, R10.
-    private static let exercise = #"\b(esercitazion[ei]|eserciz[io]|exercises?|tutorato|lab|laboratorio)\b"#
-    private static let lecture = #"\b(lezion[ei]|lectures?|slides?|lucidi|dispens[ae]|capitolo)\b"#
-    private static let admin = #"\b(programma|syllabus|regole|modalita d esame|calendario)\b"#
+    private static let exercise = #"\b(esercitazion[ei]|eserciz[io]|exercises?|tutorato|lab|laboratorio|tutorials?|problem sets?|practice sessions?)\b"#
+    private static let lecture = #"\b(lezion[ei]|lectures?|slides?|lucidi|dispens[ae]|capitolo|handouts?|lecture notes)\b"#
+    private static let admin = #"\b(programma|syllabus|regole|modalita d esame|calendario|exam rules|course schedule)\b"#
 
     /// ICU patterns, as strings: a `Regex` literal is not `Sendable`, and
     /// these are shared by every call.

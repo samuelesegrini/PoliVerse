@@ -29,8 +29,14 @@ struct ManifestoDetailView: View {
                     }
                 }
 
-                if !detail.facts.isEmpty {
+                if !detail.facts.isEmpty || !detail.languages.isEmpty {
                     Section("Insegnamento") {
+                        // First, because it decides the language of the
+                        // lectures, the materials and the exam.
+                        if !detail.languages.isEmpty {
+                            LabeledContent("Lingua di erogazione",
+                                           value: detail.languages.map(\.label).joined(separator: ", "))
+                        }
                         ForEach(detail.facts, id: \.label) { fact in
                             LabeledContent(fact.label, value: fact.value)
                         }

@@ -7598,6 +7598,36 @@
           }
         }
       }
+    },
+    "Italiano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Italian"
+          }
+        }
+      }
+    },
+    "Inglese" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "English"
+          }
+        }
+      }
+    },
+    "Lingua di erogazione" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language of instruction"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

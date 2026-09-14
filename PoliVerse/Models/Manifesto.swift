@@ -30,6 +30,31 @@ nonisolated struct ManifestoTeaching: Identifiable, Sendable, Hashable {
     let degreeCourse: String?
 }
 
+/// The language a teaching is delivered in, as the manifesto flags it.
+///
+/// Per module, not per teaching: the same teaching can be in English for one
+/// degree course and in Italian for another, and a split teaching can run one
+/// bracket in each. "Non definita" on the page is simply absent here.
+nonisolated enum TeachingLanguage: String, Sendable, Hashable, Codable, CaseIterable {
+    case italian, english
+
+    /// The manifesto's own flag images: `flags/it.png`, `flags/en.png`.
+    init?(flag: String) {
+        switch flag.lowercased() {
+        case "it": self = .italian
+        case "en": self = .english
+        default: return nil
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .italian: String(localized: "Italiano")
+        case .english: String(localized: "Inglese")
+        }
+    }
+}
+
 /// One module of a teaching, with the alphabetical bracket it serves.
 ///
 /// Big first-year teachings are split by surname — the *scaglione* — and which
@@ -43,7 +68,7 @@ nonisolated struct ManifestoModule: Identifiable, Sendable, Hashable {
     let teachers: [ManifestoTeacher]
     let credits: Double?
     let period: String?
-    let language: String?
+    let language: TeachingLanguage?
     /// Inclusive lower bound of the surname bracket, e.g. `"A"`.
     let scaglioneFrom: String?
     /// Exclusive upper bound, e.g. `"ZZZZ"`.
@@ -102,10 +127,14 @@ nonisolated struct ManifestoDetail: Sendable, Hashable {
     let summary: String?
     let ssd: [ManifestoSSD]
     let modules: [ManifestoModule]
+    /// Every language the teaching is offered in on this page, in order.
+    /// Read from the rows themselves, so it is there even when the module
+    /// table has no code column to parse modules from.
+    let languages: [TeachingLanguage]
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.code == rhs.code && lhs.name == rhs.name
-            && lhs.modules == rhs.modules && lhs.ssd == rhs.ssd
+            && lhs.modules == rhs.modules && lhs.ssd == rhs.ssd && lhs.languages == rhs.languages
     }
 
     func hash(into hasher: inout Hasher) {
