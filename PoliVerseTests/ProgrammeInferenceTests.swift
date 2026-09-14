@@ -95,8 +95,7 @@ struct ProgrammeInferenceTests {
 }
 
 /// Courses outside the programme in use — a master's course while signed in
-/// with the bachelor's matricola — read from the plan the student's other
-/// courses of that year point to, not from the first degree course offering it.
+/// with the bachelor's matricola.
 @Suite("Other programmes")
 struct OtherProgrammeTests {
     private func teaching(_ course: String, _ plan: String) -> ManifestoTeaching {
@@ -111,39 +110,46 @@ struct OtherProgrammeTests {
         #expect(PlanCandidates.distinct(rows).map { "\($0.courseCode)/\($0.planCode ?? "")" } == ["511/GEC", "542/T2A", "542/T2D"])
     }
 
-    @Test("A school named on a teaching page is the cascade's school of that name")
+}
+
+/// The same, from the catalogue search alone: a search by code already lists
+/// every degree course and plan offering the teaching, so the student's
+/// degree course is the one offering most of their courses of that year.
+@Suite("Degree course from searches")
+struct SearchInferenceTests {
+    private func row(_ code: String, _ degree: String, _ plan: String, heading: String? = nil) -> ManifestoTeaching {
+        ManifestoTeaching(code: code, name: code, courseCode: degree, planCode: plan, idItemOfferta: nil, idRiga: nil,
+                          semester: "1", year: "2026", credits: nil, school: nil,
+                          degreeCourse: heading ?? "Ing. Ind-Inf (Mag.)(ord. 96/23) - MI (\(degree)) X")
+    }
+
+    @Test("The degree course offering most of the student's courses, and its plan offering most")
+    func degree() throws {
+        let offerings = [
+            "054443": [row("054443", "511", "GEC"), row("054443", "542", "T2A"), row("054443", "542", "T2I"), row("054443", "560", "Z2A")],
+            "095946": [row("095946", "542", "T2I"), row("095946", "557", "MMI")],
+            "052496": [row("052496", "542", "T2I"), row("052496", "553", "MST")],
+        ]
+        let answer = try #require(SearchInference.row(for: "054443", offerings: offerings))
+        #expect(answer.courseCode == "542")
+        #expect(answer.planCode == "T2I")
+    }
+
+    @Test("With nothing else to go on, several degree courses are not an answer; one is")
+    func alone() {
+        let several = ["054443": [row("054443", "511", "GEC"), row("054443", "542", "T2A")]]
+        #expect(SearchInference.row(for: "054443", offerings: several) == nil)
+        #expect(SearchInference.tiedRows(for: "054443", offerings: several).map(\.courseCode) == ["511", "542"])
+        let one = ["054443": [row("054443", "542", "T2A"), row("054443", "542", "T2I")]]
+        #expect(SearchInference.row(for: "054443", offerings: one)?.planCode == "T2A")
+    }
+
+    @Test("The school comes from the result's heading, shared degree courses included")
     func school() {
-        let options = [CatalogueOption(value: "222", label: "Scuola di Architettura Urbanistica Ingegneria delle Costruzioni (Arc. Urb. Ing. Cos.)", group: nil),
+        let options = [CatalogueOption(value: "1", label: "Scuola di Ingegneria Civile, Ambientale e Territoriale (Ing. Civ)", group: nil),
                        CatalogueOption(value: "225", label: "Scuola di Ingegneria Industriale e dell'Informazione (Ing. Ind-Inf)", group: nil)]
-        #expect(PlanCandidates.school(named: "Scuola di Ingegneria Industriale e dell'Informazione", in: options) == "225")
-        #expect(PlanCandidates.school(named: "Scuola del Design", in: options) == nil)
-    }
-
-    @Test("The plan with most of the student's courses of that year is theirs; one shared course is not enough")
-    func scoring() throws {
-        let t2a = CatalogueSelection(year: "2026", campus: "ALL_SEDI", school: "225", degree: "542", plan: "T2A")
-        let geo = CatalogueSelection(year: "2026", campus: "ALL_SEDI", school: "225", degree: "511", plan: "GEC")
-        let enrolled: Set = ["054443", "052496", "095946", "054298"]
-        let best = try #require(PlanCandidates.best(enrolled: enrolled, candidates: [
-            (geo, ["054443", "099999"]), (t2a, ["054443", "052496", "095946", "054298", "011111"]),
-        ]))
-        #expect(best == t2a)
-        #expect(PlanCandidates.best(enrolled: ["054443"], candidates: [(geo, ["054443"]), (t2a, ["054443"])]) == nil)
-    }
-
-    /// Live, 2026-09-14: 054443 has the same brackets in every plan of 542
-    /// (A–DAT, DAT–MOH, MOH–ZZZZ) and different ones in 560 (A–E, E–P,
-    /// P–ZZZZ). The degree course decides; a tie between its plans does not matter.
-    @Test("Plans of one degree course tying is still an answer; two degree courses tying is not")
-    func degreeFirst() {
-        let t2a = CatalogueSelection(year: "2026", campus: "ALL_SEDI", school: "225", degree: "542", plan: "T2A")
-        let t2i = t2a.setting(.plan, to: "T2I")
-        let z2a = CatalogueSelection(year: "2026", campus: "ALL_SEDI", school: "225", degree: "560", plan: "Z2A")
-        let enrolled: Set = ["1", "2", "3", "4", "5"]
-        #expect(PlanCandidates.best(enrolled: enrolled, candidates: [(t2a, ["1", "2", "3", "4", "5"]), (t2i, ["1", "2", "3", "4", "5"]),
-                                                                    (z2a, ["1", "2", "3", "4"])]) == t2a)
-        #expect(PlanCandidates.best(enrolled: enrolled, candidates: [(t2a, ["1", "2", "3"]), (z2a, ["1", "2", "3"])]) == nil)
-        #expect(PlanCandidates.tied(enrolled: enrolled, candidates: [(t2a, ["1", "2", "3"]), (t2i, ["1", "2", "3"]),
-                                                                    (z2a, ["1", "2", "3"])]) == [t2a, z2a])
+        #expect(SearchInference.school(heading: "Ing. Ind-Inf (Mag.)(ord. 96/23) - MI (542) Computer Science and Engineering", in: options) == "225")
+        #expect(SearchInference.school(heading: "Ing. Civ, Ing. Ind-Inf (Mag.)(ord. 96/23) - MI (511) Geoinformatics Engineering", in: options) == "1")
+        #expect(SearchInference.school(heading: "Design (1 liv.) - MI (1) X", in: options) == nil)
     }
 }

@@ -156,41 +156,58 @@ nonisolated enum BracketInference {
     }
 }
 
-/// The degree courses and plans that offer a teaching, and which of them is
-/// the student's when it is not the programme in use.
+/// The degree courses and plans that offer a teaching.
 nonisolated enum PlanCandidates {
     static func distinct(_ rows: [ManifestoTeaching]) -> [ManifestoTeaching] {
         var seen: Set<String> = []
         return rows.filter { seen.insert("\($0.courseCode)/\($0.planCode ?? "")").inserted }
     }
+}
 
-    static func school(named name: String, in options: [CatalogueOption]) -> String? {
-        let key = { (text: String) in PlanCourseMatch.key(text) }
-        let wanted = key(name)
-        guard !wanted.isEmpty else { return nil }
-        return options.first { key($0.label) == wanted || key($0.label).hasPrefix(wanted + " ") }?.value
+/// Which degree course a course belongs to, from catalogue searches only.
+///
+/// A search by teaching code returns every degree course and plan offering
+/// it, in about a second and a half, without the pages of any of them. Run for
+/// each of the student's courses of a year, the degree course offering most of
+/// them is theirs: Software Engineering 2 alone is offered by five master's
+/// courses, but only 542 also offers the rest of what the student attends.
+nonisolated enum SearchInference {
+    /// The row of `code` in the degree course offering most of the student's
+    /// courses — and, within it, in the plan offering most. Nil when degree
+    /// courses tie.
+    static func row(for code: String, offerings: [String: [ManifestoTeaching]]) -> ManifestoTeaching? {
+        let tied = tiedRows(for: code, offerings: offerings)
+        return tied.count == 1 ? tied[0] : nil
     }
 
-    /// The candidate sharing most of the student's courses of that year.
-    ///
-    /// By degree course first: plans of one degree course share a teaching's
-    /// brackets, different degree courses do not — that difference is the
-    /// wrong lecturer. The teaching itself is in every candidate, so a degree
-    /// course is an answer only with another course in common and no tie.
-    static func best(enrolled: Set<String>, candidates: [(CatalogueSelection, [String])]) -> CatalogueSelection? {
-        let scored = candidates.map { ($0.0, enrolled.intersection($0.1).count) }
-        var byDegree: [String: Int] = [:]
-        for (selection, score) in scored { byDegree[selection.degree] = max(byDegree[selection.degree] ?? 0, score) }
-        guard let top = byDegree.values.max(), top >= 2, byDegree.values.filter({ $0 == top }).count == 1 else { return nil }
-        return scored.first { $0.1 == top }?.0
+    /// One row of `code` per degree course sharing the top score.
+    static func tiedRows(for code: String, offerings: [String: [ManifestoTeaching]]) -> [ManifestoTeaching] {
+        guard let own = offerings[code], !own.isEmpty else { return [] }
+        let degreeScore = { (degree: String) in
+            offerings.values.filter { rows in rows.contains { $0.courseCode == degree } }.count
+        }
+        let planScore = { (row: ManifestoTeaching) in
+            offerings.values.filter { rows in rows.contains { $0.courseCode == row.courseCode && $0.planCode == row.planCode } }.count
+        }
+        var degrees: [String] = []
+        for row in own where !degrees.contains(row.courseCode) { degrees.append(row.courseCode) }
+        guard let top = degrees.map(degreeScore).max() else { return [] }
+        return degrees.filter { degreeScore($0) == top }.compactMap { degree in
+            let rows = own.filter { $0.courseCode == degree }
+            let best = rows.map(planScore).max() ?? 0
+            return rows.first { planScore($0) == best }
+        }
     }
 
-    /// The first plan of each degree course sharing the top score, when more
-    /// than one degree course does — for settling the tie another way.
-    static func tied(enrolled: Set<String>, candidates: [(CatalogueSelection, [String])]) -> [CatalogueSelection] {
-        let scored = candidates.map { ($0.0, enrolled.intersection($0.1).count) }
-        guard let top = scored.map(\.1).max(), top >= 1 else { return [] }
-        var seen: Set<String> = []
-        return scored.filter { $0.1 == top && seen.insert($0.0.degree).inserted }.map(\.0)
+    /// The school a result's heading abbreviates — "Ing. Ind-Inf (Mag.)…" —
+    /// matched to the cascade's "Scuola … (Ing. Ind-Inf)". A degree course
+    /// shared by two schools takes the first.
+    static func school(heading: String, in options: [CatalogueOption]) -> String? {
+        guard let prefix = heading.components(separatedBy: " (").first else { return nil }
+        for abbreviation in prefix.components(separatedBy: ", ") {
+            let wanted = "(" + abbreviation.trimmingCharacters(in: .whitespaces) + ")"
+            if let option = options.first(where: { $0.label.hasSuffix(wanted) }) { return option.value }
+        }
+        return nil
     }
 }
