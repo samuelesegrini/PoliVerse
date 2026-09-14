@@ -10,6 +10,8 @@ struct CourseDetailView: View {
     @Environment(\.locale) private var locale
     @Environment(\.openURL) private var openURL
     @Environment(UpdateFeed.self) private var feed
+    @Environment(ManifestiService.self) private var manifesti
+    @Environment(Session.self) private var session
     @State private var selectedExam: ExamSession?
 
     private var accent: Color { Theme.accent(for: course) }
@@ -146,8 +148,17 @@ struct CourseDetailView: View {
         }
         .sheet(item: $selectedExam) { ExamDetailView(exam: $0) }
         .task {
-            await agenda.load(around: .now)
+            async let lectures: Void = agenda.load(around: .now)
             await career.load()
+            // The scheda takes a few pages to find: start now, so "Programma"
+            // opens on an answer rather than a spinner. After the career, so
+            // the degree course is known and the tap asks the same question.
+            if let code = course.teachingCode {
+                manifesti.prefetchSyllabus(
+                    teachingCode: code, surname: session.student?.lastName,
+                    degreeName: career.planHeader?.course, yearCode: course.academicYearStart)
+            }
+            await lectures
         }
     }
 

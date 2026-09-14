@@ -34,7 +34,12 @@ final class ManifestiService {
 
     var year: AcademicYear = AcademicYear.recent().first ?? AcademicYear(code: "2026")
 
+    /// The cart's session: its cookie is the personalised timetable.
     private let session: URLSession
+    /// Catalogue reads: no cookies at all. The service serialises requests
+    /// that share a `JSESSIONID`, so eight "parallel" detail pages on the
+    /// cart's session took eight times as long as one.
+    private let catalogue: URLSession
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "manifesti")
     private let base = URL(string: "https://onlineservices.polimi.it/manifesti/manifesti/controller")!
     private let syllabusBase = URL(string:
@@ -51,8 +56,15 @@ final class ManifestiService {
             forGroupContainerIdentifier: "manifesti")
         configuration.httpShouldSetCookies = true
         configuration.requestCachePolicy = .returnCacheDataElseLoad
-        let session = URLSession(configuration: configuration)
-        self.session = session
+        self.session = URLSession(configuration: configuration)
+
+        let reads = URLSessionConfiguration.default
+        reads.httpCookieStorage = nil
+        reads.httpShouldSetCookies = false
+        reads.httpCookieAcceptPolicy = .never
+        reads.requestCachePolicy = .returnCacheDataElseLoad
+        let session = URLSession(configuration: reads)
+        self.catalogue = session
 
         let base = self.base
         detailLoader = ResourceLoader(lifetime: .seconds(3600), capacity: 64) { key in
@@ -110,7 +122,7 @@ final class ManifestiService {
         form["jaf_currentWFID"] = "main"
 
         guard let html = await post(
-            "ricerche/RicercaPerInsegnamentoPublic.do", form: form)
+            "ricerche/RicercaPerInsegnamentoPublic.do", form: form, session: catalogue)
         else {
             errorMessage = String(localized: "Il catalogo del Politecnico non ha risposto.")
             return
@@ -137,12 +149,30 @@ final class ManifestiService {
         // sheet ask for the same teaching, and each answer costs up to nine
         // pages.
         if let cached = picks[key] { return cached }
-        guard let answer = await findPick(teachingCode: teachingCode, surname: surname,
-                                          degreeName: degreeName, yearCode: yearCode)
-        else { return nil }   // not reached: asked again next time, not remembered as "none"
+        // The course page starts this before the student taps "Programma":
+        // the tap joins that search instead of starting a second one.
+        if let running = pending[key] { return await running.value ?? nil }
+        let task = Task { await findPick(teachingCode: teachingCode, surname: surname,
+                                         degreeName: degreeName, yearCode: yearCode) }
+        pending[key] = task
+        let answer = await task.value
+        pending[key] = nil
+        // Not reached: asked again next time, not remembered as "none".
+        guard let answer else { return nil }
         picks[key] = answer
         return answer
     }
+
+    /// Starts finding a teaching's scheda, and its syllabus, without waiting.
+    func prefetchSyllabus(teachingCode: String, surname: String?, degreeName: String?, yearCode: String?) {
+        Task(priority: .utility) {
+            let pick = await syllabusPick(teachingCode: teachingCode, surname: surname,
+                                          degreeName: degreeName, yearCode: yearCode)
+            if let id = pick?.module.syllabusID { _ = await syllabus(for: id) }
+        }
+    }
+
+    @ObservationIgnored private var pending: [String: Task<SyllabusPicker.Pick??, Never>] = [:]
 
     /// Answers the catalogue actually gave — a scheda, or a real "none".
     @ObservationIgnored private var picks: [String: SyllabusPicker.Pick?] = [:]
@@ -157,7 +187,8 @@ final class ManifestiService {
             "tipoInsegnamento": "ALL_TIPO_INSEGNAMENTO", "insegn_ricerca": teachingCode,
             "lang": PoliMiLanguage.current.rawValue, "jaf_currentWFID": "main",
         ]
-        guard let html = await post("ricerche/RicercaPerInsegnamentoPublic.do", form: form) else { return nil }
+        guard let html = await post("ricerche/RicercaPerInsegnamentoPublic.do", form: form,
+                                    session: catalogue) else { return nil }
         var seen: Set<String> = []
         var rows: [ManifestoTeaching] = []
         for teaching in ManifestoParser.searchResults(html) where teaching.code == teachingCode {
@@ -324,7 +355,8 @@ final class ManifestiService {
         }
     }
 
-    private func post(_ path: String, form: [String: String]) async -> String? {
+    private func post(_ path: String, form: [String: String], session: URLSession? = nil) async -> String? {
+        let session = session ?? self.session
         guard let url = URL(string: "\(base.absoluteString)/\(path)") else { return nil }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"

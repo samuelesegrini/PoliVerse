@@ -92,10 +92,15 @@ enum PerformanceMonitor {
 /// Held for the process lifetime — the streams stop when the manager goes —
 /// and one instance only: two managers each receive "a non-deterministic
 /// subset of reports rather than a full copy".
+///
+/// The state domains are fixed at creation, so they are declared here rather
+/// than where the states are reported — see ``PerformanceStates``.
 @available(iOS 27, *)
 nonisolated final class ModernMetricStream: Sendable {
     static let shared = ModernMetricStream()
-    let manager = MetricManager()
+    let manager = MetricManager(enabledStateReportingDomains: MainActor.assumeIsolated {
+        PerformanceStates.enabledDomains
+    })
 
     func start() {
         let manager = manager
