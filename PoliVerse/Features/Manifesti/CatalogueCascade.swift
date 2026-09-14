@@ -10,6 +10,9 @@ struct CatalogueCascade: View {
     @Binding var page: CataloguePage?
     /// Where to open when there is no page yet.
     let initial: CatalogueSelection?
+    /// Whether to open on the degree course the career in use names, when
+    /// there is nothing to open on — wrong for picking another career's.
+    var locatesFromCareer = true
 
     @Environment(ManifestiService.self) private var manifesti
     @Environment(CareerService.self) private var career
@@ -77,10 +80,13 @@ struct CatalogueCascade: View {
             show(found)
             return
         }
-        await career.load()
-        if let degree = career.planHeader?.course, let located = await manifesti.locateDegree(named: degree) {
-            show(located)
-            return
+        if locatesFromCareer {
+            await career.load()
+            if let degree = career.planHeader?.course,
+               let located = await manifesti.locateDegree(named: degree, kind: career.planHeader?.level) {
+                show(located)
+                return
+            }
         }
         guard let first = await manifesti.cataloguePage(nil) else {
             message = String(localized: "Il Manifesto degli studi non risponde. Riprova tra poco.")
@@ -166,27 +172,43 @@ struct BracketPicker: View {
     }
 }
 
-/// The student's degree course and plan, chosen in the manifesto's cascade.
+/// The degree course and plan of one career, chosen in the manifesto's cascade.
 struct StudyProgrammeSheet: View {
+    /// Nil for the career in use.
+    var career: String? = nil
+
     @Environment(StudyProgrammeService.self) private var programmes
+    @Environment(Session.self) private var session
     @Environment(\.dismiss) private var dismiss
     @State private var page: CataloguePage?
+
+    private var target: String? { career ?? session.student?.matricola }
 
     var body: some View {
         NavigationStack {
             Form {
-                CatalogueCascade(page: $page, initial: programmes.programme?.selection)
+                if let career {
+                    Section {
+                        LabeledContent("Matricola", value: career)
+                    } footer: {
+                        if career != session.student?.matricola {
+                            Text("Per una carriera diversa da quella in uso il Politecnico non dice il corso di studi: sceglilo tu. I suoi corsi saranno letti da questo piano.")
+                        }
+                    }
+                }
+                CatalogueCascade(page: $page, initial: target.flatMap(programmes.initialSelection(for:)),
+                                 locatesFromCareer: career == nil || career == session.student?.matricola)
             }
-            .navigationTitle("Il tuo corso di studi")
+            .navigationTitle("Corso di studi")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Annulla") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Salva") {
-                        if let page { programmes.set(page, confirmed: true) }
+                        if let page, let target { programmes.set(page, for: target) }
                         dismiss()
                     }
-                    .disabled(page?.selection == nil)
+                    .disabled(page?.selection == nil || target == nil)
                 }
             }
         }

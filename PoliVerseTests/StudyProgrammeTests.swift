@@ -77,3 +77,35 @@ struct StudyProgrammeTests {
         #expect(programme.selection(forYear: "2025").plan == "IT1")
     }
 }
+
+/// Each career keeps its own programme, chosen by the student; courses are
+/// looked up in the one in use first, then in the others.
+@Suite("Programmes per career")
+struct CareerProgrammesTests {
+    private func programme(_ degree: String, _ plan: String, confirmed: Bool = true) -> StudyProgramme {
+        StudyProgramme(selection: CatalogueSelection(year: "2026", campus: "ALL_SEDI", school: "225", degree: degree, plan: plan),
+                       degreeLabel: degree, planLabel: plan, isConfirmed: confirmed)
+    }
+
+    @Test("The careers listed, the one in use first, each with its programme or none")
+    func rows() throws {
+        let defaults = try #require(UserDefaults(suiteName: "career-programmes-tests"))
+        defaults.removePersistentDomain(forName: "career-programmes-tests")
+        let store = StudyProgrammeStore(defaults: defaults)
+        store.save(programme("531", "I3I"), for: "986617")
+        let rows = CareerProgrammes.rows(current: "986617", careers: ["337940", "986617"], store: store)
+        #expect(rows.map(\.matricola) == ["986617", "337940"])
+        #expect(rows.map { $0.programme?.selection.degree } == ["531", nil])
+    }
+
+    @Test("Other careers are searched only with a programme the student confirmed")
+    func others() throws {
+        let defaults = try #require(UserDefaults(suiteName: "career-programmes-tests-2"))
+        defaults.removePersistentDomain(forName: "career-programmes-tests-2")
+        let store = StudyProgrammeStore(defaults: defaults)
+        store.save(programme("542", "T2A"), for: "337940")
+        store.save(programme("999", "X", confirmed: false), for: "111111")
+        let others = CareerProgrammes.others(current: "986617", careers: ["986617", "337940", "111111"], store: store)
+        #expect(others.map(\.selection.degree) == ["542"])
+    }
+}

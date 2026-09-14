@@ -226,3 +226,32 @@ nonisolated enum SearchInference {
         return nil
     }
 }
+
+/// The student's careers side by side, each with the programme chosen for it.
+///
+/// A conditional master's enrolment gets nothing from the career services —
+/// no plan header, no libretto — so its programme can only be the student's
+/// choice. Once chosen, its courses are read from that plan whichever
+/// matricola the app is signed in with.
+nonisolated enum CareerProgrammes {
+    struct Row: Sendable, Equatable, Identifiable {
+        var id: String { matricola }
+        let matricola: String
+        let programme: StudyProgramme?
+    }
+
+    static func rows(current: String?, careers: [String], store: StudyProgrammeStore) -> [Row] {
+        var matricole: [String] = []
+        for matricola in [current].compactMap({ $0 }) + careers where !matricole.contains(matricola) {
+            matricole.append(matricola)
+        }
+        return matricole.map { Row(matricola: $0, programme: store.programme(for: $0)) }
+    }
+
+    /// Confirmed programmes of the careers not in use.
+    static func others(current: String?, careers: [String], store: StudyProgrammeStore) -> [StudyProgramme] {
+        rows(current: current, careers: careers, store: store)
+            .filter { $0.matricola != current }
+            .compactMap(\.programme).filter(\.isConfirmed)
+    }
+}

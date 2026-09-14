@@ -195,6 +195,7 @@ struct CourseSyllabusView: View {
     @State private var syllabus: Syllabus?
     @State private var loading = true
     @State private var changingProgramme = false
+    @State private var editingCareer: CareerChoice?
     @State private var choosingBracket = false
     @State private var linking = false
 
@@ -248,6 +249,7 @@ struct CourseSyllabusView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task(id: programmes.programme) { await load() }
         .sheet(isPresented: $changingProgramme) { StudyProgrammeSheet() }
+        .sheet(item: $editingCareer) { choice in StudyProgrammeSheet(career: choice.matricola) }
         .sheet(isPresented: $linking) { PlanLinkSheet(course: course) }
         .sheet(isPresented: $choosingBracket) {
             BracketPicker(title: course.name, surname: session.student?.lastName ?? "",
@@ -284,8 +286,32 @@ struct CourseSyllabusView: View {
                 } else {
                     Button("Scegli il tuo corso di studi") { changingProgramme = true }
                 }
+                let rows = programmes.careerRows
+                if rows.count > 1 {
+                    ForEach(rows) { row in
+                        Button { editingCareer = CareerChoice(matricola: row.matricola) } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(row.matricola == session.student?.matricola
+                                         ? String(localized: "Matricola \(row.matricola) · in uso")
+                                         : String(localized: "Matricola \(row.matricola)"))
+                                        .font(.subheadline)
+                                    Text(row.programme.map { "\($0.degreeLabel) · \($0.planLabel)" }
+                                         ?? String(localized: "Corso di studi non scelto"))
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                            }
+                            .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             } footer: {
-                if programmes.programme?.isConfirmed == false {
+                if programmes.careerRows.count > 1 {
+                    Text("Ogni carriera ha il suo corso di studi: i corsi dell'altra carriera sono letti dal piano scelto per lei.")
+                } else if programmes.programme?.isConfirmed == false {
                     Text("Dedotto dal nome del tuo corso di studi: controlla che corso e piano siano i tuoi.")
                 } else if programmes.programme == nil {
                     Text("Con corso di studi e piano la scheda è quella del tuo piano, non una scelta per nome.")
@@ -302,6 +328,12 @@ struct CourseSyllabusView: View {
         syllabus = nil
         if let id = pick?.module.syllabusID { syllabus = await manifesti.syllabus(for: id) }
     }
+}
+
+/// `sheet(item:)` identity for the career whose programme is being chosen.
+private struct CareerChoice: Identifiable {
+    let matricola: String
+    var id: String { matricola }
 }
 
 /// Links a course to a teaching of the plan by hand, for the few that code

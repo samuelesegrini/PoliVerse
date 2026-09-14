@@ -155,6 +155,38 @@
         }
       }
     },
+    "%@° anno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Year %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@° anno"
+          }
+        }
+      }
+    },
+    "%@° sem" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@° sem"
+          }
+        }
+      }
+    },
     "%lld" : {
       "localizations" : {
         "en" : {
@@ -760,6 +792,22 @@
         }
       }
     },
+    "A scelta · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elective · %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A scelta · %@"
+          }
+        }
+      }
+    },
     "Accedi" : {
       "localizations" : {
         "en" : {
@@ -1310,6 +1358,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Anno accademico"
+          }
+        }
+      }
+    },
+    "Anno di corso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Year of course"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anno di corso"
           }
         }
       }
@@ -2012,6 +2076,22 @@
         }
       }
     },
+    "Cambia corso di studi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change degree course"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambia corso di studi"
+          }
+        }
+      }
+    },
     "Capienza" : {
       "localizations" : {
         "en" : {
@@ -2167,6 +2247,7 @@
       }
     },
     "Cerca un insegnamento per nome o codice e toccalo per aggiungerlo." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2389,6 +2470,38 @@
         }
       }
     },
+    "Collega a un altro insegnamento del piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link to another teaching in the plan"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collega a un altro insegnamento del piano"
+          }
+        }
+      }
+    },
+    "Collega a un insegnamento del piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link to a teaching in the plan"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collega a un insegnamento del piano"
+          }
+        }
+      }
+    },
     "Collega WeBeep" : {
       "localizations" : {
         "en" : {
@@ -2431,6 +2544,22 @@
         }
       }
     },
+    "Come nel Manifesto degli studi: ogni scelta restringe la successiva. Il piano è quello preventivamente approvato (PSPA) che segui." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As in the Manifesto degli studi: each choice narrows the next. The plan is the pre-approved study plan (PSPA) you follow."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Come nel Manifesto degli studi: ogni scelta restringe la successiva. Il piano è quello preventivamente approvato (PSPA) che segui."
+          }
+        }
+      }
+    },
     "Come si svolge" : {
       "localizations" : {
         "en" : {
@@ -2469,6 +2598,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Con CIE scegli «Entra con le tue credenziali CIE»: la scorciatoia con l'app CieID non funziona per questa app."
+          }
+        }
+      }
+    },
+    "Con corso di studi e piano la scheda è quella del tuo piano, non una scelta per nome." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With your degree course and plan, the syllabus is the one of your plan, not a guess by name."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con corso di studi e piano la scheda è quella del tuo piano, non una scelta per nome."
           }
         }
       }
@@ -2870,6 +3015,22 @@
         }
       }
     },
+    "Da altri piani" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From other plans"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Da altri piani"
+          }
+        }
+      }
+    },
     "Da Servizi Online · verifica aula e orario prima dell'esame." : {
       "localizations" : {
         "en" : {
@@ -2897,6 +3058,7 @@
       }
     },
     "Dai tuoi corsi" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3059,6 +3221,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Inferred from the file name"
+          }
+        }
+      }
+    },
+    "Dedotto dal nome del tuo corso di studi: controlla che corso e piano siano i tuoi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Worked out from your degree course name: check that course and plan are yours."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dedotto dal nome del tuo corso di studi: controlla che corso e piano siano i tuoi."
           }
         }
       }
@@ -3352,6 +3530,22 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "È il mio corso di studi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is my degree course"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "È il mio corso di studi"
           }
         }
       }
@@ -4218,6 +4412,22 @@
         }
       }
     },
+    "Il Manifesto degli studi non risponde. Riprova tra poco." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Manifesto degli studi is not responding. Try again shortly."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il Manifesto degli studi non risponde. Riprova tra poco."
+          }
+        }
+      }
+    },
     "Il manifesto è il catalogo ufficiale: programmi, docenti, scaglioni e bibliografia di tutti gli insegnamenti, anche quelli che non segui." : {
       "localizations" : {
         "en" : {
@@ -4488,6 +4698,22 @@
         }
       }
     },
+    "Il tuo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yours"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo"
+          }
+        }
+      }
+    },
     "Il tuo cognome" : {
       "localizations" : {
         "en" : {
@@ -4504,12 +4730,76 @@
         }
       }
     },
+    "Il tuo corso di studi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your degree course"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo corso di studi"
+          }
+        }
+      }
+    },
     "Il tuo corso di studi non risulta tra quelli che offrono questo insegnamento: questa è la scheda del primo che lo offre. Controlla che sia la tua." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your degree programme isn't among those offering this course: this is the page of the first one that does. Check it's yours."
+          }
+        }
+      }
+    },
+    "Il tuo libretto non corrisponde più a questo piano, o il piano non c'è più quest'anno." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your record no longer matches this plan, or the plan is gone this year."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo libretto non corrisponde più a questo piano, o il piano non c'è più quest'anno."
+          }
+        }
+      }
+    },
+    "Il tuo piano non ha insegnamenti nell'anno di questo corso." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your plan has no teachings in this course's year."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo piano non ha insegnamenti nell'anno di questo corso."
+          }
+        }
+      }
+    },
+    "Il tuo scaglione dipende dal cognome. Sceglierne un altro vale solo per questo insegnamento." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your bracket follows your surname. Choosing another applies to this teaching only."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo scaglione dipende dal cognome. Sceglierne un altro vale solo per questo insegnamento."
           }
         }
       }
@@ -6097,6 +6387,22 @@
         }
       }
     },
+    "Nessun corso di studi con questa scelta. Prova un'altra sede o un altro anno." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No degree course for this choice. Try another campus or year."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun corso di studi con questa scelta. Prova un'altra sede o un altro anno."
+          }
+        }
+      }
+    },
     "Nessun corso nascosto" : {
       "localizations" : {
         "en" : {
@@ -6242,6 +6548,7 @@
       }
     },
     "Nessun risultato nel tuo corso di studi: disattiva il filtro per vedere gli altri corsi." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6502,6 +6809,7 @@
       }
     },
     "Nome o codice dell'insegnamento" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8084,11 +8392,28 @@
       }
     },
     "Questo corso non ha un codice d'insegnamento del Politecnico, quindi non si trova nel Manifesto degli studi." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "This course has no Politecnico course code, so it can't be found in the study programme catalogue."
+          }
+        }
+      }
+    },
+    "Questo corso non ha un codice d'insegnamento: scegli il tuo corso di studi per trovarlo nel tuo piano." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This course has no teaching code: choose your degree course to find it in your plan."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo corso non ha un codice d'insegnamento: scegli il tuo corso di studi per trovarlo nel tuo piano."
           }
         }
       }
@@ -8105,6 +8430,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Questo insegnamento è diviso in sezioni: scegli quella che frequenti. Se non scegli, il Politecnico usa quella del tuo scaglione."
+          }
+        }
+      }
+    },
+    "Questo insegnamento ha un solo scaglione per tutti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This teaching has a single bracket for everyone."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo insegnamento ha un solo scaglione per tutti."
+          }
+        }
+      }
+    },
+    "Questo piano non elenca insegnamenti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This plan lists no teachings."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo piano non elenca insegnamenti."
           }
         }
       }
@@ -8235,6 +8592,22 @@
         }
       }
     },
+    "Rimuovi il collegamento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove link"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi il collegamento"
+          }
+        }
+      }
+    },
     "Riprova" : {
       "localizations" : {
         "en" : {
@@ -8284,6 +8657,7 @@
       }
     },
     "Risultati" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8305,6 +8679,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Withdrawn"
+          }
+        }
+      }
+    },
+    "Salva" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salva"
           }
         }
       }
@@ -8415,6 +8805,38 @@
         }
       }
     },
+    "Scaglione %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bracket %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scaglione %@"
+          }
+        }
+      }
+    },
+    "Scaglione dei docenti della tua pagina WeBeep" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bracket of the lecturers on your WeBeep page"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scaglione dei docenti della tua pagina WeBeep"
+          }
+        }
+      }
+    },
     "Scaglioni per corso di studi" : {
       "localizations" : {
         "en" : {
@@ -8457,7 +8879,24 @@
         }
       }
     },
+    "Scegli il tuo corso di studi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose your degree course"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli il tuo corso di studi"
+          }
+        }
+      }
+    },
     "Scegli la riga del tuo corso di studi: lo stesso insegnamento può avere orari diversi in corsi diversi." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8483,6 +8922,22 @@
         }
       }
     },
+    "Scegli un altro scaglione" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose another bracket"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli un altro scaglione"
+          }
+        }
+      }
+    },
     "Scheda completa: programma e libri" : {
       "localizations" : {
         "en" : {
@@ -8493,7 +8948,24 @@
         }
       }
     },
+    "Scheda del tuo piano di studi, nello scaglione del tuo cognome o in quello che hai scelto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Syllabus from your study plan, in your surname's bracket or the one you chose."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scheda del tuo piano di studi, nello scaglione del tuo cognome o in quello che hai scelto."
+          }
+        }
+      }
+    },
     "Scheda scelta in base al tuo corso di studi e al tuo cognome, dal Manifesto degli studi." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8547,6 +9019,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Scrivi il nome di un insegnamento e premi invio."
+          }
+        }
+      }
+    },
+    "Scuola" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "School"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scuola"
           }
         }
       }
@@ -9013,6 +9501,7 @@
       }
     },
     "Solo il mio corso di studi" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9820,482 +10309,82 @@
         }
       }
     },
-    "%@° anno" : {
+    "Corso di studi non scelto" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Year %@"
+            "value" : "Degree course not chosen"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@° anno"
+            "value" : "Corso di studi non scelto"
           }
         }
       }
     },
-    "%@° sem" : {
+    "Matricola %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sem %@"
+            "value" : "Student number %@"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@° sem"
+            "value" : "Matricola %@"
           }
         }
       }
     },
-    "A scelta · %@" : {
+    "Matricola %@ · in uso" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Elective · %@"
+            "value" : "Student number %@ · in use"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A scelta · %@"
+            "value" : "Matricola %@ · in uso"
           }
         }
       }
     },
-    "Anno di corso" : {
+    "Ogni carriera ha il suo corso di studi: i corsi dell'altra carriera sono letti dal piano scelto per lei." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Year of course"
+            "value" : "Each career has its own degree course: the other career's courses are read from the plan chosen for it."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Anno di corso"
+            "value" : "Ogni carriera ha il suo corso di studi: i corsi dell'altra carriera sono letti dal piano scelto per lei."
           }
         }
       }
     },
-    "Come nel Manifesto degli studi: ogni scelta restringe la successiva. Il piano è quello preventivamente approvato (PSPA) che segui." : {
+    "Per una carriera diversa da quella in uso il Politecnico non dice il corso di studi: sceglilo tu. I suoi corsi saranno letti da questo piano." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "As in the Manifesto degli studi: each choice narrows the next. The plan is the pre-approved study plan (PSPA) you follow."
+            "value" : "For a career other than the one in use the Politecnico does not say the degree course: choose it yourself. Its courses will be read from this plan."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Come nel Manifesto degli studi: ogni scelta restringe la successiva. Il piano è quello preventivamente approvato (PSPA) che segui."
-          }
-        }
-      }
-    },
-    "Da altri piani" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "From other plans"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Da altri piani"
-          }
-        }
-      }
-    },
-    "Il Manifesto degli studi non risponde. Riprova tra poco." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The Manifesto degli studi is not responding. Try again shortly."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il Manifesto degli studi non risponde. Riprova tra poco."
-          }
-        }
-      }
-    },
-    "Il tuo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yours"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il tuo"
-          }
-        }
-      }
-    },
-    "Il tuo scaglione dipende dal cognome. Sceglierne un altro vale solo per questo insegnamento." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your bracket follows your surname. Choosing another applies to this teaching only."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il tuo scaglione dipende dal cognome. Sceglierne un altro vale solo per questo insegnamento."
-          }
-        }
-      }
-    },
-    "Nessun corso di studi con questa scelta. Prova un'altra sede o un altro anno." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No degree course for this choice. Try another campus or year."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nessun corso di studi con questa scelta. Prova un'altra sede o un altro anno."
-          }
-        }
-      }
-    },
-    "Questo insegnamento ha un solo scaglione per tutti." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This teaching has a single bracket for everyone."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Questo insegnamento ha un solo scaglione per tutti."
-          }
-        }
-      }
-    },
-    "Questo piano non elenca insegnamenti." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This plan lists no teachings."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Questo piano non elenca insegnamenti."
-          }
-        }
-      }
-    },
-    "Scaglione %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bracket %@"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scaglione %@"
-          }
-        }
-      }
-    },
-    "Scuola" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "School"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scuola"
-          }
-        }
-      }
-    },
-    "Cambia corso di studi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change degree course"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cambia corso di studi"
-          }
-        }
-      }
-    },
-    "Con corso di studi e piano la scheda è quella del tuo piano, non una scelta per nome." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "With your degree course and plan, the syllabus is the one of your plan, not a guess by name."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Con corso di studi e piano la scheda è quella del tuo piano, non una scelta per nome."
-          }
-        }
-      }
-    },
-    "Dedotto dal nome del tuo corso di studi: controlla che corso e piano siano i tuoi." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Worked out from your degree course name: check that course and plan are yours."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dedotto dal nome del tuo corso di studi: controlla che corso e piano siano i tuoi."
-          }
-        }
-      }
-    },
-    "Il tuo corso di studi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your degree course"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il tuo corso di studi"
-          }
-        }
-      }
-    },
-    "Salva" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Salva"
-          }
-        }
-      }
-    },
-    "Scegli il tuo corso di studi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose your degree course"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scegli il tuo corso di studi"
-          }
-        }
-      }
-    },
-    "Questo corso non ha un codice d'insegnamento: scegli il tuo corso di studi per trovarlo nel tuo piano." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This course has no teaching code: choose your degree course to find it in your plan."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Questo corso non ha un codice d'insegnamento: scegli il tuo corso di studi per trovarlo nel tuo piano."
-          }
-        }
-      }
-    },
-    "Scegli un altro scaglione" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose another bracket"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scegli un altro scaglione"
-          }
-        }
-      }
-    },
-    "Scheda del tuo piano di studi, nello scaglione del tuo cognome o in quello che hai scelto." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Syllabus from your study plan, in your surname's bracket or the one you chose."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scheda del tuo piano di studi, nello scaglione del tuo cognome o in quello che hai scelto."
-          }
-        }
-      }
-    },
-    "È il mio corso di studi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This is my degree course"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "È il mio corso di studi"
-          }
-        }
-      }
-    },
-    "Collega a un altro insegnamento del piano" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link to another teaching in the plan"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Collega a un altro insegnamento del piano"
-          }
-        }
-      }
-    },
-    "Collega a un insegnamento del piano" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link to a teaching in the plan"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Collega a un insegnamento del piano"
-          }
-        }
-      }
-    },
-    "Il tuo libretto non corrisponde più a questo piano, o il piano non c'è più quest'anno." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your record no longer matches this plan, or the plan is gone this year."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il tuo libretto non corrisponde più a questo piano, o il piano non c'è più quest'anno."
-          }
-        }
-      }
-    },
-    "Il tuo piano non ha insegnamenti nell'anno di questo corso." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your plan has no teachings in this course's year."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il tuo piano non ha insegnamenti nell'anno di questo corso."
-          }
-        }
-      }
-    },
-    "Rimuovi il collegamento" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove link"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rimuovi il collegamento"
-          }
-        }
-      }
-    },
-    "Scaglione dei docenti della tua pagina WeBeep" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bracket of the lecturers on your WeBeep page"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scaglione dei docenti della tua pagina WeBeep"
+            "value" : "Per una carriera diversa da quella in uso il Politecnico non dice il corso di studi: sceglilo tu. I suoi corsi saranno letti da questo piano."
           }
         }
       }

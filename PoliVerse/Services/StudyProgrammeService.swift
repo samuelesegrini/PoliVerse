@@ -166,14 +166,10 @@ final class StudyProgrammeService {
 
     /// The programme as a manifesto page shows it.
     func set(_ page: CataloguePage, confirmed: Bool) {
-        guard matricola != nil, let selection = page.selection else { return }
-        let label = { (field: CatalogueField) in
-            page.level(field)?.options.first { $0.value == selection[field] }?.label ?? selection[field]
-        }
-        var updated = StudyProgramme(selection: selection, degreeLabel: label(.degree), planLabel: label(.plan),
-                                     isConfirmed: confirmed)
+        guard matricola != nil, var updated = Self.programme(from: page, confirmed: confirmed) else { return }
         // Same plan: what was decided about its teachings still applies.
-        if let previous = programme, previous.selection.degree == selection.degree, previous.selection.plan == selection.plan {
+        if let previous = programme, previous.selection.degree == updated.selection.degree,
+           previous.selection.plan == updated.selection.plan {
             updated.brackets = previous.brackets
             updated.inferredBrackets = previous.inferredBrackets
             updated.links = previous.links
@@ -181,6 +177,58 @@ final class StudyProgrammeService {
         save(updated)
         plans = [:]
         planCodes = []
+    }
+
+    private static func programme(from page: CataloguePage, confirmed: Bool) -> StudyProgramme? {
+        guard let selection = page.selection else { return nil }
+        let label = { (field: CatalogueField) in
+            page.level(field)?.options.first { $0.value == selection[field] }?.label ?? selection[field]
+        }
+        return StudyProgramme(selection: selection, degreeLabel: label(.degree), planLabel: label(.plan),
+                              isConfirmed: confirmed)
+    }
+
+    // MARK: - Careers
+
+    /// Bumped when another career's programme changes: the store is not
+    /// observable, the rows built from it must still refresh.
+    private(set) var revision = 0
+
+    private var careerMatricole: [String] {
+        careers?.careers.map(\.matricola) ?? []
+    }
+
+    /// Every career with its programme, the one in use first.
+    var careerRows: [CareerProgrammes.Row] {
+        _ = revision
+        return CareerProgrammes.rows(current: matricola, careers: careerMatricole, store: store)
+    }
+
+    /// Sets the programme of any career, chosen by the student in the
+    /// manifesto — the only way a career the services say nothing about can
+    /// have one.
+    func set(_ page: CataloguePage, for career: String) {
+        guard career != matricola else {
+            set(page, confirmed: true)
+            return
+        }
+        guard var updated = Self.programme(from: page, confirmed: true) else { return }
+        if let previous = store.programme(for: career), previous.selection.degree == updated.selection.degree {
+            updated.brackets = previous.brackets
+            updated.links = previous.links
+        }
+        store.save(updated, for: career)
+        othersAttempted = []
+        revision += 1
+    }
+
+    /// Where to open the picker for a career: its programme, else — for a
+    /// career not in use — the degree course its courses were found in.
+    func initialSelection(for career: String) -> CatalogueSelection? {
+        if career == matricola { return programme?.selection }
+        if let chosen = store.programme(for: career) { return chosen.selection }
+        let year = AcademicYear.recent().first?.code ?? ""
+        return others[year]?.selection ?? (matricola.flatMap { store.otherProgramme(for: $0, year: year) })?.selection
     }
 
     func confirm() {
@@ -275,8 +323,15 @@ final class StudyProgrammeService {
            let row = plan.first(where: { $0.teaching.code == translated.teaching.code }) {
             return row
         }
-        // Not in the programme: the plan the student's other courses of that
-        // year point to — a master's course seen from the bachelor's career.
+        // Not in the programme: the programme chosen for another career —
+        // a master's course seen from the bachelor's matricola.
+        for other in CareerProgrammes.others(current: matricola, careers: careerMatricole, store: store) {
+            if let row = PlanCourseMatch.match(codes: codes, name: name, in: await self.plan(of: other, year: year)) {
+                return row
+            }
+        }
+        // Nothing chosen: the plan the student's other courses of that year
+        // point to, found by searching.
         return await otherPlanTeaching(codes: codes, name: name, year: year)?.row
     }
 
