@@ -9402,6 +9402,278 @@
           }
         }
       }
+    },
+    "%lld eventi settimanali nel calendario predefinito." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld weekly events in the default calendar."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld eventi settimanali nel calendario predefinito."
+          }
+        }
+      }
+    },
+    "Aggiungere le lezioni al Calendario?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add the lessons to Calendar?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungere le lezioni al Calendario?"
+          }
+        }
+      }
+    },
+    "Aggiungi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi"
+          }
+        }
+      }
+    },
+    "Aggiungi al Calendario" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Calendar"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi al Calendario"
+          }
+        }
+      }
+    },
+    "Calendario non aggiornato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar not updated"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendario non aggiornato"
+          }
+        }
+      }
+    },
+    "Cognome" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Surname"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cognome"
+          }
+        }
+      }
+    },
+    "Consenti a PoliVerse di aggiungere eventi in Impostazioni › Privacy › Calendari." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow PoliVerse to add events in Settings › Privacy › Calendars."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consenti a PoliVerse di aggiungere eventi in Impostazioni › Privacy › Calendari."
+          }
+        }
+      }
+    },
+    "Lezioni aggiunte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lessons added"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lezioni aggiunte"
+          }
+        }
+      }
+    },
+    "Nel file: %@ (non ancora ufficiale)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In the file: %@ (not yet official)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nel file: %@ (non ancora ufficiale)"
+          }
+        }
+      }
+    },
+    "Nessun calendario in cui salvare." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No calendar to save to."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun calendario in cui salvare."
+          }
+        }
+      }
+    },
+    "Nessun risultato nel tuo corso di studi: disattiva il filtro per vedere gli altri corsi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No results in your degree course: turn off the filter to see other courses."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun risultato nel tuo corso di studi: disattiva il filtro per vedere gli altri corsi."
+          }
+        }
+      }
+    },
+    "Non ho trovato la tua riga nel file" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your line isn't in the file"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non ho trovato la tua riga nel file"
+          }
+        }
+      }
+    },
+    "Ogni lezione diventa un evento settimanale fino alla fine delle lezioni. Se le hai già aggiunte, verranno duplicate." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each lesson becomes a weekly event until lessons end. If you already added them, they will be duplicated."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ogni lezione diventa un evento settimanale fino alla fine delle lezioni. Se le hai già aggiunte, verranno duplicate."
+          }
+        }
+      }
+    },
+    "Probabile iscrizione libera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Likely self-enrolled"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probabile iscrizione libera"
+          }
+        }
+      }
+    },
+    "Questo insegnamento è diviso in sezioni: scegli quella che frequenti. Se non scegli, il Politecnico usa quella del tuo scaglione." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This teaching is split into sections: choose the one you attend. If you don't, the Politecnico uses your bracket's."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo insegnamento è diviso in sezioni: scegli quella che frequenti. Se non scegli, il Politecnico usa quella del tuo scaglione."
+          }
+        }
+      }
+    },
+    "Solo il mio corso di studi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only my degree course"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo il mio corso di studi"
+          }
+        }
+      }
+    },
+    "Suggerita" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggested"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggerita"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
