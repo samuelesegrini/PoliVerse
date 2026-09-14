@@ -97,6 +97,7 @@ nonisolated enum NotificationPlan {
     static func build(
         events: [AgendaEvent],
         exams: [ExamSession],
+        assignments: [AssignmentDeadline] = [],
         updates: [ExamUpdate] = [],
         preferences: NotificationPreferences,
         now: Date = .now
@@ -170,6 +171,19 @@ nonisolated enum NotificationPlan {
                     fireDate: fire,
                     isTimeSensitive: false))
             }
+        }
+
+        for assignment in assignments where preferences.deadlines {
+            let day = AssignmentDetector.reminderDay(for: assignment.due)
+            let fire = PoliMiDate.time(eveningHour, on: day)
+            guard fire > now else { continue }
+            planned.append(PlannedNotification(
+                id: "assignment-\(assignment.id)",
+                kind: .deadline,
+                title: String(localized: "Consegna domani"),
+                body: "\(assignment.courseName): \(assignment.name)",
+                fireDate: fire,
+                isTimeSensitive: false))
         }
 
         // Evening summaries of exam updates that did not deserve a push of

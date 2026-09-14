@@ -17,6 +17,8 @@ import OSLog
 final class UpdateFeed {
     /// Newest first.
     private(set) var updates: [ExamUpdate] = []
+    /// WeBeep assignment deadlines still ahead, soonest first.
+    private(set) var deadlines: [AssignmentDeadline] = []
     /// Handed what a record found for the first time, already decided.
     /// Wired to the notification service at launch.
     @ObservationIgnored var onNewUpdates: (@MainActor ([ExamUpdate]) async -> Void)?
@@ -48,13 +50,16 @@ final class UpdateFeed {
     func show(account: String?) {
         guard account != self.account else { return }
         self.account = account
-        updates = load(account)?.updates ?? []
+        let log = load(account)
+        updates = log?.updates ?? []
+        deadlines = Self.upcoming(log, now: clock())
     }
 
     /// Sample data, never written anywhere.
     func showSample(_ sample: [ExamUpdate]) {
         account = nil
         updates = sample
+        deadlines = []
     }
 
     /// - Parameter account: whose data this is. Callers show it first; a
@@ -129,6 +134,24 @@ final class UpdateFeed {
         }
     }
 
+    /// A course's assignments: new ones and moved deadlines as updates, and
+    /// the deadlines ahead kept for the reminders — replaced per course, so an
+    /// assignment the teacher removed stops being reminded.
+    func recordAssignments(course: MaterialCourse, assignments: [MoodleAssignment], account: String) async {
+        await record(account: account) { log, now in
+            let key = AssignmentDetector.courseKey(course)
+            let detected = AssignmentDetector.detect(
+                previous: log.materials?[key], assignments: assignments, course: course, now: now)
+            log.materials = (log.materials ?? [:]).merging([key: detected.snapshot]) { _, new in new }
+            log.deadlines = (log.deadlines ?? [:]).merging([key: detected.deadlines]) { _, new in new }
+            return detected.updates
+        }
+    }
+
+    private static func upcoming(_ log: ExamUpdateLog?, now: Date) -> [AssignmentDeadline] {
+        (log?.deadlines ?? [:]).values.flatMap { $0 }.filter { $0.due > now }.sorted { $0.due < $1.due }
+    }
+
     private func record(
         account: String, detect: (inout ExamUpdateLog, Date) -> [ExamUpdate]
     ) async {
@@ -146,6 +169,7 @@ final class UpdateFeed {
         offline.save(history, as: ExamUpdateLog.name, account: account)
         guard isShown else { return }
         updates = history.updates
+        deadlines = Self.upcoming(history, now: now)
 
         guard !added.isEmpty else { return }
         let kinds = added.map(\.kind.rawValue).joined(separator: ", ")

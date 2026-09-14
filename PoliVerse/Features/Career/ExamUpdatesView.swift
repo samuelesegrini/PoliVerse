@@ -197,6 +197,8 @@ extension ExamUpdate.Kind {
         case .solutionsPosted, .examNoticePosted: .teal
         case .materialAdded: .secondary
         case .announcementPosted: Theme.brand
+        case .assignmentAdded: .indigo
+        case .deadlineChanged: .orange
         }
     }
 }

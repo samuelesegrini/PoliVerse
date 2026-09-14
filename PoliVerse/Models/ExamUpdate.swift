@@ -20,6 +20,9 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         case resultsPosted, solutionsPosted, examNoticePosted, materialAdded
         /// A new post in a course's announcements forum.
         case announcementPosted
+        /// A WeBeep assignment, and a deadline that moved. `examDate` carries
+        /// the deadline.
+        case assignmentAdded, deadlineChanged
 
         var symbol: String {
             switch self {
@@ -39,6 +42,8 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
             case .examNoticePosted: "megaphone"
             case .materialAdded: "folder.badge.plus"
             case .announcementPosted: "text.bubble"
+            case .assignmentAdded: "tray.and.arrow.up"
+            case .deadlineChanged: "clock.badge.exclamationmark"
             }
         }
     }
@@ -158,6 +163,8 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         case .examNoticePosted: String(localized: "Nuovo avviso d'esame")
         case .materialAdded: String(localized: "Nuovo materiale")
         case .announcementPosted: String(localized: "Nuovo annuncio del docente")
+        case .assignmentAdded: String(localized: "Nuova consegna")
+        case .deadlineChanged: String(localized: "Scadenza della consegna cambiata")
         }
     }
 
@@ -177,8 +184,17 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
             isReplacement ? newValue.map { String(localized: "\($0) (nuova versione)") } : newValue
         case .materialAdded: newValue.flatMap(Int.init).map { String(localized: "\($0) nuovi file") }
         case .announcementPosted: newValue
+        case .assignmentAdded, .deadlineChanged:
+            [newValue, examDate.map { String(localized: "entro \($0.formatted(Self.deadlineStyle))") }]
+                .compactMap { $0 }.joined(separator: " · ")
         default: nil
         }
+    }
+
+    private static var deadlineStyle: Date.FormatStyle {
+        var style = Date.FormatStyle(date: .abbreviated, time: .shortened)
+        style.timeZone = PoliMiDate.romeCalendar.timeZone
+        return style
     }
 
     var sourceLabel: String {

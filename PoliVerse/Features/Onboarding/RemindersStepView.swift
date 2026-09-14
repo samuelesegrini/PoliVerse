@@ -57,7 +57,7 @@ struct RemindersStepView: View {
                         await notifications.requestAuthorization()
                         await notifications.reschedule(
                             events: agenda.events, exams: career.sessions,
-                            updates: feed.updates)
+                            assignments: feed.deadlines, updates: feed.updates)
                         isAsking = false
                         // Stays on this step when granted: the preferences
                         // above have just appeared and are worth a look.

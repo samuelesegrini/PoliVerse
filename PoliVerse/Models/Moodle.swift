@@ -93,6 +93,29 @@ nonisolated struct MoodleDiscussions: Decodable, Sendable {
     let discussions: [MoodleDiscussion]?
 }
 
+/// `mod_assign_get_assignments` — assignments per course.
+///
+/// Field names from `mod/assign/externallib.php` (MOODLE_405_STABLE,
+/// `get_assignments_assignment_structure`). A `duedate` of 0 means none.
+nonisolated struct MoodleAssignment: Decodable, Sendable, Equatable {
+    let id: Int
+    let name: String?
+    let duedate: Int?
+
+    var due: Date? {
+        guard let duedate, duedate > 0 else { return nil }
+        return Date(timeIntervalSince1970: TimeInterval(duedate))
+    }
+}
+
+nonisolated struct MoodleAssignmentsResponse: Decodable, Sendable {
+    struct CourseAssignments: Decodable, Sendable {
+        let id: Int
+        let assignments: [MoodleAssignment]?
+    }
+    let courses: [CourseAssignments]?
+}
+
 /// Moodle answers errors with HTTP 200 and an error body, so every response has
 /// to be sniffed for this before decoding the shape we wanted.
 nonisolated struct MoodleError: Decodable, Sendable {

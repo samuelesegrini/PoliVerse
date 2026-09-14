@@ -52,12 +52,13 @@ final class NotificationService {
     /// Replace rather than add: the timetable changes, lectures move, exams
     /// are withdrawn. Adding would leave a reminder for a lecture that no
     /// longer exists, and there is no way to notice that from inside the app.
-    func reschedule(events: [AgendaEvent], exams: [ExamSession], updates: [ExamUpdate] = []) async {
+    func reschedule(events: [AgendaEvent], exams: [ExamSession], assignments: [AssignmentDeadline] = [],
+                    updates: [ExamUpdate] = []) async {
         await refreshAuthorization()
         guard authorization == .authorized || authorization == .provisional else { return }
 
         let plan = NotificationPlan.build(
-            events: events, exams: exams, updates: updates, preferences: preferences)
+            events: events, exams: exams, assignments: assignments, updates: updates, preferences: preferences)
 
         centre.removeAllPendingNotificationRequests()
         for item in plan {

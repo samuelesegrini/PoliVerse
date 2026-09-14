@@ -112,7 +112,7 @@ struct PoliVerseApp: App {
             // Reminders follow whatever the refresh found: a lecture moved
             // overnight must not announce itself at the old time.
             await notifications.reschedule(
-                events: agenda.events, exams: career.sessions, updates: updates.updates)
+                events: agenda.events, exams: career.sessions, assignments: updates.deadlines, updates: updates.updates)
         }
     }
 

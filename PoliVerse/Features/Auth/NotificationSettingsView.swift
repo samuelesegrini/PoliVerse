@@ -114,7 +114,7 @@ struct NotificationSettingsView: View {
 
     private func reschedule() async {
         await notifications.reschedule(
-            events: agenda.events, exams: career.sessions, updates: feed.updates)
+            events: agenda.events, exams: career.sessions, assignments: feed.deadlines, updates: feed.updates)
     }
 }
 

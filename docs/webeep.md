@@ -100,7 +100,10 @@ Taken from myPoliFile, which exercises the whole surface:
 | `message_popup_get_popup_notifications` | notifications |
 | `enrol_self_enrol_user` | self-enrolment |
 
-We use the first three. The rest are available when the features are wanted.
+We use the first three, plus (for the updates feed, verified against Moodle
+4.5 source) `mod_forum_get_forum_discussions` for the announcements forum and
+`mod_assign_get_assignments` for deadlines — see
+[academic-intelligence-layer.md](academic-intelligence-layer.md).
 
 ## Gotchas
 

@@ -148,6 +148,17 @@ nonisolated enum ExamUpdatePolicy {
         case .materialAdded:
             return .inApp
 
+        case .assignmentAdded:
+            // The reminder the evening before does the urgent part.
+            return .digest
+
+        case .deadlineChanged:
+            // §21 keeps WeBeep news Bassa. The one exception is a deadline
+            // brought forward into the coming week: waiting for the evening
+            // summary can cost the time that was taken away.
+            let soon = (0...roomHorizon).contains(untilExam)
+            return soon && AssignmentDetector.movedEarlier(update) ? .push : .digest
+
         case .announcementPosted:
             // §11.2 teacherCommunication: Media, and worth a push when it
             // talks about a sitting the student has in play (the detector
@@ -293,6 +304,8 @@ nonisolated struct ExamUpdateLog: Sendable, Equatable, Codable {
     var state: ExamWatchState?
     /// Each WeBeep course's last listing, by Moodle course id.
     var materials: [String: MaterialSnapshot]?
+    /// Deadlines ahead, per Moodle course id, for the reminders.
+    var deadlines: [String: [AssignmentDeadline]]?
     /// Newest first.
     var updates: [ExamUpdate] = []
 
@@ -320,6 +333,15 @@ nonisolated struct ExamUpdateLog: Sendable, Equatable, Codable {
         // A course page not read in the retention period is a course no
         // longer followed; its listing goes too.
         materials = materials?.filter { $0.value.takenAt >= cutoff }
+        // Deadlines past, or of a course not read for a fortnight — hidden,
+        // rotated out, last year's — would remind about work that may no
+        // longer exist.
+        deadlines = deadlines?
+            .filter { key, _ in
+                (materials?[key]?.takenAt).map { now.timeIntervalSince($0) < MaterialChangeDetector.staleAfter } ?? false
+            }
+            .mapValues { $0.filter { $0.due > now } }
+            .filter { !$0.value.isEmpty }
         updates = Array(
             (added.reversed() + updates)
                 .filter { $0.detectedAt >= cutoff }

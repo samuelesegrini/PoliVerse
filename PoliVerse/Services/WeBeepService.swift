@@ -241,6 +241,7 @@ final class WeBeepService {
         let watched = Self.watched(courses.map(Course.init(moodle:)), now: .now, pass: watchPass)
         watchPass += 1
         var checked = 0
+        var read: [MaterialCourse] = []
         for course in watched {
             // A sign-out or a career switch mid-pass ends it: the rest would
             // be weighed against somebody else's sittings.
@@ -262,11 +263,28 @@ final class WeBeepService {
                     }
                 }
                 checked += 1
+                read.append(target)
             } catch let error as WeBeepAPI.Failure where error.isAuthFailure {
                 handle(error)
                 return
             } catch {
                 log.error("Update check for course \(target.moodleID, privacy: .public) failed: \(error.localizedDescription)")
+            }
+        }
+        // Assignments for every page read, in a single request.
+        if !read.isEmpty, !Task.isCancelled, deadline.map({ Date.now < $0 }) ?? true,
+           session.student?.matricola == account {
+            do {
+                let byCourse = try await api.assignments(courseIDs: read.map(\.moodleID))
+                for course in read {
+                    await feed.recordAssignments(course: course, assignments: byCourse[course.moodleID] ?? [],
+                                                 account: account)
+                }
+            } catch let error as WeBeepAPI.Failure where error.isAuthFailure {
+                handle(error)
+                return
+            } catch {
+                log.error("Assignments check failed: \(error.localizedDescription)")
             }
         }
         log.notice("Checked \(checked, privacy: .public) of \(watched.count, privacy: .public) course pages for updates")

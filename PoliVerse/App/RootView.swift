@@ -107,7 +107,7 @@ struct MainTabView: View {
         .task(id: reminderKey) {
             guard !session.useMockData else { return }
             await notifications.reschedule(
-                events: agenda.events, exams: career.sessions, updates: feed.updates)
+                events: agenda.events, exams: career.sessions, assignments: feed.deadlines, updates: feed.updates)
         }
     }
 
@@ -115,7 +115,7 @@ struct MainTabView: View {
     /// appearance.
     /// Rebuilt when the timetable or the sittings change.
     private var reminderKey: String {
-        "\(agenda.events.count)-\(career.sessions.count)-\(feed.updates.first?.id ?? "")-\(agenda.loadedRange?.upperBound.timeIntervalSince1970 ?? 0)"
+        "\(agenda.events.count)-\(career.sessions.count)-\(feed.updates.first?.id ?? "")-\(feed.deadlines.map { "\($0.id)@\($0.due.timeIntervalSince1970)" }.joined(separator: ","))-\(agenda.loadedRange?.upperBound.timeIntervalSince1970 ?? 0)"
     }
 
     private var indexKey: String {

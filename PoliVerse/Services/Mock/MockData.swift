@@ -138,6 +138,11 @@ nonisolated enum MockData {
                 newValue: "Istruzioni per lo scritto del 25 settembre", wasEnrolled: true,
                 examDate: sessions.first { $0.id == 901 }?.date, delivery: .push),
             update(.enrolmentOpened, 902, hoursAgo: 50, delivery: .digest),
+            ExamUpdate(
+                kind: .assignmentAdded, examID: nil, courseCode: "097785", courseName: "Basi di Dati",
+                detectedAt: now.addingTimeInterval(-30 * 3600), source: .webeep,
+                evidence: "webeep:mod_assign_get_assignments", newValue: "Progetto: schema ER",
+                wasEnrolled: false, examDate: now.addingTimeInterval(9 * 86400), delivery: .digest),
             update(.enrolled, 901, hoursAgo: 190),
             update(.roomPublished, 901, hoursAgo: 200, new: "B.2.1"),
             update(.discovered, 903, hoursAgo: 220),

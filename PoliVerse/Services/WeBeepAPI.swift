@@ -106,6 +106,17 @@ nonisolated final class WeBeepAPI: Sendable {
         ).discussions ?? []
     }
 
+    /// `mod_assign_get_assignments` — every assignment of the given courses in
+    /// one request, `courseids[n]` as Moodle's array form expects.
+    func assignments(courseIDs: [Int]) async throws -> [Int: [MoodleAssignment]] {
+        var parameters: [String: String] = [:]
+        for (index, id) in courseIDs.enumerated() { parameters["courseids[\(index)]"] = String(id) }
+        let response = try await call("mod_assign_get_assignments", parameters: parameters,
+                                      as: MoodleAssignmentsResponse.self)
+        return Dictionary((response.courses ?? []).map { ($0.id, $0.assignments ?? []) },
+                          uniquingKeysWith: { first, _ in first })
+    }
+
     func contents(courseID: Int) async throws -> [MoodleSection] {
         try await call(
             "core_course_get_contents",

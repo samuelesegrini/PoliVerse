@@ -154,7 +154,9 @@ nonisolated enum MaterialChangeDetector {
             if oldVersion == item.version { continue }
 
             guard let kind = kind(for: item) else {
-                if oldVersion == nil { ordinary.append(item) }
+                // Assignments are reported with their deadline by
+                // ``AssignmentDetector``, not counted as files.
+                if oldVersion == nil, !item.tags.contains(.assignment) { ordinary.append(item) }
                 continue
             }
 
