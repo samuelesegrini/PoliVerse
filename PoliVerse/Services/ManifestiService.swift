@@ -55,7 +55,11 @@ final class ManifestiService {
         configuration.httpCookieStorage = HTTPCookieStorage.sharedCookieStorage(
             forGroupContainerIdentifier: "manifesti")
         configuration.httpShouldSetCookies = true
-        configuration.requestCachePolicy = .returnCacheDataElseLoad
+        // Never from a cache: every page on this session is the cart's state
+        // at this moment. A cached GET turned "empty the cart" into a no-op
+        // and returned an old timetable in place of the one just built.
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        configuration.urlCache = nil
         self.session = URLSession(configuration: configuration)
 
         let reads = URLSessionConfiguration.default
@@ -264,6 +268,27 @@ final class ManifestiService {
     /// offered in dozens; the student's is usually among the first few, and
     /// every one costs a page.
     static let pickCandidates = 8
+
+    // MARK: - Browsing by plan
+
+    /// One step of the manifesto's cascade. Nil selection: the page as the
+    /// service first shows it. Read without the cart's cookie, like every
+    /// catalogue page.
+    func cataloguePage(_ selection: CatalogueSelection?) async -> CataloguePage? {
+        var components = URLComponents()
+        components.queryItems = selection?.queryItems ?? [.init(name: "lang", value: PoliMiLanguage.current.rawValue)]
+        guard let url = URL(string: "\(base.absoluteString)/ManifestoPublic.do?\(components.percentEncodedQuery ?? "")"),
+              let html = await Self.page(url, session: catalogue) else { return nil }
+        return CatalogueParser.page(html)
+    }
+
+    /// The brackets a teaching is split into, with their lecturers; empty
+    /// when it has one for everyone.
+    func brackets(for teaching: ManifestoTeaching) async -> [BracketChoice] {
+        let modules = await detail(for: teaching)?.modules ?? []
+        let brackets = modules.compactMap(BracketChoice.init)
+        return brackets.count > 1 ? brackets : []
+    }
 
     // MARK: - Detail and syllabus
 
