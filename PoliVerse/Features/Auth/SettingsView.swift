@@ -110,6 +110,11 @@ struct SettingsView: View {
                     } label: {
                         Text(verbatim: "MetricKit")
                     }
+                    NavigationLink {
+                        CareerDiagnosticsView()
+                    } label: {
+                        Text(verbatim: "Diagnostica carriera")
+                    }
                     #endif
                 }
             } footer: {
