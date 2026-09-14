@@ -13,6 +13,7 @@ struct CourseDetailView: View {
     @Environment(StudyProgrammeService.self) private var programmes
     @Environment(Session.self) private var session
     @State private var selectedExam: ExamSession?
+    @State private var bracketTeacher: String?
 
     private var accent: Color { Theme.accent(for: course) }
 
@@ -119,8 +120,14 @@ struct CourseDetailView: View {
             // The scheda takes a few pages to find: start now, so "Programma"
             // opens on an answer rather than a spinner. After the career, so
             // the degree course is known and the tap asks the same question.
-            programmes.prefetch(teachingCode: course.teachingCode, name: course.name, yearCode: course.academicYearStart,
-                                courseID: course.id)
+            if let pick = await programmes.pick(teachingCode: course.teachingCode, name: course.name,
+                                                yearCode: course.academicYearStart, courseID: course.id) {
+                // Only from the student's own plan: the catalogue-wide fallback
+                // may be another degree course, with other lecturers.
+                let names = pick.module.teachers.map(\.name)
+                if pick.matchesDegree, !names.isEmpty { bracketTeacher = names.joined(separator: ", ") }
+                if let id = pick.module.syllabusID { _ = await manifesti.syllabus(for: id) }
+            }
             await lectures
         }
     }
@@ -191,7 +198,9 @@ struct CourseDetailView: View {
                 .fontDesign(.rounded)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text(course.teacher)
+            // The lecturer of the student's bracket, once the plan says who:
+            // a WeBeep course alone carries no teacher at all.
+            Text(bracketTeacher ?? course.teacher)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 

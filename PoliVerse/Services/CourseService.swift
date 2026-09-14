@@ -147,6 +147,9 @@ final class CourseService {
     /// list holds by the time the plan pages arrive.
     private func fillCodes() async {
         guard let programme else { return }
+        programme.enrolledCodes = Dictionary(grouping: courses.filter { $0.teachingCode != nil },
+                                             by: { $0.academicYearStart ?? "" })
+            .mapValues { Set($0.compactMap(\.teachingCode)) }
         let codes = await programme.codes(for: courses)
         guard !codes.isEmpty else { return }
         courses = courses.map { course in

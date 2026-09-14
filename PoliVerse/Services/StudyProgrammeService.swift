@@ -23,6 +23,12 @@ final class StudyProgrammeService {
     private let store: StudyProgrammeStore
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "manifesti")
 
+    /// The student's course codes per academic year, from the course list —
+    /// what tells which plan a course outside the programme belongs to.
+    @ObservationIgnored var enrolledCodes: [String: Set<String>] = [:]
+    /// Plans followed in a year besides the programme, by year.
+    @ObservationIgnored private var others: [String: StudyProgramme] = [:]
+    @ObservationIgnored private var othersAttempted: Set<String> = []
     @ObservationIgnored private var loadedFor: String?
     @ObservationIgnored private var plans: [String: [PlanTeaching]] = [:]
     @ObservationIgnored private var locateAttempted: Set<String> = []
@@ -58,6 +64,8 @@ final class StudyProgrammeService {
         if loadedFor != matricola {
             loadedFor = matricola
             programme = store.programme(for: matricola)
+            others = [:]
+            othersAttempted = []
             plans = [:]
             planCodes = []
         }
@@ -202,6 +210,10 @@ final class StudyProgrammeService {
     /// disk for a week, so the course list and the scheda open without it.
     func plan(forYear year: String?, language: PoliMiLanguage = .current) async -> [PlanTeaching] {
         guard let programme else { return [] }
+        return await plan(of: programme, year: year, language: language)
+    }
+
+    private func plan(of programme: StudyProgramme, year: String?, language: PoliMiLanguage = .current) async -> [PlanTeaching] {
         let selection = programme.selection(forYear: year)
         let name = key(selection, language: language)
         if let cached = plans[name] { return cached }
@@ -248,10 +260,78 @@ final class StudyProgrammeService {
         }
         if let row = PlanCourseMatch.match(codes: codes, name: name, in: plan) { return row }
         let other: PoliMiLanguage = PoliMiLanguage.current == .english ? .italian : .english
-        guard !plan.isEmpty,
-              let translated = PlanCourseMatch.match(codes: [], name: name, in: await self.plan(forYear: year, language: other))
-        else { return nil }
-        return plan.first { $0.teaching.code == translated.teaching.code }
+        if !plan.isEmpty,
+           let translated = PlanCourseMatch.match(codes: [], name: name, in: await self.plan(forYear: year, language: other)),
+           let row = plan.first(where: { $0.teaching.code == translated.teaching.code }) {
+            return row
+        }
+        // Not in the programme: the plan the student's other courses of that
+        // year point to — a master's course seen from the bachelor's career.
+        return await otherPlanTeaching(codes: codes, name: name, year: year)?.row
+    }
+
+    /// The row, and the plan it is in, for a course outside the programme.
+    private func otherPlanTeaching(codes: [String], name: String, year: String?)
+        async -> (row: PlanTeaching, programme: StudyProgramme)? {
+        guard let matricola, let year = year ?? programme?.selection.year else { return nil }
+        if others[year] == nil, let stored = store.otherProgramme(for: matricola, year: year) { others[year] = stored }
+        if let known = others[year], let row = PlanCourseMatch.match(codes: codes, name: name, in: await plan(of: known, year: year)) {
+            return (row, known)
+        }
+        // Found by code only, once per year and code: a name is shared by too
+        // many degree courses to search the catalogue with.
+        guard let code = codes.first, othersAttempted.insert("\(year)/\(code)").inserted else { return nil }
+        let candidates = await manifesti.offeringPlans(teachingCode: code, yearCode: year)
+        guard !candidates.isEmpty else { return nil }
+        let enrolled = (enrolledCodes[year] ?? []).union(librettoCodes).union([code])
+        // Read together: the catalogue has no cookie, so the service does not
+        // queue them.
+        let manifesti = self.manifesti
+        let read = await withTaskGroup(of: (CatalogueSelection, CataloguePage)?.self) { group in
+            for candidate in candidates.prefix(16) {
+                group.addTask {
+                    guard let page = await manifesti.cataloguePage(candidate), let settled = page.selection,
+                          settled.degree == candidate.degree, settled.plan == candidate.plan else { return nil }
+                    return (settled, page)
+                }
+            }
+            var found: [(CatalogueSelection, CataloguePage)] = []
+            for await result in group { if let result { found.append(result) } }
+            return found
+        }
+        // In the search's order, so a tie between plans of one degree course
+        // settles the same way every time.
+        let ordered = candidates.compactMap { candidate in read.first { $0.0 == candidate } }
+        let pages = Dictionary(ordered.map { ($0.0, $0.1) }, uniquingKeysWith: { first, _ in first })
+        let scored = ordered.map { ($0.0, $0.1.teachings.map(\.teaching.code)) }
+        let singleDegree = Set(scored.map(\.0.degree)).count == 1
+        var chosen = singleDegree ? scored.first?.0 : PlanCandidates.best(enrolled: enrolled, candidates: scored)
+        if chosen == nil {
+            // Degree courses tying: when each gives the student's surname the
+            // same lecturers, the scheda and timetable are the same whichever.
+            let tied = PlanCandidates.tied(enrolled: enrolled, candidates: scored)
+            var lecturers: Set<[String]> = []
+            for selection in tied {
+                guard let row = pages[selection]?.teachings.first(where: { $0.teaching.code == code }),
+                      let modules = await manifesti.detail(for: row.teaching)?.modules else { lecturers.insert([]); continue }
+                lecturers.insert(SyllabusPicker.module(in: modules, bracket: nil, surname: session.student?.lastName)?
+                    .teachers.map(\.name) ?? [])
+            }
+            if tied.count > 1, lecturers.count == 1, lecturers.first?.isEmpty == false { chosen = tied.first }
+        }
+        guard let chosen, let page = pages[chosen] else {
+            log.notice("no plan stands out for \(code, privacy: .public) in \(year, privacy: .public) among \(scored.count, privacy: .public)")
+            return nil
+        }
+        let label = { (field: CatalogueField) in
+            page.level(field)?.options.first { $0.value == chosen[field] }?.label ?? chosen[field]
+        }
+        let found = StudyProgramme(selection: chosen, degreeLabel: label(.degree), planLabel: label(.plan), isConfirmed: false)
+        others[year] = found
+        store.saveOther(found, for: matricola, year: year)
+        log.notice("course \(code, privacy: .public) read in plan \(chosen.degree, privacy: .public)/\(chosen.plan, privacy: .public) for \(year, privacy: .public)")
+        guard let row = page.teachings.first(where: { $0.teaching.code == code }) else { return nil }
+        return (row, found)
     }
 
     // MARK: - Scheda
@@ -266,7 +346,9 @@ final class StudyProgrammeService {
            let detail = await manifesti.detail(for: row.teaching),
            let module = SyllabusPicker.module(in: detail.modules, bracket: programme?.bracket(for: row.teaching.code),
                                               surname: surname) {
-            return SyllabusPicker.Pick(degreeCourse: programme?.degreeLabel ?? detail.degreeCourse,
+            // The row's own degree course: the programme's, or the other plan
+            // the course was found in.
+            return SyllabusPicker.Pick(degreeCourse: detail.degreeCourse ?? programme?.degreeLabel,
                                        module: module, matchesDegree: true)
         }
         guard let teachingCode else { return nil }

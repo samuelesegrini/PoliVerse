@@ -93,3 +93,57 @@ struct ProgrammeInferenceTests {
         #expect(decoded == [row])
     }
 }
+
+/// Courses outside the programme in use — a master's course while signed in
+/// with the bachelor's matricola — read from the plan the student's other
+/// courses of that year point to, not from the first degree course offering it.
+@Suite("Other programmes")
+struct OtherProgrammeTests {
+    private func teaching(_ course: String, _ plan: String) -> ManifestoTeaching {
+        ManifestoTeaching(code: "054443", name: "SOFTWARE ENGINEERING 2", courseCode: course, planCode: plan,
+                          idItemOfferta: nil, idRiga: nil, semester: "1", year: "2026", credits: nil, school: nil,
+                          degreeCourse: nil)
+    }
+
+    @Test("Each degree course and plan offering a teaching is one candidate")
+    func candidates() {
+        let rows = [teaching("511", "GEC"), teaching("511", "GEC"), teaching("542", "T2A"), teaching("542", "T2D")]
+        #expect(PlanCandidates.distinct(rows).map { "\($0.courseCode)/\($0.planCode ?? "")" } == ["511/GEC", "542/T2A", "542/T2D"])
+    }
+
+    @Test("A school named on a teaching page is the cascade's school of that name")
+    func school() {
+        let options = [CatalogueOption(value: "222", label: "Scuola di Architettura Urbanistica Ingegneria delle Costruzioni (Arc. Urb. Ing. Cos.)", group: nil),
+                       CatalogueOption(value: "225", label: "Scuola di Ingegneria Industriale e dell'Informazione (Ing. Ind-Inf)", group: nil)]
+        #expect(PlanCandidates.school(named: "Scuola di Ingegneria Industriale e dell'Informazione", in: options) == "225")
+        #expect(PlanCandidates.school(named: "Scuola del Design", in: options) == nil)
+    }
+
+    @Test("The plan with most of the student's courses of that year is theirs; one shared course is not enough")
+    func scoring() throws {
+        let t2a = CatalogueSelection(year: "2026", campus: "ALL_SEDI", school: "225", degree: "542", plan: "T2A")
+        let geo = CatalogueSelection(year: "2026", campus: "ALL_SEDI", school: "225", degree: "511", plan: "GEC")
+        let enrolled: Set = ["054443", "052496", "095946", "054298"]
+        let best = try #require(PlanCandidates.best(enrolled: enrolled, candidates: [
+            (geo, ["054443", "099999"]), (t2a, ["054443", "052496", "095946", "054298", "011111"]),
+        ]))
+        #expect(best == t2a)
+        #expect(PlanCandidates.best(enrolled: ["054443"], candidates: [(geo, ["054443"]), (t2a, ["054443"])]) == nil)
+    }
+
+    /// Live, 2026-09-14: 054443 has the same brackets in every plan of 542
+    /// (A–DAT, DAT–MOH, MOH–ZZZZ) and different ones in 560 (A–E, E–P,
+    /// P–ZZZZ). The degree course decides; a tie between its plans does not matter.
+    @Test("Plans of one degree course tying is still an answer; two degree courses tying is not")
+    func degreeFirst() {
+        let t2a = CatalogueSelection(year: "2026", campus: "ALL_SEDI", school: "225", degree: "542", plan: "T2A")
+        let t2i = t2a.setting(.plan, to: "T2I")
+        let z2a = CatalogueSelection(year: "2026", campus: "ALL_SEDI", school: "225", degree: "560", plan: "Z2A")
+        let enrolled: Set = ["1", "2", "3", "4", "5"]
+        #expect(PlanCandidates.best(enrolled: enrolled, candidates: [(t2a, ["1", "2", "3", "4", "5"]), (t2i, ["1", "2", "3", "4", "5"]),
+                                                                    (z2a, ["1", "2", "3", "4"])]) == t2a)
+        #expect(PlanCandidates.best(enrolled: enrolled, candidates: [(t2a, ["1", "2", "3"]), (z2a, ["1", "2", "3"])]) == nil)
+        #expect(PlanCandidates.tied(enrolled: enrolled, candidates: [(t2a, ["1", "2", "3"]), (t2i, ["1", "2", "3"]),
+                                                                    (z2a, ["1", "2", "3"])]) == [t2a, z2a])
+    }
+}

@@ -302,6 +302,43 @@ final class ManifestiService {
         await locateDegree { DegreeCourseMatch.best($0, name: degree, kind: kind) }
     }
 
+    /// The plans offering a teaching in a year, as manifesto selections: the
+    /// search gives degree course and plan, each row's page names its school.
+    func offeringPlans(teachingCode: String, yearCode: String) async -> [CatalogueSelection] {
+        let form = [
+            "evn_default": "Esegui Ricerca", "aa": yearCode, "k_cf": "-1", "sede": "ALL_SEDI",
+            "tipoCorso": "ALL_TIPO_CORSO", "ac_ins": "0", "semestre": "ALL_SEMESTRI", "aree": "-1",
+            "tipoInsegnamento": "ALL_TIPO_INSEGNAMENTO", "insegn_ricerca": teachingCode,
+            "lang": PoliMiLanguage.current.rawValue, "jaf_currentWFID": "main",
+        ]
+        guard let html = await post("ricerche/RicercaPerInsegnamentoPublic.do", form: form, session: catalogue),
+              let schools = await cataloguePage(nil)?.level(.school)?.options else { return [] }
+        let rows = PlanCandidates.distinct(ManifestoParser.searchResults(html).filter { $0.code == teachingCode })
+        // One teaching page per degree course names its school, read together.
+        let firstOfDegree = PlanCandidates.distinct(rows.map { row in
+            ManifestoTeaching(code: row.code, name: row.name, courseCode: row.courseCode, planCode: nil,
+                              idItemOfferta: row.idItemOfferta, idRiga: row.idRiga, semester: row.semester, year: row.year,
+                              credits: nil, school: nil, degreeCourse: nil)
+        }).compactMap { degree in rows.first { $0.courseCode == degree.courseCode } }
+        let schoolOfDegree = await withTaskGroup(of: (String, String?).self) { group in
+            for row in firstOfDegree {
+                group.addTask {
+                    let name = await self.detail(for: row)?.context.first { $0.label.localizedCaseInsensitiveContains("Scuola")
+                        || $0.label.localizedCaseInsensitiveContains("School") }?.value
+                    return (row.courseCode, name.flatMap { PlanCandidates.school(named: $0, in: schools) })
+                }
+            }
+            var found: [String: String] = [:]
+            for await (degree, school) in group { if let school { found[degree] = school } }
+            return found
+        }
+        return rows.compactMap { row in
+            schoolOfDegree[row.courseCode].map {
+                CatalogueSelection(year: yearCode, campus: "ALL_SEDI", school: $0, degree: row.courseCode, plan: row.planCode ?? "***")
+            }
+        }
+    }
+
     /// The brackets a teaching is split into, with their lecturers; empty
     /// when it has one for everyone.
     func brackets(for teaching: ManifestoTeaching) async -> [BracketChoice] {

@@ -14,6 +14,8 @@ struct CourseInfoView: View {
     @Environment(\.locale) private var locale
     @Environment(\.openURL) private var openURL
     @State private var syllabus: Syllabus?
+    @State private var pickTeachers: String?
+    @State private var pickBracket: String?
     @State private var loading = true
 
     private var partialSittings: [ExamSession] {
@@ -46,7 +48,10 @@ struct CourseInfoView: View {
             }
 
             Section("Docente") {
-                Text(course.teacher)
+                Text(pickTeachers ?? course.teacher)
+                if let bracket = pickBracket {
+                    LabeledContent("Scaglione", value: bracket)
+                }
                 if let email = course.teacherEmail, !email.isEmpty, let url = URL(string: "mailto:\(email)") {
                     Button { openURL(url) } label: { Label(email, systemImage: "envelope") }
                 }
@@ -64,8 +69,17 @@ struct CourseInfoView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await agenda.load(around: .now)
-            if let code = course.teachingCode {
-                let pick = await programmes.pick(teachingCode: code, name: course.name, yearCode: course.academicYearStart, courseID: course.id)
+            do {
+                let pick = await programmes.pick(teachingCode: course.teachingCode, name: course.name, yearCode: course.academicYearStart, courseID: course.id)
+                // Only from the student's own plan: the catalogue-wide fallback
+                // may be another degree course, with other lecturers.
+                if let pick, pick.matchesDegree {
+                    let module = pick.module
+                    if !module.teachers.isEmpty { pickTeachers = module.teachers.map(\.name).joined(separator: ", ") }
+                    if let from = module.scaglioneFrom, let to = module.scaglioneTo, from != "A" || to != "ZZZZ" {
+                        pickBracket = "\(from) – \(to)"
+                    }
+                }
                 if let id = pick?.module.syllabusID { syllabus = await manifesti.syllabus(for: id) }
             }
             loading = false

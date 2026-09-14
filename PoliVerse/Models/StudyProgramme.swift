@@ -54,11 +54,26 @@ nonisolated struct StudyProgrammeStore: @unchecked Sendable {
     }
 
     func save(_ programme: StudyProgramme?, for matricola: String) {
+        write(programme, key(matricola))
+    }
+
+    /// Another plan the student follows in one academic year — the master's
+    /// courses seen while signed in with the bachelor's matricola.
+    func otherProgramme(for matricola: String, year: String) -> StudyProgramme? {
+        guard let data = defaults.data(forKey: key(matricola) + "-other-" + year) else { return nil }
+        return try? JSONDecoder().decode(StudyProgramme.self, from: data)
+    }
+
+    func saveOther(_ programme: StudyProgramme?, for matricola: String, year: String) {
+        write(programme, key(matricola) + "-other-" + year)
+    }
+
+    private func write(_ programme: StudyProgramme?, _ key: String) {
         guard let programme, let data = try? JSONEncoder().encode(programme) else {
-            defaults.removeObject(forKey: key(matricola))
+            defaults.removeObject(forKey: key)
             return
         }
-        defaults.set(data, forKey: key(matricola))
+        defaults.set(data, forKey: key)
     }
 
     private func key(_ matricola: String) -> String { "studyProgramme-\(matricola)" }
@@ -138,5 +153,44 @@ nonisolated enum BracketInference {
     private static func tokens(_ name: String) -> Set<String> {
         Set(name.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
             .split(whereSeparator: { !$0.isLetter }).map(String.init).filter { $0.count > 1 })
+    }
+}
+
+/// The degree courses and plans that offer a teaching, and which of them is
+/// the student's when it is not the programme in use.
+nonisolated enum PlanCandidates {
+    static func distinct(_ rows: [ManifestoTeaching]) -> [ManifestoTeaching] {
+        var seen: Set<String> = []
+        return rows.filter { seen.insert("\($0.courseCode)/\($0.planCode ?? "")").inserted }
+    }
+
+    static func school(named name: String, in options: [CatalogueOption]) -> String? {
+        let key = { (text: String) in PlanCourseMatch.key(text) }
+        let wanted = key(name)
+        guard !wanted.isEmpty else { return nil }
+        return options.first { key($0.label) == wanted || key($0.label).hasPrefix(wanted + " ") }?.value
+    }
+
+    /// The candidate sharing most of the student's courses of that year.
+    ///
+    /// By degree course first: plans of one degree course share a teaching's
+    /// brackets, different degree courses do not — that difference is the
+    /// wrong lecturer. The teaching itself is in every candidate, so a degree
+    /// course is an answer only with another course in common and no tie.
+    static func best(enrolled: Set<String>, candidates: [(CatalogueSelection, [String])]) -> CatalogueSelection? {
+        let scored = candidates.map { ($0.0, enrolled.intersection($0.1).count) }
+        var byDegree: [String: Int] = [:]
+        for (selection, score) in scored { byDegree[selection.degree] = max(byDegree[selection.degree] ?? 0, score) }
+        guard let top = byDegree.values.max(), top >= 2, byDegree.values.filter({ $0 == top }).count == 1 else { return nil }
+        return scored.first { $0.1 == top }?.0
+    }
+
+    /// The first plan of each degree course sharing the top score, when more
+    /// than one degree course does — for settling the tie another way.
+    static func tied(enrolled: Set<String>, candidates: [(CatalogueSelection, [String])]) -> [CatalogueSelection] {
+        let scored = candidates.map { ($0.0, enrolled.intersection($0.1).count) }
+        guard let top = scored.map(\.1).max(), top >= 1 else { return [] }
+        var seen: Set<String> = []
+        return scored.filter { $0.1 == top && seen.insert($0.0.degree).inserted }.map(\.0)
     }
 }
