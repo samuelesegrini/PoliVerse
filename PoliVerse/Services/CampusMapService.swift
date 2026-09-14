@@ -62,33 +62,43 @@ final class CampusMapService {
             .sorted { $0.id < $1.id }
     }
 
+    /// Pins appear as soon as anything can place them: coordinates cached
+    /// from an earlier visit and the cached catalogue first, then again as
+    /// fresh coordinates and a fresh catalogue arrive. Before, the map waited
+    /// for all four catalogue requests and the geojson before its first pin.
     func load(campus: String?) async {
         guard !skipsLoading else { return }
         guard !isLoading else { return }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
-
-        await catalogue.load()
-        if locations.isEmpty { await loadLocations() }
-
-        let rooms = catalogue.rooms(matching: "", campus: campus)
-        // Only buildings that have rooms and a place to be: a pin for a
-        // building with nothing in it is a pin the user cannot act on.
-        let grouped = Dictionary(grouping: rooms, by: \.buildingCode)
-        pins = grouped.compactMap { code, rooms -> MapPin? in
-            guard let location = locations[code] else { return nil }
-            return MapPin(
-                id: code,
-                name: rooms.first?.buildingName ?? code,
-                coordinate: location.coordinate,
-                freeRooms: nil,
-                totalRooms: rooms.count)
-        }.sorted { $0.name < $1.name }
-
         showsAvailability = false
-        log.notice("map: \(self.pins.count, privacy: .public) buildings placed of \(grouped.count, privacy: .public) with rooms")
+
+        if locations.isEmpty, let cached = await MapPlacement.cachedLocations() {
+            locations = cached
+        }
+        await place(campus: campus)
+
+        async let catalogueLoaded: Void = catalogue.load()
+        if !locationsRefreshed {
+            await loadLocations()
+            await place(campus: campus)
+        }
+        await catalogueLoaded
+        await place(campus: campus)
+        log.notice("map: \(self.pins.count, privacy: .public) buildings placed")
     }
+
+    private func place(campus: String?) async {
+        guard !locations.isEmpty, !catalogue.rooms.isEmpty else { return }
+        let placed = await MapPlacement.pinsInBackground(
+            rooms: catalogue.rooms, locations: locations, campus: campus)
+        if placed != pins { pins = placed }
+    }
+
+    /// Whether this launch has fetched the geojson; cached coordinates are
+    /// shown first but refreshed once per launch.
+    private var locationsRefreshed = false
 
     /// Colours the pins by how many rooms are free right now.
     ///
@@ -108,19 +118,8 @@ final class CampusMapService {
         let free = Set(freeRooms.freeNow().map(\.id))
         guard !free.isEmpty || !freeRooms.rooms.isEmpty else { return }
 
-        pins = pins.map { pin in
-            let rooms = rooms(in: pin.id)
-            // Only rooms the occupancy pass actually covered can be counted;
-            // anything else stays out of both halves of the fraction.
-            let known = rooms.filter { room in
-                freeRooms.rooms.contains { $0.id == room.id }
-            }
-            guard !known.isEmpty else { return pin }
-            return MapPin(
-                id: pin.id, name: pin.name, coordinate: pin.coordinate,
-                freeRooms: known.filter { free.contains($0.id) }.count,
-                totalRooms: known.count)
-        }
+        pins = MapPlacement.coloured(
+            pins, rooms: catalogue.rooms, covered: Set(freeRooms.rooms.map(\.id)), free: free)
         showsAvailability = true
     }
 
@@ -136,10 +135,14 @@ final class CampusMapService {
             let decoded = try await BackgroundJSON.decode(BuildingGeoJSON.self, from: data)
             locations = Dictionary(
                 decoded.locations.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            locationsRefreshed = true
+            await MapPlacement.cache(locations)
             log.notice("map: \(self.locations.count, privacy: .public) building coordinates")
         } catch {
             log.error("Building coordinates failed: \(error.localizedDescription)")
-            errorMessage = userFacingMessage(error)
+            // Cached coordinates still place the pins; only say so when
+            // there is nothing to show.
+            if locations.isEmpty { errorMessage = userFacingMessage(error) }
         }
     }
 }

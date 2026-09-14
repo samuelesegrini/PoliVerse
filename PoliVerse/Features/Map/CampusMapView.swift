@@ -12,7 +12,11 @@ struct CampusMapView: View {
     @Environment(RoomsService.self) private var rooms
 
     @State private var campus: String?
-    @State private var position: MapCameraPosition = .automatic
+    /// Opens on Milano rather than `.automatic`, which with no pins yet is
+    /// the whole world, then jumps once they arrive.
+    @State private var position: MapCameraPosition = .region(MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 45.4786, longitude: 9.2272),
+        span: MKCoordinateSpan(latitudeDelta: 0.03, longitudeDelta: 0.03)))
     @State private var selected: MapPin?
     @State private var loadingAvailability = false
 
@@ -34,9 +38,11 @@ struct CampusMapView: View {
         .overlay(alignment: .bottom) { legend }
         .navigationTitle("Mappa")
         .navigationBarTitleDisplayMode(.inline)
-        .task {
-            await map.load(campus: campus)
-            recentre()
+        // The map is drawn at once; pins arrive as they are placed, and the
+        // camera frames them the first time there are any.
+        .task { await map.load(campus: campus) }
+        .onChange(of: map.pins.isEmpty) { _, isEmpty in
+            if !isEmpty { recentre() }
         }
         .sheet(item: $selected) { pin in
             NavigationStack { BuildingSheet(pin: pin) }
