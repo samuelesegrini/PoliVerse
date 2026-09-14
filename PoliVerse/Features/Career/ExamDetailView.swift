@@ -6,6 +6,15 @@ struct ExamDetailView: View {
 
     @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
+    /// Captured when the button is tapped, so the sheet keeps its event even
+    /// if the sitting's start passes while it is open.
+    @State private var calendarDraft: ExamCalendarEvent?
+
+    /// Only for a sitting still ahead: past ones have no use in a calendar.
+    private var calendarEvent: ExamCalendarEvent? {
+        guard (exam.date ?? .distantPast) > .now else { return nil }
+        return ExamCalendarEvent(sitting: exam)
+    }
 
     private var accent: Color {
         switch exam.status {
@@ -92,11 +101,21 @@ struct ExamDetailView: View {
                 .padding(.bottom, 20)
             }
             .background(Color(.systemGroupedBackground))
+            .sheet(item: $calendarDraft) { AddToCalendarSheet(event: $0).ignoresSafeArea() }
             .navigationTitle("Dettaglio")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Chiudi") { dismiss() }
+                }
+                if calendarEvent != nil {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            calendarDraft = calendarEvent
+                        } label: {
+                            Label("Aggiungi al calendario", systemImage: "calendar.badge.plus")
+                        }
+                    }
                 }
             }
         }

@@ -227,7 +227,10 @@ final class WeBeepService {
     /// fit in a background refresh, and a favourite is the student saying
     /// which pages they care about. Every failure is quiet; the next pass
     /// tries again.
-    func checkForUpdates(force: Bool = false) async {
+    /// - Parameter deadline: stop starting new courses after this. A
+    ///   background refresh passes one, so the pass ends on its own terms
+    ///   rather than being killed mid-write.
+    func checkForUpdates(force: Bool = false, until deadline: Date? = nil) async {
         guard !session.useMockData, api != nil, let account = session.student?.matricola,
               updatesWindow.shouldLoad(force: force, source: account) else { return }
 
@@ -242,6 +245,7 @@ final class WeBeepService {
             // A sign-out or a career switch mid-pass ends it: the rest would
             // be weighed against somebody else's sittings.
             guard !Task.isCancelled, session.student?.matricola == account,
+                  deadline.map({ Date.now < $0 }) ?? true,
                   let target = MaterialCourse(course) else { break }
             do {
                 let raw = try await api.contents(courseID: target.moodleID)

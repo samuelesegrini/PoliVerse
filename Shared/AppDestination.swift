@@ -4,10 +4,12 @@ import SwiftUI
 /// What the app can be asked to do from outside it: Siri, Spotlight's action
 /// row, and the Shortcuts app.
 ///
-/// Each intent only opens a screen. Nothing here reads or writes university
-/// data on its own — an intent runs without the app in front of the user, and
-/// a "check my exams" that quietly authenticated in the background is not
-/// something to build casually.
+/// Each intent here only opens a screen. Nothing here reads or writes
+/// university data on its own — an intent runs without the app in front of
+/// the user, and a "check my exams" that quietly authenticated in the
+/// background is not something to build casually. The two that do answer
+/// (`ExamUpdatesIntent`, `NextExamIntent`) only read what the app already
+/// saved, and ask for the phone to be unlocked.
 nonisolated enum AppDestination: String, Sendable {
     case home, calendar, career, weBeep, search, freeRooms, map, plan, simulator
 

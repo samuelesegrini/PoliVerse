@@ -101,11 +101,14 @@ struct PoliVerseApp: App {
         // refresh gets about 30 seconds in total, so it warms the two screens
         // a student opens to and leaves the rest to the next foregrounding.
         background.register {
+            let started = Date.now
             await agenda.load(force: true)
             await career.load(force: true)
             // Not forced: the hourly window keeps a burst of background runs
             // from reading every course page each time.
-            await weBeep.checkForUpdates()
+            // Measured from the start of the task: iOS gives about 30 s in
+            // all, and the reschedule below needs a few of them.
+            await weBeep.checkForUpdates(until: started.addingTimeInterval(22))
             // Reminders follow whatever the refresh found: a lecture moved
             // overnight must not announce itself at the old time.
             await notifications.reschedule(

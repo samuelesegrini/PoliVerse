@@ -24,6 +24,18 @@ struct PoliVerseShortcuts: AppShortcutsProvider {
             shortTitle: "Carriera",
             systemImageName: "chart.bar")
         AppShortcut(
+            intent: ExamUpdatesIntent(),
+            phrases: ["Novità sui miei esami in \(.applicationName)",
+                      "Ci sono esiti nuovi in \(.applicationName)"],
+            shortTitle: "Novità esami",
+            systemImageName: "bell.badge")
+        AppShortcut(
+            intent: NextExamIntent(),
+            phrases: ["Quando è il prossimo esame in \(.applicationName)",
+                      "Prossimo esame in \(.applicationName)"],
+            shortTitle: "Prossimo esame",
+            systemImageName: "calendar.badge.clock")
+        AppShortcut(
             intent: OpenMaterialsIntent(),
             phrases: ["Apri WeBeep in \(.applicationName)",
                       "Materiali dei corsi in \(.applicationName)"],
