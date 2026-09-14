@@ -6,6 +6,8 @@
 	     "one.wape.PoliVerse" is the CieID return (the CieID SDK asks
 	     integrators to use the bundle identifier); "poliverse" is the Moodle
 	     tool_mobile token redirect. -->
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>PoliVerse aggiunge al calendario le lezioni del tuo orario personalizzato, senza leggere gli altri eventi.</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>one.wape.PoliVerse.refresh</string>

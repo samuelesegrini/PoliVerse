@@ -15,6 +15,8 @@ struct PersonalTimetableView: View {
     @State private var building = false
     @State private var semester = 1
     @State private var confirmingDelete = false
+    @State private var confirmingExport = false
+    @State private var exportOutcome: CalendarExporter.Outcome?
 
     var body: some View {
         Group {
@@ -38,6 +40,7 @@ struct PersonalTimetableView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu("Opzioni", systemImage: "ellipsis.circle") {
                         Button("Modifica insegnamenti", systemImage: "pencil") { building = true }
+                        Button("Aggiungi al Calendario", systemImage: "calendar.badge.plus") { confirmingExport = true }
                         Button("Elimina orario", systemImage: "trash", role: .destructive) { confirmingDelete = true }
                     }
                 }
@@ -45,6 +48,19 @@ struct PersonalTimetableView: View {
         }
         .sheet(isPresented: $building) {
             PersonalTimetableBuilder()
+        }
+        .confirmationDialog("Aggiungere le lezioni al Calendario?", isPresented: $confirmingExport, titleVisibility: .visible) {
+            Button("Aggiungi") {
+                guard let timetable = personal.timetable else { return }
+                Task { exportOutcome = await CalendarExporter.export(CalendarExport.drafts(for: timetable)) }
+            }
+        } message: {
+            Text("Ogni lezione diventa un evento settimanale fino alla fine delle lezioni. Se le hai già aggiunte, verranno duplicate.")
+        }
+        .alert(exportTitle, isPresented: Binding(get: { exportOutcome != nil }, set: { if !$0 { exportOutcome = nil } })) {
+            Button("OK") { exportOutcome = nil }
+        } message: {
+            Text(exportMessage)
         }
         .confirmationDialog("Eliminare l'orario personalizzato?", isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button("Elimina", role: .destructive) { personal.delete() }
@@ -56,6 +72,20 @@ struct PersonalTimetableView: View {
                 let semesters = Set(timetable.visibleEntries.compactMap(\.semester))
                 if !semesters.contains(semester), let first = semesters.min() { semester = first }
             }
+        }
+    }
+
+    private var exportTitle: String {
+        if case .added = exportOutcome { return String(localized: "Lezioni aggiunte") }
+        return String(localized: "Calendario non aggiornato")
+    }
+
+    private var exportMessage: String {
+        switch exportOutcome {
+        case .added(let count): String(localized: "\(count) eventi settimanali nel calendario predefinito.")
+        case .denied: String(localized: "Consenti a PoliVerse di aggiungere eventi in Impostazioni › Privacy › Calendari.")
+        case .failed(let message): message
+        case nil: ""
         }
     }
 

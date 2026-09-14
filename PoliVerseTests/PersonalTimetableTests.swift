@@ -173,3 +173,37 @@ struct PersonalTimetableTests {
         #expect(!TimetableHandover.suggestsRetiring(confirmed: 0, of: 0))
     }
 }
+
+@Suite("Personal timetable calendar export")
+struct PersonalTimetableExportTests {
+    private let calendar = PoliMiDate.romeCalendar
+
+    @Test("Each slot becomes one weekly event from its first lesson to the last day of lessons")
+    func drafts() throws {
+        // 14/09/2026 is a Monday; a Wednesday slot starts on the 16th.
+        let start = calendar.date(from: DateComponents(year: 2026, month: 9, day: 14))!
+        let end = calendar.date(from: DateComponents(year: 2026, month: 12, day: 23))!
+        let entry = PersonalTimetable.Entry(
+            code: "052496", title: "ALGORITHMS", teacher: "Rossi", semester: 1, lessonsStart: start, lessonsEnd: end,
+            slots: [.init(weekday: 4, startMinutes: 615, endMinutes: 735, room: "3.1.1", roomID: "63", address: "Edificio 3")])
+        let timetable = PersonalTimetable(name: "Rossi Mario", yearCode: "2026", entries: [entry], builtAt: .now)
+        let drafts = CalendarExport.drafts(for: timetable)
+        let draft = try #require(drafts.first)
+        #expect(drafts.count == 1)
+        #expect(calendar.dateComponents([.month, .day, .hour, .minute], from: draft.start)
+            == DateComponents(month: 9, day: 16, hour: 10, minute: 15))
+        #expect(draft.end.timeIntervalSince(draft.start) == 7200)
+        #expect(draft.repeatsUntil == calendar.date(byAdding: .day, value: 1, to: end))
+        #expect(draft.location == "Aula 3.1.1, Edificio 3")
+    }
+
+    @Test("Hidden teachings and slots without dates are not exported")
+    func skipped() {
+        let entry = PersonalTimetable.Entry(code: "1", title: "X", teacher: nil, semester: 1, lessonsStart: nil,
+                                            lessonsEnd: nil, slots: [.init(weekday: 2, startMinutes: 0, endMinutes: 60, room: nil, roomID: nil, address: nil)])
+        var timetable = PersonalTimetable(name: "A", yearCode: "2026", entries: [entry], builtAt: .now)
+        #expect(CalendarExport.drafts(for: timetable).isEmpty)
+        timetable.hiddenCodes = ["1"]
+        #expect(CalendarExport.drafts(for: timetable).isEmpty)
+    }
+}
