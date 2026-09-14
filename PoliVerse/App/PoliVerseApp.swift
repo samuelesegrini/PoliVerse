@@ -32,6 +32,10 @@ struct PoliVerseApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        // Before anything else: a report MetricKit has waiting is delivered to
+        // whoever is subscribed, and a late subscription is how one gets lost.
+        PerformanceMonitor.start()
+
         // One Session, shared: every service reads its auth state and mock
         // flag, so they must all observe the same instance.
         let session = Session()
@@ -102,6 +106,8 @@ struct PoliVerseApp: App {
         // a student opens to and leaves the rest to the next foregrounding.
         background.register {
             let started = Date.now
+            let interval = PerfSignpost.begin(.backgroundRefresh)
+            defer { PerfSignpost.end(interval) }
             await agenda.load(force: true)
             await career.load(force: true)
             // Not forced: the hourly window keeps a burst of background runs
@@ -160,10 +166,6 @@ struct PoliVerseApp: App {
                 .task {
                     UNUserNotificationCenter.current().delegate = notificationRouter
                     await notifications.refreshAuthorization()
-                    // After the first frame, deliberately: subscribing is not
-                    // free and nothing about it needs to happen before the UI
-                    // is on screen.
-                    LaunchMetrics.start()
                 }
                 // Asked for when the app leaves the screen, which is the
                 // moment iOS is deciding whether to grant one.

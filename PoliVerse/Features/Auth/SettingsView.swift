@@ -104,6 +104,13 @@ struct SettingsView: View {
                         Text(session.serviceAuthorizationFailed ? "Non autorizzati" : "OK")
                             .foregroundStyle(session.serviceAuthorizationFailed ? .orange : .green)
                     }
+                    #if DEBUG
+                    NavigationLink {
+                        MetricReportsView()
+                    } label: {
+                        Text(verbatim: "MetricKit")
+                    }
+                    #endif
                 }
             } footer: {
                 Text("Utile per segnalare un problema: mostra dove l'app sta cercando i servizi del Politecnico.")

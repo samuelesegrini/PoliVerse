@@ -100,6 +100,10 @@ final class FreshnessCoordinator {
         let previous = inFlight
         let task = Task { @MainActor [loads] in
             await previous?.value
+            // Inside the chain, after the previous run: passes never overlap
+            // here, which a same-named signpost requires.
+            let interval = PerfSignpost.begin(.freshnessRevalidate)
+            defer { PerfSignpost.end(interval) }
             for load in loads {
                 await load.run(force)
             }

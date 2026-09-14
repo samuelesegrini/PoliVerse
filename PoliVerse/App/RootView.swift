@@ -22,7 +22,13 @@ struct RootView: View {
             }
         }
         .task {
-            await session.restore()
+            // Launch, as a student feels it, ends when the account is back —
+            // not at the first frame, which is a spinner.
+            await PerformanceMonitor.trackLaunch("session-restore") {
+                let interval = PerfSignpost.begin(.sessionRestore)
+                defer { PerfSignpost.end(interval) }
+                await session.restore()
+            }
             // After the restore, not before: a token in the Keychain is what
             // says this install predates the onboarding.
             if session.student != nil { onboarding.adoptExistingInstall() }

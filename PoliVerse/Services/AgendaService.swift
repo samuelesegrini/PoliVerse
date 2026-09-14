@@ -69,7 +69,12 @@ final class AgendaService {
         else { return }
         isLoading = true
         errorMessage = nil
-        defer { isLoading = false }
+        // After the guard, so a skipped call is not timed as a fast one.
+        let interval = PerfSignpost.begin(.agendaLoad)
+        defer {
+            isLoading = false
+            PerfSignpost.end(interval)
+        }
 
         let calendar = PoliMiDate.romeCalendar
         let from = calendar.date(byAdding: lookBehind, to: date) ?? date

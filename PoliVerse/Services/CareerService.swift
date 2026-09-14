@@ -150,7 +150,12 @@ final class CareerService {
         isLoading = true
         errorMessage = nil
         examServicesRefused = false
-        defer { isLoading = false }
+        // After the guard, so a skipped call is not timed as a fast one.
+        let interval = PerfSignpost.begin(.careerLoad)
+        defer {
+            isLoading = false
+            PerfSignpost.end(interval)
+        }
 
         restoreCache()
 
