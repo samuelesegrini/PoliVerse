@@ -316,6 +316,29 @@ nonisolated enum MockData {
         ]
     }
 
+    static let forums = [
+        CourseForum(id: 1, name: "Avvisi", kind: .announcements),
+        CourseForum(id: 2, name: "Forum di discussione", kind: .discussion),
+    ]
+
+    static var discussions: [MoodleDiscussion] {
+        let now = Int(Date.now.timeIntervalSince1970)
+        return [
+            MoodleDiscussion(id: 1, discussion: 1, name: "Aula dell'appello", subject: "Aula dell'appello",
+                             message: "<p>L'appello di <b>febbraio</b> si terrà in aula L.26.</p>",
+                             created: now - 7200, timemodified: now - 7200, userfullname: "Stefano Ceri", pinned: true),
+            MoodleDiscussion(id: 2, discussion: 2, name: "Slide lezione 5", subject: "Slide lezione 5",
+                             message: "<p>Caricate le slide della quinta lezione.</p>",
+                             created: now - 172_800, timemodified: now - 172_800, userfullname: "Stefano Ceri", pinned: false),
+        ]
+    }
+
+    static func posts(for discussion: MoodleDiscussion) -> [MoodlePosts.Post] {
+        [MoodlePosts.Post(id: discussion.id, subject: discussion.subject, message: discussion.message,
+                          timecreated: discussion.created, hasparent: false,
+                          author: .init(fullname: discussion.userfullname))]
+    }
+
     static func weBeepSections(for course: Course) -> [WeBeepSection] {
         let base = Date.now
         func file(_ name: String, _ section: String, _ mb: Double, _ daysAgo: Int) -> WeBeepFile {

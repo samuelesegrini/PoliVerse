@@ -8,7 +8,6 @@ struct CourseDetailView: View {
     @Environment(CareerService.self) private var career
     @Environment(CourseService.self) private var courses
     @Environment(\.locale) private var locale
-    @Environment(\.openURL) private var openURL
     @Environment(UpdateFeed.self) private var feed
     @Environment(ManifestiService.self) private var manifesti
     @Environment(Session.self) private var session
@@ -40,9 +39,11 @@ struct CourseDetailView: View {
     }
 
     var body: some View {
+        ScrollViewReader { reader in
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
+                hub(reader)
 
                 if !lectures.isEmpty {
                     section("Prossime lezioni") {
@@ -70,6 +71,7 @@ struct CourseDetailView: View {
                             .buttonStyle(.plain)
                         }
                     }
+                    .id(Self.examsAnchor)
                 }
 
                 let news = FeedItem.items(from: feed.recent, for: course)
@@ -91,47 +93,10 @@ struct CourseDetailView: View {
                     }
                 }
 
-                section("Programma") {
-                    NavigationLink {
-                        CourseSyllabusView(course: course)
-                    } label: {
-                        row(
-                            title: String(localized: "Programma, esame e libri"),
-                            subtitle: String(localized: "Dalla scheda del Manifesto degli studi"),
-                            icon: "book.closed",
-                            chevron: true
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                section("Materiali") {
-                    NavigationLink {
-                        CourseMaterialsView(course: course)
-                    } label: {
-                        row(
-                            title: "Apri su WeBeep",
-                            subtitle: "Dispense, esercitazioni e registrazioni",
-                            icon: "folder.fill",
-                            chevron: true
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                if let email = course.teacherEmail, !email.isEmpty {
-                    section("Docente") {
-                        Button {
-                            if let url = URL(string: "mailto:\(email)") { openURL(url) }
-                        } label: {
-                            row(title: course.teacher, subtitle: email, icon: "envelope", chevron: true)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
             }
             .padding()
             .padding(.bottom, 20)
+        }
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle(course.name)
@@ -160,6 +125,52 @@ struct CourseDetailView: View {
             }
             await lectures
         }
+    }
+
+    private static let examsAnchor = "appelli"
+
+    /// The course in one place: every part of it one tap from the top.
+    private func hub(_ reader: ScrollViewProxy) -> some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 8)], spacing: 8) {
+            NavigationLink { CourseForumsView(course: course, kind: .announcements) } label: {
+                tile("Avvisi", "megaphone.fill")
+            }
+            NavigationLink { CourseForumsView(course: course, kind: .discussion) } label: {
+                tile("Forum", "bubble.left.and.bubble.right.fill")
+            }
+            NavigationLink { CourseMaterialsView(course: course) } label: {
+                tile("Materiali", "folder.fill")
+            }
+            NavigationLink { CourseSyllabusView(course: course) } label: {
+                tile("Programma", "book.closed.fill")
+            }
+            NavigationLink { CourseInfoView(course: course) } label: {
+                tile("Info", "info.circle.fill")
+            }
+            Button {
+                withAnimation { reader.scrollTo(Self.examsAnchor, anchor: .top) }
+            } label: {
+                tile("Appelli", "pencil.and.list.clipboard")
+            }
+            .disabled(examSessions.isEmpty)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func tile(_ title: LocalizedStringKey, _ icon: String) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(accent)
+            Text(title)
+                .font(.caption.weight(.medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, minHeight: 64)
+        .padding(.vertical, 6)
+        .cardBackground()
+        .contentShape(.rect)
     }
 
     private var header: some View {

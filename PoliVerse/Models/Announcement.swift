@@ -18,13 +18,7 @@ nonisolated enum AnnouncementDetector {
     /// Moodle creates one per course ("Annunci", "Announcements", "Avvisi",
     /// "News forum"); open discussion forums are left alone.
     static func forumInstances(in sections: [MoodleSection]) -> [Int] {
-        sections.flatMap { $0.modules ?? [] }.compactMap { module in
-            guard module.modname == "forum", let instance = module.instance else { return nil }
-            let name = DocumentClassifier.normalise(module.name)
-            let isAnnouncements = name.range(
-                of: #"\b(annunci|avvisi|announcements?|news forum)\b"#, options: .regularExpression) != nil
-            return isAnnouncements ? instance : nil
-        }
+        CourseForum.forums(in: sections).filter { $0.kind == .announcements }.map(\.id)
     }
 
     /// Posts created this long before the last reading still count as new:

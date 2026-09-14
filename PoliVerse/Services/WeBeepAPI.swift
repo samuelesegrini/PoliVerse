@@ -106,6 +106,14 @@ nonisolated final class WeBeepAPI: Sendable {
         ).discussions ?? []
     }
 
+    /// `mod_forum_get_discussion_posts` — one thread, opening post and replies.
+    func discussionPosts(discussionID: Int) async throws -> MoodlePosts {
+        try await call(
+            "mod_forum_get_discussion_posts",
+            parameters: ["discussionid": String(discussionID), "sortby": "created", "sortdirection": "ASC"],
+            as: MoodlePosts.self)
+    }
+
     /// `mod_assign_get_assignments` — every assignment of the given courses in
     /// one request, `courseids[n]` as Moodle's array form expects.
     func assignments(courseIDs: [Int]) async throws -> [Int: [MoodleAssignment]] {

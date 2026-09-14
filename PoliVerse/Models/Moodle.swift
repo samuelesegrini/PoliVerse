@@ -89,6 +89,30 @@ nonisolated struct MoodleDiscussion: Decodable, Sendable, Equatable {
     var title: String { subject ?? name ?? "" }
 }
 
+/// `mod_forum_get_discussion_posts` — every post in one discussion.
+nonisolated struct MoodlePosts: Decodable, Sendable {
+    nonisolated struct Post: Decodable, Sendable, Identifiable {
+        nonisolated struct Author: Decodable, Sendable {
+            let fullname: String?
+        }
+        let id: Int
+        let subject: String?
+        let message: String?
+        let timecreated: Int?
+        let hasparent: Bool?
+        let author: Author?
+
+        var isReply: Bool { hasparent ?? false }
+        var created: Date? { timecreated.map { Date(timeIntervalSince1970: TimeInterval($0)) } }
+    }
+    let posts: [Post]?
+
+    /// Moodle answers newest first; a thread reads oldest first.
+    var chronological: [Post] {
+        (posts ?? []).sorted { ($0.timecreated ?? 0, $0.id) < ($1.timecreated ?? 0, $1.id) }
+    }
+}
+
 nonisolated struct MoodleDiscussions: Decodable, Sendable {
     let discussions: [MoodleDiscussion]?
 }

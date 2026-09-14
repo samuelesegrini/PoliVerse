@@ -171,6 +171,7 @@ final class WeBeepService {
             }
 
             let raw = try await api.contents(courseID: moodleID)
+            contents[moodleID] = (raw, .now)
             // The listing is already here; noticing what is new costs nothing.
             // Only for a page the background pass would read anyway — this
             // year's, linked by id — so opening an old course never announces
@@ -400,6 +401,46 @@ final class WeBeepService {
 
         log.warning("No WeBeep course matched \(course.id) \(course.name)")
         return nil
+    }
+
+    // MARK: - Forums
+
+    /// Course pages read recently, so the hub's forums and the materials
+    /// screen share one `core_course_get_contents`.
+    private var contents: [Int: (sections: [MoodleSection], at: Date)] = [:]
+
+    /// The forums on a course's page; nil when WeBeep cannot say.
+    func forums(for course: Course) async -> [CourseForum]? {
+        if session.useMockData { return MockData.forums }
+        guard let api else { return nil }
+        if courses.isEmpty { await loadCourses() }
+        guard let moodleID = moodleCourseID(for: course) else { return nil }
+        if let cached = contents[moodleID], Date.now.timeIntervalSince(cached.at) < 600 {
+            return CourseForum.forums(in: cached.sections)
+        }
+        do {
+            let raw = try await api.contents(courseID: moodleID)
+            contents[moodleID] = (raw, .now)
+            return CourseForum.forums(in: raw)
+        } catch let error as WeBeepAPI.Failure where error.isAuthFailure {
+            handle(error)
+            return nil
+        } catch {
+            log.error("Forums for course \(moodleID, privacy: .public) failed: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    func discussions(in forum: CourseForum) async throws -> [MoodleDiscussion] {
+        if session.useMockData { return MockData.discussions }
+        guard let api else { throw WeBeepAPI.Failure.moodle(code: "invalidtoken", message: "") }
+        return try await api.discussions(forumID: forum.id, perPage: 30)
+    }
+
+    func posts(in discussion: MoodleDiscussion) async throws -> [MoodlePosts.Post] {
+        if session.useMockData { return MockData.posts(for: discussion) }
+        guard let api else { throw WeBeepAPI.Failure.moodle(code: "invalidtoken", message: "") }
+        return try await api.discussionPosts(discussionID: discussion.discussion ?? discussion.id).chronological
     }
 
     private func handle(_ error: WeBeepAPI.Failure) {
