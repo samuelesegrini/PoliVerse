@@ -275,45 +275,36 @@ final class ManifestiService {
         log.notice("manifesti: scaglione impostato")
     }
 
+    /// Where a teaching's page offers to add it to the cart, read on the
+    /// cart's session: the page shows the add link only once a name is set,
+    /// and only for that name's bracket.
+    func cartLink(for teaching: ManifestoTeaching) async -> PersonalTimetableParser.CartLink? {
+        guard let html = await page("ManifestoPublic.do?\(detailQuery(teaching))") else { return nil }
+        return PersonalTimetableParser.cartLink(in: html, code: teaching.code)
+    }
+
     /// Adds a teaching to the personalised timetable.
     ///
     /// Answers a small XML document rather than a page: `<success>` with the
-    /// new count, or `<error>`. Parsed for the count so the UI can show it
-    /// without refetching the cart.
-    @discardableResult
-    func addToTimetable(_ teaching: ManifestoTeaching, section: String = "") async -> Bool {
-        await cartCall("EVN_ADDCART", teaching: teaching, section: section)
-    }
-
-    @discardableResult
-    func removeFromTimetable(_ teaching: ManifestoTeaching, section: String = "") async -> Bool {
-        await cartCall("EVN_DELCART", teaching: teaching, section: section)
-    }
-
-    private func cartCall(
-        _ event: String, teaching: ManifestoTeaching, section: String
-    ) async -> Bool {
-        guard let xml = await post("ManifestoPublic.do?\(event)=EVENTO", form: [
+    /// new count, or `<error>` with the reason — a full cart, a teaching not
+    /// offered to this bracket.
+    func addToTimetable(
+        _ teaching: ManifestoTeaching, link: PersonalTimetableParser.CartLink?, section: String = ""
+    ) async -> PersonalTimetableParser.CartReply {
+        guard let xml = await post("ManifestoPublic.do?EVN_ADDCART=EVENTO", form: [
             "aa": teaching.year ?? year.code,
-            "k_corso_la": teaching.courseCode,
-            "k_indir": teaching.planCode ?? "",
+            "k_corso_la": link?.courseCode ?? teaching.courseCode,
+            "k_indir": link?.planCode ?? teaching.planCode ?? "",
             "codDescr": teaching.code,
-            "ac_ins": "0",
-            "semestre": teaching.semester ?? "",
+            // The year of course, as the page's own script sends it.
+            "ac_ins": link?.yearOfCourse ?? "0",
+            "semestre": link?.semester ?? teaching.semester ?? "",
             "sezione": section,
             "lang": PoliMiLanguage.current.rawValue,
-        ]) else { return false }
-
-        if let count = HTMLScraper.firstMatch(
-            "<num-ins-cart>([0-9]+)</num-ins-cart>", in: xml, group: 1),
-           let value = Int(count) {
-            cartCount = value
-        }
-        let ok = xml.contains("<success>")
-        if !ok {
-            log.error("manifesti: \(event, privacy: .public) rifiutato")
-        }
-        return ok
+        ]) else { return .refused(nil) }
+        let reply = PersonalTimetableParser.cartReply(xml)
+        if case .added(let count) = reply { cartCount = count }
+        return reply
     }
 
     /// Empties the personalised timetable.
@@ -322,13 +313,10 @@ final class ManifestiService {
         cartCount = 0
     }
 
-    /// The timetable page itself, as the catalogue renders it.
-    ///
-    /// Returned as a URL rather than parsed: the weekly grid is a layout, not
-    /// data, and for 2026/27 the slots are not published yet. Showing the real
-    /// page is honest where inventing a grid from nothing would not be.
-    var timetableURL: URL {
-        URL(string: "\(base.absoluteString)/GestioneCarrelloPublic.do?EVN_DEFAULT=evento&aa=\(year.code)&lang=\(PoliMiLanguage.current.rawValue)&jaf_currentWFID=main")!
+    /// The "orario testuale" of one semester: the cart as sentences, which
+    /// ``PersonalTimetableParser`` reads into slots.
+    func textTimetable(semester: Int) async -> String? {
+        await page("GestioneCarrelloPublic.do?evn_default=EVENTO&tab_selected=2&sel_semestre=\(semester)&sel_aa=\(year.code)&lang=\(PoliMiLanguage.current.rawValue)&jaf_currentWFID=main")
     }
 
     // MARK: - Transport

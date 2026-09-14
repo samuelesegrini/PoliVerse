@@ -316,6 +316,24 @@ nonisolated enum MockData {
         ]
     }
 
+    static var personalTimetable: PersonalTimetable {
+        let calendar = PoliMiDate.romeCalendar
+        let start = calendar.date(from: DateComponents(year: 2026, month: 9, day: 14))
+        let end = calendar.date(from: DateComponents(year: 2026, month: 12, day: 23))
+        let address = "Milano Città Studi - Piazza Leonardo da Vinci 32 - Edificio 3 - Piano Primo"
+        return PersonalTimetable(name: "Rossi Mario", yearCode: "2026", entries: [
+            .init(code: "052496", title: "ALGORITHMS AND PARALLEL COMPUTING", teacher: "Rossi Matteo Giovanni",
+                  semester: 1, lessonsStart: start, lessonsEnd: end, slots: [
+                    .init(weekday: 2, startMinutes: 495, endMinutes: 615, room: "3.1.4", roomID: "46", address: address),
+                    .init(weekday: 4, startMinutes: 615, endMinutes: 735, room: "3.1.1", roomID: "63", address: address),
+                  ]),
+            .init(code: "059156", title: "ANALISI MATEMATICA 1 E GEOMETRIA", teacher: "Notari Roberto",
+                  semester: 1, lessonsStart: start, lessonsEnd: end, slots: [
+                    .init(weekday: 2, startMinutes: 495, endMinutes: 615, room: "5.02", roomID: "4738", address: address),
+                  ]),
+        ], builtAt: .now)
+    }
+
     static let forums = [
         CourseForum(id: 1, name: "Avvisi", kind: .announcements),
         CourseForum(id: 2, name: "Forum di discussione", kind: .discussion),

@@ -19,7 +19,8 @@ struct PoliVerseApp: App {
     @State private var campusMap: CampusMapService
     @State private var careers: CareersService
     @State private var notifications: NotificationService
-    @State private var manifesti = ManifestiService()
+    @State private var manifesti: ManifestiService
+    @State private var personalTimetable: PersonalTimetableService
     @State private var network: NetworkMonitor
     @State private var pending: PendingChanges
     @State private var liveActivity = LiveActivityController()
@@ -53,6 +54,9 @@ struct PoliVerseApp: App {
         // comes from maps_rest, which needs no token.
         let rooms = RoomsService()
         _rooms = State(initialValue: rooms)
+        let manifesti = ManifestiService()
+        _manifesti = State(initialValue: manifesti)
+        _personalTimetable = State(initialValue: PersonalTimetableService(manifesti: manifesti))
         let freeRooms = FreeRoomsService(catalogue: rooms)
         _freeRooms = State(initialValue: freeRooms)
         _campusMap = State(initialValue: CampusMapService(catalogue: rooms, freeRooms: freeRooms))
@@ -145,6 +149,7 @@ struct PoliVerseApp: App {
                 .environment(careers)
                 .environment(notifications)
                 .environment(manifesti)
+                .environment(personalTimetable)
                 .environment(network)
                 .environment(pending)
                 .environment(liveActivity)

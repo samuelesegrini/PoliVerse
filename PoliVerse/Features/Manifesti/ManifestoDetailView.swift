@@ -14,7 +14,7 @@ struct ManifestoDetailView: View {
 
     @State private var detail: ManifestoDetail?
     @State private var loading = true
-    @State private var adding = false
+    @Environment(PersonalTimetableService.self) private var personal
 
     var body: some View {
         List {
@@ -70,18 +70,18 @@ struct ManifestoDetailView: View {
 
                 Section {
                     Button {
-                        Task {
-                            adding = true
-                            await manifesti.addToTimetable(teaching)
-                            adding = false
-                        }
+                        personal.toggle(teaching)
                     } label: {
-                        Label(adding ? "Aggiungo…" : "Aggiungi al mio orario",
-                              systemImage: "calendar.badge.plus")
+                        if personal.isSelected(teaching) {
+                            Label("Nel mio orario personalizzato", systemImage: "checkmark.circle.fill")
+                        } else {
+                            Label("Aggiungi al mio orario", systemImage: "calendar.badge.plus")
+                        }
                     }
-                    .disabled(adding)
+                    .disabled(!personal.isSelected(teaching)
+                              && personal.selection.count >= PersonalTimetableService.capacity)
                 } footer: {
-                    Text("L'orario personalizzato è uno strumento informale del Politecnico: non sostituisce la presentazione del piano di studi.")
+                    Text("Viene aggiunto alla selezione dell'orario personalizzato: calcola l'orario da lì. È uno strumento informale del Politecnico e non sostituisce il piano di studi.")
                 }
             } else if !loading {
                 Section {

@@ -78,7 +78,7 @@ struct ManifestiView: View {
     }
 }
 
-private struct ManifestoRow: View {
+struct ManifestoRow: View {
     let teaching: ManifestoTeaching
 
     var body: some View {
