@@ -33,6 +33,21 @@ nonisolated enum SyllabusPicker {
         return nil
     }
 
+    /// The module whose scheda is the student's, on a row already known to be
+    /// their degree course and plan: the bracket they chose, else the one their
+    /// surname falls in, else the first with a scheda.
+    static func module(in modules: [ManifestoModule], bracket: BracketChoice?, surname: String?) -> ManifestoModule? {
+        let withScheda = modules.filter { $0.syllabusID != nil }
+        let trim = { (text: String?) in text?.trimmingCharacters(in: .whitespaces).uppercased() }
+        if let bracket, let chosen = withScheda.first(where: {
+            trim($0.scaglioneFrom) == trim(bracket.from) && trim($0.scaglioneTo) == trim(bracket.to)
+        }) {
+            return chosen
+        }
+        if let surname, let mine = withScheda.first(where: { $0.covers(surname: surname) }) { return mine }
+        return withScheda.first
+    }
+
     /// Rows of the student's degree course first, the service's order kept
     /// within each group: usually the first detail read is the answer.
     static func ordered(_ rows: [ManifestoTeaching], degreeName: String?) -> [ManifestoTeaching] {
