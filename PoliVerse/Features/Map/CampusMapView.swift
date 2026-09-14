@@ -12,11 +12,9 @@ struct CampusMapView: View {
     @Environment(RoomsService.self) private var rooms
 
     @State private var campus: String?
-    /// Opens on Milano rather than `.automatic`, which with no pins yet is
+    /// Opens on a campus rather than `.automatic`, which with no pins yet is
     /// the whole world, then jumps once they arrive.
-    @State private var position: MapCameraPosition = .region(MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 45.4786, longitude: 9.2272),
-        span: MKCoordinateSpan(latitudeDelta: 0.03, longitudeDelta: 0.03)))
+    @State private var position: MapCameraPosition = .region(CampusRegions.region(for: nil))
     @State private var selected: MapPin?
     /// The campus the camera last framed; nil before any framing.
     @State private var framedCampus: String??
@@ -93,6 +91,8 @@ struct CampusMapView: View {
         .padding(12)
         .background(.bar)
         .onChange(of: campus) { _, _ in
+            // The new campus's city at once; its pins frame it when placed.
+            withAnimation { position = .region(CampusRegions.region(for: campus)) }
             Task { await map.load(campus: campus) }
         }
     }

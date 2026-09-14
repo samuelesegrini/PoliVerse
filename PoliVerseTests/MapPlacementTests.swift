@@ -1,5 +1,6 @@
 import CoreLocation
 import Foundation
+import MapKit
 import Testing
 @testable import PoliVerse
 
@@ -57,5 +58,23 @@ struct MapPlacementTests {
         let decoded = try JSONDecoder().decode([MapPlacement.Stored].self, from: data)
         #expect(decoded.first?.location.id == "MIA0102")
         #expect(decoded.first?.location.coordinate.latitude == 45.47)
+    }
+}
+
+@Suite("Campus default regions")
+struct CampusRegionTests {
+    @Test("Each campus opens on its own city before any pin", arguments: [
+        ("Milano Città Studi", 45.47), ("Milano Bovisa", 45.50), ("Como", 45.80), ("Lecco", 45.85),
+        ("Cremona", 45.13), ("Mantova", 45.15), ("Piacenza", 45.04),
+    ])
+    func region(campus: String, latitude: Double) {
+        let region = CampusRegions.region(for: campus)
+        #expect(abs(region.center.latitude - latitude) < 0.02)
+    }
+
+    @Test("An unknown or unchosen campus opens on Città Studi")
+    func fallback() {
+        #expect(abs(CampusRegions.region(for: nil).center.latitude - 45.4786) < 0.001)
+        #expect(abs(CampusRegions.region(for: "Altrove").center.longitude - 9.2272) < 0.001)
     }
 }

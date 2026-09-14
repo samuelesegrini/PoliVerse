@@ -1,5 +1,6 @@
 import CoreLocation
 import Foundation
+import MapKit
 
 extension MapPin {
     /// The pin before availability was counted.
@@ -81,5 +82,27 @@ nonisolated enum MapPlacement {
     @concurrent
     static func cache(_ locations: [String: BuildingLocation]) async {
         DiskCache.save(locations.values.map(Stored.init), as: cacheName)
+    }
+}
+
+
+/// Where the map opens for a campus before its pins are placed, so choosing
+/// Como does not show Milano while the catalogue loads.
+nonisolated enum CampusRegions {
+    private static let centres: [(keyword: String, latitude: Double, longitude: Double)] = [
+        ("bovisa", 45.5030, 9.1560),
+        ("como", 45.8013, 9.0935),
+        ("lecco", 45.8565, 9.3970),
+        ("cremona", 45.1390, 10.0260),
+        ("mantova", 45.1570, 10.7930),
+        ("piacenza", 45.0440, 9.6960),
+    ]
+
+    static func region(for campus: String?) -> MKCoordinateRegion {
+        let name = campus?.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased() ?? ""
+        let centre = centres.first { name.contains($0.keyword) }
+        return MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: centre?.latitude ?? 45.4786, longitude: centre?.longitude ?? 9.2272),
+            span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02))
     }
 }
