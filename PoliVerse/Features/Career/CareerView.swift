@@ -172,21 +172,33 @@ struct CareerView: View {
     /// the student last looked, which is the reason most visits happen.
     @ViewBuilder
     private func recentUpdates(_ career: CareerService) -> some View {
-        let recent = feed.recent
-        if !recent.isEmpty {
+        let items = FeedItem.items(from: feed.recent)
+        let unread = FeedItem.unreadCount(items, seenAt: feed.seenAt)
+        if !items.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                HStack {
+                HStack(spacing: 6) {
                     Text("Novità")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
+                    if unread > 0 {
+                        Text("\(unread)")
+                            .font(.caption2.weight(.bold))
+                            .monospacedDigit()
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 1)
+                            .background(Theme.brand, in: .capsule)
+                            .foregroundStyle(.white)
+                            .accessibilityLabel("\(unread) non lette")
+                    }
                     Spacer()
                     NavigationLink("Tutte") { ExamUpdatesView() }
                         .font(.caption.weight(.semibold))
                 }
-                ForEach(FeedItem.items(from: recent).prefix(3)) { item in
+                ForEach(items.prefix(3)) { item in
                     let sitting = career.sitting(for: item.update)
                     Button { selectedExam = sitting } label: {
-                        ExamUpdateRow(item: item)
+                        ExamUpdateRow(item: item,
+                                      isUnread: item.isUnread(since: feed.seenAt))
                     }
                     .buttonStyle(.plain)
                     .disabled(sitting == nil)

@@ -62,6 +62,8 @@ struct MainTabView: View {
             Tab("WeBeep", systemImage: "books.vertical", value: "webeep") { WeBeepView() }
             Tab("Calendario", systemImage: "calendar", value: "calendar") { CalendarView() }
             Tab("Carriera", systemImage: "chart.bar", value: "career") { CareerView() }
+                // What changed since the feed was last opened, one per fact.
+                .badge(feed.unreadCount)
             Tab("Cerca", systemImage: "magnifyingglass", value: "search", role: .search) {
                 SearchView()
             }

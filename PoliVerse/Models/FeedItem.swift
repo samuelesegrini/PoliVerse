@@ -45,6 +45,16 @@ nonisolated struct FeedItem: Identifiable, Sendable, Equatable {
         }
     }
 
+    /// Rows the student has not seen: newer than their last visit, and not a
+    /// file's mark the official one has already replaced.
+    static func unreadCount(_ items: [FeedItem], seenAt: Date?) -> Int {
+        items.filter { $0.isUnread(since: seenAt) }.count
+    }
+
+    func isUnread(since seenAt: Date?) -> Bool {
+        !isSuperseded && update.detectedAt > (seenAt ?? .distantPast)
+    }
+
     /// Sightings this close together are the same refresh.
     static let foldWindow: TimeInterval = 3600
 

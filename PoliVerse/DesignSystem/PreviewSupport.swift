@@ -19,6 +19,7 @@ enum PreviewEnvironment {
     }()
 
     static let updates = UpdateFeed()
+    static let notifications = NotificationService()
     static let weBeep = WeBeepService(session: session, feed: updates)
     static let courses = CourseService(session: session, weBeep: weBeep)
     static let agenda = AgendaService(session: session)
@@ -60,6 +61,7 @@ extension View {
             .environment(PreviewEnvironment.agenda)
             .environment(PreviewEnvironment.career)
             .environment(PreviewEnvironment.updates)
+            .environment(PreviewEnvironment.notifications)
             .environment(PreviewEnvironment.weBeep)
             .environment(PreviewEnvironment.notices)
             .environment(PreviewEnvironment.news)

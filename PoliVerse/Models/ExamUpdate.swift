@@ -198,7 +198,11 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
     }
 
     var sourceLabel: String {
-        kind == .announcementPosted ? String(localized: "WeBeep · forum Annunci") : source.label
+        switch kind {
+        case .announcementPosted: String(localized: "WeBeep · forum Annunci")
+        case .assignmentAdded, .deadlineChanged: String(localized: "WeBeep · consegne")
+        default: source.label
+        }
     }
 
     /// The same sighting read as another kind, once the file's content says

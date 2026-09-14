@@ -56,6 +56,19 @@ struct NotificationSettingsView: View {
                     Text("Esiti, aule, appelli spostati e finestre di rifiuto, appena l'app se ne accorge. Il resto arriva in un riepilogo alle 18:00, e di notte solo ciò che è urgente.")
                 }
 
+                if !notifications.preferences.mutedCourses.isEmpty {
+                    Section {
+                        ForEach(notifications.preferences.mutedCourses, id: \.self) { course in
+                            Text(course.name)
+                        }
+                        .onDelete { notifications.preferences.mutedCourses.remove(atOffsets: $0) }
+                    } header: {
+                        Text("Corsi silenziati")
+                    } footer: {
+                        Text("Le loro novità restano nell'app; nessuna notifica, promemoria o riepilogo. Scorri per riattivarle.")
+                    }
+                }
+
                 Section {
                     Toggle("Cerca la mia matricola negli esiti", isOn: $notifications.preferences.readResultsFiles)
                         .disabled(!notifications.preferences.examUpdates)

@@ -42,7 +42,8 @@ nonisolated enum ExamUpdatePolicy {
 
         return updates.map { update in
             var decided = update
-            guard preferences.examUpdates else {
+            // Off altogether, or this course silenced (§11.3): the feed only.
+            guard preferences.examUpdates, !preferences.isMuted(code: update.courseCode, name: update.courseName) else {
                 decided.delivery = .inApp
                 return decided
             }
@@ -304,6 +305,9 @@ nonisolated struct ExamUpdateLog: Sendable, Equatable, Codable {
     var state: ExamWatchState?
     /// Each WeBeep course's last listing, by Moodle course id.
     var materials: [String: MaterialSnapshot]?
+    /// When the student last opened the full feed. Kept with the log, so it
+    /// belongs to the account and goes when the account's data does.
+    var seenAt: Date?
     /// Deadlines ahead, per Moodle course id, for the reminders.
     var deadlines: [String: [AssignmentDeadline]]?
     /// Newest first.

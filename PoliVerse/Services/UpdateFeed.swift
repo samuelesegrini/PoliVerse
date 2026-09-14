@@ -45,12 +45,28 @@ final class UpdateFeed {
         updates.filter { $0.detectedAt > clock().addingTimeInterval(-14 * 86400) }
     }
 
+    /// When the student last opened the full feed, for this account.
+    private(set) var seenAt: Date?
+
+    /// Facts in the last fortnight the student has not seen yet.
+    var unreadCount: Int { FeedItem.unreadCount(FeedItem.items(from: recent), seenAt: seenAt) }
+
+    /// Called when the full feed opens.
+    func markSeen() {
+        seenAt = clock()
+        guard let account else { return }
+        var log = load(account) ?? ExamUpdateLog()
+        log.seenAt = seenAt
+        offline.save(log, as: ExamUpdateLog.name, account: account)
+    }
+
     /// Shows this account's feed. Signing out, or switching career, must not
     /// leave the previous student's on screen.
     func show(account: String?) {
         guard account != self.account else { return }
         self.account = account
         let log = load(account)
+        seenAt = log?.seenAt
         updates = log?.updates ?? []
         deadlines = Self.upcoming(log, now: clock())
     }
@@ -60,6 +76,7 @@ final class UpdateFeed {
         account = nil
         updates = sample
         deadlines = []
+        seenAt = nil
     }
 
     /// - Parameter account: whose data this is. Callers show it first; a

@@ -16,6 +16,21 @@ nonisolated struct NotificationPreferences: Sendable, Equatable, Codable {
     /// student's own matricola. Off until the student turns it on: the file
     /// lists other students too. See ``ResultsFileReader``.
     var readResultsFiles = false
+    /// Courses whose news stays in the app and never notifies (§11.1).
+    var mutedCourses: [MutedCourse] = []
+
+    /// Whether a course is muted, matched by code or by name: the exam
+    /// services, the libretto and WeBeep do not share a code for the same
+    /// teaching (§3), but all normalise its name the same way.
+    func isMuted(code: String, name: String) -> Bool {
+        let target = MutedCourse.key(name)
+        return mutedCourses.contains { $0.code == code || MutedCourse.key($0.name) == target }
+    }
+
+    mutating func setMuted(_ muted: Bool, code: String, name: String) {
+        mutedCourses.removeAll { $0.code == code || MutedCourse.key($0.name) == MutedCourse.key(name) }
+        if muted { mutedCourses.append(MutedCourse(code: code, name: name)) }
+    }
 
     static let key = "notificationPreferences"
 
@@ -35,7 +50,7 @@ nonisolated struct NotificationPreferences: Sendable, Equatable, Codable {
 
 extension NotificationPreferences {
     private enum CodingKeys: String, CodingKey {
-        case lectures, deadlines, exams, enrolments, leadMinutes, examUpdates, readResultsFiles
+        case lectures, deadlines, exams, enrolments, leadMinutes, examUpdates, readResultsFiles, mutedCourses
     }
 
     /// Lenient, key by key: a build that adds a preference must not make the
@@ -51,6 +66,18 @@ extension NotificationPreferences {
         examUpdates = try container.decodeIfPresent(Bool.self, forKey: .examUpdates) ?? defaults.examUpdates
         readResultsFiles = try container.decodeIfPresent(Bool.self, forKey: .readResultsFiles)
             ?? defaults.readResultsFiles
+        mutedCourses = try container.decodeIfPresent([MutedCourse].self, forKey: .mutedCourses)
+            ?? defaults.mutedCourses
+    }
+}
+
+/// A course the student silenced, remembered by both of its identities.
+nonisolated struct MutedCourse: Sendable, Equatable, Hashable, Codable {
+    let code: String
+    let name: String
+
+    static func key(_ name: String) -> String {
+        Course.normalise(name).folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
     }
 }
 
@@ -148,7 +175,8 @@ nonisolated enum NotificationPlan {
             }
         }
 
-        for exam in exams {
+        // A muted course sends nothing (§11.2), reminders included.
+        for exam in exams where !preferences.isMuted(code: exam.courseCode, name: exam.courseName) {
             if preferences.exams, let date = exam.date,
                let fire = eveningBefore(date, now: now) {
                 planned.append(PlannedNotification(
@@ -173,7 +201,8 @@ nonisolated enum NotificationPlan {
             }
         }
 
-        for assignment in assignments where preferences.deadlines {
+        for assignment in assignments
+        where preferences.deadlines && !preferences.isMuted(code: assignment.courseCode, name: assignment.courseName) {
             let day = AssignmentDetector.reminderDay(for: assignment.due)
             let fire = PoliMiDate.time(eveningHour, on: day)
             guard fire > now else { continue }
@@ -189,7 +218,10 @@ nonisolated enum NotificationPlan {
         // Evening summaries of exam updates that did not deserve a push of
         // their own. Rebuilt from the log each time, like everything else here.
         if preferences.examUpdates {
-            planned += ExamUpdatePolicy.digests(from: updates, now: now)
+            // Filtered here, not only when decided: muting a course also
+            // silences the summary it had already been queued for.
+            planned += ExamUpdatePolicy.digests(
+                from: updates.filter { !preferences.isMuted(code: $0.courseCode, name: $0.courseName) }, now: now)
         }
 
         return prune(planned)

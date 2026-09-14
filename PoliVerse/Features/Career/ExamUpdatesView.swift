@@ -9,6 +9,10 @@ struct ExamUpdatesView: View {
     @Environment(UpdateFeed.self) private var feed
     @Environment(\.locale) private var locale
     @State private var selectedExam: ExamSession?
+    /// When the feed was last seen before this visit: what is newer keeps its
+    /// dot for as long as the screen is open.
+    @State private var seenBefore: Date?
+    @State private var hasMarked = false
 
     private var days: [(Date, [FeedItem])] {
         let calendar = PoliMiDate.romeCalendar
@@ -39,7 +43,8 @@ struct ExamUpdatesView: View {
                                 Button { selectedExam = sitting } label: {
                                     // Under a day heading, the time says more
                                     // than "3 days ago".
-                                    ExamUpdateRow(item: item, showsClockTime: true)
+                                    ExamUpdateRow(item: item, showsClockTime: true,
+                                                  isUnread: item.isUnread(since: seenBefore))
                                 }
                                 .buttonStyle(.plain)
                                 .disabled(sitting == nil)
@@ -50,8 +55,8 @@ struct ExamUpdatesView: View {
                 .padding()
             }
 
-            // Honest about what this can and cannot see.
-            Text("Le novità arrivano dai Servizi Online quando l'app si aggiorna: aprendola, o in background quando iOS lo consente. Le email dei docenti non sono incluse.")
+            // Honest about what this can and cannot see, and how to quiet it.
+            Text("Le novità arrivano dai Servizi Online quando l'app si aggiorna: aprendola, o in background quando iOS lo consente. Le email dei docenti non sono incluse. Tieni premuta una novità per silenziarne il corso.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal)
@@ -62,6 +67,15 @@ struct ExamUpdatesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await career.load(force: true) }
         .sheet(item: $selectedExam) { ExamDetailView(exam: $0) }
+        .onAppear {
+            // Once per visit: coming back to the tab must not clear the dots
+            // of a screen still open.
+            if !hasMarked {
+                seenBefore = feed.seenAt
+                hasMarked = true
+            }
+            feed.markSeen()
+        }
     }
 }
 
@@ -69,7 +83,9 @@ struct ExamUpdatesView: View {
 struct ExamUpdateRow: View {
     let item: FeedItem
     var showsClockTime = false
+    var isUnread = false
     @Environment(\.locale) private var locale
+    @Environment(NotificationService.self) private var notifications
 
     private var update: ExamUpdate { item.update }
 
@@ -97,18 +113,44 @@ struct ExamUpdateRow: View {
 
             Spacer(minLength: 0)
 
-            Text(showsClockTime
-                 ? update.detectedAt.formatted(.dateTime.hour().minute().locale(locale))
-                 : update.detectedAt.formatted(.relative(presentation: .named).locale(locale)))
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .monospacedDigit()
+            VStack(alignment: .trailing, spacing: 6) {
+                Text(showsClockTime
+                     ? update.detectedAt.formatted(.dateTime.hour().minute().locale(locale))
+                     : update.detectedAt.formatted(.relative(presentation: .named).locale(locale)))
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .monospacedDigit()
+                if isUnread {
+                    Circle().fill(Theme.brand).frame(width: 8, height: 8)
+                        .accessibilityLabel("Non letta")
+                }
+            }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .cardBackground()
         .opacity(item.isSuperseded ? 0.6 : 1)
         .accessibilityElement(children: .combine)
+        .contextMenu { muteButton }
+    }
+
+    /// §13: silence a course from the news itself, where the noise is seen.
+    @ViewBuilder
+    private var muteButton: some View {
+        let code = update.courseCode, name = update.courseName
+        if notifications.preferences.isMuted(code: code, name: name) {
+            Button {
+                notifications.preferences.setMuted(false, code: code, name: name)
+            } label: {
+                Label("Riattiva le notifiche di \(update.courseName)", systemImage: "bell")
+            }
+        } else {
+            Button {
+                notifications.preferences.setMuted(true, code: code, name: name)
+            } label: {
+                Label("Silenzia \(update.courseName)", systemImage: "bell.slash")
+            }
+        }
     }
 }
 
