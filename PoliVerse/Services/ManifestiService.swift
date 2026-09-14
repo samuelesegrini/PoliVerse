@@ -191,7 +191,8 @@ final class ManifestiService {
     }
 
     private nonisolated static func pickFile(_ key: String) -> String {
-        "syllabus-pick-" + key.map { $0.isLetter || $0.isNumber ? String($0) : "_" }.joined()
+        // By language too: the stored module and degree names are in it.
+        "syllabus-pick-\(PoliMiLanguage.current.rawValue)-" + key.map { $0.isLetter || $0.isNumber ? String($0) : "_" }.joined()
     }
 
     /// Starts finding a teaching's scheda, and its syllabus, without waiting.
@@ -306,14 +307,17 @@ final class ManifestiService {
     ///
     /// The service asks for "cognome nome" in one field and warns that a
     /// surname alone may resolve the bracket wrongly, so both are sent.
-    func setName(_ fullName: String) async {
+    /// - Parameter yearCode: the timetable's year, when it is not the one the
+    ///   catalogue is browsing.
+    func setName(_ fullName: String, yearCode: String? = nil) async {
         let trimmed = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        _ = await page("ManifestoPublic.do?evn_gointrocarrello=evento&aa=\(year.code)&lang=\(PoliMiLanguage.current.rawValue)&jaf_currentWFID=main")
+        let aa = yearCode ?? year.code
+        _ = await page("ManifestoPublic.do?evn_gointrocarrello=evento&aa=\(aa)&lang=\(PoliMiLanguage.current.rawValue)&jaf_currentWFID=main")
         _ = await post("ManifestoPublic.do", form: [
             "evn_setcognome": "Imposta cognome e nome",
             "cognome": trimmed,
-            "aa": year.code,
+            "aa": aa,
             "lang": PoliMiLanguage.current.rawValue,
             "c_accordo": "",
         ])
@@ -378,15 +382,15 @@ final class ManifestiService {
     }
 
     /// Empties the personalised timetable.
-    func clearTimetable() async {
-        _ = await page("ManifestoPublic.do?evn_eliminacarrello=evento&aa=\(year.code)&lang=\(PoliMiLanguage.current.rawValue)&jaf_currentWFID=main")
+    func clearTimetable(yearCode: String? = nil) async {
+        _ = await page("ManifestoPublic.do?evn_eliminacarrello=evento&aa=\(yearCode ?? year.code)&lang=\(PoliMiLanguage.current.rawValue)&jaf_currentWFID=main")
         cartCount = 0
     }
 
     /// The "orario testuale" of one semester: the cart as sentences, which
     /// ``PersonalTimetableParser`` reads into slots.
-    func textTimetable(semester: Int) async -> String? {
-        await page("GestioneCarrelloPublic.do?evn_default=EVENTO&tab_selected=2&sel_semestre=\(semester)&sel_aa=\(year.code)&lang=\(PoliMiLanguage.current.rawValue)&jaf_currentWFID=main")
+    func textTimetable(semester: Int, yearCode: String? = nil) async -> String? {
+        await page("GestioneCarrelloPublic.do?evn_default=EVENTO&tab_selected=2&sel_semestre=\(semester)&sel_aa=\(yearCode ?? year.code)&lang=\(PoliMiLanguage.current.rawValue)&jaf_currentWFID=main")
     }
 
     // MARK: - Transport

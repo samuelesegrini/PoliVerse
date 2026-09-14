@@ -18,6 +18,14 @@ nonisolated struct PersonalTimetable: Codable, Sendable, Equatable {
     /// The catalogue rows it was built from, so it can be rebuilt — rooms
     /// change in the first weeks — without searching again.
     var sources: [Source] = []
+    /// Sections chosen for teachings offered in sections, by teaching code,
+    /// so a rebuild keeps them.
+    var sections: [String: SectionChoice] = [:]
+
+    struct SectionChoice: Sendable, Equatable, Codable {
+        let link: PersonalTimetableParser.SectionsLink
+        let option: PersonalTimetableParser.SectionOption
+    }
 
     /// A ``ManifestoTeaching`` as it is kept on disk.
     struct Source: Codable, Sendable, Hashable, Identifiable {
@@ -185,7 +193,7 @@ nonisolated enum PersonalTimetableParser {
     }
 
     /// A teaching offered in sections the student picks, rather than by bracket.
-    struct SectionsLink: Sendable, Equatable {
+    struct SectionsLink: Sendable, Equatable, Codable {
         let courseCode: String
         let planCode: String
         let yearOfCourse: String
@@ -206,7 +214,7 @@ nonisolated enum PersonalTimetableParser {
         return nil
     }
 
-    struct SectionOption: Sendable, Hashable, Identifiable {
+    struct SectionOption: Sendable, Hashable, Identifiable, Codable {
         var id: String { "\(semester)_\(name)" }
         let semester: String
         let name: String

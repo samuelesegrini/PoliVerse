@@ -25,8 +25,9 @@ struct CourseInfoView: View {
     private var partialEvents: [AgendaEvent] {
         let target = course.name.lowercased()
         return PartialExams.agendaEvents(agenda.officialEvents.filter { event in
-            let title = event.title.lowercased()
-            return title.contains(target) || target.contains(title)
+            // One way only: a generic agenda title ("Esame") must not
+            // attach to every course whose name contains it.
+            event.title.lowercased().contains(target)
         })
     }
 

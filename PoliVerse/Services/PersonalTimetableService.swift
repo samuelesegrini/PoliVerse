@@ -25,17 +25,20 @@ final class PersonalTimetableService {
     /// Teachings the service refused, with its reason when it gave one.
     private(set) var refused: [(teaching: ManifestoTeaching, reason: String?)] = []
 
-    /// A section the student chose, for a teaching offered in sections.
-    struct SectionChoice: Sendable, Equatable {
+    typealias SectionChoice = PersonalTimetable.SectionChoice
+
+    /// A teaching offered in sections, waiting for the student's choice.
+    struct SectionQuestion: Sendable {
+        let teaching: ManifestoTeaching
         let link: PersonalTimetableParser.SectionsLink
-        let option: PersonalTimetableParser.SectionOption
+        let options: [PersonalTimetableParser.SectionOption]
     }
 
     /// Chosen sections, by teaching code.
     private(set) var sectionChoices: [String: SectionChoice] = [:]
-    /// A teaching waiting for the student to pick its section.
-    var pendingSections: (teaching: ManifestoTeaching, link: PersonalTimetableParser.SectionsLink,
-                          options: [PersonalTimetableParser.SectionOption])?
+    /// Questions in the order teachings were picked; the sheet shows the first.
+    private(set) var sectionQuestions: [SectionQuestion] = []
+    var pendingSections: SectionQuestion? { sectionQuestions.first }
 
     /// The service's own cap.
     static let capacity = 15
@@ -50,6 +53,7 @@ final class PersonalTimetableService {
         self.agenda = agenda
         timetable = preview ?? DiskCache.load(PersonalTimetable.self, as: Self.cacheName)?.value
         selection = timetable?.sources.map(\.teaching) ?? []
+        sectionChoices = timetable?.sections ?? [:]
         agenda?.personalTimetable = timetable
     }
 
@@ -72,7 +76,8 @@ final class PersonalTimetableService {
         } else if selection.count < Self.capacity {
             selection.append(teaching)
             // Most teachings are bracketed by name; the few offered in
-            // sections ask which, and only a named session can see that.
+            // sections ask which, and only a named session can see that —
+            // before the name is set, `prepare` asks instead.
             if manifesti.surname != nil {
                 Task { await askForSections(teaching) }
             }
@@ -80,27 +85,31 @@ final class PersonalTimetableService {
     }
 
     private func askForSections(_ teaching: ManifestoTeaching) async {
-        guard let found = await manifesti.sections(for: teaching), isSelected(teaching) else { return }
-        pendingSections = (teaching, found.link, found.options)
+        guard sectionChoices[teaching.code] == nil, !sectionQuestions.contains(where: { $0.teaching.code == teaching.code }),
+              let found = await manifesti.sections(for: teaching), isSelected(teaching) else { return }
+        sectionQuestions.append(SectionQuestion(teaching: teaching, link: found.link, options: found.options))
     }
 
     func choose(_ option: PersonalTimetableParser.SectionOption?, for teaching: ManifestoTeaching,
                 link: PersonalTimetableParser.SectionsLink) {
         sectionChoices[teaching.code] = option.map { SectionChoice(link: link, option: $0) }
-        pendingSections = nil
+        sectionQuestions.removeAll { $0.teaching.code == teaching.code }
     }
 
     /// Sets the name on the service ahead of the build, so choosing teachings
     /// can find those offered in sections.
     func prepare(name: String) async {
         await manifesti.setName(name)
+        // Teachings kept from the last build were picked before the name was
+        // set: ask about their sections now.
+        for teaching in selection { await askForSections(teaching) }
     }
 
     // MARK: - Building
 
     /// Recreates the cart from the selection and reads the timetable back.
     func build(name: String) async {
-        await build(name: name, teachings: selection)
+        await build(name: name, teachings: selection, yearCode: manifesti.year.code)
     }
 
     /// A week: rooms move in the first weeks of term, and nothing announces it.
@@ -116,18 +125,15 @@ final class PersonalTimetableService {
     /// Rebuilds a week-old timetable quietly, from what it was built from.
     func refreshIfStale(now: Date = .now) async {
         guard let current = timetable, !isBuilding, Self.needsRefresh(current, now: now) else { return }
-        // The timetable's own year, then back to whatever the catalogue showed.
-        let browsing = manifesti.year
-        manifesti.year = AcademicYear(code: current.yearCode)
-        await build(name: current.name, teachings: current.sources.map(\.teaching))
-        manifesti.year = browsing
+        // In the timetable's own year, whatever the catalogue is browsing.
+        await build(name: current.name, teachings: current.sources.map(\.teaching), yearCode: current.yearCode)
         // Quiet: a failed background refresh keeps the timetable it had and
         // does not leave an error on the builder.
         if case .failed = progress { progress = .idle }
         if progress == .finished { progress = .idle }
     }
 
-    private func build(name: String, teachings: [ManifestoTeaching]) async {
+    private func build(name: String, teachings: [ManifestoTeaching], yearCode: String) async {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !teachings.isEmpty, !isBuilding else { return }
         refused = []
@@ -135,8 +141,8 @@ final class PersonalTimetableService {
         progress = .settingName
         // Cleared first: the cart outlives the app on the server's session,
         // and a leftover teaching would reappear in the result.
-        await manifesti.clearTimetable()
-        await manifesti.setName(trimmed)
+        await manifesti.clearTimetable(yearCode: yearCode)
+        await manifesti.setName(trimmed, yearCode: yearCode)
 
         // One at a time: the service serialises a session's requests anyway,
         // and the cart's count is only meaningful in order.
@@ -172,7 +178,7 @@ final class PersonalTimetableService {
         var entries: [PersonalTimetable.Entry] = []
         var readAny = false
         for semester in [1, 2] {
-            guard let html = await manifesti.textTimetable(semester: semester) else { continue }
+            guard let html = await manifesti.textTimetable(semester: semester, yearCode: yearCode) else { continue }
             readAny = true
             for entry in PersonalTimetableParser.entries(html) where !entries.contains(where: { $0.code == entry.code }) {
                 entries.append(entry)
@@ -183,8 +189,9 @@ final class PersonalTimetableService {
             return
         }
 
-        var built = PersonalTimetable(name: trimmed, yearCode: manifesti.year.code, entries: entries, builtAt: .now)
+        var built = PersonalTimetable(name: trimmed, yearCode: yearCode, entries: entries, builtAt: .now)
         built.sources = teachings.map(PersonalTimetable.Source.init)
+        built.sections = sectionChoices.filter { code, _ in teachings.contains { $0.code == code } }
         // A rebuild keeps what the student decided about each teaching.
         built.hiddenCodes = timetable?.hiddenCodes.intersection(entries.map(\.code)) ?? []
         save(built)

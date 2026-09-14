@@ -408,7 +408,8 @@ final class WeBeepService {
     /// Whether each course page takes self-enrolment, asked once a launch.
     private(set) var selfEnrolment: [Int: Bool] = [:]
 
-    /// Asks the pages not already asked, a few at a time.
+    /// Asks the pages not already asked, one at a time: a background nicety,
+    /// not worth a burst of requests.
     func loadSelfEnrolment(for moodleIDs: [Int]) async {
         guard let api, !session.useMockData else { return }
         for id in moodleIDs where selfEnrolment[id] == nil {

@@ -421,9 +421,9 @@ private struct PersonalTimetableBuilder: View {
                 }
             }
         }
-        .sheet(isPresented: Binding(get: { personal.pendingSections != nil },
-                                    set: { if !$0, let pending = personal.pendingSections {
-                                        personal.choose(nil, for: pending.teaching, link: pending.link) } })) {
+        .sheet(item: Binding(get: { personal.pendingSections.map { PendingID(code: $0.teaching.code) } },
+                             set: { if $0 == nil, let pending = personal.pendingSections {
+                                 personal.choose(nil, for: pending.teaching, link: pending.link) } })) { _ in
             if let pending = personal.pendingSections {
                 SectionPicker(teaching: pending.teaching, options: pending.options) { option in
                     personal.choose(option, for: pending.teaching, link: pending.link)
@@ -504,6 +504,13 @@ private struct PersonalTimetableBuilder: View {
             }
         }
     }
+}
+
+/// `sheet(item:)` identity for the section question on screen, so the next
+/// question replaces it instead of the sheet staying shut.
+private struct PendingID: Identifiable {
+    let code: String
+    var id: String { code }
 }
 
 /// Which section of a teaching offered in sections.
