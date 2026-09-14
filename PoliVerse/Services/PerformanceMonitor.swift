@@ -98,9 +98,7 @@ enum PerformanceMonitor {
 @available(iOS 27, *)
 nonisolated final class ModernMetricStream: Sendable {
     static let shared = ModernMetricStream()
-    let manager = MetricManager(enabledStateReportingDomains: MainActor.assumeIsolated {
-        PerformanceStates.enabledDomains
-    })
+    let manager = MetricManager(enabledStateReportingDomains: PerformanceStates.enabledDomains)
 
     func start() {
         let manager = manager

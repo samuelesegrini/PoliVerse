@@ -25,6 +25,13 @@
 			remoteGlobalIDString = PV00000000000000000043;
 			remoteInfo = PoliVerseWidgets;
 		};
+		PV00000000000000000058 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = PV00000000000000000013 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = PV0000000000000000000F;
+			remoteInfo = PoliVerse;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -45,6 +52,7 @@
 		PV0000000000000000000B /* PoliVerse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PoliVerse.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		PV00000000000000000021 /* PoliVerseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PoliVerseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		PV00000000000000000041 /* PoliVerseWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PoliVerseWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		PV00000000000000000050 /* PoliVerseUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PoliVerseUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -66,6 +74,11 @@
 		PV00000000000000000042 /* PoliVerseWidgets */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = PoliVerseWidgets;
+			sourceTree = "<group>";
+		};
+		PV00000000000000000051 /* PoliVerseUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PoliVerseUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -92,6 +105,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		PV00000000000000000055 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -102,6 +122,7 @@
 				PV00000000000000000042 /* PoliVerseWidgets */,
 				PV00000000000000000040 /* Shared */,
 				PV00000000000000000020 /* PoliVerseTests */,
+				PV00000000000000000051 /* PoliVerseUITests */,
 				PV0000000000000000000E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -112,6 +133,7 @@
 				PV0000000000000000000B /* PoliVerse.app */,
 				PV00000000000000000021 /* PoliVerseTests.xctest */,
 				PV00000000000000000041 /* PoliVerseWidgets.appex */,
+				PV00000000000000000050 /* PoliVerseUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -190,6 +212,29 @@
 			productReference = PV00000000000000000041 /* PoliVerseWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		PV00000000000000000052 /* PoliVerseUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = PV00000000000000000053 /* Build configuration list for PBXNativeTarget "PoliVerseUITests" */;
+			buildPhases = (
+				PV00000000000000000054 /* Sources */,
+				PV00000000000000000055 /* Frameworks */,
+				PV00000000000000000056 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				PV00000000000000000057 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				PV00000000000000000051 /* PoliVerseUITests */,
+			);
+			name = PoliVerseUITests;
+			packageProductDependencies = (
+			);
+			productName = PoliVerseUITests;
+			productReference = PV00000000000000000050 /* PoliVerseUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -204,6 +249,10 @@
 						CreatedOnToolsVersion = 27.0;
 					};
 					PV00000000000000000022 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = PV0000000000000000000F;
+					};
+					PV00000000000000000052 = {
 						CreatedOnToolsVersion = 27.0;
 						TestTargetID = PV0000000000000000000F;
 					};
@@ -227,6 +276,7 @@
 				PV0000000000000000000F /* PoliVerse */,
 				PV00000000000000000022 /* PoliVerseTests */,
 				PV00000000000000000043 /* PoliVerseWidgets */,
+				PV00000000000000000052 /* PoliVerseUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -247,6 +297,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		PV00000000000000000047 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		PV00000000000000000056 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -277,6 +334,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		PV00000000000000000054 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -289,6 +353,11 @@
 			isa = PBXTargetDependency;
 			target = PV00000000000000000043 /* PoliVerseWidgets */;
 			targetProxy = PV0000000000000000004B /* PBXContainerItemProxy */;
+		};
+		PV00000000000000000057 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = PV0000000000000000000F /* PoliVerse */;
+			targetProxy = PV00000000000000000058 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -532,6 +601,40 @@
 			};
 			name = Release;
 		};
+		PV00000000000000000059 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8CHF29UD9Q;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = segrini.samuele.PoliVerseUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = PoliVerse;
+			};
+			name = Debug;
+		};
+		PV0000000000000000005A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8CHF29UD9Q;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = segrini.samuele.PoliVerseUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = PoliVerse;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -567,6 +670,15 @@
 			buildConfigurations = (
 				PV0000000000000000004C /* Debug */,
 				PV0000000000000000004D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		PV00000000000000000053 /* Build configuration list for PBXNativeTarget "PoliVerseUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				PV00000000000000000059 /* Debug */,
+				PV0000000000000000005A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

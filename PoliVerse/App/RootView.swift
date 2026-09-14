@@ -21,6 +21,10 @@ struct RootView: View {
                 if onboarding.isComplete { MainTabView() } else { OnboardingView() }
             }
         }
+        // Sample data is its own population in the field numbers.
+        .onChange(of: session.useMockData, initial: true) { _, sample in
+            PerformanceStates.dataSource(usesSampleData: sample)
+        }
         .task {
             // Launch, as a student feels it, ends when the account is back —
             // not at the first frame, which is a spinner.
@@ -78,6 +82,11 @@ struct MainTabView: View {
         // every one of them, so saying it once on the Home would leave the
         // libretto looking like a real libretto.
         .safeAreaInset(edge: .top, spacing: 0) { DemoModeBanner() }
+        // Hangs and hitches in the field arrive split by tab.
+        .onChange(of: selection, initial: true) { _, tab in
+            PerformanceStates.tabSelected(tab)
+        }
+        .onDisappear { PerformanceStates.tabSelected(nil) }
         // Every way in from outside — Siri, Shortcuts, Spotlight's action row
         // — arrives as one notification, so the routing exists once.
         .onReceive(NotificationCenter.default.publisher(for: AppDestination.notification)) {
