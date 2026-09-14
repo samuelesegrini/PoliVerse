@@ -66,10 +66,37 @@ final class PersonalTimetableService {
 
     /// Recreates the cart from the selection and reads the timetable back.
     func build(name: String) async {
+        await build(name: name, teachings: selection)
+    }
+
+    /// A week: rooms move in the first weeks of term, and nothing announces it.
+    static let refreshInterval: TimeInterval = 7 * 86400
+
+    static func needsRefresh(_ timetable: PersonalTimetable, now: Date) -> Bool {
+        guard timetable.retiredAt == nil, !timetable.sources.isEmpty,
+              now.timeIntervalSince(timetable.builtAt) >= refreshInterval else { return false }
+        // Nothing left to attend: a rebuild would only cost requests.
+        return timetable.entries.contains { ($0.lessonsEnd ?? .distantFuture) >= now }
+    }
+
+    /// Rebuilds a week-old timetable quietly, from what it was built from.
+    func refreshIfStale(now: Date = .now) async {
+        guard let current = timetable, !isBuilding, Self.needsRefresh(current, now: now) else { return }
+        // The timetable's own year, then back to whatever the catalogue showed.
+        let browsing = manifesti.year
+        manifesti.year = AcademicYear(code: current.yearCode)
+        await build(name: current.name, teachings: current.sources.map(\.teaching))
+        manifesti.year = browsing
+        // Quiet: a failed background refresh keeps the timetable it had and
+        // does not leave an error on the builder.
+        if case .failed = progress { progress = .idle }
+        if progress == .finished { progress = .idle }
+    }
+
+    private func build(name: String, teachings: [ManifestoTeaching]) async {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, !selection.isEmpty, !isBuilding else { return }
+        guard !trimmed.isEmpty, !teachings.isEmpty, !isBuilding else { return }
         refused = []
-        let teachings = selection
 
         progress = .settingName
         // Cleared first: the cart outlives the app on the server's session,

@@ -190,6 +190,7 @@ struct PoliVerseApp: App {
                             // round trip. Forcing here would turn every glance
                             // at the multitasking view into five requests.
                             await freshness.revalidate()
+                            await personalTimetable.refreshIfStale()
                         }
                     }
                 }

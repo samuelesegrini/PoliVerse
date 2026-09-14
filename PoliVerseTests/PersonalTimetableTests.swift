@@ -207,3 +207,32 @@ struct PersonalTimetableExportTests {
         #expect(CalendarExport.drafts(for: timetable).isEmpty)
     }
 }
+
+@Suite("Personal timetable refresh")
+struct PersonalTimetableRefreshTests {
+    private let now = Date(timeIntervalSince1970: 1_790_000_000)
+
+    private func timetable(builtDaysAgo days: Double, lessonsEndInDays end: Double = 30) -> PersonalTimetable {
+        let entry = PersonalTimetable.Entry(code: "1", title: "X", teacher: nil, semester: 1, lessonsStart: nil,
+                                            lessonsEnd: now.addingTimeInterval(end * 86400), slots: [])
+        var value = PersonalTimetable(name: "A", yearCode: "2026", entries: [entry], builtAt: now.addingTimeInterval(-days * 86400))
+        value.sources = [PersonalTimetable.Source(ManifestoTeaching(
+            code: "1", name: "X", courseCode: "1", planCode: nil, idItemOfferta: nil, idRiga: nil,
+            semester: "1", year: "2026", credits: nil, school: nil, degreeCourse: nil))]
+        return value
+    }
+
+    @Test("Rebuilt after a week, while lessons still run")
+    func stale() {
+        #expect(PersonalTimetableService.needsRefresh(timetable(builtDaysAgo: 8), now: now))
+        #expect(!PersonalTimetableService.needsRefresh(timetable(builtDaysAgo: 2), now: now))
+    }
+
+    @Test("Not rebuilt once retired, or once every teaching's lessons have ended")
+    func notNeeded() {
+        var retired = timetable(builtDaysAgo: 8)
+        retired.retiredAt = now
+        #expect(!PersonalTimetableService.needsRefresh(retired, now: now))
+        #expect(!PersonalTimetableService.needsRefresh(timetable(builtDaysAgo: 8, lessonsEndInDays: -1), now: now))
+    }
+}
