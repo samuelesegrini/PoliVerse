@@ -22,6 +22,16 @@ struct ProgrammeInferenceTests {
         #expect(result.isConfident)
     }
 
+    /// Live, 531 in 2025: IOL (online, all years) 6, I1C (Cremona) 5, IT1 3.
+    @Test("Winning by one teaching is not confident")
+    func narrow() throws {
+        let result = try #require(ProgrammeInference.best(libretto: ["1", "2", "3", "4", "5", "6"], candidates: [
+            (selection("IOL"), ["1", "2", "3", "4", "5", "6"]), (selection("I1C"), ["1", "2", "3", "4", "5"]),
+        ]))
+        #expect(result.selection.plan == "IOL")
+        #expect(!result.isConfident)
+    }
+
     @Test("A tie is reported, so the career's track can settle it")
     func tie() throws {
         let result = try #require(ProgrammeInference.best(libretto: ["1", "2", "3"], candidates: [
@@ -151,5 +161,39 @@ struct SearchInferenceTests {
         #expect(SearchInference.school(heading: "Ing. Ind-Inf (Mag.)(ord. 96/23) - MI (542) Computer Science and Engineering", in: options) == "225")
         #expect(SearchInference.school(heading: "Ing. Civ, Ing. Ind-Inf (Mag.)(ord. 96/23) - MI (511) Geoinformatics Engineering", in: options) == "1")
         #expect(SearchInference.school(heading: "Design (1 liv.) - MI (1) X", in: options) == nil)
+    }
+}
+
+/// Shapes from the diagnostic report of a real account, 2026-09-14: the
+/// libretto has names and no teaching codes, the plan header names the level.
+@Suite("Career payloads, as sent")
+struct CareerPayloadTests {
+    @Test("A libretto row keeps its English name; its id is the row, not a teaching code")
+    func librettoRow() throws {
+        let json = #"{"sostenuti":[{"id_riga":47314209,"descrizione":"ALGORITMI E PRINCIPI DELL'INFORMATICA","descrizione_eng":"ALGORITHMS AND PRINCIPLES OF COMPUTER SCIENCE","stato_esame":"S","voto_esame":"25","data_esame":1750197600000}],"daSostenere":[]}"#
+        let exam = try #require(try JSONDecoder().decode(LibrettoResponse.self, from: Data(json.utf8)).allExams.first)
+        #expect(exam.id == "47314209")
+        #expect(exam.englishName == "ALGORITHMS AND PRINCIPLES OF COMPUTER SCIENCE")
+    }
+
+    @Test("The plan header gives the level, the English name and the plan's year")
+    func header() throws {
+        let json = #"{"aa":"2025/26","descrizioneCDL":"INGEGNERIA INFORMATICA","descrizioneCDL_ENG":"ENGINEERING OF COMPUTING SYSTEMS","tipoCorso":"LAUREA DI PRIMO LIVELLO","statusPiano":"Approvato"}"#
+        let header = try #require(StudyPlanHeader(value: try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))))
+        #expect(header.course == "INGEGNERIA INFORMATICA")
+        #expect(header.level == "LAUREA DI PRIMO LIVELLO")
+        #expect(header.englishCourse == "ENGINEERING OF COMPUTING SYSTEMS")
+        #expect(header.yearCode == "2025")
+    }
+
+    @Test("A libretto and a plan are compared by teaching name, in either language")
+    func byName() {
+        let libretto = LibrettoExam(id: "47314209", name: "Algoritmi e Principi dell'Informatica", grade: 25, hasLode: false,
+                                    cfu: 10, date: nil, statusText: nil, isPassed: true,
+                                    englishName: "ALGORITHMS AND PRINCIPLES OF COMPUTER SCIENCE")
+        let keys = ProgrammeInference.keys(of: [libretto])
+        #expect(keys.contains(PlanCourseMatch.key("ALGORITMI E PRINCIPI DELL'INFORMATICA")))
+        #expect(keys.contains(PlanCourseMatch.key("Algorithms and principles of computer science")))
+        #expect(!keys.contains("47314209"))
     }
 }

@@ -104,6 +104,16 @@ nonisolated struct StudyPlanHeader: Sendable, Equatable, Codable {
     /// read leniently; the payload's shape is logged in debug builds.
     var degreeCode: String? = nil
     var planCode: String? = nil
+    /// `tipoCorso`, e.g. "LAUREA DI PRIMO LIVELLO": what tells a bachelor's
+    /// from a master's of the same name. The careers list only says "Studente".
+    var level: String? = nil
+    var englishCourse: String? = nil
+
+    /// The plan's academic year as the manifesto keys it: "2025/26" → "2025".
+    var yearCode: String? {
+        guard let prefix = year?.prefix(4), prefix.count == 4, prefix.allSatisfy(\.isNumber) else { return nil }
+        return String(prefix)
+    }
 
     init?(value: JSONValue) {
         guard let fields = value.objectValue ?? value.arrayValue?.first?.objectValue else {
@@ -123,6 +133,8 @@ nonisolated struct StudyPlanHeader: Sendable, Equatable, Codable {
             "cfu_totali", "cfu", "crediti", "totale_cfu",
         ])?.intValue
 
+        level = fields.firstValue(["tipoCorso", "tipo_corso"]).flatMap(Notice.text(from:))
+        englishCourse = fields.firstValue(["descrizioneCDL_ENG"]).flatMap(Notice.text(from:))
         let code = { (value: JSONValue) -> String? in
             value.intValue.map(String.init) ?? Notice.text(from: value)
         }

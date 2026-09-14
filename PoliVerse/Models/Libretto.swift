@@ -23,6 +23,9 @@ nonisolated struct LibrettoExam: Identifiable, Sendable, Hashable, Codable {
     /// inferred from the mark — a pass/fail teaching ("idoneità") is passed
     /// with no numeric mark at all.
     let isPassed: Bool
+    /// `descrizione_eng`. With no teaching code in the libretto, the names are
+    /// all there is to recognise a teaching by in the manifesto.
+    var englishName: String? = nil
 
     /// `30L` for a mark with honours, matching how the official app renders it.
     var displayGrade: String {
@@ -114,7 +117,8 @@ nonisolated struct LibrettoEntryDTO: Decodable, Sendable {
             cfu: creditValue,
             date: examDate,
             statusText: stato_esame_desc?.capitalized,
-            isPassed: passed
+            isPassed: passed,
+            englishName: descrizione_eng
         )
     }
 }

@@ -51,9 +51,8 @@ final class StudyProgrammeService {
         session.useMockData ? nil : session.student?.matricola
     }
 
-    private var librettoCodes: Set<String> {
-        Set(career.libretto.map(\.id).filter { $0.range(of: "^[0-9]{6}$", options: .regularExpression) != nil })
-    }
+    /// The libretto by teaching name: it carries no teaching codes.
+    private var librettoKeys: Set<String> { ProgrammeInference.keys(of: career.libretto) }
 
     // MARK: - The programme
 
@@ -82,7 +81,9 @@ final class StudyProgrammeService {
         isLocating = true
         defer { isLocating = false }
         let header = career.planHeader
-        let kind = careers?.current?.kind
+        // The plan header's level ("Laurea di primo livello"); the careers
+        // list only says "Studente".
+        let kind = header?.level ?? careers?.current?.kind
 
         // 1. The header's own codes, when the service sends them.
         var page: CataloguePage?
@@ -94,6 +95,15 @@ final class StudyProgrammeService {
         if page == nil, let name = header?.course, !name.isEmpty {
             page = await manifesti.locateDegree(named: name, kind: kind)
         }
+        if page == nil, let name = header?.englishCourse, !name.isEmpty {
+            page = await manifesti.locateDegree(named: name, kind: kind)
+        }
+        // In the plan's own year: the header says which manifesto it follows.
+        if let year = header?.yearCode, let current = page?.selection, current.year != year,
+           let inYear = await manifesti.cataloguePage(current.setting(.year, to: year)),
+           inYear.selection?.degree == current.degree {
+            page = inYear
+        }
         guard var located = page, let base = located.selection, matricola == self.matricola else { return }
         if let plan = header?.planCode, located.level(.plan)?.options.contains(where: { $0.value == plan }) == true,
            let exact = await manifesti.cataloguePage(base.setting(.plan, to: plan)) {
@@ -103,7 +113,7 @@ final class StudyProgrammeService {
 
         // 3. Every plan of that degree course against the libretto.
         var confirmed = false
-        let libretto = librettoCodes
+        let libretto = librettoKeys
         let planOptions = (located.level(.plan)?.options ?? []).filter { $0.value != "***" }.prefix(Self.plansScored)
         if !libretto.isEmpty, planOptions.count > 1 {
             var candidates: [(CatalogueSelection, [String])] = []
@@ -112,7 +122,7 @@ final class StudyProgrammeService {
                 let selection = base.setting(.plan, to: option.value)
                 guard let candidate = await manifesti.cataloguePage(selection), let settled = candidate.selection else { continue }
                 pages[settled] = candidate
-                candidates.append((settled, candidate.teachings.map(\.teaching.code)))
+                candidates.append((settled, ProgrammeInference.keys(of: candidate.teachings)))
             }
             if let best = ProgrammeInference.best(libretto: libretto, candidates: candidates) {
                 // Plans sharing as many teachings: the career's track —
@@ -131,7 +141,7 @@ final class StudyProgrammeService {
                 if let chosen = pages[answer] { located = chosen }
             }
         } else if !libretto.isEmpty {
-            confirmed = ProgrammeInference.best(libretto: libretto, candidates: [(base, located.teachings.map(\.teaching.code))])?
+            confirmed = ProgrammeInference.best(libretto: libretto, candidates: [(base, ProgrammeInference.keys(of: located.teachings))])?
                 .isConfident ?? false
         }
         guard matricola == self.matricola else { return }
@@ -146,7 +156,7 @@ final class StudyProgrammeService {
         let year = AcademicYear.recent().first?.code ?? current.selection.year
         let plan = await plan(forYear: year)
         let gone = plan.isEmpty && plans[key(current.selection(forYear: year))] != nil
-        let misfit = !ProgrammeInference.stillFits(libretto: librettoCodes, plan: Set(plan.map(\.teaching.code)))
+        let misfit = !ProgrammeInference.stillFits(libretto: librettoKeys, plan: Set(ProgrammeInference.keys(of: plan)))
         guard gone || misfit, var updated = programme else { return }
         updated.isConfirmed = false
         updated.needsReview = true

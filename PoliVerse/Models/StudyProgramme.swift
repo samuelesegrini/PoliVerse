@@ -124,9 +124,24 @@ nonisolated enum ProgrammeInference {
         let scored = candidates.map { selection, codes in (selection, libretto.intersection(codes).count) }
         guard let top = scored.max(by: { $0.1 < $1.1 }), top.1 > 0 else { return nil }
         let runnerUp = scored.filter { $0.0 != top.0 }.map(\.1).max() ?? 0
-        let confident = top.1 >= 3 && Double(top.1) >= Double(min(libretto.count, 10)) * 0.5 && top.1 > runnerUp
+        // A clear lead, not just the most: plans are cut by year — IT1 holds
+        // years one and two, I3I the third — while an online or another
+        // campus's plan lists all three and wins by a teaching or so.
+        let confident = top.1 >= 3 && Double(top.1) >= Double(min(libretto.count, 10)) * 0.5 && top.1 >= runnerUp + 2
         let tied = scored.filter { $0.1 == top.1 }.map(\.0)
         return Result(selection: tied.first ?? top.0, overlap: top.1, isConfident: confident, tied: tied)
+    }
+
+    /// What a libretto is compared by: its teachings' names in both languages.
+    /// The payload has no teaching code — `id_riga` is the row — and a plan
+    /// page lists names too, so a name key on either side is the same key.
+    static func keys(of libretto: [LibrettoExam]) -> Set<String> {
+        Set((libretto.map(\.name) + libretto.compactMap(\.englishName)).map(PlanCourseMatch.key).filter { !$0.isEmpty })
+    }
+
+    /// A plan page's side of the comparison.
+    static func keys(of plan: [PlanTeaching]) -> [String] {
+        plan.map { PlanCourseMatch.key($0.teaching.name) }
     }
 
     /// False once a libretto with enough rows shares nothing with the plan.
