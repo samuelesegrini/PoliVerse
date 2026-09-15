@@ -45,7 +45,6 @@ struct NewRootView: View {
 
             if shell.customizeStage == .gallery {
                 CustomizeOggi()
-                    .transition(.opacity)
             }
         }
         .onChange(of: shell.isCustomizing) { _, customizing in
@@ -96,16 +95,19 @@ struct NewRootView: View {
         withAnimation(.spring(duration: 0.45, bounce: 0.1)) {
             shell.customizeStage = .shrunk
         } completion: {
-            withAnimation(.easeOut(duration: 0.2)) { shell.customizeStage = .gallery }
+            // Swapped without a fade: the middle card sits exactly where the
+            // shrunk app is, so the one scale is the only animation seen.
+            var swap = Transaction()
+            swap.disablesAnimations = true
+            withTransaction(swap) { shell.customizeStage = .gallery }
         }
     }
 
     private func closeCustomize() {
-        withAnimation(.easeIn(duration: 0.15)) {
-            shell.customizeStage = .shrunk
-        } completion: {
-            withAnimation(.spring(duration: 0.45, bounce: 0.1)) { shell.customizeStage = .off }
-        }
+        var swap = Transaction()
+        swap.disablesAnimations = true
+        withTransaction(swap) { shell.customizeStage = .shrunk }
+        withAnimation(.spring(duration: 0.45, bounce: 0.1)) { shell.customizeStage = .off }
     }
 
     private var tabs: some View {
