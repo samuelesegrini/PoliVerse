@@ -1849,6 +1849,9 @@
     "Aspetto" : {
 
     },
+    "Aspetto %lld" : {
+
+    },
     "Assente" : {
       "localizations" : {
         "en" : {
@@ -2350,6 +2353,9 @@
           }
         }
       }
+    },
+    "Cerchi" : {
+
     },
     "Cerchio" : {
 
@@ -2861,6 +2867,9 @@
         }
       }
     },
+    "Coriandoli" : {
+
+    },
     "Correzione disponibile" : {
       "localizations" : {
         "en" : {
@@ -3136,6 +3145,9 @@
           }
         }
       }
+    },
+    "Croci" : {
+
     },
     "Cronologia" : {
       "localizations" : {
@@ -3968,6 +3980,9 @@
         }
       }
     },
+    "Esagoni" : {
+
+    },
     "Esame" : {
       "localizations" : {
         "en" : {
@@ -4335,6 +4350,9 @@
     "Giorno mostrato: %@" : {
 
     },
+    "Griglia" : {
+
+    },
     "Guarda l'app senza accedere" : {
       "localizations" : {
         "en" : {
@@ -4638,6 +4656,9 @@
           }
         }
       }
+    },
+    "Il motivo prende il colore della data." : {
+
     },
     "Il Politecnico ha accettato l'accesso ma non autorizza questa app a leggere corsi, orario e carriera. WeBeep continua a funzionare." : {
       "localizations" : {
@@ -6099,6 +6120,9 @@
         }
       }
     },
+    "Maglia ovale" : {
+
+    },
     "Manifesto" : {
       "localizations" : {
         "en" : {
@@ -7087,6 +7111,9 @@
         }
       }
     },
+    "Nessuno" : {
+
+    },
     "Niente in programma" : {
       "localizations" : {
         "en" : {
@@ -7849,6 +7876,9 @@
           }
         }
       }
+    },
+    "Onde" : {
+
     },
     "Opzioni" : {
       "localizations" : {
@@ -8684,6 +8714,9 @@
         }
       }
     },
+    "Puntini" : {
+
+    },
     "Puoi ancora rifiutare questo voto dai servizi online." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8899,6 +8932,9 @@
         }
       }
     },
+    "Retino" : {
+
+    },
     "Riattiva le notifiche di %@" : {
       "localizations" : {
         "en" : {
@@ -8950,6 +8986,9 @@
           }
         }
       }
+    },
+    "Righe" : {
+
     },
     "Rimuovi" : {
       "localizations" : {
@@ -9140,6 +9179,9 @@
           }
         }
       }
+    },
+    "Scacchi" : {
+
     },
     "Scadenza" : {
 
@@ -9774,6 +9816,12 @@
         }
       }
     },
+    "Sfondo" : {
+
+    },
+    "Sfumatura" : {
+
+    },
     "Si cambia quando vuoi da Impostazioni · Promemoria." : {
       "localizations" : {
         "en" : {
@@ -10187,6 +10235,9 @@
           }
         }
       }
+    },
+    "Tinta" : {
+
     },
     "tipo" : {
 
@@ -10786,6 +10837,9 @@
           }
         }
       }
+    },
+    "Zig-zag" : {
+
     }
   },
   "version" : "1.0"

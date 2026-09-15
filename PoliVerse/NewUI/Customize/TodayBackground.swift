@@ -4,7 +4,8 @@ import SwiftUI
 /// the look's colour, like the Lock Screen's wallpapers but kept faint so the
 /// timetable stays readable.
 nonisolated enum TodayBackground: String, Codable, CaseIterable, Identifiable, Sendable {
-    case plain, wash, mesh, grid, dots, halftone, ovals, waves, stripes, zigzag, crosses, checker, hexagons, rings, confetti
+    case plain, wash, mesh, grid, dots, halftone, ovals, waves, stripes, zigzag, crosses, checker, hexagons, rings, confetti,
+         study, science, maths, coding, space, nature, coffee, music, travel, sparkles
 
     var id: String { rawValue }
 
@@ -25,6 +26,34 @@ nonisolated enum TodayBackground: String, Codable, CaseIterable, Identifiable, S
         case .hexagons: "Esagoni"
         case .rings: "Cerchi"
         case .confetti: "Coriandoli"
+        case .study: "Studio"
+        case .science: "Scienze"
+        case .maths: "Matematica"
+        case .coding: "Codice"
+        case .space: "Spazio"
+        case .nature: "Natura"
+        case .coffee: "Pausa caffè"
+        case .music: "Musica"
+        case .travel: "Viaggi"
+        case .sparkles: "Scintille"
+        }
+    }
+
+    /// The SF Symbols a symbol pattern repeats, in order; empty for the
+    /// drawn patterns.
+    var symbols: [String] {
+        switch self {
+        case .study: ["book.closed", "pencil", "graduationcap", "backpack", "books.vertical", "highlighter"]
+        case .science: ["atom", "flask", "testtube.2", "microbe", "leaf", "bolt"]
+        case .maths: ["function", "sum", "percent", "x.squareroot", "divide", "angle"]
+        case .coding: ["chevron.left.forwardslash.chevron.right", "terminal", "curlybraces", "cpu", "number", "laptopcomputer"]
+        case .space: ["moon.stars", "sparkle", "globe.europe.africa", "star", "circle.hexagongrid", "moon"]
+        case .nature: ["leaf", "tree", "sun.max", "cloud", "drop", "camera.macro"]
+        case .coffee: ["cup.and.saucer", "mug", "birthday.cake", "fork.knife", "takeoutbag.and.cup.and.straw", "carrot"]
+        case .music: ["music.note", "headphones", "guitars", "music.quarternote.3", "pianokeys", "waveform"]
+        case .travel: ["airplane", "map", "tram", "bicycle", "suitcase.rolling", "globe"]
+        case .sparkles: ["sparkles", "star.fill", "sparkle", "heart", "seal", "wand.and.stars"]
+        default: []
         }
     }
 }
@@ -195,6 +224,8 @@ struct TodayBackgroundView: View {
                 }
                 context.stroke(rings, with: .color(tint.opacity(0.16 * strength)), lineWidth: 1.5)
             }
+        case .study, .science, .maths, .coding, .space, .nature, .coffee, .music, .travel, .sparkles:
+            SymbolPattern(symbols: background.symbols, tint: tint.opacity(0.22 * strength))
         case .confetti:
             Canvas { context, size in
                 // A fixed sequence, so the confetti does not move between draws.
@@ -224,6 +255,41 @@ struct TodayBackgroundView: View {
                     stripes.addLine(to: CGPoint(x: x + size.height, y: 0))
                 }
                 context.stroke(stripes, with: .color(tint.opacity(0.12 * strength)), lineWidth: 5)
+            }
+        }
+    }
+}
+
+/// SF Symbols scattered on a staggered grid, each a little turned and sized
+/// differently, so the pattern reads as drawn by hand rather than stamped.
+private struct SymbolPattern: View {
+    let symbols: [String]
+    let tint: Color
+
+    var body: some View {
+        Canvas { context, size in
+            let cell: CGFloat = 54
+            var generator = SeededGenerator(seed: UInt64(symbols.joined().count))
+            for (row, y) in stride(from: CGFloat(0), through: size.height + cell, by: cell).enumerated() {
+                let shift = row.isMultiple(of: 2) ? 0 : cell / 2
+                for (column, x) in stride(from: -cell, through: size.width + cell, by: cell).enumerated() {
+                    let index = (row * 2 + column) % symbols.count
+                    guard let symbol = context.resolveSymbol(id: index) else { continue }
+                    var piece = context
+                    piece.translateBy(x: x + shift + .random(in: -6...6, using: &generator),
+                                      y: y + .random(in: -6...6, using: &generator))
+                    piece.rotate(by: .degrees(.random(in: -18...18, using: &generator)))
+                    let scale = CGFloat.random(in: 0.8...1.15, using: &generator)
+                    piece.scaleBy(x: scale, y: scale)
+                    piece.draw(symbol, at: .zero)
+                }
+            }
+        } symbols: {
+            ForEach(Array(symbols.enumerated()), id: \.offset) { index, name in
+                Image(systemName: name)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(tint)
+                    .tag(index)
             }
         }
     }
