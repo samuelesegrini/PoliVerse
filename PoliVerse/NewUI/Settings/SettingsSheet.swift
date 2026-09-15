@@ -11,6 +11,7 @@ struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var query = ""
+    @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
     @State private var confirmingSignOut = false
 
     var body: some View {
@@ -37,6 +38,19 @@ struct SettingsSheet: View {
                     } label: {
                         Label("Dati e archiviazione", systemImage: "externaldrive")
                     }
+                }
+
+                Section {
+                    Picker(selection: $layout) {
+                        ForEach(AppLayout.allCases) { option in
+                            Label(option.title, systemImage: option.systemImage).tag(option)
+                        }
+                    } label: {
+                        Label("Disposizione", systemImage: "square.grid.2x2")
+                    }
+                    .pickerStyle(.menu)
+                } footer: {
+                    Text(layout.detail)
                 }
 
                 Section {

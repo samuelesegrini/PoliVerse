@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// The restructured app shell being tried out: four tabs instead of five.
+/// The restructured app shell being tried out, in the layout the student
+/// chose: four tabs instead of five, or a single page with a bottom panel.
 ///
 /// Oggi merges the old Home and Calendario, since both show the same lessons
 /// and exams filtered differently. Corsi replaces the WeBeep tab and the Home
@@ -15,8 +16,16 @@ struct NewRootView: View {
     }
 
     @State private var selection: Destination = .today
+    @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
 
     var body: some View {
+        switch layout {
+        case .singlePage: SinglePageHome()
+        case .tabs: tabs
+        }
+    }
+
+    private var tabs: some View {
         TabView(selection: $selection) {
             Tab("Oggi", systemImage: "calendar.day.timeline.left", value: .today) {
                 TodayTab()
