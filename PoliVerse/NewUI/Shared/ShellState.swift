@@ -11,6 +11,15 @@ final class ShellState {
     var day = Date.now
     var showingSettings = false
     var showingProfile = false
+    /// Personalizza is open over Oggi.
+    #if DEBUG
+    /// `-Customize` opens Personalizza at launch, for trying it out.
+    var isCustomizing = CommandLine.arguments.contains("-Customize")
+    #else
+    var isCustomizing = false
+    #endif
+    /// Asked for from Impostazioni: opens once that sheet has closed.
+    var customizePending = false
 }
 
 extension EnvironmentValues {

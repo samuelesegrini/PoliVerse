@@ -4,6 +4,7 @@ import SwiftUI
 /// every other part of the app in a ``BottomPanel``.
 struct SinglePageHome: View {
     @Environment(\.shell) private var shell
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
     @State private var detent: BottomPanel<PanelContent, AnyView>.Detent = .peek
     @Environment(AgendaService.self) private var agenda
     @State private var now = Date.now
@@ -13,7 +14,7 @@ struct SinglePageHome: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                LandingPage(day: shell.day)
+                TodayLanding(day: shell.day, style: style)
                     .padding(.bottom, 140)
             }
             .todayBar()
@@ -40,44 +41,6 @@ struct SinglePageHome: View {
                 try? await Task.sleep(for: .seconds(60))
                 now = .now
             }
-        }
-    }
-}
-
-/// The day at a glance. Placeholder sections for now, in the order the
-/// redesign puts them.
-private struct LandingPage: View {
-    let day: Date
-    @Environment(\.locale) private var locale
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Buona giornata!")
-                    .font(.headline)
-                Text(day.formatted(.dateTime.day(.twoDigits).month(.twoDigits).locale(locale)).replacingOccurrences(of: "/", with: "."))
-                    .font(.system(size: 72, weight: .black))
-                    .fontWidth(.expanded)
-                Text(day.formatted(.dateTime.weekday(.abbreviated).locale(locale)).uppercased())
-                    .font(.system(size: 72, weight: .black))
-                    .fontWidth(.expanded)
-                    .padding(.top, -24)
-            }
-
-            placeholder("In arrivo", "checklist", height: 110)
-            placeholder("Orario", "calendar.day.timeline.left", height: 220)
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 12)
-    }
-
-    private func placeholder(_ title: LocalizedStringKey, _ icon: String, height: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.subheadline.weight(.semibold))
-            RoundedRectangle(cornerRadius: 28)
-                .fill(.quaternary.opacity(0.5))
-                .frame(height: height)
-                .overlay { Image(systemName: icon).font(.largeTitle).foregroundStyle(.tertiary) }
         }
     }
 }

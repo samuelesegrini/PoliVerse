@@ -34,6 +34,7 @@
       }
     },
     "«%@»" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -48,6 +49,9 @@
           }
         }
       }
+    },
+    "/30" : {
+
     },
     "%@ – %@" : {
       "localizations" : {
@@ -348,6 +352,9 @@
         }
       }
     },
+    "%lld gg" : {
+
+    },
     "%lld giorni fa" : {
       "localizations" : {
         "en" : {
@@ -486,6 +493,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld unread"
+          }
+        }
+      }
+    },
+    "%lld novità %@" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld novità %2$@"
           }
         }
       }
@@ -743,6 +760,9 @@
           }
         }
       }
+    },
+    "15" : {
+
     },
     "15 minuti" : {
       "localizations" : {
@@ -1014,6 +1034,12 @@
         }
       }
     },
+    "Adesso" : {
+
+    },
+    "Adesso e più tardi" : {
+
+    },
     "Aggiorna disponibilità" : {
       "localizations" : {
         "en" : {
@@ -1080,7 +1106,6 @@
       }
     },
     "Aggiungi" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1113,6 +1138,7 @@
       }
     },
     "Aggiungi al calendario" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1214,6 +1240,9 @@
         }
       }
     },
+    "Alle %@" : {
+
+    },
     "Almeno" : {
       "localizations" : {
         "en" : {
@@ -1262,6 +1291,9 @@
         }
       }
     },
+    "Altri appelli" : {
+
+    },
     "Altri corsi" : {
       "localizations" : {
         "en" : {
@@ -1294,6 +1326,12 @@
         }
       }
     },
+    "Altro" : {
+
+    },
+    "Altro scaglione" : {
+
+    },
     "Ammesso" : {
       "localizations" : {
         "en" : {
@@ -1314,7 +1352,11 @@
         }
       }
     },
+    "Ancora nessun messaggio" : {
+
+    },
     "Ancora nessun messaggio." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1345,6 +1387,9 @@
           }
         }
       }
+    },
+    "anno accademico" : {
+
     },
     "Anno accademico" : {
       "localizations" : {
@@ -1420,6 +1465,9 @@
         }
       }
     },
+    "Apertura" : {
+
+    },
     "Apertura iscrizioni" : {
       "localizations" : {
         "en" : {
@@ -1462,6 +1510,18 @@
         }
       }
     },
+    "Appello" : {
+
+    },
+    "Appello %@" : {
+
+    },
+    "Appello da definire" : {
+
+    },
+    "Appello del %@" : {
+
+    },
     "Appello non più disponibile" : {
       "localizations" : {
         "en" : {
@@ -1481,6 +1541,9 @@
           }
         }
       }
+    },
+    "Apre il corso" : {
+
     },
     "Apre la pianta a schermo intero" : {
       "localizations" : {
@@ -1529,6 +1592,7 @@
       }
     },
     "Apri" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1782,6 +1846,9 @@
         }
       }
     },
+    "Aspetto" : {
+
+    },
     "Assente" : {
       "localizations" : {
         "en" : {
@@ -1818,6 +1885,9 @@
         }
       }
     },
+    "Aula" : {
+
+    },
     "Aula %@" : {
       "localizations" : {
         "en" : {
@@ -1837,6 +1907,9 @@
           }
         }
       }
+    },
+    "Aula da definire" : {
+
     },
     "Aula pubblicata" : {
       "localizations" : {
@@ -1963,6 +2036,9 @@
           }
         }
       }
+    },
+    "Buona giornata!" : {
+
     },
     "Cache" : {
       "localizations" : {
@@ -2092,6 +2168,9 @@
         }
       }
     },
+    "Campus e edifici" : {
+
+    },
     "Capienza" : {
       "localizations" : {
         "en" : {
@@ -2107,6 +2186,12 @@
           }
         }
       }
+    },
+    "Carattere" : {
+
+    },
+    "Carattere e colore della data, e quali sezioni mostrare." : {
+
     },
     "Caricati" : {
       "localizations" : {
@@ -2188,6 +2273,9 @@
         }
       }
     },
+    "Cerca corsi, aule, docenti" : {
+
+    },
     "Cerca la mia matricola negli esiti" : {
       "localizations" : {
         "en" : {
@@ -2230,6 +2318,9 @@
         }
       }
     },
+    "Cerca nelle impostazioni" : {
+
+    },
     "Cerca un insegnamento" : {
       "localizations" : {
         "en" : {
@@ -2262,6 +2353,9 @@
           }
         }
       }
+    },
+    "Cerchio" : {
+
     },
     "CFU" : {
       "localizations" : {
@@ -2327,6 +2421,9 @@
         }
       }
     },
+    "Chiusura" : {
+
+    },
     "Chiusura iscrizioni" : {
       "localizations" : {
         "en" : {
@@ -2363,6 +2460,9 @@
         }
       }
     },
+    "Coccarda" : {
+
+    },
     "Codice" : {
       "localizations" : {
         "en" : {
@@ -2378,6 +2478,9 @@
           }
         }
       }
+    },
+    "Codice insegnamento" : {
+
     },
     "Codice persona" : {
       "localizations" : {
@@ -2471,6 +2574,7 @@
       }
     },
     "Collega a un altro insegnamento del piano" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2501,6 +2605,9 @@
           }
         }
       }
+    },
+    "Collega altro insegnamento" : {
+
     },
     "Collega WeBeep" : {
       "localizations" : {
@@ -2533,6 +2640,12 @@
           }
         }
       }
+    },
+    "Colore" : {
+
+    },
+    "Come appare la tua foto nell’app." : {
+
     },
     "Come lo descrive il docente" : {
       "localizations" : {
@@ -2819,6 +2932,12 @@
         }
       }
     },
+    "Corsi, aule, docenti" : {
+
+    },
+    "Corsi, aule, docenti ed esami." : {
+
+    },
     "Corsi, docenti, aule, notizie, materiali" : {
       "localizations" : {
         "en" : {
@@ -2889,6 +3008,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Degree programme"
+          }
+        }
+      }
+    },
+    "Corso di studi non scelto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Degree course not chosen"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Corso di studi non scelto"
+          }
+        }
+      }
+    },
+    "Corso integrato: il Politecnico pubblica una sola scheda per tutti i moduli, qui sotto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Integrated course: the Politecnico publishes one syllabus for all its modules, below."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Corso integrato: il Politecnico pubblica una sola scheda per tutti i moduli, qui sotto."
           }
         }
       }
@@ -3157,6 +3308,12 @@
         }
       }
     },
+    "Data" : {
+
+    },
+    "Data da definire" : {
+
+    },
     "Dati" : {
       "localizations" : {
         "en" : {
@@ -3198,6 +3355,9 @@
           }
         }
       }
+    },
+    "Dati e archiviazione" : {
+
     },
     "Dedotto confrontando i corsi con il piano di studi di ogni tua matricola. Tieni premuto un corso per correggerlo." : {
       "localizations" : {
@@ -3326,6 +3486,9 @@
         }
       }
     },
+    "Dettagli" : {
+
+    },
     "Dettaglio" : {
       "localizations" : {
         "en" : {
@@ -3353,6 +3516,7 @@
       }
     },
     "Di tutti i corsi" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3436,6 +3600,9 @@
         }
       }
     },
+    "Disposizione" : {
+
+    },
     "Docente" : {
       "localizations" : {
         "en" : {
@@ -3477,6 +3644,12 @@
           }
         }
       }
+    },
+    "Domani" : {
+
+    },
+    "Domani alle %@" : {
+
     },
     "Dotazioni" : {
       "localizations" : {
@@ -3613,6 +3786,9 @@
           }
         }
       }
+    },
+    "Elaborato corretto consultabile sui Servizi Online." : {
+
     },
     "Elimina" : {
       "localizations" : {
@@ -3785,6 +3961,7 @@
       }
     },
     "Erogato in" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3882,6 +4059,9 @@
         }
       }
     },
+    "Esito" : {
+
+    },
     "Esito pubblicato" : {
       "localizations" : {
         "en" : {
@@ -3907,6 +4087,9 @@
           }
         }
       }
+    },
+    "Espandi" : {
+
     },
     "Esplora con dati di esempio" : {
       "localizations" : {
@@ -4040,6 +4223,12 @@
         }
       }
     },
+    "Fino alle %@" : {
+
+    },
+    "Forma della foto" : {
+
+    },
     "Formato non riconosciuto" : {
       "localizations" : {
         "en" : {
@@ -4071,6 +4260,9 @@
           }
         }
       }
+    },
+    "Forum non disponibile" : {
+
     },
     "Fuori dal piano di studi" : {
       "localizations" : {
@@ -4145,6 +4337,9 @@
           }
         }
       }
+    },
+    "Giorno mostrato: %@" : {
+
     },
     "Guarda l'app senza accedere" : {
       "localizations" : {
@@ -4305,6 +4500,12 @@
           }
         }
       }
+    },
+    "I tuoi corsi con materiali, avvisi e appelli." : {
+
+    },
+    "Identificativi" : {
+
     },
     "Idoneo" : {
       "localizations" : {
@@ -4820,6 +5021,9 @@
         }
       }
     },
+    "Il voto non entra nella media: puoi ripresentarti a un prossimo appello." : {
+
+    },
     "Impegno" : {
       "localizations" : {
         "en" : {
@@ -4911,7 +5115,11 @@
         }
       }
     },
+    "In arrivo" : {
+
+    },
     "In aula, in tutto" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4920,6 +5128,9 @@
           }
         }
       }
+    },
+    "In breve" : {
+
     },
     "In calendario" : {
       "localizations" : {
@@ -5209,6 +5420,9 @@
         }
       }
     },
+    "Iscrizione" : {
+
+    },
     "Iscrizione annullata" : {
       "localizations" : {
         "en" : {
@@ -5264,6 +5478,12 @@
           }
         }
       }
+    },
+    "Iscrizioni aperte fino al %@" : {
+
+    },
+    "Iscrizioni chiuse" : {
+
     },
     "Iscrizioni entro il %@" : {
       "localizations" : {
@@ -5562,6 +5782,9 @@
         }
       }
     },
+    "Le iscrizioni aprono il %@" : {
+
+    },
     "Le lezioni del giorno appena apri l'app, con l'aula e quanto manca. Sulla schermata di blocco e in Centro di Controllo, se vuoi." : {
       "localizations" : {
         "en" : {
@@ -5688,6 +5911,9 @@
         }
       }
     },
+    "Leggi tutto" : {
+
+    },
     "Leggo l'orario…" : {
       "localizations" : {
         "en" : {
@@ -5723,6 +5949,9 @@
           }
         }
       }
+    },
+    "Lezione in corso" : {
+
     },
     "Lezioni" : {
       "localizations" : {
@@ -5820,6 +6049,12 @@
           }
         }
       }
+    },
+    "Libretto, piano di studi e media." : {
+
+    },
+    "Libretto, piano e media" : {
+
     },
     "Libri di testo in inglese" : {
       "localizations" : {
@@ -5948,6 +6183,7 @@
       }
     },
     "Materiali di %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5989,6 +6225,9 @@
         }
       }
     },
+    "Materiali, avvisi e appelli" : {
+
+    },
     "Matricola" : {
       "localizations" : {
         "en" : {
@@ -6001,6 +6240,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Matricola"
+          }
+        }
+      }
+    },
+    "Matricola %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Student number %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Matricola %@"
+          }
+        }
+      }
+    },
+    "Matricola %@ · in uso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Student number %@ · in use"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Matricola %@ · in uso"
           }
         }
       }
@@ -6073,6 +6344,9 @@
         }
       }
     },
+    "Media dopo la registrazione" : {
+
+    },
     "Media finale" : {
       "localizations" : {
         "en" : {
@@ -6131,6 +6405,9 @@
         }
       }
     },
+    "Modifica" : {
+
+    },
     "Modifica insegnamenti" : {
       "localizations" : {
         "en" : {
@@ -6143,6 +6420,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Modifica insegnamenti"
+          }
+        }
+      }
+    },
+    "Moduli" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modules"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moduli"
           }
         }
       }
@@ -6178,6 +6471,15 @@
           }
         }
       }
+    },
+    "Mostra il saluto" : {
+
+    },
+    "Mostra In arrivo" : {
+
+    },
+    "Mostra l’orario" : {
+
     },
     "Mostra la pagina del Politecnico" : {
       "localizations" : {
@@ -6242,6 +6544,9 @@
           }
         }
       }
+    },
+    "Mostra meno" : {
+
     },
     "Nascondi" : {
       "localizations" : {
@@ -6644,6 +6949,9 @@
         }
       }
     },
+    "Nessuna lezione oggi" : {
+
+    },
     "Nessuna notifica" : {
       "localizations" : {
         "en" : {
@@ -6744,6 +7052,9 @@
         }
       }
     },
+    "Nessuna prova in itinere" : {
+
+    },
     "Nessuna risposta dopo %lld tentativi." : {
       "localizations" : {
         "en" : {
@@ -6759,6 +7070,9 @@
           }
         }
       }
+    },
+    "Nessuna scheda" : {
+
     },
     "Nessuna statistica, nessun tracciamento, nessun account da creare." : {
       "localizations" : {
@@ -7189,6 +7503,9 @@
         }
       }
     },
+    "Notizie e avvisi" : {
+
+    },
     "Notizie non disponibili" : {
       "localizations" : {
         "en" : {
@@ -7475,6 +7792,28 @@
         }
       }
     },
+    "Oggi alle %@" : {
+
+    },
+    "Oggi, Corsi, Carriera e Cerca in schede separate." : {
+
+    },
+    "Ogni carriera ha il suo corso di studi: i corsi dell'altra carriera sono letti dal piano scelto per lei." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each career has its own degree course: the other career's courses are read from the plan chosen for it."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ogni carriera ha il suo corso di studi: i corsi dell'altra carriera sono letti dal piano scelto per lei."
+          }
+        }
+      }
+    },
     "Ogni lezione diventa un evento settimanale fino alla fine delle lezioni. Se le hai già aggiunte, verranno duplicate." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7540,6 +7879,9 @@
         }
       }
     },
+    "Orari, corsi e carriera salvati per aprire l’app senza rete." : {
+
+    },
     "Orario" : {
       "localizations" : {
         "en" : {
@@ -7588,6 +7930,12 @@
         }
       }
     },
+    "ore di studio" : {
+
+    },
+    "ore in aula" : {
+
+    },
     "Ore indicate dalla scheda del Politecnico." : {
       "localizations" : {
         "en" : {
@@ -7613,6 +7961,15 @@
           }
         }
       }
+    },
+    "Ospite" : {
+
+    },
+    "Pagina unica" : {
+
+    },
+    "Pannello" : {
+
     },
     "Passare a %@?" : {
       "localizations" : {
@@ -7693,6 +8050,28 @@
           }
         }
       }
+    },
+    "Per una carriera diversa da quella in uso il Politecnico non dice il corso di studi: sceglilo tu. I suoi corsi saranno letti da questo piano." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For a career other than the one in use the Politecnico does not say the degree course: choose it yourself. Its courses will be read from this plan."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per una carriera diversa da quella in uso il Politecnico non dice il corso di studi: sceglilo tu. I suoi corsi saranno letti da questo piano."
+          }
+        }
+      }
+    },
+    "Personalizza" : {
+
+    },
+    "Personalizza Oggi" : {
+
     },
     "Piano" : {
       "localizations" : {
@@ -8077,6 +8456,9 @@
         }
       }
     },
+    "Programma, libri e dettagli" : {
+
+    },
     "Programma, prerequisiti e bibliografia" : {
       "localizations" : {
         "en" : {
@@ -8157,6 +8539,9 @@
         }
       }
     },
+    "Promemoria d’esame" : {
+
+    },
     "Promemoria non attivi · si accendono da Impostazioni · Promemoria." : {
       "localizations" : {
         "en" : {
@@ -8205,6 +8590,9 @@
         }
       }
     },
+    "Prossima" : {
+
+    },
     "Prossima lezione" : {
       "localizations" : {
         "en" : {
@@ -8230,6 +8618,9 @@
           }
         }
       }
+    },
+    "Prossimi appelli" : {
+
     },
     "Prossimo appello" : {
       "localizations" : {
@@ -8273,6 +8664,9 @@
         }
       }
     },
+    "Prove in itinere previste" : {
+
+    },
     "Pubblicate le soluzioni" : {
       "localizations" : {
         "en" : {
@@ -8294,6 +8688,7 @@
       }
     },
     "Puoi ancora rifiutare questo voto dai servizi online." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8308,6 +8703,9 @@
           }
         }
       }
+    },
+    "Puoi ancora rifiutare questo voto dai Servizi Online." : {
+
     },
     "Puoi rifiutare il voto" : {
       "localizations" : {
@@ -8328,6 +8726,9 @@
           }
         }
       }
+    },
+    "Quadrato" : {
+
     },
     "Quali aule sono libere adesso, in quale edificio e per quanto ancora. Dai dati pubblici del Politecnico, senza account." : {
       "localizations" : {
@@ -8374,6 +8775,9 @@
           }
         }
       }
+    },
+    "Questi dati arrivano dal tuo account del Politecnico." : {
+
     },
     "Questo corso non ha file pubblicati." : {
       "localizations" : {
@@ -8482,6 +8886,9 @@
         }
       }
     },
+    "Registrato nel libretto" : {
+
+    },
     "Respinto" : {
       "localizations" : {
         "en" : {
@@ -8517,6 +8924,9 @@
           }
         }
       }
+    },
+    "Riduci" : {
+
     },
     "Riepilogo alle" : {
       "localizations" : {
@@ -8683,6 +9093,9 @@
         }
       }
     },
+    "Saluto" : {
+
+    },
     "Salva" : {
       "localizations" : {
         "en" : {
@@ -8730,6 +9143,9 @@
           }
         }
       }
+    },
+    "Scadenza" : {
+
     },
     "Scadenza della consegna cambiata" : {
       "localizations" : {
@@ -8923,6 +9339,7 @@
       }
     },
     "Scegli un altro scaglione" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8963,6 +9380,9 @@
           }
         }
       }
+    },
+    "Scheda non trovata" : {
+
     },
     "Scheda scelta in base al tuo corso di studi e al tuo cognome, dal Manifesto degli studi." : {
       "extractionState" : "stale",
@@ -9006,6 +9426,9 @@
           }
         }
       }
+    },
+    "Scrivi al docente" : {
+
     },
     "Scrivi il nome di un insegnamento e premi invio." : {
       "localizations" : {
@@ -9087,6 +9510,9 @@
         }
       }
     },
+    "Sei iscritto a questo appello" : {
+
+    },
     "Sei negli esiti" : {
       "localizations" : {
         "en" : {
@@ -9128,6 +9554,12 @@
           }
         }
       }
+    },
+    "Sem. %@" : {
+
+    },
+    "semestre" : {
+
     },
     "Semestre" : {
       "localizations" : {
@@ -9277,6 +9709,9 @@
           }
         }
       }
+    },
+    "Settimana e mese" : {
+
     },
     "Settimana precedente" : {
       "localizations" : {
@@ -9565,6 +10000,9 @@
         }
       }
     },
+    "Spessore" : {
+
+    },
     "Stai guardando dati di esempio" : {
       "localizations" : {
         "en" : {
@@ -9597,6 +10035,9 @@
         }
       }
     },
+    "Stima sui voti del libretto pesati per CFU (%lld CFU per questo esame)." : {
+
+    },
     "Sto andando a lezione" : {
       "localizations" : {
         "en" : {
@@ -9608,6 +10049,7 @@
       }
     },
     "Studio autonomo" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9675,6 +10117,9 @@
         }
       }
     },
+    "Sviluppo e diagnostica" : {
+
+    },
     "Svuota cache" : {
       "localizations" : {
         "en" : {
@@ -9708,6 +10153,12 @@
         }
       }
     },
+    "Tab" : {
+
+    },
+    "Tentativi precedenti" : {
+
+    },
     "Ti porto su %@…" : {
       "localizations" : {
         "en" : {
@@ -9739,6 +10190,9 @@
           }
         }
       }
+    },
+    "tipo" : {
+
     },
     "Tipo" : {
       "localizations" : {
@@ -9801,6 +10255,9 @@
           }
         }
       }
+    },
+    "Tra %lld giorni" : {
+
     },
     "Trova un'aula libera" : {
       "localizations" : {
@@ -9956,6 +10413,9 @@
         }
       }
     },
+    "Una sola pagina con il giorno, e tutto il resto in un pannello dal basso." : {
+
+    },
     "Una striscia in cima a ogni schermata te lo ricorda." : {
       "localizations" : {
         "en" : {
@@ -10004,6 +10464,9 @@
         }
       }
     },
+    "Uscire dall’account?" : {
+
+    },
     "Utile per segnalare un problema: mostra dove l'app sta cercando i servizi del Politecnico." : {
       "localizations" : {
         "en" : {
@@ -10019,6 +10482,12 @@
           }
         }
       }
+    },
+    "Vai a oggi" : {
+
+    },
+    "Vedi e modifica il profilo" : {
+
     },
     "Vedi l'orario settimanale" : {
       "extractionState" : "stale",
@@ -10036,6 +10505,9 @@
           }
         }
       }
+    },
+    "Vengono rimossi i token dal portachiavi e i dati salvati sul dispositivo." : {
+
     },
     "Verifiche" : {
       "localizations" : {
@@ -10094,6 +10566,9 @@
           }
         }
       }
+    },
+    "Voto %@" : {
+
     },
     "Voto confermato sui Servizi Online" : {
       "localizations" : {
@@ -10305,118 +10780,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Widget e Centro di Controllo: tieni premuto sulla schermata Home per aggiungerli."
-          }
-        }
-      }
-    },
-    "Corso di studi non scelto" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Degree course not chosen"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Corso di studi non scelto"
-          }
-        }
-      }
-    },
-    "Matricola %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Student number %@"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Matricola %@"
-          }
-        }
-      }
-    },
-    "Matricola %@ · in uso" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Student number %@ · in use"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Matricola %@ · in uso"
-          }
-        }
-      }
-    },
-    "Ogni carriera ha il suo corso di studi: i corsi dell'altra carriera sono letti dal piano scelto per lei." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Each career has its own degree course: the other career's courses are read from the plan chosen for it."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ogni carriera ha il suo corso di studi: i corsi dell'altra carriera sono letti dal piano scelto per lei."
-          }
-        }
-      }
-    },
-    "Per una carriera diversa da quella in uso il Politecnico non dice il corso di studi: sceglilo tu. I suoi corsi saranno letti da questo piano." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "For a career other than the one in use the Politecnico does not say the degree course: choose it yourself. Its courses will be read from this plan."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Per una carriera diversa da quella in uso il Politecnico non dice il corso di studi: sceglilo tu. I suoi corsi saranno letti da questo piano."
-          }
-        }
-      }
-    },
-    "Moduli" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Modules"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Moduli"
-          }
-        }
-      }
-    },
-    "Corso integrato: il Politecnico pubblica una sola scheda per tutti i moduli, qui sotto." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Integrated course: the Politecnico publishes one syllabus for all its modules, below."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Corso integrato: il Politecnico pubblica una sola scheda per tutti i moduli, qui sotto."
           }
         }
       }

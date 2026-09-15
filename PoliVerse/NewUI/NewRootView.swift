@@ -48,8 +48,19 @@ struct NewRootView: View {
                 withAnimation(.smooth(duration: 0.45)) { shownLayout = new }
             }
         }
+        .overlay {
+            if shell.isCustomizing {
+                CustomizeOggi()
+                    .transition(.scale(scale: 0.92).combined(with: .opacity))
+            }
+        }
         .environment(\.shell, shell)
         .sheet(isPresented: $shell.showingSettings, onDismiss: {
+            if shell.customizePending {
+                shell.customizePending = false
+                selection = .today
+                withAnimation(.smooth(duration: 0.4)) { shell.isCustomizing = true }
+            }
             guard layoutChangePending else { return }
             layoutChangePending = false
             withAnimation(.smooth(duration: 0.45)) { shownLayout = layout }

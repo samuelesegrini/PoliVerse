@@ -9,6 +9,7 @@ struct SettingsSheet: View {
     @Environment(Session.self) private var session
     @Environment(WeBeepService.self) private var weBeep
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.shell) private var shell
 
     @State private var query = ""
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
@@ -54,12 +55,14 @@ struct SettingsSheet: View {
                 }
 
                 Section {
-                    NavigationLink {
-                        ContentUnavailableView("Aspetto", systemImage: "paintbrush",
-                                               description: Text("Colore, motivo e widget della schermata Oggi."))
+                    Button {
+                        shell.customizePending = true
+                        dismiss()
                     } label: {
-                        Label("Aspetto", systemImage: "paintbrush")
+                        Label("Personalizza Oggi", systemImage: "paintbrush")
                     }
+                } footer: {
+                    Text("Carattere e colore della data, e quali sezioni mostrare.")
                 }
 
                 Section {
