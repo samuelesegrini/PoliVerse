@@ -1,58 +1,223 @@
+import PhotosUI
 import SwiftUI
 
-/// The controls for one zone: a curated set and one fine control.
-struct ZoneEditor: View {
-    let zone: TodayLanding.Zone
+/// A page of Personalizza's panel: one part of the look.
+enum CustomizePage: Hashable, Identifiable {
+    case flavor, paper, decoration, cards, appearance, widget, accessory, layout, greeting, bar
+    case section(TodaySection.Kind)
+
+    var id: String {
+        switch self {
+        case .section(let kind): "section-\(kind.rawValue)"
+        default: String(describing: self)
+        }
+    }
+
+    /// The page for a zone tapped on the page.
+    init(zone: TodayLanding.Zone) {
+        switch zone {
+        case .bar: self = .bar
+        case .greeting: self = .greeting
+        case .date: self = .widget
+        case .stickers: self = .accessory
+        case .background: self = .flavor
+        case .section(let kind): self = .section(kind)
+        }
+    }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .flavor: "Flavor"
+        case .paper: "Materiale"
+        case .decoration: "Decorazione"
+        case .cards: "Schede"
+        case .appearance: "Aspetto"
+        case .widget: "Widget"
+        case .accessory: "Accessorio"
+        case .layout: "Layout"
+        case .greeting: "Saluto"
+        case .bar: "Barra"
+        case .section(let kind): kind.title
+        }
+    }
+}
+
+/// The controls of one panel page: a curated set and one fine control.
+struct CustomizeControls: View {
+    let page: CustomizePage
     @Binding var style: TodayStyle
-    @Environment(\.dismiss) private var dismiss
+    @Binding var arranging: Bool
+    var pickStickers: () -> Void = {}
+    var close: () -> Void = {}
+
     @Environment(Session.self) private var session
-    @State private var pickingStickers = false
+    @Environment(\.colorScheme) private var scheme
+    @State private var photoItem: PhotosPickerItem?
+    @State private var photoItems: [PhotosPickerItem] = []
 
     var body: some View {
-        NavigationStack {
-            Form {
-                switch zone {
-                case .bar: barControls
-                case .date: dateControls
-                case .greeting: greetingControls
-                case .stickers: stickerControls
-                case .section(let kind): sectionControls(kind)
-                case .background: backgroundControls
-                }
+        Form {
+            switch page {
+            case .flavor: flavorControls
+            case .paper: paperControls
+            case .decoration: decorationControls
+            case .cards: cardControls
+            case .appearance: appearanceControls
+            case .widget: dateControls
+            case .accessory: accessoryControls
+            case .layout: layoutControls
+            case .greeting: greetingControls
+            case .bar: barControls
+            case .section(let kind): sectionControls(kind)
             }
-            .navigationTitle(zone.title)
-            .navigationBarTitleDisplayMode(.inline)
-            // Here, not on the sticker section: a sheet attached inside a Form
-            // row does not present reliably.
-            .sheet(isPresented: $pickingStickers) {
-                StickerPicker(remaining: TodayStyle.maxStickers - style.stickers.count) { content in
-                    style.addSticker(content)
-                }
-                .presentationDetents([.height(220)])
-            }
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Fine", systemImage: "checkmark") { dismiss() }
-                        .accessibilityIdentifier("customize-zone-done")
-                }
+        }
+        .navigationTitle(page.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Fine", systemImage: "checkmark", action: close)
+                    .accessibilityIdentifier("customize-zone-done")
             }
         }
     }
 
-    // MARK: Theme
+    // MARK: Flavor
 
-    /// The look's Flavor, material, text and background: everything behind
-    /// and around the zones, together.
     @ViewBuilder
-    private var backgroundControls: some View {
+    private var flavorControls: some View {
+        Section {
+            FlavorFlowView(flavor: style.flavor)
+                .frame(height: 110)
+                .clipShape(.rect(cornerRadius: 22))
+                .overlay {
+                    VStack(spacing: 2) {
+                        Text(style.flavor.name).font(.title2.weight(.bold))
+                        Text("Flavor").font(.caption2.weight(.semibold)).opacity(0.8)
+                    }
+                    .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.25), radius: 6)
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+        }
+        Section {
+            HStack(spacing: 10) {
+                ForEach(Flavor.Role.allCases, id: \.self) { role in
+                    FlavorRoleSwatch(role: role, flavor: $style.flavor)
+                }
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
+        } header: {
+            Text("Colori")
+        } footer: {
+            Text("Scelti da soli a partire dal principale: tocca un colore per cambiarlo.")
+        }
         Section {
             FlavorRow(flavor: $style.flavor)
-        } header: {
-            Text("Flavor")
-        } footer: {
-            Text("Un colore diventa sfondo, schede e il colore di pulsanti, schede selezionate e collegamenti in tutta l’app, sempre leggibili in chiaro e in scuro.")
+            PhotosPicker(selection: $photoItem, matching: .images) {
+                Label("Colori da una foto", systemImage: "photo")
+            }
+            .onChange(of: photoItem) { _, item in
+                guard let item else { return }
+                Task {
+                    if let data = try? await item.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data),
+                       let flavor = Flavor.extract(from: image.samplePixels()) {
+                        withAnimation(.snappy) { style.flavor = flavor }
+                    }
+                    photoItem = nil
+                }
+            }
+            Button("Colori suggeriti", systemImage: "wand.and.sparkles") {
+                withAnimation(.snappy) { style.flavor.resetDerived() }
+            }
         }
-        Section("Materiale") {
+        Section {
+            ShareLink(item: style.flavor.shareCode, subject: Text("Flavor \(style.flavor.name)")) {
+                Label("Condividi il Flavor", systemImage: "square.and.arrow.up")
+            }
+            PasteButton(payloadType: String.self) { strings in
+                guard let flavor = strings.lazy.compactMap(Flavor.init(shareCode:)).first else { return }
+                Task { @MainActor in withAnimation(.snappy) { style.flavor = flavor } }
+            }
+        } footer: {
+            Text("Un Flavor condiviso è un codice: incollalo qui per usarlo.")
+        }
+    }
+
+    // MARK: Paper
+
+    @ViewBuilder
+    private var paperControls: some View {
+        Section {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2), spacing: 12) {
+                ForEach(TodayPaper.allCases) { paper in
+                    Button { style.paper = paper } label: {
+                        PaperTile(paper: paper, style: style, selected: style.paper == paper)
+                            .frame(height: 120)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text(paper.title))
+                    .accessibilityIdentifier("paper-\(paper.rawValue)")
+                    .accessibilityAddTraits(style.paper == paper ? .isSelected : [])
+                }
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
+        }
+        Section {
+            Slider(value: $style.grain, in: 0...1) {
+                Text("Grana")
+            } minimumValueLabel: {
+                Image(systemName: "circle")
+            } maximumValueLabel: {
+                Image(systemName: "circle.dotted")
+            }
+            .accessibilityIdentifier("paper-grain")
+        } header: {
+            Text("Grana")
+        } footer: {
+            Text("Una grana di pellicola su tutta la pagina.")
+        }
+    }
+
+    // MARK: Decoration
+
+    private var decorationControls: some View {
+        Section {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+                ForEach(TodayBackground.allCases) { background in
+                    Button { style.background = background } label: {
+                        VStack(spacing: 6) {
+                            TodayBackgroundView(background: background, flavor: style.flavor, paper: style.paper,
+                                                mode: style.appearance.flavorMode)
+                                .frame(height: 96)
+                                .clipShape(.rect(cornerRadius: 16))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .strokeBorder(style.background == background ? AnyShapeStyle(.tint) : AnyShapeStyle(.quaternary),
+                                                      lineWidth: style.background == background ? 2.5 : 1)
+                                }
+                            Text(background.title)
+                                .font(.caption)
+                                .foregroundStyle(style.background == background ? .primary : .secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(style.background == background ? .isSelected : [])
+                }
+            }
+            .listRowBackground(Color.clear)
+        } footer: {
+            Text("Il motivo prende il colore del Flavor.")
+        }
+    }
+
+    // MARK: Cards
+
+    private var cardControls: some View {
+        Section {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 12) {
                 ForEach(TodayMaterial.allCases) { material in
                     Button { style.material = material } label: {
@@ -76,6 +241,38 @@ struct ZoneEditor: View {
                     .accessibilityAddTraits(style.material == material ? .isSelected : [])
                 }
             }
+            .listRowBackground(Color.clear)
+        } footer: {
+            Text("Ogni sezione può averne uno suo.")
+        }
+    }
+
+    // MARK: Appearance
+
+    @ViewBuilder
+    private var appearanceControls: some View {
+        Section {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 14) {
+                ForEach(TodayAppearance.allCases) { appearance in
+                    Button { style.appearance = appearance } label: {
+                        VStack(spacing: 6) {
+                            AppearanceTile(appearance: appearance, style: style)
+                                .frame(height: 86)
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 18)
+                                        .strokeBorder(style.appearance == appearance ? AnyShapeStyle(.tint) : AnyShapeStyle(.quaternary),
+                                                      lineWidth: style.appearance == appearance ? 3 : 1)
+                                }
+                            Text(appearance.title)
+                                .font(.caption.weight(style.appearance == appearance ? .semibold : .regular))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("appearance-\(appearance.rawValue)")
+                    .accessibilityAddTraits(style.appearance == appearance ? .isSelected : [])
+                }
+            }
+            .listRowBackground(Color.clear)
         }
         Section("Testo") {
             Picker("Testo", selection: $style.textDesign) {
@@ -85,34 +282,10 @@ struct ZoneEditor: View {
             }
             .pickerStyle(.segmented)
         }
-        Section("Sfondo") {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
-                ForEach(TodayBackground.allCases) { background in
-                    Button { style.background = background } label: {
-                        VStack(spacing: 6) {
-                            TodayBackgroundView(background: background, flavor: style.flavor)
-                                .frame(height: 96)
-                                .clipShape(.rect(cornerRadius: 16))
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .strokeBorder(style.background == background ? AnyShapeStyle(.tint) : AnyShapeStyle(.quaternary),
-                                                      lineWidth: style.background == background ? 2.5 : 1)
-                                }
-                            Text(background.title)
-                                .font(.caption)
-                                .foregroundStyle(style.background == background ? .primary : .secondary)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(style.background == background ? .isSelected : [])
-                }
-            }
-        }
     }
 
     // MARK: Bar
 
-    @ViewBuilder
     private var barControls: some View {
         Section {
             Toggle("Profilo", isOn: $style.bar.showsProfile)
@@ -126,45 +299,137 @@ struct ZoneEditor: View {
         }
     }
 
-    // MARK: Stickers
+    // MARK: Accessory
 
     @ViewBuilder
-    private var stickerControls: some View {
+    private var accessoryControls: some View {
         Section {
-            headerLayoutPicker
-        }
-        Section {
-            ForEach(style.stickers) { sticker in
-                HStack(spacing: 12) {
-                    StickerContentView(content: sticker.content)
-                        .frame(width: 36, height: 36)
-                    Text(sticker.content.isEmoji ? "Emoji" : "Sticker")
-                        .foregroundStyle(.secondary)
-                }
+            Picker("Accanto alla data", selection: $style.accessory) {
+                ForEach(TodayAccessory.allCases) { Text($0.title).tag($0) }
             }
-            .onDelete { offsets in
-                let ids = offsets.map { style.stickers[$0].id }
-                ids.forEach { style.removeSticker($0) }
-            }
-            Button("Aggiungi sticker", systemImage: "plus") { pickingStickers = true }
-                .disabled(style.stickers.count >= TodayStyle.maxStickers)
-                .accessibilityIdentifier("sticker-controls-add")
-        } header: {
-            Text("Sticker")
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("date-header-layout")
         } footer: {
-            Text("Tieni premuto sulla pagina per spostarli, ingrandirli e ruotarli.")
+            Text("Con un accessorio la data occupa metà della larghezza.")
+        }
+        switch style.accessory {
+        case .none:
+            EmptyView()
+        case .stickers:
+            Section {
+                ForEach(style.stickers) { sticker in
+                    HStack(spacing: 12) {
+                        StickerContentView(content: sticker.content)
+                            .frame(width: 36, height: 36)
+                        Text(sticker.content.isEmoji ? "Emoji" : "Sticker")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .onDelete { offsets in
+                    let ids = offsets.map { style.stickers[$0].id }
+                    ids.forEach { style.removeSticker($0) }
+                }
+                Button("Aggiungi sticker", systemImage: "plus", action: pickStickers)
+                    .disabled(style.stickers.count >= TodayStyle.maxStickers)
+                    .accessibilityIdentifier("sticker-controls-add")
+                Toggle("Bordo bianco", isOn: $style.stickerOutline)
+            } header: {
+                Text("Sticker")
+            } footer: {
+                Text("Tieni premuto sulla pagina per spostarli, ingrandirli e ruotarli.")
+            }
+        case .text:
+            Section {
+                TextField("Tutto pronto?", text: $style.accessoryText)
+                    .textInputAutocapitalization(.sentences)
+                    .accessibilityIdentifier("accessory-text")
+            } header: {
+                Text("Testo")
+            } footer: {
+                Text("Poche parole, nel carattere della data e nel colore del Flavor.")
+            }
+        case .photos:
+            Section {
+                ForEach(style.photoIDs, id: \.self) { id in
+                    StickerContentView(content: .image(id), fill: true)
+                        .frame(width: 56, height: 56)
+                        .clipShape(.rect(cornerRadius: 10))
+                }
+                .onDelete { offsets in
+                    let ids = offsets.map { style.photoIDs[$0] }
+                    ids.forEach { style.removePhoto($0) }
+                }
+                PhotosPicker(selection: $photoItems, maxSelectionCount: TodayStyle.maxPhotos, matching: .images) {
+                    Label("Scegli le foto", systemImage: "photo.on.rectangle.angled")
+                }
+                .onChange(of: photoItems) { _, items in
+                    guard !items.isEmpty else { return }
+                    Task {
+                        for item in items {
+                            if let data = try? await item.loadTransferable(type: Data.self),
+                               let resized = UIImage(data: data)?.resizedJPEG(maxSide: 900),
+                               let id = try? StickerStore.shared.save(resized) {
+                                withAnimation(.snappy) { style.addPhoto(id) }
+                            }
+                        }
+                        photoItems = []
+                    }
+                }
+            } header: {
+                Text("Foto")
+            } footer: {
+                Text("Fino a tre, impilate come stampe.")
+            }
         }
     }
 
-    /// Whether the top of the page is the date alone or the date beside
-    /// stickers; offered with the date and with the stickers.
-    private var headerLayoutPicker: some View {
-        Picker("In alto", selection: $style.header) {
-            Text("Solo data").tag(HeaderLayout.date)
-            Text("Data e sticker").tag(HeaderLayout.dateAndStickers)
+    // MARK: Layout
+
+    @ViewBuilder
+    private var layoutControls: some View {
+        Section {
+            ForEach(style.visibleSections) { section in
+                Label(section.kind.title, systemImage: section.kind.systemImage)
+            }
+            .onMove { offsets, destination in
+                let visible = style.visibleSections
+                let moved = offsets.map { visible[$0].kind }
+                let target = destination < visible.count ? visible[destination].kind : nil
+                withAnimation(.snappy) { style.moveSections(moved, before: target) }
+            }
+            .onDelete { offsets in
+                let visible = style.visibleSections
+                offsets.map { visible[$0].kind }.forEach { style.hideSection($0) }
+            }
+        } header: {
+            Text("Sulla pagina")
         }
-        .pickerStyle(.segmented)
-        .accessibilityIdentifier("date-header-layout")
+        .environment(\.editMode, .constant(.active))
+        Section("Aspetto delle sezioni") {
+            ForEach(style.visibleSections) { section in
+                NavigationLink(value: CustomizePage.section(section.kind)) {
+                    Label(section.kind.title, systemImage: section.kind.systemImage)
+                }
+                .accessibilityIdentifier("layout-section-\(section.kind.rawValue)")
+            }
+        }
+        if !style.addableSections.isEmpty {
+            Section("Aggiungi") {
+                ForEach(style.addableSections) { kind in
+                    Button { withAnimation(.snappy) { style.addSection(kind) } } label: {
+                        Label(kind.title, systemImage: kind.systemImage)
+                    }
+                }
+            }
+        }
+        Section {
+            Button("Disponi sulla pagina", systemImage: "square.stack.3d.up") {
+                withAnimation(.snappy) { arranging = true }
+            }
+            .accessibilityIdentifier("customize-editor-arrange")
+        } footer: {
+            Text("Oppure tieni premuto sulla pagina per trascinare le sezioni.")
+        }
     }
 
     // MARK: Sections
@@ -190,7 +455,10 @@ struct ZoneEditor: View {
                 ForEach(TodaySection.Density.allCases) { Text($0.title).tag($0) }
             }
             .pickerStyle(.segmented)
-            Toggle("Colore della data", isOn: section.tinted)
+            Toggle("Colore del Flavor", isOn: section.tinted)
+            if kind.hasCourseColours {
+                Toggle("Colori dei corsi", isOn: section.courseColours)
+            }
         }
         if kind.listsItems {
             Section {
@@ -202,12 +470,14 @@ struct ZoneEditor: View {
         Section {
             Button("Togli dalla pagina", systemImage: "eye.slash", role: .destructive) {
                 style.hideSection(kind)
-                dismiss()
+                close()
             }
         } footer: {
-            Text("Tieni premuto sulla pagina per riordinare, aggiungere e togliere le sezioni. Una sezione tolta tiene le sue impostazioni.")
+            Text("Una sezione tolta tiene le sue impostazioni.")
         }
     }
+
+    // MARK: Greeting
 
     @ViewBuilder
     private var greetingControls: some View {
@@ -243,7 +513,8 @@ struct ZoneEditor: View {
         }
     }
 
-    @ViewBuilder
+    // MARK: Widget
+
     private var dateLayoutControls: some View {
         Section("Disposizione") {
             ScrollView(.horizontal) {
@@ -282,11 +553,6 @@ struct ZoneEditor: View {
 
     @ViewBuilder
     private var dateControls: some View {
-        Section {
-            headerLayoutPicker
-        } footer: {
-            Text("Con gli sticker la data occupa metà della larghezza.")
-        }
         dateLayoutControls
         Section("Carattere") {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
@@ -324,20 +590,69 @@ struct ZoneEditor: View {
                 Image(systemName: "textformat.size.larger")
             }
         }
-        Section {
+        Section("Colore") {
             Picker("Colore", selection: $style.dateColour) {
                 ForEach(TodayStyle.DateColour.allCases) { Text($0.title).tag($0) }
             }
             .pickerStyle(.segmented)
-        } header: {
-            Text("Colore")
-        } footer: {
-            Text("Il colore del Flavor si sceglie in Tema.")
         }
     }
 }
 
-/// The Flavor swatches, then the system's colour picker for any other colour.
+// MARK: - Pieces
+
+/// One of a Flavor's three colours, with the system picker over it.
+private struct FlavorRoleSwatch: View {
+    let role: Flavor.Role
+    @Binding var flavor: Flavor
+    @Environment(\.self) private var environment
+
+    private var label: LocalizedStringKey {
+        switch role {
+        case .main: "PRINCIPALE"
+        case .accent: "ACCENTO"
+        case .extra: "EXTRA"
+        }
+    }
+
+    var body: some View {
+        let colour = flavor.colour(role)
+        RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .fill(colour.color)
+            .frame(height: 76)
+            .overlay(alignment: .bottom) {
+                Text(label)
+                    .font(.caption2.weight(.bold))
+                    .tracking(1)
+                    .foregroundStyle(Flavor.contrast(.white, colour) >= Flavor.contrast(.black, colour) ? Color.white : Color.black)
+                    .padding(.bottom, 8)
+            }
+            .overlay {
+                // The system picker, nearly invisible, over the whole swatch.
+                ColorPicker(selection: binding, supportsOpacity: false) { Text(label) }
+                    .labelsHidden()
+                    .scaleEffect(3)
+                    .opacity(0.02)
+            }
+            .accessibilityIdentifier("flavor-role-\(role.rawValue)")
+    }
+
+    private var binding: Binding<Color> {
+        Binding {
+            flavor.colour(role).color
+        } set: { colour in
+            let resolved = colour.resolve(in: environment)
+            let rgb = Flavor.RGB(red: Double(resolved.red), green: Double(resolved.green), blue: Double(resolved.blue))
+            switch role {
+            case .main: flavor.base = rgb
+            case .accent: flavor.accentColour = rgb
+            case .extra: flavor.extraColour = rgb
+            }
+        }
+    }
+}
+
+/// The system's colour picker for any colour, then the Flavor swatches.
 private struct FlavorRow: View {
     @Binding var flavor: Flavor
     @Environment(\.self) private var environment
@@ -345,13 +660,16 @@ private struct FlavorRow: View {
     var body: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 12) {
+                ColorPicker("Altro colore", selection: pickerColour, supportsOpacity: false)
+                    .labelsHidden()
+                    .accessibilityIdentifier("flavor-picker")
                 ForEach(Flavor.swatches) { swatch in
-                    Button { flavor = swatch.flavor } label: {
+                    Button { withAnimation(.snappy) { flavor = swatch.flavor } } label: {
                         Circle()
                             .fill(swatch.flavor.base.color)
                             .frame(width: 34, height: 34)
                             .overlay {
-                                if flavor == swatch.flavor {
+                                if flavor.hex == swatch.flavor.hex {
                                     Circle().strokeBorder(.background, lineWidth: 3).padding(2)
                                 }
                             }
@@ -359,18 +677,14 @@ private struct FlavorRow: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel(Text(swatch.name))
                     .accessibilityIdentifier("flavor-\(swatch.flavor.hex)")
-                    .accessibilityAddTraits(flavor == swatch.flavor ? .isSelected : [])
+                    .accessibilityAddTraits(flavor.hex == swatch.flavor.hex ? .isSelected : [])
                 }
-                ColorPicker("Altro colore", selection: pickerColour, supportsOpacity: false)
-                    .labelsHidden()
-                    .accessibilityIdentifier("flavor-picker")
             }
             .padding(.vertical, 2)
         }
         .scrollIndicators(.hidden)
     }
 
-    /// Any colour the picker returns, resolved to sRGB.
     private var pickerColour: Binding<Color> {
         Binding {
             flavor.base.color
@@ -382,13 +696,13 @@ private struct FlavorRow: View {
 }
 
 /// A material on the look's background, with a line of text and an accent.
-private struct MaterialPreview: View {
+struct MaterialPreview: View {
     let material: TodayMaterial
     let style: TodayStyle
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        TodayBackgroundView(background: style.background, flavor: style.flavor)
+        TodayBackgroundView(style: style)
             .overlay {
                 VStack(alignment: .leading, spacing: 3) {
                     Capsule().fill(style.accent(scheme)).frame(width: 18, height: 4)
@@ -396,19 +710,107 @@ private struct MaterialPreview: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                 .padding(7)
-                .todayMaterial(material, flavor: style.flavor, cornerRadius: 9)
+                .todayMaterial(material, flavor: style.flavor, mode: style.appearance.flavorMode, cornerRadius: 9)
                 .padding(8)
             }
             .clipShape(.rect(cornerRadius: 14))
     }
 }
 
-extension TodayLanding.Zone {
-    /// A few controls, fine in a sheet that leaves most of the page visible.
-    var isShort: Bool {
-        switch self {
-        case .section: true
-        case .bar, .greeting, .date, .stickers, .background: false
+/// A sheet of paper with its bottom corner peeled up, as Kyo shows materials.
+struct PaperTile: View {
+    let paper: TodayPaper
+    let style: TodayStyle
+    var selected = false
+    var showsTitle = true
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        let shape = UnevenRoundedRectangle(topLeadingRadius: 34, bottomLeadingRadius: 8, bottomTrailingRadius: 16,
+                                           topTrailingRadius: 16, style: .continuous)
+        TodayBackgroundView(background: .plain, flavor: style.flavor, paper: paper, grain: style.grain,
+                            mode: style.appearance.flavorMode)
+            .clipShape(shape)
+            .overlay(alignment: .bottomLeading) {
+                PeeledCorner(colour: style.flavor.ground(dark: scheme == .dark, mode: style.appearance.flavorMode).color)
+                    .frame(width: 44, height: 44)
+            }
+            .overlay(alignment: .bottomTrailing) {
+                if showsTitle {
+                    Text(paper.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(style.accent(scheme))
+                        .padding(10)
+                }
+            }
+            .overlay {
+                shape.strokeBorder(selected ? AnyShapeStyle(.tint) : AnyShapeStyle(.quaternary), lineWidth: selected ? 3 : 1)
+            }
+    }
+}
+
+/// A folded corner: the back of the sheet, and the white beneath.
+private struct PeeledCorner: View {
+    let colour: Color
+
+    var body: some View {
+        GeometryReader { proxy in
+            let size = proxy.size
+            ZStack {
+                Path { path in
+                    path.move(to: CGPoint(x: 0, y: 0))
+                    path.addLine(to: CGPoint(x: size.width, y: size.height))
+                    path.addLine(to: CGPoint(x: 0, y: size.height))
+                    path.closeSubpath()
+                }
+                .fill(.white)
+                Path { path in
+                    path.move(to: CGPoint(x: 0, y: 0))
+                    path.addQuadCurve(to: CGPoint(x: size.width, y: size.height),
+                                      control: CGPoint(x: size.width * 0.95, y: size.height * 0.05))
+                    path.addLine(to: CGPoint(x: 0, y: 0))
+                }
+                .fill(LinearGradient(colors: [colour, colour.opacity(0.7)], startPoint: .topTrailing, endPoint: .bottomLeading))
+                .shadow(color: .black.opacity(0.18), radius: 4, x: 2, y: -2)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// An appearance drawn as a small page: the date and a card.
+private struct AppearanceTile: View {
+    let appearance: TodayAppearance
+    let style: TodayStyle
+
+    var body: some View {
+        switch appearance {
+        case .system:
+            HStack(spacing: 0) {
+                page(dark: false)
+                page(dark: true)
+            }
+            .clipShape(.rect(cornerRadius: 18))
+        case .light, .contrast, .tinted:
+            page(dark: false).clipShape(.rect(cornerRadius: 18))
+        case .dark:
+            page(dark: true).clipShape(.rect(cornerRadius: 18))
+        }
+    }
+
+    private func page(dark: Bool) -> some View {
+        let mode = appearance.flavorMode
+        let ground = style.flavor.ground(dark: dark, mode: mode).color
+        let surface = style.flavor.surface(dark: dark, mode: mode).color
+        let ink: Color = dark ? .white : .black
+        return ZStack(alignment: .topLeading) {
+            ground
+            VStack(alignment: .leading, spacing: 5) {
+                Capsule().fill(ink.opacity(0.85)).frame(width: 28, height: 6)
+                Capsule().fill(style.flavor.accent(dark: dark, mode: mode).color).frame(width: 18, height: 4)
+                RoundedRectangle(cornerRadius: 6).fill(surface).frame(height: 28)
+            }
+            .padding(10)
         }
     }
 }
@@ -416,5 +818,35 @@ extension TodayLanding.Zone {
 private extension PlacedSticker.Content {
     var isEmoji: Bool {
         if case .emoji = self { true } else { false }
+    }
+}
+
+extension UIImage {
+    /// A small grid of the image's colours, for picking a Flavor from it.
+    func samplePixels(side: Int = 40) -> [Flavor.RGB] {
+        guard let cgImage else { return [] }
+        var bytes = [UInt8](repeating: 0, count: side * side * 4)
+        let drawn = bytes.withUnsafeMutableBytes { buffer -> Bool in
+            guard let context = CGContext(data: buffer.baseAddress, width: side, height: side, bitsPerComponent: 8,
+                                          bytesPerRow: side * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: side, height: side))
+            return true
+        }
+        guard drawn else { return [] }
+        return stride(from: 0, to: bytes.count, by: 4).compactMap { index in
+            guard bytes[index + 3] > 128 else { return nil }
+            return Flavor.RGB(red: Double(bytes[index]) / 255, green: Double(bytes[index + 1]) / 255,
+                              blue: Double(bytes[index + 2]) / 255)
+        }
+    }
+
+    /// A JPEG no larger than a side, for photos kept beside the date.
+    func resizedJPEG(maxSide: CGFloat) -> Data? {
+        let scale = min(1, maxSide / max(size.width, size.height))
+        let target = CGSize(width: size.width * scale, height: size.height * scale)
+        return UIGraphicsImageRenderer(size: target).jpegData(withCompressionQuality: 0.85) { _ in
+            draw(in: CGRect(origin: .zero, size: target))
+        }
     }
 }

@@ -210,7 +210,7 @@ struct CustomizeOggi: View {
         }
         .frame(width: screen.width, height: screen.height, alignment: .top)
         .tint(look.controlTint(scheme))
-        .background(TodayBackgroundView(background: look.background, flavor: look.flavor))
+        .background(TodayBackgroundView(style: look))
         .clipShape(.rect(cornerRadius: 48))
         .scaleEffect(Self.cardScale)
         .frame(width: screen.width * Self.cardScale, height: screen.height * Self.cardScale)
@@ -278,7 +278,7 @@ struct CustomizeOggi: View {
     private func persist() {
         storedLibrary = TodayStyle.encodeLibrary(looks)
         // Sticker images no saved look draws any more.
-        let inUse = looks.reduce(into: active.stickerImageIDs) { $0.formUnion($1.stickerImageIDs) }
+        let inUse = looks.reduce(into: active.storedImageIDs) { $0.formUnion($1.storedImageIDs) }
         StickerStore.shared.prune(keeping: inUse)
     }
 
@@ -294,9 +294,9 @@ struct CustomizeOggi: View {
     }
 }
 
-/// One look at full size with its zones outlined. Tapping a zone opens its
-/// controls; holding the page, or Disponi, arranges it: sections to reorder,
-/// add and remove, stickers to move. Nothing reaches the look until Fine.
+/// One look at full size with its zones outlined, over the bento panel.
+/// Tapping a zone opens its page in the panel; holding the page, or Disponi,
+/// arranges it. Nothing reaches the look until Fine.
 private struct LookEditor: View {
     let onSave: (TodayStyle) -> Void
 
@@ -304,9 +304,9 @@ private struct LookEditor: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
     @State private var draft: TodayStyle
-    @State private var editingZone: TodayLanding.Zone?
+    @State private var panelPath: [CustomizePage] = []
     @State private var arranging = false
-    @State private var pickingStickers = false
+    @State private var panelDetent = BentoPanel.small
 
     init(look: TodayStyle, onSave: @escaping (TodayStyle) -> Void) {
         self.onSave = onSave
@@ -317,39 +317,36 @@ private struct LookEditor: View {
         NavigationStack {
             ScrollView {
                 TodayLanding(day: shell.day, draft: $draft, arranging: arranging,
-                             onAddSticker: { pickingStickers = true }) { zone in
+                             onAddSticker: { panelPath = [.accessory] }) { zone in
                     // Holding a zone arranges the page; the tap that ends the
                     // hold must not also open the zone.
                     guard !arranging else { return }
-                    editingZone = zone
+                    panelPath = [CustomizePage(zone: zone)]
+                    panelDetent = BentoPanel.small
                 }
                 .padding(.top, 8)
-                .padding(.bottom, 360)
+                .padding(.bottom, 420)
                 .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
                     guard !arranging else { return }
                     withAnimation(.snappy) { arranging = true }
                 })
             }
-            // The look's own ground, as on the card it zooms out of.
-            .background(TodayBackgroundView(background: draft.background, flavor: draft.flavor).ignoresSafeArea())
+            // The look's own page, as on the card it zooms out of.
+            .background(TodayBackgroundView(style: draft).ignoresSafeArea())
             .sensoryFeedback(.impact(weight: .medium), trigger: arranging) { _, new in new }
             .navigationTitle(arranging ? "Disponi" : "Personalizza")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
             // Buttons in the look's colour, as the app will draw them.
             .tint(draft.controlTint(scheme))
-            .sheet(item: $editingZone) { zone in
-                ZoneEditor(zone: zone, style: $draft)
-                    .presentationDetents(zone.isShort ? [.height(340), .medium, .large] : [.medium, .large])
-                    // The page stays live behind the editor, as on the Lock Screen.
-                    .presentationBackgroundInteraction(.enabled)
-            }
-            .sheet(isPresented: $pickingStickers) {
-                StickerPicker(remaining: TodayStyle.maxStickers - draft.stickers.count) { content in
-                    withAnimation(.snappy) { _ = draft.addSticker(content) }
-                }
-                .presentationDetents([.height(220)])
-                .presentationBackgroundInteraction(.enabled)
+            .preferredColorScheme(draft.appearance.colorScheme)
+            // The panel stays while editing and steps away while arranging.
+            .sheet(isPresented: Binding(get: { !arranging }, set: { _ in })) {
+                BentoPanel(style: $draft, path: $panelPath, arranging: $arranging, detent: $panelDetent)
+                    .presentationDetents([BentoPanel.small, .large], selection: $panelDetent)
+                    .presentationBackgroundInteraction(.enabled(upThrough: BentoPanel.small))
+                    .presentationDragIndicator(.visible)
+                    .interactiveDismissDisabled()
             }
         }
     }
@@ -370,24 +367,12 @@ private struct LookEditor: View {
                     .accessibilityIdentifier("customize-editor-done")
             }
         }
-        // The background is behind every zone, so it has its own button,
-        // where the Lock Screen keeps its wallpaper; beside it, the way into
-        // arranging for whoever does not hold the page.
-        ToolbarItemGroup(placement: .bottomBar) {
-            Button { editingZone = .background } label: {
-                Label("Tema", systemImage: "paintpalette")
-                    .labelStyle(.titleAndIcon)
-            }
-            .accessibilityIdentifier("customize-editor-background")
-            .disabled(arranging)
-            Spacer()
-            Button { withAnimation(.snappy) { arranging.toggle() } } label: {
-                Label("Disponi", systemImage: "square.stack.3d.up")
-                    .labelStyle(.titleAndIcon)
-            }
-            .accessibilityIdentifier("customize-editor-arrange")
-        }
     }
+}
+
+extension BentoPanel {
+    /// The panel's resting height: the page above stays visible and live.
+    static let small = PresentationDetent.fraction(0.46)
 }
 
 /// Scales a card about its centre until it covers the screen. A transform, not

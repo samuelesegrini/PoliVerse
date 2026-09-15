@@ -1,13 +1,35 @@
-import Foundation
+import SwiftUI
 
-/// What the top of the page holds beside the greeting and the date.
-nonisolated enum HeaderLayout: String, Codable, CaseIterable, Identifiable, Sendable {
-    /// The date across the whole width.
-    case date
-    /// The date on the left half, stickers on the right half.
-    case dateAndStickers
+/// What sits on the right half beside the greeting and the date. With
+/// nothing, the date takes the whole width.
+nonisolated enum TodayAccessory: String, Codable, CaseIterable, Identifiable, Sendable {
+    case none
+    /// Stickers placed by hand.
+    case stickers
+    /// A few words in the Flavor's colour.
+    case text
+    /// Up to three photos in a small stack.
+    case photos
 
     var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .none: "Nessuno"
+        case .stickers: "Sticker"
+        case .text: "Testo"
+        case .photos: "Foto"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .none: "rectangle"
+        case .stickers: "face.smiling"
+        case .text: "textformat"
+        case .photos: "photo.on.rectangle.angled"
+        }
+    }
 }
 
 /// A sticker on the panel beside the date, placed by the student.
@@ -82,7 +104,7 @@ nonisolated extension TodayStyle {
         sticker.rotation = spot.rotation
         sticker.size = stickers.isEmpty ? 0.6 : 0.42
         stickers.append(sticker)
-        header = .dateAndStickers
+        accessory = .stickers
         return sticker
     }
 
@@ -96,11 +118,27 @@ nonisolated extension TodayStyle {
         stickers.removeAll { $0.id == id }
     }
 
-    /// The stored images this look draws, so the store keeps them.
-    var stickerImageIDs: Set<String> {
+    /// Beyond this the stack hides more than it shows.
+    static let maxPhotos = 3
+
+    /// Puts a stored photo on top of the stack, dropping the oldest when full,
+    /// and shows the photos.
+    mutating func addPhoto(_ id: String) {
+        photoIDs.append(id)
+        if photoIDs.count > Self.maxPhotos { photoIDs.removeFirst(photoIDs.count - Self.maxPhotos) }
+        accessory = .photos
+    }
+
+    mutating func removePhoto(_ id: String) {
+        photoIDs.removeAll { $0 == id }
+    }
+
+    /// The stored images this look draws, stickers and photos, so the store
+    /// keeps them.
+    var storedImageIDs: Set<String> {
         Set(stickers.compactMap {
             if case .image(let id) = $0.content { id } else { nil }
-        })
+        } + photoIDs)
     }
 }
 

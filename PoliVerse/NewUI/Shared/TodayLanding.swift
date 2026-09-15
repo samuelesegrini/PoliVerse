@@ -29,7 +29,7 @@ struct TodayLanding: View {
             case .bar: "Barra e colore"
             case .greeting: "Saluto"
             case .date: "Data"
-            case .stickers: "Sticker"
+            case .stickers: "Accessorio"
             case .background: "Tema"
             case .section(let kind): kind.title
             }
@@ -97,20 +97,32 @@ struct TodayLanding: View {
 
     @ViewBuilder
     private var header: some View {
-        if style.header == .dateAndStickers {
+        // Editing, an empty right half invites an accessory.
+        if style.accessory != .none || (editing && !arranging) {
             // Half and half: the date shrinks to its column rather than
             // pushing the stickers out.
             HStack(alignment: .center, spacing: 12) {
                 titles(dateScale: 0.72)
                     .frame(maxWidth: .infinity)
-                zone(.stickers) {
-                    StickerPanel(
-                        stickers: style.stickers,
-                        editing: editing,
-                        arranging: arranging,
-                        onChange: { id, change in draft?.wrappedValue.updateSticker(id, change) },
-                        onRemove: { id in draft?.wrappedValue.removeSticker(id) },
-                        onAdd: onAddSticker)
+                zone(.stickers,
+                     swap: style.accessory == .none ? nil : { cycleAccessory() },
+                     remove: style.accessory == .none ? nil : { draft?.wrappedValue.accessory = .none }) {
+                    ZStack {
+                        if style.accessory == .none {
+                            Label("Accessorio", systemImage: "plus")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(style.accent(scheme))
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            TodayAccessoryView(
+                                style: style,
+                                editing: editing,
+                                arranging: arranging,
+                                onChange: { id, change in draft?.wrappedValue.updateSticker(id, change) },
+                                onRemove: { id in draft?.wrappedValue.removeSticker(id) },
+                                onAdd: onAddSticker)
+                        }
+                    }
                     .frame(height: 150)
                 }
                 .frame(maxWidth: .infinity)
@@ -123,7 +135,7 @@ struct TodayLanding: View {
     private func titles(dateScale: CGFloat) -> some View {
         VStack(alignment: style.dateAlignment.horizontal, spacing: editing ? 20 : 8) {
             if style.showsGreeting || editing {
-                zone(.greeting) {
+                zone(.greeting, remove: style.showsGreeting ? { draft?.wrappedValue.showsGreeting = false } : nil) {
                     Text(style.greeting.text(for: day, firstName: session.student?.firstName, custom: style.customGreeting))
                         .font(.headline)
                         .frame(maxWidth: .infinity, alignment: style.dateAlignment.frame)
@@ -132,7 +144,7 @@ struct TodayLanding: View {
                         .fontDesign(style.textDesign.design)
                 }
             }
-            zone(.date) {
+            zone(.date, swap: { cycleDateLayout() }) {
                 DateHeader(day: day, style: style, size: 72 * style.dateSize * dateScale)
             }
         }
@@ -237,8 +249,23 @@ struct TodayLanding: View {
     /// Editing, a zone gets a thin outline and a tap opens its controls — the
     /// Lock Screen's way of splitting the page into small pieces. Arranging,
     /// the outline stays but taps go to what is inside.
+    /// Swaps the accessory for the next kind, as Kyo's ⇄ does.
+    private func cycleAccessory() {
+        let kinds: [TodayAccessory] = [.stickers, .text, .photos]
+        let next = kinds[((kinds.firstIndex(of: style.accessory) ?? -1) + 1) % kinds.count]
+        withAnimation(.snappy) { draft?.wrappedValue.accessory = next }
+    }
+
+    /// Swaps the date for its next layout.
+    private func cycleDateLayout() {
+        let layouts = DateLayout.allCases
+        let next = layouts[((layouts.firstIndex(of: style.dateLayout) ?? -1) + 1) % layouts.count]
+        withAnimation(.snappy) { draft?.wrappedValue.dateLayout = next }
+    }
+
     @ViewBuilder
-    private func zone<Content: View>(_ zone: Zone, @ViewBuilder content: () -> Content) -> some View {
+    private func zone<Content: View>(_ zone: Zone, swap: (() -> Void)? = nil, remove: (() -> Void)? = nil,
+                                     @ViewBuilder content: () -> Content) -> some View {
         if !editing {
             content()
         } else if arranging {
@@ -260,12 +287,47 @@ struct TodayLanding: View {
             .accessibilityLabel(Text(zone.title))
             .accessibilityHint("Modifica")
             .accessibilityIdentifier("zone-\(zone.id)")
+            // Kyo's badges on the zone's corners: swap for another kind at
+            // the top, remove at the bottom, on the outer edge of the page so
+            // neighbouring zones never share a corner.
+            .overlay(alignment: zone == .stickers ? .topTrailing : .topLeading) {
+                if let swap {
+                    ZoneBadge(symbol: "arrow.left.arrow.right", label: "Cambia", action: swap)
+                        .offset(x: zone == .stickers ? 12 : -12, y: -12)
+                        .accessibilityIdentifier("zone-\(zone.id)-swap")
+                }
+            }
+            .overlay(alignment: zone == .greeting ? .topTrailing : zone == .stickers ? .bottomTrailing : .bottomLeading) {
+                if let remove {
+                    ZoneBadge(symbol: "minus", label: "Togli", action: remove)
+                        .offset(x: zone == .stickers || zone == .greeting ? 12 : -12, y: zone == .greeting ? -12 : 12)
+                        .accessibilityIdentifier("zone-\(zone.id)-remove")
+                }
+            }
         }
     }
 
     private var outline: some View {
         RoundedRectangle(cornerRadius: 20, style: .continuous)
             .strokeBorder(.secondary.opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [6, 5]))
+    }
+}
+
+/// A small round badge on a zone's corner.
+private struct ZoneBadge: View {
+    let symbol: String
+    let label: LocalizedStringKey
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.caption2.weight(.bold))
+                .frame(width: 24, height: 24)
+                .glassEffect(.regular.interactive(), in: .circle)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(label))
     }
 }
 

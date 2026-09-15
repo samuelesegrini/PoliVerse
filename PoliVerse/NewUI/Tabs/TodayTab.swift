@@ -23,7 +23,7 @@ struct TodayTab: View {
                 if phase == .interacting { minimizePanel() }
             }
             .simultaneousGesture(TapGesture().onEnded(minimizePanel))
-            .background(TodayBackgroundView(background: style.background, flavor: style.flavor).ignoresSafeArea())
+            .background(TodayBackgroundView(style: style).ignoresSafeArea())
             .todayBar()
             .toolbarVisibility(shell.singlePage ? .hidden : .automatic, for: .tabBar)
             .sheet(isPresented: Binding(get: { shell.showsPanel }, set: { _ in }),

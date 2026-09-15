@@ -60,4 +60,21 @@ struct TodayDigestTests {
         let items = TodayDigest.upcoming(events: [agendaExam], deadlines: [], exams: [exam(20, 49), exam(21, 51)], now: now, limit: 5)
         #expect(items.map(\.id) == ["event-7", "exam-21"])
     }
+
+    @Test("A lesson takes a course colour from its title: the same every day, one of the eight")
+    func courseColour() {
+        let first = TodayDigest.colourIndex(for: "Basi di Dati")
+        #expect(first == TodayDigest.colourIndex(for: "Basi di Dati"))
+        #expect((0..<8).contains(first))
+        let spread = Set(["Basi di Dati", "Reti Logiche", "Analisi 2", "Fisica", "Ingegneria del Software", "Automatica"]
+            .map(TodayDigest.colourIndex(for:)))
+        #expect(spread.count >= 3)
+    }
+
+    @Test("The toggle for course colours exists only on the timetable, and is on for a new one")
+    func courseColoursDefault() {
+        #expect(TodaySection(kind: .timetable).courseColours)
+        #expect(TodaySection.Kind.timetable.hasCourseColours)
+        #expect(!TodaySection.Kind.upcoming.hasCourseColours)
+    }
 }

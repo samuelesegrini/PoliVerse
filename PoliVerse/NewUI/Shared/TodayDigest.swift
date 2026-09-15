@@ -14,6 +14,17 @@ nonisolated enum TodayDigest {
         let source: Source
     }
 
+    /// One of the eight course colours for a lesson, from its title with the
+    /// same hash courses use, so a lesson keeps its colour from day to day.
+    static func colourIndex(for title: String) -> Int {
+        var hash: UInt64 = 0xcbf2_9ce4_8422_2325
+        for byte in title.utf8 {
+            hash ^= UInt64(byte)
+            hash &*= 0x0000_0100_0000_01B3
+        }
+        return Int(hash % 8)
+    }
+
     /// The day's lessons and exams, by start time.
     static func timetable(events: [AgendaEvent], day: Date, calendar: Calendar = PoliMiDate.romeCalendar) -> [AgendaEvent] {
         events

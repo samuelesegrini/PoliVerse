@@ -10,6 +10,7 @@ struct StickerPanel: View {
     /// In Personalizza, where an empty panel shows where stickers go.
     var editing = false
     var arranging = false
+    var outline = true
     var onChange: (UUID, (inout PlacedSticker) -> Void) -> Void = { _, _ in }
     var onRemove: (UUID) -> Void = { _ in }
     var onAdd: () -> Void = {}
@@ -19,7 +20,7 @@ struct StickerPanel: View {
             let panel = proxy.size
             ZStack {
                 ForEach(stickers) { sticker in
-                    StickerItem(sticker: sticker, panel: panel, arranging: arranging,
+                    StickerItem(sticker: sticker, panel: panel, arranging: arranging, outline: outline,
                                 onChange: { change in onChange(sticker.id, change) },
                                 onRemove: { onRemove(sticker.id) })
                 }
@@ -51,6 +52,7 @@ private struct StickerItem: View {
     let sticker: PlacedSticker
     let panel: CGSize
     let arranging: Bool
+    let outline: Bool
     let onChange: ((inout PlacedSticker) -> Void) -> Void
     let onRemove: () -> Void
 
@@ -62,6 +64,7 @@ private struct StickerItem: View {
         let side = panel.height * sticker.size * pinch
         StickerContentView(content: sticker.content)
             .frame(width: side, height: side)
+            .stickerOutline(outline)
             .rotationEffect(.degrees(sticker.rotation) + twist)
             .overlay(alignment: .topTrailing) {
                 if arranging {
@@ -103,6 +106,8 @@ private struct StickerItem: View {
 /// A sticker's picture: an emoji as text, a keyboard sticker as its image.
 struct StickerContentView: View {
     let content: PlacedSticker.Content
+    /// Fills the frame, cropping, as a photo does; stickers fit whole.
+    var fill = false
 
     var body: some View {
         switch content {
@@ -115,7 +120,7 @@ struct StickerContentView: View {
             if let image = StickerImages.image(for: id) {
                 Image(uiImage: image)
                     .resizable()
-                    .scaledToFit()
+                    .aspectRatio(contentMode: fill ? .fill : .fit)
             } else {
                 Image(systemName: "questionmark.square.dashed")
                     .resizable()

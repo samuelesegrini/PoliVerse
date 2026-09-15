@@ -40,6 +40,9 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
             }
         }
 
+        /// Lessons, which each have a course colour.
+        var hasCourseColours: Bool { self == .timetable }
+
         /// Lists entries that can run long, so the number shown can be chosen.
         /// The timetable always shows the whole day.
         var listsItems: Bool {
@@ -75,6 +78,8 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
     var tinted = false
     /// Off the page, keeping its place and settings for when it comes back.
     var isHidden = false
+    /// Each lesson on its own card in its course's colour.
+    var courseColours = true
 
     var id: Kind { kind }
 
@@ -90,7 +95,7 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
 /// its defaults for anything it did not have.
 nonisolated extension TodaySection: Codable {
     private enum CodingKeys: String, CodingKey {
-        case kind, material, density, itemLimit, tinted, isHidden
+        case kind, material, density, itemLimit, tinted, isHidden, courseColours
         /// Before materials: glass, filled or plain.
         case card
     }
@@ -114,6 +119,7 @@ nonisolated extension TodaySection: Codable {
         itemLimit = (try container.decodeIfPresent(Int.self, forKey: .itemLimit) ?? itemLimit).clamped(to: Self.itemLimits)
         tinted = try container.decodeIfPresent(Bool.self, forKey: .tinted) ?? tinted
         isHidden = try container.decodeIfPresent(Bool.self, forKey: .isHidden) ?? isHidden
+        courseColours = try container.decodeIfPresent(Bool.self, forKey: .courseColours) ?? courseColours
     }
 
     func encode(to encoder: any Encoder) throws {
@@ -124,6 +130,7 @@ nonisolated extension TodaySection: Codable {
         try container.encode(itemLimit, forKey: .itemLimit)
         try container.encode(tinted, forKey: .tinted)
         try container.encode(isHidden, forKey: .isHidden)
+        try container.encode(courseColours, forKey: .courseColours)
     }
 }
 

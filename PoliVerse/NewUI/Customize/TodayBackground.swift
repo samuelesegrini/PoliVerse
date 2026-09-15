@@ -65,22 +65,90 @@ nonisolated enum TodayBackground: String, Codable, CaseIterable, Identifiable, S
 struct TodayBackgroundView: View {
     let background: TodayBackground
     let flavor: Flavor
+    var paper = TodayPaper.plain
+    var grain = 0.0
+    var mode = Flavor.Mode.standard
 
     @Environment(\.colorScheme) private var scheme
 
+    /// A look's whole page: paper, decoration, grain, in its appearance.
+    init(style: TodayStyle) {
+        self.init(background: style.background, flavor: style.flavor, paper: style.paper, grain: style.grain,
+                  mode: style.appearance.flavorMode)
+    }
+
+    init(background: TodayBackground, flavor: Flavor, paper: TodayPaper = .plain, grain: Double = 0,
+         mode: Flavor.Mode = .standard) {
+        self.background = background
+        self.flavor = flavor
+        self.paper = paper
+        self.grain = grain
+        self.mode = mode
+    }
+
     private var strength: Double { scheme == .dark ? 1.4 : 1 }
-    private var tint: Color { flavor.accent(dark: scheme == .dark).color }
+    private var tint: Color { flavor.accent(dark: scheme == .dark, mode: mode).color }
 
     var body: some View {
         ZStack {
-            if background == .plain {
+            // The system's own background only for a page with nothing on it.
+            if background == .plain && paper == .plain && mode == .standard {
                 Color(.systemBackground)
             } else {
-                flavor.ground(dark: scheme == .dark).color
+                flavor.ground(dark: scheme == .dark, mode: mode).color
             }
+            paperTexture
             pattern
         }
+        .paperGrain(grain)
         .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private var paperTexture: some View {
+        switch paper {
+        case .plain:
+            EmptyView()
+        case .plot:
+            // Millimetre paper: fine lines, a bolder line every five, and a
+            // small cross where the bold ones meet.
+            Canvas { context, size in
+                let minor: CGFloat = 9, major = minor * 5
+                var fine = Path(), bold = Path(), crosses = Path()
+                for x in stride(from: 0, through: size.width, by: minor) {
+                    let line = Path { $0.move(to: CGPoint(x: x, y: 0)); $0.addLine(to: CGPoint(x: x, y: size.height)) }
+                    x.truncatingRemainder(dividingBy: major) == 0 ? bold.addPath(line) : fine.addPath(line)
+                }
+                for y in stride(from: 0, through: size.height, by: minor) {
+                    let line = Path { $0.move(to: CGPoint(x: 0, y: y)); $0.addLine(to: CGPoint(x: size.width, y: y)) }
+                    y.truncatingRemainder(dividingBy: major) == 0 ? bold.addPath(line) : fine.addPath(line)
+                }
+                for x in stride(from: 0, through: size.width, by: major) {
+                    for y in stride(from: 0, through: size.height, by: major) {
+                        crosses.move(to: CGPoint(x: x - 3, y: y)); crosses.addLine(to: CGPoint(x: x + 3, y: y))
+                        crosses.move(to: CGPoint(x: x, y: y - 3)); crosses.addLine(to: CGPoint(x: x, y: y + 3))
+                    }
+                }
+                context.stroke(fine, with: .color(tint.opacity(0.05 * strength)), lineWidth: 0.5)
+                context.stroke(bold, with: .color(tint.opacity(0.1 * strength)), lineWidth: 0.8)
+                context.stroke(crosses, with: .color(tint.opacity(0.3 * strength)), lineWidth: 1)
+            }
+        case .paper:
+            // A warm sheet with fibres.
+            tint.opacity(0.05 * strength)
+                .colorEffect(ShaderLibrary.paperFibre(.float(0.12)))
+        case .dots:
+            Canvas { context, size in
+                let step: CGFloat = 12
+                var dots = Path()
+                for y in stride(from: step / 2, through: size.height, by: step) {
+                    for x in stride(from: step / 2, through: size.width, by: step) {
+                        dots.addEllipse(in: CGRect(x: x - 0.8, y: y - 0.8, width: 1.6, height: 1.6))
+                    }
+                }
+                context.fill(dots, with: .color(tint.opacity(0.22 * strength)))
+            }
+        }
     }
 
     @ViewBuilder

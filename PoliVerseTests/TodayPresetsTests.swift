@@ -43,8 +43,8 @@ struct TodayPresetsTests {
             #expect(!preset.visibleSections.isEmpty)
             #expect(preset.stickers.count <= TodayStyle.maxStickers)
             // Presets ship without image files: emoji only.
-            #expect(preset.stickerImageIDs.isEmpty)
-            if !preset.stickers.isEmpty { #expect(preset.header == .dateAndStickers) }
+            #expect(preset.storedImageIDs.isEmpty)
+            if !preset.stickers.isEmpty { #expect(preset.accessory == .stickers) }
         }
         #expect(presets.contains { !$0.stickers.isEmpty })
         #expect(presets.contains { $0.sections.contains { $0.material != nil } })

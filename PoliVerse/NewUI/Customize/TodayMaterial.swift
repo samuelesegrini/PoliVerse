@@ -42,20 +42,21 @@ nonisolated enum TodayMaterial: String, Codable, CaseIterable, Identifiable, Sen
 
 extension View {
     /// Draws the view on a card of a material, in a Flavor.
-    func todayMaterial(_ material: TodayMaterial, flavor: Flavor, cornerRadius: CGFloat) -> some View {
-        modifier(MaterialSurface(material: material, flavor: flavor, cornerRadius: cornerRadius))
+    func todayMaterial(_ material: TodayMaterial, flavor: Flavor, mode: Flavor.Mode = .standard, cornerRadius: CGFloat) -> some View {
+        modifier(MaterialSurface(material: material, flavor: flavor, mode: mode, cornerRadius: cornerRadius))
     }
 }
 
 private struct MaterialSurface: ViewModifier {
     let material: TodayMaterial
     let flavor: Flavor
+    let mode: Flavor.Mode
     let cornerRadius: CGFloat
 
     @Environment(\.colorScheme) private var scheme
 
     func body(content: Content) -> some View {
-        let palette = flavor.palette(scheme)
+        let palette = flavor.palette(scheme, mode: mode)
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         // One stack around every case, so the section above sees a single view.
         ZStack {

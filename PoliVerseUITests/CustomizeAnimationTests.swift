@@ -60,20 +60,19 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         shot(app, "03-editor")
 
-        app.buttons["Data"].firstMatch.tap()
+        // A zone on the page opens its page in the panel.
+        zone(app, "date").tap()
         settle()
         shot(app, "04-zone")
-        let mono = app.buttons["date-font-mono"].firstMatch
-        if !mono.isHittable { app.collectionViews.firstMatch.swipeUp() }
-        mono.tap()
+        reveal(app.buttons["date-font-mono"].firstMatch, in: app).tap()
         settle()
         shot(app, "05-font")
         app.buttons["customize-zone-done"].tap()
         settle()
         shot(app, "06-zone-closed")
-        XCTAssertTrue(done.exists, "Closing a zone closed the editor")
+        XCTAssertTrue(done.exists, "Closing a page closed the editor")
 
-        app.buttons["customize-editor-background"].tap()
+        app.buttons["bento-decoration"].tap()
         settle()
         reveal(app.buttons["Righe"].firstMatch, in: app).tap()
         settle()
@@ -119,143 +118,6 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         shot(app, "13-closed")
     }
 
-    /// Personalises every kind of element on one look, then uses it: a
-    /// section's card, the bar and its colour, a custom greeting, arranging
-    /// the sections, and a sticker beside the date.
-    @MainActor func testPersonaliseElements() throws {
-        let app = makeApp()
-        app.launch()
-
-        let gallery = open(app)
-        card(app, 0).tap()
-        let done = app.buttons["customize-editor-done"]
-        XCTAssertTrue(done.waitForExistence(timeout: 5))
-        settle()
-        shot(app, "30-editor")
-
-        // A section's appearance.
-        zone(app, "section-upcoming").tap()
-        settle()
-        app.buttons["section-material"].firstMatch.tap()
-        app.buttons["Vetro"].firstMatch.tap()
-        app.steppers.firstMatch.buttons.element(boundBy: 1).tap()
-        settle()
-        shot(app, "31-section")
-        app.buttons["customize-zone-done"].tap()
-        settle()
-
-        // The bar: no settings button.
-        zone(app, "bar").tap()
-        settle()
-        // The switch itself: a tap in the middle of the row lands on its label.
-        app.switches["Impostazioni"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
-        settle()
-        shot(app, "32-bar")
-        app.buttons["customize-zone-done"].tap()
-        settle()
-
-        // The theme: a raspberry Flavor on glowing cards, serif text.
-        app.buttons["customize-editor-background"].tap()
-        settle()
-        app.buttons["flavor-#C2386F"].firstMatch.tap()
-        reveal(app.buttons["material-glow"].firstMatch, in: app).tap()
-        reveal(app.buttons["Con grazie"].firstMatch, in: app).tap()
-        settle()
-        shot(app, "32b-theme")
-        app.buttons["customize-zone-done"].tap()
-        settle()
-
-        // A greeting of the student's own.
-        zone(app, "greeting").tap()
-        settle()
-        let custom = app.buttons["greeting-custom"].firstMatch
-        if !custom.isHittable { app.collectionViews.firstMatch.swipeUp() }
-        custom.tap()
-        let field = app.textFields.firstMatch
-        XCTAssertTrue(field.waitForExistence(timeout: 3), "Choosing a custom greeting showed no field")
-        field.tap()
-        field.typeText("Forza e coraggio\n")
-        settle()
-        shot(app, "33-greeting")
-        app.buttons["customize-zone-done"].tap()
-        settle()
-
-        // Arranging: remove In arrivo, add Esami, drag it above the timetable.
-        app.buttons["customize-editor-arrange"].tap()
-        settle()
-        shot(app, "34-arranging")
-        app.buttons["section-remove-upcoming"].tap()
-        let removed = app.descendants(matching: .any)["section-upcoming"].firstMatch.waitForNonExistence(timeout: 3)
-        shot(app, "34b-removed")
-        XCTAssertTrue(removed, "Removing a section left it on the page")
-        app.buttons["section-add"].tap()
-        app.buttons["Esami"].firstMatch.tap()
-        settle()
-        let exams = app.descendants(matching: .any)["section-exams"].firstMatch
-        let timetable = app.descendants(matching: .any)["section-timetable"].firstMatch
-        XCTAssertTrue(exams.waitForExistence(timeout: 3), "Adding a section did not put it on the page")
-        // To the top of the timetable: the system places the lifted section
-        // before whichever one the finger has crossed the upper part of.
-        exams.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-            .press(forDuration: 1.2,
-                   thenDragTo: timetable.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05)),
-                   withVelocity: .slow, thenHoldForDuration: 0.8)
-        settle()
-        shot(app, "35-arranged")
-        XCTAssertLessThan(exams.frame.minY, timetable.frame.minY, "Dragging a section onto another did not move it")
-        app.buttons["customize-arrange-done"].tap()
-        settle()
-
-        // A sticker beside the date.
-        zone(app, "date").tap()
-        settle()
-        app.segmentedControls["date-header-layout"].buttons["Data e sticker"].tap()
-        app.buttons["customize-zone-done"].tap()
-        settle()
-        zone(app, "stickers").tap()
-        settle()
-        shot(app, "36a-sticker-controls")
-        app.buttons["sticker-controls-add"].tap()
-        let keyboard = app.textViews["sticker-keyboard"].firstMatch
-        let shown = keyboard.waitForExistence(timeout: 5)
-        shot(app, "36b-sticker-picker")
-        XCTAssertTrue(shown, "Adding a sticker showed no keyboard field")
-        settle()
-        keyboard.typeText("🎓")
-        settle()
-        shot(app, "36-sticker-picked")
-        app.buttons["sticker-picker-done"].tap()
-        settle()
-        shot(app, "37-sticker-controls")
-        app.buttons["customize-zone-done"].tap()
-        settle()
-        shot(app, "38-editor-done")
-
-        done.tap()
-        settle()
-        XCTAssertTrue(gallery.waitForExistence(timeout: 5))
-        shot(app, "39-gallery")
-        app.buttons["customize-use"].tap()
-        settle()
-        shot(app, "40-app")
-        XCTAssertFalse(app.buttons["Impostazioni"].exists, "The bar still shows the settings button")
-    }
-
-    /// Scrolls the open sheet until the element can be tapped.
-    @discardableResult
-    @MainActor private func reveal(_ element: XCUIElement, in app: XCUIApplication) -> XCUIElement {
-        var attempts = 0
-        while !element.isHittable && attempts < 8 {
-            app.collectionViews.firstMatch.swipeUp()
-            attempts += 1
-        }
-        return element
-    }
-
-    @MainActor private func zone(_ app: XCUIApplication, _ id: String) -> XCUIElement {
-        app.buttons["zone-\(id)"].firstMatch
-    }
-
     /// Every starter look, one screenshot each, to check them by eye.
     @MainActor func testPresets() throws {
         let app = makeApp()
@@ -269,6 +131,153 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
                 settle()
             }
         }
+    }
+
+    /// Personalises every part of one look through the panel, then uses it.
+    @MainActor func testPersonaliseElements() throws {
+        let app = makeApp()
+        app.launch()
+
+        let gallery = open(app)
+        card(app, 0).tap()
+        let done = app.buttons["customize-editor-done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5))
+        settle()
+        shot(app, "30-editor")
+
+        // Flavor from a swatch.
+        app.buttons["bento-flavor"].tap()
+        settle()
+        reveal(app.buttons["flavor-#C2386F"].firstMatch, in: app).tap()
+        settle()
+        shot(app, "31-flavor")
+        app.buttons["customize-zone-done"].tap()
+        settle()
+
+        // Plotting paper with grain.
+        app.buttons["bento-paper"].tap()
+        settle()
+        app.buttons["paper-plot"].firstMatch.tap()
+        reveal(app.sliders["paper-grain"].firstMatch, in: app).adjust(toNormalizedSliderPosition: 0.5)
+        settle()
+        shot(app, "32-paper")
+        app.buttons["customize-zone-done"].tap()
+        settle()
+
+        // Glowing cards, tinted appearance, serif text.
+        app.buttons["bento-cards"].tap()
+        settle()
+        app.buttons["material-glow"].firstMatch.tap()
+        app.buttons["customize-zone-done"].tap()
+        settle()
+        app.buttons["bento-appearance"].tap()
+        settle()
+        app.buttons["appearance-tinted"].firstMatch.tap()
+        reveal(app.buttons["Con grazie"].firstMatch, in: app).tap()
+        settle()
+        shot(app, "33-appearance")
+        app.buttons["customize-zone-done"].tap()
+        settle()
+
+        // A section's appearance, from the layout page.
+        app.buttons["bento-layout"].tap()
+        settle()
+        reveal(app.buttons["layout-section-upcoming"].firstMatch, in: app).tap()
+        settle()
+        app.buttons["section-material"].firstMatch.tap()
+        app.buttons["Vetro"].firstMatch.tap()
+        app.steppers.firstMatch.buttons.element(boundBy: 1).tap()
+        settle()
+        shot(app, "34-section")
+        app.buttons["customize-zone-done"].tap()
+        settle()
+
+        // The bar: no settings button.
+        zone(app, "bar").tap()
+        settle()
+        app.switches["Impostazioni"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        settle()
+        app.buttons["customize-zone-done"].tap()
+        settle()
+
+        // A greeting of the student's own.
+        zone(app, "greeting").tap()
+        settle()
+        let custom = reveal(app.buttons["greeting-custom"].firstMatch, in: app)
+        custom.tap()
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 3), "Choosing a custom greeting showed no field")
+        field.tap()
+        field.typeText("Forza e coraggio\n")
+        settle()
+        app.buttons["customize-zone-done"].tap()
+        settle()
+
+        // Arranging: remove In arrivo, add Esami, drag it above the timetable.
+        app.buttons["bento-arrange"].tap()
+        settle()
+        shot(app, "35-arranging")
+        app.buttons["section-remove-upcoming"].tap()
+        let removed = app.descendants(matching: .any)["section-upcoming"].firstMatch.waitForNonExistence(timeout: 3)
+        XCTAssertTrue(removed, "Removing a section left it on the page")
+        app.buttons["section-add"].tap()
+        app.buttons["Esami"].firstMatch.tap()
+        settle()
+        let exams = app.descendants(matching: .any)["section-exams"].firstMatch
+        let timetable = app.descendants(matching: .any)["section-timetable"].firstMatch
+        XCTAssertTrue(exams.waitForExistence(timeout: 3), "Adding a section did not put it on the page")
+        exams.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            .press(forDuration: 1.2,
+                   thenDragTo: timetable.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05)),
+                   withVelocity: .slow, thenHoldForDuration: 0.8)
+        settle()
+        shot(app, "36-arranged")
+        XCTAssertLessThan(exams.frame.minY, timetable.frame.minY, "Dragging a section onto another did not move it")
+        app.buttons["customize-arrange-done"].tap()
+        settle()
+
+        // An accessory: a sticker from the keyboard, then swap to text.
+        zone(app, "stickers").tap()
+        settle()
+        app.segmentedControls["date-header-layout"].buttons["Sticker"].tap()
+        reveal(app.buttons["sticker-controls-add"].firstMatch, in: app).tap()
+        let keyboard = app.textViews["sticker-keyboard"].firstMatch
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5), "Adding a sticker showed no keyboard field")
+        settle()
+        keyboard.typeText("🎓")
+        settle()
+        app.buttons["sticker-picker-done"].tap()
+        settle()
+        app.buttons["customize-zone-done"].tap()
+        settle()
+        shot(app, "37-sticker")
+        app.buttons["zone-stickers-swap"].firstMatch.tap()
+        settle()
+        shot(app, "38-accessory-text")
+
+        done.tap()
+        settle()
+        XCTAssertTrue(gallery.waitForExistence(timeout: 5))
+        shot(app, "39-gallery")
+        app.buttons["customize-use"].tap()
+        settle()
+        shot(app, "40-app")
+        XCTAssertFalse(app.buttons["Impostazioni"].exists, "The bar still shows the settings button")
+    }
+
+    /// Scrolls the open panel page until the element can be tapped.
+    @discardableResult
+    @MainActor private func reveal(_ element: XCUIElement, in app: XCUIApplication) -> XCUIElement {
+        var attempts = 0
+        while !element.isHittable && attempts < 8 {
+            app.collectionViews.firstMatch.swipeUp()
+            attempts += 1
+        }
+        return element
+    }
+
+    @MainActor private func zone(_ app: XCUIApplication, _ id: String) -> XCUIElement {
+        app.buttons["zone-\(id)"].firstMatch
     }
 
     /// In the single page, the panel steps aside for Personalizza and comes
@@ -301,7 +310,9 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         XCTAssertTrue(customize.waitForExistence(timeout: 5))
         customize.tap()
         let cancel = app.buttons["customize-cancel"]
-        XCTAssertTrue(cancel.waitForExistence(timeout: 5), "Personalizza did not open")
+        let opened = cancel.waitForExistence(timeout: 5)
+        if !opened { shot(app, "99-open-failed") }
+        XCTAssertTrue(opened, "Personalizza did not open")
         settle()
         return cancel
     }

@@ -9,10 +9,10 @@ struct TodayStickersTests {
     @Test("The first sticker turns the header into date and stickers, in the middle of the panel")
     func firstSticker() throws {
         var style = TodayStyle()
-        #expect(style.header == .date)
+        #expect(style.accessory == .none)
         let addedSticker = style.addSticker(.emoji("🎓"))
         let sticker = try #require(addedSticker)
-        #expect(style.header == .dateAndStickers)
+        #expect(style.accessory == .stickers)
         #expect(sticker.x == 0.5 && sticker.y == 0.5)
         #expect(style.stickers == [sticker])
     }
@@ -68,7 +68,7 @@ struct TodayStickersTests {
         _ = style.addSticker(.image("B"))
         style.removeSticker(emoji.id)
         #expect(style.stickers.count == 2)
-        #expect(style.stickerImageIDs == ["A", "B"])
+        #expect(style.storedImageIDs == ["A", "B"])
     }
 
     @Test("Stickers and the header round-trip through the stored string")
@@ -77,7 +77,7 @@ struct TodayStickersTests {
         _ = style.addSticker(.image("glyph"))
         _ = style.addSticker(.emoji("🧪"))
         let restored = try #require(TodayStyle(rawValue: style.rawValue))
-        #expect(restored.header == .dateAndStickers)
+        #expect(restored.accessory == .stickers)
         #expect(restored.stickers == style.stickers)
     }
 

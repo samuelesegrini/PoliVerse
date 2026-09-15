@@ -38,14 +38,69 @@ struct TodaySectionView: View {
 
     // MARK: - Card
 
+    @ViewBuilder
     private var card: some View {
+        let lessons = TodayDigest.timetable(events: agenda.events, day: day)
+        if section.kind.hasCourseColours && section.courseColours && !collapsed && !lessons.isEmpty {
+            // Each lesson its own card in its course's colour.
+            VStack(spacing: compact ? 6 : 8) {
+                ForEach(lessons) { lesson in
+                    lessonCard(lesson)
+                }
+            }
+        } else {
+            materialCard
+        }
+    }
+
+    private func lessonCard(_ lesson: AgendaEvent) -> some View {
+        let colour = Theme.courseAccents[TodayDigest.colourIndex(for: lesson.title)]
+        let shape = RoundedRectangle(cornerRadius: compact ? 16 : 22, style: .continuous)
+        return HStack(spacing: 12) {
+            Image(systemName: lesson.kind == .exam ? "pencil.and.list.clipboard" : "book.closed")
+                .font(compact ? .subheadline : .title3)
+                .frame(width: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(lesson.title)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                if !compact {
+                    Text([lesson.start.formatted(.dateTime.hour().minute().locale(locale)) + " – "
+                          + lesson.end.formatted(.dateTime.hour().minute().locale(locale)),
+                          lesson.room ?? lesson.roomAcronym].compactMap { $0 }.joined(separator: " · "))
+                        .font(.caption)
+                        .opacity(0.8)
+                        .lineLimit(1)
+                }
+            }
+            Spacer(minLength: 8)
+            if compact {
+                Text(lesson.start.formatted(.dateTime.hour().minute().locale(locale)))
+                    .font(.caption.weight(.semibold))
+                    .monospacedDigit()
+            }
+        }
+        .foregroundStyle(Theme.onAccent)
+        .padding(.horizontal, 14)
+        .padding(.vertical, compact ? 9 : 13)
+        .background {
+            shape.fill(colour)
+                .visualEffect { content, proxy in
+                    content.colorEffect(ShaderLibrary.glossSheen(.float2(proxy.size), .float(0.5)))
+                }
+        }
+        .shadow(color: colour.opacity(0.3), radius: 8, y: 4)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var materialCard: some View {
         let material = style.material(for: section)
         let padding: CGFloat = material.hasCard ? (compact ? 10 : 14) : 0
         return VStack(alignment: .leading, spacing: 0) { content }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, padding)
             .padding(.vertical, padding / 2)
-            .todayMaterial(material, flavor: style.flavor, cornerRadius: compact ? 20 : 26)
+            .todayMaterial(material, flavor: style.flavor, mode: style.appearance.flavorMode, cornerRadius: compact ? 20 : 26)
     }
 
     // MARK: - Content

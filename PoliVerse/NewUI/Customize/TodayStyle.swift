@@ -130,13 +130,28 @@ nonisolated struct TodayStyle: Equatable, Sendable {
     }
     var dateLayout: DateLayout = .stacked
     var dateAlignment: DateAlignment = .leading
-    var header: HeaderLayout = .date
+    var accessory = TodayAccessory.none
     var stickers: [PlacedSticker] = []
+    /// Stickers get a white cut-out edge, like printed ones.
+    var stickerOutline = true
+    /// The text accessory.
+    var accessoryText = "" {
+        didSet { if accessoryText.count > Self.accessoryTextLimit { accessoryText = String(accessoryText.prefix(Self.accessoryTextLimit)) } }
+    }
+    /// The photo accessory, oldest first; the last is on top.
+    var photoIDs: [String] = []
+    var paper = TodayPaper.plain
+    /// Film grain over the page, from none to full.
+    var grain: Double = 0 {
+        didSet { grain = grain.clamped(to: 0...1) }
+    }
+    var appearance = TodayAppearance.system
     var sections: [TodaySection] = TodaySection.defaultKinds.map(TodaySection.init(kind:))
     var bar = TodayBarStyle()
 
     static let dateSizes = 0.6...1.3
     static let customGreetingLimit = 40
+    static let accessoryTextLimit = 24
 
     /// The material a section draws in: its own, or the page's.
     func material(for section: TodaySection) -> TodayMaterial {
@@ -153,7 +168,12 @@ nonisolated struct TodayStyle: Equatable, Sendable {
 
     /// The accent in a colour scheme, readable on the page and on cards.
     @MainActor func accent(_ scheme: ColorScheme) -> Color {
-        flavor.accent(dark: scheme == .dark).color
+        flavor.accent(dark: scheme == .dark, mode: appearance.flavorMode).color
+    }
+
+    /// The Flavor's colours for this look's appearance.
+    @MainActor func palette(_ scheme: ColorScheme) -> Flavor.Palette {
+        flavor.palette(scheme, mode: appearance.flavorMode)
     }
 
     /// The date's colour in a colour scheme.
@@ -164,7 +184,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
     /// The accent of buttons, the selected tab and links across the app: the
     /// Flavor's, so the whole app takes the look's colour.
     func controlAccent(dark: Bool) -> Flavor.RGB {
-        flavor.accent(dark: dark)
+        flavor.accent(dark: dark, mode: appearance.flavorMode)
     }
 
     @MainActor func controlTint(_ scheme: ColorScheme) -> Color {
@@ -231,6 +251,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         study.dateFont = .rounded
         study.textDesign = .rounded
         study.material = .tintedGlass
+        study.paper = .plot
         study.background = .study
         study.greeting = .name
         study.addSticker(.emoji("📚"), id: presetSticker(1))
@@ -267,6 +288,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         greenhouse.dateWeight = 0.7
         greenhouse.textDesign = .serif
         greenhouse.material = .solid
+        greenhouse.grain = 0.2
         greenhouse.background = .nature
         greenhouse.greeting = .timeOfDay
         greenhouse.addSticker(.emoji("🌿"), id: presetSticker(3))
@@ -286,6 +308,8 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         coffee.dateSize = 1.3
         coffee.textDesign = .rounded
         coffee.material = .soft
+        coffee.paper = .paper
+        coffee.grain = 0.35
         coffee.background = .coffee
         coffee.greeting = .motto
         coffee.addSticker(.emoji("☕️"), id: presetSticker(4))
@@ -385,8 +409,14 @@ nonisolated private struct StoredTodayStyle: Codable {
     var customGreeting: String?
     var dateLayout: DateLayout?
     var dateAlignment: DateAlignment?
-    var header: HeaderLayout?
+    var accessory: TodayAccessory?
     var stickers: Lenient<PlacedSticker>?
+    var stickerOutline: Bool?
+    var accessoryText: String?
+    var photoIDs: [String]?
+    var paper: TodayPaper?
+    var grain: Double?
+    var appearance: TodayAppearance?
     var sections: Lenient<TodaySection>?
     var bar: TodayBarStyle?
 }
@@ -400,6 +430,8 @@ nonisolated private struct LegacyTodayStyle: Decodable {
     var dateAccent: String?
     var backgroundAccent: String?
     var bar: LegacyBar?
+    /// Before accessories: the date alone, or beside stickers.
+    var header: String?
 
     struct LegacyBar: Decodable {
         var tint: String?
@@ -434,8 +466,14 @@ nonisolated extension TodayStyle: RawRepresentable {
         customGreeting = String((stored.customGreeting ?? customGreeting).prefix(Self.customGreetingLimit))
         dateLayout = stored.dateLayout ?? dateLayout
         dateAlignment = stored.dateAlignment ?? dateAlignment
-        header = stored.header ?? header
+        accessory = stored.accessory ?? (legacy?.header == "dateAndStickers" ? .stickers : accessory)
         stickers = stored.stickers?.elements.map { $0.clamped() } ?? stickers
+        stickerOutline = stored.stickerOutline ?? stickerOutline
+        accessoryText = String((stored.accessoryText ?? accessoryText).prefix(Self.accessoryTextLimit))
+        photoIDs = Array((stored.photoIDs ?? photoIDs).suffix(Self.maxPhotos))
+        paper = stored.paper ?? paper
+        grain = (stored.grain ?? grain).clamped(to: 0...1)
+        appearance = stored.appearance ?? appearance
         bar = stored.bar ?? bar
 
         // Before Flavor a look had up to three colours: the date's wins, then
@@ -462,8 +500,10 @@ nonisolated extension TodayStyle: RawRepresentable {
                                       dateFont: dateFont, dateWeight: dateWeight, dateSize: dateSize, dateColour: dateColour,
                                       showsGreeting: showsGreeting, background: background,
                                       greeting: greeting, customGreeting: customGreeting,
-                                      dateLayout: dateLayout, dateAlignment: dateAlignment, header: header,
-                                      stickers: Lenient(stickers), sections: Lenient(sections), bar: bar)
+                                      dateLayout: dateLayout, dateAlignment: dateAlignment, accessory: accessory,
+                                      stickers: Lenient(stickers), stickerOutline: stickerOutline, accessoryText: accessoryText,
+                                      photoIDs: photoIDs, paper: paper, grain: grain, appearance: appearance,
+                                      sections: Lenient(sections), bar: bar)
         // Sorted keys: the standard library's `==` for RawRepresentable types
         // compares `rawValue`, and unsorted JSON keys would make equal styles
         // unequal.

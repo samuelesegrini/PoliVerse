@@ -104,6 +104,7 @@ struct NewRootView: View {
             }
         }
         .tint(todayStyle.controlTint(scheme))
+        .preferredColorScheme(todayStyle.appearance.colorScheme)
         // Selecting the search tab opens its field straight away.
         .tabViewSearchActivation(.searchTabSelection)
         .tabBarMinimizeBehavior(.onScrollDown)
