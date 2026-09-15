@@ -40,20 +40,9 @@ struct PanelContent: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    destination("Corsi", "books.vertical", "Materiali, avvisi e appelli")
-                    destination("Carriera", "graduationcap", "Libretto, piano e media")
-                    destination("Calendario", "calendar", "Settimana e mese")
-                }
-                Section {
-                    destination("Aule libere", "door.left.hand.open", "Adesso e più tardi")
-                    destination("Mappa", "map", "Campus e edifici")
-                    destination("Dal Politecnico", "newspaper", "Notizie e avvisi")
-                }
-            }
-            .scrollContentBackground(.hidden)
-            .safeAreaInset(edge: .top, spacing: 0) {
+            VStack(spacing: 8) {
+                // A plain header, not a list safe-area inset: the inset got
+                // the list's own opaque band behind the field.
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                     TextField("Cerca corsi, aule, docenti", text: $query)
@@ -63,11 +52,26 @@ struct PanelContent: View {
                 .frame(height: 44)
                 .background(.quaternary.opacity(0.6), in: .capsule)
                 .padding(.horizontal, 16)
-                .padding(.bottom, 8)
+
+                List {
+                    Section {
+                        destination("Corsi", "books.vertical", "Materiali, avvisi e appelli")
+                        destination("Carriera", "graduationcap", "Libretto, piano e media")
+                        destination("Calendario", "calendar", "Settimana e mese")
+                    }
+                    Section {
+                        destination("Aule libere", "door.left.hand.open", "Adesso e più tardi")
+                        destination("Mappa", "map", "Campus e edifici")
+                        destination("Dal Politecnico", "newspaper", "Notizie e avvisi")
+                    }
+                }
+                .scrollContentBackground(.hidden)
+                .contentMargins(.top, 4, for: .scrollContent)
             }
             .toolbar(.hidden, for: .navigationBar)
+            // Let the panel's glass show through the stack's own ground.
+            .containerBackground(.clear, for: .navigation)
         }
-        .background(.clear)
     }
 
     private func destination(_ title: LocalizedStringKey, _ icon: String, _ detail: LocalizedStringKey) -> some View {
@@ -83,6 +87,8 @@ struct PanelContent: View {
                 Image(systemName: icon)
             }
         }
+        // Soft rows on the glass instead of the list's solid cells.
+        .listRowBackground(Rectangle().fill(.primary.opacity(0.06)))
     }
 }
 
