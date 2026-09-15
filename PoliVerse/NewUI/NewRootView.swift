@@ -18,9 +18,6 @@ struct NewRootView: View {
     @State private var selection: Destination = .today
     @State private var shell = ShellState()
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
-    /// The layout on screen. Trails the stored setting so a change made in
-    /// Impostazioni first closes the sheet, then animates.
-    @State private var shownLayout: AppLayout?
     @State private var layoutChangePending = false
     @Environment(AgendaService.self) private var agenda
     /// Re-read every minute so the accessory moves on when a lesson ends.
@@ -29,23 +26,18 @@ struct NewRootView: View {
     private var current: CurrentClass? { CurrentClass.forAccessory(from: agenda.events, now: now) }
 
     var body: some View {
-        ZStack {
-            switch shownLayout ?? layout {
-            case .singlePage:
-                SinglePageHome()
-                    .transition(BlurReplaceTransition(configuration: .downUp).combined(with: ScaleTransition(0.96)))
-            case .tabs:
-                tabs
-                    .transition(BlurReplaceTransition(configuration: .downUp).combined(with: ScaleTransition(0.96)))
-            }
-        }
-        .onAppear { if shownLayout == nil { shownLayout = layout } }
+        // One tree for both layouts. Swapping two whole screens cross-faded
+        // two navigation bars, two pages and a tab bar at once; here the page
+        // and its bar stay put and only the bottom changes — the tab bar
+        // slides away as the panel rises, and back.
+        tabs
+        .onAppear { shell.singlePage = layout == .singlePage }
         .onChange(of: layout) { _, new in
             if shell.showingSettings {
                 layoutChangePending = true
                 shell.showingSettings = false
             } else {
-                withAnimation(.smooth(duration: 0.45)) { shownLayout = new }
+                show(new)
             }
         }
         .overlay {
@@ -62,7 +54,7 @@ struct NewRootView: View {
             }
             guard layoutChangePending else { return }
             layoutChangePending = false
-            withAnimation(.smooth(duration: 0.45)) { shownLayout = layout }
+            show(layout)
         }) { SettingsSheet() }
         .sheet(isPresented: $shell.showingProfile) {
             NavigationStack {
@@ -81,6 +73,15 @@ struct NewRootView: View {
         .environment(\.shell, shell)
     }
 
+    /// The layout on screen trails the stored setting, so a change made in
+    /// Impostazioni first closes the sheet, then animates.
+    private func show(_ layout: AppLayout) {
+        if layout == .singlePage { selection = .today }
+        withAnimation(.spring(duration: 0.5, bounce: 0.12)) {
+            shell.singlePage = layout == .singlePage
+        }
+    }
+
     private var tabs: some View {
         TabView(selection: $selection) {
             Tab("Oggi", systemImage: "calendar.day.timeline.left", value: .today) {
@@ -97,7 +98,7 @@ struct NewRootView: View {
             }
         }
         // Above the tab bar while there is a class today, like Music's player.
-        .currentClassAccessory(current)
+        .currentClassAccessory(shell.singlePage ? nil : current)
         .task { await agenda.load(around: .now) }
         .task {
             while !Task.isCancelled {

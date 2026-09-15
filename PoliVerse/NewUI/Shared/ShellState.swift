@@ -10,6 +10,9 @@ import SwiftUI
 final class ShellState {
     var day = Date.now
     var showingSettings = false
+    /// The single-page layout is on screen: Oggi without the tab bar, with
+    /// the bottom panel.
+    var singlePage = false
     var showingProfile = false
     /// Personalizza is open over Oggi.
     #if DEBUG

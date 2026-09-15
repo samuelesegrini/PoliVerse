@@ -1,10 +1,8 @@
 import SwiftUI
 
-/// The single-page layout: a landing page for the day under ``TodayBar``, and
-/// every other part of the app in a ``BottomPanel``.
-struct SinglePageHome: View {
-    @Environment(\.shell) private var shell
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+/// The bottom of the single-page layout: every other part of the app in a
+/// ``BottomPanel``, with the current class riding on top of it.
+struct SinglePagePanel: View {
     @State private var detent: BottomPanel<PanelContent, AnyView>.Detent = .peek
     @Environment(AgendaService.self) private var agenda
     @State private var now = Date.now
@@ -12,30 +10,20 @@ struct SinglePageHome: View {
     private var current: CurrentClass? { CurrentClass.forAccessory(from: agenda.events, now: now) }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                TodayLanding(day: shell.day, style: style)
-                    .padding(.bottom, 140)
-            }
-            .todayBar()
+        BottomPanel(detent: $detent) {
+            PanelContent(expand: { withAnimation(.snappy) { detent = .full } })
+        } accessory: {
+            // The same bar Music-style tab bars carry, above the panel.
+            AnyView(Group {
+                if let current {
+                    CurrentClassAccessory(current: current)
+                        .frame(height: 54)
+                        .glassEffect(.regular.interactive(), in: .capsule)
+                        .padding(.horizontal, 16)
+                }
+            })
         }
-        .overlay {
-            BottomPanel(detent: $detent) {
-                PanelContent(expand: { withAnimation(.snappy) { detent = .full } })
-            } accessory: {
-                // The same bar Music-style tab bars carry, above the panel.
-                AnyView(Group {
-                    if let current {
-                        CurrentClassAccessory(current: current)
-                            .frame(height: 54)
-                            .glassEffect(.regular.interactive(), in: .capsule)
-                            .padding(.horizontal, 16)
-                    }
-                })
-            }
-            .animation(.snappy, value: detent)
-        }
-        .task { await agenda.load(around: .now) }
+        .animation(.snappy, value: detent)
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(60))
@@ -99,6 +87,6 @@ struct PanelContent: View {
     }
 }
 
-#Preview("Pagina unica") {
-    SinglePageHome().previewEnvironment()
+#Preview("Pannello") {
+    SinglePagePanel().previewEnvironment()
 }
