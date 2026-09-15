@@ -9,7 +9,11 @@ struct TodaySectionView: View {
     /// While arranging, one short row in place of the list: a page of compact
     /// tiles fits on screen, so a section can be carried past all the others.
     var collapsed = false
+    /// Rows open their lesson or sitting: on the page, not in Personalizza,
+    /// where a tap edits the section.
+    var opensDetails = false
 
+    @Environment(\.shell) private var shell
     @Environment(AgendaService.self) private var agenda
     @Environment(UpdateFeed.self) private var updates
     @Environment(CareerService.self) private var career
@@ -56,41 +60,57 @@ struct TodaySectionView: View {
     private func lessonCard(_ lesson: AgendaEvent) -> some View {
         let colour = Theme.courseAccents[TodayDigest.colourIndex(for: lesson.title)]
         let shape = RoundedRectangle(cornerRadius: compact ? 16 : 22, style: .continuous)
-        return HStack(spacing: 12) {
-            Image(systemName: lesson.kind == .exam ? "pencil.and.list.clipboard" : "book.closed")
-                .font(compact ? .subheadline : .title3)
-                .frame(width: 28)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(lesson.title)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-                if !compact {
-                    Text([lesson.start.formatted(.dateTime.hour().minute().locale(locale)) + " – "
-                          + lesson.end.formatted(.dateTime.hour().minute().locale(locale)),
-                          lesson.room ?? lesson.roomAcronym].compactMap { $0 }.joined(separator: " · "))
-                        .font(.caption)
-                        .opacity(0.8)
+        return opening(.event(lesson)) {
+            HStack(spacing: 12) {
+                Image(systemName: lesson.kind == .exam ? "pencil.and.list.clipboard" : "book.closed")
+                    .font(compact ? .subheadline : .title3)
+                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(lesson.title)
+                        .font(.subheadline.weight(.semibold))
                         .lineLimit(1)
+                    if !compact {
+                        Text([lesson.start.formatted(.dateTime.hour().minute().locale(locale)) + " – "
+                              + lesson.end.formatted(.dateTime.hour().minute().locale(locale)),
+                              lesson.room ?? lesson.roomAcronym].compactMap { $0 }.joined(separator: " · "))
+                            .font(.caption)
+                            .opacity(0.8)
+                            .lineLimit(1)
+                    }
+                }
+                Spacer(minLength: 8)
+                if compact {
+                    Text(lesson.start.formatted(.dateTime.hour().minute().locale(locale)))
+                        .font(.caption.weight(.semibold))
+                        .monospacedDigit()
                 }
             }
-            Spacer(minLength: 8)
-            if compact {
-                Text(lesson.start.formatted(.dateTime.hour().minute().locale(locale)))
-                    .font(.caption.weight(.semibold))
-                    .monospacedDigit()
+            .foregroundStyle(Theme.onAccent)
+            .padding(.horizontal, 14)
+            .padding(.vertical, compact ? 9 : 13)
+            .background {
+                shape.fill(colour)
+                    .visualEffect { content, proxy in
+                        content.colorEffect(ShaderLibrary.glossSheen(.float2(proxy.size), .float(0.5)))
+                    }
             }
+            .shadow(color: colour.opacity(0.3), radius: 8, y: 4)
+            .accessibilityElement(children: .combine)
         }
-        .foregroundStyle(Theme.onAccent)
-        .padding(.horizontal, 14)
-        .padding(.vertical, compact ? 9 : 13)
-        .background {
-            shape.fill(colour)
-                .visualEffect { content, proxy in
-                    content.colorEffect(ShaderLibrary.glossSheen(.float2(proxy.size), .float(0.5)))
-                }
+    }
+
+    /// A row as a button opening its detail, or as it is when it has none or
+    /// the page is being edited.
+    @ViewBuilder
+    private func opening(_ detail: TodayDetail?, @ViewBuilder content: () -> some View) -> some View {
+        if opensDetails, let detail {
+            Button { shell.present { shell.detail = detail } } label: {
+                content().contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+        } else {
+            content()
         }
-        .shadow(color: colour.opacity(0.3), radius: 8, y: 4)
-        .accessibilityElement(children: .combine)
     }
 
     private var materialCard: some View {
@@ -138,7 +158,7 @@ struct TodaySectionView: View {
                     trailing: current.isOngoing
                         ? String(localized: "fino alle \(current.event.end.formatted(.dateTime.hour().minute().locale(locale)))")
                         : current.event.start.formatted(.dateTime.hour().minute().locale(locale)),
-                    last: true)
+                    last: true, opens: .event(current.event))
             } else {
                 empty("Nessuna lezione oggi")
             }
@@ -152,7 +172,7 @@ struct TodaySectionView: View {
                     row(symbol: item.source == .exam ? "graduationcap" : "pencil.and.list.clipboard",
                         title: item.title, detail: item.detail,
                         trailing: item.date.formatted(.relative(presentation: .named).locale(locale)),
-                        last: item.id == items.last?.id)
+                        last: item.id == items.last?.id, opens: item.opens)
                 }
             }
         case .timetable:
@@ -164,7 +184,7 @@ struct TodaySectionView: View {
                     row(symbol: event.kind == .exam ? "pencil.and.list.clipboard" : "clock",
                         title: event.title, detail: event.room ?? event.roomAcronym,
                         trailing: event.start.formatted(.dateTime.hour().minute().locale(locale)),
-                        last: event.id == events.last?.id)
+                        last: event.id == events.last?.id, opens: .event(event))
                 }
             }
         case .deadlines:
@@ -186,13 +206,20 @@ struct TodaySectionView: View {
                 ForEach(sessions) { session in
                     row(symbol: "graduationcap", title: session.courseName, detail: session.room,
                         trailing: session.date?.formatted(.dateTime.day().month(.abbreviated).locale(locale)) ?? "",
-                        last: session.id == sessions.last?.id)
+                        last: session.id == sessions.last?.id, opens: .exam(session))
                 }
             }
         }
     }
 
-    private func row(symbol: String, title: String, detail: String?, trailing: String, last: Bool) -> some View {
+    private func row(symbol: String, title: String, detail: String?, trailing: String, last: Bool,
+                     opens: TodayDetail? = nil) -> some View {
+        opening(opens) {
+            rowContent(symbol: symbol, title: title, detail: detail, trailing: trailing, last: last)
+        }
+    }
+
+    private func rowContent(symbol: String, title: String, detail: String?, trailing: String, last: Bool) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
                 Image(systemName: symbol)

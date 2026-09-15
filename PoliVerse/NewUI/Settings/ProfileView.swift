@@ -15,11 +15,10 @@ struct ProfileView: View {
     @Environment(\.openURL) private var openURL
 
     @AppStorage(AvatarShape.storageKey) private var shape: AvatarShape = .circle
-    @State private var sheet: ProfileSheet?
+    @State private var page: ProfilePage?
     @State private var copied: String?
-    @State private var confirmingSignOut = false
 
-    enum ProfileSheet: String, Identifiable {
+    enum ProfilePage: String, Identifiable {
         case contact, photo, career
         var id: String { rawValue }
     }
@@ -50,12 +49,6 @@ struct ProfileView: View {
                         .padding(.horizontal, 8)
                 }
                 .padding(.top, 26)
-
-                Button("Esci", role: .destructive) { confirmingSignOut = true }
-                    .font(.body)
-                    .frame(maxWidth: .infinity, minHeight: 52)
-                    .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: Theme.cardCorner))
-                    .padding(.top, 30)
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 32)
@@ -66,26 +59,19 @@ struct ProfileView: View {
         .toolbar {
             if session.student != nil {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Condividi contatto", systemImage: "square.and.arrow.up") { sheet = .contact }
+                    Button("Condividi contatto", systemImage: "square.and.arrow.up") { page = .contact }
                 }
             }
         }
-        .sheet(item: $sheet) { sheet in
-            switch sheet {
+        .navigationDestination(item: $page) { page in
+            switch page {
             case .contact:
-                if let student = session.student { ContactSheet(student: student) }
+                if let student = session.student { ContactPage(student: student) }
             case .photo:
-                PhotoSheet(student: session.student)
+                PhotoPage(student: session.student)
             case .career:
-                CareerSheet()
+                CareerPage()
             }
-        }
-        .confirmationDialog("Uscire dall’account?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
-            Button("Esci", role: .destructive) {
-                Task { await session.signOut() }
-            }
-        } message: {
-            Text("Vengono rimossi i token dal portachiavi e i dati salvati sul dispositivo.")
         }
         .sensoryFeedback(.success, trigger: copied) { _, new in new != nil }
         .task {
@@ -129,10 +115,10 @@ struct ProfileView: View {
     private var actions: some View {
         HStack(spacing: 10) {
             if session.student != nil {
-                QuickAction(title: "Codice QR", systemImage: "qrcode") { sheet = .contact }
+                QuickAction(title: "Codice QR", systemImage: "qrcode") { page = .contact }
             }
             QuickAction(title: "Posta", systemImage: "envelope") { openMail() }
-            QuickAction(title: "Foto", systemImage: "person.crop.circle") { sheet = .photo }
+            QuickAction(title: "Foto", systemImage: "person.crop.circle") { page = .photo }
         }
     }
 
@@ -199,11 +185,11 @@ struct ProfileView: View {
     // MARK: - Careers
 
     private var careerList: some View {
-        ProfileGroup("Carriere", footer: "La scheda Carriera mostra la carriera scelta qui.") {
+        ProfileGroup("Carriere", footer: "Carriera mostra la carriera scelta qui.") {
             VStack(spacing: 0) {
                 ForEach(Array(careers.careers.enumerated()), id: \.element.id) { index, item in
                     if index > 0 { Divider().padding(.leading, 68) }
-                    Button { sheet = .career } label: {
+                    Button { page = .career } label: {
                         CareerRow(career: item, isCurrent: item.matricola == session.student?.matricola)
                     }
                     .buttonStyle(.plain)

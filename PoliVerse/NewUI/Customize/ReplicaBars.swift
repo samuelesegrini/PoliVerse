@@ -19,24 +19,17 @@ struct ReplicaNavigationBar: View {
                     .frame(width: 44, height: 44)
                     .glassEffect(.regular, in: .circle)
             }
-            if bar.showsSettings {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 19, weight: .medium))
-                    .foregroundStyle(.tint)
-                    .frame(width: 44, height: 44)
-                    .glassEffect(.regular, in: .circle)
-            }
+            Image(systemName: "gearshape")
+                .font(.system(size: 19, weight: .medium))
+                .foregroundStyle(.tint)
+                .frame(width: 44, height: 44)
+                .glassEffect(.regular, in: .circle)
             Spacer(minLength: 0)
-            HStack(spacing: 22) {
-                if bar.showsAdd {
-                    Image(systemName: "plus")
-                }
-                Image(systemName: "ellipsis")
-            }
-            .font(.system(size: 19, weight: .medium))
-            .foregroundStyle(.tint)
-            .frame(width: bar.showsAdd ? 102 : 44, height: 44)
-            .glassEffect(.regular, in: bar.showsAdd ? AnyShape(.capsule) : AnyShape(.circle))
+            Image(systemName: "paintbrush")
+                .font(.system(size: 19, weight: .medium))
+                .foregroundStyle(.tint)
+                .frame(width: 44, height: 44)
+                .glassEffect(.regular, in: .circle)
         }
         // The date is the bar's principal item: centred on the bar, whatever
         // sits at either side.

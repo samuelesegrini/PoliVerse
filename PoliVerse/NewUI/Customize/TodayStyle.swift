@@ -278,7 +278,6 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         night.addSection(.currentClass)
         night.moveSections([.currentClass], before: .upcoming)
         night.hideSection(.upcoming)
-        night.bar.showsAdd = false
 
         // Serra: Bodoni in sage, a leaf beside it, solid compact cards.
         var greenhouse = TodayStyle()
@@ -338,7 +337,6 @@ nonisolated struct TodayStyle: Equatable, Sendable {
             code.updateSection(kind) { $0.density = .compact; $0.itemLimit = 2 }
         }
         code.bar.showsProfile = false
-        code.bar.showsSettings = false
 
         return [TodayStyle(), sunset, polimi, minimal, study, night, greenhouse, coffee, code]
     }
@@ -373,12 +371,10 @@ nonisolated struct TodayStyle: Equatable, Sendable {
     }
 }
 
-/// Which buttons Oggi's navigation bar shows. The ••• menu is always there:
-/// it is the way back into Personalizza.
+/// Which optional buttons Oggi's navigation bar shows. Settings and
+/// Personalizza are always there: hiding them would leave no way back.
 nonisolated struct TodayBarStyle: Codable, Equatable, Hashable, Sendable {
     var showsProfile = true
-    var showsSettings = true
-    var showsAdd = true
     var showsDate = true
 
     init() {}
@@ -386,8 +382,6 @@ nonisolated struct TodayBarStyle: Codable, Equatable, Hashable, Sendable {
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         showsProfile = try container.decodeIfPresent(Bool.self, forKey: .showsProfile) ?? showsProfile
-        showsSettings = try container.decodeIfPresent(Bool.self, forKey: .showsSettings) ?? showsSettings
-        showsAdd = try container.decodeIfPresent(Bool.self, forKey: .showsAdd) ?? showsAdd
         showsDate = try container.decodeIfPresent(Bool.self, forKey: .showsDate) ?? showsDate
     }
 }

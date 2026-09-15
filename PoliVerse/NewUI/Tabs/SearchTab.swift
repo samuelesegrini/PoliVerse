@@ -1,20 +1,19 @@
 import SwiftUI
 
-/// The Cerca tab of the new structure. Its search role lets the tab bar float
-/// it apart from the other tabs.
+/// Cerca: one field over everything, and before a search the places that are
+/// not tabs. Its search role lets the tab bar float it apart from the others.
 struct SearchTab: View {
-    @State private var query = ""
+    @Environment(\.shell) private var shell
 
     var body: some View {
-        NavigationStack {
-            ContentUnavailableView("Cerca", systemImage: "magnifyingglass",
-                                   description: Text("Corsi, aule, docenti ed esami."))
-                .navigationTitle("Cerca")
+        NavigationStack(path: Binding(get: { shell.searchPath }, set: { shell.searchPath = $0 })) {
+            SearchView(embedded: true, places: NewDestination.inSearch)
+                .profileButton()
+                .demoModeBanner()
         }
-        .searchable(text: $query, prompt: "Corsi, aule, docenti")
     }
 }
 
 #Preview("Cerca") {
-    SearchTab()
+    SearchTab().previewEnvironment()
 }

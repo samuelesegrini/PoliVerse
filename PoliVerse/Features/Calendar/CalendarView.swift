@@ -36,8 +36,15 @@ struct CalendarView: View {
         agenda.events(on: selectedDay).filter(filter.matches)
     }
 
+    /// Shown inside a navigation stack that is not its own.
+    private let embedded: Bool
+
+    init(embedded: Bool = false) {
+        self.embedded = embedded
+    }
+
     var body: some View {
-        NavigationStack {
+        RootStack(embedded: embedded) {
             VStack(spacing: 0) {
                 weekStrip
                 Picker("Filtro", selection: $filter) {

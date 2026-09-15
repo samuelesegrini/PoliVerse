@@ -1,21 +1,14 @@
 import SwiftUI
 
-/// The restructured app shell being tried out, in the layout the student
-/// chose: four tabs instead of five, or a single page with a bottom panel.
+/// The restructured app shell, in the layout the student chose: four tabs
+/// instead of five, or a single page with a bottom panel.
 ///
-/// Oggi merges the old Home and Calendario, since both show the same lessons
-/// and exams filtered differently. Corsi replaces the WeBeep tab and the Home
-/// course grid. Cerca is the system search tab. See
+/// Oggi merges the old Home and Calendario's day, since both show the same
+/// lessons and exams filtered differently; the full calendar lives in Cerca.
+/// Corsi replaces the WeBeep tab and the Home course grid. Both layouts reach
+/// the same places, listed once in ``NewDestination``. See
 /// `docs/information-architecture.md`.
-///
-/// Not wired into the app yet: it lives only in previews until the structure
-/// settles.
 struct NewRootView: View {
-    enum Destination: Hashable {
-        case today, courses, career, search
-    }
-
-    @State private var selection: Destination = .today
     @State private var shell = ShellState()
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
     /// The look in use sets the colour of the app's controls.
@@ -23,10 +16,15 @@ struct NewRootView: View {
     @Environment(\.colorScheme) private var scheme
     @State private var layoutChangePending = false
     @Environment(AgendaService.self) private var agenda
+    @Environment(UpdateFeed.self) private var feed
     /// Re-read every minute so the accessory moves on when a lesson ends.
     @State private var now = Date.now
 
-    private var current: CurrentClass? { CurrentClass.forAccessory(from: agenda.events, now: now) }
+    /// The class now, except on Oggi when the page already shows it.
+    private var current: CurrentClass? {
+        guard todayStyle.wantsCurrentClassAccessory || shell.selection != .today else { return nil }
+        return CurrentClass.forAccessory(from: agenda.events, now: now)
+    }
 
     var body: some View {
         // One tree for both layouts. Swapping two whole screens cross-faded
@@ -49,20 +47,18 @@ struct NewRootView: View {
                 }
             }
             .sheet(isPresented: $shell.showingSettings, onDismiss: {
+                shell.settingsPath = []
                 guard layoutChangePending else { return }
                 layoutChangePending = false
                 show(layout)
             }) { SettingsSheet() }
-            .sheet(isPresented: $shell.showingProfile) {
-                NavigationStack {
-                    ProfileView()
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("Chiudi") { shell.showingProfile = false }
-                            }
-                        }
+            .sheet(item: $shell.detail) { detail in
+                switch detail {
+                case .event(let event): EventDetailView(event: event)
+                case .exam(let exam): ExamDetailView(exam: exam)
                 }
             }
+            .appShellDuties { shell.route(to: NewRoute($0)) }
             // Outermost, so the sheets see the same shell as the page. Placed
             // before them, the sheets fell back to the default instance: the
             // settings sheet wrote to a stray copy and its dismissal never
@@ -73,30 +69,33 @@ struct NewRootView: View {
     /// The layout on screen trails the stored setting, so a change made in
     /// Impostazioni first closes the sheet, then animates.
     private func show(_ layout: AppLayout) {
-        if layout == .singlePage { selection = .today }
+        if layout == .singlePage { shell.selection = .today }
         withAnimation(.spring(duration: 0.5, bounce: 0.12)) {
             shell.singlePage = layout == .singlePage
         }
     }
 
     private var tabs: some View {
-        TabView(selection: $selection) {
+        TabView(selection: $shell.selection) {
             Tab("Oggi", systemImage: "calendar.day.timeline.left", value: .today) {
                 TodayTab()
             }
-            Tab("Corsi", systemImage: "books.vertical", value: .courses) {
+            Tab(NewDestination.courses.title, systemImage: NewDestination.courses.systemImage, value: .courses) {
                 CoursesTab()
             }
-            Tab("Carriera", systemImage: "graduationcap", value: .career) {
+            Tab(NewDestination.career.title, systemImage: NewDestination.career.systemImage, value: .career) {
                 CareerTab()
             }
+            // What changed since the feed was last opened, one per fact.
+            .badge(feed.unreadCount)
             Tab(value: .search, role: .search) {
                 SearchTab()
             }
         }
         // Above the tab bar while there is a class today, like Music's player.
         .currentClassAccessory(shell.singlePage ? nil : current)
-        .task { await agenda.load(around: .now) }
+        // Around the day shown, so a day picked two months out is not empty.
+        .task(id: shell.day) { await agenda.ensureLoaded(covering: shell.day) }
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(60))

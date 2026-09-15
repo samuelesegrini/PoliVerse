@@ -48,7 +48,7 @@ struct TodayPresetsTests {
         }
         #expect(presets.contains { !$0.stickers.isEmpty })
         #expect(presets.contains { $0.sections.contains { $0.material != nil } })
-        #expect(presets.contains { !$0.bar.showsProfile || !$0.bar.showsAdd })
+        #expect(presets.contains { !$0.bar.showsProfile || !$0.bar.showsDate })
     }
 
     @Test("A student with no saved looks gets the presets")

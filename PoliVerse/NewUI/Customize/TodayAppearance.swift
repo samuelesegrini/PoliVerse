@@ -50,7 +50,7 @@ nonisolated enum TodayPaper: String, Codable, CaseIterable, Identifiable, Sendab
         switch self {
         case .plain: "Liscia"
         case .plot: "Millimetrata"
-        case .paper: "Carta"
+        case .paper: "Da disegno"
         case .dots: "Puntinata"
         }
     }

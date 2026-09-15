@@ -11,18 +11,23 @@ struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.shell) private var shell
 
-    @State private var query = ""
     @AppStorage(NewInterface.storageKey) private var usesNewInterface = true
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
     @State private var confirmingSignOut = false
 
+    #if DEBUG
+    /// `-NewUI` shows this interface whatever the setting says, so switching
+    /// back would do nothing.
+    private let canSwitchBack = !CommandLine.arguments.contains("-NewUI")
+    #else
+    private let canSwitchBack = true
+    #endif
+
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: Binding(get: { shell.settingsPath }, set: { shell.settingsPath = $0 })) {
             List {
                 Section {
-                    NavigationLink {
-                        ProfileView()
-                    } label: {
+                    NavigationLink(value: ShellState.SettingsPage.profile) {
                         HStack(spacing: 14) {
                             ProfileAvatar(student: session.student, size: 52)
                             VStack(alignment: .leading, spacing: 2) {
@@ -61,31 +66,31 @@ struct SettingsSheet: View {
                     } label: {
                         Label("Promemoria", systemImage: "bell")
                     }
+                    // The current settings screen holds both until they are
+                    // rebuilt: one row, named for both, rather than two rows
+                    // opening the same screen.
                     NavigationLink {
                         SettingsView()
                     } label: {
                         LabeledContent {
                             Text(weBeep.isAuthenticated ? "Collegato" : "Non collegato")
                         } label: {
-                            Label("WeBeep", systemImage: "books.vertical")
+                            Label("WeBeep e diagnostica", systemImage: "books.vertical")
                         }
                     }
                 }
 
-                Section {
-                    NavigationLink {
-                        SettingsView()
-                    } label: {
-                        Label("Sviluppo e diagnostica", systemImage: "hammer")
+                if canSwitchBack {
+                    Section {
+                        Button {
+                            dismiss()
+                            usesNewInterface = false
+                        } label: {
+                            Label("Torna all’interfaccia attuale", systemImage: "arrow.uturn.backward")
+                        }
+                    } footer: {
+                        Text("La nuova interfaccia è in prova. Puoi riattivarla dalle impostazioni.")
                     }
-                    Button {
-                        dismiss()
-                        usesNewInterface = false
-                    } label: {
-                        Label("Torna all’interfaccia attuale", systemImage: "arrow.uturn.backward")
-                    }
-                } footer: {
-                    Text("La nuova interfaccia è in prova. Puoi riattivarla dalle impostazioni.")
                 }
 
                 Section {
@@ -96,7 +101,11 @@ struct SettingsSheet: View {
                 }
             }
             .navigationTitle("Impostazioni")
-            .searchable(text: $query, prompt: "Cerca nelle impostazioni")
+            .navigationDestination(for: ShellState.SettingsPage.self) { page in
+                switch page {
+                case .profile: ProfileView()
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Chiudi", systemImage: "xmark") { dismiss() }

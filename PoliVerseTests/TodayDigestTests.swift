@@ -50,6 +50,8 @@ struct TodayDigestTests {
             exams: [exam(20, 50)],
             now: now, limit: 5)
         #expect(items.map(\.id) == ["deadline-10", "event-2", "exam-20"])
+        // Rows open what they stand for; a WeBeep deadline has no screen.
+        #expect(items.map(\.opens?.id) == [nil, "event-2", "exam-20"])
         #expect(TodayDigest.upcoming(events: [], deadlines: [deadline(1, 1), deadline(2, 2)], exams: [], now: now, limit: 1).count == 1)
     }
 

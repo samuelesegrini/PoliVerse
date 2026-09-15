@@ -19,7 +19,7 @@ struct TodayStyleTests {
         style.dateSize = 1.2
         style.greeting = .custom
         style.customGreeting = "Forza!"
-        style.bar.showsSettings = false
+        style.bar.showsProfile = false
         style.updateSection(.upcoming) { $0.material = .tintedGlass }
         let restored = try #require(TodayStyle(rawValue: style.rawValue))
         #expect(restored.dateFont == .didot)
@@ -119,5 +119,16 @@ struct TodayStyleTests {
         #expect(style.section(.upcoming)?.material == .glass)
         #expect(style.section(.timetable)?.material == .bare)
         #expect(style.section(.exams)?.material == nil)
+    }
+
+    @Test("The bar keeps settings and Personalizza always; older looks' add and settings toggles are read and dropped")
+    func barAlwaysReachable() throws {
+        let bar = TodayBarStyle()
+        #expect(bar.showsProfile && bar.showsDate)
+        let legacy = try #require(TodayStyle(rawValue: #"{"bar":{"showsSettings":false,"showsAdd":false,"showsProfile":false}}"#))
+        #expect(!legacy.bar.showsProfile)
+        #expect(legacy.bar.showsDate)
+        #expect(!legacy.rawValue.contains("showsSettings"))
+        #expect(!legacy.rawValue.contains("showsAdd"))
     }
 }

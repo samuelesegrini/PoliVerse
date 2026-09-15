@@ -12,6 +12,8 @@ nonisolated enum TodayDigest {
         let detail: String?
         let date: Date
         let source: Source
+        /// The detail a tap opens, when there is one.
+        var opens: TodayDetail?
     }
 
     /// One of the eight course colours for a lesson, from its title with the
@@ -58,7 +60,7 @@ nonisolated enum TodayDigest {
         let fromAgenda = events
             .filter { ($0.kind == .exam || $0.kind == .deadline) && $0.start >= now }
             .map { Item(id: "event-\($0.id)", title: $0.title, detail: $0.room ?? $0.roomAcronym, date: $0.start,
-                        source: $0.kind == .exam ? .exam : .deadline) }
+                        source: $0.kind == .exam ? .exam : .deadline, opens: .event($0)) }
         let fromWeBeep = deadlines
             .filter { $0.due >= now }
             .map { Item(id: "deadline-\($0.id)", title: $0.name, detail: $0.courseName, date: $0.due, source: .deadline) }
@@ -70,7 +72,22 @@ nonisolated enum TodayDigest {
                         && event.title.localizedCaseInsensitiveContains(session.courseName)
                 }
             }
-            .map { Item(id: "exam-\($0.id)", title: $0.courseName, detail: $0.room, date: $0.date ?? now, source: .exam) }
+            .map { Item(id: "exam-\($0.id)", title: $0.courseName, detail: $0.room, date: $0.date ?? now, source: .exam,
+                        opens: .exam($0)) }
         return Array((fromAgenda + fromWeBeep + fromCareer).sorted { $0.date < $1.date }.prefix(limit))
+    }
+}
+
+/// A detail an Oggi row opens: the same screens the calendar and the career
+/// open, presented over the page.
+nonisolated enum TodayDetail: Identifiable, Equatable, Sendable {
+    case event(AgendaEvent)
+    case exam(ExamSession)
+
+    var id: String {
+        switch self {
+        case .event(let event): "event-\(event.id)"
+        case .exam(let exam): "exam-\(exam.id)"
+        }
     }
 }

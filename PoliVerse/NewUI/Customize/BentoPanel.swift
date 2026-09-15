@@ -10,7 +10,6 @@ struct BentoPanel: View {
 
     @Environment(\.shell) private var shell
     @Environment(\.colorScheme) private var scheme
-    @State private var pickingStickers = false
     /// The bento's width, split into thirds.
     @State private var width: CGFloat = 360
     private let gap: CGFloat = 8
@@ -69,23 +68,22 @@ struct BentoPanel: View {
             .onGeometryChange(for: CGFloat.self) { $0.size.width - 24 } action: { width = $0 }
             .toolbarVisibility(.hidden, for: .navigationBar)
             .navigationDestination(for: CustomizePage.self) { page in
-                CustomizeControls(page: page, style: $style, arranging: $arranging,
-                                  pickStickers: { pickingStickers = true },
-                                  close: {
-                                      // Back to the bento, and down, so the page and its Fine show again.
-                                      withAnimation(.snappy) {
-                                          path.removeAll()
-                                          detent = BentoPanel.small
-                                      }
-                                  })
+                if page == .stickerPicker {
+                    StickerPicker(remaining: TodayStyle.maxStickers - style.stickers.count) { content in
+                        withAnimation(.snappy) { _ = style.addSticker(content) }
+                    }
+                } else {
+                    CustomizeControls(page: page, style: $style, arranging: $arranging,
+                                      pickStickers: { path.append(.stickerPicker) },
+                                      close: { withAnimation(.snappy) { path.removeAll() } })
+                }
             }
         }
         .tint(style.controlTint(scheme))
-        .sheet(isPresented: $pickingStickers) {
-            StickerPicker(remaining: TodayStyle.maxStickers - style.stickers.count) { content in
-                withAnimation(.snappy) { _ = style.addSticker(content) }
-            }
-            .presentationDetents([.height(220)])
+        // Back at the bento, the panel rests low again so the page and its
+        // Fine show.
+        .onChange(of: path) { _, path in
+            if path.isEmpty { withAnimation(.snappy) { detent = BentoPanel.small } }
         }
     }
 
@@ -161,9 +159,9 @@ struct BentoPanel: View {
         let accent = style.accent(scheme), off = Color.secondary.opacity(0.2)
         return HStack(spacing: 5) {
             Circle().fill(style.bar.showsProfile ? accent : off).frame(width: 14)
-            Circle().fill(style.bar.showsSettings ? accent : off).frame(width: 14)
+            Circle().fill(accent).frame(width: 14)
             Capsule().fill(style.bar.showsDate ? Color.primary.opacity(0.5) : off).frame(width: 22, height: 8)
-            Capsule().fill(accent).frame(width: style.bar.showsAdd ? 24 : 14, height: 14)
+            Circle().fill(accent).frame(width: 14)
         }
         .padding(.bottom, 16)
     }

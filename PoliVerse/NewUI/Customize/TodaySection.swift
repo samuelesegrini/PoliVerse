@@ -158,6 +158,12 @@ nonisolated extension TodayStyle {
         sections.first { $0.kind == kind }
     }
 
+    /// The tab bar's current class, unless the page already shows it as a
+    /// section: the same lesson twice on one screen reads as two lessons.
+    var wantsCurrentClassAccessory: Bool {
+        !visibleSections.contains { $0.kind == .currentClass }
+    }
+
     /// The sections drawn on the page, in order.
     var visibleSections: [TodaySection] {
         sections.filter { !$0.isHidden }

@@ -4,7 +4,8 @@ import XCTest
 /// step, so the whole process can be checked by eye after a change.
 ///
 /// Opens the gallery from Oggi, swipes to another look, edits it and saves,
-/// uses it, then adds a look and cancels, taps a side card, and closes.
+/// uses it, then cancels an edit, adds a look and cancels, taps a side card,
+/// and closes.
 /// Every screenshot is attached to the test report; with
 /// `TEST_RUNNER_CUSTOMIZE_SHOTS` set to a folder on the Mac they are also
 /// written there.
@@ -67,7 +68,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         reveal(app.buttons["date-font-mono"].firstMatch, in: app).tap()
         settle()
         shot(app, "05-font")
-        app.buttons["customize-zone-done"].tap()
+        back(app)
         settle()
         shot(app, "06-zone-closed")
         XCTAssertTrue(done.exists, "Closing a page closed the editor")
@@ -77,7 +78,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         reveal(app.buttons["Righe"].firstMatch, in: app).tap()
         settle()
         shot(app, "06b-background")
-        app.buttons["customize-zone-done"].tap()
+        back(app)
         settle()
 
         done.tap()
@@ -93,6 +94,23 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         // Reopened, it starts on the look just used.
         _ = open(app)
         shot(app, "09-reopened")
+
+        // Cancelling a changed look asks before throwing the change away.
+        card(app, 2).tap()
+        XCTAssertTrue(done.waitForExistence(timeout: 5))
+        settle()
+        zone(app, "date").tap()
+        settle()
+        reveal(app.buttons["date-font-serif"].firstMatch, in: app).tap()
+        back(app)
+        settle()
+        app.buttons["customize-editor-cancel"].tap()
+        let discard = app.buttons["customize-editor-discard"].firstMatch
+        XCTAssertTrue(discard.waitForExistence(timeout: 3), "Annulla threw away changes without asking")
+        shot(app, "09b-discard")
+        discard.tap()
+        settle()
+        XCTAssertTrue(gallery.waitForExistence(timeout: 5), "Discarding did not return to the gallery")
 
         // A new look, cancelled, is not kept.
         app.buttons["customize-add"].tap()
@@ -114,7 +132,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
 
         gallery.tap()
         settle()
-        XCTAssertFalse(gallery.exists, "Annulla did not close Personalizza")
+        XCTAssertFalse(gallery.exists, "Chiudi did not close Personalizza")
         shot(app, "13-closed")
     }
 
@@ -151,7 +169,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         reveal(app.buttons["flavor-#C2386F"].firstMatch, in: app).tap()
         settle()
         shot(app, "31-flavor")
-        app.buttons["customize-zone-done"].tap()
+        back(app)
         settle()
 
         // Plotting paper with grain.
@@ -161,14 +179,14 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         reveal(app.sliders["paper-grain"].firstMatch, in: app).adjust(toNormalizedSliderPosition: 0.5)
         settle()
         shot(app, "32-paper")
-        app.buttons["customize-zone-done"].tap()
+        back(app)
         settle()
 
         // Glowing cards, tinted appearance, serif text.
         app.buttons["bento-cards"].tap()
         settle()
         app.buttons["material-glow"].firstMatch.tap()
-        app.buttons["customize-zone-done"].tap()
+        back(app)
         settle()
         app.buttons["bento-appearance"].tap()
         settle()
@@ -176,7 +194,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         reveal(app.buttons["Con grazie"].firstMatch, in: app).tap()
         settle()
         shot(app, "33-appearance")
-        app.buttons["customize-zone-done"].tap()
+        back(app)
         settle()
 
         // A section's appearance, from the layout page.
@@ -189,15 +207,16 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         app.steppers.firstMatch.buttons.element(boundBy: 1).tap()
         settle()
         shot(app, "34-section")
-        app.buttons["customize-zone-done"].tap()
+        back(app)
         settle()
 
-        // The bar: no settings button.
+        // The bar: no profile button. Settings has no switch: it always stays.
         zone(app, "bar").tap()
         settle()
-        app.switches["Impostazioni"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        XCTAssertFalse(app.switches["Impostazioni"].exists, "Settings can still be hidden from the bar")
+        app.switches["Profilo"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
         settle()
-        app.buttons["customize-zone-done"].tap()
+        back(app)
         settle()
 
         // A greeting of the student's own.
@@ -210,7 +229,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         field.tap()
         field.typeText("Forza e coraggio\n")
         settle()
-        app.buttons["customize-zone-done"].tap()
+        back(app)
         settle()
 
         // Arranging: remove In arrivo, add Esami, drag it above the timetable.
@@ -246,9 +265,9 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         keyboard.typeText("🎓")
         settle()
-        app.buttons["sticker-picker-done"].tap()
+        back(app)
         settle()
-        app.buttons["customize-zone-done"].tap()
+        back(app)
         settle()
         shot(app, "37-sticker")
         app.buttons["zone-stickers-swap"].firstMatch.tap()
@@ -262,7 +281,8 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         app.buttons["customize-use"].tap()
         settle()
         shot(app, "40-app")
-        XCTAssertFalse(app.buttons["Impostazioni"].exists, "The bar still shows the settings button")
+        XCTAssertFalse(app.buttons["bar-profile"].exists, "The bar still shows the profile button")
+        XCTAssertTrue(app.buttons["bar-settings"].exists, "The bar lost the settings button")
     }
 
     /// Scrolls the open panel page until the element can be tapped.
@@ -274,6 +294,13 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
             attempts += 1
         }
         return element
+    }
+
+    /// Back from a page of Personalizza's panel to the bento.
+    @MainActor private func back(_ app: XCUIApplication) {
+        let back = app.buttons["BackButton"].firstMatch
+        XCTAssertTrue(back.waitForExistence(timeout: 3), "The panel page has no back button")
+        back.tap()
     }
 
     @MainActor private func zone(_ app: XCUIApplication, _ id: String) -> XCUIElement {
@@ -297,17 +324,42 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         _ = open(app)
         cancel.tap()
         settle()
-        XCTAssertFalse(cancel.exists, "Annulla did not close Personalizza")
+        XCTAssertFalse(cancel.exists, "Chiudi did not close Personalizza")
         shot(app, "22-single-cancelled")
     }
 
-    /// Opens Personalizza from Oggi's ••• menu; returns its Annulla button.
+    /// The places are reached from the tabs, and the profile from any root.
+    @MainActor func testDestinations() throws {
+        let app = makeApp()
+        app.launch()
+        XCTAssertTrue(app.buttons["today-customize"].firstMatch.waitForExistence(timeout: 20))
+
+        app.buttons["bar-profile"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Profilo"].waitForExistence(timeout: 5), "The profile button did not open the profile")
+        shot(app, "60-profile")
+        app.buttons["BackButton"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Impostazioni"].waitForExistence(timeout: 3), "The profile did not sit in Impostazioni")
+        app.buttons["Chiudi"].firstMatch.tap()
+        settle()
+
+        app.buttons["Carriera"].firstMatch.tap()
+        let careerProfile = app.buttons["bar-profile"].firstMatch
+        XCTAssertTrue(careerProfile.waitForExistence(timeout: 5), "Carriera has no profile button")
+        shot(app, "61-career")
+
+        app.buttons["Cerca"].firstMatch.tap()
+        let calendar = app.buttons["place-calendar"].firstMatch
+        XCTAssertTrue(calendar.waitForExistence(timeout: 5), "Cerca does not list the calendar")
+        shot(app, "62-search")
+        calendar.tap()
+        XCTAssertTrue(app.navigationBars["Calendario"].waitForExistence(timeout: 5), "The calendar did not open from Cerca")
+        shot(app, "63-calendar")
+    }
+
+    /// Opens Personalizza from Oggi's bar; returns its Chiudi button.
     @MainActor private func open(_ app: XCUIApplication) -> XCUIElement {
-        let more = app.buttons["Altro"].firstMatch
-        XCTAssertTrue(more.waitForExistence(timeout: 20))
-        more.tap()
         let customize = app.buttons["today-customize"].firstMatch
-        XCTAssertTrue(customize.waitForExistence(timeout: 5))
+        XCTAssertTrue(customize.waitForExistence(timeout: 20))
         customize.tap()
         let cancel = app.buttons["customize-cancel"]
         let opened = cancel.waitForExistence(timeout: 5)

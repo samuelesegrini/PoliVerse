@@ -155,45 +155,38 @@ struct StickerPicker: View {
     @State private var picked = 0
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 16) {
-                Text("Scegli uno sticker o un’emoji dalla tastiera.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                StickerKeyboard { pick in
-                    // Past the limit nothing is kept, not even the image file.
-                    guard picked < remaining else { return }
-                    let content: PlacedSticker.Content
-                    switch pick {
-                    case .emoji(let emoji): content = .emoji(emoji)
-                    case .image(let data):
-                        guard let id = try? store.save(data) else { return }
-                        content = .image(id)
-                    }
-                    picked += 1
-                    onPick(content)
-                    if picked >= remaining { dismiss() }
+        VStack(spacing: 16) {
+            Text("Scegli uno sticker o un’emoji dalla tastiera.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            StickerKeyboard { pick in
+                // Past the limit nothing is kept, not even the image file.
+                guard picked < remaining else { return }
+                let content: PlacedSticker.Content
+                switch pick {
+                case .emoji(let emoji): content = .emoji(emoji)
+                case .image(let data):
+                    guard let id = try? store.save(data) else { return }
+                    content = .image(id)
                 }
-                .frame(height: 56)
-                .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 16))
-                if picked > 0 {
-                    Text("Aggiunti: \(picked)")
-                        .font(.footnote.weight(.medium))
-                        .contentTransition(.numericText())
-                }
-                Spacer(minLength: 0)
+                picked += 1
+                onPick(content)
+                if picked >= remaining { dismiss() }
             }
-            .padding(20)
-            .navigationTitle("Aggiungi sticker")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Fine", systemImage: "checkmark") { dismiss() }
-                        .accessibilityIdentifier("sticker-picker-done")
-                }
+            .frame(height: 56)
+            .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 16))
+            if picked > 0 {
+                Text("Aggiunti: \(picked)")
+                    .font(.footnote.weight(.medium))
+                    .contentTransition(.numericText())
             }
+            Spacer(minLength: 0)
         }
+        .padding(20)
+        // Pushed in Personalizza's panel: back returns to the accessory page.
+        .navigationTitle("Aggiungi sticker")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

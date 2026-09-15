@@ -129,9 +129,30 @@ struct SearchView: View {
             && matchedNotices.isEmpty && matchedFiles.isEmpty
     }
 
+    /// Shown inside a navigation stack that is not its own.
+    private let embedded: Bool
+    /// The new interface's places, listed before a search in place of the
+    /// map and the plan; nil in the current interface.
+    private let places: [NewDestination]?
+
+    init(embedded: Bool = false, places: [NewDestination]? = nil) {
+        self.embedded = embedded
+        self.places = places
+    }
+
     var body: some View {
-        NavigationStack {
+        RootStack(embedded: embedded) {
             List {
+                if trimmed.isEmpty, let places, !places.isEmpty {
+                    Section {
+                        ForEach(places) { place in
+                            NavigationLink(value: place) {
+                                Label(place.title, systemImage: place.systemImage)
+                            }
+                            .accessibilityIdentifier("place-\(place.id)")
+                        }
+                    }
+                }
                 if trimmed.isEmpty {
                     Section {
                         NavigationLink {
@@ -139,15 +160,17 @@ struct SearchView: View {
                         } label: {
                             Label("Aule", systemImage: "building.2")
                         }
-                        NavigationLink {
-                            CampusMapView()
-                        } label: {
-                            Label("Mappa del campus", systemImage: "map")
-                        }
-                        NavigationLink {
-                            StudyPlanView()
-                        } label: {
-                            Label("Piano di studi", systemImage: "list.bullet.rectangle")
+                        if places == nil {
+                            NavigationLink {
+                                CampusMapView()
+                            } label: {
+                                Label("Mappa del campus", systemImage: "map")
+                            }
+                            NavigationLink {
+                                StudyPlanView()
+                            } label: {
+                                Label("Piano di studi", systemImage: "list.bullet.rectangle")
+                            }
                         }
                         NavigationLink {
                             ManifestiView()
@@ -310,6 +333,7 @@ struct SearchView: View {
                 activity.userInfo = ["query": trimmed]
             }
             .navigationDestination(for: Course.self) { CourseDetailView(course: $0) }
+            .navigationDestination(for: NewDestination.self) { $0.screen }
             .searchable(text: $query, prompt: "Corsi, docenti, aule, notizie, materiali")
             .searchScopes($scope, activation: .onSearchPresentation) {
                 ForEach(Scope.allCases) { Text($0.label).tag($0) }

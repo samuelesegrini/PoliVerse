@@ -831,6 +831,9 @@
         }
       }
     },
+    "Accanto alla data" : {
+
+    },
     "Accedi" : {
       "localizations" : {
         "en" : {
@@ -925,6 +928,9 @@
         }
       }
     },
+    "ACCENTO" : {
+
+    },
     "Accesso" : {
       "localizations" : {
         "en" : {
@@ -1004,6 +1010,9 @@
           }
         }
       }
+    },
+    "Accessorio" : {
+
     },
     "Account" : {
       "localizations" : {
@@ -1344,6 +1353,9 @@
     "Altro" : {
 
     },
+    "Altro colore" : {
+
+    },
     "Altro scaglione" : {
 
     },
@@ -1498,9 +1510,6 @@
           }
         }
       }
-    },
-    "App" : {
-
     },
     "App CieID non installata" : {
       "localizations" : {
@@ -1838,9 +1847,6 @@
         }
       }
     },
-    "Arancio" : {
-
-    },
     "Archivia l'orario personalizzato" : {
       "localizations" : {
         "en" : {
@@ -1873,6 +1879,9 @@
         }
       }
     },
+    "Ardesia" : {
+
+    },
     "Ariosa" : {
 
     },
@@ -1883,6 +1892,9 @@
 
     },
     "Aspetto %lld" : {
+
+    },
+    "Aspetto delle sezioni" : {
 
     },
     "Assente" : {
@@ -2031,6 +2043,9 @@
         }
       }
     },
+    "Avenir Next" : {
+
+    },
     "Avvisi" : {
       "localizations" : {
         "en" : {
@@ -2063,6 +2078,9 @@
         }
       }
     },
+    "Barra" : {
+
+    },
     "Barra e colore" : {
 
     },
@@ -2075,6 +2093,15 @@
           }
         }
       }
+    },
+    "Blu Politecnico" : {
+
+    },
+    "Bodoni" : {
+
+    },
+    "Bordo bianco" : {
+
     },
     "Buon pomeriggio%@!" : {
 
@@ -2103,6 +2130,9 @@
           }
         }
       }
+    },
+    "Caffè" : {
+
     },
     "Calcola" : {
       "localizations" : {
@@ -2200,6 +2230,9 @@
         }
       }
     },
+    "Cambia" : {
+
+    },
     "Cambia corso di studi" : {
       "localizations" : {
         "en" : {
@@ -2285,6 +2318,12 @@
           }
         }
       }
+    },
+    "Carriere" : {
+
+    },
+    "Carta" : {
+
     },
     "Catalogo non disponibile" : {
       "localizations" : {
@@ -2453,6 +2492,9 @@
         }
       }
     },
+    "Chiaro" : {
+
+    },
     "Chiudi" : {
       "localizations" : {
         "en" : {
@@ -2492,6 +2534,9 @@
 
     },
     "Ciao!" : {
+
+    },
+    "Cielo" : {
 
     },
     "Ciò che conta — un esito, un'aula, un appello spostato — arriva appena l'app se ne accorge; il resto nel riepilogo, e di notte solo ciò che è urgente. Un tipo spento non notifica ma resta visibile nell'app." : {
@@ -2587,6 +2632,12 @@
         }
       }
     },
+    "Codice QR" : {
+
+    },
+    "Codice QR con nome ed email" : {
+
+    },
     "Codice: %@" : {
       "localizations" : {
         "en" : {
@@ -2596,6 +2647,9 @@
           }
         }
       }
+    },
+    "Codici" : {
+
     },
     "Cognome" : {
       "localizations" : {
@@ -2701,16 +2755,22 @@
     "Colore" : {
 
     },
-    "Colore dei controlli" : {
+    "Colore del Flavor" : {
 
     },
-    "Colore della data" : {
+    "Colori" : {
 
     },
-    "Come appare la tua foto nell’app." : {
+    "Colori da una foto" : {
 
     },
-    "Come la data" : {
+    "Colori dei corsi" : {
+
+    },
+    "Colori suggeriti" : {
+
+    },
+    "Come la pagina" : {
 
     },
     "Come lo descrive il docente" : {
@@ -2800,9 +2860,6 @@
         }
       }
     },
-    "Con gli sticker la data occupa metà della larghezza." : {
-
-    },
     "Con grazie" : {
 
     },
@@ -2823,6 +2880,18 @@
       }
     },
     "Con il nome" : {
+
+    },
+    "Con un accessorio la data occupa metà della larghezza." : {
+
+    },
+    "Condividi" : {
+
+    },
+    "Condividi contatto" : {
+
+    },
+    "Condividi il Flavor" : {
 
     },
     "Consegna domani" : {
@@ -2926,6 +2995,9 @@
         }
       }
     },
+    "Contrasto" : {
+
+    },
     "Controllo aula per aula…" : {
       "localizations" : {
         "en" : {
@@ -2941,6 +3013,12 @@
           }
         }
       }
+    },
+    "Copia" : {
+
+    },
+    "Corallo" : {
+
     },
     "Coriandoli" : {
 
@@ -3401,9 +3479,6 @@
     "Data da definire" : {
 
     },
-    "Data e sticker" : {
-
-    },
     "Dati" : {
       "localizations" : {
         "en" : {
@@ -3447,6 +3522,9 @@
       }
     },
     "Dati e archiviazione" : {
+
+    },
+    "Decorazione" : {
 
     },
     "Dedotto confrontando i corsi con il piano di studi di ogni tua matricola. Tieni premuto un corso per correggerlo." : {
@@ -3645,6 +3723,9 @@
         }
       }
     },
+    "Didot" : {
+
+    },
     "Disattiva i dati di esempio per usare WeBeep reale." : {
       "localizations" : {
         "en" : {
@@ -3694,6 +3775,9 @@
       }
     },
     "Disponi" : {
+
+    },
+    "Disponi sulla pagina" : {
 
     },
     "Disposizione" : {
@@ -4225,6 +4309,9 @@
         }
       }
     },
+    "EXTRA" : {
+
+    },
     "Facoltativo" : {
       "localizations" : {
         "en" : {
@@ -4234,6 +4321,9 @@
           }
         }
       }
+    },
+    "Fallo inquadrare a un compagno per salvare nome ed email." : {
+
     },
     "Fasce libere per giorno, ricavate dalle lezioni prenotate." : {
       "localizations" : {
@@ -4325,10 +4415,19 @@
         }
       }
     },
+    "Fino a tre, impilate come stampe." : {
+
+    },
     "fino alle %@" : {
 
     },
     "Fino alle %@" : {
+
+    },
+    "Flavor" : {
+
+    },
+    "Flavor %@" : {
 
     },
     "Forma della foto" : {
@@ -4367,6 +4466,12 @@
       }
     },
     "Forum non disponibile" : {
+
+    },
+    "Foto" : {
+
+    },
+    "Foto del Politecnico" : {
 
     },
     "Frase del giorno" : {
@@ -4414,6 +4519,12 @@
         }
       }
     },
+    "Futura" : {
+
+    },
+    "Gessetto" : {
+
+    },
     "Già nell'agenda ufficiale" : {
       "localizations" : {
         "en" : {
@@ -4452,6 +4563,12 @@
     "Giorno mostrato: %@" : {
 
     },
+    "Grafite" : {
+
+    },
+    "Grana" : {
+
+    },
     "Grandezza" : {
 
     },
@@ -4473,6 +4590,9 @@
           }
         }
       }
+    },
+    "Hai %lld matricole. L’app legge i dati di quella che scegli." : {
+
     },
     "Hai più di una carriera" : {
       "localizations" : {
@@ -4765,7 +4885,7 @@
     "Il menu ••• resta sempre: è da lì che si torna in Personalizza." : {
 
     },
-    "Il motivo prende il colore della data, a meno di sceglierne uno." : {
+    "Il motivo prende il colore del Flavor." : {
 
     },
     "Il Politecnico ha accettato l'accesso ma non autorizza questa app a leggere corsi, orario e carriera. WeBeep continua a funzionare." : {
@@ -4879,6 +4999,9 @@
           }
         }
       }
+    },
+    "Il Politecnico non ha una tua foto." : {
+
     },
     "Il Politecnico non permette di cambiare matricola senza un nuovo accesso: l'app uscirà e ti chiederà di rientrare con CIE o SPID." : {
       "localizations" : {
@@ -5053,6 +5176,9 @@
           }
         }
       }
+    },
+    "Il tuo contatto" : {
+
     },
     "Il tuo corso di studi" : {
       "localizations" : {
@@ -5241,9 +5367,6 @@
         }
       }
     },
-    "In alto" : {
-
-    },
     "In arrivo" : {
 
     },
@@ -5361,6 +5484,9 @@
     "Inchiostro" : {
 
     },
+    "Indaco" : {
+
+    },
     "Indietro" : {
       "localizations" : {
         "en" : {
@@ -5460,6 +5586,9 @@
           }
         }
       }
+    },
+    "Iniziali" : {
+
     },
     "Insegnamenti" : {
       "localizations" : {
@@ -5778,6 +5907,9 @@
         }
       }
     },
+    "La scheda Carriera mostra la carriera scelta qui." : {
+
+    },
     "La scheda non lo dice" : {
       "localizations" : {
         "en" : {
@@ -5820,7 +5952,16 @@
         }
       }
     },
+    "Lampone" : {
+
+    },
     "Largo" : {
+
+    },
+    "Lavanda" : {
+
+    },
+    "Layout" : {
 
     },
     "Le attività in tempo reale sono disattivate per PoliVerse." : {
@@ -6227,6 +6368,9 @@
         }
       }
     },
+    "Liscia" : {
+
+    },
     "Lo scaglione è per cognome, dal primo incluso al secondo escluso. Scrivi il tuo cognome per vedere quale ti riguarda." : {
       "localizations" : {
         "en" : {
@@ -6243,7 +6387,16 @@
         }
       }
     },
+    "Luminoso" : {
+
+    },
+    "Macchina da scrivere" : {
+
+    },
     "Maglia ovale" : {
+
+    },
+    "Mandarino" : {
 
     },
     "Manifesto" : {
@@ -6311,6 +6464,9 @@
       }
     },
     "Matematica" : {
+
+    },
+    "Materiale" : {
 
     },
     "Materiali" : {
@@ -6439,6 +6595,9 @@
         }
       }
     },
+    "Matricola e codice persona non sono inclusi." : {
+
+    },
     "Matricola preferita %@" : {
       "localizations" : {
         "en" : {
@@ -6536,6 +6695,9 @@
         }
       }
     },
+    "Menta" : {
+
+    },
     "Mettere le lezioni nel Calendario?" : {
       "localizations" : {
         "en" : {
@@ -6551,6 +6713,9 @@
           }
         }
       }
+    },
+    "Millimetrata" : {
+
     },
     "Modifica" : {
 
@@ -6604,6 +6769,9 @@
       }
     },
     "Monospaziato" : {
+
+    },
+    "Morbido" : {
 
     },
     "Mostra" : {
@@ -7247,6 +7415,9 @@
       }
     },
     "Nessuno" : {
+
+    },
+    "New York" : {
 
     },
     "Niente in arrivo" : {
@@ -8002,6 +8173,9 @@
         }
       }
     },
+    "Ogni sezione può averne uno suo." : {
+
+    },
     "OK" : {
       "localizations" : {
         "en" : {
@@ -8019,6 +8193,9 @@
       }
     },
     "Onde" : {
+
+    },
+    "Oppure tieni premuto sulla pagina per trascinare le sezioni." : {
 
     },
     "Opzioni" : {
@@ -8136,6 +8313,9 @@
         }
       }
     },
+    "Origine" : {
+
+    },
     "Ospite" : {
 
     },
@@ -8174,6 +8354,9 @@
         }
       }
     },
+    "Password" : {
+
+    },
     "Pausa caffè" : {
 
     },
@@ -8195,6 +8378,9 @@
           }
         }
       }
+    },
+    "Per cambiare matricola il Politecnico chiede un nuovo accesso." : {
+
     },
     "Per cambiare serve un nuovo accesso: lo trovi in Impostazioni · Matricola. Da lì l'app te lo spiega prima di farlo." : {
       "localizations" : {
@@ -8368,6 +8554,9 @@
         }
       }
     },
+    "Poche parole, nel carattere della data e nel colore del Flavor." : {
+
+    },
     "Poi" : {
       "localizations" : {
         "en" : {
@@ -8444,6 +8633,9 @@
           }
         }
       }
+    },
+    "Posta" : {
+
     },
     "Posti" : {
       "localizations" : {
@@ -8540,6 +8732,9 @@
           }
         }
       }
+    },
+    "PRINCIPALE" : {
+
     },
     "Probabile iscrizione libera" : {
       "localizations" : {
@@ -8876,7 +9071,7 @@
     "Pulsanti" : {
 
     },
-    "Pulsanti, scheda selezionata e collegamenti in tutta l’app." : {
+    "Puntinata" : {
 
     },
     "Puntini" : {
@@ -8972,9 +9167,6 @@
       }
     },
     "Quattro schede con Oggi, oppure una pagina unica con un pannello dal basso." : {
-
-    },
-    "Questi dati arrivano dal tuo account del Politecnico." : {
 
     },
     "Questo corso non ha file pubblicati." : {
@@ -9190,9 +9382,6 @@
         }
       }
     },
-    "Rimuovi dalla pagina" : {
-
-    },
     "Rimuovi dalla vista" : {
       "localizations" : {
         "en" : {
@@ -9303,7 +9492,7 @@
         }
       }
     },
-    "Rosa" : {
+    "Rockwell" : {
 
     },
     "Saluto" : {
@@ -9356,6 +9545,9 @@
           }
         }
       }
+    },
+    "Salvia" : {
+
     },
     "Scacchi" : {
 
@@ -9554,6 +9746,9 @@
         }
       }
     },
+    "Scegli le foto" : {
+
+    },
     "Scegli un altro scaglione" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9572,6 +9767,9 @@
       }
     },
     "Scegli uno sticker o un’emoji dalla tastiera." : {
+
+    },
+    "Scelti da soli a partire dal principale: tocca un colore per cambiarlo." : {
 
     },
     "Scheda" : {
@@ -9616,6 +9814,9 @@
           }
         }
       }
+    },
+    "Schede" : {
+
     },
     "Scienze" : {
 
@@ -9692,6 +9893,9 @@
           }
         }
       }
+    },
+    "Scuro" : {
+
     },
     "Se prendo" : {
       "localizations" : {
@@ -9826,9 +10030,6 @@
           }
         }
       }
-    },
-    "Senza scheda" : {
-
     },
     "Serve cognome **e** nome: con il solo cognome il Politecnico avverte che lo scaglione può risultare sbagliato." : {
       "extractionState" : "stale",
@@ -10027,9 +10228,6 @@
         }
       }
     },
-    "Sfondo" : {
-
-    },
     "Sfumatura" : {
 
     },
@@ -10152,6 +10350,9 @@
         }
       }
     },
+    "Sistema" : {
+
+    },
     "Slide e materiale in inglese" : {
       "localizations" : {
         "en" : {
@@ -10161,6 +10362,9 @@
           }
         }
       }
+    },
+    "Smerigliato" : {
+
     },
     "Software" : {
       "localizations" : {
@@ -10177,9 +10381,6 @@
           }
         }
       }
-    },
-    "Solo data" : {
-
     },
     "Solo giorno" : {
 
@@ -10345,6 +10546,9 @@
         }
       }
     },
+    "Su una carriera chiusa appelli e iscrizioni di solito non rispondono." : {
+
+    },
     "Suggerita" : {
       "localizations" : {
         "en" : {
@@ -10360,6 +10564,9 @@
           }
         }
       }
+    },
+    "Sulla pagina" : {
+
     },
     "Superati" : {
       "localizations" : {
@@ -10442,7 +10649,13 @@
     "Tab" : {
 
     },
+    "Tema" : {
+
+    },
     "Tentativi precedenti" : {
+
+    },
+    "Testo" : {
 
     },
     "Ti porto su %@…" : {
@@ -10477,13 +10690,13 @@
         }
       }
     },
-    "Tieni premuto sulla pagina per riordinare, aggiungere e togliere le sezioni." : {
-
-    },
     "Tieni premuto sulla pagina per spostarli, ingrandirli e ruotarli." : {
 
     },
     "Tinta" : {
+
+    },
+    "Tinto" : {
 
     },
     "tipo" : {
@@ -10508,6 +10721,15 @@
           }
         }
       }
+    },
+    "Tocca un codice per copiarlo. Arrivano dal tuo account del Politecnico." : {
+
+    },
+    "Togli" : {
+
+    },
+    "Togli dalla pagina" : {
+
     },
     "Togli dalla schermata di blocco" : {
       "localizations" : {
@@ -10555,6 +10777,9 @@
 
     },
     "Tra %lld giorni" : {
+
+    },
+    "Trascina per spostare" : {
 
     },
     "Trova un'aula libera" : {
@@ -10682,6 +10907,9 @@
         }
       }
     },
+    "Un Flavor condiviso è un codice: incollalo qui per usarlo." : {
+
+    },
     "Un passo alla volta." : {
 
     },
@@ -10701,6 +10929,9 @@
         }
       }
     },
+    "Una grana di pellicola su tutta la pagina." : {
+
+    },
     "Una notifica prima di ogni lezione, con l'aula." : {
       "localizations" : {
         "en" : {
@@ -10716,6 +10947,9 @@
           }
         }
       }
+    },
+    "Una sezione tolta tiene le sue impostazioni." : {
+
     },
     "Una sola pagina con il giorno, e tutto il resto in un pannello dal basso." : {
 
@@ -10816,9 +11050,6 @@
     "Vengono rimossi i token dal portachiavi e i dati salvati sul dispositivo." : {
 
     },
-    "Verde" : {
-
-    },
     "Verifiche" : {
       "localizations" : {
         "en" : {
@@ -10848,6 +11079,12 @@
     "Vetro" : {
 
     },
+    "Vetro chiaro" : {
+
+    },
+    "Vetro tinto" : {
+
+    },
     "Viaggi" : {
 
     },
@@ -10866,9 +11103,6 @@
           }
         }
       }
-    },
-    "Viola" : {
-
     },
     "Voti, media e crediti, con la simulazione di cosa succede alla media se il prossimo esame va in un certo modo." : {
       "localizations" : {
@@ -11070,6 +11304,9 @@
           }
         }
       }
+    },
+    "Widget" : {
+
     },
     "Widget con la prossima lezione e la media, controlli in Centro di Controllo e una Live Activity mentre sei in viaggio verso l'aula." : {
       "localizations" : {

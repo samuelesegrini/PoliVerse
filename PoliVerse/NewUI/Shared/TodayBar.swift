@@ -2,13 +2,14 @@ import SwiftUI
 
 /// Oggi's navigation bar, shared by the tab layout and the single page:
 /// profile and settings as two glass circles on the left, the day shown in
-/// the middle with its stepper popover, add and more on the right.
+/// the middle with its stepper popover, Personalizza on the right.
 ///
-/// The sheets its buttons open are presented by ``NewRootView``, through
-/// ``ShellState``, so they survive a change of layout.
+/// Settings and Personalizza stay whatever the look hides: without them
+/// there would be no way back to either. The sheets its buttons open are
+/// presented by ``NewRootView``, through ``ShellState``, so they survive a
+/// change of layout.
 struct TodayBar: ViewModifier {
 
-    @Environment(Session.self) private var session
     @Environment(\.locale) private var locale
     @Environment(\.shell) private var shell
     /// Which buttons the look in use keeps in the bar.
@@ -29,17 +30,14 @@ struct TodayBar: ViewModifier {
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         // Profile and settings are two glass circles, split by a fixed spacer
-        // so the system does not join them; add and more share one capsule.
+        // so the system does not join them.
         if style.bar.showsProfile {
-            ToolbarItem(placement: .topBarLeading) { profileMenu }
-        }
-        if style.bar.showsProfile && style.bar.showsSettings {
+            ToolbarItem(placement: .topBarLeading) { ProfileBarButton() }
             ToolbarSpacer(.fixed, placement: .topBarLeading)
         }
-        if style.bar.showsSettings {
-            ToolbarItem(placement: .topBarLeading) {
-                Button("Impostazioni", systemImage: "gearshape") { shell.present { shell.showingSettings = true } }
-            }
+        ToolbarItem(placement: .topBarLeading) {
+            Button("Impostazioni", systemImage: "gearshape") { shell.present { shell.showingSettings = true } }
+                .accessibilityIdentifier("bar-settings")
         }
 
         if style.bar.showsDate {
@@ -74,52 +72,10 @@ struct TodayBar: ViewModifier {
             }
         }
 
-        if style.bar.showsAdd {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu("Aggiungi", systemImage: "plus") {
-                    Button("Promemoria d’esame", systemImage: "pencil.and.list.clipboard") {}
-                    Button("Scadenza", systemImage: "checklist") {}
-                }
-            }
-        }
         ToolbarItem(placement: .topBarTrailing) {
-            Menu("Altro", systemImage: "ellipsis") {
-                Button("Vai a oggi", systemImage: "arrow.uturn.backward") { shell.day = .now }
-                    .disabled(Calendar.current.isDateInToday(shell.day))
-                Button("Personalizza", systemImage: "paintbrush") { shell.present { shell.isCustomizing = true } }
-                    .accessibilityIdentifier("today-customize")
-            }
+            Button("Personalizza", systemImage: "paintbrush") { shell.present { shell.isCustomizing = true } }
+                .accessibilityIdentifier("today-customize")
         }
-    }
-
-    /// The student's profile, the three places they manage, and settings —
-    /// the native menu renders the name with the matricola as its subtitle
-    /// and the three shortcuts as one horizontal row.
-    private var profileMenu: some View {
-        Menu {
-            Section {
-                Button { shell.present { shell.showingProfile = true } } label: {
-                    Text(session.student?.fullName ?? String(localized: "Ospite"))
-                    Text(session.student.map { String(localized: "Matricola \($0.matricola)") } ?? "")
-                }
-            }
-            ControlGroup {
-                Button("Orario", systemImage: "calendar") {}
-                Button("Corsi", systemImage: "book.closed") {}
-                Button("Docenti", systemImage: "person") {}
-            }
-            .controlGroupStyle(.compactMenu)
-            Section {
-                Button("Impostazioni", systemImage: "gearshape") { shell.present { shell.showingSettings = true } }
-            }
-        } label: {
-            // Laid out at a symbol's width so the bar sizes its glass as the
-            // same circle as the other buttons; the photo draws a little
-            // larger inside it.
-            ProfileAvatar(student: session.student, size: 34)
-                .frame(width: 12, height: 12)
-        }
-        .accessibilityLabel("Profilo")
     }
 }
 

@@ -71,6 +71,20 @@ struct CurrentClassAccessory: View {
     }
 }
 
+/// The current class as a button opening the lesson, as its row on Oggi does.
+struct CurrentClassButton: View {
+    let current: CurrentClass
+    @Environment(\.shell) private var shell
+
+    var body: some View {
+        Button { shell.present { shell.detail = .event(current.event) } } label: {
+            CurrentClassAccessory(current: current)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 extension View {
     /// Shows the accessory only while there is a class. Hiding it needs
     /// iOS 26.1; on 26.0 the bar stays with a quiet placeholder.
@@ -78,12 +92,12 @@ extension View {
     func currentClassAccessory(_ current: CurrentClass?) -> some View {
         if #available(iOS 26.1, *) {
             tabViewBottomAccessory(isEnabled: current != nil) {
-                if let current { CurrentClassAccessory(current: current) }
+                if let current { CurrentClassButton(current: current) }
             }
         } else {
             tabViewBottomAccessory {
                 if let current {
-                    CurrentClassAccessory(current: current)
+                    CurrentClassButton(current: current)
                 } else {
                     Label("Nessuna lezione oggi", systemImage: "checkmark.circle")
                         .font(.subheadline)

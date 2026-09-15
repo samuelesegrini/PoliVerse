@@ -9,6 +9,70 @@ Legenda: **[V]** verificato nel codice o nella pagina Apple; **[I]** dedotto.
 
 ---
 
+## 0. Struttura adottata nella nuova interfaccia
+
+Aggiornato il 15/09/2026, dopo la revisione in `docs/newui-information-architecture-review.md`.
+Dove questa sezione e le sezioni successive non coincidono, vale questa: il resto del documento
+è la ricerca da cui si è partiti.
+
+**Tab (4 + ricerca).** Oggi, Corsi, Carriera, Cerca. Calendario non è un tab: il giorno sta in
+Oggi (con il selettore del giorno sotto la data) e il calendario completo è il primo luogo di
+Cerca. L'elenco dei luoghi è uno solo, `NewDestination` (`PoliVerse/NewUI/Shared/NewDestination.swift`):
+
+| Luogo | Nei tab | Nella pagina unica |
+| --- | --- | --- |
+| Corsi (`WeBeepView`) | tab Corsi | riga del pannello |
+| Carriera (`CareerView`) | tab Carriera, con il badge delle novità | riga del pannello |
+| Calendario, Aule libere, Mappa, Piano di studi, Notizie, Notifiche | righe in cima a Cerca | righe del pannello |
+| Ricerca (`SearchView`) | tab Cerca | riga «Cerca» in cima al pannello |
+
+**Profilo da ogni root.** La foto nella barra di Oggi, Corsi, Carriera e Cerca apre Impostazioni
+già sulla pagina Profilo; le pagine del profilo (contatto, foto, carriera) sono push, non sheet.
+Esci sta solo in Impostazioni.
+
+**Barra di Oggi.** Profilo (nascondibile), Impostazioni (sempre), il giorno (nascondibile),
+Personalizza (sempre). Impostazioni e Personalizza non si possono nascondere: sono la strada
+per tornarci.
+
+**Oggi.** Le righe di lezioni, lezione in corso ed esami aprono il loro dettaglio in sheet
+(`EventDetailView`, `ExamDetailView`); le scadenze WeBeep non hanno ancora una schermata.
+La lezione in corso sopra i tab (o nel pannello) apre anch'essa il dettaglio; su Oggi non compare
+se lo stile in uso mostra già la sezione «Lezione in corso».
+L'agenda si carica attorno al giorno mostrato.
+
+**Ingressi da fuori.** Siri, Comandi rapidi, Centro di Controllo e notifiche passano da
+`AppShellDuties` (`PoliVerse/App/AppShellDuties.swift`), condiviso dalle due interfacce, insieme a
+Spotlight, promemoria e banner dei dati di esempio. Nella nuova interfaccia `NewRoute` sceglie il
+tab, o apre il pannello della pagina unica sul luogo.
+
+**Personalizza.** Un solo punto di conferma per azione: nell'editor «Fine» salva lo stile, nella
+galleria ✓ lo usa, «Chiudi» lascia la pagina sullo stile che già usa (salvare proprio quello
+cambia subito la pagina). «Annulla» chiede prima di scartare modifiche.
+Le pagine del pannello tornano indietro con il pulsante di sistema e cambiano lo stile mentre si
+tocca; l'emoji keyboard degli sticker è una pagina del pannello, non uno sheet sopra. Uno stile
+si elimina tenendo premuta la sua scheda (resta sempre almeno uno stile).
+
+### Glossario
+
+| Parola | Significa | Non usare per |
+| --- | --- | --- |
+| **Stile** | uno degli aspetti salvati di Oggi, nella galleria di Personalizza | — |
+| **Aspetto** | sistema, chiaro, scuro, contrasto, tinto | gli stili salvati, l'aspetto delle sezioni |
+| **Flavor** | i tre colori dello stile | — |
+| **Carta** | la carta della pagina (liscia, millimetrata, da disegno, puntinata) e la grana | la superficie delle sezioni |
+| **Superficie** | come è disegnata una sezione (vetro, pieno, bagliore…) | la carta |
+| **Data** | il blocco della data; la sua **Forma** è come è composta | «Widget», che nell'app sono i widget della Home |
+| **Sezioni** | la pagina che ordina, nasconde e aggiunge le sezioni | «Layout» |
+| **Disponi** | trascinare sezioni e sticker sulla pagina | — |
+| **Disposizione** | tab o pagina unica, in Impostazioni | la forma della data |
+| **Schede** | i tab dell'app | le sezioni di Oggi |
+| **Nascondi** | togliere dalla pagina una sezione o il saluto, che tengono le impostazioni | sticker e foto |
+| **Rimuovi** | togliere sticker, foto o accessorio | sezioni |
+| **Chiudi** | lasciare uno sheet o la galleria senza cambiare nulla | salvare |
+| **Fine** | salvare le modifiche fatte | chiudere senza salvare |
+
+---
+
 ## 1. Sintesi della raccomandazione
 
 Oggi: 5 tab — Home, WeBeep, Calendario, Carriera, Cerca (`PoliVerse/App/RootView.swift:67-76`) [V].

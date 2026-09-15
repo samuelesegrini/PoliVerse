@@ -137,4 +137,15 @@ struct TodaySectionsTests {
         #expect(kinds(style) == [.exams])
         #expect(style.section(.exams)?.itemLimit == 2)
     }
+
+    @Test("The tab bar's current class steps aside when the page already has that section")
+    func currentClassOnce() {
+        var style = TodayStyle()
+        style.sections = [TodaySection(kind: .timetable)]
+        #expect(style.wantsCurrentClassAccessory)
+        style.sections.insert(TodaySection(kind: .currentClass), at: 0)
+        #expect(!style.wantsCurrentClassAccessory)
+        style.hideSection(.currentClass)
+        #expect(style.wantsCurrentClassAccessory)
+    }
 }

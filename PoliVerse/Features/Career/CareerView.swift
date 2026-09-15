@@ -13,8 +13,15 @@ struct CareerView: View {
         var id: String { rawValue }
     }
 
+    /// Shown inside a navigation stack that is not its own.
+    private let embedded: Bool
+
+    init(embedded: Bool = false) {
+        self.embedded = embedded
+    }
+
     var body: some View {
-        NavigationStack {
+        RootStack(embedded: embedded) {
             content(career)
             .background(Color(.systemGroupedBackground))
             .safeAreaInset(edge: .top, spacing: 0) { FreshnessBar(age: career.age) }

@@ -5,6 +5,9 @@ import SwiftUI
 enum CustomizePage: Hashable, Identifiable {
     case flavor, paper, decoration, cards, appearance, widget, accessory, layout, greeting, bar
     case section(TodaySection.Kind)
+    /// The emoji keyboard, pushed from the accessory page rather than
+    /// presented over the panel.
+    case stickerPicker
 
     var id: String {
         switch self {
@@ -28,16 +31,17 @@ enum CustomizePage: Hashable, Identifiable {
     var title: LocalizedStringKey {
         switch self {
         case .flavor: "Flavor"
-        case .paper: "Materiale"
+        case .paper: "Carta"
         case .decoration: "Decorazione"
-        case .cards: "Schede"
+        case .cards: "Superficie"
         case .appearance: "Aspetto"
-        case .widget: "Widget"
+        case .widget: "Data"
         case .accessory: "Accessorio"
-        case .layout: "Layout"
+        case .layout: "Sezioni"
         case .greeting: "Saluto"
         case .bar: "Barra"
         case .section(let kind): kind.title
+        case .stickerPicker: "Aggiungi sticker"
         }
     }
 }
@@ -48,6 +52,7 @@ struct CustomizeControls: View {
     @Binding var style: TodayStyle
     @Binding var arranging: Bool
     var pickStickers: () -> Void = {}
+    /// Back to the bento, after a change that empties the page.
     var close: () -> Void = {}
 
     @Environment(Session.self) private var session
@@ -69,16 +74,13 @@ struct CustomizeControls: View {
             case .greeting: greetingControls
             case .bar: barControls
             case .section(let kind): sectionControls(kind)
+            case .stickerPicker: EmptyView()
             }
         }
+        // Changes reach the page as they are made: the back button is the
+        // only way out, and the editor's Fine the only save.
         .navigationTitle(page.title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Fine", systemImage: "checkmark", action: close)
-                    .accessibilityIdentifier("customize-zone-done")
-            }
-        }
     }
 
     // MARK: Flavor
@@ -289,13 +291,11 @@ struct CustomizeControls: View {
     private var barControls: some View {
         Section {
             Toggle("Profilo", isOn: $style.bar.showsProfile)
-            Toggle("Impostazioni", isOn: $style.bar.showsSettings)
             Toggle("Giorno", isOn: $style.bar.showsDate)
-            Toggle("Aggiungi", isOn: $style.bar.showsAdd)
         } header: {
             Text("Pulsanti")
         } footer: {
-            Text("Il menu ••• resta sempre: è da lì che si torna in Personalizza.")
+            Text("Impostazioni e Personalizza restano sempre nella barra: sono la strada per tornarci.")
         }
     }
 
@@ -405,7 +405,7 @@ struct CustomizeControls: View {
             Text("Sulla pagina")
         }
         .environment(\.editMode, .constant(.active))
-        Section("Aspetto delle sezioni") {
+        Section("Ogni sezione") {
             ForEach(style.visibleSections) { section in
                 NavigationLink(value: CustomizePage.section(section.kind)) {
                     Label(section.kind.title, systemImage: section.kind.systemImage)
@@ -445,8 +445,8 @@ struct CustomizeControls: View {
     @ViewBuilder
     private func sectionControls(_ kind: TodaySection.Kind) -> some View {
         let section = section(kind)
-        Section("Scheda") {
-            Picker("Materiale", selection: section.material) {
+        Section("Superficie") {
+            Picker("Superficie", selection: section.material) {
                 Text("Come la pagina").tag(TodayMaterial?.none)
                 ForEach(TodayMaterial.allCases) { Text($0.title).tag(TodayMaterial?.some($0)) }
             }
@@ -468,12 +468,12 @@ struct CustomizeControls: View {
             }
         }
         Section {
-            Button("Togli dalla pagina", systemImage: "eye.slash", role: .destructive) {
+            Button("Nascondi dalla pagina", systemImage: "eye.slash", role: .destructive) {
                 style.hideSection(kind)
                 close()
             }
         } footer: {
-            Text("Una sezione tolta tiene le sue impostazioni.")
+            Text("Una sezione nascosta tiene le sue impostazioni.")
         }
     }
 
@@ -513,10 +513,10 @@ struct CustomizeControls: View {
         }
     }
 
-    // MARK: Widget
+    // MARK: Date
 
     private var dateLayoutControls: some View {
-        Section("Disposizione") {
+        Section("Forma") {
             ScrollView(.horizontal) {
                 HStack(spacing: 10) {
                     ForEach(DateLayout.allCases) { layout in

@@ -26,11 +26,11 @@ struct TodayLanding: View {
 
         var title: LocalizedStringKey {
             switch self {
-            case .bar: "Barra e colore"
+            case .bar: "Barra"
             case .greeting: "Saluto"
             case .date: "Data"
             case .stickers: "Accessorio"
-            case .background: "Tema"
+            case .background: "Flavor"
             case .section(let kind): kind.title
             }
         }
@@ -185,7 +185,7 @@ struct TodayLanding: View {
 
     @ViewBuilder
     private func sectionZone(_ section: TodaySection) -> some View {
-        let view = TodaySectionView(section: section, style: style, day: day, collapsed: arranging)
+        let view = TodaySectionView(section: section, style: style, day: day, collapsed: arranging, opensDetails: draft == nil)
         if arranging {
             view
                 .padding(10)
@@ -196,7 +196,7 @@ struct TodayLanding: View {
                 // Inside the section's frame, beside its title: a lifted section
                 // takes touches only within its bounds.
                 .overlay(alignment: .topTrailing) {
-                    Button("Rimuovi \(Text(section.kind.title))", systemImage: "minus") {
+                    Button("Nascondi \(Text(section.kind.title))", systemImage: "minus") {
                         withAnimation(.snappy) { draft?.wrappedValue.hideSection(section.kind) }
                     }
                     .labelStyle(.iconOnly)
@@ -299,7 +299,8 @@ struct TodayLanding: View {
             }
             .overlay(alignment: zone == .greeting ? .topTrailing : zone == .stickers ? .bottomTrailing : .bottomLeading) {
                 if let remove {
-                    ZoneBadge(symbol: "minus", label: "Togli", action: remove)
+                    // Stickers and photos go; the greeting is only hidden.
+                    ZoneBadge(symbol: "minus", label: zone == .greeting ? "Nascondi" : "Rimuovi", action: remove)
                         .offset(x: zone == .stickers || zone == .greeting ? 12 : -12, y: zone == .greeting ? -12 : 12)
                         .accessibilityIdentifier("zone-\(zone.id)-remove")
                 }

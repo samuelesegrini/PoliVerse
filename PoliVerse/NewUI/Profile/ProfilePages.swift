@@ -1,10 +1,12 @@
 import OSLog
 import SwiftUI
 
-/// The sheets the profile opens: the contact to share, the photo, and the
+/// The pages the profile pushes: the contact to share, the photo, and the
 /// choice of career. Each is a short task with one button to finish it.
-private struct ProfileSheetScaffold<Content: View, Footer: View>: View {
-    @Environment(\.dismiss) private var dismiss
+///
+/// Pushed rather than presented: the profile already sits in the settings
+/// sheet, and a sheet over a sheet is one layer too many.
+private struct ProfilePageScaffold<Content: View, Footer: View>: View {
     @ViewBuilder var content: Content
     @ViewBuilder var footer: Footer
 
@@ -21,18 +23,11 @@ private struct ProfileSheetScaffold<Content: View, Footer: View>: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 12)
         }
-        .overlay(alignment: .topTrailing) {
-            Button("Chiudi", systemImage: "xmark") { dismiss() }
-                .labelStyle(.iconOnly)
-                .buttonStyle(.glass)
-                .buttonBorderShape(.circle)
-                .controlSize(.large)
-                .padding(16)
-        }
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
-private struct SheetTitle: View {
+private struct PageTitle: View {
     let title: LocalizedStringKey
     var message: Text? = nil
 
@@ -55,16 +50,16 @@ private struct SheetTitle: View {
 
 /// The student's name and email as a QR code a classmate can scan, and the
 /// same card through the share sheet.
-struct ContactSheet: View {
+struct ContactPage: View {
     let student: Student
 
     private var contact: ProfileContact { ProfileContact(student: student) }
 
     var body: some View {
         let contact = contact
-        ProfileSheetScaffold {
+        ProfilePageScaffold {
             VStack(spacing: 0) {
-                SheetTitle(title: "Il tuo contatto",
+                PageTitle(title: "Il tuo contatto",
                            message: Text("Fallo inquadrare a un compagno per salvare nome ed email."))
 
                 Group {
@@ -112,14 +107,13 @@ struct ContactSheet: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .presentationDetents([.fraction(0.78), .large])
     }
 }
 
 // MARK: - Photo
 
 /// Where the picture comes from and how it is cut.
-struct PhotoSheet: View {
+struct PhotoPage: View {
     let student: Student?
 
     @Environment(\.dismiss) private var dismiss
@@ -129,9 +123,9 @@ struct PhotoSheet: View {
     private var hasPhoto: Bool { student?.photoURL != nil }
 
     var body: some View {
-        ProfileSheetScaffold {
+        ProfilePageScaffold {
             VStack(spacing: 0) {
-                SheetTitle(title: "Foto")
+                PageTitle(title: "Foto")
 
                 ProfileAvatar(student: student, size: 150)
                     .padding(.top, 18)
@@ -163,7 +157,6 @@ struct PhotoSheet: View {
             .buttonStyle(.glassProminent)
             .controlSize(.large)
         }
-        .presentationDetents([.fraction(0.72), .large])
     }
 }
 
@@ -171,7 +164,7 @@ struct PhotoSheet: View {
 
 /// Which matricola the app reads. Changing it takes a fresh sign-in: the
 /// Politecnico binds the token to one enrolment.
-struct CareerSheet: View {
+struct CareerPage: View {
     @Environment(CareersService.self) private var careers
     @Environment(Session.self) private var session
     @Environment(\.dismiss) private var dismiss
@@ -186,7 +179,7 @@ struct CareerSheet: View {
     }
 
     var body: some View {
-        ProfileSheetScaffold {
+        ProfilePageScaffold {
             VStack(spacing: 0) {
                 Image(systemName: "graduationcap")
                     .font(.system(size: 28))
@@ -195,7 +188,7 @@ struct CareerSheet: View {
                     .background(Theme.brand.opacity(0.1), in: .rect(cornerRadius: 18, style: .continuous))
                     .padding(.bottom, 12)
 
-                SheetTitle(title: "Carriera",
+                PageTitle(title: "Carriera",
                            message: Text("Hai \(careers.careers.count) matricole. L’app legge i dati di quella che scegli."))
 
                 VStack(spacing: 10) {
@@ -236,7 +229,8 @@ struct CareerSheet: View {
         .overlay {
             if working { ProgressView().controlSize(.large) }
         }
-        .presentationDetents([.fraction(0.72), .large])
+        // No way out while the switch signs out and back in.
+        .navigationBarBackButtonHidden(working)
         .interactiveDismissDisabled(working)
     }
 
@@ -300,15 +294,11 @@ struct CareerSheet: View {
 }
 
 #Preview("Contatto") {
-    Color.clear.sheet(isPresented: .constant(true)) {
-        ContactSheet(student: MockData.student)
-    }
-    .previewEnvironment()
+    NavigationStack { ContactPage(student: MockData.student) }
+        .previewEnvironment()
 }
 
 #Preview("Foto") {
-    Color.clear.sheet(isPresented: .constant(true)) {
-        PhotoSheet(student: MockData.student)
-    }
-    .previewEnvironment()
+    NavigationStack { PhotoPage(student: MockData.student) }
+        .previewEnvironment()
 }

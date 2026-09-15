@@ -5,8 +5,15 @@ struct NoticesView: View {
     @Environment(NoticeService.self) private var notices
     @Environment(\.dismiss) private var dismiss
 
+    /// Shown inside a navigation stack that is not its own.
+    private let embedded: Bool
+
+    init(embedded: Bool = false) {
+        self.embedded = embedded
+    }
+
     var body: some View {
-        NavigationStack {
+        RootStack(embedded: embedded) {
             Group {
                 if let message = notices.errorMessage, notices.notices.isEmpty {
                     ContentUnavailableView("Notifiche non disponibili",
@@ -31,8 +38,10 @@ struct NoticesView: View {
             .navigationTitle("Notifiche")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Chiudi") { dismiss() }
+                if !embedded {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Chiudi") { dismiss() }
+                    }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Segna tutte") { notices.markAllRead() }

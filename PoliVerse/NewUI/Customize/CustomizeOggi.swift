@@ -1,10 +1,14 @@
 import SwiftUI
 
-/// Personalizza, opened from Oggi's ••• menu. It opens as a gallery of saved
-/// looks, paged like the Lock Screen's: swipe between them at a reduced size,
-/// Personalizza to edit the one in the middle, + to add a new one, Fine to use
-/// it. Editing shows the page at full size with its zones outlined; nothing is
-/// kept until Fine.
+/// Personalizza, opened from Oggi's bar. It opens as a gallery of saved
+/// styles, paged like the Lock Screen's: swipe between them at a reduced size,
+/// Personalizza to edit the one in the middle, + to add a new one, ✓ to use
+/// it, and hold a card to delete it. Editing shows the page at full size with
+/// its zones outlined.
+///
+/// One commit point per action, kept by ``LookLibrary``: the editor's Fine
+/// saves the style, ✓ makes it the page's. Saving the style in use shows at
+/// once, since it is the page's already.
 ///
 /// Laid over the app by ``NewRootView``. Like the Lock Screen, the look in use
 /// starts covering the screen, exactly where the app is, and shrinks into the
@@ -19,8 +23,10 @@ struct CustomizeOggi: View {
     @AppStorage(TodayStyle.libraryKey) private var storedLibrary = ""
     @AppStorage(TodayStyle.selectionKey) private var storedSelection = 0
 
-    @State private var looks: [TodayStyle]
+    @State private var library: LookLibrary
     @State private var page: Int?
+    /// The card whose deletion is being confirmed.
+    @State private var deleting: Int?
     /// The middle card covers the screen: on opening, and on closing.
     @State private var expanded = true
     @State private var editing: EditedLook?
@@ -45,8 +51,9 @@ struct CustomizeOggi: View {
         // use instead of scrolling to it while it shrinks.
         let defaults = UserDefaults.standard
         let looks = TodayStyle.library(from: defaults.string(forKey: TodayStyle.libraryKey) ?? "", active: TodayStyle())
-        _looks = State(initialValue: looks)
-        _page = State(initialValue: min(defaults.integer(forKey: TodayStyle.selectionKey), looks.count - 1))
+        let library = LookLibrary(looks: looks, selection: defaults.integer(forKey: TodayStyle.selectionKey))
+        _library = State(initialValue: library)
+        _page = State(initialValue: library.selection)
     }
 
     var body: some View {
@@ -84,6 +91,15 @@ struct CustomizeOggi: View {
             }
             .navigationTransition(.zoom(sourceID: edited.index, in: cards))
         }
+        .confirmationDialog("Eliminare questo stile?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
+                            titleVisibility: .visible) {
+            Button("Elimina stile", role: .destructive) {
+                if let deleting { delete(deleting) }
+            }
+            .accessibilityIdentifier("customize-delete-confirm")
+        } message: {
+            Text("Non si può annullare.")
+        }
     }
 
     // MARK: - Gallery
@@ -93,7 +109,7 @@ struct CustomizeOggi: View {
         return ScrollViewReader { reader in
             ScrollView(.horizontal) {
                 LazyHStack(spacing: 18) {
-                    ForEach(Array(looks.enumerated()), id: \.offset) { index, look in
+                    ForEach(Array(library.looks.enumerated()), id: \.offset) { index, look in
                         let middle = index == (page ?? 0)
                         card(look, screen: screen, insets: insets)
                             .frame(width: cardSize.width, height: cardSize.height)
@@ -110,9 +126,20 @@ struct CustomizeOggi: View {
                             .zIndex(middle ? 1 : 0)
                             .id(index)
                             .onTapGesture { select(index) }
+                            .contextMenu {
+                                if library.canRemove {
+                                    Button("Elimina stile", systemImage: "trash", role: .destructive) { deleting = index }
+                                }
+                            }
                             .accessibilityElement(children: .ignore)
-                            .accessibilityLabel(Text("Aspetto \(index + 1)"))
+                            .accessibilityLabel(Text("Stile \(index + 1)"))
+                            .accessibilityValue(index == library.selection ? Text("In uso") : Text(""))
                             .accessibilityAddTraits(.isButton)
+                            .accessibilityActions {
+                                if library.canRemove {
+                                    Button("Elimina stile") { deleting = index }
+                                }
+                            }
                             .accessibilityIdentifier("customize-card-\(index)")
                     }
                 }
@@ -133,7 +160,9 @@ struct CustomizeOggi: View {
     private var controls: some View {
         VStack {
             HStack {
-                Button("Annulla", role: .cancel) { close() }
+                // Saved styles stay saved: closing only leaves the page on the
+                // style it already uses.
+                Button("Chiudi", role: .close) { close() }
                     .buttonStyle(.glass)
                     .accessibilityIdentifier("customize-cancel")
                 Spacer()
@@ -154,7 +183,7 @@ struct CustomizeOggi: View {
 
             VStack(spacing: 14) {
                 HStack(spacing: 7) {
-                    ForEach(looks.indices, id: \.self) { index in
+                    ForEach(library.looks.indices, id: \.self) { index in
                         Circle()
                             .fill(index == (page ?? 0) ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
                             .frame(width: 7, height: 7)
@@ -169,7 +198,7 @@ struct CustomizeOggi: View {
                     }
                     .buttonStyle(.glass)
 
-                    Button("Nuovo aspetto", systemImage: "plus", action: addLook)
+                    Button("Nuovo stile", systemImage: "plus", action: addLook)
                         .accessibilityIdentifier("customize-add")
                         .labelStyle(.iconOnly)
                         .font(.title3)
@@ -198,7 +227,7 @@ struct CustomizeOggi: View {
         .overlay(alignment: .bottom) {
             if !shell.singlePage {
                 VStack(spacing: 8) {
-                    if let current = CurrentClass.forAccessory(from: agenda.events, now: .now) {
+                    if look.wantsCurrentClassAccessory, let current = CurrentClass.forAccessory(from: agenda.events, now: .now) {
                         ReplicaAccessory(current: current)
                     }
                     ReplicaTabBar()
@@ -231,62 +260,74 @@ struct CustomizeOggi: View {
     }
 
     private func beginEditing(_ index: Int) {
-        guard looks.indices.contains(index) else { return }
-        editing = EditedLook(index: index, look: looks[index])
+        guard library.looks.indices.contains(index) else { return }
+        editing = EditedLook(index: index, look: library.looks[index])
     }
 
-    /// Adds a blank look at the end, brings it to the middle, and opens it
+    /// Adds a blank style at the end, brings it to the middle, and opens it
     /// once it is there, so the editor zooms out of its card.
     private func addLook() {
-        looks.append(TodayStyle())
-        let index = looks.count - 1
+        library.append(TodayStyle())
+        let index = library.looks.count - 1
         unsavedLook = index
         withAnimation(.snappy) { page = index } completion: {
             beginEditing(index)
         }
     }
 
-    /// Editing a look is choosing it, as on the Lock Screen.
+    /// Saves the style without choosing it: ✓ does that. The style in use is
+    /// the page's already, so the page shows the change.
     private func save(_ look: TodayStyle, at index: Int) {
-        guard looks.indices.contains(index) else { return }
-        looks[index] = look
+        library.save(look, at: index)
+        if index == library.selection { active = library.active }
         unsavedLook = nil
-        use(index)
         page = index
         editing = nil
+        persist()
     }
 
-    /// A look added with + and then cancelled goes, once the editor has
+    /// A style added with + and then cancelled goes, once the editor has
     /// zoomed back into its card.
     private func dropCancelledLook() {
         guard let index = unsavedLook else { return }
         unsavedLook = nil
         withAnimation(.snappy) {
-            page = min(storedSelection, index - 1)
+            page = library.selection
         } completion: {
-            looks.remove(at: index)
+            library.remove(at: index)
         }
     }
 
     private func use(_ index: Int) {
-        guard looks.indices.contains(index) else { return }
-        storedSelection = index
-        active = looks[index]
+        library.use(index)
+        active = library.active
+        persist()
+    }
+
+    /// Deleting the style in use hands the page to its neighbour.
+    private func delete(_ index: Int) {
+        guard library.remove(at: index) else { return }
+        active = library.active
+        // The cards are keyed by position: the one in the middle stays there
+        // only if the page moves back with it.
+        let middle = page ?? 0
+        withAnimation(.snappy) { page = min(index < middle ? middle - 1 : middle, library.looks.count - 1) }
         persist()
     }
 
     private func persist() {
-        storedLibrary = TodayStyle.encodeLibrary(looks)
-        // Sticker images no saved look draws any more.
-        let inUse = looks.reduce(into: active.storedImageIDs) { $0.formUnion($1.storedImageIDs) }
+        storedLibrary = TodayStyle.encodeLibrary(library.looks)
+        storedSelection = library.selection
+        // Sticker images no saved style draws any more.
+        let inUse = library.looks.reduce(into: active.storedImageIDs) { $0.formUnion($1.storedImageIDs) }
         StickerStore.shared.prune(keeping: inUse)
     }
 
-    /// Grows the middle card back over the app, then goes. Cancelled, the
-    /// carousel first returns to the look in use, which is what the app shows.
+    /// Grows the middle card back over the app, then goes. The carousel first
+    /// returns to the style in use, which is what the app shows.
     private func close() {
         withAnimation(Self.expand) {
-            page = min(storedSelection, looks.count - 1)
+            page = library.selection
             expanded = true
         } completion: {
             shell.isCustomizing = false
@@ -294,10 +335,12 @@ struct CustomizeOggi: View {
     }
 }
 
-/// One look at full size with its zones outlined, over the bento panel.
+/// One style at full size with its zones outlined, over the bento panel.
 /// Tapping a zone opens its page in the panel; holding the page, or Disponi,
-/// arranges it. Nothing reaches the look until Fine.
+/// arranges it. Nothing reaches the style until Fine, and Annulla asks before
+/// throwing changes away.
 private struct LookEditor: View {
+    let original: TodayStyle
     let onSave: (TodayStyle) -> Void
 
     @Environment(\.shell) private var shell
@@ -307,11 +350,15 @@ private struct LookEditor: View {
     @State private var panelPath: [CustomizePage] = []
     @State private var arranging = false
     @State private var panelDetent = BentoPanel.small
+    @State private var confirmingDiscard = false
 
     init(look: TodayStyle, onSave: @escaping (TodayStyle) -> Void) {
+        original = look
         self.onSave = onSave
         _draft = State(initialValue: look)
     }
+
+    private var hasChanges: Bool { draft != original }
 
     var body: some View {
         NavigationStack {
@@ -343,6 +390,13 @@ private struct LookEditor: View {
             // The panel stays while editing and steps away while arranging.
             .sheet(isPresented: Binding(get: { !arranging }, set: { _ in })) {
                 BentoPanel(style: $draft, path: $panelPath, arranging: $arranging, detent: $panelDetent)
+                    // Asked from the panel, the one on top: the editor under it
+                    // cannot present while the panel is up.
+                    .confirmationDialog("Scartare le modifiche?", isPresented: $confirmingDiscard, titleVisibility: .visible) {
+                        Button("Scarta modifiche", role: .destructive) { dismiss() }
+                            .accessibilityIdentifier("customize-editor-discard")
+                        Button("Continua a modificare", role: .cancel) {}
+                    }
                     .presentationDetents([BentoPanel.small, .large], selection: $panelDetent)
                     .presentationBackgroundInteraction(.enabled(upThrough: BentoPanel.small))
                     .presentationDragIndicator(.visible)
@@ -353,9 +407,14 @@ private struct LookEditor: View {
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .cancellationAction) {
-            Button("Annulla", role: .cancel) { dismiss() }
+        // While arranging, the only way on is Fine, back to editing.
+        if !arranging {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Annulla", role: .cancel) {
+                    if hasChanges { confirmingDiscard = true } else { dismiss() }
+                }
                 .accessibilityIdentifier("customize-editor-cancel")
+            }
         }
         ToolbarItem(placement: .confirmationAction) {
             if arranging {

@@ -116,8 +116,15 @@ struct WeBeepView: View {
         overrides = EnrolmentOverrides.all()
     }
 
+    /// Shown inside a navigation stack that is not its own.
+    private let embedded: Bool
+
+    init(embedded: Bool = false) {
+        self.embedded = embedded
+    }
+
     var body: some View {
-        NavigationStack {
+        RootStack(embedded: embedded) {
             List {
                 if courses.academicYears.count > 1 {
                     Section {

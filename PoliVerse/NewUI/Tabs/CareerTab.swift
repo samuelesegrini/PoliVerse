@@ -1,16 +1,16 @@
 import SwiftUI
 
-/// Placeholder for the Carriera tab of the new structure.
+/// Carriera: the libretto, the sittings and the results.
 struct CareerTab: View {
     var body: some View {
         NavigationStack {
-            ContentUnavailableView("Carriera", systemImage: "graduationcap",
-                                   description: Text("Libretto, piano di studi e media."))
-                .navigationTitle("Carriera")
+            NewDestination.career.screen
+                .profileButton()
+                .demoModeBanner()
         }
     }
 }
 
 #Preview("Carriera") {
-    CareerTab()
+    CareerTab().previewEnvironment()
 }

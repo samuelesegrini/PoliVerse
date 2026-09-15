@@ -1,16 +1,16 @@
 import SwiftUI
 
-/// Placeholder for the Corsi tab of the new structure.
+/// Corsi: the courses with their materials, notices and sittings.
 struct CoursesTab: View {
     var body: some View {
         NavigationStack {
-            ContentUnavailableView("Corsi", systemImage: "books.vertical",
-                                   description: Text("I tuoi corsi con materiali, avvisi e appelli."))
-                .navigationTitle("Corsi")
+            NewDestination.courses.screen
+                .profileButton()
+                .demoModeBanner()
         }
     }
 }
 
 #Preview("Corsi") {
-    CoursesTab()
+    CoursesTab().previewEnvironment()
 }
