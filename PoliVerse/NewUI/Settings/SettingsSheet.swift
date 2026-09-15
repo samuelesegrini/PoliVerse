@@ -56,17 +56,6 @@ struct SettingsSheet: View {
                 }
 
                 Section {
-                    Button {
-                        shell.customizePending = true
-                        dismiss()
-                    } label: {
-                        Label("Personalizza Oggi", systemImage: "paintbrush")
-                    }
-                } footer: {
-                    Text("Carattere e colore della data, e quali sezioni mostrare.")
-                }
-
-                Section {
                     NavigationLink {
                         NotificationSettingsView()
                     } label: {

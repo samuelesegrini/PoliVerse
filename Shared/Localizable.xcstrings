@@ -5624,6 +5624,9 @@
         }
       }
     },
+    "La nuova interfaccia è in prova. Puoi riattivarla dalle impostazioni." : {
+
+    },
     "La pagina WeBeep di questo corso non ne ha." : {
       "localizations" : {
         "en" : {
@@ -7582,6 +7585,9 @@
         }
       }
     },
+    "Nuova interfaccia (in prova)" : {
+
+    },
     "Nuovo annuncio del docente" : {
       "localizations" : {
         "en" : {
@@ -7601,6 +7607,9 @@
           }
         }
       }
+    },
+    "Nuovo aspetto" : {
+
     },
     "Nuovo avviso d'esame" : {
       "localizations" : {
@@ -8775,6 +8784,9 @@
           }
         }
       }
+    },
+    "Quattro schede con Oggi, oppure una pagina unica con un pannello dal basso." : {
+
     },
     "Questi dati arrivano dal tuo account del Politecnico." : {
 
@@ -10256,6 +10268,9 @@
         }
       }
     },
+    "Torna all’interfaccia attuale" : {
+
+    },
     "Tra %lld giorni" : {
 
     },
@@ -10431,6 +10446,9 @@
           }
         }
       }
+    },
+    "Usa" : {
+
     },
     "Usa dati di esempio" : {
       "localizations" : {

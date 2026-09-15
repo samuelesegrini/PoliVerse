@@ -21,8 +21,6 @@ final class ShellState {
     #else
     var isCustomizing = false
     #endif
-    /// Asked for from Impostazioni: opens once that sheet has closed.
-    var customizePending = false
 }
 
 extension ShellState {

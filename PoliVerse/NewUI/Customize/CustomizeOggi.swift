@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Personalizza, entered from Impostazioni. It opens as a gallery of saved
+/// Personalizza, opened from Oggi's ••• menu. It opens as a gallery of saved
 /// looks, paged like the Lock Screen's: swipe between them at a reduced size,
 /// Personalizza to edit the one in the middle, + to add a new one, Fine to use
 /// it. Editing shows the page at full size with its zones outlined; nothing is
@@ -185,7 +185,7 @@ struct CustomizeOggi: View {
     }
 
     private func close() {
-        withAnimation(.smooth(duration: 0.4)) { shell.isCustomizing = false }
+        shell.isCustomizing = false
     }
 }
 

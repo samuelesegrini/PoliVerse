@@ -23,7 +23,6 @@ struct SinglePagePanel: View {
                 }
             })
         }
-        .animation(.snappy, value: detent)
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(60))
