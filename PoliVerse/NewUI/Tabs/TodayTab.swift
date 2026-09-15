@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// Only the navigation bar is built so far. On the left, the profile menu and
 /// settings as two separate glass buttons; in the middle, the day being
-/// shown, which drops a linear day strip down from itself; on the right, add and more actions in
+/// shown, which drops a day stepper down from itself; on the right, add and more actions in
 /// one glass group.
 struct TodayTab: View {
     @Environment(Session.self) private var session
@@ -32,9 +32,7 @@ struct TodayTab: View {
             }
             .overlay(alignment: .top) {
                 if showingDays {
-                    DayStrip(day: $day) {
-                        withAnimation(.snappy(duration: 0.35)) { showingDays = false }
-                    }
+                    DayStrip(day: $day)
                     .padding(.horizontal, 12)
                     .padding(.top, 4)
                     // Grows out of the date above it rather than sliding in.
