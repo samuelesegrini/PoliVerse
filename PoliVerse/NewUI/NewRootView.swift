@@ -43,9 +43,12 @@ struct NewRootView: View {
                 .allowsHitTesting(shell.customizeStage == .off)
                 .ignoresSafeArea()
 
-            if shell.customizeStage == .gallery {
-                CustomizeOggi()
-            }
+            // Kept built, invisible until the scale ends. Built when opened,
+            // its cards and buttons laid out mid-animation and made it stutter.
+            CustomizeOggi()
+                .opacity(shell.customizeStage == .gallery ? 1 : 0)
+                .allowsHitTesting(shell.customizeStage == .gallery)
+                .accessibilityHidden(shell.customizeStage != .gallery)
         }
         .onChange(of: shell.isCustomizing) { _, customizing in
             customizing ? openCustomize() : closeCustomize()

@@ -29,6 +29,10 @@ struct CustomizeOggi: View {
         }
         .animation(.smooth(duration: 0.4), value: editingIndex)
         .onAppear(perform: load)
+        // Built once and kept: re-read the saved looks each time it opens.
+        .onChange(of: shell.isCustomizing) { _, open in
+            if open { editingIndex = nil; load() }
+        }
     }
 
     // MARK: - Gallery
