@@ -34,14 +34,15 @@ struct NewRootView: View {
             // The ground the shrunk app and the gallery sit on.
             Color(.secondarySystemBackground).ignoresSafeArea()
 
+            // Personalizza, like the Lock Screen: the whole app scales down
+            // into the gallery's middle card, and back up on close. Both are
+            // measured in the safe area, so the swap between them is still.
             tabs
-                // Personalizza, like the Lock Screen: the whole app scales
-                // down into the gallery's middle card, and back up on close.
+                .background(Color(.systemBackground))
                 .clipShape(.rect(cornerRadius: shell.customizeStage == .off ? 0 : 48))
                 .shadow(color: .black.opacity(shell.customizeStage == .off ? 0 : 0.18), radius: 24, y: 10)
                 .scaleEffect(shell.customizeStage == .off ? 1 : CustomizeOggi.cardScale)
                 .allowsHitTesting(shell.customizeStage == .off)
-                .ignoresSafeArea()
 
             // Kept built, invisible until the scale ends. Built when opened,
             // its cards and buttons laid out mid-animation and made it stutter.

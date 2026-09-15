@@ -13,7 +13,8 @@ final class ShellState {
     /// where the shrunk app was.
     enum CustomizeStage { case off, shrunk, gallery }
     #if DEBUG
-    var customizeStage: CustomizeStage = CommandLine.arguments.contains("-Customize") ? .gallery : .off
+    var customizeStage: CustomizeStage = CommandLine.arguments.contains("-Customize") ? .gallery
+        : CommandLine.arguments.contains("-CustomizeShrunk") ? .shrunk : .off
     #else
     var customizeStage = CustomizeStage.off
     #endif

@@ -20,11 +20,14 @@ struct CustomizeOggi: View {
     var body: some View {
         ZStack {
             if let index = editingIndex {
+                // Grows from card size to full screen over the gallery; the
+                // two used to cross-fade, showing both at once.
                 editor(index)
-                    .transition(.scale(scale: 0.72).combined(with: .opacity))
+                    .transition(.scale(scale: Self.cardScale))
+                    .zIndex(1)
             } else {
                 gallery
-                    .transition(.opacity)
+                    .transition(.identity)
             }
         }
         .animation(.smooth(duration: 0.4), value: editingIndex)
@@ -42,8 +45,10 @@ struct CustomizeOggi: View {
 
     private var gallery: some View {
         GeometryReader { proxy in
-            let screen = CGSize(width: proxy.size.width + proxy.safeAreaInsets.leading + proxy.safeAreaInsets.trailing,
-                                height: proxy.size.height + proxy.safeAreaInsets.top + proxy.safeAreaInsets.bottom)
+            // The app shrinks within the safe area, so the cards are measured
+            // and centred there too; measured on the whole screen they were
+            // taller and higher than the app they replace.
+            let screen = proxy.size
             let cardSize = CGSize(width: screen.width * Self.cardScale, height: screen.height * Self.cardScale)
 
             ZStack {
@@ -88,7 +93,7 @@ struct CustomizeOggi: View {
                     .padding(.horizontal, 20)
                     // The gallery ignores the safe area to match the shrunk
                     // app, so the status bar and home indicator are cleared by hand.
-                    .padding(.top, 60)
+                    .padding(.top, 4)
 
                     Spacer()
 
@@ -118,22 +123,21 @@ struct CustomizeOggi: View {
                         }
                         .padding(.horizontal, 60)
                     }
-                    .padding(.bottom, 40)
+                    .padding(.bottom, 4)
                 }
             }
             .frame(width: screen.width, height: screen.height)
         }
-        .ignoresSafeArea()
-        .background(Color(.secondarySystemBackground))
+        .background(Color(.secondarySystemBackground).ignoresSafeArea())
     }
 
     /// A look drawn as the app would be at full screen size, with a quiet copy
     /// of the navigation bar, then scaled into a card.
     private func card(_ look: TodayStyle, screen: CGSize) -> some View {
         VStack(spacing: 0) {
-            Color.clear.frame(height: 62)
             BarSilhouette(day: shell.day)
                 .padding(.horizontal, 16)
+                .padding(.top, 6)
             TodayLanding(day: shell.day, style: look)
             Spacer(minLength: 0)
         }
@@ -167,6 +171,9 @@ struct CustomizeOggi: View {
                     Button("Fine", systemImage: "checkmark") {
                         looks[index] = draft
                         persist()
+                        // Editing a look is choosing it, as on the Lock Screen.
+                        use(index)
+                        page = index
                         editingIndex = nil
                     }
                 }
