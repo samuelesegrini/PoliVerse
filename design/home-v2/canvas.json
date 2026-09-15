@@ -1,0 +1,40 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "title": "Home",
+      "x": 0,
+      "y": 0,
+      "w": 402,
+      "h": 2060
+    },
+    {
+      "file": "CourseDetail.dc.html",
+      "title": "Corso",
+      "x": 522,
+      "y": 0,
+      "w": 402,
+      "h": 2080
+    },
+    {
+      "file": "ExamSheet.dc.html",
+      "title": "Appello (sheet)",
+      "x": 1044,
+      "y": 0,
+      "w": 402,
+      "h": 1900
+    }
+  ],
+  "annotations": [
+    {
+      "id": "kyo-direction",
+      "x": 0,
+      "y": -230,
+      "w": 1446,
+      "text": "New direction — native iOS 26, after Kyo 2.0's approach\nSystem-first: grouped grey ground, white inset lists with Settings-style coloured icon squares, SF text, and one expressive serif title face (New York) for page titles, like Kyo's custom title fonts. Each course gets a soft pastel tint with a matching dark ink and a subtle dot pattern instead of saturated gradients. Today is a colour-coded vertical timetable with dashed breaks. Navigation is Liquid Glass: floating glass buttons at the top, a floating glass tab bar with a separate search button at the bottom within thumb reach. The exam opens as a standard sheet with a grabber.\nAll values are sample data. Dark mode toggle above each frame."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

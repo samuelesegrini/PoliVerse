@@ -1,0 +1,87 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "title": "Home",
+      "x": 0,
+      "y": 0,
+      "w": 402,
+      "h": 1720
+    },
+    {
+      "file": "Courses.dc.html",
+      "title": "I tuoi corsi (sheet)",
+      "x": 522,
+      "y": 0,
+      "w": 402,
+      "h": 1100
+    },
+    {
+      "file": "CourseDetail.dc.html",
+      "title": "Corso (sheet)",
+      "x": 1044,
+      "y": 0,
+      "w": 402,
+      "h": 1560
+    },
+    {
+      "file": "ExamSheet.dc.html",
+      "title": "Appello (sheet)",
+      "x": 1566,
+      "y": 0,
+      "w": 402,
+      "h": 1090
+    },
+    {
+      "file": "Theme.dc.html",
+      "title": "Tema",
+      "x": 2088,
+      "y": 0,
+      "w": 402,
+      "h": 1100
+    },
+    {
+      "file": "DarkMenu.dc.html",
+      "title": "Flusso · Menu (scuro)",
+      "x": 0,
+      "y": 1900,
+      "w": 402,
+      "h": 874
+    },
+    {
+      "file": "Customize.dc.html",
+      "title": "Flusso · Personalizza",
+      "x": 522,
+      "y": 1900,
+      "w": 402,
+      "h": 874
+    },
+    {
+      "file": "WidgetPicker.dc.html",
+      "title": "Flusso · Widget",
+      "x": 1044,
+      "y": 1900,
+      "w": 402,
+      "h": 874
+    }
+  ],
+  "annotations": [
+    {
+      "id": "kyo-v4",
+      "x": 0,
+      "y": -210,
+      "w": 2490,
+      "text": "PoliVerse in the Kyo 2.0 language. Home: patterned background, contextual greeting, big wide date with an accent accessory ('Tutto pronto?'), task cards inside a soft translucent ring, the timetable as overlapping full-colour cards ('Terminata', 'Mancano', → next time, room chip, a white break pill), courses as colour tiles, then news. At the bottom the glossy day pill and accent button float over an 'Azioni e ricerca globale' search sheet, instead of a tab bar.\nSheets use Kyo's anatomy: a centred glyph, title and description, capsule fields split icon | text | value, a glossy N/D report card, a glossy exam card, and floating glossy buttons.\n'Tema' is a theme manager (material, colour, widget, accessory).\nUse the Theme and Pattern chips above each frame to switch Arancio / Viola / Blu / Rosa and Griglia / Maglia ovale / Puntini. All content is sample data."
+    },
+    {
+      "id": "flow-dark",
+      "x": 0,
+      "y": 1740,
+      "w": 1446,
+      "text": "Flow taken from the Kyo recording, rebuilt for PoliVerse in dark mode: (1) the round accent button opens a menu with settings, a Corsi/Docenti split row and quick adds; (2) Personalizza rises as a sheet with a bento of Materiale (page curl), Stile, Widget, Accessorio, Icona, Motivo and colour; (3) tapping a tile opens its picker, a carousel of options with 'Selezionato' and a font button. The empty states are pills with a single plain sentence."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

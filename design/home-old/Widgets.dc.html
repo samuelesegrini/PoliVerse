@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: #F2F2F7; font-family: -apple-system, "SF Pro Text", system-ui, "Helvetica Neue", sans-serif; color: #000; -webkit-font-smoothing: antialiased; }
+    a { color: #003352; } a:hover { color: #1C6BAD; }
+    .r { font-family: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif; }
+    .sec { color: rgba(60,60,67,0.6); }
+    .ter { color: rgba(60,60,67,0.3); }
+  </style>
+</helmet>
+<div style="width: 402px; min-height: 1760px; background: #F2F2F7; position: relative; display: flex; flex-direction: column;">
+  <div style="display: flex; flex-direction: column; gap: 2px; padding: 64px 20px 6px 20px;">
+    <span class="sec" style="font-size: 15px; font-weight: 500;">Buongiorno</span>
+    <span class="r" style="font-size: 34px; font-weight: 700;">Samuele</span>
+  </div>
+  <div style="display: flex; gap: 10px; position: absolute; top: 14px; right: 16px;">
+    <div style="width: 44px; height: 44px; border-radius: 22px; background: rgba(255,255,255,0.8); box-shadow: 0 1px 6px rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center; position: relative;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#003352" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"></path><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"></path></svg>
+      <span style="position: absolute; top: 9px; right: 10px; width: 9px; height: 9px; border-radius: 5px; background: #FF3B30; border: 2px solid #fff;"></span>
+    </div>
+    <div class="r" style="width: 44px; height: 44px; border-radius: 22px; background: linear-gradient(160deg, #0B4A73, #003352); color: #fff; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center;">SS</div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 18px 16px 140px 16px;">
+
+    <!-- Oggi: medium widget, full width -->
+    <div style="grid-column: span 2; background: #fff; border-radius: 26px; padding: 16px 16px 8px 16px; display: flex; flex-direction: column; gap: 6px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;">
+        <span class="r" style="font-size: 17px; font-weight: 700;">Oggi</span>
+        <span class="sec" style="font-size: 13px;">3 impegni</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0;">
+        <span style="font-size: 16px; font-weight: 700; width: 48px; font-variant-numeric: tabular-nums;">10:15</span>
+        <span style="width: 4px; height: 34px; border-radius: 3px; background: #003352;"></span>
+        <div style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 15px; font-weight: 500;">Ingegneria del Software</span><span class="sec" style="font-size: 12px;">Aula B.3.2</span></div>
+        <span style="font-size: 11px; font-weight: 700; color: #fff; background: #003352; border-radius: 10px; padding: 3px 8px;">Ora</span>
+      </div>
+      <div style="height: 1px; background: rgba(60,60,67,0.12); margin-left: 64px;"></div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0;">
+        <span style="font-size: 16px; font-weight: 700; width: 48px; font-variant-numeric: tabular-nums;">14:15</span>
+        <span style="width: 4px; height: 34px; border-radius: 3px; background: #003352;"></span>
+        <div style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 15px; font-weight: 500;">Basi di Dati</span><span class="sec" style="font-size: 12px;">Aula 3.0.1</span></div>
+      </div>
+      <div style="height: 1px; background: rgba(60,60,67,0.12); margin-left: 64px;"></div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0;">
+        <span style="font-size: 16px; font-weight: 700; width: 48px; font-variant-numeric: tabular-nums;">18:00</span>
+        <span style="width: 4px; height: 34px; border-radius: 3px; background: #FF9500;"></span>
+        <div style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 15px; font-weight: 500;">Consegna progetto Reti Logiche</span><span class="sec" style="font-size: 12px;">Scadenza</span></div>
+      </div>
+    </div>
+
+    <!-- Exam: small widget -->
+    <div style="background: #003352; color: #fff; border-radius: 26px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; aspect-ratio: 1 / 1; box-sizing: border-box;">
+      <span style="font-size: 12px; font-weight: 600; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.4px;">Prossimo esame</span>
+      <div style="display: flex; align-items: baseline; gap: 6px;"><span class="r" style="font-size: 52px; font-weight: 700; line-height: 1;">10</span><span style="font-size: 15px; opacity: 0.8;">giorni</span></div>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 14px; font-weight: 600; line-height: 1.2;">Ingegneria del Software</span>
+        <span style="font-size: 12px; opacity: 0.75;">Gio 24 set · 09:00 · Aula Magna</span>
+      </div>
+    </div>
+
+    <!-- Notices: small widget -->
+    <div style="background: #fff; border-radius: 26px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; aspect-ratio: 1 / 1; box-sizing: border-box;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span class="sec" style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;">Notifiche</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="1.8" stroke-linecap="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"></path><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"></path></svg>
+      </div>
+      <span class="r" style="font-size: 52px; font-weight: 700; line-height: 1; color: #FF3B30;">3</span>
+      <span style="font-size: 13px; font-weight: 500; line-height: 1.25;">Aula cambiata per Reti Logiche</span>
+    </div>
+
+    <!-- Courses: large widget -->
+    <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 4px;">
+        <span class="r" style="font-size: 22px; font-weight: 700;">I tuoi corsi <span class="sec" style="font-size: 15px; font-weight: 400;">6</span></span>
+        <span style="display: flex; align-items: center; gap: 4px; font-size: 15px; color: #003352;">2025/26<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></span>
+      </div>
+      <div style="background: #fff; border-radius: 26px; overflow: hidden; display: flex; flex-direction: column;">
+        <sc-for list="{{courses}}" as="c" hint-placeholder-count="6">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: {{c.border}};">
+            <span class="r" style="flex: 0 0 38px; height: 38px; border-radius: 11px; color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; background: {{c.color}};">{{c.mono}}</span>
+            <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;">
+              <span style="font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{c.name}}</span>
+              <span class="sec" style="font-size: 12px;">{{c.meta}}</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 3px;">
+              <span style="font-size: 12px; font-weight: 600; color: {{c.color}}; white-space: nowrap;">{{c.next}}</span>
+              <sc-if value="{{c.hasBadge}}" hint-placeholder-val="{{ false }}"><span style="font-size: 11px; font-weight: 700; color: #FF3B30;">{{c.badge}}</span></sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- News: medium widget -->
+    <div style="grid-column: span 2; background: #fff; border-radius: 26px; padding: 16px; display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;">
+        <span class="r" style="font-size: 17px; font-weight: 700;">Dal Politecnico</span>
+        <span style="font-size: 15px; color: #003352;">Tutte</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 3px;"><span style="font-size: 15px; font-weight: 500;">Aperte le iscrizioni ai bandi di mobilità internazionale</span><span class="sec" style="font-size: 12px;">2 giorni fa</span></div>
+      <div style="height: 1px; background: rgba(60,60,67,0.12);"></div>
+      <div style="display: flex; flex-direction: column; gap: 3px;"><span style="font-size: 15px; font-weight: 500;">Nuovi spazi studio in Bovisa</span><span class="sec" style="font-size: 12px;">5 giorni fa</span></div>
+      <div style="height: 1px; background: rgba(60,60,67,0.12);"></div>
+      <div style="display: flex; flex-direction: column; gap: 3px;"><span style="font-size: 15px; font-weight: 500;">Seminario: intelligenza artificiale e ricerca</span><span class="sec" style="font-size: 12px;">1 settimana fa</span></div>
+    </div>
+  </div>
+  <!-- Tab bar -->
+  <div style="position: absolute; left: 16px; right: 16px; bottom: 26px; height: 64px; border-radius: 32px; background: rgba(250,250,252,0.86); box-shadow: 0 8px 28px rgba(0,0,0,0.12), inset 0 0 0 0.5px rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: space-around; padding: 0 8px;">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; color: #003352; background: rgba(0,51,82,0.1); border-radius: 26px; padding: 6px 14px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5z"></path><path d="M6 11v5c3 2 9 2 12 0v-5"></path></svg><span style="font-size: 10px; font-weight: 600;">Home</span></div>
+    <div class="sec" style="display: flex; flex-direction: column; align-items: center; gap: 2px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="4" height="16" rx="1"></rect><rect x="10" y="4" width="4" height="16" rx="1"></rect><path d="M16 5l3.5-1 2 15.5-3.5 1z"></path></svg><span style="font-size: 10px; font-weight: 500;">WeBeep</span></div>
+    <div class="sec" style="display: flex; flex-direction: column; align-items: center; gap: 2px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg><span style="font-size: 10px; font-weight: 500;">Calendario</span></div>
+    <div class="sec" style="display: flex; flex-direction: column; align-items: center; gap: 2px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V12M12 20V5M19 20v-9"></path></svg><span style="font-size: 10px; font-weight: 500;">Carriera</span></div>
+    <div class="sec" style="display: flex; flex-direction: column; align-items: center; gap: 2px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path></svg><span style="font-size: 10px; font-weight: 500;">Cerca</span></div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":402,"height":1760}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const rows = [
+      ['Ingegneria del Software', 'IS', 'Matteo Rossi · 12 CFU', '#5459B8', 'In corso', ''],
+      ['Basi di Dati', 'BD', 'Stefano Ceri · 8 CFU', '#26738C', 'Oggi 14:15', '2 avvisi'],
+      ['Architetture dei Calcolatori e Sistemi Operativi', 'AC', 'Cristina Silvano · 10 CFU', '#1C6BAD', 'Domani 08:15', ''],
+      ['Reti Logiche', 'RL', 'Fabio Salice · 5 CFU', '#B84D1F', 'Appello 2 ott', '1 materiale'],
+      ['Analisi e Geometria 2', 'AG', 'Federico Lastaria · 8 CFU', '#33825C', 'Mer 10:15', ''],
+      ['Fondamenti di Automatica', 'FA', 'Luigi Piroddi · 8 CFU', '#823D99', 'Gio 13:15', '']
+    ];
+    return { courses: rows.map((r, i) => ({ name: r[0], mono: r[1], meta: r[2], color: r[3], next: r[4], badge: r[5], hasBadge: !!r[5], border: i ? '0.5px solid rgba(60,60,67,0.18)' : 'none' })) };
+  }
+}
+</script>
+</body>
+</html>

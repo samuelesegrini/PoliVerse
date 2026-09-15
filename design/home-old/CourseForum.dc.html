@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: var(--bg, #F2F2F7); font-family: -apple-system, "SF Pro Text", system-ui, "Helvetica Neue", sans-serif; color: #000; -webkit-font-smoothing: antialiased; }
+    a { color: #003352; } a:hover { color: #1C6BAD; }
+    .r { font-family: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif; }
+    .sec { color: rgba(60,60,67,0.6); }
+    .ter { color: rgba(60,60,67,0.3); }
+  </style>
+</helmet>
+<div style="--bg: {{t.bg}}; --card: {{t.card}}; --text: {{t.text}}; --sec: {{t.sec}}; --sep: {{t.sep}}; --fill: {{t.fill}}; --glass: {{t.glass}}; --brand: {{t.brand}}; --brandTint: {{t.brandTint}}; --accent: {{t.accent}}; --accentTint: {{t.accentTint}}; width: 402px; min-height: 1260px; background: var(--bg); color: var(--text); position: relative; display: flex; flex-direction: column; overflow: hidden;">
+  <div style="position: relative; background: linear-gradient(180deg, #1D5A6E 0%, #26738C 58%, {{t.bg}} 100%); color: #fff; padding: 14px 16px 56px 16px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="position: absolute; width: 300px; height: 300px; border-radius: 150px; right: -130px; top: -120px; background: radial-gradient(circle, rgba(255,255,255,0.2), rgba(255,255,255,0) 70%);"></div>
+    <div style="position: relative; display: flex; justify-content: space-between; align-items: center;">
+      <div style="height: 44px; padding: 0 14px 0 10px; border-radius: 22px; background: rgba(255,255,255,0.18); display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 600;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>Basi di Dati</div>
+      <span class="r" style="width: 40px; height: 40px; border-radius: 13px; background: #fff; color: #26738C; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center;">BD</span>
+    </div>
+    <div style="position: relative; display: flex; flex-direction: column; gap: 4px;">
+      <span class="r" style="font-size: 34px; font-weight: 800; line-height: 1.05; letter-spacing: -0.3px;">Forum</span>
+      <span style="font-size: 15px; opacity: 0.85;">Discussioni del corso su WeBeep</span>
+    </div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 26px; padding: 0 16px 150px 16px; margin-top: -32px; position: relative;">
+    <div style="display: flex; gap: 8px;">
+      <span style="font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 16px; background: var(--card); box-shadow: 0 6px 18px rgba(0,0,0,0.06);">Discussioni generali</span>
+      <span style="font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 16px; background: var(--card); box-shadow: 0 6px 18px rgba(0,0,0,0.06); color: var(--sec);">Progetto</span>
+    </div>
+    <span class="r" style="font-size: 24px; font-weight: 800; line-height: 1.2; padding: 0 4px;">Dubbio sulla normalizzazione in 3NF</span>
+    <div style="display: flex; flex-direction: column; gap: 12px;"><div style="position: relative;  background: var(--card); border-radius: 24px; padding: 16px; display: flex; flex-direction: column; gap: 10px;"><div style="display: flex; align-items: center; gap: 10px;"><span class="r" style="flex: 0 0 34px; height: 34px; border-radius: 17px; background: var(--accentTint); color: var(--accent); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;">LB</span><div style="display: flex; flex-direction: column;"><span style="font-size: 15px; font-weight: 600;">Luca Bianchi</span><span style="font-size: 12px; color: var(--sec);">Ieri, 18:42</span></div></div><span style="font-size: 15px; line-height: 1.45;">Nell’esercizio 4 della scorsa esercitazione non capisco perché la relazione Ordine non sia già in terza forma normale. La dipendenza Cliente → Città non dovrebbe essere ammessa?</span></div><div style="position: relative; margin-left: 24px; background: var(--card); border-radius: 24px; padding: 16px; display: flex; flex-direction: column; gap: 10px;"><span style="position: absolute; left: -14px; top: 18px; bottom: 18px; width: 3px; border-radius: 2px; background: var(--accentTint);"></span><div style="display: flex; align-items: center; gap: 10px;"><span class="r" style="flex: 0 0 34px; height: 34px; border-radius: 17px; background: var(--accentTint); color: var(--accent); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;">DM</span><div style="display: flex; flex-direction: column;"><span style="font-size: 15px; font-weight: 600;">Davide Martinenghi</span><span style="font-size: 12px; color: var(--sec);">Ieri, 21:05</span></div></div><span style="font-size: 15px; line-height: 1.45;">Cliente non è superchiave di Ordine e Città non è primo: la dipendenza viola la 3NF. Va scomposta in Ordine(Id, Cliente) e Cliente(Nome, Città).</span></div><div style="position: relative; margin-left: 24px; background: var(--card); border-radius: 24px; padding: 16px; display: flex; flex-direction: column; gap: 10px;"><span style="position: absolute; left: -14px; top: 18px; bottom: 18px; width: 3px; border-radius: 2px; background: var(--accentTint);"></span><div style="display: flex; align-items: center; gap: 10px;"><span class="r" style="flex: 0 0 34px; height: 34px; border-radius: 17px; background: var(--accentTint); color: var(--accent); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;">LB</span><div style="display: flex; flex-direction: column;"><span style="font-size: 15px; font-weight: 600;">Luca Bianchi</span><span style="font-size: 12px; color: var(--sec);">Oggi, 08:12</span></div></div><span style="font-size: 15px; line-height: 1.45;">Chiarissimo, grazie!</span></div></div>
+    <div style="display: flex; align-items: center; gap: 10px; background: var(--card); border-radius: 24px; padding: 8px 8px 8px 16px;"><span style="font-size: 15px; color: var(--sec); flex-grow: 1;">Rispondi su WeBeep</span><span style="width: 36px; height: 36px; border-radius: 18px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M7 17L17 7 M9 7h8v8"></path></svg></span></div>
+  </div>
+
+  <!-- Tab bar -->
+  <div style="position: absolute; left: 16px; right: 16px; bottom: 26px; height: 64px; border-radius: 32px; background: var(--glass); box-shadow: 0 8px 28px rgba(0,0,0,0.12), inset 0 0 0 0.5px rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: space-around; padding: 0 8px;">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--brand); background: var(--brandTint); border-radius: 26px; padding: 6px 14px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5z"></path><path d="M6 11v5c3 2 9 2 12 0v-5"></path></svg><span style="font-size: 10px; font-weight: 600;">Home</span></div>
+    <div style="color: var(--sec);; display: flex; flex-direction: column; align-items: center; gap: 2px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="4" height="16" rx="1"></rect><rect x="10" y="4" width="4" height="16" rx="1"></rect><path d="M16 5l3.5-1 2 15.5-3.5 1z"></path></svg><span style="font-size: 10px; font-weight: 500;">WeBeep</span></div>
+    <div style="color: var(--sec);; display: flex; flex-direction: column; align-items: center; gap: 2px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg><span style="font-size: 10px; font-weight: 500;">Calendario</span></div>
+    <div style="color: var(--sec);; display: flex; flex-direction: column; align-items: center; gap: 2px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V12M12 20V5M19 20v-9"></path></svg><span style="font-size: 10px; font-weight: 500;">Carriera</span></div>
+    <div style="color: var(--sec);; display: flex; flex-direction: column; align-items: center; gap: 2px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path></svg><span style="font-size: 10px; font-weight: 500;">Cerca</span></div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":402,"height":1260}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dark = this.props.dark ?? false;
+    const t = dark
+      ? { bg: '#000000', card: '#1C1C1E', text: '#FFFFFF', sec: 'rgba(235,235,245,0.6)', sep: 'rgba(84,84,88,0.65)', fill: 'rgba(118,118,128,0.24)', glass: 'rgba(30,30,32,0.82)', brand: '#59A6E0', brandTint: 'rgba(89,166,224,0.18)', accent: '#61BFD9', accentTint: 'rgba(97,191,217,0.18)' }
+      : { bg: '#F2F2F7', card: '#FFFFFF', text: '#000000', sec: 'rgba(60,60,67,0.6)', sep: 'rgba(60,60,67,0.2)', fill: 'rgba(118,118,128,0.12)', glass: 'rgba(250,250,252,0.86)', brand: '#003352', brandTint: 'rgba(0,51,82,0.1)', accent: '#26738C', accentTint: 'rgba(38,115,140,0.13)' };
+    return { t };
+  }
+}
+</script>
+</body>
+</html>

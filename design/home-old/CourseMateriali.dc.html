@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: var(--bg, #F2F2F7); font-family: -apple-system, "SF Pro Text", system-ui, "Helvetica Neue", sans-serif; color: #000; -webkit-font-smoothing: antialiased; }
+    a { color: #003352; } a:hover { color: #1C6BAD; }
+    .r { font-family: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif; }
+    .sec { color: rgba(60,60,67,0.6); }
+    .ter { color: rgba(60,60,67,0.3); }
+  </style>
+</helmet>
+<div style="--bg: {{t.bg}}; --card: {{t.card}}; --text: {{t.text}}; --sec: {{t.sec}}; --sep: {{t.sep}}; --fill: {{t.fill}}; --glass: {{t.glass}}; --brand: {{t.brand}}; --brandTint: {{t.brandTint}}; --accent: {{t.accent}}; --accentTint: {{t.accentTint}}; width: 402px; min-height: 1300px; background: var(--bg); color: var(--text); position: relative; display: flex; flex-direction: column; overflow: hidden;">
+  <div style="position: relative; background: linear-gradient(180deg, #1D5A6E 0%, #26738C 58%, {{t.bg}} 100%); color: #fff; padding: 14px 16px 56px 16px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="position: absolute; width: 300px; height: 300px; border-radius: 150px; right: -130px; top: -120px; background: radial-gradient(circle, rgba(255,255,255,0.2), rgba(255,255,255,0) 70%);"></div>
+    <div style="position: relative; display: flex; justify-content: space-between; align-items: center;">
+      <div style="height: 44px; padding: 0 14px 0 10px; border-radius: 22px; background: rgba(255,255,255,0.18); display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 600;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>Basi di Dati</div>
+      <span class="r" style="width: 40px; height: 40px; border-radius: 13px; background: #fff; color: #26738C; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center;">BD</span>
+    </div>
+    <div style="position: relative; display: flex; flex-direction: column; gap: 4px;">
+      <span class="r" style="font-size: 34px; font-weight: 800; line-height: 1.05; letter-spacing: -0.3px;">Materiali</span>
+      <span style="font-size: 15px; opacity: 0.85;">7 file in 3 sezioni</span>
+    </div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 26px; padding: 0 16px 150px 16px; margin-top: -32px; position: relative;">
+    <div style="display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px; border-radius: 22px; background: var(--card); box-shadow: 0 6px 18px rgba(0,0,0,0.06); color: var(--sec); font-size: 16px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path></svg>Cerca nei materiali</div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; justify-content: space-between; padding: 0 4px;"><span style="font-size: 15px; font-weight: 700;">Lezioni</span><span style="font-size: 15px; color: var(--sec);">3</span></div>
+      <div style="background: var(--card); border-radius: 24px; display: flex; flex-direction: column;"><div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px;"><span style="flex: 0 0 42px; height: 42px; border-radius: 12px; background: #FF3B3022; color: #FF3B30; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; letter-spacing: 0.3px;">PDF</span><div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;"><span style="font-size: 15px; font-weight: 600; line-height: 1.25;">01 – Introduzione e modello relazionale</span><span style="font-size: 12px; color: var(--sec);">2,4 MB · 2 settimane fa</span></div><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#34C759"></circle><path d="M7.5 12.5l3 3 6-6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"></path></svg></div><div style="height: 0.5px; background: var(--sep); margin-left: 70px;"></div><div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px;"><span style="flex: 0 0 42px; height: 42px; border-radius: 12px; background: #FF3B3022; color: #FF3B30; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; letter-spacing: 0.3px;">PDF</span><div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;"><span style="font-size: 15px; font-weight: 600; line-height: 1.25;">02 – Algebra relazionale</span><span style="font-size: 12px; color: var(--sec);">3,1 MB · 10 giorni fa</span></div><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#34C759"></circle><path d="M7.5 12.5l3 3 6-6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"></path></svg></div><div style="height: 0.5px; background: var(--sep); margin-left: 70px;"></div><div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px;"><span style="flex: 0 0 42px; height: 42px; border-radius: 12px; background: #FF3B3022; color: #FF3B30; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; letter-spacing: 0.3px;">PDF</span><div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;"><span style="font-size: 15px; font-weight: 600; line-height: 1.25;">03 – SQL: interrogazioni</span><span style="font-size: 12px; color: var(--sec);">4,8 MB · 4 giorni fa</span></div><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--fill)" stroke-width="3"></circle><circle cx="12" cy="12" r="9" fill="none" stroke="var(--accent)" stroke-width="3" stroke-dasharray="57" stroke-dashoffset="22" transform="rotate(-90 12 12)" stroke-linecap="round"></circle></svg></div></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; justify-content: space-between; padding: 0 4px;"><span style="font-size: 15px; font-weight: 700;">Esercitazioni</span><span style="font-size: 15px; color: var(--sec);">2</span></div>
+      <div style="background: var(--card); border-radius: 24px; display: flex; flex-direction: column;"><div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px;"><span style="flex: 0 0 42px; height: 42px; border-radius: 12px; background: #FF3B3022; color: #FF3B30; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; letter-spacing: 0.3px;">PDF</span><div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;"><span style="font-size: 15px; font-weight: 600; line-height: 1.25;">Esercitazione 3 – SQL avanzato</span><span style="font-size: 12px; color: var(--sec);">1,2 MB · ieri</span></div><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color: var(--sec);"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8 M8.5 12.5L12 16l3.5-3.5"></path></svg></div><div style="height: 0.5px; background: var(--sep); margin-left: 70px;"></div><div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px;"><span style="flex: 0 0 42px; height: 42px; border-radius: 12px; background: #26738C22; color: #26738C; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; letter-spacing: 0.3px;">SQL</span><div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;"><span style="font-size: 15px; font-weight: 600; line-height: 1.25;">Schema di esempio</span><span style="font-size: 12px; color: var(--sec);">18 KB · ieri</span></div><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color: var(--sec);"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8 M8.5 12.5L12 16l3.5-3.5"></path></svg></div></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; justify-content: space-between; padding: 0 4px;"><span style="font-size: 15px; font-weight: 700;">Progetto</span><span style="font-size: 15px; color: var(--sec);">2</span></div>
+      <div style="background: var(--card); border-radius: 24px; display: flex; flex-direction: column;"><div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px;"><span style="flex: 0 0 42px; height: 42px; border-radius: 12px; background: #FF3B3022; color: #FF3B30; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; letter-spacing: 0.3px;">PDF</span><div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;"><span style="font-size: 15px; font-weight: 600; line-height: 1.25;">Testo del progetto 2025/26</span><span style="font-size: 12px; color: var(--sec);">640 KB · 1 settimana fa</span></div><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#34C759"></circle><path d="M7.5 12.5l3 3 6-6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"></path></svg></div><div style="height: 0.5px; background: var(--sep); margin-left: 70px;"></div><div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px;"><span style="flex: 0 0 42px; height: 42px; border-radius: 12px; background: #1C6BAD22; color: #1C6BAD; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; letter-spacing: 0.3px;">DOCX</span><div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;"><span style="font-size: 15px; font-weight: 600; line-height: 1.25;">Template relazione</span><span style="font-size: 12px; color: var(--sec);">92 KB · 1 settimana fa</span></div><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color: var(--sec);"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8 M8.5 12.5L12 16l3.5-3.5"></path></svg></div></div>
+    </div>
+  </div>
+
+  <!-- Tab bar -->
+  <div style="position: absolute; left: 16px; right: 16px; bottom: 26px; height: 64px; border-radius: 32px; background: var(--glass); box-shadow: 0 8px 28px rgba(0,0,0,0.12), inset 0 0 0 0.5px rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: space-around; padding: 0 8px;">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--brand); background: var(--brandTint); border-radius: 26px; padding: 6px 14px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5z"></path><path d="M6 11v5c3 2 9 2 12 0v-5"></path></svg><span style="font-size: 10px; font-weight: 600;">Home</span></div>
+    <div style="color: var(--sec);; display: flex; flex-direction: column; align-items: center; gap: 2px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="4" height="16" rx="1"></rect><rect x="10" y="4" width="4" height="16" rx="1"></rect><path d="M16 5l3.5-1 2 15.5-3.5 1z"></path></svg><span style="font-size: 10px; font-weight: 500;">WeBeep</span></div>
+    <div style="color: var(--sec);; display: flex; flex-direction: column; align-items: center; gap: 2px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg><span style="font-size: 10px; font-weight: 500;">Calendario</span></div>
+    <div style="color: var(--sec);; display: flex; flex-direction: column; align-items: center; gap: 2px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V12M12 20V5M19 20v-9"></path></svg><span style="font-size: 10px; font-weight: 500;">Carriera</span></div>
+    <div style="color: var(--sec);; display: flex; flex-direction: column; align-items: center; gap: 2px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path></svg><span style="font-size: 10px; font-weight: 500;">Cerca</span></div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":402,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dark = this.props.dark ?? false;
+    const t = dark
+      ? { bg: '#000000', card: '#1C1C1E', text: '#FFFFFF', sec: 'rgba(235,235,245,0.6)', sep: 'rgba(84,84,88,0.65)', fill: 'rgba(118,118,128,0.24)', glass: 'rgba(30,30,32,0.82)', brand: '#59A6E0', brandTint: 'rgba(89,166,224,0.18)', accent: '#61BFD9', accentTint: 'rgba(97,191,217,0.18)' }
+      : { bg: '#F2F2F7', card: '#FFFFFF', text: '#000000', sec: 'rgba(60,60,67,0.6)', sep: 'rgba(60,60,67,0.2)', fill: 'rgba(118,118,128,0.12)', glass: 'rgba(250,250,252,0.86)', brand: '#003352', brandTint: 'rgba(0,51,82,0.1)', accent: '#26738C', accentTint: 'rgba(38,115,140,0.13)' };
+    return { t };
+  }
+}
+</script>
+</body>
+</html>

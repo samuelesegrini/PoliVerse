@@ -1,0 +1,161 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "title": "A · Adesso in primo piano",
+      "x": 0,
+      "y": 0,
+      "w": 402,
+      "h": 1990
+    },
+    {
+      "file": "Widgets.dc.html",
+      "title": "B · Griglia di widget",
+      "x": 522,
+      "y": 0,
+      "w": 402,
+      "h": 1760
+    },
+    {
+      "file": "Timeline.dc.html",
+      "title": "C · Giornata e lista",
+      "x": 1044,
+      "y": 0,
+      "w": 402,
+      "h": 1900
+    },
+    {
+      "file": "AdessoPlus.dc.html",
+      "title": "A+ · Adesso, di più",
+      "x": 1566,
+      "y": 0,
+      "w": 402,
+      "h": 2270
+    },
+    {
+      "file": "Immersive.dc.html",
+      "title": "A++ · Immersivo",
+      "x": 2088,
+      "y": 0,
+      "w": 402,
+      "h": 2250
+    },
+    {
+      "file": "CourseDetail.dc.html",
+      "title": "A++ · Dettaglio corso",
+      "x": 2610,
+      "y": 0,
+      "w": 402,
+      "h": 2480
+    },
+    {
+      "file": "CourseAvvisi.dc.html",
+      "title": "Dettaglio · Avvisi",
+      "x": 0,
+      "y": 2780,
+      "w": 402,
+      "h": 1150
+    },
+    {
+      "file": "CourseMateriali.dc.html",
+      "title": "Dettaglio · Materiali",
+      "x": 522,
+      "y": 2780,
+      "w": 402,
+      "h": 1300
+    },
+    {
+      "file": "CourseAppello.dc.html",
+      "title": "Dettaglio · Appello",
+      "x": 1044,
+      "y": 2780,
+      "w": 402,
+      "h": 2560
+    },
+    {
+      "file": "CourseForum.dc.html",
+      "title": "Dettaglio · Forum",
+      "x": 1566,
+      "y": 2780,
+      "w": 402,
+      "h": 1260
+    },
+    {
+      "file": "CourseProgramma.dc.html",
+      "title": "Dettaglio · Programma",
+      "x": 2088,
+      "y": 2780,
+      "w": 402,
+      "h": 2620
+    },
+    {
+      "file": "CourseInfo.dc.html",
+      "title": "Dettaglio · Info",
+      "x": 2610,
+      "y": 2780,
+      "w": 402,
+      "h": 1900
+    }
+  ],
+  "annotations": [
+    {
+      "id": "dir-a",
+      "x": 0,
+      "y": -250,
+      "w": 402,
+      "text": "A · Adesso in primo piano\nOne hero card owns the top: the lecture in progress with its progress bar, then what comes after today. The exam becomes a calendar-date card with a countdown. Courses turn into a 2-column tile grid; news becomes a swipeable shelf.\nTradeoff: the hero is striking on lecture days but has to fall back gracefully on empty days, and long course names get tight in half-width tiles."
+    },
+    {
+      "id": "dir-b",
+      "x": 522,
+      "y": -250,
+      "w": 402,
+      "text": "B · Griglia di widget\nHome reads like the iOS Home Screen: an 'Oggi' medium widget, square 'Prossimo esame' and 'Notifiche' widgets, courses as one large widget list, news as a medium widget.\nTradeoff: the most compact and scannable layout, but also the most familiar — and fixed widget shapes leave empty space when there's little to show."
+    },
+    {
+      "id": "dir-c",
+      "x": 1044,
+      "y": -250,
+      "w": 402,
+      "text": "C · Giornata e lista\nThe date is the title. The exam is a milestone banner with a countdown ring, today is a real timeline with a red 'now' line, and every course is a full-width card with status chips. News becomes an editorial list.\nTradeoff: closest to Calendar/Reminders and the easiest to read, but the longest scroll before you reach the courses."
+    },
+    {
+      "id": "sample-note",
+      "x": 0,
+      "y": 2060,
+      "w": 520,
+      "text": "All values are sample data from the app's demo mode (courses, times, rooms). The year filter, notifications bell, avatar/settings, course favourite + menu and unread badges are kept in every direction. The app's warning banners (offline, pending changes, service authorisation) would sit directly under the header."
+    },
+    {
+      "id": "dir-a-plus",
+      "x": 1566,
+      "y": -250,
+      "w": 402,
+      "text": "A+ · Adesso, di più (built on A)\nA week strip with a dot per lecture on each day. The hero adds a live pulse, a minutes-left ring, room and time chips, and one-tap Materiali/Avvisi. 'Poi, oggi' says how long until each thing starts. The exam card adds a 10-day countdown bar and your enrolment state. Your favourite course gets a featured card, and the other tiles show which weekdays they have lectures. News cards get colour headers.\nTweak: toggle dark mode from the chip above the frame."
+    },
+    {
+      "id": "dir-a-immersive",
+      "x": 2088,
+      "y": -250,
+      "w": 402,
+      "text": "A++ · Immersivo (variant of A+)\nThe current lecture's colour floods the whole top of the screen, with a huge title, a glowing progress bar and three shortcuts. Today's next items sit in a stack like Wallet cards. The exam uses A's calendar-date card with the countdown. Courses become a shelf of tall coloured cards (favourite and unread first), with the rest in a compact list. News leads with one featured story.\nTradeoff: the most expressive version; on a day without lectures the top needs a calmer fallback (e.g. the brand navy with the next exam)."
+    },
+    {
+      "id": "course-detail",
+      "x": 2610,
+      "y": -250,
+      "w": 402,
+      "text": "A++ · Dettaglio corso\nThe course colour floods the header: monogram, a large name, teacher, CFU/semester/year chips, where you stand (next sitting and enrolment state, or the mark once passed) and the email button. The six shortcuts lift over the header as cards with unread counts. Below: upcoming lectures with the one in progress in green, sittings led by A's calendar-date card with earlier attempts under it, 'In breve' from the course description (hours, exam format, midterms, objectives), and Novità with unread dots.\nDark mode toggle above the frame."
+    },
+    {
+      "id": "subpages",
+      "x": 0,
+      "y": 2600,
+      "w": 900,
+      "text": "Course subpages in the A++ style (row below). Each opens from the shortcuts on 'A++ · Dettaglio corso' and shares a shorter course-coloured header with a back button to the course, the page title and a one-line summary, with the content cards lifting over its bottom edge. Avvisi and Forum use initials avatars; Materiali shows per-file download state; Programma and Info carry everything from the course description; Appello is the exam sheet (enrolment window, details, how the exam works, earlier attempts, other sittings, timeline). Each has its own dark mode toggle."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

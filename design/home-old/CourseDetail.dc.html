@@ -1,0 +1,212 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: var(--bg, #F2F2F7); font-family: -apple-system, "SF Pro Text", system-ui, "Helvetica Neue", sans-serif; color: #000; -webkit-font-smoothing: antialiased; }
+    a { color: #003352; } a:hover { color: #1C6BAD; }
+    .r { font-family: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif; }
+    .sec { color: rgba(60,60,67,0.6); }
+    .ter { color: rgba(60,60,67,0.3); }
+  </style>
+</helmet>
+<div style="--bg: {{t.bg}}; --card: {{t.card}}; --text: {{t.text}}; --sec: {{t.sec}}; --sep: {{t.sep}}; --fill: {{t.fill}}; --glass: {{t.glass}}; --brand: {{t.brand}}; --brandTint: {{t.brandTint}}; --accent: {{t.accent}}; --accentTint: {{t.accentTint}}; width: 402px; min-height: 2480px; background: var(--bg); color: var(--text); position: relative; display: flex; flex-direction: column; overflow: hidden;">
+
+  <!-- Immersive header in the course colour -->
+  <div style="position: relative; background: linear-gradient(180deg, #1D5A6E 0%, #26738C 50%, {{t.bg}} 100%); color: #fff; padding: 14px 16px 64px 16px; display: flex; flex-direction: column; gap: 20px;">
+    <div style="position: absolute; width: 360px; height: 360px; border-radius: 180px; right: -150px; top: -130px; background: radial-gradient(circle, rgba(255,255,255,0.22), rgba(255,255,255,0) 70%);"></div>
+    <div style="position: relative; display: flex; justify-content: space-between; align-items: center;">
+      <div style="width: 44px; height: 44px; border-radius: 22px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+      <div style="display: flex; gap: 10px;">
+        <div style="width: 44px; height: 44px; border-radius: 22px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="#FFCC00"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4L2.8 9.5l6.4-.8z"></path></svg></div>
+        <div style="width: 44px; height: 44px; border-radius: 22px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><circle cx="5" cy="12" r="1.9"></circle><circle cx="12" cy="12" r="1.9"></circle><circle cx="19" cy="12" r="1.9"></circle></svg></div>
+      </div>
+    </div>
+
+    <div style="position: relative; display: flex; flex-direction: column; gap: 6px; margin-top: 6px;">
+      <span class="r" style="width: 64px; height: 64px; border-radius: 20px; background: #fff; color: #26738C; font-size: 24px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.18);">BD</span>
+      <span class="r" style="font-size: 40px; font-weight: 800; line-height: 1.02; letter-spacing: -0.4px;">Basi di Dati</span>
+      <span style="font-size: 16px; opacity: 0.88;">Stefano Ceri</span>
+    </div>
+
+    <div style="position: relative; display: flex; gap: 8px; flex-wrap: wrap;">
+      <span style="font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 14px; background: rgba(255,255,255,0.18);">8 CFU</span>
+      <span style="font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 14px; background: rgba(255,255,255,0.18);">Semestre 2</span>
+      <span style="font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 14px; background: rgba(255,255,255,0.18);">A.A. 2025/26</span>
+    </div>
+
+    <!-- Standing -->
+    <div style="position: relative; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 20px; background: rgba(255,255,255,0.16);">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="17" rx="2.5"></rect><path d="M9 8h6M9 12h6M9 16h3"></path></svg>
+      <div style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 15px; font-weight: 700;">Iscrizioni aperte</span><span style="font-size: 12px; opacity: 0.85;">Appello del 15 ottobre</span></div>
+      <span class="r" style="font-size: 22px; font-weight: 800;">31 gg</span>
+    </div>
+
+    <div style="position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border-radius: 24px; background: #fff; color: #1D5A6E; font-size: 15px; font-weight: 700;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"></rect><path d="M3.5 7l8.5 6 8.5-6"></path></svg>Scrivi al docente</div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 30px; padding: 0 16px 150px 16px; margin-top: -40px; position: relative;">
+
+    <!-- Hub -->
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;">
+      <sc-for list="{{hub}}" as="h" hint-placeholder-count="6">
+        <div style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; height: 92px; border-radius: 22px; background: var(--card); box-shadow: 0 6px 18px rgba(0,0,0,0.06);">
+          <span style="width: 40px; height: 40px; border-radius: 20px; background: var(--accentTint); color: var(--accent); display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{h.icon}}"></path></svg></span>
+          <span style="font-size: 12px; font-weight: 600;">{{h.label}}</span>
+          <sc-if value="{{h.hasBadge}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: 8px; right: 8px; min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: 10px; background: #FF3B30; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{h.badge}}</span></sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- Lectures -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px;">
+        <span class="r" style="font-size: 22px; font-weight: 700;">Prossime lezioni</span>
+        <span style="font-size: 15px; color: var(--brand);">Calendario</span>
+      </div>
+      <div style="background: var(--card); border-radius: 26px; padding: 4px 16px; display: flex; flex-direction: column;">
+        <sc-for list="{{lectures}}" as="l" hint-placeholder-count="4">
+          <div style="display: flex; align-items: center; gap: 14px; padding: 12px 0; border-top: {{l.border}};">
+            <div style="display: flex; flex-direction: column; align-items: center; width: 50px;"><span class="r" style="font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums;">{{l.start}}</span><span style="font-size: 11px; color: var(--sec); font-variant-numeric: tabular-nums;">{{l.end}}</span></div>
+            <span style="width: 4px; height: 34px; border-radius: 2px; background: {{l.bar}};"></span>
+            <div style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 16px; font-weight: 600; color: {{l.dayColor}};">{{l.day}}</span><span style="font-size: 13px; color: var(--sec);">{{l.room}}</span></div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- Sittings: A-style next exam card, then the others -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <span class="r" style="font-size: 22px; font-weight: 700; padding: 0 4px;">Appelli</span>
+      <div style="background: var(--card); border-radius: 26px; padding: 18px; display: flex; align-items: center; gap: 16px;">
+        <div style="width: 72px; height: 80px; border-radius: 18px; overflow: hidden; background: var(--fill); display: flex; flex-direction: column; align-items: center;">
+          <span style="width: 100%; text-align: center; background: #FF9500; color: #fff; font-size: 11px; font-weight: 700; padding: 4px 0;">OTT</span>
+          <span class="r" style="font-size: 32px; font-weight: 700; line-height: 1.25;">15</span>
+          <span style="font-size: 11px; font-weight: 500; color: var(--sec);">Mer</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1; min-width: 0;">
+          <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--sec);">Prossimo appello</span>
+          <span style="font-size: 17px; font-weight: 600;">Scritto · 14:00</span>
+          <span style="align-self: flex-start; font-size: 12px; font-weight: 600; color: #C66A00; background: rgba(255,149,0,0.14); padding: 3px 8px; border-radius: 8px;">Iscrizioni entro il 10 ottobre</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end;">
+          <span class="r" style="font-size: 28px; font-weight: 700; color: var(--brand); line-height: 1;">31</span>
+          <span style="font-size: 12px; color: var(--sec);">giorni</span>
+        </div>
+      </div>
+      <div style="background: var(--card); border-radius: 22px; display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 13px 16px;">
+          <span style="width: 40px; display: flex; justify-content: center; color: #FF9500;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg></span>
+          <div style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 15px; font-weight: 600;">12 febbraio 2026</span><span style="font-size: 12px; color: var(--sec);">Non ancora aperto</span></div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" style="color: var(--sec);"><path d="M9 5l7 7-7 7"></path></svg>
+        </div>
+        <div style="height: 0.5px; background: var(--sep); margin-left: 68px;"></div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 13px 16px;">
+          <span class="r" style="width: 40px; text-align: center; font-size: 18px; font-weight: 700; color: #FF3B30;">16</span>
+          <div style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 15px; font-weight: 600;">9 luglio 2025</span><span style="font-size: 12px; color: var(--sec);">Non superato</span></div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" style="color: var(--sec);"><path d="M9 5l7 7-7 7"></path></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- In breve -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <span class="r" style="font-size: 22px; font-weight: 700; padding: 0 4px;">In breve</span>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 14px 0; border-radius: 20px; background: var(--card);"><span class="r" style="font-size: 24px; font-weight: 800; color: var(--accent);">80</span><span style="font-size: 11px; color: var(--sec);">ore in aula</span></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 14px 0; border-radius: 20px; background: var(--card);"><span class="r" style="font-size: 24px; font-weight: 800; color: var(--accent);">120</span><span style="font-size: 11px; color: var(--sec);">ore di studio</span></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 14px 0; border-radius: 20px; background: var(--card);"><span class="r" style="font-size: 17px; font-weight: 800; color: var(--accent); line-height: 1.7;">Mono</span><span style="font-size: 11px; color: var(--sec);">disciplinare</span></div>
+      </div>
+      <div style="background: var(--card); border-radius: 26px; display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px;">
+          <span style="flex: 0 0 32px; height: 32px; border-radius: 10px; background: var(--accentTint); color: var(--accent); display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"></path></svg></span>
+          <span style="font-size: 15px; flex-grow: 1;">Erogato in italiano</span>
+        </div>
+        <div style="height: 0.5px; background: var(--sep); margin-left: 60px;"></div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px;">
+          <span style="flex: 0 0 32px; height: 32px; border-radius: 10px; background: var(--accentTint); color: var(--accent); display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+          <span style="font-size: 15px; flex-grow: 1;">Prova scritta obbligatoria</span>
+        </div>
+        <div style="height: 0.5px; background: var(--sep); margin-left: 60px;"></div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px;">
+          <span style="flex: 0 0 32px; height: 32px; border-radius: 10px; background: var(--accentTint); color: var(--accent); display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+          <span style="font-size: 15px; flex-grow: 1;">Prova orale facoltativa</span>
+        </div>
+        <div style="height: 0.5px; background: var(--sep); margin-left: 60px;"></div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px;">
+          <span style="flex: 0 0 32px; height: 32px; border-radius: 10px; background: rgba(52,199,89,0.14); color: #34C759; display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="5" width="7" height="14" rx="1.5"></rect><rect x="13.5" y="5" width="7" height="14" rx="1.5"></rect></svg></span>
+          <span style="font-size: 15px; font-weight: 600; color: #34C759; flex-grow: 1;">Prove in itinere previste</span>
+        </div>
+        <div style="height: 0.5px; background: var(--sep); margin-left: 16px;"></div>
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;">
+          <span style="font-size: 15px; line-height: 1.45; color: var(--sec);">Il corso introduce la progettazione e l'uso delle basi di dati relazionali: modello relazionale, SQL, progettazione concettuale e logica, transazioni…</span>
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 15px; font-weight: 600; color: var(--accent);"><span>Programma, libri e dettagli</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M9 5l7 7-7 7"></path></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Novità -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px;">
+        <span class="r" style="font-size: 22px; font-weight: 700;">Novità</span>
+        <span style="font-size: 15px; color: var(--brand);">Tutte</span>
+      </div>
+      <div style="background: var(--card); border-radius: 26px; display: flex; flex-direction: column;">
+        <sc-for list="{{news}}" as="n" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-top: {{n.border}};">
+            <span style="flex: 0 0 36px; height: 36px; border-radius: 11px; background: {{n.tint}}; color: {{n.color}}; display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.icon}}"></path></svg></span>
+            <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;"><span style="font-size: 15px; font-weight: 600;">{{n.title}}</span><span style="font-size: 12px; color: var(--sec);">{{n.detail}}</span></div>
+            <sc-if value="{{n.unread}}" hint-placeholder-val="{{ false }}"><span style="width: 9px; height: 9px; border-radius: 5px; background: var(--brand);"></span></sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab bar -->
+  <div style="position: absolute; left: 16px; right: 16px; bottom: 26px; height: 64px; border-radius: 32px; background: var(--glass); box-shadow: 0 8px 28px rgba(0,0,0,0.12), inset 0 0 0 0.5px rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: space-around; padding: 0 8px;">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--brand); background: var(--brandTint); border-radius: 26px; padding: 6px 14px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5z"></path><path d="M6 11v5c3 2 9 2 12 0v-5"></path></svg><span style="font-size: 10px; font-weight: 600;">Home</span></div>
+    <div style="color: var(--sec);; display: flex; flex-direction: column; align-items: center; gap: 2px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="4" height="16" rx="1"></rect><rect x="10" y="4" width="4" height="16" rx="1"></rect><path d="M16 5l3.5-1 2 15.5-3.5 1z"></path></svg><span style="font-size: 10px; font-weight: 500;">WeBeep</span></div>
+    <div style="color: var(--sec);; display: flex; flex-direction: column; align-items: center; gap: 2px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg><span style="font-size: 10px; font-weight: 500;">Calendario</span></div>
+    <div style="color: var(--sec);; display: flex; flex-direction: column; align-items: center; gap: 2px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V12M12 20V5M19 20v-9"></path></svg><span style="font-size: 10px; font-weight: 500;">Carriera</span></div>
+    <div style="color: var(--sec);; display: flex; flex-direction: column; align-items: center; gap: 2px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path></svg><span style="font-size: 10px; font-weight: 500;">Cerca</span></div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":402,"height":2480}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dark = this.props.dark ?? false;
+    const t = dark
+      ? { bg: '#000000', card: '#1C1C1E', text: '#FFFFFF', sec: 'rgba(235,235,245,0.6)', sep: 'rgba(84,84,88,0.65)', fill: 'rgba(118,118,128,0.24)', glass: 'rgba(30,30,32,0.82)', brand: '#59A6E0', brandTint: 'rgba(89,166,224,0.18)', accent: '#61BFD9', accentTint: 'rgba(97,191,217,0.18)' }
+      : { bg: '#F2F2F7', card: '#FFFFFF', text: '#000000', sec: 'rgba(60,60,67,0.6)', sep: 'rgba(60,60,67,0.2)', fill: 'rgba(118,118,128,0.12)', glass: 'rgba(250,250,252,0.86)', brand: '#003352', brandTint: 'rgba(0,51,82,0.1)', accent: '#26738C', accentTint: 'rgba(38,115,140,0.13)' };
+    const hub = [
+      ['Avvisi', 'M4 10v4h3l6 4V6L7 10z M17 9a4 4 0 0 1 0 6', 2],
+      ['Materiali', 'M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z', 1],
+      ['Appelli', 'M8 4h8v3H8z M6 5.5H5v15h14v-15h-1 M9 12h6 M9 16h4', 0],
+      ['Forum', 'M4 5h12v9H8l-4 3z M20 9v9l-3-2h-6', 0],
+      ['Programma', 'M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z M5 17a3 3 0 0 1 3-3h11', 0],
+      ['Info', 'M12 3a9 9 0 1 1 0 18a9 9 0 0 1 0-18z M12 11v6 M12 7.5v.5', 0]
+    ].map(([label, icon, badge]) => ({ label, icon, badge, hasBadge: badge > 0 }));
+    const lectures = [
+      ['14:15', '16:00', 'In corso', 'Aula 3.0.1', '#34C759', '#34C759'],
+      ['14:15', '16:00', 'Mercoledì 16 settembre', 'Aula 3.0.1', t.accent, t.text],
+      ['10:15', '12:00', 'Venerdì 18 settembre', 'Aula B.8.1', t.accent, t.text],
+      ['14:15', '16:00', 'Lunedì 21 settembre', 'Aula 3.0.1', t.accent, t.text]
+    ].map((r, i) => ({ start: r[0], end: r[1], day: r[2], room: r[3], bar: r[4], dayColor: r[5], border: i ? '0.5px solid ' + t.sep : 'none' }));
+    const news = [
+      ['Nuovo avviso del docente', 'Cambio aula per la lezione di mercoledì · 2 h fa', 'M4 10v4h3l6 4V6L7 10z M17 9a4 4 0 0 1 0 6', '#FF3B30', true],
+      ['Materiale aggiunto', 'Esercitazione 3 – SQL avanzato.pdf · ieri', 'M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z', t.accent, true],
+      ['Iscrizioni aperte', 'Appello del 15 ottobre · 3 giorni fa', 'M5 12.5l4.5 4.5L19 7.5', '#FF9500', false]
+    ].map((r, i) => ({ title: r[0], detail: r[1], icon: r[2], color: r[3], tint: r[3].startsWith('#') && r[3].length === 7 ? r[3] + '22' : t.accentTint, unread: r[4], border: i ? '0.5px solid ' + t.sep : 'none' }));
+    return { t, hub, lectures, news };
+  }
+}
+</script>
+</body>
+</html>

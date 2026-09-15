@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,800;125,900&amp;display=swap">
+  <style>
+    body { margin: 0; font-family: -apple-system, "SF Pro Text", system-ui, "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; color: #1A1715; }
+    a { color: #E8751A; } a:hover { color: #C45F0E; }
+    .wide { font-family: Archivo, "Helvetica Neue", Arial, sans-serif; font-stretch: 125%; font-weight: 900; }
+    .serif { font-family: "New York", ui-serif, Georgia, serif; }
+  </style>
+</helmet>
+<div style="width: 402px; position: relative; overflow: hidden; {{th.bgStyle}}">
+  <div style="position: absolute; left: 0; right: 0; top: 820px; bottom: 0; background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(250,247,244,0.85) 25%);"></div>
+  <div style="position: relative; display: flex; flex-direction: column; gap: 22px; padding: 64px 0 200px 0;">
+    <div style="display: flex; flex-direction: column; gap: 10px; padding: 0 26px;">
+      <span style="font-size: 19px; font-weight: 600;">Buona giornata, Samuele!</span>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <div class="wide" style="display: flex; flex-direction: column; font-size: 66px; line-height: 0.98; letter-spacing: -1px; color: #111;"><span>14.09</span><span>LUN</span></div>
+        <span style="font-size: 26px; font-weight: 700; color: {{th.accent}}; text-align: right; line-height: 1.05; margin-top: 46px;">Tutto<br>pronto?</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 0 26px;"><span style="font-size: 16px; font-weight: 500;">In arrivo</span></div>
+      <div style="margin: 0 14px; padding: 12px; border-radius: 36px; background: rgba(255,255,255,0.58); box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);"><div style="border-radius: 26px; background: #E7E6EC; padding: 16px 18px; display: flex; gap: 14px; align-items: center;"><div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;"><span style="font-size: 15px; color: #8C8993;">Scadenza · Reti Logiche</span><span style="font-size: 21px; font-weight: 700; color: #6F6C76; line-height: 1.2;">Consegna del progetto</span><span style="font-size: 16px; color: #75727C;">14 settembre – 18:00</span><div style="height: 1px; background: rgba(0,0,0,0.1); margin: 8px 0 6px 0;"></div><span style="font-size: 14px; color: #8C8993; line-height: 1.4;">Relazione e sorgenti VHDL da caricare su WeBeep, un solo file per gruppo.</span></div><span style="flex: 0 0 52px; height: 52px; border-radius: 16px; border: 2px solid #77747D; background: rgba(255,255,255,0.7); box-sizing: border-box;"></span></div><div style="height: 10px;"></div><div style="border-radius: 26px; background: #E7E6EC; padding: 14px 18px; display: flex; align-items: center; gap: 14px;"><div style="display: flex; flex-direction: column; gap: 1px; flex-grow: 1;"><span style="font-size: 15px; color: #8C8993;">Esame · Scritto</span><span style="font-size: 19px; font-weight: 700; color: #6F6C76;">Ingegneria del Software</span><span style="font-size: 15px; color: #75727C;">24 settembre – 09:00 · Aula Magna</span></div><span class="wide" style="font-size: 28px; color: #6F6C76; text-align: center; line-height: 1;">10<br><span style="font-family: -apple-system, system-ui; font-stretch: normal; font-size: 12px; font-weight: 600;">giorni</span></span></div></div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 0 26px;"><span style="font-size: 16px; font-weight: 500;">Orario</span></div>
+      <div style="margin: 0 14px; padding: 12px; border-radius: 36px; background: rgba(255,255,255,0.58); box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);"><div style="position: relative; z-index: 1; margin-top: 0px; height: 128px; border-radius: 28px; background: #8C8580; color: #fff; box-shadow: 0 -4px 14px rgba(0,0,0,0.08); padding: 16px 18px; box-sizing: border-box; display: flex; gap: 16px; filter: saturate(0.6);">
+        <span style="flex: 0 0 32px; padding-top: 22px; display: flex; justify-content: center; opacity: 0.95;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10H7z M10 3v4 M14 3v4 M10 17v4 M14 17v4 M3 10h4 M3 14h4 M17 10h4 M17 14h4"></path></svg></span>
+        <div style="display: flex; flex-direction: column; gap: 1px; padding-right: 64px; min-width: 0;"><span style="font-size: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Architetture</span><span style="font-size: 16px; opacity: 0.85;">Terminata 10:00</span><span style="display: flex; align-items: center; gap: 5px; font-size: 13px; opacity: 0.75; margin-top: 2px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V4h10v17 M4 21h16 M13 12h.01"></path></svg>N.1.2</span></div>
+        <span style="position: absolute; right: 18px; top: 16px; display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 600; opacity: 0.9;">1¾ h</span>
+      </div><div style="position: relative; z-index: 2; margin-top: -34px; height: 128px; border-radius: 28px; background: {{th.accent}}; color: #fff; box-shadow: 0 -4px 14px rgba(0,0,0,0.08); padding: 16px 18px; box-sizing: border-box; display: flex; gap: 16px; ">
+        <span style="flex: 0 0 32px; padding-top: 22px; display: flex; justify-content: center; opacity: 0.95;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1 11-11-3-3L5 16z M14 6l3 3"></path></svg></span>
+        <div style="display: flex; flex-direction: column; gap: 1px; padding-right: 64px; min-width: 0;"><span style="font-size: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Ingegneria del Software</span><span style="font-size: 16px; opacity: 0.85;">Mancano 38:12</span><span style="display: flex; align-items: center; gap: 5px; font-size: 13px; opacity: 0.75; margin-top: 2px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V4h10v17 M4 21h16 M13 12h.01"></path></svg>B.3.2</span></div>
+        <span style="position: absolute; right: 18px; top: 16px; display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 600; opacity: 0.9;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14 M13 6l6 6-6 6"></path></svg>12:00</span>
+      </div><div style="position: relative; z-index: 3; margin-top: 10px; height: 44px; border-radius: 22px; background: rgba(255,255,255,0.9); display: flex; align-items: center; padding: 0 18px; gap: 8px; font-size: 14px; color: #6E6862;"><b style="font-weight: 700; color: #1A1715;">Pausa</b>12:00 – 14:15<span style="margin-left: auto;">2¼ h</span></div><div style="position: relative; z-index: 4; margin-top: 10px; height: 128px; border-radius: 28px; background: #6F8F99; color: #fff; box-shadow: 0 -4px 14px rgba(0,0,0,0.08); padding: 16px 18px; box-sizing: border-box; display: flex; gap: 16px; ">
+        <span style="flex: 0 0 32px; padding-top: 22px; display: flex; justify-content: center; opacity: 0.95;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c4.4 0 8 1.3 8 3s-3.6 3-8 3-8-1.3-8-3 3.6-3 8-3z M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6 M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"></path></svg></span>
+        <div style="display: flex; flex-direction: column; gap: 1px; padding-right: 64px; min-width: 0;"><span style="font-size: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Basi di Dati</span><span style="font-size: 16px; opacity: 0.85;">14:15 – 16:00</span><span style="display: flex; align-items: center; gap: 5px; font-size: 13px; opacity: 0.75; margin-top: 2px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V4h10v17 M4 21h16 M13 12h.01"></path></svg>3.0.1</span></div>
+        <span style="position: absolute; right: 18px; top: 16px; display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 600; opacity: 0.9;">1¾ h</span>
+      </div></div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 0 26px;"><span style="font-size: 16px; font-weight: 500;">Corsi</span><span style="font-size: 14px; color: #8A847E;">2025/26</span></div>
+      <div style="margin: 0 14px; padding: 10px; border-radius: 36px; background: rgba(255,255,255,0.58); box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);"><div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;"><div style="height: 74px; border-radius: 22px; background: #6F8F99; color: #fff; padding: 12px; box-sizing: border-box; display: flex; align-items: center; gap: 10px;"><span style="flex: 0 0 38px; height: 38px; border-radius: 12px; background: #fff; color: #40606A; display: flex; align-items: center; justify-content: center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c4.4 0 8 1.3 8 3s-3.6 3-8 3-8-1.3-8-3 3.6-3 8-3z M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6 M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"></path></svg></span><span style="font-size: 15px; font-weight: 600; line-height: 1.2;">Basi di Dati</span></div><div style="height: 74px; border-radius: 22px; background: {{th.accent}}; color: #fff; padding: 12px; box-sizing: border-box; display: flex; align-items: center; gap: 10px;"><span style="flex: 0 0 38px; height: 38px; border-radius: 12px; background: #fff; color: {{th.ink}}; display: flex; align-items: center; justify-content: center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1 11-11-3-3L5 16z M14 6l3 3"></path></svg></span><span style="font-size: 15px; font-weight: 600; line-height: 1.2;">Ing. del Software</span></div><div style="height: 74px; border-radius: 22px; background: #8C8580; color: #fff; padding: 12px; box-sizing: border-box; display: flex; align-items: center; gap: 10px;"><span style="flex: 0 0 38px; height: 38px; border-radius: 12px; background: #fff; color: #57524D; display: flex; align-items: center; justify-content: center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10H7z M10 3v4 M14 3v4 M10 17v4 M14 17v4 M3 10h4 M3 14h4 M17 10h4 M17 14h4"></path></svg></span><span style="font-size: 15px; font-weight: 600; line-height: 1.2;">Architetture</span></div><div style="height: 74px; border-radius: 22px; background: #E9C7B0; color: #6B3E2E; padding: 12px; box-sizing: border-box; display: flex; align-items: center; gap: 10px;"><span style="flex: 0 0 38px; height: 38px; border-radius: 12px; background: #fff; color: #8A4F37; display: flex; align-items: center; justify-content: center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h6a5 5 0 0 1 0 10H4z M14 12h6"></path></svg></span><span style="font-size: 15px; font-weight: 600; line-height: 1.2;">Reti Logiche</span></div><div style="height: 74px; border-radius: 22px; background: #CFDDBF; color: #3F5234; padding: 12px; box-sizing: border-box; display: flex; align-items: center; gap: 10px;"><span style="flex: 0 0 38px; height: 38px; border-radius: 12px; background: #fff; color: #56704D; display: flex; align-items: center; justify-content: center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19c3 0 3-14 7-14 M3 11h8 M13 13l6 6 M19 13l-6 6"></path></svg></span><span style="font-size: 15px; font-weight: 600; line-height: 1.2;">Analisi e Geom. 2</span></div><div style="height: 74px; border-radius: 22px; background: #B9B3D6; color: #3B3566; padding: 12px; box-sizing: border-box; display: flex; align-items: center; gap: 10px;"><span style="flex: 0 0 38px; height: 38px; border-radius: 12px; background: #fff; color: #5A5391; display: flex; align-items: center; justify-content: center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 0 0 0-7z M12 2v3 M12 19v3 M2 12h3 M19 12h3 M4.9 4.9l2.1 2.1 M17 17l2.1 2.1 M4.9 19.1L7 17 M17 7l2.1-2.1"></path></svg></span><span style="font-size: 15px; font-weight: 600; line-height: 1.2;">Automatica</span></div></div></div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 0 26px;"><span style="font-size: 16px; font-weight: 500;">Dal Politecnico</span></div>
+      <div style="margin: 0 14px; border-radius: 30px; background: rgba(255,255,255,0.72); padding: 16px 20px; font-size: 15px; display: flex; flex-direction: column; gap: 12px;"><span>Aperte le iscrizioni ai bandi di mobilità <span style="color: #8A847E;">· 2 g</span></span><span style="height: 1px; background: rgba(0,0,0,0.07);"></span><span>Nuovi spazi studio in Bovisa <span style="color: #8A847E;">· 5 g</span></span></div>
+    </div>
+  </div>
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column;">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 22px 14px 22px;">
+      <div style="height: 54px; border-radius: 27px; padding: 0 20px 0 16px; display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; {{th.gloss}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v15H4z M4 9.5h16 M8 3v3 M16 3v3 M8 13h.01 M12 13h.01 M16 13h.01 M8 16.5h.01 M12 16.5h.01"></path></svg>14, Lun</div>
+      <div style="width: 58px; height: 58px; border-radius: 29px; background: radial-gradient(circle at 50% 30%, {{th.glossBot}} 0%, {{th.accent}} 70%); box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.6), 0 10px 24px {{th.accent}}55; color: #fff; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v3 M12 7l-5 13 M12 7l5 13 M8.5 15h7"></path></svg></div>
+    </div>
+    <div style="background: rgba(250,247,244,0.92); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); border-radius: 30px 30px 0 0; box-shadow: 0 -6px 24px rgba(60,40,20,0.08); padding: 8px 20px 36px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+      <span style="width: 40px; height: 5px; border-radius: 3px; background: rgba(60,50,40,0.25);"></span>
+      <div style="align-self: stretch; height: 50px; border-radius: 16px; background: rgba(120,110,100,0.08); box-shadow: inset 0 0 0 1px rgba(60,50,40,0.06); display: flex; align-items: center; justify-content: center; gap: 8px; color: #A39C95; font-size: 18px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4.5a6.5 6.5 0 1 1 0 13a6.5 6.5 0 0 1 0-13z M16 16l4.5 4.5"></path></svg>Azioni e ricerca globale</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"theme":{"editor":"enum","options":["Arancio","Viola","Blu","Rosa"],"default":"Arancio"},"pattern":{"editor":"enum","options":["Griglia","Maglia ovale","Puntini"],"default":"Griglia"},"$preview":{"width":402,"height":1720}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const themes = {
+      Arancio: { accent: '#E8751A', accentSoft: '#F7E9DC', ink: '#B35A10', line: '232,117,26', sheet: '#F6F0EA', glossTop: '#FFD9B5', glossBot: '#F6B27A' },
+      Viola:   { accent: '#6F63D9', accentSoft: '#E6E3F3', ink: '#4B41A8', line: '111,99,217', sheet: '#EFEDF6', glossTop: '#D9D4FA', glossBot: '#AFA6EE' },
+      Blu:     { accent: '#2F80D9', accentSoft: '#E1ECF3', ink: '#1F5C9E', line: '47,128,217', sheet: '#ECF3F6', glossTop: '#CFE6FA', glossBot: '#8DC3F0' },
+      Rosa:    { accent: '#D9557A', accentSoft: '#F6E6EA', ink: '#A83858', line: '217,85,122', sheet: '#F5EDEF', glossTop: '#FAD3DE', glossBot: '#F0A0B6' }
+    };
+    const th = themes[this.props.theme ?? 'Arancio'] ?? themes.Arancio;
+    const L = th.line;
+    const svg = (s) => 'url("data:image/svg+xml,' + encodeURIComponent(s) + '")';
+    const patterns = {
+      'Griglia': 'linear-gradient(rgba(' + L + ',0.30) 1px, transparent 1px), linear-gradient(90deg, rgba(' + L + ',0.30) 1px, transparent 1px), linear-gradient(rgba(' + L + ',0.11) 1px, transparent 1px), linear-gradient(90deg, rgba(' + L + ',0.11) 1px, transparent 1px)',
+      'Maglia ovale': svg('<svg xmlns="http://www.w3.org/2000/svg" width="34" height="46"><rect x="4" y="4" width="26" height="38" rx="13" fill="none" stroke="rgba(' + L + ',0.28)" stroke-width="2.2"/></svg>'),
+      'Puntini': 'radial-gradient(rgba(' + L + ',0.35) 1.4px, transparent 1.5px)'
+    };
+    const sizes = { 'Griglia': '93px 93px, 93px 93px, 9.3px 9.3px, 9.3px 9.3px', 'Maglia ovale': '34px 46px', 'Puntini': '14px 14px' };
+    const p = this.props.pattern ?? 'Griglia';
+    th.bgStyle = 'background-color: ' + th.accentSoft + '; background-image: ' + patterns[p] + '; background-size: ' + sizes[p] + '; background-position: -8px 10px;';
+    th.gloss = 'background: linear-gradient(180deg, ' + th.glossTop + ' 0%, ' + th.glossBot + ' 100%); box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.8), inset 0 0 0 1.5px ' + th.accent + '55, 0 10px 26px ' + th.accent + '40; color: ' + th.ink + ';';
+
+    return { th };
+  }
+}
+</script>
+</body>
+</html>

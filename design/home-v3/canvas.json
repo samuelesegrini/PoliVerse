@@ -1,0 +1,40 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "title": "Oggi (Home)",
+      "x": 0,
+      "y": 0,
+      "w": 402,
+      "h": 1680
+    },
+    {
+      "file": "CourseDetail.dc.html",
+      "title": "Corso",
+      "x": 522,
+      "y": 0,
+      "w": 402,
+      "h": 1760
+    },
+    {
+      "file": "ExamSheet.dc.html",
+      "title": "Appello (sheet)",
+      "x": 1044,
+      "y": 0,
+      "w": 402,
+      "h": 1620
+    }
+  ],
+  "annotations": [
+    {
+      "id": "kyo-v3",
+      "x": 0,
+      "y": -200,
+      "w": 1446,
+      "text": "Rebuilt from the Kyo 2.0 screenshots\nHome follows the Kyo 2.0 dashboard: a peach blueprint-grid background, a contextual line, a huge wide date (14.09 LUN) with an orange 'Tutto pronto?', then 'In arrivo' task cards (exam; deadline with a checkbox) and 'Orario di oggi' as filled colour cards, each group inside a soft translucent ring. Courses and news lists follow; the 'Adesso' pill floats above the glass tab bar.\nThe course page sits on a background tinted in the subject's colour, with a centred glyph and title. The next sitting is a glossy card with a serif number, like Kyo's Report Card. Rows split icon | label with the value in orange. A glass circle and a big tinted glass action button sit at the bottom.\nThe exam opens as a warm cream sheet with centred icon, title and description (like Kyo's Schedule and Edit Mapping sheets), a from/to range for the enrolment window, and a primary glass button.\nAll values are sample data."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}
