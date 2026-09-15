@@ -137,7 +137,14 @@ struct PoliVerseApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            Group {
+                #if DEBUG
+                // `-NewUI` launches the restructured shell being tried out.
+                if CommandLine.arguments.contains("-NewUI") { NewRootView() } else { RootView() }
+                #else
+                RootView()
+                #endif
+            }
                 .environment(session)
                 .environment(courses)
                 .environment(agenda)

@@ -27,11 +27,10 @@ struct NewRootView: View {
             Tab("Carriera", systemImage: "graduationcap", value: .career) {
                 CareerTab()
             }
-            Tab("Cerca", systemImage: "magnifyingglass", value: .search, role: .search) {
+            Tab(value: .search, role: .search) {
                 SearchTab()
             }
         }
-        .tabViewStyle(.sidebarAdaptable)
         .tabBarMinimizeBehavior(.onScrollDown)
     }
 }

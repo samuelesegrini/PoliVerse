@@ -43,14 +43,23 @@ struct TodayTab: View {
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) { profileMenu }
-            // The shared capsule would stretch around the photo: draw the
-            // glass as a circle instead.
-            .sharedBackgroundVisibility(.hidden)
-        ToolbarSpacer(.fixed, placement: .topBarLeading)
+        // Profile and settings sit together on the left as two separate glass
+        // circles; the shared capsule would join them into one pill.
         ToolbarItem(placement: .topBarLeading) {
-            Button("Impostazioni", systemImage: "gearshape") { showingSettings = true }
+            HStack(spacing: 8) {
+                profileMenu
+                Button { showingSettings = true } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 19, weight: .medium))
+                        .foregroundStyle(.tint)
+                        .frame(width: 44, height: 44)
+                        .glassEffect(.regular.interactive(), in: .circle)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Impostazioni")
+            }
         }
+        .sharedBackgroundVisibility(.hidden)
 
         ToolbarItem(placement: .principal) {
             Button { showingDatePicker = true } label: {
