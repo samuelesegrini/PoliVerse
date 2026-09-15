@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// Only the navigation bar is built so far. On the left, the profile menu and
 /// settings as two separate glass buttons; in the middle, the day being
-/// shown, which drops a day stepper down from itself; on the right, add and more actions in
+/// shown, which opens a day stepper in a popover; on the right, add and more actions in
 /// one glass group.
 struct TodayTab: View {
     @Environment(Session.self) private var session
@@ -21,23 +21,6 @@ struct TodayTab: View {
                 ContentUnavailableView("Oggi", systemImage: "calendar.day.timeline.left",
                                        description: Text("Lezioni, esami e scadenze del giorno."))
                     .padding(.top, 120)
-            }
-            // Tapping outside the strip closes it.
-            .overlay {
-                if showingDays {
-                    Color.clear
-                        .contentShape(.rect)
-                        .onTapGesture { withAnimation(.snappy) { showingDays = false } }
-                }
-            }
-            .overlay(alignment: .top) {
-                if showingDays {
-                    DayStrip(day: $day)
-                    .padding(.horizontal, 12)
-                    .padding(.top, 4)
-                    // Grows out of the date above it rather than sliding in.
-                    .transition(.scale(scale: 0.2, anchor: .top).combined(with: .opacity))
-                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
@@ -68,7 +51,7 @@ struct TodayTab: View {
         }
 
         ToolbarItem(placement: .principal) {
-            Button { withAnimation(.spring(duration: 0.4, bounce: 0.25)) { showingDays.toggle() } } label: {
+            Button { showingDays.toggle() } label: {
                 HStack(spacing: 6) {
                     Text(day.formatted(.dateTime.day().month(.abbreviated).locale(locale)).capitalized)
                         .font(.headline)
@@ -79,6 +62,13 @@ struct TodayTab: View {
                 }
             }
             .buttonStyle(.plain)
+            // A real popover, kept as one on iPhone: the system morphs it out
+            // of the date and back, and closes it on a tap outside.
+            .popover(isPresented: $showingDays, arrowEdge: .top) {
+                DayStrip(day: $day)
+                    .frame(width: 360)
+                    .presentationCompactAdaptation(.popover)
+            }
             .accessibilityLabel(Text("Giorno mostrato: \(day.formatted(.dateTime.day().month(.wide).locale(locale)))"))
         }
 

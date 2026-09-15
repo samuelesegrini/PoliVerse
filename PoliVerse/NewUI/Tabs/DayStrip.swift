@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// A linear day stepper that drops down from the date in Oggi's navigation
-/// bar: the highlight stays fixed in the middle, the days scroll under it,
+/// A linear day stepper, shown in a popover from the date in Oggi's
+/// navigation bar: the highlight stays fixed in the middle, the days scroll under it,
 /// and whichever day stops in the middle is the one shown.
 ///
 /// Two months either side of today are enough for a timetable.
@@ -68,7 +68,6 @@ struct DayStrip: View {
             .frame(height: 64)
         }
         .padding(.vertical, 12)
-        .glassEffect(.regular, in: .rect(cornerRadius: 30))
         .sensoryFeedback(.selection, trigger: centred)
         .onAppear { centred = calendar.startOfDay(for: day) }
         .onChange(of: centred) { _, new in
