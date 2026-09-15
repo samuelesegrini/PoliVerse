@@ -5,7 +5,7 @@ import SwiftUI
 /// editable zones outlined.
 struct TodayLanding: View {
     enum Zone: String, Identifiable, CaseIterable {
-        case greeting, date, upcoming, timetable
+        case greeting, date, upcoming, timetable, background
         var id: String { rawValue }
 
         var title: LocalizedStringKey {
@@ -14,6 +14,7 @@ struct TodayLanding: View {
             case .date: "Data"
             case .upcoming: "In arrivo"
             case .timetable: "Orario"
+            case .background: "Sfondo"
             }
         }
     }

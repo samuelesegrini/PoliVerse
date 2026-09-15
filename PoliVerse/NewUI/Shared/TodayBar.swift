@@ -75,6 +75,7 @@ struct TodayBar: ViewModifier {
                 Button("Vai a oggi", systemImage: "arrow.uturn.backward") { shell.day = .now }
                     .disabled(Calendar.current.isDateInToday(shell.day))
                 Button("Personalizza", systemImage: "paintbrush") { shell.present { shell.isCustomizing = true } }
+                    .accessibilityIdentifier("today-customize")
             }
         }
     }

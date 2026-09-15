@@ -8,17 +8,6 @@ import SwiftUI
 /// view that owned the sheet, closing it mid-change.
 @MainActor @Observable
 final class ShellState {
-    /// Where the Personalizza transition is: the app at full size, shrunk to
-    /// a card, or replaced by the gallery whose middle card sits exactly
-    /// where the shrunk app was.
-    enum CustomizeStage { case off, shrunk, gallery }
-    #if DEBUG
-    var customizeStage: CustomizeStage = CommandLine.arguments.contains("-Customize") ? .gallery
-        : CommandLine.arguments.contains("-CustomizeShrunk") ? .shrunk : .off
-    #else
-    var customizeStage = CustomizeStage.off
-    #endif
-
     var day = Date.now
     var showingSettings = false
     /// The single-page layout is on screen: Oggi without the tab bar, with
@@ -48,7 +37,7 @@ final class ShellState {
     /// The panel is presented only while nothing else is.
     var showsPanel: Bool {
         singlePage && !panelHeld && pendingPresentation == nil && !showingSettings && !showingProfile
-            && !showingDays && !isCustomizing && customizeStage == .off
+            && !showingDays && !isCustomizing
     }
 
     /// Opens a sheet, popover or Personalizza: straight away in the tab

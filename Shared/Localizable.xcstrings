@@ -4085,9 +4085,6 @@
         }
       }
     },
-    "Espandi" : {
-
-    },
     "Esplora con dati di esempio" : {
       "localizations" : {
         "en" : {
@@ -7974,9 +7971,6 @@
     "Pagina unica" : {
 
     },
-    "Pannello" : {
-
-    },
     "Passare a %@?" : {
       "localizations" : {
         "en" : {
@@ -8930,9 +8924,6 @@
           }
         }
       }
-    },
-    "Riduci" : {
-
     },
     "Riepilogo alle" : {
       "localizations" : {

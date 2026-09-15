@@ -44,6 +44,12 @@ nonisolated struct TodayStyle: Equatable, Sendable {
     var showsGreeting = true
     var showsUpcoming = true
     var showsTimetable = true
+    var background: TodayBackground = .plain
+
+    /// The pattern takes the date's colour; plain ink would read as grey.
+    @MainActor var backgroundTint: Color {
+        dateAccent == .ink ? Theme.brand : dateAccent.color
+    }
 
     var weight: Font.Weight {
         let steps: [Font.Weight] = [.regular, .medium, .semibold, .bold, .heavy, .black]
@@ -60,15 +66,18 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         var warm = TodayStyle()
         warm.dateAccent = .orange
         warm.dateFont = .rounded
+        warm.background = .grid
         var serif = TodayStyle()
         serif.dateFont = .serif
         serif.dateWeight = 0.5
         serif.dateAccent = .polimi
+        serif.background = .ovals
         var minimal = TodayStyle()
         minimal.dateFont = .mono
         minimal.dateWeight = 0.2
         minimal.showsGreeting = false
         minimal.showsUpcoming = false
+        minimal.background = .dots
         return [TodayStyle(), warm, serif, minimal]
     }
 
@@ -93,6 +102,7 @@ nonisolated private struct StoredTodayStyle: Codable {
     var showsGreeting: Bool?
     var showsUpcoming: Bool?
     var showsTimetable: Bool?
+    var background: TodayBackground?
 }
 
 nonisolated extension TodayStyle: RawRepresentable {
@@ -106,12 +116,13 @@ nonisolated extension TodayStyle: RawRepresentable {
         showsGreeting = stored.showsGreeting ?? showsGreeting
         showsUpcoming = stored.showsUpcoming ?? showsUpcoming
         showsTimetable = stored.showsTimetable ?? showsTimetable
+        background = stored.background ?? background
     }
 
     var rawValue: String {
         let stored = StoredTodayStyle(dateFont: dateFont, dateWeight: dateWeight, dateAccent: dateAccent,
                                       showsGreeting: showsGreeting, showsUpcoming: showsUpcoming,
-                                      showsTimetable: showsTimetable)
+                                      showsTimetable: showsTimetable, background: background)
         // Sorted keys: the standard library's `==` for RawRepresentable types
         // compares `rawValue`, and unsorted JSON keys would make equal styles
         // unequal.

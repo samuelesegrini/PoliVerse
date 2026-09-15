@@ -30,59 +30,41 @@ struct NewRootView: View {
         // two navigation bars, two pages and a tab bar at once; here the page
         // and its bar stay put and only the bottom changes — the tab bar
         // slides away as the panel rises, and back.
-        ZStack {
-            // The ground the shrunk app and the gallery sit on.
-            Color(.secondarySystemBackground).ignoresSafeArea()
-
-            // Personalizza, like the Lock Screen: the whole app scales down
-            // into the gallery's middle card, and back up on close. Both are
-            // measured in the safe area, so the swap between them is still.
-            tabs
-                .background(Color(.systemBackground))
-                .clipShape(.rect(cornerRadius: shell.customizeStage == .off ? 0 : 48))
-                .shadow(color: .black.opacity(shell.customizeStage == .off ? 0 : 0.18), radius: 24, y: 10)
-                .scaleEffect(shell.customizeStage == .off ? 1 : CustomizeOggi.cardScale)
-                .allowsHitTesting(shell.customizeStage == .off)
-
-            // Kept built, invisible until the scale ends. Built when opened,
-            // its cards and buttons laid out mid-animation and made it stutter.
-            CustomizeOggi()
-                .opacity(shell.customizeStage == .gallery ? 1 : 0)
-                .allowsHitTesting(shell.customizeStage == .gallery)
-                .accessibilityHidden(shell.customizeStage != .gallery)
-        }
-        .onChange(of: shell.isCustomizing) { _, customizing in
-            customizing ? openCustomize() : closeCustomize()
-        }
-        .onAppear { shell.singlePage = layout == .singlePage }
-        .onChange(of: layout) { _, new in
-            if shell.showingSettings {
-                layoutChangePending = true
-                shell.showingSettings = false
-            } else {
-                show(new)
+        tabs
+            // Personalizza, over the app that stays underneath: the look in use
+            // shrinks out of it into the gallery, and grows back on close.
+            .overlay {
+                if shell.isCustomizing { CustomizeOggi() }
             }
-        }
-        .sheet(isPresented: $shell.showingSettings, onDismiss: {
-            guard layoutChangePending else { return }
-            layoutChangePending = false
-            show(layout)
-        }) { SettingsSheet() }
-        .sheet(isPresented: $shell.showingProfile) {
-            NavigationStack {
-                ProfileView()
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Chiudi") { shell.showingProfile = false }
+            .onAppear { shell.singlePage = layout == .singlePage }
+            .onChange(of: layout) { _, new in
+                if shell.showingSettings {
+                    layoutChangePending = true
+                    shell.showingSettings = false
+                } else {
+                    show(new)
+                }
+            }
+            .sheet(isPresented: $shell.showingSettings, onDismiss: {
+                guard layoutChangePending else { return }
+                layoutChangePending = false
+                show(layout)
+            }) { SettingsSheet() }
+            .sheet(isPresented: $shell.showingProfile) {
+                NavigationStack {
+                    ProfileView()
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Chiudi") { shell.showingProfile = false }
+                            }
                         }
-                    }
+                }
             }
-        }
-        // Outermost, so the sheets see the same shell as the page. Placed
-        // before them, the sheets fell back to the default instance: the
-        // settings sheet wrote to a stray copy and its dismissal never
-        // found the pending change.
-        .environment(\.shell, shell)
+            // Outermost, so the sheets see the same shell as the page. Placed
+            // before them, the sheets fell back to the default instance: the
+            // settings sheet wrote to a stray copy and its dismissal never
+            // found the pending change.
+            .environment(\.shell, shell)
     }
 
     /// The layout on screen trails the stored setting, so a change made in
@@ -92,26 +74,6 @@ struct NewRootView: View {
         withAnimation(.spring(duration: 0.5, bounce: 0.12)) {
             shell.singlePage = layout == .singlePage
         }
-    }
-
-    private func openCustomize() {
-        selection = .today
-        withAnimation(.spring(duration: 0.45, bounce: 0.1)) {
-            shell.customizeStage = .shrunk
-        } completion: {
-            // Swapped without a fade: the middle card sits exactly where the
-            // shrunk app is, so the one scale is the only animation seen.
-            var swap = Transaction()
-            swap.disablesAnimations = true
-            withTransaction(swap) { shell.customizeStage = .gallery }
-        }
-    }
-
-    private func closeCustomize() {
-        var swap = Transaction()
-        swap.disablesAnimations = true
-        withTransaction(swap) { shell.customizeStage = .shrunk }
-        withAnimation(.spring(duration: 0.45, bounce: 0.1)) { shell.customizeStage = .off }
     }
 
     private var tabs: some View {
