@@ -17,6 +17,22 @@ struct NewRootView: View {
 
     @State private var selection: Destination = .today
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
+    @Environment(AgendaService.self) private var agenda
+    /// Re-read every minute so the accessory moves on when a lesson ends.
+    @State private var now = Date.now
+
+    private var current: CurrentClass? {
+        #if DEBUG
+        // `-NowDemo` shows a lesson in progress without an account.
+        if CommandLine.arguments.contains("-NowDemo") {
+            return CurrentClass(event: AgendaEvent(
+                id: -1, title: "Ingegneria del Software", start: now.addingTimeInterval(-40 * 60),
+                end: now.addingTimeInterval(65 * 60), kind: .lecture, room: "Aula B.3.2",
+                roomAcronym: nil, calendarName: nil), isOngoing: true)
+        }
+        #endif
+        return CurrentClass.pick(from: agenda.events, now: now)
+    }
 
     var body: some View {
         switch layout {
@@ -38,6 +54,15 @@ struct NewRootView: View {
             }
             Tab(value: .search, role: .search) {
                 SearchTab()
+            }
+        }
+        // Above the tab bar while there is a class today, like Music's player.
+        .currentClassAccessory(current)
+        .task { await agenda.load(around: .now) }
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                now = .now
             }
         }
         // Selecting the search tab opens its field straight away.
