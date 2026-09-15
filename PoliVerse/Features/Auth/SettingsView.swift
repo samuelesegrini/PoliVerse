@@ -7,6 +7,7 @@ struct SettingsView: View {
     @State private var cacheBytes = DiskCache.sizeInBytes()
     @State private var materialBytes = FileDownloadService.storageInBytes()
     @State private var showingDiagnostics = false
+    @AppStorage(NewInterface.storageKey) private var usesNewInterface = true
 
     var body: some View {
         @Bindable var session = session
@@ -37,6 +38,12 @@ struct SettingsView: View {
                     LabeledContent("Email", value: student.email)
                 }
                 .task { await careers.load() }
+            }
+
+            Section {
+                Toggle("Nuova interfaccia (in prova)", isOn: $usesNewInterface)
+            } footer: {
+                Text("Quattro schede con Oggi, oppure una pagina unica con un pannello dal basso.")
             }
 
             Section {

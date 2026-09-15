@@ -12,6 +12,7 @@ struct SettingsSheet: View {
     @Environment(\.shell) private var shell
 
     @State private var query = ""
+    @AppStorage(NewInterface.storageKey) private var usesNewInterface = true
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
     @State private var confirmingSignOut = false
 
@@ -88,6 +89,14 @@ struct SettingsSheet: View {
                     } label: {
                         Label("Sviluppo e diagnostica", systemImage: "hammer")
                     }
+                    Button {
+                        dismiss()
+                        usesNewInterface = false
+                    } label: {
+                        Label("Torna all’interfaccia attuale", systemImage: "arrow.uturn.backward")
+                    }
+                } footer: {
+                    Text("La nuova interfaccia è in prova. Puoi riattivarla dalle impostazioni.")
                 }
 
                 Section {

@@ -4,6 +4,9 @@ import SwiftUI
 struct RootView: View {
     @Environment(Session.self) private var session
     @Environment(OnboardingState.self) private var onboarding
+    /// The restructured interface being tried out, on by default on this
+    /// branch; Impostazioni switches back to the current one.
+    @AppStorage(NewInterface.storageKey) private var usesNewInterface = true
 
     var body: some View {
         Group {
@@ -18,7 +21,13 @@ struct RootView: View {
             case .signedOut, .failed, .exchangingCode:
                 if onboarding.isComplete { LoginView() } else { OnboardingView() }
             case .signedIn:
-                if onboarding.isComplete { MainTabView() } else { OnboardingView() }
+                if !onboarding.isComplete {
+                    OnboardingView()
+                } else if usesNewInterface {
+                    NewRootView()
+                } else {
+                    MainTabView()
+                }
             }
         }
         // Sample data is its own population in the field numbers.
