@@ -44,6 +44,9 @@ struct TodayTab: View {
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) { profileMenu }
+            // The shared capsule would stretch around the photo: draw the
+            // glass as a circle instead.
+            .sharedBackgroundVisibility(.hidden)
         ToolbarSpacer(.fixed, placement: .topBarLeading)
         ToolbarItem(placement: .topBarLeading) {
             Button("Impostazioni", systemImage: "gearshape") { showingSettings = true }
@@ -97,7 +100,9 @@ struct TodayTab: View {
                 Button("Impostazioni", systemImage: "gearshape") { showingSettings = true }
             }
         } label: {
-            ProfileAvatar(student: session.student, size: 32)
+            ProfileAvatar(student: session.student, size: 36)
+                .padding(4)
+                .glassEffect(.regular.interactive(), in: .circle)
         }
         .accessibilityLabel("Profilo")
     }
