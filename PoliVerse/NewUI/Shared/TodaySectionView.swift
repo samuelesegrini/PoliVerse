@@ -6,6 +6,9 @@ struct TodaySectionView: View {
     let section: TodaySection
     let style: TodayStyle
     let day: Date
+    /// While arranging, one short row in place of the list: a page of compact
+    /// tiles fits on screen, so a section can be carried past all the others.
+    var collapsed = false
 
     @Environment(AgendaService.self) private var agenda
     @Environment(UpdateFeed.self) private var updates
@@ -54,6 +57,26 @@ struct TodaySectionView: View {
     @ViewBuilder
     private var content: some View {
         let now = Date.now
+        if collapsed {
+            HStack(spacing: 12) {
+                Image(systemName: section.kind.systemImage)
+                    .foregroundStyle(accent)
+                    .frame(width: 24)
+                Text("Trascina per spostare")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 8)
+                Image(systemName: "line.3.horizontal")
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.vertical, 12)
+        } else {
+            list(now: now)
+        }
+    }
+
+    @ViewBuilder
+    private func list(now: Date) -> some View {
         switch section.kind {
         case .currentClass:
             if let current = CurrentClass.forAccessory(from: agenda.events, now: now) {

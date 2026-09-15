@@ -10,6 +10,9 @@ import XCTest
 /// written there.
 ///
 /// Run from the PoliVersePerformance scheme, which holds the UI test target.
+/// The looks offered before the student makes any; a new one comes after.
+private let todayPresetCount = 9
+
 nonisolated final class CustomizeAnimationTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -100,7 +103,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         app.buttons["customize-editor-cancel"].tap()
         settle()
         shot(app, "11-new-cancelled")
-        XCTAssertTrue(card(app, 4).waitForNonExistence(timeout: 3), "A cancelled new look was kept")
+        XCTAssertTrue(card(app, todayPresetCount).waitForNonExistence(timeout: 3), "A cancelled new look was kept")
 
         // A side card scrolls to the middle instead of opening.
         XCTAssertTrue(isCentred(card(app, 2), in: app), "Reopened, the gallery was not on the look just used")
@@ -171,15 +174,21 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         shot(app, "34-arranging")
         app.buttons["section-remove-upcoming"].tap()
-        settle()
-        XCTAssertFalse(app.descendants(matching: .any)["section-upcoming"].exists, "Removing a section left it on the page")
+        let removed = app.descendants(matching: .any)["section-upcoming"].firstMatch.waitForNonExistence(timeout: 3)
+        shot(app, "34b-removed")
+        XCTAssertTrue(removed, "Removing a section left it on the page")
         app.buttons["section-add"].tap()
         app.buttons["Esami"].firstMatch.tap()
         settle()
         let exams = app.descendants(matching: .any)["section-exams"].firstMatch
         let timetable = app.descendants(matching: .any)["section-timetable"].firstMatch
         XCTAssertTrue(exams.waitForExistence(timeout: 3), "Adding a section did not put it on the page")
-        exams.press(forDuration: 1.2, thenDragTo: timetable, withVelocity: .slow, thenHoldForDuration: 0.8)
+        // To the top of the timetable: the system places the lifted section
+        // before whichever one the finger has crossed the upper part of.
+        exams.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            .press(forDuration: 1.2,
+                   thenDragTo: timetable.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05)),
+                   withVelocity: .slow, thenHoldForDuration: 0.8)
         settle()
         shot(app, "35-arranged")
         XCTAssertLessThan(exams.frame.minY, timetable.frame.minY, "Dragging a section onto another did not move it")
@@ -223,6 +232,21 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
 
     @MainActor private func zone(_ app: XCUIApplication, _ id: String) -> XCUIElement {
         app.buttons["zone-\(id)"].firstMatch
+    }
+
+    /// Every starter look, one screenshot each, to check them by eye.
+    @MainActor func testPresets() throws {
+        let app = makeApp()
+        app.launch()
+        _ = open(app)
+        for index in 0..<todayPresetCount {
+            XCTAssertTrue(isCentred(card(app, index), in: app), "Look \(index + 1) did not come to the middle")
+            shot(app, String(format: "50-preset-%d", index + 1))
+            if index < todayPresetCount - 1 {
+                card(app, index).swipeLeft()
+                settle()
+            }
+        }
     }
 
     /// In the single page, the panel steps aside for Personalizza and comes

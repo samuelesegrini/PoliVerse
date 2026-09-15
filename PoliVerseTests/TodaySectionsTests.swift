@@ -54,6 +54,37 @@ struct TodaySectionsTests {
         #expect(TodaySection.Kind.upcoming.listsItems && TodaySection.Kind.exams.listsItems)
     }
 
+    @Test("A reorder moves the lifted sections, in the order they were picked, before the target or to the end")
+    func reorder() {
+        var style = TodayStyle()
+        style.addSection(.exams)
+        style.addSection(.deadlines)
+        style.moveSections([.deadlines, .upcoming], before: .timetable)
+        #expect(kinds(style) == [.deadlines, .upcoming, .timetable, .exams])
+        style.moveSections([.deadlines], before: nil)
+        #expect(kinds(style) == [.upcoming, .timetable, .exams, .deadlines])
+    }
+
+    @Test("A reorder onto one of the lifted sections, or of kinds not on the page, changes nothing")
+    func reorderIgnored() {
+        var style = TodayStyle()
+        style.moveSections([.upcoming], before: .upcoming)
+        style.moveSections([.exams], before: .upcoming)
+        style.moveSections([], before: nil)
+        #expect(kinds(style) == [.upcoming, .timetable])
+    }
+
+    @Test("A reorder lands among the visible sections, whatever is hidden between them")
+    func reorderAroundHidden() {
+        var style = TodayStyle()
+        style.addSection(.exams)
+        style.hideSection(.timetable)
+        style.moveSections([.exams], before: .upcoming)
+        #expect(kinds(style) == [.exams, .upcoming])
+        style.addSection(.timetable)
+        #expect(kinds(style) == [.exams, .upcoming, .timetable])
+    }
+
     @Test("Dropping a section on another puts it in that one's place")
     func move() {
         var style = TodayStyle()
@@ -74,7 +105,7 @@ struct TodaySectionsTests {
             $0.density = .compact
             $0.itemLimit = 40
         }
-        let upcoming = try? #require(style.section(.upcoming))
+        let upcoming = style.section(.upcoming)
         #expect(upcoming?.card == .glass)
         #expect(upcoming?.density == .compact)
         #expect(upcoming?.itemLimit == TodaySection.itemLimits.upperBound)

@@ -67,7 +67,7 @@ nonisolated extension TodayStyle {
     /// first on a tie, and shows the sticker panel. Returns nil when the
     /// panel is full.
     @discardableResult
-    mutating func addSticker(_ content: PlacedSticker.Content) -> PlacedSticker? {
+    mutating func addSticker(_ content: PlacedSticker.Content, id: UUID = UUID()) -> PlacedSticker? {
         guard stickers.count < Self.maxStickers else { return nil }
         func room(_ spot: (x: Double, y: Double, rotation: Double)) -> Double {
             stickers.map { hypot($0.x - spot.x, $0.y - spot.y) }.min() ?? .infinity
@@ -76,7 +76,7 @@ nonisolated extension TodayStyle {
         for candidate in Self.spots.dropFirst() where room(candidate) > room(spot) {
             spot = candidate
         }
-        var sticker = PlacedSticker(content: content)
+        var sticker = PlacedSticker(id: id, content: content)
         sticker.x = spot.x
         sticker.y = spot.y
         sticker.rotation = spot.rotation

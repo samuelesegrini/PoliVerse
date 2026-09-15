@@ -5,8 +5,9 @@ import SwiftUI
 ///
 /// In Personalizza it comes in two modes. Editing, each zone is outlined and a
 /// tap opens its controls. Arranging, reached by holding the page, sections
-/// wiggle, can be dragged onto one another to reorder and removed, new ones
-/// are added at the bottom, and stickers follow a finger, a pinch and a twist.
+/// wiggle, lift and move with the system's reordering, can be removed, new
+/// ones are added at the bottom, and stickers follow a finger, a pinch and a
+/// twist.
 struct TodayLanding: View {
     enum Zone: Hashable, Identifiable {
         case bar, greeting, date, stickers, background
@@ -80,9 +81,7 @@ struct TodayLanding: View {
 
             header
 
-            ForEach(style.visibleSections) { section in
-                sectionZone(section)
-            }
+            sections
 
             if arranging, !style.addableSections.isEmpty {
                 addSectionMenu
@@ -139,9 +138,40 @@ struct TodayLanding: View {
 
     // MARK: - Sections
 
+    /// Arranging on iOS 27, the system reorders: a lifted section leaves a
+    /// placeholder that follows the finger, and the drop reports where the
+    /// sections went. Earlier, each section is a drag source and drop target.
+    @ViewBuilder
+    private var sections: some View {
+        if arranging, #available(iOS 27, *) {
+            // Built only while arranging: a container made disabled and
+            // enabled later no longer lifts anything.
+            VStack(alignment: .leading, spacing: 28) {
+                ForEach(style.visibleSections) { section in
+                    // One view per item: a condition at the top of an item's
+                    // view makes the container fail on lift ("Unexpected
+                    // identifier type"), and the section is full of them.
+                    VStack(spacing: 0) { sectionZone(section) }
+                }
+                .reorderable()
+            }
+            .reorderContainer(for: TodaySection.self) { difference in
+                let target: TodaySection.Kind? = switch difference.destination.position {
+                case .before(let kind): kind
+                case .end: nil
+                }
+                withAnimation(.snappy) { draft?.wrappedValue.moveSections(difference.sources, before: target) }
+            }
+        } else {
+            ForEach(style.visibleSections) { section in
+                sectionZone(section)
+            }
+        }
+    }
+
     @ViewBuilder
     private func sectionZone(_ section: TodaySection) -> some View {
-        let view = TodaySectionView(section: section, style: style, day: day)
+        let view = TodaySectionView(section: section, style: style, day: day, collapsed: arranging)
         if arranging {
             view
                 .padding(10)
@@ -149,7 +179,9 @@ struct TodayLanding: View {
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
                         .strokeBorder(.secondary.opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [6, 5]))
                 }
-                .overlay(alignment: .topLeading) {
+                // Inside the section's frame, beside its title: a lifted section
+                // takes touches only within its bounds.
+                .overlay(alignment: .topTrailing) {
                     Button("Rimuovi \(Text(section.kind.title))", systemImage: "minus") {
                         withAnimation(.snappy) { draft?.wrappedValue.hideSection(section.kind) }
                     }
@@ -158,21 +190,15 @@ struct TodayLanding: View {
                     .foregroundStyle(.white)
                     .frame(width: 26, height: 26)
                     .background(.red, in: .circle)
-                    .offset(x: -8, y: -8)
+                    .padding(6)
+                    .contentShape(.rect)
                     .accessibilityIdentifier("section-remove-\(section.kind.rawValue)")
                 }
                 .padding(-10)
                 .modifier(Wiggle())
-                .draggable(section.kind.rawValue) {
-                    Label(section.kind.title, systemImage: section.kind.systemImage)
-                        .padding(12)
-                        .glassEffect(.regular, in: .capsule)
-                }
-                .dropDestination(for: String.self) { items, _ in
-                    guard let kind = items.first.flatMap(TodaySection.Kind.init(rawValue:)) else { return false }
-                    withAnimation(.snappy) { draft?.wrappedValue.moveSection(kind, onto: section.kind) }
-                    return true
-                }
+                .modifier(DragToReorder(kind: section.kind) { kind, target in
+                    withAnimation(.snappy) { draft?.wrappedValue.moveSection(kind, onto: target) }
+                })
                 // A container, so the remove button stays its own element.
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("section-\(section.kind.rawValue)")
@@ -238,6 +264,31 @@ struct TodayLanding: View {
     private var outline: some View {
         RoundedRectangle(cornerRadius: 20, style: .continuous)
             .strokeBorder(.secondary.opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [6, 5]))
+    }
+}
+
+/// Before iOS 27's reordering: a section is dragged as its kind and dropped
+/// onto another to take its place. On iOS 27 the container does this.
+private struct DragToReorder: ViewModifier {
+    let kind: TodaySection.Kind
+    let move: (_ kind: TodaySection.Kind, _ target: TodaySection.Kind) -> Void
+
+    func body(content: Content) -> some View {
+        if #available(iOS 27, *) {
+            content
+        } else {
+            content
+                .draggable(kind.rawValue) {
+                    Label(kind.title, systemImage: kind.systemImage)
+                        .padding(12)
+                        .glassEffect(.regular, in: .capsule)
+                }
+                .dropDestination(for: String.self) { items, _ in
+                    guard let dropped = items.first.flatMap(TodaySection.Kind.init(rawValue:)) else { return false }
+                    move(dropped, kind)
+                    return true
+                }
+        }
     }
 }
 

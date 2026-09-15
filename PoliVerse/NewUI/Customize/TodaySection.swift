@@ -190,6 +190,18 @@ nonisolated extension TodayStyle {
         moveSection(kind, onto: visible[index + offset].kind)
     }
 
+    /// Applies a reorder as the system reports it: the lifted sections, in
+    /// the order they were picked, go before `target`, or to the end when
+    /// there is none. A target among the lifted sections changes nothing.
+    mutating func moveSections(_ kinds: [TodaySection.Kind], before target: TodaySection.Kind?) {
+        let lifted = kinds.compactMap(section)
+        guard !lifted.isEmpty, target.map({ !kinds.contains($0) }) ?? true else { return }
+        var rest = sections.filter { !kinds.contains($0.kind) }
+        let index = target.flatMap { target in rest.firstIndex { $0.kind == target } } ?? rest.endIndex
+        rest.insert(contentsOf: lifted, at: index)
+        sections = rest
+    }
+
     mutating func updateSection(_ kind: TodaySection.Kind, _ change: (inout TodaySection) -> Void) {
         guard let index = sections.firstIndex(where: { $0.kind == kind }) else { return }
         change(&sections[index])

@@ -117,27 +117,36 @@ nonisolated struct TodayStyle: Equatable, Sendable {
     static let libraryKey = "todayStyleLibrary"
     static let selectionKey = "todayStyleSelection"
 
-    /// The looks offered before the student makes any: the default, a warm
-    /// one, a quiet serif and a minimal page with only the timetable.
+    /// The looks offered before the student makes any: the plain default,
+    /// then eight that each show off a background and a different mix of
+    /// type, sections, cards, stickers and colour, to start from.
     static var presets: [TodayStyle] {
+        // Warm: rounded orange on a grid, the lesson now in front, all glass.
         var warm = TodayStyle()
         warm.dateAccent = .orange
         warm.dateFont = .rounded
         warm.background = .grid
         warm.greeting = .timeOfDay
         warm.addSection(.currentClass)
-        warm.moveSection(.currentClass, onto: .upcoming)
-        warm.updateSection(.upcoming) { $0.card = .glass }
-        warm.updateSection(.timetable) { $0.card = .glass }
-        warm.updateSection(.currentClass) { $0.card = .glass; $0.tinted = true }
-        var serif = TodayStyle()
-        serif.dateFont = .serif
-        serif.dateWeight = 0.5
-        serif.dateAccent = .polimi
-        serif.background = .ovals
-        serif.dateLayout = .words
-        serif.greeting = .motto
-        serif.addSection(.exams)
+        warm.moveSections([.currentClass], before: .upcoming)
+        for kind in [TodaySection.Kind.currentClass, .upcoming, .timetable] {
+            warm.updateSection(kind) { $0.card = .glass }
+        }
+        warm.updateSection(.currentClass) { $0.tinted = true }
+        warm.bar.tintFollowsDate = true
+
+        // Politecnico: a quiet serif in the school's blue, the date in words.
+        var polimi = TodayStyle()
+        polimi.dateFont = .serif
+        polimi.dateWeight = 0.5
+        polimi.dateAccent = .polimi
+        polimi.background = .ovals
+        polimi.dateLayout = .words
+        polimi.greeting = .motto
+        polimi.addSection(.exams)
+        polimi.updateSection(.exams) { $0.tinted = true }
+
+        // Minimal: thin mono on dots, only the day's lessons, no cards.
         var minimal = TodayStyle()
         minimal.dateFont = .mono
         minimal.dateWeight = 0.2
@@ -146,7 +155,92 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         minimal.updateSection(.timetable) { $0.card = .plain; $0.density = .compact }
         minimal.background = .dots
         minimal.dateLayout = .bigDay
-        return [TodayStyle(), warm, serif, minimal]
+
+        // Study: books and pencils, violet, deadlines first, stickers beside.
+        var study = TodayStyle()
+        study.dateAccent = .violet
+        study.dateFont = .rounded
+        study.background = .study
+        study.greeting = .name
+        study.addSticker(.emoji("📚"), id: presetSticker(1))
+        study.addSticker(.emoji("✏️"), id: presetSticker(2))
+        study.addSection(.deadlines)
+        study.moveSections([.deadlines], before: .upcoming)
+        study.hideSection(.upcoming)
+        for kind in [TodaySection.Kind.deadlines, .timetable] {
+            study.updateSection(kind) { $0.card = .glass; $0.tinted = true }
+        }
+        study.bar.tint = .violet
+
+        // Space: the weekday large and centred among the stars.
+        var space = TodayStyle()
+        space.dateAccent = .polimi
+        space.dateFont = .condensed
+        space.dateLayout = .weekday
+        space.dateAlignment = .center
+        space.background = .space
+        space.greeting = .week
+        space.addSection(.currentClass)
+        space.moveSections([.currentClass], before: .upcoming)
+        space.hideSection(.upcoming)
+        for kind in [TodaySection.Kind.currentClass, .timetable] {
+            space.updateSection(kind) { $0.card = .glass }
+        }
+        space.bar.showsAdd = false
+
+        // Nature: green italic, a leaf beside it, exams and what is coming.
+        var nature = TodayStyle()
+        nature.dateAccent = .green
+        nature.dateFont = .italic
+        nature.dateWeight = 0.6
+        nature.background = .nature
+        nature.greeting = .timeOfDay
+        nature.addSticker(.emoji("🌿"), id: presetSticker(3))
+        nature.addSection(.exams)
+        for kind in [TodaySection.Kind.upcoming, .timetable, .exams] {
+            nature.updateSection(kind) { $0.density = .compact; $0.tinted = true }
+        }
+        nature.bar.tintFollowsDate = true
+
+        // Coffee break: rose on cups, one line of date, a cheerful sticker pair.
+        var coffee = TodayStyle()
+        coffee.dateAccent = .rose
+        coffee.dateFont = .rounded
+        coffee.dateLayout = .inline
+        coffee.dateSize = 1.3
+        coffee.background = .coffee
+        coffee.greeting = .motto
+        coffee.addSticker(.emoji("☕️"), id: presetSticker(4))
+        coffee.addSticker(.emoji("🥐"), id: presetSticker(5))
+        coffee.addSection(.currentClass)
+        coffee.addSection(.deadlines)
+        coffee.moveSections([.currentClass], before: .upcoming)
+        coffee.updateSection(.upcoming) { $0.itemLimit = 2 }
+        coffee.updateSection(.deadlines) { $0.card = .plain; $0.itemLimit = 2 }
+
+        // Code: condensed blue on symbols, compact glass, no profile or settings.
+        var code = TodayStyle()
+        code.dateAccent = .polimi
+        code.dateFont = .condensed
+        code.background = .coding
+        code.greeting = .week
+        code.dateAlignment = .trailing
+        code.addSection(.exams)
+        code.addSection(.deadlines)
+        for kind in [TodaySection.Kind.upcoming, .timetable, .exams, .deadlines] {
+            code.updateSection(kind) { $0.card = .glass; $0.density = .compact; $0.itemLimit = 2 }
+        }
+        code.bar.showsProfile = false
+        code.bar.showsSettings = false
+        code.bar.tint = .polimi
+
+        return [TodayStyle(), warm, polimi, minimal, study, space, nature, coffee, code]
+    }
+
+    /// A fixed id for a preset's sticker, so the presets are the same looks
+    /// each time they are built.
+    private static func presetSticker(_ number: Int) -> UUID {
+        UUID(uuidString: String(format: "00000000-0000-4000-8000-%012d", number))!
     }
 
     /// Saved looks, one stored style per line; the presets when there are none.
