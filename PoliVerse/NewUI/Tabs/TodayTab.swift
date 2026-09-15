@@ -12,6 +12,9 @@ struct TodayTab: View {
 
     @State private var day = Date.now
     @State private var showingDays = false
+    /// Drives the chevron separately from the popover: bound to `showingDays`
+    /// alone, the toolbar only redrew it once the popover had gone.
+    @State private var chevronUp = false
     @State private var showingSettings = false
     @State private var showingProfile = false
 
@@ -51,14 +54,17 @@ struct TodayTab: View {
         }
 
         ToolbarItem(placement: .principal) {
-            Button { showingDays.toggle() } label: {
+            Button {
+                withAnimation(.snappy(duration: 0.3)) { chevronUp.toggle() }
+                showingDays.toggle()
+            } label: {
                 HStack(spacing: 6) {
                     Text(day.formatted(.dateTime.day().month(.abbreviated).locale(locale)).capitalized)
                         .font(.headline)
                     Image(systemName: "chevron.down.circle.fill")
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(.secondary)
-                        .rotationEffect(.degrees(showingDays ? 180 : 0))
+                        .rotationEffect(.degrees(chevronUp ? 180 : 0))
                 }
             }
             .buttonStyle(.plain)
@@ -68,6 +74,11 @@ struct TodayTab: View {
                 DayStrip(day: $day)
                     .frame(width: 360)
                     .presentationCompactAdaptation(.popover)
+            }
+            // A tap outside closes the popover without the button: turn the
+            // chevron back as soon as that starts.
+            .onChange(of: showingDays) { _, showing in
+                if chevronUp != showing { withAnimation(.snappy(duration: 0.3)) { chevronUp = showing } }
             }
             .accessibilityLabel(Text("Giorno mostrato: \(day.formatted(.dateTime.day().month(.wide).locale(locale)))"))
         }
