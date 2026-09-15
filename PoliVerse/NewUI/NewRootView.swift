@@ -27,7 +27,7 @@ struct NewRootView: View {
             Tab("Carriera", systemImage: "graduationcap", value: .career) {
                 CareerTab()
             }
-            Tab(value: .search, role: .search) {
+            Tab("Cerca", systemImage: "magnifyingglass", value: .search, role: .search) {
                 SearchTab()
             }
         }
@@ -37,5 +37,5 @@ struct NewRootView: View {
 }
 
 #Preview("Nuova struttura") {
-    NewRootView()
+    NewRootView().previewEnvironment()
 }
