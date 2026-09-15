@@ -18,6 +18,10 @@ struct NewRootView: View {
     @State private var selection: Destination = .today
     @State private var shell = ShellState()
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
+    /// The layout on screen. Trails the stored setting so a change made in
+    /// Impostazioni first closes the sheet, then animates.
+    @State private var shownLayout: AppLayout?
+    @State private var layoutChangePending = false
     @Environment(AgendaService.self) private var agenda
     /// Re-read every minute so the accessory moves on when a lesson ends.
     @State private var now = Date.now
@@ -26,7 +30,7 @@ struct NewRootView: View {
 
     var body: some View {
         ZStack {
-            switch layout {
+            switch shownLayout ?? layout {
             case .singlePage:
                 SinglePageHome()
                     .transition(BlurReplaceTransition(configuration: .downUp).combined(with: ScaleTransition(0.96)))
@@ -35,11 +39,21 @@ struct NewRootView: View {
                     .transition(BlurReplaceTransition(configuration: .downUp).combined(with: ScaleTransition(0.96)))
             }
         }
-        // The setting is written from Impostazioni: animate here, where the
-        // change lands.
-        .animation(.smooth(duration: 0.45), value: layout)
+        .onAppear { if shownLayout == nil { shownLayout = layout } }
+        .onChange(of: layout) { _, new in
+            if shell.showingSettings {
+                layoutChangePending = true
+                shell.showingSettings = false
+            } else {
+                withAnimation(.smooth(duration: 0.45)) { shownLayout = new }
+            }
+        }
         .environment(\.shell, shell)
-        .sheet(isPresented: $shell.showingSettings) { SettingsSheet() }
+        .sheet(isPresented: $shell.showingSettings, onDismiss: {
+            guard layoutChangePending else { return }
+            layoutChangePending = false
+            withAnimation(.smooth(duration: 0.45)) { shownLayout = layout }
+        }) { SettingsSheet() }
         .sheet(isPresented: $shell.showingProfile) {
             NavigationStack {
                 ProfileView()
