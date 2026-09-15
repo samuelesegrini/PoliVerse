@@ -30,7 +30,27 @@ struct NewRootView: View {
         // two navigation bars, two pages and a tab bar at once; here the page
         // and its bar stay put and only the bottom changes — the tab bar
         // slides away as the panel rises, and back.
-        tabs
+        ZStack {
+            // The ground the shrunk app and the gallery sit on.
+            Color(.secondarySystemBackground).ignoresSafeArea()
+
+            tabs
+                // Personalizza, like the Lock Screen: the whole app scales
+                // down into the gallery's middle card, and back up on close.
+                .clipShape(.rect(cornerRadius: shell.customizeStage == .off ? 0 : 48))
+                .shadow(color: .black.opacity(shell.customizeStage == .off ? 0 : 0.18), radius: 24, y: 10)
+                .scaleEffect(shell.customizeStage == .off ? 1 : CustomizeOggi.cardScale)
+                .allowsHitTesting(shell.customizeStage == .off)
+                .ignoresSafeArea()
+
+            if shell.customizeStage == .gallery {
+                CustomizeOggi()
+                    .transition(.opacity)
+            }
+        }
+        .onChange(of: shell.isCustomizing) { _, customizing in
+            customizing ? openCustomize() : closeCustomize()
+        }
         .onAppear { shell.singlePage = layout == .singlePage }
         .onChange(of: layout) { _, new in
             if shell.showingSettings {
@@ -68,6 +88,23 @@ struct NewRootView: View {
         if layout == .singlePage { selection = .today }
         withAnimation(.spring(duration: 0.5, bounce: 0.12)) {
             shell.singlePage = layout == .singlePage
+        }
+    }
+
+    private func openCustomize() {
+        selection = .today
+        withAnimation(.spring(duration: 0.45, bounce: 0.1)) {
+            shell.customizeStage = .shrunk
+        } completion: {
+            withAnimation(.easeOut(duration: 0.2)) { shell.customizeStage = .gallery }
+        }
+    }
+
+    private func closeCustomize() {
+        withAnimation(.easeIn(duration: 0.15)) {
+            shell.customizeStage = .shrunk
+        } completion: {
+            withAnimation(.spring(duration: 0.45, bounce: 0.1)) { shell.customizeStage = .off }
         }
     }
 
