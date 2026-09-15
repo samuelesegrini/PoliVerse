@@ -54,7 +54,6 @@ struct NewRootView: View {
                     .transition(.scale(scale: 0.92).combined(with: .opacity))
             }
         }
-        .environment(\.shell, shell)
         .sheet(isPresented: $shell.showingSettings, onDismiss: {
             if shell.customizePending {
                 shell.customizePending = false
@@ -75,6 +74,11 @@ struct NewRootView: View {
                     }
             }
         }
+        // Outermost, so the sheets see the same shell as the page. Placed
+        // before them, the sheets fell back to the default instance: the
+        // settings sheet wrote to a stray copy and its dismissal never
+        // found the pending change.
+        .environment(\.shell, shell)
     }
 
     private var tabs: some View {

@@ -22,8 +22,12 @@ final class ShellState {
     var customizePending = false
 }
 
+extension ShellState {
+    /// One instance for views with no root above them, such as previews of a
+    /// single tab. A default built inline would be a new object on every read.
+    static let standalone = ShellState()
+}
+
 extension EnvironmentValues {
-    /// A throwaway default keeps previews of single tabs working without a
-    /// root above them.
-    @Entry var shell = ShellState()
+    @Entry var shell: ShellState = .standalone
 }

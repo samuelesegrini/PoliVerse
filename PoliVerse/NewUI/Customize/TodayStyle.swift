@@ -112,6 +112,11 @@ nonisolated extension TodayStyle: RawRepresentable {
         let stored = StoredTodayStyle(dateFont: dateFont, dateWeight: dateWeight, dateAccent: dateAccent,
                                       showsGreeting: showsGreeting, showsUpcoming: showsUpcoming,
                                       showsTimetable: showsTimetable)
-        return (try? String(data: JSONEncoder().encode(stored), encoding: .utf8)) ?? "{}"
+        // Sorted keys: the standard library's `==` for RawRepresentable types
+        // compares `rawValue`, and unsorted JSON keys would make equal styles
+        // unequal.
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        return (try? String(data: encoder.encode(stored), encoding: .utf8)) ?? "{}"
     }
 }
