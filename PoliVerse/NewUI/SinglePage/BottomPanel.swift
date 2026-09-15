@@ -5,7 +5,7 @@ import SwiftUI
 ///
 /// Drawn in the page rather than presented as a sheet: a presented sheet
 /// would block the navigation bar's own sheets and popover while it is up.
-struct BottomPanel<Content: View>: View {
+struct BottomPanel<Content: View, Accessory: View>: View {
     enum Detent: CaseIterable {
         case peek, half, full
 
@@ -20,6 +20,9 @@ struct BottomPanel<Content: View>: View {
 
     @Binding var detent: Detent
     @ViewBuilder var content: Content
+    /// Rides on top of the panel's edge, like the tab bar accessory; hidden
+    /// once the panel fills the screen.
+    @ViewBuilder var accessory: Accessory
 
     @GestureState private var drag: CGFloat = 0
 
@@ -29,6 +32,11 @@ struct BottomPanel<Content: View>: View {
             let height = max(Detent.peek.height(in: total) - 30,
                              min(detent.height(in: total) - drag, Detent.full.height(in: total) + 20))
 
+            VStack(spacing: 10) {
+                if detent != .full {
+                    accessory
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             VStack(spacing: 0) {
                 Capsule()
                     .fill(.secondary.opacity(0.5))
@@ -58,8 +66,15 @@ struct BottomPanel<Content: View>: View {
                         withAnimation(.spring(duration: 0.4, bounce: 0.15)) { detent = nearest }
                     }
             )
+            }
             .frame(maxHeight: .infinity, alignment: .bottom)
         }
         .ignoresSafeArea(edges: .bottom)
+    }
+}
+
+extension BottomPanel where Accessory == EmptyView {
+    init(detent: Binding<Detent>, @ViewBuilder content: () -> Content) {
+        self.init(detent: detent, content: content, accessory: { EmptyView() })
     }
 }

@@ -4,7 +4,11 @@ import SwiftUI
 /// every other part of the app in a ``BottomPanel``.
 struct SinglePageHome: View {
     @State private var day = Date.now
-    @State private var detent: BottomPanel<PanelContent>.Detent = .peek
+    @State private var detent: BottomPanel<PanelContent, AnyView>.Detent = .peek
+    @Environment(AgendaService.self) private var agenda
+    @State private var now = Date.now
+
+    private var current: CurrentClass? { CurrentClass.forAccessory(from: agenda.events, now: now) }
 
     var body: some View {
         NavigationStack {
@@ -17,6 +21,24 @@ struct SinglePageHome: View {
         .overlay {
             BottomPanel(detent: $detent) {
                 PanelContent(expand: { withAnimation(.snappy) { detent = .full } })
+            } accessory: {
+                // The same bar Music-style tab bars carry, above the panel.
+                AnyView(Group {
+                    if let current {
+                        CurrentClassAccessory(current: current)
+                            .frame(height: 54)
+                            .glassEffect(.regular.interactive(), in: .capsule)
+                            .padding(.horizontal, 16)
+                    }
+                })
+            }
+            .animation(.snappy, value: detent)
+        }
+        .task { await agenda.load(around: .now) }
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                now = .now
             }
         }
     }

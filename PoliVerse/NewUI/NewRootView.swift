@@ -21,18 +21,7 @@ struct NewRootView: View {
     /// Re-read every minute so the accessory moves on when a lesson ends.
     @State private var now = Date.now
 
-    private var current: CurrentClass? {
-        #if DEBUG
-        // `-NowDemo` shows a lesson in progress without an account.
-        if CommandLine.arguments.contains("-NowDemo") {
-            return CurrentClass(event: AgendaEvent(
-                id: -1, title: "Ingegneria del Software", start: now.addingTimeInterval(-40 * 60),
-                end: now.addingTimeInterval(65 * 60), kind: .lecture, room: "Aula B.3.2",
-                roomAcronym: nil, calendarName: nil), isOngoing: true)
-        }
-        #endif
-        return CurrentClass.pick(from: agenda.events, now: now)
-    }
+    private var current: CurrentClass? { CurrentClass.forAccessory(from: agenda.events, now: now) }
 
     var body: some View {
         switch layout {

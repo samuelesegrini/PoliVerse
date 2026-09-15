@@ -23,4 +23,18 @@ nonisolated struct CurrentClass: Equatable, Sendable {
         }
         return today.first.map { CurrentClass(event: $0, isOngoing: false) }
     }
+
+    /// What the accessory shows: ``pick(from:now:calendar:)``, or in debug
+    /// builds launched with `-NowDemo`, a lesson in progress without an account.
+    static func forAccessory(from events: [AgendaEvent], now: Date) -> CurrentClass? {
+        #if DEBUG
+        if CommandLine.arguments.contains("-NowDemo") {
+            return CurrentClass(event: AgendaEvent(
+                id: -1, title: "Ingegneria del Software", start: now.addingTimeInterval(-40 * 60),
+                end: now.addingTimeInterval(65 * 60), kind: .lecture, room: "Aula B.3.2",
+                roomAcronym: nil, calendarName: nil), isOngoing: true)
+        }
+        #endif
+        return pick(from: events, now: now)
+    }
 }
