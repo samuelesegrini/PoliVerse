@@ -20,6 +20,7 @@ struct NewRootView: View {
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
     /// The look in use sets the colour of the app's controls.
     @AppStorage(TodayStyle.storageKey) private var todayStyle = TodayStyle()
+    @Environment(\.colorScheme) private var scheme
     @State private var layoutChangePending = false
     @Environment(AgendaService.self) private var agenda
     /// Re-read every minute so the accessory moves on when a lesson ends.
@@ -102,7 +103,7 @@ struct NewRootView: View {
                 now = .now
             }
         }
-        .tint(todayStyle.controlTint)
+        .tint(todayStyle.controlTint(scheme))
         // Selecting the search tab opens its field straight away.
         .tabViewSearchActivation(.searchTabSelection)
         .tabBarMinimizeBehavior(.onScrollDown)

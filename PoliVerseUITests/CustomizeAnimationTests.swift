@@ -75,7 +75,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
 
         app.buttons["customize-editor-background"].tap()
         settle()
-        app.buttons["Righe"].firstMatch.tap()
+        reveal(app.buttons["Righe"].firstMatch, in: app).tap()
         settle()
         shot(app, "06b-background")
         app.buttons["customize-zone-done"].tap()
@@ -136,6 +136,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         // A section's appearance.
         zone(app, "section-upcoming").tap()
         settle()
+        app.buttons["section-material"].firstMatch.tap()
         app.buttons["Vetro"].firstMatch.tap()
         app.steppers.firstMatch.buttons.element(boundBy: 1).tap()
         settle()
@@ -143,14 +144,24 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         app.buttons["customize-zone-done"].tap()
         settle()
 
-        // The bar: no settings button, rose controls.
+        // The bar: no settings button.
         zone(app, "bar").tap()
         settle()
         // The switch itself: a tap in the middle of the row lands on its label.
         app.switches["Impostazioni"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
-        app.buttons["accent-rose"].firstMatch.tap()
         settle()
         shot(app, "32-bar")
+        app.buttons["customize-zone-done"].tap()
+        settle()
+
+        // The theme: a raspberry Flavor on glowing cards, serif text.
+        app.buttons["customize-editor-background"].tap()
+        settle()
+        app.buttons["flavor-#C2386F"].firstMatch.tap()
+        reveal(app.buttons["material-glow"].firstMatch, in: app).tap()
+        reveal(app.buttons["Con grazie"].firstMatch, in: app).tap()
+        settle()
+        shot(app, "32b-theme")
         app.buttons["customize-zone-done"].tap()
         settle()
 
@@ -228,6 +239,17 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         shot(app, "40-app")
         XCTAssertFalse(app.buttons["Impostazioni"].exists, "The bar still shows the settings button")
+    }
+
+    /// Scrolls the open sheet until the element can be tapped.
+    @discardableResult
+    @MainActor private func reveal(_ element: XCUIElement, in app: XCUIApplication) -> XCUIElement {
+        var attempts = 0
+        while !element.isHittable && attempts < 8 {
+            app.collectionViews.firstMatch.swipeUp()
+            attempts += 1
+        }
+        return element
     }
 
     @MainActor private func zone(_ app: XCUIApplication, _ id: String) -> XCUIElement {

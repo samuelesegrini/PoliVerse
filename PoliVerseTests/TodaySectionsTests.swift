@@ -24,13 +24,13 @@ struct TodaySectionsTests {
     @Test("Hiding takes the section off the page and offers it again, keeping its settings and place")
     func hide() {
         var style = TodayStyle()
-        style.updateSection(.upcoming) { $0.card = .glass; $0.itemLimit = 5 }
+        style.updateSection(.upcoming) { $0.material = .glass; $0.itemLimit = 5 }
         style.hideSection(.upcoming)
         #expect(kinds(style) == [.timetable])
         #expect(style.addableSections.first == .upcoming)
         style.addSection(.upcoming)
         #expect(kinds(style) == [.upcoming, .timetable])
-        #expect(style.section(.upcoming)?.card == .glass)
+        #expect(style.section(.upcoming)?.material == .glass)
         #expect(style.section(.upcoming)?.itemLimit == 5)
     }
 
@@ -101,12 +101,12 @@ struct TodaySectionsTests {
     func update() {
         var style = TodayStyle()
         style.updateSection(.upcoming) {
-            $0.card = .glass
+            $0.material = .glass
             $0.density = .compact
             $0.itemLimit = 40
         }
         let upcoming = style.section(.upcoming)
-        #expect(upcoming?.card == .glass)
+        #expect(upcoming?.material == .glass)
         #expect(upcoming?.density == .compact)
         #expect(upcoming?.itemLimit == TodaySection.itemLimits.upperBound)
     }
@@ -116,7 +116,7 @@ struct TodaySectionsTests {
         var style = TodayStyle()
         style.addSection(.currentClass)
         style.moveSection(.currentClass, onto: .upcoming)
-        style.updateSection(.timetable) { $0.tinted = true; $0.card = .plain }
+        style.updateSection(.timetable) { $0.tinted = true; $0.material = .bare }
         style.hideSection(.upcoming)
         let restored = try #require(TodayStyle(rawValue: style.rawValue))
         #expect(restored.sections == style.sections)

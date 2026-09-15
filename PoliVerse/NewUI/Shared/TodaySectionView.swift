@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// One ``TodaySection`` of the Oggi page, drawn with its card, density and
+/// One ``TodaySection`` of the Oggi page, drawn in its material, density and
 /// colour, filled from the agenda, WeBeep and the career.
 struct TodaySectionView: View {
     let section: TodaySection
@@ -14,12 +14,13 @@ struct TodaySectionView: View {
     @Environment(UpdateFeed.self) private var updates
     @Environment(CareerService.self) private var career
     @Environment(\.locale) private var locale
+    @Environment(\.colorScheme) private var scheme
 
     private var compact: Bool { section.density == .compact }
 
-    /// The date's colour for symbols; ink would make them all black.
+    /// The Flavor's accent for a tinted section's symbols, grey otherwise.
     private var accent: Color {
-        section.tinted ? style.dateAccent.highlight : .secondary
+        section.tinted ? style.accent(scheme) : .secondary
     }
 
     var body: some View {
@@ -30,26 +31,21 @@ struct TodaySectionView: View {
                 .labelStyle(TitleOnlyUnlessTinted(tinted: section.tinted))
             card
         }
+        // In the look's text design. Set here and on the greeting rather than
+        // on the whole page, where it would restyle the date's system faces.
+        .fontDesign(style.textDesign.design)
     }
 
     // MARK: - Card
 
-    @ViewBuilder
     private var card: some View {
-        let rows = VStack(alignment: .leading, spacing: 0) { content }
+        let material = style.material(for: section)
+        let padding: CGFloat = material.hasCard ? (compact ? 10 : 14) : 0
+        return VStack(alignment: .leading, spacing: 0) { content }
             .frame(maxWidth: .infinity, alignment: .leading)
-        let padding: CGFloat = compact ? 10 : 14
-        switch section.card {
-        case .glass:
-            rows.padding(.horizontal, padding).padding(.vertical, padding / 2)
-                .glassEffect(.regular, in: .rect(cornerRadius: compact ? 20 : 26))
-        case .filled:
-            rows.padding(.horizontal, padding).padding(.vertical, padding / 2)
-                .background(section.tinted ? AnyShapeStyle(accent.opacity(0.12)) : AnyShapeStyle(.quaternary.opacity(0.5)),
-                            in: .rect(cornerRadius: compact ? 20 : 26))
-        case .plain:
-            rows
-        }
+            .padding(.horizontal, padding)
+            .padding(.vertical, padding / 2)
+            .todayMaterial(material, flavor: style.flavor, cornerRadius: compact ? 20 : 26)
     }
 
     // MARK: - Content

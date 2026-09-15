@@ -14,6 +14,7 @@ struct CustomizeOggi: View {
     @Environment(\.shell) private var shell
     @Environment(Session.self) private var session
     @Environment(AgendaService.self) private var agenda
+    @Environment(\.colorScheme) private var scheme
     @AppStorage(TodayStyle.storageKey) private var active = TodayStyle()
     @AppStorage(TodayStyle.libraryKey) private var storedLibrary = ""
     @AppStorage(TodayStyle.selectionKey) private var storedSelection = 0
@@ -208,8 +209,8 @@ struct CustomizeOggi: View {
             }
         }
         .frame(width: screen.width, height: screen.height, alignment: .top)
-        .tint(look.controlTint)
-        .background(TodayBackgroundView(background: look.background, tint: look.backgroundTint))
+        .tint(look.controlTint(scheme))
+        .background(TodayBackgroundView(background: look.background, flavor: look.flavor))
         .clipShape(.rect(cornerRadius: 48))
         .scaleEffect(Self.cardScale)
         .frame(width: screen.width * Self.cardScale, height: screen.height * Self.cardScale)
@@ -301,6 +302,7 @@ private struct LookEditor: View {
 
     @Environment(\.shell) private var shell
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var scheme
     @State private var draft: TodayStyle
     @State private var editingZone: TodayLanding.Zone?
     @State private var arranging = false
@@ -329,13 +331,13 @@ private struct LookEditor: View {
                 })
             }
             // The look's own ground, as on the card it zooms out of.
-            .background(TodayBackgroundView(background: draft.background, tint: draft.backgroundTint).ignoresSafeArea())
+            .background(TodayBackgroundView(background: draft.background, flavor: draft.flavor).ignoresSafeArea())
             .sensoryFeedback(.impact(weight: .medium), trigger: arranging) { _, new in new }
             .navigationTitle(arranging ? "Disponi" : "Personalizza")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
             // Buttons in the look's colour, as the app will draw them.
-            .tint(draft.controlTint)
+            .tint(draft.controlTint(scheme))
             .sheet(item: $editingZone) { zone in
                 ZoneEditor(zone: zone, style: $draft)
                     .presentationDetents(zone.isShort ? [.height(340), .medium, .large] : [.medium, .large])
@@ -344,7 +346,7 @@ private struct LookEditor: View {
             }
             .sheet(isPresented: $pickingStickers) {
                 StickerPicker(remaining: TodayStyle.maxStickers - draft.stickers.count) { content in
-                    withAnimation(.snappy) { draft.addSticker(content) }
+                    withAnimation(.snappy) { _ = draft.addSticker(content) }
                 }
                 .presentationDetents([.height(220)])
                 .presentationBackgroundInteraction(.enabled)
@@ -373,7 +375,7 @@ private struct LookEditor: View {
         // arranging for whoever does not hold the page.
         ToolbarItemGroup(placement: .bottomBar) {
             Button { editingZone = .background } label: {
-                Label("Sfondo", systemImage: "square.grid.3x3.square")
+                Label("Tema", systemImage: "paintpalette")
                     .labelStyle(.titleAndIcon)
             }
             .accessibilityIdentifier("customize-editor-background")

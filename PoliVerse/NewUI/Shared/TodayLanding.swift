@@ -30,7 +30,7 @@ struct TodayLanding: View {
             case .greeting: "Saluto"
             case .date: "Data"
             case .stickers: "Sticker"
-            case .background: "Sfondo"
+            case .background: "Tema"
             case .section(let kind): kind.title
             }
         }
@@ -44,6 +44,7 @@ struct TodayLanding: View {
     private let onAddSticker: () -> Void
 
     @Environment(\.locale) private var locale
+    @Environment(\.colorScheme) private var scheme
     @Environment(Session.self) private var session
 
     /// The page as the app shows it.
@@ -75,7 +76,7 @@ struct TodayLanding: View {
                 zone(.bar) {
                     ReplicaNavigationBar(student: session.student, day: day, bar: style.bar)
                         .padding(.horizontal, -16)
-                        .tint(style.controlTint)
+                        .tint(style.controlTint(scheme))
                 }
             }
 
@@ -128,6 +129,7 @@ struct TodayLanding: View {
                         .frame(maxWidth: .infinity, alignment: style.dateAlignment.frame)
                         .opacity(style.showsGreeting ? 1 : 0.35)
                         .contentTransition(.opacity)
+                        .fontDesign(style.textDesign.design)
                 }
             }
             zone(.date) {

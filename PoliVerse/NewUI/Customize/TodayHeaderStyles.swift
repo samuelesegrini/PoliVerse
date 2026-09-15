@@ -138,10 +138,11 @@ struct DateHeader: View {
     var size: CGFloat = 72
 
     @Environment(\.locale) private var locale
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         content
-            .foregroundStyle(style.dateAccent.color)
+            .foregroundStyle(style.dateTint(scheme))
             .multilineTextAlignment(style.dateAlignment.text)
             .frame(maxWidth: .infinity, alignment: style.dateAlignment.frame)
             .lineLimit(1)
@@ -150,7 +151,7 @@ struct DateHeader: View {
     }
 
     private func font(_ scale: CGFloat) -> Font {
-        style.dateFont.font(size: size * scale, weight: style.weight)
+        style.dateFont.font(size: size * scale, weight: style.dateWeight)
     }
 
     @ViewBuilder

@@ -28,6 +28,15 @@ struct TodayPresetsTests {
         }
     }
 
+    @Test("Each has its own Flavor and typeface, and between them they show every material")
+    func character() {
+        #expect(Set(presets.map(\.flavor)).count == presets.count)
+        #expect(Set(presets.map(\.dateFont)).count == presets.count)
+        #expect(Set(presets.map(\.material)).count >= 6)
+        #expect(presets.contains { $0.material == .glow })
+        #expect(Set(presets.map(\.textDesign)).count == TodayStyle.TextDesign.allCases.count)
+    }
+
     @Test("Each shows at least one section, and some use stickers, glass cards and the bar's colour")
     func contents() {
         for preset in presets {
@@ -38,8 +47,8 @@ struct TodayPresetsTests {
             if !preset.stickers.isEmpty { #expect(preset.header == .dateAndStickers) }
         }
         #expect(presets.contains { !$0.stickers.isEmpty })
-        #expect(presets.contains { $0.sections.contains { $0.card == .glass } })
-        #expect(presets.contains { $0.controlAccent != nil })
+        #expect(presets.contains { $0.sections.contains { $0.material != nil } })
+        #expect(presets.contains { !$0.bar.showsProfile || !$0.bar.showsAdd })
     }
 
     @Test("A student with no saved looks gets the presets")

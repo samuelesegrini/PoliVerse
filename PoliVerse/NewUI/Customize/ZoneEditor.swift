@@ -39,14 +39,58 @@ struct ZoneEditor: View {
         }
     }
 
+    // MARK: Theme
+
+    /// The look's Flavor, material, text and background: everything behind
+    /// and around the zones, together.
     @ViewBuilder
     private var backgroundControls: some View {
         Section {
+            FlavorRow(flavor: $style.flavor)
+        } header: {
+            Text("Flavor")
+        } footer: {
+            Text("Un colore diventa sfondo, schede e il colore di pulsanti, schede selezionate e collegamenti in tutta l’app, sempre leggibili in chiaro e in scuro.")
+        }
+        Section("Materiale") {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 12) {
+                ForEach(TodayMaterial.allCases) { material in
+                    Button { style.material = material } label: {
+                        VStack(spacing: 6) {
+                            MaterialPreview(material: material, style: style)
+                                .frame(height: 64)
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .strokeBorder(style.material == material ? AnyShapeStyle(.tint) : AnyShapeStyle(.clear), lineWidth: 2.5)
+                                }
+                            Text(material.title)
+                                .font(.caption2)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                                .foregroundStyle(style.material == material ? .primary : .secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text(material.title))
+                    .accessibilityIdentifier("material-\(material.rawValue)")
+                    .accessibilityAddTraits(style.material == material ? .isSelected : [])
+                }
+            }
+        }
+        Section("Testo") {
+            Picker("Testo", selection: $style.textDesign) {
+                ForEach(TodayStyle.TextDesign.allCases) { design in
+                    Text(design.title).fontDesign(design.design).tag(design)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+        Section("Sfondo") {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
                 ForEach(TodayBackground.allCases) { background in
                     Button { style.background = background } label: {
                         VStack(spacing: 6) {
-                            TodayBackgroundView(background: background, tint: style.backgroundTint)
+                            TodayBackgroundView(background: background, flavor: style.flavor)
                                 .frame(height: 96)
                                 .clipShape(.rect(cornerRadius: 16))
                                 .overlay {
@@ -64,13 +108,6 @@ struct ZoneEditor: View {
                 }
             }
         }
-        Section {
-            AccentRow(selection: $style.backgroundAccent, automatic: "Come la data")
-        } header: {
-            Text("Colore")
-        } footer: {
-            Text("Il motivo prende il colore della data, a meno di sceglierne uno.")
-        }
     }
 
     // MARK: Bar
@@ -86,13 +123,6 @@ struct ZoneEditor: View {
             Text("Pulsanti")
         } footer: {
             Text("Il menu ••• resta sempre: è da lì che si torna in Personalizza.")
-        }
-        Section {
-            AccentRow(selection: $style.bar.tint, automatic: "App", followsDate: $style.bar.tintFollowsDate)
-        } header: {
-            Text("Colore dei controlli")
-        } footer: {
-            Text("Pulsanti, scheda selezionata e collegamenti in tutta l’app.")
         }
     }
 
@@ -151,10 +181,11 @@ struct ZoneEditor: View {
     private func sectionControls(_ kind: TodaySection.Kind) -> some View {
         let section = section(kind)
         Section("Scheda") {
-            Picker("Scheda", selection: section.card) {
-                ForEach(TodaySection.CardStyle.allCases) { Text($0.title).tag($0) }
+            Picker("Materiale", selection: section.material) {
+                Text("Come la pagina").tag(TodayMaterial?.none)
+                ForEach(TodayMaterial.allCases) { Text($0.title).tag(TodayMaterial?.some($0)) }
             }
-            .pickerStyle(.segmented)
+            .accessibilityIdentifier("section-material")
             Picker("Densità", selection: section.density) {
                 ForEach(TodaySection.Density.allCases) { Text($0.title).tag($0) }
             }
@@ -262,7 +293,7 @@ struct ZoneEditor: View {
                 ForEach(TodayStyle.DateFont.allCases) { font in
                     Button { style.dateFont = font } label: {
                         Text("15")
-                            .font(font.font(size: 28, weight: style.weight))
+                            .font(font.font(size: 28, weight: style.dateWeight))
                             .frame(maxWidth: .infinity, minHeight: 56)
                             .background(style.dateFont == font ? AnyShapeStyle(.tint.opacity(0.18)) : AnyShapeStyle(.quaternary.opacity(0.5)),
                                         in: .rect(cornerRadius: 14))
@@ -293,86 +324,82 @@ struct ZoneEditor: View {
                 Image(systemName: "textformat.size.larger")
             }
         }
-        Section("Colore") {
-            HStack(spacing: 14) {
-                ForEach(TodayStyle.Accent.allCases) { accent in
-                    Button { style.dateAccent = accent } label: {
-                        Circle()
-                            .fill(accent.color)
-                            .frame(width: 34, height: 34)
-                            .overlay {
-                                if style.dateAccent == accent {
-                                    Circle().strokeBorder(.background, lineWidth: 3).padding(2)
-                                }
-                            }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(style.dateAccent == accent ? .isSelected : [])
-                }
+        Section {
+            Picker("Colore", selection: $style.dateColour) {
+                ForEach(TodayStyle.DateColour.allCases) { Text($0.title).tag($0) }
             }
-            .frame(maxWidth: .infinity)
+            .pickerStyle(.segmented)
+        } header: {
+            Text("Colore")
+        } footer: {
+            Text("Il colore del Flavor si sceglie in Tema.")
         }
     }
 }
 
-/// A row of colour swatches, after a first choice that keeps the default and,
-/// where offered, one that follows the date.
-private struct AccentRow: View {
-    @Binding var selection: TodayStyle.Accent?
-    let automatic: LocalizedStringKey
-    var followsDate: Binding<Bool>?
-
-    private var following: Bool { followsDate?.wrappedValue ?? false }
+/// The Flavor swatches, then the system's colour picker for any other colour.
+private struct FlavorRow: View {
+    @Binding var flavor: Flavor
+    @Environment(\.self) private var environment
 
     var body: some View {
         ScrollView(.horizontal) {
-            HStack(spacing: 14) {
-                chip(automatic, selected: selection == nil && !following) {
-                    selection = nil
-                    followsDate?.wrappedValue = false
-                }
-                if let followsDate {
-                    chip("Come la data", selected: following) { followsDate.wrappedValue = true }
-                        .accessibilityIdentifier("accent-date")
-                }
-                ForEach(TodayStyle.Accent.allCases) { accent in
-                    Button {
-                        selection = accent
-                        followsDate?.wrappedValue = false
-                    } label: {
+            HStack(spacing: 12) {
+                ForEach(Flavor.swatches) { swatch in
+                    Button { flavor = swatch.flavor } label: {
                         Circle()
-                            .fill(accent.color)
+                            .fill(swatch.flavor.base.color)
                             .frame(width: 34, height: 34)
                             .overlay {
-                                if selection == accent && !following {
+                                if flavor == swatch.flavor {
                                     Circle().strokeBorder(.background, lineWidth: 3).padding(2)
                                 }
                             }
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(Text(accent.title))
-                    .accessibilityIdentifier("accent-\(accent.rawValue)")
-                    .accessibilityAddTraits(selection == accent && !following ? .isSelected : [])
+                    .accessibilityLabel(Text(swatch.name))
+                    .accessibilityIdentifier("flavor-\(swatch.flavor.hex)")
+                    .accessibilityAddTraits(flavor == swatch.flavor ? .isSelected : [])
                 }
+                ColorPicker("Altro colore", selection: pickerColour, supportsOpacity: false)
+                    .labelsHidden()
+                    .accessibilityIdentifier("flavor-picker")
             }
             .padding(.vertical, 2)
         }
         .scrollIndicators(.hidden)
     }
 
-    private func chip(_ title: LocalizedStringKey, selected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 12)
-                .frame(height: 34)
-                .background(.quaternary.opacity(0.6), in: .capsule)
-                .overlay {
-                    if selected { Capsule().strokeBorder(.tint, lineWidth: 2) }
-                }
+    /// Any colour the picker returns, resolved to sRGB.
+    private var pickerColour: Binding<Color> {
+        Binding {
+            flavor.base.color
+        } set: { colour in
+            let resolved = colour.resolve(in: environment)
+            flavor = Flavor(red: Double(resolved.red), green: Double(resolved.green), blue: Double(resolved.blue))
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+/// A material on the look's background, with a line of text and an accent.
+private struct MaterialPreview: View {
+    let material: TodayMaterial
+    let style: TodayStyle
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        TodayBackgroundView(background: style.background, flavor: style.flavor)
+            .overlay {
+                VStack(alignment: .leading, spacing: 3) {
+                    Capsule().fill(style.accent(scheme)).frame(width: 18, height: 4)
+                    Capsule().fill(.primary.opacity(0.6)).frame(width: 26, height: 3)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .padding(7)
+                .todayMaterial(material, flavor: style.flavor, cornerRadius: 9)
+                .padding(8)
+            }
+            .clipShape(.rect(cornerRadius: 14))
     }
 }
 

@@ -58,21 +58,25 @@ nonisolated enum TodayBackground: String, Codable, CaseIterable, Identifiable, S
     }
 }
 
-/// Draws a ``TodayBackground`` in a colour. Patterns are drawn with `Canvas`,
-/// so they stay sharp at any size and cost one layer.
+/// Draws a ``TodayBackground`` in a Flavor: its ground, with the pattern in
+/// its accent. Patterns are drawn with `Canvas`, so they stay sharp at any
+/// size and cost one layer. With no pattern the page keeps the system's
+/// background.
 struct TodayBackgroundView: View {
     let background: TodayBackground
-    let tint: Color
+    let flavor: Flavor
 
     @Environment(\.colorScheme) private var scheme
 
     private var strength: Double { scheme == .dark ? 1.4 : 1 }
+    private var tint: Color { flavor.accent(dark: scheme == .dark).color }
 
     var body: some View {
         ZStack {
-            Color(.systemBackground)
-            if background != .plain {
-                tint.opacity(0.07 * strength)
+            if background == .plain {
+                Color(.systemBackground)
+            } else {
+                flavor.ground(dark: scheme == .dark).color
             }
             pattern
         }
@@ -314,7 +318,7 @@ nonisolated struct SeededGenerator: RandomNumberGenerator {
     ScrollView {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 110))], spacing: 12) {
             ForEach(TodayBackground.allCases) { background in
-                TodayBackgroundView(background: background, tint: .orange)
+                TodayBackgroundView(background: background, flavor: Flavor(hex: "#E8751A")!)
                     .frame(height: 180)
                     .clipShape(.rect(cornerRadius: 20))
                     .overlay(alignment: .bottomLeading) {

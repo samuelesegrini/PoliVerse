@@ -3,35 +3,58 @@ import SwiftUI
 import Testing
 @testable import PoliVerse
 
-/// The Oggi style survives storage and maps the weight slider to a weight.
+/// The Oggi style survives storage, maps the weight slider to a weight, and
+/// carries looks saved by older versions into the Flavor and Material model.
 @Suite("Today style")
 struct TodayStyleTests {
     @Test("Round-trips through its stored string")
     func roundTrip() throws {
         var style = TodayStyle()
-        style.dateFont = .serif
+        style.dateFont = .didot
         style.dateWeight = 0.3
-        style.dateAccent = .violet
+        style.dateColour = .flavor
+        style.flavor = try #require(Flavor(hex: "#C2386F"))
+        style.material = .glow
+        style.textDesign = .serif
         style.dateSize = 1.2
         style.greeting = .custom
         style.customGreeting = "Forza!"
-        style.backgroundAccent = .green
         style.bar.showsSettings = false
-        style.bar.tint = .rose
+        style.updateSection(.upcoming) { $0.material = .tintedGlass }
         let restored = try #require(TodayStyle(rawValue: style.rawValue))
-        #expect(restored.dateFont == style.dateFont)
-        #expect(restored.dateWeight == style.dateWeight)
-        #expect(restored.dateAccent == style.dateAccent)
+        #expect(restored.dateFont == .didot)
+        #expect(restored.flavor == style.flavor)
+        #expect(restored.dateColour == .flavor)
+        #expect(restored.material == .glow)
+        #expect(restored.textDesign == .serif)
         #expect(restored.dateSize == 1.2)
         #expect(restored.customGreeting == "Forza!")
-        #expect(restored.backgroundAccent == .green)
         #expect(restored.bar == style.bar)
+        #expect(restored.section(.upcoming)?.material == .tintedGlass)
         #expect(restored == style)
     }
 
     @Test("A corrupt stored value is refused, so the default is used")
     func corrupt() {
         #expect(TodayStyle(rawValue: "not json") == nil)
+    }
+
+    @Test("A new look is ink on the Politecnico's blue, soft cards, the system's text")
+    func defaults() {
+        let style = TodayStyle()
+        #expect(style.flavor == .polimi)
+        #expect(style.dateColour == .ink)
+        #expect(style.material == .soft)
+        #expect(style.textDesign == .standard)
+    }
+
+    @Test("The app's accent colour is always the Flavor's readable accent, in both modes")
+    func controlsFollowFlavor() throws {
+        var style = TodayStyle()
+        style.flavor = try #require(Flavor(hex: "#FFD60A"))
+        for dark in [false, true] {
+            #expect(style.controlAccent(dark: dark) == style.flavor.accent(dark: dark))
+        }
     }
 
     @Test("The slider ends are regular and black")
@@ -52,15 +75,6 @@ struct TodayStyleTests {
         #expect(style.dateSize == TodayStyle.dateSizes.lowerBound)
     }
 
-    @Test("The background takes the date's colour unless one of its own is chosen")
-    func backgroundAccentInUse() {
-        var style = TodayStyle()
-        style.dateAccent = .orange
-        #expect(style.backgroundAccentInUse == .orange)
-        style.backgroundAccent = .violet
-        #expect(style.backgroundAccentInUse == .violet)
-    }
-
     @Test("A custom greeting says what the student wrote, or the classic line while it is empty")
     func customGreeting() {
         let day = Date.now
@@ -68,24 +82,42 @@ struct TodayStyleTests {
         #expect(GreetingStyle.custom.text(for: day, firstName: nil, custom: " ") == GreetingStyle.classic.text(for: day, firstName: nil))
     }
 
-    @Test("Every bar button shows by default, with the app's own tint")
-    func barDefaults() {
-        let bar = TodayBarStyle()
-        #expect(bar.showsProfile && bar.showsSettings && bar.showsAdd && bar.showsDate)
-        #expect(bar.tint == nil)
-        #expect(!bar.tintFollowsDate)
+    @Test("A section draws in its own material, or the page's when it has none")
+    func sectionMaterial() {
+        var style = TodayStyle()
+        style.material = .frosted
+        #expect(style.material(for: style.section(.upcoming)!) == .frosted)
+        style.updateSection(.upcoming) { $0.material = .bare }
+        #expect(style.material(for: style.section(.upcoming)!) == .bare)
     }
 
-    @Test("The controls' colour is the app's, a chosen one, or the date's; ink as the date's keeps the app's")
-    func controlTint() {
-        var style = TodayStyle()
-        #expect(style.controlAccent == nil)
-        style.bar.tint = .green
-        #expect(style.controlAccent == .green)
-        style.bar.tintFollowsDate = true
-        style.dateAccent = .violet
-        #expect(style.controlAccent == .violet)
-        style.dateAccent = .ink
-        #expect(style.controlAccent == nil)
+    // MARK: Older looks
+
+    @Test("A coloured date from before Flavor becomes that Flavor, and the date keeps its colour")
+    func legacyDateAccent() throws {
+        let style = try #require(TodayStyle(rawValue: #"{"dateAccent":"orange"}"#))
+        #expect(style.flavor == TodayStyle.legacyFlavor("orange"))
+        #expect(style.dateColour == .flavor)
+    }
+
+    @Test("An ink date keeps ink; the background's colour, else the controls', becomes the Flavor")
+    func legacyInk() throws {
+        let background = try #require(TodayStyle(rawValue: #"{"dateAccent":"ink","backgroundAccent":"green","bar":{"tint":"rose"}}"#))
+        #expect(background.dateColour == .ink)
+        #expect(background.flavor == TodayStyle.legacyFlavor("green"))
+        let controls = try #require(TodayStyle(rawValue: #"{"bar":{"tintFollowsDate":true},"dateAccent":"violet"}"#))
+        #expect(controls.flavor == TodayStyle.legacyFlavor("violet"))
+        let plain = try #require(TodayStyle(rawValue: #"{"dateFont":"serif"}"#))
+        #expect(plain.flavor == .polimi)
+        #expect(plain.dateColour == .ink)
+    }
+
+    @Test("A section's old card becomes its material: glass stays glass, plain is bare, filled follows the page")
+    func legacyCards() throws {
+        let style = try #require(TodayStyle(rawValue:
+            #"{"sections":[{"kind":"upcoming","card":"glass"},{"kind":"timetable","card":"plain"},{"kind":"exams","card":"filled"}]}"#))
+        #expect(style.section(.upcoming)?.material == .glass)
+        #expect(style.section(.timetable)?.material == .bare)
+        #expect(style.section(.exams)?.material == nil)
     }
 }

@@ -50,25 +50,6 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
         }
     }
 
-    nonisolated enum CardStyle: String, Codable, CaseIterable, Identifiable, Sendable {
-        /// Liquid Glass over the background.
-        case glass
-        /// A soft filled card.
-        case filled
-        /// No card: rows straight on the page.
-        case plain
-
-        var id: String { rawValue }
-
-        var title: LocalizedStringKey {
-            switch self {
-            case .glass: "Vetro"
-            case .filled: "Pieno"
-            case .plain: "Senza scheda"
-            }
-        }
-    }
-
     nonisolated enum Density: String, Codable, CaseIterable, Identifiable, Sendable {
         case compact, comfortable
 
@@ -83,7 +64,8 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
     }
 
     var kind: Kind
-    var card: CardStyle = .filled
+    /// The section's own material; nil draws it in the page's.
+    var material: TodayMaterial?
     var density: Density = .comfortable
     /// How many entries a listing section shows.
     var itemLimit = 3 {
@@ -108,18 +90,40 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
 /// its defaults for anything it did not have.
 nonisolated extension TodaySection: Codable {
     private enum CodingKeys: String, CodingKey {
-        case kind, card, density, itemLimit, tinted, isHidden
+        case kind, material, density, itemLimit, tinted, isHidden
+        /// Before materials: glass, filled or plain.
+        case card
     }
 
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         kind = try container.decode(Kind.self, forKey: .kind)
-        card = try container.decodeIfPresent(CardStyle.self, forKey: .card) ?? card
+        if let stored = try container.decodeIfPresent(TodayMaterial.self, forKey: .material) {
+            material = stored
+        } else {
+            // Glass stays glass and plain becomes bare; filled was the page's
+            // look, so it follows the page.
+            switch try container.decodeIfPresent(String.self, forKey: .card) {
+            case "glass": material = .glass
+            case "plain": material = .bare
+            default: material = nil
+            }
+        }
         density = try container.decodeIfPresent(Density.self, forKey: .density) ?? density
         // Observers do not run in an initialiser: clamp by hand.
         itemLimit = (try container.decodeIfPresent(Int.self, forKey: .itemLimit) ?? itemLimit).clamped(to: Self.itemLimits)
         tinted = try container.decodeIfPresent(Bool.self, forKey: .tinted) ?? tinted
         isHidden = try container.decodeIfPresent(Bool.self, forKey: .isHidden) ?? isHidden
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(kind, forKey: .kind)
+        try container.encodeIfPresent(material, forKey: .material)
+        try container.encode(density, forKey: .density)
+        try container.encode(itemLimit, forKey: .itemLimit)
+        try container.encode(tinted, forKey: .tinted)
+        try container.encode(isHidden, forKey: .isHidden)
     }
 }
 
