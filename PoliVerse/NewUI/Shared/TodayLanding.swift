@@ -25,28 +25,22 @@ struct TodayLanding: View {
     var onEdit: (Zone) -> Void = { _ in }
 
     @Environment(\.locale) private var locale
+    @Environment(Session.self) private var session
 
     var body: some View {
         VStack(alignment: .leading, spacing: editing ? 32 : 24) {
-            VStack(alignment: .leading, spacing: editing ? 24 : 8) {
+            VStack(alignment: style.dateAlignment.horizontal, spacing: editing ? 24 : 8) {
                 if style.showsGreeting || editing {
                     zone(.greeting) {
-                        Text("Buona giornata!")
+                        Text(style.greeting.text(for: day, firstName: session.student?.firstName))
                             .font(.headline)
+                            .frame(maxWidth: .infinity, alignment: style.dateAlignment.frame)
                             .opacity(style.showsGreeting ? 1 : 0.35)
+                            .contentTransition(.opacity)
                     }
                 }
                 zone(.date) {
-                    VStack(alignment: .leading, spacing: -18) {
-                        Text(day.formatted(.dateTime.day(.twoDigits).month(.twoDigits).locale(locale))
-                            .replacingOccurrences(of: "/", with: "."))
-                        Text(day.formatted(.dateTime.weekday(.abbreviated).locale(locale)).uppercased())
-                    }
-                    .font(style.dateFont.font(size: 72, weight: style.weight))
-                    .foregroundStyle(style.dateAccent.color)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                    .contentTransition(.interpolate)
+                    DateHeader(day: day, style: style)
                 }
             }
 

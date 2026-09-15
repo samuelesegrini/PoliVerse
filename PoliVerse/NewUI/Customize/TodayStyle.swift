@@ -45,6 +45,9 @@ nonisolated struct TodayStyle: Equatable, Sendable {
     var showsUpcoming = true
     var showsTimetable = true
     var background: TodayBackground = .plain
+    var greeting: GreetingStyle = .classic
+    var dateLayout: DateLayout = .stacked
+    var dateAlignment: DateAlignment = .leading
 
     /// The pattern takes the date's colour; plain ink would read as grey.
     @MainActor var backgroundTint: Color {
@@ -67,17 +70,21 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         warm.dateAccent = .orange
         warm.dateFont = .rounded
         warm.background = .grid
+        warm.greeting = .timeOfDay
         var serif = TodayStyle()
         serif.dateFont = .serif
         serif.dateWeight = 0.5
         serif.dateAccent = .polimi
         serif.background = .ovals
+        serif.dateLayout = .words
+        serif.greeting = .motto
         var minimal = TodayStyle()
         minimal.dateFont = .mono
         minimal.dateWeight = 0.2
         minimal.showsGreeting = false
         minimal.showsUpcoming = false
         minimal.background = .dots
+        minimal.dateLayout = .bigDay
         return [TodayStyle(), warm, serif, minimal]
     }
 
@@ -103,6 +110,9 @@ nonisolated private struct StoredTodayStyle: Codable {
     var showsUpcoming: Bool?
     var showsTimetable: Bool?
     var background: TodayBackground?
+    var greeting: GreetingStyle?
+    var dateLayout: DateLayout?
+    var dateAlignment: DateAlignment?
 }
 
 nonisolated extension TodayStyle: RawRepresentable {
@@ -117,12 +127,16 @@ nonisolated extension TodayStyle: RawRepresentable {
         showsUpcoming = stored.showsUpcoming ?? showsUpcoming
         showsTimetable = stored.showsTimetable ?? showsTimetable
         background = stored.background ?? background
+        greeting = stored.greeting ?? greeting
+        dateLayout = stored.dateLayout ?? dateLayout
+        dateAlignment = stored.dateAlignment ?? dateAlignment
     }
 
     var rawValue: String {
         let stored = StoredTodayStyle(dateFont: dateFont, dateWeight: dateWeight, dateAccent: dateAccent,
                                       showsGreeting: showsGreeting, showsUpcoming: showsUpcoming,
-                                      showsTimetable: showsTimetable, background: background)
+                                      showsTimetable: showsTimetable, background: background,
+                                      greeting: greeting, dateLayout: dateLayout, dateAlignment: dateAlignment)
         // Sorted keys: the standard library's `==` for RawRepresentable types
         // compares `rawValue`, and unsorted JSON keys would make equal styles
         // unequal.

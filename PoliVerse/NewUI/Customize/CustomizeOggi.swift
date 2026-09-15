@@ -89,38 +89,44 @@ struct CustomizeOggi: View {
 
     private func carousel(screen: CGSize, insets: EdgeInsets) -> some View {
         let cardSize = CGSize(width: screen.width * Self.cardScale, height: screen.height * Self.cardScale)
-        return ScrollView(.horizontal) {
-            LazyHStack(spacing: 18) {
-                ForEach(Array(looks.enumerated()), id: \.offset) { index, look in
-                    let middle = index == (page ?? 0)
-                    card(look, screen: screen, insets: insets)
-                        .frame(width: cardSize.width, height: cardSize.height)
-                        .scrollTransition(.interactive, axis: .horizontal) { [expanded] view, phase in
-                            // Off while covering the screen, where it would let
-                            // the app show through.
-                            view
-                                .scaleEffect(phase.isIdentity || expanded ? 1 : 0.92)
-                                .opacity(phase.isIdentity || expanded ? 1 : 0.6)
-                        }
-                        .matchedTransitionSource(id: index, in: cards)
-                        .modifier(FillScreen(progress: middle && expanded ? 1 : 0, screen: screen))
-                        .opacity(middle || !expanded ? 1 : 0)
-                        .zIndex(middle ? 1 : 0)
-                        .id(index)
-                        .onTapGesture { select(index) }
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(Text("Aspetto \(index + 1)"))
-                        .accessibilityAddTraits(.isButton)
-                        .accessibilityIdentifier("customize-card-\(index)")
+        return ScrollViewReader { reader in
+            ScrollView(.horizontal) {
+                LazyHStack(spacing: 18) {
+                    ForEach(Array(looks.enumerated()), id: \.offset) { index, look in
+                        let middle = index == (page ?? 0)
+                        card(look, screen: screen, insets: insets)
+                            .frame(width: cardSize.width, height: cardSize.height)
+                            .scrollTransition(.interactive, axis: .horizontal) { [expanded] view, phase in
+                                // Off while covering the screen, where it would let
+                                // the app show through.
+                                view
+                                    .scaleEffect(phase.isIdentity || expanded ? 1 : 0.92)
+                                    .opacity(phase.isIdentity || expanded ? 1 : 0.6)
+                            }
+                            .matchedTransitionSource(id: index, in: cards)
+                            .modifier(FillScreen(progress: middle && expanded ? 1 : 0, screen: screen))
+                            .opacity(middle || !expanded ? 1 : 0)
+                            .zIndex(middle ? 1 : 0)
+                            .id(index)
+                            .onTapGesture { select(index) }
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel(Text("Aspetto \(index + 1)"))
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityIdentifier("customize-card-\(index)")
+                    }
                 }
+                .scrollTargetLayout()
             }
-            .scrollTargetLayout()
+            .scrollIndicators(.hidden)
+            .scrollTargetBehavior(.viewAligned)
+            .scrollPosition(id: $page, anchor: .center)
+            .scrollDisabled(expanded)
+            .contentMargins(.horizontal, (screen.width - cardSize.width) / 2, for: .scrollContent)
+            // The position's first value is not applied to a lazy stack: without
+            // this the carousel opened on the first look while the look in use,
+            // off to the side, was the one shrinking out of the app.
+            .onAppear { reader.scrollTo(page, anchor: .center) }
         }
-        .scrollIndicators(.hidden)
-        .scrollTargetBehavior(.viewAligned)
-        .scrollPosition(id: $page, anchor: .center)
-        .scrollDisabled(expanded)
-        .contentMargins(.horizontal, (screen.width - cardSize.width) / 2, for: .scrollContent)
     }
 
     private var controls: some View {
@@ -372,7 +378,7 @@ private struct ZoneEditor: View {
             Form {
                 switch zone {
                 case .date: dateControls
-                case .greeting: Toggle("Mostra il saluto", isOn: $style.showsGreeting)
+                case .greeting: greetingControls
                 case .upcoming: Toggle("Mostra In arrivo", isOn: $style.showsUpcoming)
                 case .timetable: Toggle("Mostra l’orario", isOn: $style.showsTimetable)
                 case .background: backgroundControls
@@ -417,8 +423,76 @@ private struct ZoneEditor: View {
         }
     }
 
+    @Environment(Session.self) private var session
+
+    @ViewBuilder
+    private var greetingControls: some View {
+        Section {
+            Toggle("Mostra il saluto", isOn: $style.showsGreeting)
+        }
+        Section("Stile") {
+            ForEach(GreetingStyle.allCases) { greeting in
+                Button { style.greeting = greeting } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(greeting.title).font(.subheadline.weight(.medium))
+                            Text(greeting.text(for: .now, firstName: session.student?.firstName))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if style.greeting == greeting {
+                            Image(systemName: "checkmark").foregroundStyle(.tint)
+                        }
+                    }
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .disabled(!style.showsGreeting)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var dateLayoutControls: some View {
+        Section("Disposizione") {
+            ScrollView(.horizontal) {
+                HStack(spacing: 10) {
+                    ForEach(DateLayout.allCases) { layout in
+                        Button { style.dateLayout = layout } label: {
+                            VStack(spacing: 6) {
+                                DateHeader(day: .now, style: { var preview = style; preview.dateLayout = layout; preview.dateAlignment = .leading; return preview }(), size: 30)
+                                    .padding(10)
+                                    .frame(width: 150, height: 86, alignment: .leading)
+                                    .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 14))
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 14)
+                                            .strokeBorder(style.dateLayout == layout ? AnyShapeStyle(.tint) : AnyShapeStyle(.clear), lineWidth: 2)
+                                    }
+                                Text(layout.title).font(.caption)
+                                    .foregroundStyle(style.dateLayout == layout ? .primary : .secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(style.dateLayout == layout ? .isSelected : [])
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            .scrollIndicators(.hidden)
+
+            Picker("Allineamento", selection: $style.dateAlignment) {
+                ForEach(DateAlignment.allCases) { alignment in
+                    Image(systemName: alignment.systemImage).tag(alignment)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
     @ViewBuilder
     private var dateControls: some View {
+        dateLayoutControls
         Section("Carattere") {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
                 ForEach(TodayStyle.DateFont.allCases) { font in
