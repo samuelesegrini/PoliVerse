@@ -37,7 +37,7 @@ final class NotificationService {
     func requestAuthorization() async -> Bool {
         do {
             let granted = try await centre.requestAuthorization(
-                options: [.alert, .sound, .badge, .timeSensitive])
+                options: [.alert, .sound, .badge])
             await refreshAuthorization()
             log.notice("Notification authorization: \(granted, privacy: .public)")
             return granted

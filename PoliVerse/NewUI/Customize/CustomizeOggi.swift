@@ -95,7 +95,7 @@ struct CustomizeOggi: View {
                     let middle = index == (page ?? 0)
                     card(look, screen: screen, insets: insets)
                         .frame(width: cardSize.width, height: cardSize.height)
-                        .scrollTransition(.interactive, axis: .horizontal) { view, phase in
+                        .scrollTransition(.interactive, axis: .horizontal) { [expanded] view, phase in
                             // Off while covering the screen, where it would let
                             // the app show through.
                             view

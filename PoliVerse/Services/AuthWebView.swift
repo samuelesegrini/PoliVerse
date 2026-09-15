@@ -183,7 +183,7 @@ struct AuthWebView: UIViewRepresentable {
                 reissued.insert(url.absoluteString)
                 cancelledDeliberately = true
                 log.debug("Re-issuing \(url.host ?? "?", privacy: .public) navigation in-app")
-                await MainActor.run { webView.load(URLRequest(url: url)) }
+                _ = await MainActor.run { webView.load(URLRequest(url: url)) }
                 return .cancel
             }
 
@@ -211,7 +211,7 @@ struct AuthWebView: UIViewRepresentable {
                 return .cancel
             case .load(let next):
                 cancelledDeliberately = true
-                await MainActor.run { webView.load(URLRequest(url: next)) }
+                _ = await MainActor.run { webView.load(URLRequest(url: next)) }
                 return .cancel
             }
         }
