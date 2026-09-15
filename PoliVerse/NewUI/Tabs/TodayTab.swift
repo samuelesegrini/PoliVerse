@@ -4,14 +4,14 @@ import SwiftUI
 ///
 /// Only the navigation bar is built so far. On the left, the profile menu and
 /// settings as two separate glass buttons; in the middle, the day being
-/// shown, which opens a date picker; on the right, add and more actions in
+/// shown, which drops a linear day strip down from itself; on the right, add and more actions in
 /// one glass group.
 struct TodayTab: View {
     @Environment(Session.self) private var session
     @Environment(\.locale) private var locale
 
     @State private var day = Date.now
-    @State private var showingDatePicker = false
+    @State private var showingDays = false
     @State private var showingSettings = false
     @State private var showingProfile = false
 
@@ -22,9 +22,27 @@ struct TodayTab: View {
                                        description: Text("Lezioni, esami e scadenze del giorno."))
                     .padding(.top, 120)
             }
+            // Tapping outside the strip closes it.
+            .overlay {
+                if showingDays {
+                    Color.clear
+                        .contentShape(.rect)
+                        .onTapGesture { withAnimation(.snappy) { showingDays = false } }
+                }
+            }
+            .overlay(alignment: .top) {
+                if showingDays {
+                    DayStrip(day: $day) {
+                        withAnimation(.snappy(duration: 0.35)) { showingDays = false }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.top, 4)
+                    // Grows out of the date above it rather than sliding in.
+                    .transition(.scale(scale: 0.2, anchor: .top).combined(with: .opacity))
+                }
+            }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
-            .sheet(isPresented: $showingDatePicker) { datePicker }
             .sheet(isPresented: $showingSettings) { SettingsSheet() }
             .sheet(isPresented: $showingProfile) {
                 NavigationStack {
@@ -52,13 +70,14 @@ struct TodayTab: View {
         }
 
         ToolbarItem(placement: .principal) {
-            Button { showingDatePicker = true } label: {
+            Button { withAnimation(.spring(duration: 0.4, bounce: 0.25)) { showingDays.toggle() } } label: {
                 HStack(spacing: 6) {
                     Text(day.formatted(.dateTime.day().month(.abbreviated).locale(locale)).capitalized)
                         .font(.headline)
                     Image(systemName: "chevron.down.circle.fill")
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(showingDays ? 180 : 0))
                 }
             }
             .buttonStyle(.plain)
@@ -110,24 +129,6 @@ struct TodayTab: View {
         .accessibilityLabel("Profilo")
     }
 
-    private var datePicker: some View {
-        NavigationStack {
-            DatePicker("Giorno", selection: $day, displayedComponents: .date)
-                .datePickerStyle(.graphical)
-                .padding(.horizontal)
-                .navigationTitle("Scegli un giorno")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Oggi") { day = .now }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Fine", systemImage: "checkmark") { showingDatePicker = false }
-                    }
-                }
-        }
-        .presentationDetents([.medium, .large])
-    }
 }
 
 #Preview("Oggi") {
