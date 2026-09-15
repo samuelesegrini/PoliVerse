@@ -13,6 +13,7 @@ struct TodayTab: View {
     @State private var day = Date.now
     @State private var showingDatePicker = false
     @State private var showingSettings = false
+    @State private var showingProfile = false
 
     var body: some View {
         NavigationStack {
@@ -24,8 +25,16 @@ struct TodayTab: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
             .sheet(isPresented: $showingDatePicker) { datePicker }
-            .sheet(isPresented: $showingSettings) {
-                NavigationStack { SettingsView() }
+            .sheet(isPresented: $showingSettings) { SettingsSheet() }
+            .sheet(isPresented: $showingProfile) {
+                NavigationStack {
+                    ProfileView()
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Chiudi") { showingProfile = false }
+                            }
+                        }
+                }
             }
         }
     }
@@ -73,7 +82,7 @@ struct TodayTab: View {
     private var profileMenu: some View {
         Menu {
             Section {
-                Button {} label: {
+                Button { showingProfile = true } label: {
                     Text(session.student?.fullName ?? String(localized: "Ospite"))
                     Text(session.student.map { String(localized: "Matricola \($0.matricola)") } ?? "")
                 }
@@ -88,11 +97,7 @@ struct TodayTab: View {
                 Button("Impostazioni", systemImage: "gearshape") { showingSettings = true }
             }
         } label: {
-            Text(session.student?.initials ?? "?")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Theme.onAccent)
-                .frame(width: 32, height: 32)
-                .background(Theme.brand.gradient, in: .circle)
+            ProfileAvatar(student: session.student, size: 32)
         }
         .accessibilityLabel("Profilo")
     }
