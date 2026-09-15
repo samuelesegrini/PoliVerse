@@ -4,6 +4,11 @@ import SwiftUI
 /// ``TodayBar``. In the single-page layout the same page hides the tab bar
 /// and carries the ``SinglePagePanel``.
 struct TodayTab: View {
+    private func minimizePanel() {
+        guard shell.singlePage, shell.panelDetent != .peek else { return }
+        withAnimation(.snappy) { shell.panelDetent = .peek }
+    }
+
     @Environment(\.shell) private var shell
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
 
@@ -11,15 +16,18 @@ struct TodayTab: View {
         NavigationStack {
             ScrollView {
                 TodayLanding(day: shell.day, style: style)
-                    .padding(.bottom, shell.singlePage ? 180 : 40)
+                    .padding(.bottom, shell.singlePage ? 120 : 40)
             }
+            // Using the page behind the panel tucks the panel away, as in Maps.
+            .onScrollPhaseChange { _, phase in
+                if phase == .interacting { minimizePanel() }
+            }
+            .simultaneousGesture(TapGesture().onEnded(minimizePanel))
             .todayBar()
             .toolbarVisibility(shell.singlePage ? .hidden : .automatic, for: .tabBar)
-        }
-        .overlay {
-            if shell.singlePage {
+            .sheet(isPresented: Binding(get: { shell.showsPanel }, set: { _ in }),
+                   onDismiss: shell.panelDidDismiss) {
                 SinglePagePanel()
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
     }

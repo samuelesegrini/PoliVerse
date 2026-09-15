@@ -32,6 +32,40 @@ final class ShellState {
     #else
     var isCustomizing = false
     #endif
+
+    /// The day stepper popover under the date.
+    var showingDays = false
+
+    // MARK: Single-page panel
+
+    enum PanelDetent: Hashable { case peek, half, full }
+    var panelDetent = PanelDetent.peek
+    /// Something asked to present while the panel was up; it runs once the
+    /// panel's sheet has gone, since one view presents one thing at a time.
+    private(set) var pendingPresentation: (() -> Void)?
+    private var panelHeld = false
+
+    /// The panel is presented only while nothing else is.
+    var showsPanel: Bool {
+        singlePage && !panelHeld && pendingPresentation == nil && !showingSettings && !showingProfile
+            && !showingDays && !isCustomizing && customizeStage == .off
+    }
+
+    /// Opens a sheet, popover or Personalizza: straight away in the tab
+    /// layout, after the panel steps aside in the single page.
+    func present(_ action: @escaping () -> Void) {
+        guard singlePage, showsPanel else { action(); return }
+        pendingPresentation = action
+    }
+
+    /// Called when the panel's sheet has finished dismissing.
+    func panelDidDismiss() {
+        guard let action = pendingPresentation else { return }
+        panelHeld = true
+        pendingPresentation = nil
+        action()
+        panelHeld = false
+    }
 }
 
 extension ShellState {

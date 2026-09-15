@@ -12,7 +12,6 @@ struct TodayBar: ViewModifier {
     @Environment(\.locale) private var locale
     @Environment(\.shell) private var shell
 
-    @State private var showingDays = false
     /// Drives the chevron separately from the popover: bound to `showingDays`
     /// alone, the toolbar only redrew it once the popover had gone.
     @State private var chevronUp = false
@@ -32,13 +31,13 @@ struct TodayBar: ViewModifier {
         ToolbarItem(placement: .topBarLeading) { profileMenu }
         ToolbarSpacer(.fixed, placement: .topBarLeading)
         ToolbarItem(placement: .topBarLeading) {
-            Button("Impostazioni", systemImage: "gearshape") { shell.showingSettings = true }
+            Button("Impostazioni", systemImage: "gearshape") { shell.present { shell.showingSettings = true } }
         }
 
         ToolbarItem(placement: .principal) {
             Button {
                 withAnimation(.snappy(duration: 0.3)) { chevronUp.toggle() }
-                showingDays.toggle()
+                if shell.showingDays { shell.showingDays = false } else { shell.present { shell.showingDays = true } }
             } label: {
                 HStack(spacing: 6) {
                     Text(shell.day.formatted(.dateTime.day().month(.abbreviated).locale(locale)).capitalized)
@@ -52,14 +51,14 @@ struct TodayBar: ViewModifier {
             .buttonStyle(.plain)
             // A real popover, kept as one on iPhone: the system morphs it out
             // of the date and back, and closes it on a tap outside.
-            .popover(isPresented: $showingDays, arrowEdge: .top) {
+            .popover(isPresented: Binding(get: { shell.showingDays }, set: { shell.showingDays = $0 }), arrowEdge: .top) {
                 DayStrip(day: Binding(get: { shell.day }, set: { shell.day = $0 }))
                     .frame(width: 360)
                     .presentationCompactAdaptation(.popover)
             }
             // A tap outside closes the popover without the button: turn the
             // chevron back as soon as that starts.
-            .onChange(of: showingDays) { _, showing in
+            .onChange(of: shell.showingDays) { _, showing in
                 if chevronUp != showing { withAnimation(.snappy(duration: 0.3)) { chevronUp = showing } }
             }
             .accessibilityLabel(Text("Giorno mostrato: \(shell.day.formatted(.dateTime.day().month(.wide).locale(locale)))"))
@@ -75,7 +74,7 @@ struct TodayBar: ViewModifier {
             Menu("Altro", systemImage: "ellipsis") {
                 Button("Vai a oggi", systemImage: "arrow.uturn.backward") { shell.day = .now }
                     .disabled(Calendar.current.isDateInToday(shell.day))
-                Button("Personalizza", systemImage: "paintbrush") { shell.isCustomizing = true }
+                Button("Personalizza", systemImage: "paintbrush") { shell.present { shell.isCustomizing = true } }
             }
         }
     }
@@ -86,7 +85,7 @@ struct TodayBar: ViewModifier {
     private var profileMenu: some View {
         Menu {
             Section {
-                Button { shell.showingProfile = true } label: {
+                Button { shell.present { shell.showingProfile = true } } label: {
                     Text(session.student?.fullName ?? String(localized: "Ospite"))
                     Text(session.student.map { String(localized: "Matricola \($0.matricola)") } ?? "")
                 }
@@ -98,7 +97,7 @@ struct TodayBar: ViewModifier {
             }
             .controlGroupStyle(.compactMenu)
             Section {
-                Button("Impostazioni", systemImage: "gearshape") { shell.showingSettings = true }
+                Button("Impostazioni", systemImage: "gearshape") { shell.present { shell.showingSettings = true } }
             }
         } label: {
             // Laid out at a symbol's width so the bar sizes its glass as the
