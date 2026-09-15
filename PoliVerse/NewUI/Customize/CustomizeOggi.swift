@@ -305,7 +305,8 @@ private struct LookEditor: View {
                     .padding(.top, 8)
                     .padding(.bottom, 360)
             }
-            .background(.background)
+            // The look's own ground, as on the card it zooms out of.
+            .background(TodayBackgroundView(background: draft.background, tint: draft.backgroundTint).ignoresSafeArea())
             .navigationTitle("Personalizza")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -316,6 +317,15 @@ private struct LookEditor: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Fine", systemImage: "checkmark") { onSave(draft) }
                         .accessibilityIdentifier("customize-editor-done")
+                }
+                // The background is behind every zone, so it has its own
+                // button, where the Lock Screen keeps its wallpaper.
+                ToolbarItem(placement: .bottomBar) {
+                    Button { editingZone = .background } label: {
+                        Label("Sfondo", systemImage: "square.grid.3x3.square")
+                            .labelStyle(.titleAndIcon)
+                    }
+                    .accessibilityIdentifier("customize-editor-background")
                 }
             }
             .sheet(item: $editingZone) { zone in
