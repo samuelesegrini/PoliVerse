@@ -3,7 +3,7 @@ import SwiftUI
 /// The single-page layout: a landing page for the day under ``TodayBar``, and
 /// every other part of the app in a ``BottomPanel``.
 struct SinglePageHome: View {
-    @State private var day = Date.now
+    @Environment(\.shell) private var shell
     @State private var detent: BottomPanel<PanelContent, AnyView>.Detent = .peek
     @Environment(AgendaService.self) private var agenda
     @State private var now = Date.now
@@ -13,10 +13,10 @@ struct SinglePageHome: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                LandingPage(day: day)
+                LandingPage(day: shell.day)
                     .padding(.bottom, 140)
             }
-            .todayBar(day: $day)
+            .todayBar()
         }
         .overlay {
             BottomPanel(detent: $detent) {

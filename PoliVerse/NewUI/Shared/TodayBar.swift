@@ -4,35 +4,23 @@ import SwiftUI
 /// profile and settings as two glass circles on the left, the day shown in
 /// the middle with its stepper popover, add and more on the right.
 ///
-/// It also presents what those buttons open, so each layout only applies it.
+/// The sheets its buttons open are presented by ``NewRootView``, through
+/// ``ShellState``, so they survive a change of layout.
 struct TodayBar: ViewModifier {
-    @Binding var day: Date
 
     @Environment(Session.self) private var session
     @Environment(\.locale) private var locale
+    @Environment(\.shell) private var shell
 
     @State private var showingDays = false
     /// Drives the chevron separately from the popover: bound to `showingDays`
     /// alone, the toolbar only redrew it once the popover had gone.
     @State private var chevronUp = false
-    @State private var showingSettings = false
-    @State private var showingProfile = false
 
     func body(content: Content) -> some View {
         content
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
-            .sheet(isPresented: $showingSettings) { SettingsSheet() }
-            .sheet(isPresented: $showingProfile) {
-                NavigationStack {
-                    ProfileView()
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("Chiudi") { showingProfile = false }
-                            }
-                        }
-                }
-            }
     }
 
     // MARK: - Toolbar
@@ -44,7 +32,7 @@ struct TodayBar: ViewModifier {
         ToolbarItem(placement: .topBarLeading) { profileMenu }
         ToolbarSpacer(.fixed, placement: .topBarLeading)
         ToolbarItem(placement: .topBarLeading) {
-            Button("Impostazioni", systemImage: "gearshape") { showingSettings = true }
+            Button("Impostazioni", systemImage: "gearshape") { shell.showingSettings = true }
         }
 
         ToolbarItem(placement: .principal) {
@@ -53,7 +41,7 @@ struct TodayBar: ViewModifier {
                 showingDays.toggle()
             } label: {
                 HStack(spacing: 6) {
-                    Text(day.formatted(.dateTime.day().month(.abbreviated).locale(locale)).capitalized)
+                    Text(shell.day.formatted(.dateTime.day().month(.abbreviated).locale(locale)).capitalized)
                         .font(.headline)
                     Image(systemName: "chevron.down.circle.fill")
                         .symbolRenderingMode(.hierarchical)
@@ -65,7 +53,7 @@ struct TodayBar: ViewModifier {
             // A real popover, kept as one on iPhone: the system morphs it out
             // of the date and back, and closes it on a tap outside.
             .popover(isPresented: $showingDays, arrowEdge: .top) {
-                DayStrip(day: $day)
+                DayStrip(day: Binding(get: { shell.day }, set: { shell.day = $0 }))
                     .frame(width: 360)
                     .presentationCompactAdaptation(.popover)
             }
@@ -74,7 +62,7 @@ struct TodayBar: ViewModifier {
             .onChange(of: showingDays) { _, showing in
                 if chevronUp != showing { withAnimation(.snappy(duration: 0.3)) { chevronUp = showing } }
             }
-            .accessibilityLabel(Text("Giorno mostrato: \(day.formatted(.dateTime.day().month(.wide).locale(locale)))"))
+            .accessibilityLabel(Text("Giorno mostrato: \(shell.day.formatted(.dateTime.day().month(.wide).locale(locale)))"))
         }
 
         ToolbarItem(placement: .topBarTrailing) {
@@ -85,8 +73,8 @@ struct TodayBar: ViewModifier {
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu("Altro", systemImage: "ellipsis") {
-                Button("Vai a oggi", systemImage: "arrow.uturn.backward") { day = .now }
-                    .disabled(Calendar.current.isDateInToday(day))
+                Button("Vai a oggi", systemImage: "arrow.uturn.backward") { shell.day = .now }
+                    .disabled(Calendar.current.isDateInToday(shell.day))
                 Button("Personalizza", systemImage: "paintbrush") {}
             }
         }
@@ -98,7 +86,7 @@ struct TodayBar: ViewModifier {
     private var profileMenu: some View {
         Menu {
             Section {
-                Button { showingProfile = true } label: {
+                Button { shell.showingProfile = true } label: {
                     Text(session.student?.fullName ?? String(localized: "Ospite"))
                     Text(session.student.map { String(localized: "Matricola \($0.matricola)") } ?? "")
                 }
@@ -110,7 +98,7 @@ struct TodayBar: ViewModifier {
             }
             .controlGroupStyle(.compactMenu)
             Section {
-                Button("Impostazioni", systemImage: "gearshape") { showingSettings = true }
+                Button("Impostazioni", systemImage: "gearshape") { shell.showingSettings = true }
             }
         } label: {
             // Laid out at a symbol's width so the bar sizes its glass as the
@@ -124,7 +112,7 @@ struct TodayBar: ViewModifier {
 }
 
 extension View {
-    func todayBar(day: Binding<Date>) -> some View {
-        modifier(TodayBar(day: day))
+    func todayBar() -> some View {
+        modifier(TodayBar())
     }
 }

@@ -16,6 +16,7 @@ struct NewRootView: View {
     }
 
     @State private var selection: Destination = .today
+    @State private var shell = ShellState()
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
     @Environment(AgendaService.self) private var agenda
     /// Re-read every minute so the accessory moves on when a lesson ends.
@@ -24,9 +25,30 @@ struct NewRootView: View {
     private var current: CurrentClass? { CurrentClass.forAccessory(from: agenda.events, now: now) }
 
     var body: some View {
-        switch layout {
-        case .singlePage: SinglePageHome()
-        case .tabs: tabs
+        ZStack {
+            switch layout {
+            case .singlePage:
+                SinglePageHome()
+                    .transition(BlurReplaceTransition(configuration: .downUp).combined(with: ScaleTransition(0.96)))
+            case .tabs:
+                tabs
+                    .transition(BlurReplaceTransition(configuration: .downUp).combined(with: ScaleTransition(0.96)))
+            }
+        }
+        // The setting is written from Impostazioni: animate here, where the
+        // change lands.
+        .animation(.smooth(duration: 0.45), value: layout)
+        .environment(\.shell, shell)
+        .sheet(isPresented: $shell.showingSettings) { SettingsSheet() }
+        .sheet(isPresented: $shell.showingProfile) {
+            NavigationStack {
+                ProfileView()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Chiudi") { shell.showingProfile = false }
+                        }
+                    }
+            }
         }
     }
 
