@@ -43,8 +43,8 @@ struct TodayTab: View {
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        // Mirrored groups: two glass circles on each side, split by fixed
-        // spacers so the system does not join each pair into one capsule.
+        // Profile and settings are two glass circles, split by a fixed spacer
+        // so the system does not join them; add and more share one capsule.
         ToolbarItem(placement: .topBarLeading) { profileMenu }
         ToolbarSpacer(.fixed, placement: .topBarLeading)
         ToolbarItem(placement: .topBarLeading) {
@@ -71,7 +71,6 @@ struct TodayTab: View {
                 Button("Scadenza", systemImage: "checklist") {}
             }
         }
-        ToolbarSpacer(.fixed, placement: .topBarTrailing)
         ToolbarItem(placement: .topBarTrailing) {
             Menu("Altro", systemImage: "ellipsis") {
                 Button("Vai a oggi", systemImage: "arrow.uturn.backward") { day = .now }
