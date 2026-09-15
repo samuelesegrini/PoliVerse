@@ -16,6 +16,9 @@ enum AvatarShape: String, CaseIterable, Identifiable {
     }
 
     static let storageKey = "avatarShape"
+    /// Whether to show the Politecnico's photo when there is one, or always
+    /// the initials.
+    static let photoKey = "avatarUsesPhoto"
 }
 
 /// The student's photo when the Politecnico has one, their initials otherwise,
@@ -23,8 +26,12 @@ enum AvatarShape: String, CaseIterable, Identifiable {
 struct ProfileAvatar: View {
     let student: Student?
     var size: CGFloat = 32
+    /// Draws this shape instead of the stored one, for pickers that show
+    /// every option side by side.
+    var shape: AvatarShape? = nil
 
-    @AppStorage(AvatarShape.storageKey) private var shape: AvatarShape = .circle
+    @AppStorage(AvatarShape.storageKey) private var storedShape: AvatarShape = .circle
+    @AppStorage(AvatarShape.photoKey) private var usesPhoto = true
 
     var body: some View {
         content
@@ -35,7 +42,7 @@ struct ProfileAvatar: View {
 
     @ViewBuilder
     private var content: some View {
-        if let url = student?.photoURL {
+        if usesPhoto, let url = student?.photoURL {
             AsyncImage(url: url) { image in
                 image.resizable().scaledToFill()
             } placeholder: {
@@ -55,7 +62,7 @@ struct ProfileAvatar: View {
     }
 
     private var clip: AnyShape {
-        switch shape {
+        switch shape ?? storedShape {
         case .circle: AnyShape(Circle())
         case .roundedSquare: AnyShape(RoundedRectangle(cornerRadius: size * 0.28, style: .continuous))
         case .scalloped: AnyShape(ScallopedCircle())

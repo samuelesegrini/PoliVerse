@@ -147,6 +147,13 @@ final class LoginMethodMemory {
         }
     }
 
+    /// The method used last time, or nil when nothing was recorded: unlike
+    /// ``last(in:)``, which falls back to the password, this does not claim a
+    /// way in the student may never have used.
+    func remembered(in providers: [SPIDProvider] = SPIDProvider.all) -> PoliMiLoginMethod? {
+        defaults.string(forKey: Self.key) == nil ? nil : last(in: providers)
+    }
+
     func remember(_ method: PoliMiLoginMethod) {
         defaults.set(method.id, forKey: Self.key)
     }
