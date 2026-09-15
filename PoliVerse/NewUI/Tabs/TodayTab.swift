@@ -43,23 +43,13 @@ struct TodayTab: View {
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        // Profile and settings sit together on the left as two separate glass
-        // circles; the shared capsule would join them into one pill.
+        // Mirrored groups: two glass circles on each side, split by fixed
+        // spacers so the system does not join each pair into one capsule.
+        ToolbarItem(placement: .topBarLeading) { profileMenu }
+        ToolbarSpacer(.fixed, placement: .topBarLeading)
         ToolbarItem(placement: .topBarLeading) {
-            HStack(spacing: 8) {
-                profileMenu
-                Button { showingSettings = true } label: {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 19, weight: .medium))
-                        .foregroundStyle(.tint)
-                        .frame(width: 44, height: 44)
-                        .glassEffect(.regular.interactive(), in: .circle)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Impostazioni")
-            }
+            Button("Impostazioni", systemImage: "gearshape") { showingSettings = true }
         }
-        .sharedBackgroundVisibility(.hidden)
 
         ToolbarItem(placement: .principal) {
             Button { showingDatePicker = true } label: {
@@ -75,11 +65,14 @@ struct TodayTab: View {
             .accessibilityLabel(Text("Giorno mostrato: \(day.formatted(.dateTime.day().month(.wide).locale(locale)))"))
         }
 
-        ToolbarItemGroup(placement: .topBarTrailing) {
+        ToolbarItem(placement: .topBarTrailing) {
             Menu("Aggiungi", systemImage: "plus") {
                 Button("Promemoria d’esame", systemImage: "pencil.and.list.clipboard") {}
                 Button("Scadenza", systemImage: "checklist") {}
             }
+        }
+        ToolbarSpacer(.fixed, placement: .topBarTrailing)
+        ToolbarItem(placement: .topBarTrailing) {
             Menu("Altro", systemImage: "ellipsis") {
                 Button("Vai a oggi", systemImage: "arrow.uturn.backward") { day = .now }
                     .disabled(Calendar.current.isDateInToday(day))
@@ -109,9 +102,11 @@ struct TodayTab: View {
                 Button("Impostazioni", systemImage: "gearshape") { showingSettings = true }
             }
         } label: {
-            ProfileAvatar(student: session.student, size: 36)
-                .padding(4)
-                .glassEffect(.regular.interactive(), in: .circle)
+            // Laid out at a symbol's width so the bar sizes its glass as the
+            // same circle as the other buttons; the photo draws a little
+            // larger inside it.
+            ProfileAvatar(student: session.student, size: 34)
+                .frame(width: 12, height: 12)
         }
         .accessibilityLabel("Profilo")
     }

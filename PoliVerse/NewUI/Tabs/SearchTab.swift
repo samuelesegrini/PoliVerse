@@ -1,8 +1,7 @@
 import SwiftUI
 
-/// The Cerca tab of the new structure. With the search role, the tab bar
-/// shows it as its own button apart from the other tabs, and selecting it
-/// turns that button into the search field.
+/// The Cerca tab of the new structure. Its search role lets the tab bar float
+/// it apart from the other tabs.
 struct SearchTab: View {
     @State private var query = ""
 

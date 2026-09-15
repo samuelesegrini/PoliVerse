@@ -31,6 +31,8 @@ struct NewRootView: View {
                 SearchTab()
             }
         }
+        // Selecting the search tab opens its field straight away.
+        .tabViewSearchActivation(.searchTabSelection)
         .tabBarMinimizeBehavior(.onScrollDown)
     }
 }
