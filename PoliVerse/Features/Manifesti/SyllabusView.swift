@@ -16,20 +16,22 @@ struct SyllabusView: View {
     @State private var loading = true
 
     var body: some View {
-        List {
-            if loading {
-                Section { ProgressView().frame(maxWidth: .infinity) }
-            } else if let syllabus, !syllabus.isEmpty {
-                SyllabusSections(syllabus: syllabus)
-            } else {
-                Section {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                if loading {
+                    ProgressView().frame(maxWidth: .infinity).padding(.top, 40)
+                } else if let syllabus, !syllabus.isEmpty {
+                    SyllabusSections(syllabus: syllabus)
+                } else {
                     // Said plainly: many teachings simply have no published
                     // scheda, which is not the same as a failure.
-                    Text("Il Politecnico non pubblica una scheda per questo modulo.")
-                        .foregroundStyle(.secondary)
+                    ContentUnavailableView("Nessuna scheda", systemImage: "book.closed",
+                                           description: Text("Il Politecnico non pubblica una scheda per questo modulo."))
                 }
             }
+            .padding()
         }
+        .courseScreen()
         .navigationTitle("Programma")
         .navigationBarTitleDisplayMode(.inline)
         .task {
@@ -41,128 +43,176 @@ struct SyllabusView: View {
 
 /// The scheda's sections, most practical first: what the exam is, what
 /// language it is in, who teaches it and how much time it takes — then the
-/// prose and the books.
+/// prose and the books. Laid out as cards, for a scrolling page.
 struct SyllabusSections: View {
     let syllabus: Syllabus
+    var tint: Color = Theme.brand
+
+    @State private var notesExpanded = false
+
+    private var facts: [(value: String, label: String)] {
+        [
+            syllabus.credits.map { ($0.formatted(.number), String(localized: "CFU")) },
+            syllabus.assistedMinutes.map { ("\($0 / 60)", String(localized: "ore in aula")) },
+            syllabus.selfStudyMinutes.map { ("\($0 / 60)", String(localized: "ore di studio")) },
+        ].compactMap { $0 }
+    }
+
+    private var proseSections: [(title: String, body: String)] {
+        syllabus.sections.filter { !$0.title.localizedCaseInsensitiveContains("valutazione") }
+    }
 
     var body: some View {
+        if !facts.isEmpty { FactTiles(facts: facts, tint: tint) }
+
         if !syllabus.assessment.isEmpty || syllabus.assessmentNotes != nil {
-            Section("Esame") {
-                ForEach(syllabus.assessment, id: \.self) { item in
-                    Label(item, systemImage: "pencil.and.list.clipboard")
-                        .font(.subheadline)
+            CardSection("Esame", icon: "pencil.and.list.clipboard", tint: tint) {
+                ForEach(Array(syllabus.assessment.enumerated()), id: \.offset) { index, item in
+                    if index > 0 { CardDivider(inset: 48) }
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(tint).frame(width: 22)
+                        Text(item).font(.subheadline)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                }
+                switch PartialExams.policy(assessment: syllabus.assessment, notes: syllabus.assessmentNotes) {
+                case .offered:
+                    CardDivider(inset: 48)
+                    Label("Prove in itinere previste", systemImage: "square.split.2x1")
+                        .font(.subheadline.weight(.medium)).foregroundStyle(.green)
+                        .padding(.horizontal, 14).padding(.vertical, 12)
+                case .none, .unknown:
+                    EmptyView()
                 }
                 if let notes = syllabus.assessmentNotes {
-                    DisclosureGroup("Come lo descrive il docente") {
-                        Text(notes).font(.subheadline).textSelection(.enabled)
+                    CardDivider()
+                    CardBlock {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Come lo descrive il docente")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            Text(notes)
+                                .font(.subheadline)
+                                .lineLimit(notesExpanded ? nil : 5)
+                                .textSelection(.enabled)
+                            Button(notesExpanded ? "Mostra meno" : "Leggi tutto") {
+                                withAnimation(.snappy) { notesExpanded.toggle() }
+                            }
+                            .font(.caption.weight(.semibold))
+                            .tint(tint)
+                        }
                     }
-                    .font(.subheadline)
                 }
             }
         }
 
-        if syllabus.language != nil || !syllabus.englishSupport.isEmpty {
-            Section("Lingua") {
-                if let language = syllabus.language {
-                    LabeledContent("Erogato in", value: language.label)
-                }
-                ForEach(syllabus.englishSupport, id: \.self) { support in
-                    Label(support.label, systemImage: "checkmark")
-                        .font(.subheadline)
-                }
-            }
-        }
-
-        if !syllabus.teachers.isEmpty || syllabus.credits != nil || syllabus.teachingType != nil {
-            Section("Insegnamento") {
+        if !syllabus.teachers.isEmpty || syllabus.teachingType != nil || syllabus.language != nil
+            || !syllabus.englishSupport.isEmpty {
+            CardSection("Insegnamento", icon: "person.2.fill", tint: tint) {
                 ForEach(Array(syllabus.teachers.enumerated()), id: \.element.id) { index, teacher in
-                    LabeledContent(index == 0 ? String(localized: "Titolare") : String(localized: "Co-titolare"),
-                                   value: teacher.name)
-                }
-                if let credits = syllabus.credits {
-                    LabeledContent("CFU", value: credits.formatted(.number))
+                    if index > 0 { CardDivider(inset: 60) }
+                    HStack(spacing: 12) {
+                        InitialsAvatar(name: teacher.name, tint: tint)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(teacher.name).font(.subheadline.weight(.medium))
+                            Text(index == 0 ? String(localized: "Titolare") : String(localized: "Co-titolare"))
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
                 }
                 if let type = syllabus.teachingType {
-                    LabeledContent("Tipo", value: type)
+                    if !syllabus.teachers.isEmpty { CardDivider() }
+                    CardRow(String(localized: "Tipo"), value: type, icon: "square.stack", tint: tint)
+                }
+                if let language = syllabus.language {
+                    CardDivider()
+                    CardRow(String(localized: "Lingua"), value: language.label, icon: "globe", tint: tint)
+                }
+                ForEach(syllabus.englishSupport, id: \.self) { support in
+                    CardDivider(inset: 48)
+                    Label(support.label, systemImage: "checkmark")
+                        .font(.subheadline)
+                        .padding(.horizontal, 14).padding(.vertical, 10)
                 }
             }
         }
 
-        if !syllabus.teachingForms.isEmpty || syllabus.selfStudyMinutes != nil {
-            Section {
-                ForEach(syllabus.teachingForms, id: \.name) { form in
-                    LabeledContent(SyllabusSections.formName(form.name), value: SyllabusSections.hours(form.minutes))
+        if !syllabus.teachingForms.isEmpty {
+            CardSection("Impegno", icon: "clock.fill", footer: "Ore indicate dalla scheda del Politecnico.", tint: tint) {
+                let total = max(syllabus.teachingForms.reduce(0) { $0 + $1.minutes }, 1)
+                ForEach(Array(syllabus.teachingForms.enumerated()), id: \.offset) { index, form in
+                    if index > 0 { CardDivider() }
+                    CardBlock {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text(SyllabusSections.formName(form.name)).font(.subheadline)
+                                Spacer()
+                                Text(SyllabusSections.hours(form.minutes))
+                                    .font(.subheadline.weight(.medium)).monospacedDigit()
+                            }
+                            ProgressView(value: Double(form.minutes), total: Double(total)).tint(tint)
+                        }
+                    }
                 }
-                if let assisted = syllabus.assistedMinutes {
-                    LabeledContent("In aula, in tutto", value: SyllabusSections.hours(assisted))
-                }
-                if let study = syllabus.selfStudyMinutes {
-                    LabeledContent("Studio autonomo", value: SyllabusSections.hours(study))
-                }
-            } header: {
-                Text("Impegno")
-            } footer: {
-                Text("Ore indicate dalla scheda del Politecnico.")
             }
         }
 
-        ForEach(syllabus.sections.filter { !$0.title.localizedCaseInsensitiveContains("valutazione") }, id: \.title) { section in
-            Section(section.title) {
-                Text(section.body)
-                    .font(.subheadline)
-                    .textSelection(.enabled)
-            }
+        ForEach(proseSections, id: \.title) { section in
+            ProseCard(title: section.title, text: section.body, tint: tint)
         }
 
         if !syllabus.books.isEmpty {
-            Section("Bibliografia") {
-                ForEach(syllabus.books) { book in
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(alignment: .firstTextBaseline) {
-                            Text(book.title).font(.subheadline.weight(.semibold))
-                            Spacer(minLength: 8)
-                            Text(book.isRequired ? String(localized: "Obbligatorio") : String(localized: "Facoltativo"))
-                                .font(.caption2.weight(.medium))
-                                .padding(.horizontal, 7)
-                                .padding(.vertical, 2)
-                                .background((book.isRequired ? Theme.brand : Color.secondary).opacity(0.15), in: .capsule)
-                                .foregroundStyle(book.isRequired ? Theme.brand : .secondary)
-                        }
-                        if let authors = book.authors { Text(authors).font(.caption) }
-                        if let details = book.details {
-                            Text(details).font(.caption).foregroundStyle(.secondary)
-                        }
-                        if let url = book.url {
-                            Link(destination: url) {
-                                Label("Apri il link", systemImage: "arrow.up.right.square")
+            CardSection("Bibliografia", icon: "books.vertical.fill", tint: tint) {
+                ForEach(Array(syllabus.books.enumerated()), id: \.element.id) { index, book in
+                    if index > 0 { CardDivider() }
+                    CardBlock {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(book.title).font(.subheadline.weight(.semibold))
+                                Spacer(minLength: 8)
+                                Text(book.isRequired ? String(localized: "Obbligatorio") : String(localized: "Facoltativo"))
+                                    .font(.caption2.weight(.medium))
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 2)
+                                    .background((book.isRequired ? tint : Color.secondary).opacity(0.15), in: .capsule)
+                                    .foregroundStyle(book.isRequired ? tint : .secondary)
                             }
-                            .font(.caption)
+                            if let authors = book.authors { Text(authors).font(.caption) }
+                            if let details = book.details {
+                                Text(details).font(.caption).foregroundStyle(.secondary)
+                            }
+                            if let url = book.url {
+                                Link(destination: url) {
+                                    Label("Apri il link", systemImage: "arrow.up.right.square")
+                                }
+                                .font(.caption.weight(.medium))
+                                .tint(tint)
+                            }
                         }
+                        .accessibilityElement(children: .combine)
                     }
-                    .padding(.vertical, 2)
-                    .accessibilityElement(children: .combine)
                 }
             }
         }
 
         if let software = syllabus.software {
-            Section("Software") { Text(software).font(.subheadline) }
+            CardSection("Software", icon: "laptopcomputer", tint: tint) {
+                CardBlock { Text(software).font(.subheadline) }
+            }
         }
 
         if syllabus.brackets.count > 1 {
-            Section {
-                ForEach(syllabus.brackets, id: \.self) { bracket in
-                    LabeledContent {
-                        Text([bracket.from, bracket.to].compactMap { $0 }.joined(separator: " – "))
-                            .monospaced()
-                    } label: {
-                        Text(bracket.degreeCourse).font(.caption)
+            CardSection("Scaglioni per corso di studi", icon: "person.3.fill",
+                        footer: "Dal primo cognome incluso al secondo escluso.", tint: tint) {
+                ForEach(Array(syllabus.brackets.enumerated()), id: \.offset) { index, bracket in
+                    if index > 0 { CardDivider() }
+                    CardRow(label: bracket.degreeCourse) {
+                        Text([bracket.from, bracket.to].compactMap { $0 }.joined(separator: " – ")).monospaced()
                     }
                 }
-            } header: {
-                Text("Scaglioni per corso di studi")
-            } footer: {
-                Text("Dal primo cognome incluso al secondo escluso.")
             }
         }
     }
@@ -184,6 +234,34 @@ struct SyllabusSections: View {
     }
 }
 
+/// A long prose section, folded to a few lines until asked for.
+private struct ProseCard: View {
+    let title: String
+    let text: String
+    let tint: Color
+    @State private var expanded = false
+
+    var body: some View {
+        CardSection(verbatim: title, tint: tint) {
+            CardBlock {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(text)
+                        .font(.subheadline)
+                        .lineLimit(expanded ? nil : 6)
+                        .textSelection(.enabled)
+                    if text.count > 320 {
+                        Button(expanded ? "Mostra meno" : "Leggi tutto") {
+                            withAnimation(.snappy) { expanded.toggle() }
+                        }
+                        .font(.caption.weight(.semibold))
+                        .tint(tint)
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// The scheda of one of the student's own courses, found from its code.
 struct CourseSyllabusView: View {
     let course: Course
@@ -199,69 +277,37 @@ struct CourseSyllabusView: View {
     @State private var choosingBracket = false
     @State private var linking = false
 
+    private var tint: Color { Theme.accent(for: course) }
+
     var body: some View {
-        List {
-            programmeSection
-            if loading {
-                Section { ProgressView().frame(maxWidth: .infinity) }
-            } else if let syllabus, !syllabus.isEmpty {
-                if let pick {
-                    Section {
-                        if let from = pick.module.scaglioneFrom, let to = pick.module.scaglioneTo, to != "ZZZZ" || from != "A" {
-                            LabeledContent("Scaglione", value: "\(from) – \(to)")
-                        }
-                        if let teachers = pick.teachers.nonEmptyJoined {
-                            LabeledContent(pick.teachers.count > 1 ? "Docenti" : "Docente", value: teachers)
-                        }
-                        if let code = bracketCode, programmes.programme?.brackets[code] == nil,
-                           programmes.programme?.inferredBrackets[code] != nil {
-                            Label("Scaglione dei docenti della tua pagina WeBeep", systemImage: "books.vertical")
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                if loading {
+                    ProgressView().frame(maxWidth: .infinity).padding(.top, 40)
+                } else if let syllabus, !syllabus.isEmpty {
+                    if let pick { pickSection(pick) }
+                    if let pick, pick.isIntegrated { modulesSection(pick) }
+                    SyllabusSections(syllabus: syllabus, tint: tint)
+                } else {
+                    VStack(spacing: 12) {
+                        ContentUnavailableView(
+                            "Scheda non trovata", systemImage: "book.closed",
+                            description: Text(programmes.programme == nil && course.teachingCode == nil
+                                ? "Questo corso non ha un codice d'insegnamento: scegli il tuo corso di studi per trovarlo nel tuo piano."
+                                : "Non trovo la scheda di questo insegnamento nel Manifesto degli studi."))
                         if programmes.programme != nil {
-                            Button("Scegli un altro scaglione") { choosingBracket = true }
-                            Button("Collega a un altro insegnamento del piano") { linking = true }
-                        }
-                    } footer: {
-                        // Which row was chosen: from the plan when there is
-                        // one, a guess otherwise — say which.
-                        if pick.matchesDegree {
-                            Text("Scheda del tuo piano di studi, nello scaglione del tuo cognome o in quello che hai scelto.")
-                        } else {
-                            Text("Il tuo corso di studi non risulta tra quelli che offrono questo insegnamento: questa è la scheda del primo che lo offre. Controlla che sia la tua.")
+                            Button("Collega a un insegnamento del piano") { linking = true }
+                                .buttonStyle(.borderedProminent)
+                                .tint(tint)
                         }
                     }
                 }
-                if let pick, pick.isIntegrated {
-                    Section {
-                        ForEach(Array(pick.parts.enumerated()), id: \.offset) { _, part in
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(part.name.capitalized).font(.subheadline.weight(.medium))
-                                Text([part.code,
-                                      part.credits.flatMap { $0 > 0 ? String(localized: "\($0.formatted()) CFU") : nil },
-                                      part.teachers.map(\.name).nonEmptyJoined].compactMap { $0 }.joined(separator: " · "))
-                                    .font(.caption).foregroundStyle(.secondary)
-                            }
-                        }
-                    } header: {
-                        Text("Moduli")
-                    } footer: {
-                        Text("Corso integrato: il Politecnico pubblica una sola scheda per tutti i moduli, qui sotto.")
-                    }
-                }
-                SyllabusSections(syllabus: syllabus)
-            } else {
-                Section {
-                    if programmes.programme != nil {
-                        Button("Collega a un insegnamento del piano") { linking = true }
-                    }
-                    Text(programmes.programme == nil && course.teachingCode == nil
-                         ? "Questo corso non ha un codice d'insegnamento: scegli il tuo corso di studi per trovarlo nel tuo piano."
-                         : "Non trovo la scheda di questo insegnamento nel Manifesto degli studi.")
-                        .foregroundStyle(.secondary)
-                }
+                programmeSection
             }
+            .padding()
+            .padding(.bottom, 20)
         }
+        .courseScreen()
         .navigationTitle("Programma")
         .navigationBarTitleDisplayMode(.inline)
         .task(id: programmes.programme) { await load() }
@@ -282,30 +328,107 @@ struct CourseSyllabusView: View {
     /// The plan teaching's code, which brackets are stored under.
     private var bracketCode: String? { course.teachingCode ?? pick?.module.code }
 
+    private func pickSection(_ pick: SyllabusPicker.Pick) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 0) {
+                if let teachers = pick.teachers.nonEmptyJoined {
+                    CardRow(pick.teachers.count > 1 ? String(localized: "Docenti") : String(localized: "Docente"),
+                            value: teachers, icon: "person.fill", tint: tint)
+                }
+                if let from = pick.module.scaglioneFrom, let to = pick.module.scaglioneTo, to != "ZZZZ" || from != "A" {
+                    CardDivider(inset: 48)
+                    CardRow(String(localized: "Scaglione"), value: "\(from) – \(to)", icon: "textformat.abc", tint: tint)
+                }
+                if let code = bracketCode, programmes.programme?.brackets[code] == nil,
+                   programmes.programme?.inferredBrackets[code] != nil {
+                    CardDivider(inset: 48)
+                    Label("Scaglione dei docenti della tua pagina WeBeep", systemImage: "books.vertical")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .padding(.horizontal, 14).padding(.vertical, 10)
+                }
+                if programmes.programme != nil {
+                    CardDivider()
+                    HStack(spacing: 8) {
+                        Button("Altro scaglione") { choosingBracket = true }
+                        Button("Collega altro insegnamento") { linking = true }
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .tint(tint)
+                    .padding(12)
+                }
+            }
+            .cardBackground()
+
+            // Which row was chosen: from the plan when there is one, a guess
+            // otherwise — say which.
+            Label(pick.matchesDegree
+                  ? "Scheda del tuo piano di studi, nello scaglione del tuo cognome o in quello che hai scelto."
+                  : "Il tuo corso di studi non risulta tra quelli che offrono questo insegnamento: questa è la scheda del primo che lo offre. Controlla che sia la tua.",
+                  systemImage: pick.matchesDegree ? "checkmark.seal" : "exclamationmark.triangle")
+                .font(.caption)
+                .foregroundStyle(pick.matchesDegree ? Color.secondary : .orange)
+                .padding(.horizontal, 4)
+        }
+    }
+
+    private func modulesSection(_ pick: SyllabusPicker.Pick) -> some View {
+        CardSection("Moduli", icon: "square.stack.3d.up.fill",
+                    footer: "Corso integrato: il Politecnico pubblica una sola scheda per tutti i moduli, qui sotto.",
+                    tint: tint) {
+            ForEach(Array(pick.parts.enumerated()), id: \.offset) { index, part in
+                if index > 0 { CardDivider() }
+                CardBlock {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(part.name.capitalized).font(.subheadline.weight(.medium))
+                        Text([part.code,
+                              part.credits.flatMap { $0 > 0 ? String(localized: "\($0.formatted()) CFU") : nil },
+                              part.teachers.map(\.name).nonEmptyJoined].compactMap { $0 }.joined(separator: " · "))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+
     @ViewBuilder
     private var programmeSection: some View {
         if !session.useMockData {
-            Section {
+            CardSection("Il tuo corso di studi", icon: "graduationcap.fill", tint: tint) {
                 if let programme = programmes.programme {
-                    LabeledContent("Corso di studi", value: programme.degreeLabel)
-                    LabeledContent("Piano", value: programme.planLabel)
+                    CardRow(String(localized: "Corso di studi"), value: programme.degreeLabel)
+                    CardDivider()
+                    CardRow(String(localized: "Piano"), value: programme.planLabel)
                     if programme.needsReview {
+                        CardDivider()
                         Label("Il tuo libretto non corrisponde più a questo piano, o il piano non c'è più quest'anno.",
                               systemImage: "exclamationmark.triangle")
                             .font(.caption).foregroundStyle(.orange)
+                            .padding(.horizontal, 14).padding(.vertical, 10)
                     }
-                    if !programme.isConfirmed {
-                        Button("È il mio corso di studi") { programmes.confirm() }
+                    CardDivider()
+                    HStack(spacing: 8) {
+                        if !programme.isConfirmed {
+                            Button("È il mio corso di studi") { programmes.confirm() }
+                                .buttonStyle(.borderedProminent)
+                        }
+                        Button("Cambia corso di studi") { changingProgramme = true }
+                            .buttonStyle(.bordered)
                     }
-                    Button("Cambia corso di studi") { changingProgramme = true }
+                    .controlSize(.small)
+                    .tint(tint)
+                    .padding(12)
                 } else if programmes.isLocating {
-                    ProgressView().frame(maxWidth: .infinity)
+                    ProgressView().frame(maxWidth: .infinity).padding()
                 } else {
                     Button("Scegli il tuo corso di studi") { changingProgramme = true }
+                        .padding(14)
+                        .tint(tint)
                 }
                 let rows = programmes.careerRows
                 if rows.count > 1 {
                     ForEach(rows) { row in
+                        CardDivider()
                         Button { editingCareer = CareerChoice(matricola: row.matricola) } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
@@ -320,21 +443,28 @@ struct CourseSyllabusView: View {
                                 Spacer()
                                 Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
                             }
+                            .padding(.horizontal, 14).padding(.vertical, 10)
                             .contentShape(.rect)
                         }
                         .buttonStyle(.plain)
                     }
                 }
-            } footer: {
-                if programmes.careerRows.count > 1 {
-                    Text("Ogni carriera ha il suo corso di studi: i corsi dell'altra carriera sono letti dal piano scelto per lei.")
-                } else if programmes.programme?.isConfirmed == false {
-                    Text("Dedotto dal nome del tuo corso di studi: controlla che corso e piano siano i tuoi.")
-                } else if programmes.programme == nil {
-                    Text("Con corso di studi e piano la scheda è quella del tuo piano, non una scelta per nome.")
-                }
+            }
+            if let note = programmeNote {
+                Text(note).font(.caption).foregroundStyle(.secondary).padding(.horizontal, 4).padding(.top, -12)
             }
         }
+    }
+
+    private var programmeNote: LocalizedStringKey? {
+        if programmes.careerRows.count > 1 {
+            return "Ogni carriera ha il suo corso di studi: i corsi dell'altra carriera sono letti dal piano scelto per lei."
+        } else if programmes.programme?.isConfirmed == false {
+            return "Dedotto dal nome del tuo corso di studi: controlla che corso e piano siano i tuoi."
+        } else if programmes.programme == nil {
+            return "Con corso di studi e piano la scheda è quella del tuo piano, non una scelta per nome."
+        }
+        return nil
     }
 
     private func load() async {

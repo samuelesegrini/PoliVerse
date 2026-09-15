@@ -18,17 +18,21 @@ struct CourseForumsView: View {
         kind == .announcements ? String(localized: "Avvisi") : String(localized: "Forum")
     }
 
+    private var tint: Color { Theme.accent(for: course) }
+
     private var matching: [CourseForum] { (forums ?? []).filter { $0.kind == kind } }
 
     var body: some View {
         Group {
             if !session.useMockData && !weBeep.isAuthenticated {
-                List {
-                    Section {
-                        Text("Avvisi e forum arrivano da WeBeep, che usa un accesso separato.")
-                            .foregroundStyle(.secondary)
-                        Button("Accedi a WeBeep") { showingLogin = true }
-                    }
+                ContentUnavailableView {
+                    Label("Collega WeBeep", systemImage: "link")
+                } description: {
+                    Text("Avvisi e forum arrivano da WeBeep, che usa un accesso separato.")
+                } actions: {
+                    Button("Accedi a WeBeep") { showingLogin = true }
+                        .buttonStyle(.borderedProminent)
+                        .tint(tint)
                 }
             } else if !loaded {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -36,20 +40,41 @@ struct CourseForumsView: View {
                 ContentUnavailableView("WeBeep non risponde", systemImage: "wifi.exclamationmark",
                                        description: Text("Riprova tra poco."))
             } else if matching.count == 1, let forum = matching.first {
-                DiscussionsList(forum: forum)
+                DiscussionsList(forum: forum, tint: tint)
             } else if matching.isEmpty {
                 ContentUnavailableView(
                     kind == .announcements ? "Nessun forum avvisi" : "Nessun forum",
                     systemImage: "bubble.left.and.bubble.right",
                     description: Text("La pagina WeBeep di questo corso non ne ha."))
             } else {
-                List(matching) { forum in
-                    NavigationLink(forum.name) {
-                        DiscussionsList(forum: forum).navigationTitle(forum.name)
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(Array(matching.enumerated()), id: \.element.id) { index, forum in
+                            if index > 0 { CardDivider(inset: 60) }
+                            NavigationLink {
+                                DiscussionsList(forum: forum, tint: tint).navigationTitle(forum.name)
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "bubble.left.and.bubble.right.fill")
+                                        .foregroundStyle(tint)
+                                        .frame(width: 34, height: 34)
+                                        .background(tint.opacity(0.13), in: .rect(cornerRadius: 10))
+                                    Text(forum.name).font(.subheadline.weight(.medium)).foregroundStyle(.primary)
+                                    Spacer()
+                                    Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                                }
+                                .padding(12)
+                                .contentShape(.rect)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
+                    .cardBackground()
+                    .padding()
                 }
             }
         }
+        .courseScreen()
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .task(id: weBeep.isAuthenticated) { await load() }
@@ -68,6 +93,7 @@ struct CourseForumsView: View {
 /// The discussions in one forum, newest activity first as Moodle orders them.
 private struct DiscussionsList: View {
     let forum: CourseForum
+    let tint: Color
 
     @Environment(WeBeepService.self) private var weBeep
     @Environment(\.locale) private var locale
@@ -75,51 +101,80 @@ private struct DiscussionsList: View {
     @State private var failed = false
 
     var body: some View {
-        List {
-            if let discussions {
-                if discussions.isEmpty {
-                    Text("Ancora nessun messaggio.").foregroundStyle(.secondary)
-                }
-                ForEach(discussions, id: \.id) { discussion in
-                    NavigationLink {
-                        DiscussionView(discussion: discussion)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(spacing: 6) {
-                                if discussion.pinned == true {
-                                    Image(systemName: "pin.fill").font(.caption).foregroundStyle(.orange)
-                                        .accessibilityLabel("In evidenza")
-                                }
-                                Text(discussion.subject ?? discussion.name ?? "")
-                                    .font(.subheadline.weight(.medium))
-                                    .lineLimit(2)
-                            }
-                            Text(HTMLText.plain(discussion.message ?? ""))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(2)
-                            Text(caption(discussion))
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
-                        .padding(.vertical, 2)
+        ScrollView {
+            LazyVStack(spacing: 10) {
+                if let discussions {
+                    if discussions.isEmpty {
+                        ContentUnavailableView("Ancora nessun messaggio", systemImage: "bubble.left")
+                            .padding(.top, 40)
                     }
+                    ForEach(discussions, id: \.id) { discussion in
+                        NavigationLink {
+                            DiscussionView(discussion: discussion, tint: tint)
+                        } label: {
+                            row(discussion)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } else if failed {
+                    ContentUnavailableView("Forum non disponibile", systemImage: "wifi.exclamationmark",
+                                           description: Text("Non riesco a leggere questo forum."))
+                        .padding(.top, 40)
+                } else {
+                    ProgressView().frame(maxWidth: .infinity).padding(.top, 40)
                 }
-            } else if failed {
-                Text("Non riesco a leggere questo forum.").foregroundStyle(.secondary)
-            } else {
-                ProgressView().frame(maxWidth: .infinity)
             }
+            .padding()
         }
+        .courseScreen()
         .refreshable { await load() }
         .task { if discussions == nil { await load() } }
     }
 
-    private func caption(_ discussion: MoodleDiscussion) -> String {
-        let when = discussion.created.map {
-            Date(timeIntervalSince1970: TimeInterval($0)).formatted(.relative(presentation: .named).locale(locale))
+    private func row(_ discussion: MoodleDiscussion) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            InitialsAvatar(name: discussion.userfullname ?? "?", tint: tint, size: 38)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(discussion.userfullname ?? "")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                    if let created = discussion.created {
+                        Text(Date(timeIntervalSince1970: TimeInterval(created))
+                            .formatted(.relative(presentation: .named).locale(locale)))
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    if discussion.pinned == true {
+                        Image(systemName: "pin.fill").font(.caption).foregroundStyle(.orange)
+                            .accessibilityLabel("In evidenza")
+                    }
+                    Text(discussion.subject ?? discussion.name ?? "")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(2)
+                }
+                Text(HTMLText.plain(discussion.message ?? ""))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(3)
+            }
         }
-        return [discussion.userfullname, when].compactMap { $0 }.joined(separator: " · ")
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardBackground()
+        .overlay(alignment: .leading) {
+            if discussion.pinned == true {
+                RoundedRectangle(cornerRadius: 2).fill(.orange).frame(width: 3).padding(.vertical, 16)
+            }
+        }
+        .contentShape(.rect)
     }
 
     private func load() async {
@@ -135,37 +190,54 @@ private struct DiscussionsList: View {
 /// One thread: the opening post and its replies, oldest first.
 private struct DiscussionView: View {
     let discussion: MoodleDiscussion
+    let tint: Color
 
     @Environment(WeBeepService.self) private var weBeep
     @Environment(\.locale) private var locale
     @State private var posts: [MoodlePosts.Post]?
 
     var body: some View {
-        List {
-            ForEach(posts ?? fallback) { post in
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text(post.author?.fullname ?? "")
-                            .font(.subheadline.weight(.semibold))
-                        Spacer()
-                        if let created = post.created {
-                            Text(created.formatted(.dateTime.day().month().hour().minute().locale(locale)))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 12) {
+                Text(discussion.subject ?? discussion.name ?? "")
+                    .font(.title3.weight(.bold))
+                    .fontDesign(.rounded)
+                    .padding(.horizontal, 4)
+
+                ForEach(posts ?? fallback) { post in
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(spacing: 10) {
+                            InitialsAvatar(name: post.author?.fullname ?? "?", tint: tint, size: 32)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(post.author?.fullname ?? "").font(.subheadline.weight(.semibold))
+                                if let created = post.created {
+                                    Text(created.formatted(.dateTime.day().month().hour().minute().locale(locale)))
+                                        .font(.caption2).foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        if post.isReply, let subject = post.subject {
+                            Text(subject).font(.caption).foregroundStyle(.secondary)
+                        }
+                        RichText(html: post.message, plain: nil)
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .cardBackground()
+                    .padding(.leading, post.isReply ? 20 : 0)
+                    .overlay(alignment: .leading) {
+                        if post.isReply {
+                            RoundedRectangle(cornerRadius: 2).fill(tint.opacity(0.4)).frame(width: 3).padding(.leading, 6)
                         }
                     }
-                    if post.isReply, let subject = post.subject {
-                        Text(subject).font(.caption).foregroundStyle(.secondary)
-                    }
-                    RichText(html: post.message, plain: nil)
                 }
-                .padding(.vertical, 4)
-                .padding(.leading, post.isReply ? 12 : 0)
+                if posts == nil {
+                    ProgressView().frame(maxWidth: .infinity)
+                }
             }
-            if posts == nil {
-                ProgressView().frame(maxWidth: .infinity)
-            }
+            .padding()
         }
+        .courseScreen()
         .navigationTitle(discussion.subject ?? discussion.name ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .task { posts = try? await weBeep.posts(in: discussion) }

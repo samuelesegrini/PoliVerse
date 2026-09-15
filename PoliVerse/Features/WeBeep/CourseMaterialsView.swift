@@ -20,6 +20,8 @@ struct CourseMaterialsView: View {
         }
     }
 
+    private var tint: Color { Theme.accent(for: course) }
+
     private var needsLogin: Bool {
         !session.useMockData && !weBeep.isAuthenticated
     }
@@ -36,6 +38,7 @@ struct CourseMaterialsView: View {
                             .foregroundStyle(.secondary)
                         Button("Accedi a WeBeep") { showingLogin = true }
                             .buttonStyle(.borderedProminent)
+                            .tint(tint)
                     }
                     .padding(.vertical, 4)
                 }
@@ -63,9 +66,10 @@ struct CourseMaterialsView: View {
             }
 
             ForEach(sections) { section in
-                Section(section.name) {
+                Section {
                     ForEach(section.files) { file in
                         FileRow(
+                            tint: tint,
                             file: file,
                             status: downloads.status(for: file),
                             onTap: { Task { await open(file) } }
@@ -78,9 +82,18 @@ struct CourseMaterialsView: View {
                             }
                         }
                     }
+                } header: {
+                    HStack {
+                        Text(section.name)
+                        Spacer()
+                        Text("\(section.files.count)").monospacedDigit()
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .textCase(nil)
                 }
             }
         }
+        .listSectionSpacing(16)
         .searchable(text: $query, prompt: "Cerca nei materiali")
         .navigationTitle(course.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -137,6 +150,7 @@ private struct PreviewItem: Identifiable {
 }
 
 private struct FileRow: View {
+    let tint: Color
     let file: WeBeepFile
     let status: FileDownloadService.Status
     let onTap: () -> Void
@@ -149,13 +163,14 @@ private struct FileRow: View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 Image(systemName: file.icon)
-                    .font(.title3)
-                    .foregroundStyle(Theme.brand)
-                    .frame(width: 28)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(tint)
+                    .frame(width: 40, height: 40)
+                    .background(tint.opacity(0.13), in: .rect(cornerRadius: 11))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(file.name)
-                        .font(.subheadline)
+                        .font(.subheadline.weight(.medium))
                         .lineLimit(2)
                         .foregroundStyle(.primary)
                     if case .failed(let message) = status {
@@ -190,7 +205,8 @@ private struct FileRow: View {
                         .foregroundStyle(.orange)
                 }
             }
-            .padding(.vertical, 2)
+            .padding(.vertical, 4)
+            .contentShape(.rect)
         }
         .buttonStyle(.plain)
         .disabled(file.downloadURL == nil)

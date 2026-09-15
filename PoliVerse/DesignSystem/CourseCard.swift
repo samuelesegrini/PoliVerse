@@ -2,10 +2,9 @@ import SwiftUI
 
 /// The course tile on Home.
 ///
-/// Keeps the shape language of the 2023 prototype — a large rounded card with a
-/// tinted corner motif — but every value is bound to a ``Course`` instead of
-/// hardcoded, and the corner art is drawn with a gradient rather than shipping
-/// megabytes of stock photography.
+/// A tappable card that answers "what is next for this course" at a glance:
+/// the next lecture, the next sitting, and what is new — with secondary
+/// actions in a menu instead of a row of buttons competing with the title.
 struct CourseCard: View {
     let course: Course
     let onOpen: () -> Void
@@ -13,131 +12,210 @@ struct CourseCard: View {
     let onMaterials: () -> Void
     var onHide: () -> Void = {}
 
+    @Environment(AgendaService.self) private var agenda
+    @Environment(CareerService.self) private var career
+    @Environment(UpdateFeed.self) private var feed
+    @Environment(\.locale) private var locale
+
     private var accent: Color { Theme.accent(for: course) }
 
-    /// Icon buttons grow with the user's text size instead of staying 34pt.
-    @ScaledMetric(relativeTo: .body) private var controlSize: CGFloat = 34
+    @ScaledMetric(relativeTo: .body) private var monogramSize: CGFloat = 46
 
-    @ViewBuilder
-    private var cfuChip: some View {
-        if course.cfu > 0 {
-            Label("\(course.cfu) CFU", systemImage: "graduationcap")
-                .font(.caption.weight(.medium))
-                .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(accent.opacity(0.15), in: .capsule)
-                .foregroundStyle(accent)
-        }
+    /// Matched by name, as on the course page: the agenda carries no code.
+    private var nextLecture: AgendaEvent? {
+        let target = course.name.lowercased()
+        return agenda.events
+            .lazy
+            .filter { $0.kind == .lecture && $0.end > .now }
+            .filter { let title = $0.title.lowercased(); return title.contains(target) || target.contains(title) }
+            .min { $0.start < $1.start }
     }
 
-    @ViewBuilder
-    private var actionButtons: some View {
-        Button(action: onMaterials) {
-            Image(systemName: "folder.fill")
-                .frame(width: controlSize, height: controlSize)
-        }
-        .buttonStyle(.plain)
-        .background(Color(.tertiarySystemFill), in: .circle)
-        .accessibilityLabel("Materiali di \(course.name)")
+    private var nextSitting: ExamSession? {
+        career.upcoming.first { $0.isOf(courseCode: course.id, courseName: course.name) }
+    }
 
-        Menu {
-            Button(course.isFavourite ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti",
-                   systemImage: course.isFavourite ? "star.slash" : "star",
-                   action: onFavourite)
-            Button("Apri materiali", systemImage: "folder", action: onMaterials)
-            Divider()
-            // Mirrors WeBeep's own "Rimuovi dalla vista": the course stays
-            // enrolled, it just stops crowding the list.
-            Button("Rimuovi dalla vista", systemImage: "eye.slash", action: onHide)
-        } label: {
-            Image(systemName: "ellipsis")
-                .frame(width: controlSize, height: controlSize)
-                .background(Color(.tertiarySystemFill), in: .circle)
-        }
-        .accessibilityLabel("Altre azioni")
+    private var badges: CourseHubBadges {
+        CourseHubBadges(items: FeedItem.items(from: feed.recent, for: course), seenAt: feed.seenAt)
+    }
 
-        Button(action: onOpen) {
-            HStack(spacing: 6) {
-                Text("Apri")
-                Image(systemName: "arrow.up.right")
-            }
-            .font(.subheadline.weight(.semibold))
-            .lineLimit(1)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 9)
-        }
-        .buttonStyle(.plain)
-        .background(accent, in: .capsule)
-        .foregroundStyle(Theme.onAccent)
+    /// "AR" for "Architetture dei Calcolatori": skips the short joining words.
+    private var monogram: String {
+        let skip: Set<String> = ["di", "dei", "del", "della", "delle", "e", "ed", "per", "a", "and", "of", "the", "in"]
+        let letters = course.name
+            .split(whereSeparator: { !$0.isLetter })
+            .filter { !skip.contains($0.lowercased()) }
+            .prefix(2)
+            .compactMap(\.first)
+        return String(letters).uppercased()
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(course.teacher)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(course.name)
-                        .font(.title3.weight(.semibold))
+        let lecture = nextLecture
+        let sitting = nextSitting
+        let badges = badges
+
+        Button(action: onOpen) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top, spacing: 12) {
+                    Text(monogram)
+                        .font(.headline.weight(.bold))
                         .fontDesign(.rounded)
-                        .lineLimit(3)
-                        .minimumScaleFactor(0.75)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 8)
-                if course.isFavourite {
-                    Image(systemName: "star.fill")
-                        .foregroundStyle(.yellow)
-                        .accessibilityLabel("Preferito")
-                }
-            }
+                        .foregroundStyle(Theme.onAccent)
+                        .frame(width: monogramSize, height: monogramSize)
+                        .background(accent.gradient, in: .rect(cornerRadius: 14))
+                        .accessibilityHidden(true)
 
-            Spacer(minLength: 12)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(course.name)
+                            .font(.headline)
+                            .fontDesign(.rounded)
+                            .foregroundStyle(.primary)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
 
-            // At accessibility text sizes the chip and the "Apri" label grow
-            // enough that a single row overflows — the CFU chip started
-            // wrapping mid-word. Fall back to stacking rather than squeezing.
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 8) {
-                    cfuChip
                     Spacer(minLength: 4)
-                    actionButtons
+
+                    menu
                 }
 
-                VStack(alignment: .leading, spacing: 10) {
-                    cfuChip
-                    HStack(spacing: 8) {
-                        actionButtons
+                if lecture != nil || sitting != nil {
+                    VStack(alignment: .leading, spacing: 8) {
+                        if let lecture {
+                            infoLine(icon: "clock.fill", tint: accent,
+                                     title: lectureText(lecture),
+                                     trailing: lecture.roomAcronym ?? lecture.room)
+                        }
+                        if let sitting {
+                            infoLine(icon: "pencil.and.list.clipboard", tint: sitting.status == .open ? .orange : accent,
+                                     title: sittingText(sitting),
+                                     trailing: sitting.status.label)
+                        }
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(accent.opacity(0.08), in: .rect(cornerRadius: 16))
+                }
+
+                if badges.announcements + badges.materials + badges.exams > 0 {
+                    HStack(spacing: 6) {
+                        badge(badges.announcements, "megaphone.fill", "avvisi")
+                        badge(badges.materials, "folder.fill", "materiali")
+                        badge(badges.exams, "bell.badge.fill", "esami")
                     }
                 }
             }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: Theme.cardCorner))
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.cardCorner)
+                    .strokeBorder(accent.opacity(course.isFavourite ? 0.45 : 0), lineWidth: 1.5)
+            }
+            .contentShape(.rect(cornerRadius: Theme.cardCorner))
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: Theme.cardCorner)
-                .fill(Color(.secondarySystemGroupedBackground))
-                .overlay(alignment: .topTrailing) {
-                    // The corner motif: cheap, resolution-independent, themed.
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [accent.opacity(0.35), accent.opacity(0)],
-                                center: .center, startRadius: 0, endRadius: 130
-                            )
-                        )
-                        .frame(width: 220, height: 220)
-                        .offset(x: 70, y: -90)
-                }
-                .clipShape(.rect(cornerRadius: Theme.cardCorner))
+        .buttonStyle(CardPressStyle())
+        .contextMenu { menuItems }
+        .accessibilityHint("Apre il corso")
+    }
+
+    private var subtitle: String {
+        var parts: [String] = []
+        if !course.teacher.isEmpty, course.teacher != "—" { parts.append(course.teacher) }
+        if course.cfu > 0 { parts.append("\(course.cfu) CFU") }
+        if course.semester != "—" { parts.append(String(localized: "Sem. \(course.semester)")) }
+        return parts.joined(separator: " · ")
+    }
+
+    private var menu: some View {
+        Menu { menuItems } label: {
+            Image(systemName: course.isFavourite ? "star.fill" : "ellipsis")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(course.isFavourite ? .yellow : .secondary)
+                .frame(width: 32, height: 32)
+                .background(Color(.tertiarySystemFill), in: .circle)
         }
+        .accessibilityLabel("Altre azioni")
+    }
+
+    @ViewBuilder
+    private var menuItems: some View {
+        Button(course.isFavourite ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti",
+               systemImage: course.isFavourite ? "star.slash" : "star",
+               action: onFavourite)
+        Button("Apri materiali", systemImage: "folder", action: onMaterials)
+        Divider()
+        // Mirrors WeBeep's own "Rimuovi dalla vista": the course stays
+        // enrolled, it just stops crowding the list.
+        Button("Rimuovi dalla vista", systemImage: "eye.slash", action: onHide)
+    }
+
+    private func infoLine(icon: String, tint: Color, title: String, trailing: String?) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundStyle(tint)
+                .frame(width: 18)
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+            Spacer(minLength: 6)
+            if let trailing {
+                Text(trailing)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    private func lectureText(_ lecture: AgendaEvent) -> String {
+        let time = lecture.start.formatted(.dateTime.hour().minute().locale(locale))
+        if lecture.start <= .now { return String(localized: "Lezione in corso") }
+        let calendar = PoliMiDate.romeCalendar
+        if calendar.isDateInToday(lecture.start) { return String(localized: "Oggi alle \(time)") }
+        if calendar.isDateInTomorrow(lecture.start) { return String(localized: "Domani alle \(time)") }
+        return lecture.start.formatted(.dateTime.weekday(.wide).hour().minute().locale(locale)).capitalized
+    }
+
+    private func sittingText(_ sitting: ExamSession) -> String {
+        guard let date = sitting.date else { return String(localized: "Appello da definire") }
+        return String(localized: "Appello \(date.formatted(.dateTime.day().month(.abbreviated).locale(locale)))")
+    }
+
+    @ViewBuilder
+    private func badge(_ count: Int, _ icon: String, _ label: String) -> some View {
+        if count > 0 {
+            Label("\(count)", systemImage: icon)
+                .font(.caption2.weight(.bold))
+                .monospacedDigit()
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.red.opacity(0.12), in: .capsule)
+                .foregroundStyle(.red)
+                .accessibilityLabel(Text("\(count) novità \(label)"))
+        }
+    }
+}
+
+/// A slight shrink on press, so a whole-card tap feels like a tap.
+private struct CardPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(.snappy(duration: 0.2), value: configuration.isPressed)
     }
 }
 
 #Preview(traits: .sizeThatFitsLayout) {
     CourseCard(course: MockData.courses[0], onOpen: {}, onFavourite: {}, onMaterials: {})
         .padding()
+        .previewEnvironment()
 }
