@@ -9,35 +9,47 @@ import SwiftUI
 struct ReplicaNavigationBar: View {
     let student: Student?
     let day: Date
+    var bar = TodayBarStyle()
     @Environment(\.locale) private var locale
 
     var body: some View {
         HStack(spacing: 12) {
-            ProfileAvatar(student: student, size: 34)
-                .frame(width: 44, height: 44)
-                .glassEffect(.regular, in: .circle)
-            Image(systemName: "gearshape")
-                .font(.system(size: 19, weight: .medium))
-                .foregroundStyle(.tint)
-                .frame(width: 44, height: 44)
-                .glassEffect(.regular, in: .circle)
-            Spacer(minLength: 0)
-            HStack(spacing: 6) {
-                Text(day.formatted(.dateTime.day().month(.abbreviated).locale(locale)).capitalized)
-                    .font(.headline)
-                Image(systemName: "chevron.down.circle.fill")
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.secondary)
+            if bar.showsProfile {
+                ProfileAvatar(student: student, size: 34)
+                    .frame(width: 44, height: 44)
+                    .glassEffect(.regular, in: .circle)
+            }
+            if bar.showsSettings {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 19, weight: .medium))
+                    .foregroundStyle(.tint)
+                    .frame(width: 44, height: 44)
+                    .glassEffect(.regular, in: .circle)
             }
             Spacer(minLength: 0)
             HStack(spacing: 22) {
-                Image(systemName: "plus")
+                if bar.showsAdd {
+                    Image(systemName: "plus")
+                }
                 Image(systemName: "ellipsis")
             }
             .font(.system(size: 19, weight: .medium))
             .foregroundStyle(.tint)
-            .frame(width: 102, height: 44)
-            .glassEffect(.regular, in: .capsule)
+            .frame(width: bar.showsAdd ? 102 : 44, height: 44)
+            .glassEffect(.regular, in: bar.showsAdd ? AnyShape(.capsule) : AnyShape(.circle))
+        }
+        // The date is the bar's principal item: centred on the bar, whatever
+        // sits at either side.
+        .overlay {
+            if bar.showsDate {
+                HStack(spacing: 6) {
+                    Text(day.formatted(.dateTime.day().month(.abbreviated).locale(locale)).capitalized)
+                        .font(.headline)
+                    Image(systemName: "chevron.down.circle.fill")
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .padding(.horizontal, 16)
         .frame(height: 44)

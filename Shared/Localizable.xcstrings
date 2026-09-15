@@ -812,6 +812,9 @@
         }
       }
     },
+    "A parole" : {
+
+    },
     "A scelta · %@" : {
       "localizations" : {
         "en" : {
@@ -1197,6 +1200,12 @@
         }
       }
     },
+    "Aggiungi sezione" : {
+
+    },
+    "Aggiungi sticker" : {
+
+    },
     "Aggiungo gli insegnamenti: %lld di %lld" : {
       "localizations" : {
         "en" : {
@@ -1230,6 +1239,9 @@
         }
       }
     },
+    "Aggiunti: %lld" : {
+
+    },
     "Alle" : {
       "localizations" : {
         "en" : {
@@ -1241,6 +1253,9 @@
       }
     },
     "Alle %@" : {
+
+    },
+    "Allineamento" : {
 
     },
     "Almeno" : {
@@ -1352,6 +1367,9 @@
         }
       }
     },
+    "Anche questa è fatta." : {
+
+    },
     "Ancora nessun messaggio" : {
 
     },
@@ -1371,6 +1389,9 @@
           }
         }
       }
+    },
+    "Ancora sveglio%@?" : {
+
     },
     "Anno" : {
       "localizations" : {
@@ -1477,6 +1498,9 @@
           }
         }
       }
+    },
+    "App" : {
+
     },
     "App CieID non installata" : {
       "localizations" : {
@@ -1814,6 +1838,9 @@
         }
       }
     },
+    "Arancio" : {
+
+    },
     "Archivia l'orario personalizzato" : {
       "localizations" : {
         "en" : {
@@ -1845,6 +1872,12 @@
           }
         }
       }
+    },
+    "Ariosa" : {
+
+    },
+    "Arrotondato" : {
+
     },
     "Aspetto" : {
 
@@ -2030,6 +2063,9 @@
         }
       }
     },
+    "Barra e colore" : {
+
+    },
     "Bibliografia" : {
       "localizations" : {
         "en" : {
@@ -2040,7 +2076,16 @@
         }
       }
     },
+    "Buon pomeriggio%@!" : {
+
+    },
     "Buona giornata!" : {
+
+    },
+    "Buonasera%@!" : {
+
+    },
+    "Buongiorno%@!" : {
 
     },
     "Cache" : {
@@ -2443,6 +2488,12 @@
         }
       }
     },
+    "Ciao, %@" : {
+
+    },
+    "Ciao!" : {
+
+    },
     "Ciò che conta — un esito, un'aula, un appello spostato — arriva appena l'app se ne accorge; il resto nel riepilogo, e di notte solo ciò che è urgente. Un tipo spento non notifica ma resta visibile nell'app." : {
       "localizations" : {
         "en" : {
@@ -2452,6 +2503,9 @@
           }
         }
       }
+    },
+    "Classico" : {
+
     },
     "Co-titolare" : {
       "localizations" : {
@@ -2647,7 +2701,16 @@
     "Colore" : {
 
     },
+    "Colore dei controlli" : {
+
+    },
+    "Colore della data" : {
+
+    },
     "Come appare la tua foto nell’app." : {
+
+    },
+    "Come la data" : {
 
     },
     "Come lo descrive il docente" : {
@@ -2685,6 +2748,9 @@
           }
         }
       }
+    },
+    "Compatta" : {
+
     },
     "Completa l'accesso nell'app CieID, poi torna qui." : {
       "localizations" : {
@@ -2734,6 +2800,12 @@
         }
       }
     },
+    "Con gli sticker la data occupa metà della larghezza." : {
+
+    },
+    "Con grazie" : {
+
+    },
     "Con i dati di esempio l'app funziona senza collegarsi ai server del Politecnico. Disattivalo per usare il tuo account reale." : {
       "localizations" : {
         "en" : {
@@ -2749,6 +2821,9 @@
           }
         }
       }
+    },
+    "Con il nome" : {
+
     },
     "Consegna domani" : {
       "localizations" : {
@@ -2975,6 +3050,9 @@
           }
         }
       }
+    },
+    "Corsivo" : {
+
     },
     "Corso" : {
       "localizations" : {
@@ -3323,6 +3401,9 @@
     "Data da definire" : {
 
     },
+    "Data e sticker" : {
+
+    },
     "Dati" : {
       "localizations" : {
         "en" : {
@@ -3478,6 +3559,9 @@
         }
       }
     },
+    "Densità" : {
+
+    },
     "Determina il mio scaglione" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3608,6 +3692,9 @@
           }
         }
       }
+    },
+    "Disponi" : {
+
     },
     "Disposizione" : {
 
@@ -3799,6 +3886,9 @@
     "Elaborato corretto consultabile sui Servizi Online." : {
 
     },
+    "Elementi mostrati: %lld" : {
+
+    },
     "Elimina" : {
       "localizations" : {
         "en" : {
@@ -3878,6 +3968,9 @@
           }
         }
       }
+    },
+    "Emoji" : {
+
     },
     "Entra con CIE" : {
       "localizations" : {
@@ -4232,6 +4325,9 @@
         }
       }
     },
+    "fino alle %@" : {
+
+    },
     "Fino alle %@" : {
 
     },
@@ -4271,6 +4367,9 @@
       }
     },
     "Forum non disponibile" : {
+
+    },
+    "Frase del giorno" : {
 
     },
     "Fuori dal piano di studi" : {
@@ -4347,7 +4446,13 @@
         }
       }
     },
+    "Giorno grande" : {
+
+    },
     "Giorno mostrato: %@" : {
+
+    },
+    "Grandezza" : {
 
     },
     "Griglia" : {
@@ -4657,7 +4762,10 @@
         }
       }
     },
-    "Il motivo prende il colore della data." : {
+    "Il menu ••• resta sempre: è da lì che si torna in Personalizza." : {
+
+    },
+    "Il motivo prende il colore della data, a meno di sceglierne uno." : {
 
     },
     "Il Politecnico ha accettato l'accesso ma non autorizza questa app a leggere corsi, orario e carriera. WeBeep continua a funzionare." : {
@@ -5049,6 +5157,9 @@
         }
       }
     },
+    "Impilata" : {
+
+    },
     "Impossibile caricare i dati di carriera." : {
       "localizations" : {
         "en" : {
@@ -5129,6 +5240,9 @@
           }
         }
       }
+    },
+    "In alto" : {
+
     },
     "In arrivo" : {
 
@@ -5215,6 +5329,9 @@
         }
       }
     },
+    "In linea" : {
+
+    },
     "In queste ore arriva solo ciò che è urgente, come un esito o un appello spostato; il resto aspetta la fine del silenzio. Stessa ora per inizio e fine: nessun silenzio." : {
       "localizations" : {
         "en" : {
@@ -5240,6 +5357,9 @@
           }
         }
       }
+    },
+    "Inchiostro" : {
+
     },
     "Indietro" : {
       "localizations" : {
@@ -5699,6 +5819,9 @@
           }
         }
       }
+    },
+    "Largo" : {
+
     },
     "Le attività in tempo reale sono disattivate per PoliVerse." : {
       "localizations" : {
@@ -6187,6 +6310,9 @@
         }
       }
     },
+    "Matematica" : {
+
+    },
     "Materiali" : {
       "localizations" : {
         "en" : {
@@ -6477,6 +6603,9 @@
         }
       }
     },
+    "Monospaziato" : {
+
+    },
     "Mostra" : {
       "localizations" : {
         "en" : {
@@ -6494,12 +6623,6 @@
       }
     },
     "Mostra il saluto" : {
-
-    },
-    "Mostra In arrivo" : {
-
-    },
-    "Mostra l’orario" : {
 
     },
     "Mostra la pagina del Politecnico" : {
@@ -6569,6 +6692,9 @@
     "Mostra meno" : {
 
     },
+    "Musica" : {
+
+    },
     "Nascondi" : {
       "localizations" : {
         "en" : {
@@ -6600,6 +6726,9 @@
           }
         }
       }
+    },
+    "Natura" : {
+
     },
     "Nel file: %@ (non ancora ufficiale)" : {
       "localizations" : {
@@ -6760,6 +6889,9 @@
           }
         }
       }
+    },
+    "Nessun esame in programma" : {
+
     },
     "Nessun esito" : {
       "localizations" : {
@@ -7092,6 +7224,9 @@
         }
       }
     },
+    "Nessuna scadenza" : {
+
+    },
     "Nessuna scheda" : {
 
     },
@@ -7112,6 +7247,9 @@
       }
     },
     "Nessuno" : {
+
+    },
+    "Niente in arrivo" : {
 
     },
     "Niente in programma" : {
@@ -7825,6 +7963,9 @@
     "Oggi alle %@" : {
 
     },
+    "Oggi conta." : {
+
+    },
     "Oggi, Corsi, Carriera e Cerca in schede separate." : {
 
     },
@@ -8033,6 +8174,12 @@
         }
       }
     },
+    "Pausa caffè" : {
+
+    },
+    "Pausa caffè meritata." : {
+
+    },
     "Per accedere con la Carta d'Identità Elettronica serve l'app CieID." : {
       "localizations" : {
         "en" : {
@@ -8100,6 +8247,9 @@
     "Personalizza" : {
 
     },
+    "Personalizzato" : {
+
+    },
     "Piano" : {
       "localizations" : {
         "en" : {
@@ -8147,6 +8297,9 @@
           }
         }
       }
+    },
+    "Piano piano, ma senza fermarsi." : {
+
     },
     "Pianta" : {
       "localizations" : {
@@ -8196,6 +8349,9 @@
         }
       }
     },
+    "Pieno" : {
+
+    },
     "Più tardi" : {
       "localizations" : {
         "en" : {
@@ -8221,6 +8377,9 @@
           }
         }
       }
+    },
+    "Politecnico" : {
+
     },
     "PoliVerse" : {
       "localizations" : {
@@ -8714,6 +8873,12 @@
         }
       }
     },
+    "Pulsanti" : {
+
+    },
+    "Pulsanti, scheda selezionata e collegamenti in tutta l’app." : {
+
+    },
     "Puntini" : {
 
     },
@@ -9006,6 +9171,9 @@
         }
       }
     },
+    "Rimuovi %@" : {
+
+    },
     "Rimuovi dai preferiti" : {
       "localizations" : {
         "en" : {
@@ -9021,6 +9189,9 @@
           }
         }
       }
+    },
+    "Rimuovi dalla pagina" : {
+
     },
     "Rimuovi dalla vista" : {
       "localizations" : {
@@ -9053,6 +9224,9 @@
           }
         }
       }
+    },
+    "Rimuovi sticker" : {
+
     },
     "Riprova" : {
       "localizations" : {
@@ -9128,6 +9302,9 @@
           }
         }
       }
+    },
+    "Rosa" : {
+
     },
     "Saluto" : {
 
@@ -9394,6 +9571,12 @@
         }
       }
     },
+    "Scegli uno sticker o un’emoji dalla tastiera." : {
+
+    },
+    "Scheda" : {
+
+    },
     "Scheda completa: programma e libri" : {
       "localizations" : {
         "en" : {
@@ -9433,6 +9616,12 @@
           }
         }
       }
+    },
+    "Scienze" : {
+
+    },
+    "Scintille" : {
+
     },
     "Scollega WeBeep" : {
       "localizations" : {
@@ -9485,6 +9674,9 @@
         }
       }
     },
+    "Scrivi il tuo saluto" : {
+
+    },
     "Scuola" : {
       "localizations" : {
         "en" : {
@@ -9516,6 +9708,9 @@
           }
         }
       }
+    },
+    "Secondo l’ora" : {
+
     },
     "Sede" : {
       "localizations" : {
@@ -9631,6 +9826,9 @@
           }
         }
       }
+    },
+    "Senza scheda" : {
+
     },
     "Serve cognome **e** nome: con il solo cognome il Politecnico avverte che lo scaglione può risultare sbagliato." : {
       "extractionState" : "stale",
@@ -9749,6 +9947,19 @@
         }
       }
     },
+    "Settimana" : {
+
+    },
+    "Settimana %lld · giorno %lld di 7" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Settimana %1$lld · giorno %2$lld di 7"
+          }
+        }
+      }
+    },
     "Settimana e mese" : {
 
     },
@@ -9837,6 +10048,9 @@
           }
         }
       }
+    },
+    "Si parte!" : {
+
     },
     "Si può fare più tardi: la trovi nella scheda WeBeep quando ti serve." : {
       "localizations" : {
@@ -9964,6 +10178,12 @@
         }
       }
     },
+    "Solo data" : {
+
+    },
+    "Solo giorno" : {
+
+    },
     "Solo i corsi WeBeep già aperti: cercarli tutti richiederebbe una richiesta per corso." : {
       "localizations" : {
         "en" : {
@@ -10045,7 +10265,16 @@
         }
       }
     },
+    "Spazio" : {
+
+    },
     "Spessore" : {
+
+    },
+    "Sposta giù" : {
+
+    },
+    "Sposta su" : {
 
     },
     "Stai guardando dati di esempio" : {
@@ -10080,6 +10309,12 @@
         }
       }
     },
+    "Sticker" : {
+
+    },
+    "Stile" : {
+
+    },
     "Stima sui voti del libretto pesati per CFU (%lld CFU per questo esame)." : {
 
     },
@@ -10092,6 +10327,12 @@
           }
         }
       }
+    },
+    "Stretto" : {
+
+    },
+    "Studio" : {
+
     },
     "Studio autonomo" : {
       "extractionState" : "stale",
@@ -10235,6 +10476,12 @@
           }
         }
       }
+    },
+    "Tieni premuto sulla pagina per riordinare, aggiungere e togliere le sezioni." : {
+
+    },
+    "Tieni premuto sulla pagina per spostarli, ingrandirli e ruotarli." : {
+
     },
     "Tinta" : {
 
@@ -10384,6 +10631,9 @@
         }
       }
     },
+    "Tutto pronto?" : {
+
+    },
     "Tutto resta sul dispositivo: i promemoria vengono calcolati dal tuo orario e programmati localmente, senza inviare nulla." : {
       "localizations" : {
         "en" : {
@@ -10431,6 +10681,9 @@
           }
         }
       }
+    },
+    "Un passo alla volta." : {
+
     },
     "Un'aula dove studiare" : {
       "localizations" : {
@@ -10563,6 +10816,9 @@
     "Vengono rimossi i token dal portachiavi e i dati salvati sul dispositivo." : {
 
     },
+    "Verde" : {
+
+    },
     "Verifiche" : {
       "localizations" : {
         "en" : {
@@ -10589,6 +10845,12 @@
         }
       }
     },
+    "Vetro" : {
+
+    },
+    "Viaggi" : {
+
+    },
     "Viene aggiunto alla selezione dell'orario personalizzato: calcola l'orario da lì. È uno strumento informale del Politecnico e non sostituisce il piano di studi." : {
       "localizations" : {
         "en" : {
@@ -10604,6 +10866,9 @@
           }
         }
       }
+    },
+    "Viola" : {
+
     },
     "Voti, media e crediti, con la simulazione di cosa succede alla media se il prossimo esame va in un certo modo." : {
       "localizations" : {

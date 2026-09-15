@@ -38,6 +38,17 @@ struct PoliVerseApp: App {
         // whoever is subscribed, and a late subscription is how one gets lost.
         PerformanceMonitor.start()
 
+        #if DEBUG
+        // `-ResetTodayStyle` forgets the saved looks, so a UI test starts on
+        // the presets. Passing the keys as arguments instead would pin them:
+        // the argument domain wins over every later save.
+        if CommandLine.arguments.contains("-ResetTodayStyle") {
+            for key in [TodayStyle.storageKey, TodayStyle.libraryKey, TodayStyle.selectionKey] {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
+        #endif
+
         // One Session, shared: every service reads its auth state and mock
         // flag, so they must all observe the same instance.
         let session = Session()

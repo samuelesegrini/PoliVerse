@@ -12,6 +12,8 @@ nonisolated enum GreetingStyle: String, Codable, CaseIterable, Identifiable, Sen
     case motto
     /// Week of the year and how far into it the day is.
     case week
+    /// The student's own words.
+    case custom
 
     var id: String { rawValue }
 
@@ -22,12 +24,17 @@ nonisolated enum GreetingStyle: String, Codable, CaseIterable, Identifiable, Sen
         case .name: "Con il nome"
         case .motto: "Frase del giorno"
         case .week: "Settimana"
+        case .custom: "Personalizzato"
         }
     }
 
     /// The line itself.
-    func text(for day: Date, now: Date = .now, firstName: String?, calendar: Calendar = PoliMiDate.romeCalendar) -> String {
+    func text(for day: Date, now: Date = .now, firstName: String?, custom: String = "",
+              calendar: Calendar = PoliMiDate.romeCalendar) -> String {
         switch self {
+        case .custom:
+            let line = custom.trimmingCharacters(in: .whitespacesAndNewlines)
+            return line.isEmpty ? GreetingStyle.classic.text(for: day, firstName: firstName) : line
         case .classic:
             return String(localized: "Buona giornata!")
         case .timeOfDay:

@@ -11,6 +11,8 @@ struct TodayBar: ViewModifier {
     @Environment(Session.self) private var session
     @Environment(\.locale) private var locale
     @Environment(\.shell) private var shell
+    /// Which buttons the look in use keeps in the bar.
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
 
     /// Drives the chevron separately from the popover: bound to `showingDays`
     /// alone, the toolbar only redrew it once the popover had gone.
@@ -28,46 +30,56 @@ struct TodayBar: ViewModifier {
     private var toolbar: some ToolbarContent {
         // Profile and settings are two glass circles, split by a fixed spacer
         // so the system does not join them; add and more share one capsule.
-        ToolbarItem(placement: .topBarLeading) { profileMenu }
-        ToolbarSpacer(.fixed, placement: .topBarLeading)
-        ToolbarItem(placement: .topBarLeading) {
-            Button("Impostazioni", systemImage: "gearshape") { shell.present { shell.showingSettings = true } }
+        if style.bar.showsProfile {
+            ToolbarItem(placement: .topBarLeading) { profileMenu }
+        }
+        if style.bar.showsProfile && style.bar.showsSettings {
+            ToolbarSpacer(.fixed, placement: .topBarLeading)
+        }
+        if style.bar.showsSettings {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Impostazioni", systemImage: "gearshape") { shell.present { shell.showingSettings = true } }
+            }
         }
 
-        ToolbarItem(placement: .principal) {
-            Button {
-                withAnimation(.snappy(duration: 0.3)) { chevronUp.toggle() }
-                if shell.showingDays { shell.showingDays = false } else { shell.present { shell.showingDays = true } }
-            } label: {
-                HStack(spacing: 6) {
-                    Text(shell.day.formatted(.dateTime.day().month(.abbreviated).locale(locale)).capitalized)
-                        .font(.headline)
-                    Image(systemName: "chevron.down.circle.fill")
-                        .symbolRenderingMode(.hierarchical)
-                        .foregroundStyle(.secondary)
-                        .rotationEffect(.degrees(chevronUp ? 180 : 0))
+        if style.bar.showsDate {
+            ToolbarItem(placement: .principal) {
+                Button {
+                    withAnimation(.snappy(duration: 0.3)) { chevronUp.toggle() }
+                    if shell.showingDays { shell.showingDays = false } else { shell.present { shell.showingDays = true } }
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(shell.day.formatted(.dateTime.day().month(.abbreviated).locale(locale)).capitalized)
+                            .font(.headline)
+                        Image(systemName: "chevron.down.circle.fill")
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(.secondary)
+                            .rotationEffect(.degrees(chevronUp ? 180 : 0))
+                    }
                 }
+                .buttonStyle(.plain)
+                // A real popover, kept as one on iPhone: the system morphs it out
+                // of the date and back, and closes it on a tap outside.
+                .popover(isPresented: Binding(get: { shell.showingDays }, set: { shell.showingDays = $0 }), arrowEdge: .top) {
+                    DayStrip(day: Binding(get: { shell.day }, set: { shell.day = $0 }))
+                        .frame(width: 360)
+                        .presentationCompactAdaptation(.popover)
+                }
+                // A tap outside closes the popover without the button: turn the
+                // chevron back as soon as that starts.
+                .onChange(of: shell.showingDays) { _, showing in
+                    if chevronUp != showing { withAnimation(.snappy(duration: 0.3)) { chevronUp = showing } }
+                }
+                .accessibilityLabel(Text("Giorno mostrato: \(shell.day.formatted(.dateTime.day().month(.wide).locale(locale)))"))
             }
-            .buttonStyle(.plain)
-            // A real popover, kept as one on iPhone: the system morphs it out
-            // of the date and back, and closes it on a tap outside.
-            .popover(isPresented: Binding(get: { shell.showingDays }, set: { shell.showingDays = $0 }), arrowEdge: .top) {
-                DayStrip(day: Binding(get: { shell.day }, set: { shell.day = $0 }))
-                    .frame(width: 360)
-                    .presentationCompactAdaptation(.popover)
-            }
-            // A tap outside closes the popover without the button: turn the
-            // chevron back as soon as that starts.
-            .onChange(of: shell.showingDays) { _, showing in
-                if chevronUp != showing { withAnimation(.snappy(duration: 0.3)) { chevronUp = showing } }
-            }
-            .accessibilityLabel(Text("Giorno mostrato: \(shell.day.formatted(.dateTime.day().month(.wide).locale(locale)))"))
         }
 
-        ToolbarItem(placement: .topBarTrailing) {
-            Menu("Aggiungi", systemImage: "plus") {
-                Button("Promemoria d’esame", systemImage: "pencil.and.list.clipboard") {}
-                Button("Scadenza", systemImage: "checklist") {}
+        if style.bar.showsAdd {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu("Aggiungi", systemImage: "plus") {
+                    Button("Promemoria d’esame", systemImage: "pencil.and.list.clipboard") {}
+                    Button("Scadenza", systemImage: "checklist") {}
+                }
             }
         }
         ToolbarItem(placement: .topBarTrailing) {

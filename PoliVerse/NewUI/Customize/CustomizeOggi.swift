@@ -188,7 +188,7 @@ struct CustomizeOggi: View {
         VStack(spacing: 0) {
             // The system's inline bar is 54 points tall; its controls sit in
             // the top 44.
-            ReplicaNavigationBar(student: session.student, day: shell.day)
+            ReplicaNavigationBar(student: session.student, day: shell.day, bar: look.bar)
                 .padding(.bottom, 10)
             TodayLanding(day: shell.day, style: look)
             Spacer(minLength: 0)
@@ -208,6 +208,7 @@ struct CustomizeOggi: View {
             }
         }
         .frame(width: screen.width, height: screen.height, alignment: .top)
+        .tint(look.controlTint)
         .background(TodayBackgroundView(background: look.background, tint: look.backgroundTint))
         .clipShape(.rect(cornerRadius: 48))
         .scaleEffect(Self.cardScale)
@@ -275,6 +276,9 @@ struct CustomizeOggi: View {
 
     private func persist() {
         storedLibrary = TodayStyle.encodeLibrary(looks)
+        // Sticker images no saved look draws any more.
+        let inUse = looks.reduce(into: active.stickerImageIDs) { $0.formUnion($1.stickerImageIDs) }
+        StickerStore.shared.prune(keeping: inUse)
     }
 
     /// Grows the middle card back over the app, then goes. Cancelled, the
@@ -290,7 +294,8 @@ struct CustomizeOggi: View {
 }
 
 /// One look at full size with its zones outlined. Tapping a zone opens its
-/// controls; nothing reaches the look until Fine.
+/// controls; holding the page, or Disponi, arranges it: sections to reorder,
+/// add and remove, stickers to move. Nothing reaches the look until Fine.
 private struct LookEditor: View {
     let onSave: (TodayStyle) -> Void
 
@@ -298,6 +303,8 @@ private struct LookEditor: View {
     @Environment(\.dismiss) private var dismiss
     @State private var draft: TodayStyle
     @State private var editingZone: TodayLanding.Zone?
+    @State private var arranging = false
+    @State private var pickingStickers = false
 
     init(look: TodayStyle, onSave: @escaping (TodayStyle) -> Void) {
         self.onSave = onSave
@@ -307,39 +314,76 @@ private struct LookEditor: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                TodayLanding(day: shell.day, style: draft, editing: true) { editingZone = $0 }
-                    .padding(.top, 8)
-                    .padding(.bottom, 360)
+                TodayLanding(day: shell.day, draft: $draft, arranging: arranging,
+                             onAddSticker: { pickingStickers = true }) { zone in
+                    // Holding a zone arranges the page; the tap that ends the
+                    // hold must not also open the zone.
+                    guard !arranging else { return }
+                    editingZone = zone
+                }
+                .padding(.top, 8)
+                .padding(.bottom, 360)
+                .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
+                    guard !arranging else { return }
+                    withAnimation(.snappy) { arranging = true }
+                })
             }
             // The look's own ground, as on the card it zooms out of.
             .background(TodayBackgroundView(background: draft.background, tint: draft.backgroundTint).ignoresSafeArea())
-            .navigationTitle("Personalizza")
+            .sensoryFeedback(.impact(weight: .medium), trigger: arranging) { _, new in new }
+            .navigationTitle(arranging ? "Disponi" : "Personalizza")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Annulla", role: .cancel) { dismiss() }
-                        .accessibilityIdentifier("customize-editor-cancel")
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Fine", systemImage: "checkmark") { onSave(draft) }
-                        .accessibilityIdentifier("customize-editor-done")
-                }
-                // The background is behind every zone, so it has its own
-                // button, where the Lock Screen keeps its wallpaper.
-                ToolbarItem(placement: .bottomBar) {
-                    Button { editingZone = .background } label: {
-                        Label("Sfondo", systemImage: "square.grid.3x3.square")
-                            .labelStyle(.titleAndIcon)
-                    }
-                    .accessibilityIdentifier("customize-editor-background")
-                }
-            }
+            .toolbar { toolbar }
+            // Buttons in the look's colour, as the app will draw them.
+            .tint(draft.controlTint)
             .sheet(item: $editingZone) { zone in
                 ZoneEditor(zone: zone, style: $draft)
-                    .presentationDetents([.height(320), .medium])
+                    .presentationDetents(zone.isShort ? [.height(340), .medium, .large] : [.medium, .large])
                     // The page stays live behind the editor, as on the Lock Screen.
                     .presentationBackgroundInteraction(.enabled)
             }
+            .sheet(isPresented: $pickingStickers) {
+                StickerPicker(remaining: TodayStyle.maxStickers - draft.stickers.count) { content in
+                    withAnimation(.snappy) { draft.addSticker(content) }
+                }
+                .presentationDetents([.height(220)])
+                .presentationBackgroundInteraction(.enabled)
+            }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var toolbar: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            Button("Annulla", role: .cancel) { dismiss() }
+                .accessibilityIdentifier("customize-editor-cancel")
+        }
+        ToolbarItem(placement: .confirmationAction) {
+            if arranging {
+                // Arranging is a step inside editing: Fine returns to it.
+                Button("Fine", systemImage: "checkmark") { withAnimation(.snappy) { arranging = false } }
+                    .accessibilityIdentifier("customize-arrange-done")
+            } else {
+                Button("Fine", systemImage: "checkmark") { onSave(draft) }
+                    .accessibilityIdentifier("customize-editor-done")
+            }
+        }
+        // The background is behind every zone, so it has its own button,
+        // where the Lock Screen keeps its wallpaper; beside it, the way into
+        // arranging for whoever does not hold the page.
+        ToolbarItemGroup(placement: .bottomBar) {
+            Button { editingZone = .background } label: {
+                Label("Sfondo", systemImage: "square.grid.3x3.square")
+                    .labelStyle(.titleAndIcon)
+            }
+            .accessibilityIdentifier("customize-editor-background")
+            .disabled(arranging)
+            Spacer()
+            Button { withAnimation(.snappy) { arranging.toggle() } } label: {
+                Label("Disponi", systemImage: "square.stack.3d.up")
+                    .labelStyle(.titleAndIcon)
+            }
+            .accessibilityIdentifier("customize-editor-arrange")
         }
     }
 }
@@ -364,180 +408,6 @@ private struct FillScreen: GeometryEffect {
         return ProjectionTransform(CGAffineTransform(translationX: center.x, y: center.y)
             .scaledBy(x: scale, y: scale)
             .translatedBy(x: -center.x, y: -center.y))
-    }
-}
-
-/// The controls for one zone: a curated set and one fine control.
-private struct ZoneEditor: View {
-    let zone: TodayLanding.Zone
-    @Binding var style: TodayStyle
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                switch zone {
-                case .date: dateControls
-                case .greeting: greetingControls
-                case .upcoming: Toggle("Mostra In arrivo", isOn: $style.showsUpcoming)
-                case .timetable: Toggle("Mostra l’orario", isOn: $style.showsTimetable)
-                case .background: backgroundControls
-                }
-            }
-            .navigationTitle(zone.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Fine", systemImage: "checkmark") { dismiss() }
-                        .accessibilityIdentifier("customize-zone-done")
-                }
-            }
-        }
-    }
-
-    private var backgroundControls: some View {
-        Section {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
-                ForEach(TodayBackground.allCases) { background in
-                    Button { style.background = background } label: {
-                        VStack(spacing: 6) {
-                            TodayBackgroundView(background: background, tint: style.backgroundTint)
-                                .frame(height: 96)
-                                .clipShape(.rect(cornerRadius: 16))
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .strokeBorder(style.background == background ? AnyShapeStyle(.tint) : AnyShapeStyle(.quaternary),
-                                                      lineWidth: style.background == background ? 2.5 : 1)
-                                }
-                            Text(background.title)
-                                .font(.caption)
-                                .foregroundStyle(style.background == background ? .primary : .secondary)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(style.background == background ? .isSelected : [])
-                }
-            }
-        } footer: {
-            Text("Il motivo prende il colore della data.")
-        }
-    }
-
-    @Environment(Session.self) private var session
-
-    @ViewBuilder
-    private var greetingControls: some View {
-        Section {
-            Toggle("Mostra il saluto", isOn: $style.showsGreeting)
-        }
-        Section("Stile") {
-            ForEach(GreetingStyle.allCases) { greeting in
-                Button { style.greeting = greeting } label: {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(greeting.title).font(.subheadline.weight(.medium))
-                            Text(greeting.text(for: .now, firstName: session.student?.firstName))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        if style.greeting == greeting {
-                            Image(systemName: "checkmark").foregroundStyle(.tint)
-                        }
-                    }
-                    .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .disabled(!style.showsGreeting)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var dateLayoutControls: some View {
-        Section("Disposizione") {
-            ScrollView(.horizontal) {
-                HStack(spacing: 10) {
-                    ForEach(DateLayout.allCases) { layout in
-                        Button { style.dateLayout = layout } label: {
-                            VStack(spacing: 6) {
-                                DateHeader(day: .now, style: { var preview = style; preview.dateLayout = layout; preview.dateAlignment = .leading; return preview }(), size: 30)
-                                    .padding(10)
-                                    .frame(width: 150, height: 86, alignment: .leading)
-                                    .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 14))
-                                    .overlay {
-                                        RoundedRectangle(cornerRadius: 14)
-                                            .strokeBorder(style.dateLayout == layout ? AnyShapeStyle(.tint) : AnyShapeStyle(.clear), lineWidth: 2)
-                                    }
-                                Text(layout.title).font(.caption)
-                                    .foregroundStyle(style.dateLayout == layout ? .primary : .secondary)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityAddTraits(style.dateLayout == layout ? .isSelected : [])
-                    }
-                }
-                .padding(.vertical, 4)
-            }
-            .scrollIndicators(.hidden)
-
-            Picker("Allineamento", selection: $style.dateAlignment) {
-                ForEach(DateAlignment.allCases) { alignment in
-                    Image(systemName: alignment.systemImage).tag(alignment)
-                }
-            }
-            .pickerStyle(.segmented)
-        }
-    }
-
-    @ViewBuilder
-    private var dateControls: some View {
-        dateLayoutControls
-        Section("Carattere") {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
-                ForEach(TodayStyle.DateFont.allCases) { font in
-                    Button { style.dateFont = font } label: {
-                        Text("15")
-                            .font(font.font(size: 28, weight: style.weight))
-                            .frame(maxWidth: .infinity, minHeight: 56)
-                            .background(style.dateFont == font ? AnyShapeStyle(.tint.opacity(0.18)) : AnyShapeStyle(.quaternary.opacity(0.5)),
-                                        in: .rect(cornerRadius: 14))
-                            .overlay {
-                                if style.dateFont == font {
-                                    RoundedRectangle(cornerRadius: 14).strokeBorder(.tint, lineWidth: 2)
-                                }
-                            }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            Slider(value: $style.dateWeight, in: 0...1) {
-                Text("Spessore")
-            } minimumValueLabel: {
-                Image(systemName: "textformat.size.smaller")
-            } maximumValueLabel: {
-                Image(systemName: "bold")
-            }
-        }
-        Section("Colore") {
-            HStack(spacing: 14) {
-                ForEach(TodayStyle.Accent.allCases) { accent in
-                    Button { style.dateAccent = accent } label: {
-                        Circle()
-                            .fill(accent.color)
-                            .frame(width: 34, height: 34)
-                            .overlay {
-                                if style.dateAccent == accent {
-                                    Circle().strokeBorder(.background, lineWidth: 3).padding(2)
-                                }
-                            }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(style.dateAccent == accent ? .isSelected : [])
-                }
-            }
-            .frame(maxWidth: .infinity)
-        }
     }
 }
 
