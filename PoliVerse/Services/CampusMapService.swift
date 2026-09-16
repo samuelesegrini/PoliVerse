@@ -14,7 +14,15 @@ import OSLog
 /// building pin wearing a room's name.
 @Observable
 final class CampusMapService {
+    /// The pins the map is drawing. Grows a few at a time while a placement
+    /// is being revealed, so buildings land on the map instead of the whole
+    /// campus blinking into place at once.
     private(set) var pins: [MapPin] = []
+    /// Every pin the last placement produced, revealed or not. The camera
+    /// frames these, so it frames the campus rather than the first batch.
+    private(set) var placed: [MapPin] = []
+    /// True while pins are still arriving, for the status line.
+    private(set) var isPlacing = false
     private(set) var isLoading = false
     private(set) var errorMessage: String?
     /// Whether pins are coloured by availability. Off until occupancy has been
@@ -34,6 +42,7 @@ final class CampusMapService {
     convenience init(catalogue: RoomsService, freeRooms: FreeRoomsService, preview pins: [MapPin]) {
         self.init(catalogue: catalogue, freeRooms: freeRooms)
         self.pins = pins
+        self.placed = pins
         self.skipsLoading = true
     }
 
@@ -52,7 +61,7 @@ final class CampusMapService {
     /// Takes no campus: ``pins`` is already only that campus's buildings, and
     /// an argument here would invite the two to disagree.
     var region: MKCoordinateRegion? {
-        BuildingLocation.region(covering: pins.map {
+        BuildingLocation.region(covering: placed.map {
             BuildingLocation(id: $0.id, coordinate: $0.coordinate)
         })
     }
@@ -86,20 +95,63 @@ final class CampusMapService {
         }
         await catalogueLoaded
         await place(campus: campus)
-        log.notice("map: \(self.pins.count, privacy: .public) buildings placed")
+        log.notice("map: \(self.placed.count, privacy: .public) buildings placed")
     }
 
     private func place(campus: String?) async {
         guard !locations.isEmpty, !catalogue.rooms.isEmpty else { return }
         let placed = await MapPlacement.pinsInBackground(
             rooms: catalogue.rooms, locations: locations, campus: campus)
+        guard placed != self.placed.map(\.uncoloured) else { return }
+        self.placed = placed
         // Placing again drops any colouring, so say so rather than keep a
         // legend over grey pins.
-        if placed != pins.map(\.uncoloured) {
-            pins = placed
-            showsAvailability = false
+        showsAvailability = false
+        // Not awaited: the reveal paces itself over a few hundred milliseconds
+        // and ``load(campus:)`` has more fetching to do meanwhile.
+        revealTask?.cancel()
+        revealTask = Task { await reveal(placed) }
+    }
+
+    private var revealTask: Task<Void, Never>?
+
+    /// How many pins land together, and how long between batches. Small enough
+    /// that a campus visibly fills in, brief enough that the whole of Milano
+    /// Leonardo — around 30 buildings — is there inside half a second.
+    private static let batchSize = 4
+    private static let batchDelay = Duration.milliseconds(60)
+
+    /// Hands the map its pins a batch at a time.
+    ///
+    /// Pins already on screen keep their place: only what is new is added, so
+    /// a second placement (fresh coordinates, then the fresh catalogue) tops
+    /// the map up instead of clearing it and starting again.
+    private func reveal(_ placed: [MapPin]) async {
+        revealID += 1
+        let id = revealID
+        // Anything already shown that survived this placement stays put.
+        let shownIDs = Set(pins.map(\.id))
+        var shown = placed.filter { shownIDs.contains($0.id) }
+        let arriving = placed.filter { !shownIDs.contains($0.id) }
+        pins = shown
+        guard !arriving.isEmpty else { return }
+
+        isPlacing = true
+        defer { if revealID == id { isPlacing = false } }
+        for batch in stride(from: 0, to: arriving.count, by: Self.batchSize) {
+            if batch > 0 {
+                try? await Task.sleep(for: Self.batchDelay)
+                // A newer placement is revealing; leave it to it.
+                guard revealID == id else { return }
+            }
+            shown.append(contentsOf: arriving[batch..<min(batch + Self.batchSize, arriving.count)])
+            pins = shown
         }
     }
+
+    /// Identifies the reveal in flight, so a placement that arrives mid-reveal
+    /// supersedes the old one rather than interleaving with it.
+    private var revealID = 0
 
     /// Whether this launch has fetched the geojson; cached coordinates are
     /// shown first but refreshed once per launch.
@@ -111,7 +163,7 @@ final class CampusMapService {
     /// request per room — around 150 for Milano Leonardo — so it happens when
     /// the user asks for it and not before.
     func loadAvailability(campus: String?) async {
-        guard !pins.isEmpty else { return }
+        guard !placed.isEmpty else { return }
         // Point the occupancy service at the campus on screen first. Without
         // this it keeps whichever campus the Aule libere screen last used, and
         // the pins get coloured from a different city's rooms — every pin
@@ -123,8 +175,10 @@ final class CampusMapService {
         let free = Set(freeRooms.freeNow().map(\.id))
         guard !free.isEmpty || !freeRooms.rooms.isEmpty else { return }
 
-        pins = await MapPlacement.colouredInBackground(
-            pins, rooms: catalogue.rooms, covered: Set(freeRooms.rooms.map(\.id)), free: free)
+        placed = await MapPlacement.colouredInBackground(
+            placed, rooms: catalogue.rooms, covered: Set(freeRooms.rooms.map(\.id)), free: free)
+        let shownIDs = Set(pins.map(\.id))
+        pins = placed.filter { shownIDs.contains($0.id) }
         showsAvailability = true
     }
 

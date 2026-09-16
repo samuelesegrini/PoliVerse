@@ -33,6 +33,9 @@ struct CampusMapView: View {
                     .tag(pin.id)
             }
         }
+        // Pins are handed over a few at a time, so each batch fades in rather
+        // than the campus appearing in one step.
+        .animation(.easeOut(duration: 0.25), value: map.pins.count)
         .mapStyle(.standard(pointsOfInterest: .excludingAll))
         .safeAreaInset(edge: .top) { controls }
         .overlay(alignment: .bottom) { legend }
@@ -43,8 +46,10 @@ struct CampusMapView: View {
         .task { await map.load(campus: campus) }
         // Framed once per campus, as soon as its pins are placed — not on
         // every re-placement, which would pull the camera from under a pan.
-        .onChange(of: map.pins.map(\.id)) { _, ids in
-            guard !ids.isEmpty, framedCampus != .some(campus) else { return }
+        // Off the full placement rather than the pins revealed so far, so the
+        // camera frames the campus and not its first four buildings.
+        .onChange(of: map.placed.count) { _, count in
+            guard count > 0, framedCampus != .some(campus) else { return }
             framedCampus = campus
             recentre()
         }
@@ -86,7 +91,7 @@ struct CampusMapView: View {
                     systemImage: loadingAvailability ? "clock" : "checkmark.circle")
             }
             .buttonStyle(.borderedProminent)
-            .disabled(loadingAvailability || map.pins.isEmpty)
+            .disabled(loadingAvailability || map.placed.isEmpty)
         }
         .padding(12)
         .background(.bar)
@@ -110,6 +115,13 @@ struct CampusMapView: View {
             .padding(.vertical, 7)
             .background(.bar, in: .capsule)
             .padding(.bottom, 12)
+        } else if map.isPlacing || (map.isLoading && map.pins.isEmpty) {
+            Label("Carico gli edifici…", systemImage: "mappin.and.ellipse")
+                .font(.caption)
+                .padding(.horizontal, 12).padding(.vertical, 7)
+                .background(.bar, in: .capsule)
+                .padding(.bottom, 12)
+                .transition(.opacity)
         } else if loadingAvailability {
             // One request per room, so it is worth saying that out loud rather
             // than leaving a button looking stuck.

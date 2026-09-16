@@ -243,7 +243,7 @@ final class AgendaService {
         eventsByDay[PoliMiDate.romeCalendar.startOfDay(for: day)] ?? []
     }
 
-    static func index(_ events: [AgendaEvent]) -> [Date: [AgendaEvent]] {
+    nonisolated static func index(_ events: [AgendaEvent]) -> [Date: [AgendaEvent]] {
         let calendar = PoliMiDate.romeCalendar
         return Dictionary(grouping: events) { calendar.startOfDay(for: $0.start) }
             .mapValues { $0.sorted { $0.start < $1.start } }

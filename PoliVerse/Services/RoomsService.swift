@@ -26,6 +26,12 @@ import OSLog
 @Observable
 final class RoomsService {
     private(set) var rooms: [Classroom] = []
+    /// Campuses present in the catalogue, for filtering.
+    ///
+    /// Kept as a value rather than computed: it was read from view bodies —
+    /// the map's campus picker among them — and a `Set` over 350 rooms on
+    /// every re-render is work the main thread does not need to repeat.
+    private(set) var campuses: [String] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?
 
@@ -39,6 +45,7 @@ final class RoomsService {
     convenience init(preview rooms: [Classroom]) {
         self.init()
         self.rooms = rooms
+        self.campuses = Array(Set(rooms.compactMap(\.campusName))).sorted()
         self.skipsLoading = true
     }
 
@@ -46,14 +53,15 @@ final class RoomsService {
 
     init(session: URLSession = .shared) {
         self.session = session
-        if let cached = DiskCache.load([Classroom].self, as: "rooms") {
-            rooms = cached.value
-        }
+        // The cached catalogue is *not* read here: this runs while the app is
+        // launching, and decoding 350 rooms from disk on the main thread is a
+        // stall before anything is on screen. ``load(force:)`` reads it in the
+        // background instead, so the first screen that asks gets it.
     }
 
-    /// Campuses present in the catalogue, for filtering.
-    var campuses: [String] {
-        Array(Set(rooms.compactMap(\.campusName))).sorted()
+    private func adopt(_ rooms: [Classroom], campuses: [String]) {
+        self.rooms = rooms
+        self.campuses = campuses
     }
 
     func rooms(matching query: String, campus: String?) -> [Classroom] {
@@ -75,6 +83,12 @@ final class RoomsService {
         errorMessage = nil
         defer { isLoading = false }
 
+        // Disk first, so callers have a catalogue to draw within a frame or
+        // two rather than after four network round-trips.
+        if rooms.isEmpty, let cached = await Self.cachedCatalogue() {
+            adopt(cached.rooms, campuses: cached.campuses)
+        }
+
         do {
             // Three independent catalogues; fetch together and join locally.
             async let roomsTask = fetch("/spazi/aula", as: [ClassroomDTO].self)
@@ -85,44 +99,84 @@ final class RoomsService {
             let (rawRooms, rawBuildings, rawCampuses, rawFloors) =
                 try await (roomsTask, buildingsTask, campusesTask, floorsTask)
 
-            let buildings = Dictionary(
-                rawBuildings.compactMap { dto -> (String, BuildingDTO)? in
-                    dto.csie.map { ($0, dto) }
-                },
-                uniquingKeysWith: { first, _ in first }
-            )
-            let campusNames = Dictionary(
-                rawCampuses.compactMap { dto -> (String, String)? in
-                    guard let csic = dto.csic, let nome = dto.nome else { return nil }
-                    return (csic, nome)
-                },
-                uniquingKeysWith: { first, _ in first }
-            )
-            let floorNames = Dictionary(
-                rawFloors.compactMap { dto -> (String, String)? in
-                    guard let csip = dto.csip, let nome = dto.nome else { return nil }
-                    return (csip, nome)
-                },
-                uniquingKeysWith: { first, _ in first }
-            )
+            let joined = await Self.join(
+                rooms: rawRooms, buildings: rawBuildings, campuses: rawCampuses, floors: rawFloors)
 
-            let joined = rawRooms.compactMap { $0.toClassroom() }.map { room -> Classroom in
-                var copy = room
-                let building = buildings[room.buildingCode]
-                copy.buildingName = building?.nome
-                copy.address = building?.fullAddress
-                copy.campusName = building?.csic.flatMap { campusNames[$0] }
-                copy.floorName = floorNames[room.floorCode]
-                return copy
-            }.sorted { $0.id < $1.id }
-
-            log.notice("rooms: \(rawRooms.count, privacy: .public) in catalogue, \(joined.count, privacy: .public) usable")
-            rooms = joined
-            DiskCache.save(joined, as: "rooms")
+            log.notice("rooms: \(rawRooms.count, privacy: .public) in catalogue, \(joined.rooms.count, privacy: .public) usable")
+            adopt(joined.rooms, campuses: joined.campuses)
+            await Self.cache(joined.rooms)
         } catch {
             log.error("Room catalogue failed: \(error.localizedDescription)")
             errorMessage = userFacingMessage(error)
         }
+    }
+
+    /// The catalogue as it is held in memory: the rooms, plus the campus list
+    /// derived from them once instead of per read.
+    nonisolated private struct Catalogue: Sendable {
+        let rooms: [Classroom]
+        let campuses: [String]
+
+        nonisolated init(_ rooms: [Classroom]) {
+            self.rooms = rooms
+            campuses = Array(Set(rooms.compactMap(\.campusName))).sorted()
+        }
+    }
+
+    /// The join of the four catalogues, off the main actor.
+    ///
+    /// Four dictionaries and a sort over 350 rooms is not free, and under this
+    /// project's main-actor-by-default isolation it all ran on the main thread
+    /// while the map was trying to draw.
+    @concurrent
+    private static func join(rooms rawRooms: [ClassroomDTO], buildings rawBuildings: [BuildingDTO],
+                             campuses rawCampuses: [CampusDTO], floors rawFloors: [FloorDTO]) async -> Catalogue {
+        let buildings = Dictionary(
+            rawBuildings.compactMap { dto -> (String, BuildingDTO)? in
+                dto.csie.map { ($0, dto) }
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let campusNames = Dictionary(
+            rawCampuses.compactMap { dto -> (String, String)? in
+                guard let csic = dto.csic, let nome = dto.nome else { return nil }
+                return (csic, nome)
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let floorNames = Dictionary(
+            rawFloors.compactMap { dto -> (String, String)? in
+                guard let csip = dto.csip, let nome = dto.nome else { return nil }
+                return (csip, nome)
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
+
+        let joined = rawRooms.compactMap { $0.toClassroom() }.map { room -> Classroom in
+            var copy = room
+            let building = buildings[room.buildingCode]
+            copy.buildingName = building?.nome
+            copy.address = building?.fullAddress
+            copy.campusName = building?.csic.flatMap { campusNames[$0] }
+            copy.floorName = floorNames[room.floorCode]
+            return copy
+        }.sorted { $0.id < $1.id }
+
+        return Catalogue(joined)
+    }
+
+    @concurrent
+    private static func cachedCatalogue() async -> Catalogue? {
+        guard let cached = DiskCache.load([Classroom].self, as: "rooms"), !cached.value.isEmpty
+        else { return nil }
+        return Catalogue(cached.value)
+    }
+
+    /// Encoding 350 rooms and writing them is a file write; it belongs off the
+    /// main thread just as much as the decode does.
+    @concurrent
+    private static func cache(_ rooms: [Classroom]) async {
+        DiskCache.save(rooms, as: "rooms")
     }
 
     private func fetch<T: Decodable & Sendable>(_ path: String, as type: T.Type) async throws -> T {
