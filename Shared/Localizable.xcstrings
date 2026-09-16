@@ -570,9 +570,6 @@
         }
       }
     },
-    "%lld ms" : {
-
-    },
     "%lld non lette" : {
       "localizations" : {
         "en" : {
@@ -731,6 +728,16 @@
         }
       }
     },
+    "%lld su %lld" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld su %2$lld"
+          }
+        }
+      }
+    },
     "%lld sulle prestazioni, %lld su blocchi e chiusure" : {
       "localizations" : {
         "it" : {
@@ -740,9 +747,6 @@
           }
         }
       }
-    },
-    "%lld, tutti" : {
-
     },
     "%lld° semestre" : {
       "localizations" : {
@@ -1209,6 +1213,9 @@
         }
       }
     },
+    "Aggiorna" : {
+
+    },
     "Aggiorna adesso" : {
       "localizations" : {
         "en" : {
@@ -1218,6 +1225,9 @@
           }
         }
       }
+    },
+    "Aggiorna aule libere" : {
+
     },
     "Aggiorna disponibilità" : {
       "localizations" : {
@@ -3070,9 +3080,6 @@
         }
       }
     },
-    "Circa una volta all’ora, quando iOS lo concede, l’app aggiorna orario, carriera e novità di WeBeep in circa trenta secondi, poi riprogramma i promemoria e aggiorna i widget. iOS decide quando: con Risparmio energetico o l’aggiornamento disattivato, non succede." : {
-
-    },
     "Ciò che conta — un esito, un’aula, un appello spostato — arriva subito; il resto nel riepilogo. Un tipo spento non notifica ma resta visibile nell’app." : {
       "localizations" : {
         "en" : {
@@ -3088,6 +3095,9 @@
           }
         }
       }
+    },
+    "Circa una volta all’ora, quando iOS lo concede, l’app aggiorna orario, carriera e novità di WeBeep in circa trenta secondi, poi riprogramma i promemoria e aggiorna i widget. iOS decide quando: con Risparmio energetico o l’aggiornamento disattivato, non succede." : {
+
     },
     "Classico" : {
       "localizations" : {
@@ -4245,7 +4255,11 @@
         }
       }
     },
+    "Dati di un altro giorno. Aggiorna o apri l'app." : {
+
+    },
     "Dati di un altro giorno. Apri l'app." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4544,9 +4558,6 @@
         }
       }
     },
-    "Diversi dalla richiesta" : {
-
-    },
     "Docente" : {
       "localizations" : {
         "en" : {
@@ -4634,9 +4645,6 @@
           }
         }
       }
-    },
-    "E %lld modifiche non inviate: le trovi più in basso." : {
-
     },
     "e altre %lld" : {
       "localizations" : {
@@ -5019,6 +5027,9 @@
       }
     },
     "Errore %lld" : {
+
+    },
+    "Errore CIE" : {
 
     },
     "Esagoni" : {
@@ -6586,6 +6597,9 @@
         }
       }
     },
+    "In attesa dell’app CieID" : {
+
+    },
     "In attesa di invio" : {
 
     },
@@ -6962,6 +6976,7 @@
 
     },
     "iOS consente al massimo %lld promemoria in attesa: vengono tenuti i più vicini." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7282,7 +7297,7 @@
         }
       }
     },
-    "La verifica chiede a ogni servizio se c’è, senza credenziali: dice se la rete arriva al Politecnico e quanto risponde in fretta, non se i tuoi dati sono corretti." : {
+    "La verifica chiede a ogni servizio, WeBeep compreso, se c’è, senza credenziali. Conta che risponda, anche con un errore come 404: dice se la rete arriva al Politecnico e quanto in fretta, non se i tuoi dati sono corretti." : {
 
     },
     "Laboratorio" : {
@@ -8251,6 +8266,9 @@
       }
     },
     "Modifiche in coda" : {
+
+    },
+    "Modifiche non inviate: %lld. Le trovi più in basso." : {
 
     },
     "Moduli" : {
@@ -10771,6 +10789,7 @@
       }
     },
     "Programmati · %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11525,6 +11544,9 @@
       }
     },
     "Risparmio energetico" : {
+
+    },
+    "Risponde · %lld ms" : {
 
     },
     "Risposta del server non leggibile." : {
@@ -13341,6 +13363,9 @@
           }
         }
       }
+    },
+    "Una in corso" : {
+
     },
     "Una notifica prima di ogni lezione, con l'aula." : {
       "localizations" : {
