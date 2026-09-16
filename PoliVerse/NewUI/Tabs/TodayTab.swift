@@ -15,8 +15,10 @@ struct TodayTab: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                TodayLanding(day: shell.day, style: style)
-                    .padding(.bottom, shell.singlePage ? 120 : 40)
+                DayTransition(day: shell.day) { day in
+                    TodayLanding(day: day, style: style)
+                }
+                .padding(.bottom, shell.singlePage ? 120 : 40)
             }
             // Using the page behind the panel tucks the panel away, as in Maps.
             .onScrollPhaseChange { _, phase in
