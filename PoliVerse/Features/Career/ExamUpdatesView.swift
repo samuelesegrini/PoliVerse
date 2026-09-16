@@ -214,7 +214,7 @@ struct ExamTimelineSection: View {
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .lookCard()
+                .glassEffect(.regular, in: .rect(cornerRadius: 26))
             }
         }
     }
