@@ -6,7 +6,7 @@ struct CareerTab: View {
         NavigationStack {
             NewDestination.career.screen
                 .profileButton()
-                .demoModeBanner()
+                .dataStatusLine()
         }
     }
 }

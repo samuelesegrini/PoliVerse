@@ -6,7 +6,7 @@ struct CoursesTab: View {
         NavigationStack {
             NewDestination.courses.screen
                 .profileButton()
-                .demoModeBanner()
+                .dataStatusLine()
         }
     }
 }

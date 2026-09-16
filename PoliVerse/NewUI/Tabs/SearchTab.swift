@@ -9,7 +9,7 @@ struct SearchTab: View {
         NavigationStack(path: Binding(get: { shell.searchPath }, set: { shell.searchPath = $0 })) {
             SearchView(embedded: true, places: NewDestination.inSearch)
                 .profileButton()
-                .demoModeBanner()
+                .dataStatusLine()
         }
     }
 }

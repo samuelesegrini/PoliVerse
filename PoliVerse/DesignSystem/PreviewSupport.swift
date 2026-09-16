@@ -48,11 +48,16 @@ enum PreviewEnvironment {
         defaults: UserDefaults(suiteName: "preview-login") ?? .standard)
     static let onboarding = OnboardingState(
         defaults: UserDefaults(suiteName: "preview-onboarding") ?? .standard)
+    static let status = DataStatus(session: session, network: network)
     /// Wired to the same sample services, so a preview's `.task` refreshes
     /// mock data instead of finding an empty list.
-    static let freshness = FreshnessCoordinator.standard(
-        courses: courses, agenda: agenda, career: career,
-        notices: notices, news: news, weBeep: weBeep)
+    static let freshness: FreshnessCoordinator = {
+        let coordinator = FreshnessCoordinator.standard(
+            courses: courses, agenda: agenda, career: career,
+            notices: notices, news: news, weBeep: weBeep)
+        coordinator.status = status
+        return coordinator
+    }()
 }
 
 extension View {
@@ -81,6 +86,7 @@ extension View {
             .environment(PreviewEnvironment.programmes)
             .environment(PreviewEnvironment.liveActivity)
             .environment(PreviewEnvironment.freshness)
+            .environment(PreviewEnvironment.status)
             .environment(PreviewEnvironment.onboarding)
             .environment(PreviewEnvironment.spid)
             .environment(PreviewEnvironment.loginMemory)

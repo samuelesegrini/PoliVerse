@@ -44,12 +44,4 @@ extension View {
             ToolbarItem(placement: .topBarLeading) { ProfileBarButton() }
         }
     }
-
-    /// The sample-data banner under a tab's bar. Inset around the new
-    /// interface's whole tab view it sat hidden under the bars, where its Esci
-    /// button still took the taps meant for the buttons at the top trailing
-    /// edge.
-    func demoModeBanner() -> some View {
-        safeAreaInset(edge: .top, spacing: 0) { DemoModeBanner() }
-    }
 }

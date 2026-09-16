@@ -35,10 +35,7 @@ struct TodayBar: ViewModifier {
             ToolbarItem(placement: .topBarLeading) { ProfileBarButton() }
             ToolbarSpacer(.fixed, placement: .topBarLeading)
         }
-        ToolbarItem(placement: .topBarLeading) {
-            Button("Impostazioni", systemImage: "gearshape") { shell.present { shell.showingSettings = true } }
-                .accessibilityIdentifier("bar-settings")
-        }
+        ToolbarItem(placement: .topBarLeading) { SettingsBarButton() }
 
         if style.bar.showsDate {
             ToolbarItem(placement: .principal) {

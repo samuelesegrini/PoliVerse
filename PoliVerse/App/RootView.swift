@@ -86,7 +86,7 @@ struct MainTabView: View {
         // Above the tabs rather than on one screen: sample data replaces
         // every one of them, so saying it once on the Home would leave the
         // libretto looking like a real libretto.
-        .safeAreaInset(edge: .top, spacing: 0) { DemoModeBanner() }
+        .dataStatusLine(opensSettings: false)
         .appShellDuties(route: route(to:))
     }
 }

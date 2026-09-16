@@ -22,8 +22,35 @@ final class FreshnessCoordinator {
     /// One service's load, as the coordinator sees it: take a `force` flag,
     /// come back when the data is in.
     typealias Load = @MainActor (_ force: Bool) async -> Void
+    /// How a service says, after a load, whether that load got anywhere.
+    /// Nil for the ones that have no error to report.
+    typealias Failure = @MainActor () -> String?
+    /// How a service says how old the data it is holding is.
+    typealias Age = @MainActor () -> TimeInterval?
 
-    private var loads: [(name: String, run: Load)] = []
+    /// One service as Impostazioni shows it: what it is called, how old what
+    /// it holds is, and what went wrong last time, if anything.
+    struct ServiceStatus: Identifiable, Equatable {
+        let id: String
+        let title: String
+        let age: TimeInterval?
+        let failure: String?
+    }
+
+    private struct Registration {
+        let name: String
+        /// The service's name on screen, for the status line. Nil means the
+        /// service is not worth naming to the student.
+        let title: LocalizedStringResource?
+        let failure: Failure?
+        let age: Age?
+        let run: Load
+    }
+
+    private var loads: [Registration] = []
+    /// What the app tells the student about its data. Assigned by the app;
+    /// nil in tests and in the few previews that build a bare coordinator.
+    var status: DataStatus?
     /// The revalidation currently in flight, if any. New runs chain behind it
     /// rather than racing it.
     private var inFlight: Task<Void, Never>?
@@ -44,14 +71,24 @@ final class FreshnessCoordinator {
         weBeep: WeBeepService
     ) -> FreshnessCoordinator {
         let coordinator = FreshnessCoordinator()
-        coordinator.register("courses") { await courses.load(force: $0) }
-        coordinator.register("agenda") { await agenda.load(around: .now, force: $0) }
-        coordinator.register("career") { await career.load(force: $0) }
+        coordinator.register("courses", title: "Corsi", failure: { courses.errorMessage }, age: { courses.age }) {
+            await courses.load(force: $0)
+        }
+        coordinator.register("agenda", title: "Orario", failure: { agenda.errorMessage }, age: { agenda.age }) {
+            await agenda.load(around: .now, force: $0)
+        }
+        coordinator.register("career", title: "Carriera", failure: { career.errorMessage }, age: { career.age }) {
+            await career.load(force: $0)
+        }
         // Last, as on Home: the bell is the least urgent thing on the screen,
         // and an endpoint whose shape is still unconfirmed should not delay
         // the content that is known to work.
-        coordinator.register("notices") { await notices.load(force: $0) }
-        coordinator.register("news") { await news.load(force: $0) }
+        coordinator.register("notices", title: "Avvisi", failure: { notices.errorMessage }, age: { notices.age }) {
+            await notices.load(force: $0)
+        }
+        coordinator.register("news", title: "Notizie", failure: { news.errorMessage }, age: { news.age }) {
+            await news.load(force: $0)
+        }
         // After everything on screen: it reads several course pages, and
         // what it finds lands in the feed rather than on any open screen.
         coordinator.register("webeep-updates") { await weBeep.checkForUpdates(force: $0) }
@@ -69,8 +106,27 @@ final class FreshnessCoordinator {
     ///
     /// The name is for the log: "revalidated 5 services" says nothing when one
     /// of them is hanging, and the names say which.
-    func register(_ name: String, _ run: @escaping Load) {
-        loads.append((name, run))
+    /// - Parameters:
+    ///   - title: how the service is named on screen, when a failed load has
+    ///     to be reported. Omitted for work with nothing to show for itself.
+    ///   - failure: read after each load; a non-nil message means that load
+    ///     did not get what it went for.
+    func register(_ name: String, title: LocalizedStringResource? = nil,
+                  failure: Failure? = nil, age: Age? = nil, _ run: @escaping Load) {
+        loads.append(Registration(name: name, title: title, failure: failure, age: age, run: run))
+    }
+
+    /// Every named service, read as they are now rather than as they were at
+    /// the end of the last pass: a screen opened between passes should show
+    /// what each service is actually holding, not a snapshot that has since
+    /// gone stale. Reading the services here — inside a view's `body` — is
+    /// also what keeps the list updating as loads land.
+    var services: [ServiceStatus] {
+        loads.compactMap { load in
+            guard let title = load.title else { return nil }
+            return ServiceStatus(id: load.name, title: String(localized: title),
+                                 age: load.age?(), failure: load.failure?())
+        }
     }
 
     /// Runs every registered load, in order, and returns when the last one is
@@ -98,15 +154,26 @@ final class FreshnessCoordinator {
             return
         }
         let previous = inFlight
-        let task = Task { @MainActor [loads] in
+        // `loads`, `status` and `log` by value, as before: the run belongs to
+        // the app's data rather than to this object's lifetime.
+        let task = Task { @MainActor [loads, status, log] in
             await previous?.value
             // Inside the chain, after the previous run: passes never overlap
             // here, which a same-named signpost requires.
             let interval = PerfSignpost.begin(.freshnessRevalidate)
             defer { PerfSignpost.end(interval) }
+            status?.refreshBegan()
+            var failed: [String] = []
             for load in loads {
                 await load.run(force)
+                // Read after the load, not inside it: a service clears its own
+                // error when a load starts, so asking before would report the
+                // previous pass.
+                guard let message = load.failure?(), !message.isEmpty else { continue }
+                log.notice("\(load.name, privacy: .public) failed: \(message, privacy: .private)")
+                if let title = load.title { failed.append(String(localized: title)) }
             }
+            status?.refreshEnded(failures: failed)
         }
         inFlight = task
         await task.value

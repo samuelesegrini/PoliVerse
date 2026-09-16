@@ -29,6 +29,7 @@ struct PoliVerseApp: App {
     @State private var spid = SPIDCatalogue()
     @State private var loginMemory = LoginMethodMemory()
     @State private var freshness: FreshnessCoordinator
+    @State private var status: DataStatus
     private let notificationRouter = NotificationRouter()
     private let background = BackgroundRefresh()
     @Environment(\.scenePhase) private var scenePhase
@@ -118,9 +119,15 @@ struct PoliVerseApp: App {
 
         // Built here because this is the only place that holds every
         // service; the order lives in the factory, next to the class.
-        _freshness = State(initialValue: FreshnessCoordinator.standard(
+        let freshness = FreshnessCoordinator.standard(
             courses: courses, agenda: agenda, career: career,
-            notices: notices, news: news, weBeep: weBeep))
+            notices: notices, news: news, weBeep: weBeep)
+        // One sentence about the data, told by the passes the coordinator
+        // runs and read by the status line and Impostazioni.
+        let status = DataStatus(session: session, network: network)
+        freshness.status = status
+        _status = State(initialValue: status)
+        _freshness = State(initialValue: freshness)
 
         // Deliberately narrower than the coordinator's list: a background
         // refresh gets about 30 seconds in total, so it warms the two screens
@@ -179,6 +186,7 @@ struct PoliVerseApp: App {
                 .environment(pending)
                 .environment(liveActivity)
                 .environment(freshness)
+                .environment(status)
                 .environment(onboarding)
                 .environment(spid)
                 .environment(loginMemory)

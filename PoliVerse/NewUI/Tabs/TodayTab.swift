@@ -23,7 +23,7 @@ struct TodayTab: View {
                 if phase == .interacting { minimizePanel() }
             }
             .simultaneousGesture(TapGesture().onEnded(minimizePanel))
-            .demoModeBanner()
+            .dataStatusLine()
             .background(TodayBackgroundView(style: style).ignoresSafeArea())
             .todayBar()
             .toolbarVisibility(shell.singlePage ? .hidden : .automatic, for: .tabBar)
