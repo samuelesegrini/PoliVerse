@@ -23,6 +23,14 @@ struct ExamUpdatesView: View {
         .map { ($0.key, $0.value.sorted { $0.update.detectedAt > $1.update.detectedAt }) }
     }
 
+    /// "Oggi", "Ieri", or the day in words.
+    private func dayTitle(_ day: Date) -> String {
+        let calendar = PoliMiDate.romeCalendar
+        if calendar.isDateInToday(day) { return String(localized: "Oggi") }
+        if calendar.isDateInYesterday(day) { return String(localized: "Ieri") }
+        return day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)).capitalized
+    }
+
     var body: some View {
         ScrollView {
             if feed.updates.isEmpty {
@@ -32,37 +40,42 @@ struct ExamUpdatesView: View {
                     description: Text("Quando cambia qualcosa nei tuoi appelli — un'aula, un esito, un appello spostato — lo trovi qui."))
                     .padding(.top, 40)
             } else {
-                LazyVStack(alignment: .leading, spacing: 18) {
+                LazyVStack(alignment: .leading, spacing: 26) {
                     ForEach(days, id: \.0) { day, items in
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)).capitalized)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            ForEach(items) { item in
-                                let sitting = career.sitting(for: item.update)
-                                Button { selectedExam = sitting } label: {
-                                    // Under a day heading, the time says more
-                                    // than "3 days ago".
-                                    ExamUpdateRow(item: item, showsClockTime: true,
-                                                  isUnread: item.isUnread(since: seenBefore))
+                        // One card a day, under Oggi's heading.
+                        VStack(alignment: .leading, spacing: 10) {
+                            LookHeading(verbatim: dayTitle(day))
+                            VStack(spacing: 0) {
+                                ForEach(items) { item in
+                                    let sitting = career.sitting(for: item.update)
+                                    Button { selectedExam = sitting } label: {
+                                        // Under a day heading, the time says more
+                                        // than "3 days ago".
+                                        ExamUpdateRow(item: item, showsClockTime: true,
+                                                      isUnread: item.isUnread(since: seenBefore), card: false)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .disabled(sitting == nil)
+                                    if item.id != items.last?.id { Divider().padding(.leading, 52) }
                                 }
-                                .buttonStyle(.plain)
-                                .disabled(sitting == nil)
                             }
+                            .lookCard()
                         }
                     }
                 }
-                .padding()
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 20)
             }
 
             // Honest about what this can and cannot see, and how to quiet it.
             Text("Le novità arrivano dai Servizi Online quando l'app si aggiorna: aprendola, o in background quando iOS lo consente. Le email dei docenti non sono incluse. Tieni premuta una novità per silenziarne il corso.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .padding(.horizontal)
-                .padding(.bottom, 24)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 40)
         }
-        .background(Color(.systemGroupedBackground))
+        .lookPage()
         .navigationTitle("Novità esami")
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await career.load(force: true) }
@@ -170,19 +183,17 @@ struct ExamTimelineSection: View {
     var body: some View {
         let entries = entries
         if !entries.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Cronologia")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 10) {
+                LookHeading("Cronologia")
 
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
                         line(entry, isLast: index == entries.count - 1)
                     }
                 }
-                .padding(12)
+                .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .cardBackground()
+                .lookCard()
             }
         }
     }
@@ -257,6 +268,6 @@ extension ExamUpdate.Kind {
     ScrollView {
         ExamTimelineSection(exam: MockData.examSessions()[0]).padding()
     }
-    .background(Color(.systemGroupedBackground))
+    .lookPage()
     .previewEnvironment()
 }

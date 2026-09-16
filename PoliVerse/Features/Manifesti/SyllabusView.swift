@@ -297,7 +297,7 @@ struct CourseSyllabusView: View {
                                 : "Non trovo la scheda di questo insegnamento nel Manifesto degli studi."))
                         if programmes.programme != nil {
                             Button("Collega a un insegnamento del piano") { linking = true }
-                                .buttonStyle(.borderedProminent)
+                                .buttonStyle(.glassProminent)
                                 .tint(tint)
                         }
                     }
@@ -352,7 +352,7 @@ struct CourseSyllabusView: View {
                         Button("Altro scaglione") { choosingBracket = true }
                         Button("Collega altro insegnamento") { linking = true }
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.glass)
                     .controlSize(.small)
                     .tint(tint)
                     .padding(12)
@@ -410,10 +410,10 @@ struct CourseSyllabusView: View {
                     HStack(spacing: 8) {
                         if !programme.isConfirmed {
                             Button("È il mio corso di studi") { programmes.confirm() }
-                                .buttonStyle(.borderedProminent)
+                                .buttonStyle(.glassProminent)
                         }
                         Button("Cambia corso di studi") { changingProgramme = true }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(.glass)
                     }
                     .controlSize(.small)
                     .tint(tint)

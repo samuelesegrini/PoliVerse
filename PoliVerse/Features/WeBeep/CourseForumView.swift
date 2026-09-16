@@ -107,14 +107,19 @@ private struct DiscussionsList: View {
                     if discussions.isEmpty {
                         ContentUnavailableView("Ancora nessun messaggio", systemImage: "bubble.left")
                             .padding(.top, 40)
-                    }
-                    ForEach(discussions, id: \.id) { discussion in
-                        NavigationLink {
-                            DiscussionView(discussion: discussion, tint: tint)
-                        } label: {
-                            row(discussion)
+                    } else {
+                        VStack(spacing: 0) {
+                            ForEach(discussions, id: \.id) { discussion in
+                                NavigationLink {
+                                    DiscussionView(discussion: discussion, tint: tint)
+                                } label: {
+                                    row(discussion, last: discussion.id == discussions.last?.id)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
-                        .buttonStyle(.plain)
+                        .padding(.horizontal, 14)
+                        .lookCard()
                     }
                 } else if failed {
                     ContentUnavailableView("Forum non disponibile", systemImage: "wifi.exclamationmark",
@@ -131,50 +136,50 @@ private struct DiscussionsList: View {
         .task { if discussions == nil { await load() } }
     }
 
-    private func row(_ discussion: MoodleDiscussion) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            InitialsAvatar(name: discussion.userfullname ?? "?", tint: tint, size: 38)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
+    /// A discussion as a row of the forum's card: who, what, and the start
+    /// of what they said; a pinned one says so with the course's colour.
+    private func row(_ discussion: MoodleDiscussion, last: Bool) -> some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 12) {
+                InitialsAvatar(name: discussion.userfullname ?? "?", tint: tint, size: 38)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        if discussion.pinned == true {
+                            Label("In evidenza", systemImage: "pin.fill")
+                                .labelStyle(.iconOnly)
+                                .font(.caption)
+                                .foregroundStyle(tint)
+                        }
+                        Text(discussion.subject ?? discussion.name ?? "")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(2)
+                        Spacer(minLength: 4)
+                        if let created = discussion.created {
+                            Text(Date(timeIntervalSince1970: TimeInterval(created))
+                                .formatted(.relative(presentation: .named).locale(locale)))
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                                .lineLimit(1)
+                        }
+                    }
                     Text(discussion.userfullname ?? "")
-                        .font(.caption.weight(.semibold))
+                        .font(.caption.weight(.medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
-                    Spacer(minLength: 4)
-                    if let created = discussion.created {
-                        Text(Date(timeIntervalSince1970: TimeInterval(created))
-                            .formatted(.relative(presentation: .named).locale(locale)))
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
-                }
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    if discussion.pinned == true {
-                        Image(systemName: "pin.fill").font(.caption).foregroundStyle(.orange)
-                            .accessibilityLabel("In evidenza")
-                    }
-                    Text(discussion.subject ?? discussion.name ?? "")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
+                    Text(HTMLText.plain(discussion.message ?? ""))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.leading)
                         .lineLimit(2)
                 }
-                Text(HTMLText.plain(discussion.message ?? ""))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(3)
             }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .lookCard()
-        .overlay(alignment: .leading) {
-            if discussion.pinned == true {
-                RoundedRectangle(cornerRadius: 2).fill(.orange).frame(width: 3).padding(.vertical, 16)
-            }
+            .padding(.vertical, 12)
+            if !last { Divider().padding(.leading, 50) }
         }
         .contentShape(.rect)
+        .accessibilityElement(children: .combine)
     }
 
     private func load() async {
@@ -200,9 +205,10 @@ private struct DiscussionView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 12) {
                 Text(discussion.subject ?? discussion.name ?? "")
-                    .font(.title3.weight(.bold))
-                    .fontDesign(.rounded)
+                    .font(.title2.weight(.bold))
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 4)
+                    .padding(.bottom, 4)
 
                 ForEach(posts ?? fallback) { post in
                     VStack(alignment: .leading, spacing: 10) {
