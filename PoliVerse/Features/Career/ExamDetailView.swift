@@ -3,6 +3,9 @@ import SwiftUI
 /// Everything known about one exam sitting: the sitting itself, the
 /// enrolment window, the mark and what it does to the mean, the course's
 /// other sittings and earlier attempts, how the exam works, and its history.
+///
+/// Drawn as the course page is: the sitting large on a card in its course's
+/// colour, then Oggi's headings over cards of the look's material.
 struct ExamDetailView: View {
     @State private var exam: ExamSession
 
@@ -14,6 +17,7 @@ struct ExamDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(CareerService.self) private var career
     @Environment(CourseService.self) private var courses
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
     /// Captured when the button is tapped, so the sheet keeps its event even
     /// if the sitting's start passes while it is open.
     @State private var calendarDraft: ExamCalendarEvent?
@@ -35,6 +39,15 @@ struct ExamDetailView: View {
 
     private var accent: Color { ExamDetailView.accent(for: exam.status) }
 
+    /// The course's colour, as on its page; by name when no course matches,
+    /// as Oggi colours its lessons.
+    private var courseColour: Color {
+        course.map(Theme.accent(for:)) ?? Theme.courseAccents[TodayDigest.colourIndex(for: exam.courseName)]
+    }
+
+    /// Inside a card, rows keep off its edge; on a bare page they meet it.
+    private var cardPadding: CGFloat { style.material.hasCard ? 14 : 0 }
+
     static func accent(for status: ExamStatus) -> Color {
         switch status {
         case .graded(let grade): grade.passed ? .green : .red
@@ -48,7 +61,7 @@ struct ExamDetailView: View {
         let context = context
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 26) {
                     hero(context)
                     quickActions
 
@@ -72,17 +85,20 @@ struct ExamDetailView: View {
 
                     ExamTimelineSection(exam: exam)
                 }
-                .padding()
-                .padding(.bottom, 20)
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 40)
+                .frame(maxWidth: 700)
+                .frame(maxWidth: .infinity)
                 .animation(.snappy, value: exam.id)
             }
-            .background(Color(.systemGroupedBackground))
+            .lookPage()
             .sheet(item: $calendarDraft) { AddToCalendarSheet(event: $0).ignoresSafeArea() }
             .navigationTitle(exam.kind?.nonEmpty ?? String(localized: "Appello"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Chiudi") { dismiss() }
+                    Button("Chiudi", systemImage: "xmark") { dismiss() }
                 }
             }
         }
@@ -90,56 +106,73 @@ struct ExamDetailView: View {
 
     // MARK: - Hero
 
+    /// The sitting on a card in its course's colour, with Oggi's sheen: the
+    /// date — or the mark, once there is one — in the typeface of Oggi's date.
     private func hero(_ context: ExamContext) -> some View {
-        HStack(alignment: .center, spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(exam.courseName)
-                    .font(.title2.weight(.bold))
-                    .fontDesign(.rounded)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if let teacher = exam.teacher {
-                    Text(teacher)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                HStack(spacing: 6) {
-                    chip(exam.grade.map { $0.passed ? String(localized: "Superato") : String(localized: "Non superato") }
-                         ?? exam.status.label, tint: accent)
-                    if let cfu = context.librettoEntry?.cfu, cfu > 0 {
-                        chip("\(cfu) CFU", tint: .secondary)
-                    }
-                }
-
-                if let countdown {
-                    Text(countdown)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(accent)
-                        .padding(.top, 2)
-                }
+        let shape = RoundedRectangle(cornerRadius: 28, style: .continuous)
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(exam.kind?.nonEmpty ?? String(localized: "Appello"))
+                    .font(.subheadline.weight(.semibold))
+                    .opacity(0.9)
+                Spacer(minLength: 8)
+                Text(exam.grade.map { $0.passed ? String(localized: "Superato") : String(localized: "Non superato") }
+                     ?? exam.status.label)
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(.white.opacity(0.22), in: .capsule)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
             if let grade = exam.grade {
-                GradeRing(grade: grade, tint: accent)
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text(grade.display)
+                        .font(style.dateFont.font(size: 64, weight: style.dateWeight))
+                    if grade.value != nil {
+                        Text("/30").font(.title3.weight(.semibold)).opacity(0.7)
+                    }
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text("Voto \(grade.display)"))
             } else if let date = exam.date {
-                dateBadge(date)
+                Text(date.formatted(.dateTime.day().month(.abbreviated).locale(locale)))
+                    .font(style.dateFont.font(size: 56, weight: style.dateWeight))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(exam.courseName)
+                    .font(.title3.weight(.bold))
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(heroDetail(context))
+                    .font(.subheadline)
+                    .opacity(0.9)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(18)
+        .foregroundStyle(Theme.onAccent)
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: Theme.cardCorner)
-                .fill(Color(.secondarySystemGroupedBackground))
-                .overlay(alignment: .topTrailing) {
-                    Circle()
-                        .fill(RadialGradient(colors: [accent.opacity(0.3), accent.opacity(0)],
-                                             center: .center, startRadius: 0, endRadius: 130))
-                        .frame(width: 240, height: 240)
-                        .offset(x: 80, y: -100)
+            shape.fill(courseColour)
+                .visualEffect { content, proxy in
+                    content.colorEffect(ShaderLibrary.glossSheen(.float2(proxy.size), .float(0.5)))
                 }
-                .clipShape(.rect(cornerRadius: Theme.cardCorner))
         }
+        .shadow(color: courseColour.opacity(0.3), radius: 12, y: 6)
+        .accessibilityElement(children: .combine)
+    }
+
+    /// When, where, how much it weighs and who teaches it, on one line.
+    private func heroDetail(_ context: ExamContext) -> String {
+        // A sitting ahead says how far off it is; one past says when it was,
+        // since its mark sits where the date would.
+        let when = countdown ?? exam.date?.formatted(.dateTime.day().month(.wide).year().locale(locale))
+        let cfu = context.librettoEntry?.cfu.flatMap { $0 > 0 ? String(localized: "\($0) CFU") : nil }
+        return [when, exam.room, cfu, exam.teacher].compactMap { $0 }.joined(separator: " · ")
     }
 
     /// "Tra 12 giorni", "Domani", "Oggi alle 9:00" — for a sitting ahead.
@@ -156,64 +189,43 @@ struct ExamDetailView: View {
         }
     }
 
-    private func dateBadge(_ date: Date) -> some View {
-        VStack(spacing: 0) {
-            Text(date.formatted(.dateTime.month(.abbreviated).locale(locale)).uppercased())
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 4)
-                .background(accent)
-            Text(date.formatted(.dateTime.day().locale(locale)))
-                .font(.title.weight(.bold))
-                .fontDesign(.rounded)
-                .monospacedDigit()
-                .padding(.top, 4)
-            Text(date.formatted(.dateTime.weekday(.abbreviated).locale(locale)).capitalized)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .padding(.bottom, 6)
-        }
-        .frame(width: 68)
-        .background(Color(.tertiarySystemGroupedBackground))
-        .clipShape(.rect(cornerRadius: 14))
-        .accessibilityElement(children: .combine)
-    }
-
     // MARK: - Actions
 
+    /// What to do next, as glass buttons: the calendar for a sitting ahead,
+    /// and the course with its materials.
     @ViewBuilder
     private var quickActions: some View {
         let hasCalendar = calendarEvent != nil
         if hasCalendar || course != nil {
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 if hasCalendar {
                     Button { calendarDraft = calendarEvent } label: {
-                        actionTile("Calendario", "calendar.badge.plus")
+                        actionLabel("Calendario", "calendar.badge.plus")
                     }
                 }
                 if let course {
                     NavigationLink { CourseDetailView(course: course) } label: {
-                        actionTile("Corso", "books.vertical.fill")
+                        actionLabel("Corso", "books.vertical")
                     }
                     NavigationLink { CourseMaterialsView(course: course) } label: {
-                        actionTile("Materiali", "folder.fill")
+                        actionLabel("Materiali", "folder")
                     }
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.glass)
+            .buttonBorderShape(.roundedRectangle(radius: 20))
+            .controlSize(.large)
+            .tint(courseColour)
         }
     }
 
-    private func actionTile(_ title: LocalizedStringKey, _ icon: String) -> some View {
-        VStack(spacing: 6) {
-            Image(systemName: icon).font(.title3).foregroundStyle(accent)
-            Text(title).font(.caption.weight(.medium)).lineLimit(1)
+    private func actionLabel(_ title: LocalizedStringKey, _ icon: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon).font(.body.weight(.semibold))
+            Text(title).font(.caption.weight(.semibold)).lineLimit(1)
         }
-        .frame(maxWidth: .infinity, minHeight: 60)
-        .padding(.vertical, 4)
-        .cardBackground()
-        .contentShape(.rect)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 2)
     }
 
     // MARK: - Result
@@ -233,8 +245,7 @@ struct ExamDetailView: View {
                                 Image(systemName: "arrow.right").font(.caption)
                                     .foregroundStyle(.tertiary)
                                 Text(impact.after, format: .number.precision(.fractionLength(2)))
-                                    .font(.title3.weight(.bold))
-                                    .fontDesign(.rounded)
+                                    .font(style.dateFont.font(size: 24, weight: style.dateWeight))
                             }
                             .monospacedDigit()
                         }
@@ -276,9 +287,9 @@ struct ExamDetailView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .padding(14)
+            .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .cardBackground()
+            .lookCard()
         }
     }
 
@@ -311,9 +322,9 @@ struct ExamDetailView: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
-            .padding(14)
+            .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .cardBackground()
+            .lookCard()
         }
     }
 
@@ -343,10 +354,12 @@ struct ExamDetailView: View {
                 let rows = detailRows(context)
                 ForEach(Array(rows.enumerated()), id: \.offset) { index, item in
                     detailRow(item.label, item.value, icon: item.icon)
-                    if index < rows.count - 1 { Divider().padding(.leading, 48) }
+                    if index < rows.count - 1 { Divider().padding(.leading, 36) }
                 }
             }
-            .cardBackground()
+            .padding(.horizontal, cardPadding)
+            .padding(.vertical, cardPadding / 2)
+            .lookCard()
         }
     }
 
@@ -369,7 +382,7 @@ struct ExamDetailView: View {
     private func detailRow(_ label: String, _ value: String, icon: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .foregroundStyle(accent)
+                .foregroundStyle(courseColour)
                 .frame(width: 24)
             Text(label)
                 .font(.subheadline)
@@ -380,8 +393,7 @@ struct ExamDetailView: View {
                 .multilineTextAlignment(.trailing)
                 .textSelection(.enabled)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 11)
+        .padding(.vertical, 12)
     }
 
     // MARK: - Other sittings
@@ -392,10 +404,12 @@ struct ExamDetailView: View {
                 ForEach(Array(sittings.enumerated()), id: \.element.id) { index, sitting in
                     Button { exam = sitting } label: { sittingRow(sitting) }
                         .buttonStyle(.plain)
-                    if index < sittings.count - 1 { Divider().padding(.leading, 68) }
+                    if index < sittings.count - 1 { Divider().padding(.leading, 56) }
                 }
             }
-            .cardBackground()
+            .padding(.horizontal, cardPadding)
+            .padding(.vertical, cardPadding / 2)
+            .lookCard()
         }
     }
 
@@ -405,8 +419,7 @@ struct ExamDetailView: View {
             Group {
                 if let grade = sitting.grade {
                     Text(grade.display)
-                        .font(.headline.weight(.bold))
-                        .fontDesign(.rounded)
+                        .font(style.dateFont.font(size: 20, weight: style.dateWeight))
                         .foregroundStyle(tint)
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
@@ -430,72 +443,24 @@ struct ExamDetailView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
         }
-        .padding(12)
+        .padding(.vertical, 12)
         .contentShape(.rect)
     }
 
     // MARK: - Building blocks
 
-    private func chip(_ text: String, tint: Color) -> some View {
-        Text(text)
-            .font(.caption.weight(.medium))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(tint.opacity(0.15), in: .capsule)
-            .foregroundStyle(tint)
-    }
-
     @ViewBuilder
     private func section<Content: View>(
         _ title: LocalizedStringKey, @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 4)
+        VStack(alignment: .leading, spacing: 10) {
+            LookHeading(title)
             content()
         }
     }
 }
 
 // MARK: - Components
-
-/// The mark on a ring filled to its share of 30.
-private struct GradeRing: View {
-    let grade: ExamGrade
-    let tint: Color
-
-    private var fraction: Double {
-        guard let value = grade.value else { return grade.passed ? 1 : 0 }
-        return min(Double(value) / 30, 1)
-    }
-
-    var body: some View {
-        ZStack {
-            Circle().stroke(tint.opacity(0.15), lineWidth: 8)
-            Circle()
-                .trim(from: 0, to: fraction)
-                .stroke(tint, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-            VStack(spacing: 0) {
-                Text(grade.display)
-                    .font(.title2.weight(.bold))
-                    .fontDesign(.rounded)
-                    .foregroundStyle(tint)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.4)
-                if grade.value != nil {
-                    Text("/30").font(.caption2).foregroundStyle(.secondary)
-                }
-            }
-            .padding(12)
-        }
-        .frame(width: 84, height: 84)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Voto \(grade.display)"))
-    }
-}
 
 /// Opening, closing and the sitting on one line, with today marked.
 private struct EnrolmentWindowBar: View {
@@ -514,7 +479,7 @@ private struct EnrolmentWindowBar: View {
         VStack(alignment: .leading, spacing: 6) {
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color(.tertiarySystemFill))
+                    Capsule().fill(.quaternary)
                     Capsule().fill(tint).frame(width: max(proxy.size.width * progress, 6))
                 }
             }
