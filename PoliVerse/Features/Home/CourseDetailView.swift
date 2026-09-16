@@ -21,6 +21,9 @@ struct CourseDetailView: View {
     @Environment(StudyProgrammeService.self) private var programmes
     @Environment(Session.self) private var session
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.colorScheme) private var scheme
+
+    private var ramp: CourseRamp { CourseRamp(course: course, style: style, scheme: scheme) }
 
     @State private var selectedExam: ExamSession?
     @State private var bracketTeacher: String?
@@ -68,6 +71,8 @@ struct CourseDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
                 hero
+
+                glance(lectures: lectures, next: upcoming.first, news: news)
 
                 if !lectures.isEmpty {
                     block("Lezioni") {
@@ -240,6 +245,34 @@ struct CourseDetailView: View {
         }
     }
 
+    /// The next lesson, the next sitting and what is new, before the blocks
+    /// that say each at length.
+    @ViewBuilder
+    private func glance(lectures: [AgendaEvent], next: ExamSession?, news: [FeedItem]) -> some View {
+        let unread = news.filter { $0.isUnread(since: feed.seenAt) }.count
+        var items: [GlanceStrip.Item] = []
+        let _ = {
+            if let lecture = lectures.first {
+                items.append(.init(id: "lesson",
+                                   value: lecture.start <= .now ? String(localized: "Ora")
+                                       : lecture.start.formatted(.dateTime.hour().minute().locale(locale)),
+                                   label: lecture.start <= .now ? String(localized: "a lezione") : dayLabel(lecture.start)))
+            }
+            if let date = next?.date {
+                let calendar = PoliMiDate.romeCalendar
+                let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: .now),
+                                                   to: calendar.startOfDay(for: date)).day ?? 0
+                items.append(.init(id: "exam", value: "\(days)",
+                                   label: days == 1 ? String(localized: "giorno all'appello") : String(localized: "giorni all'appello")))
+            }
+            items.append(.init(id: "news", value: "\(unread)",
+                               label: unread == 1 ? String(localized: "novità") : String(localized: "novità")))
+        }()
+        if items.count > 1 {
+            GlanceStrip(items: items, tint: ramp.main.color)
+        }
+    }
+
     // MARK: - Parts
 
     /// The parts of the course, with what is new in each.
@@ -248,20 +281,20 @@ struct CourseDetailView: View {
         return VStack(spacing: 0) {
             NavigationLink { CourseForumsView(course: course, kind: .announcements) } label: {
                 row(symbol: "megaphone", title: String(localized: "Avvisi"), trailing: newCount(badges.announcements),
-                    last: false, chevron: true)
+                    tile: ramp.colour(0, of: 5), last: false, chevron: true)
             }
             NavigationLink { CourseMaterialsView(course: course) } label: {
                 row(symbol: "folder", title: String(localized: "Materiali"), trailing: newCount(badges.materials),
-                    last: false, chevron: true)
+                    tile: ramp.colour(1, of: 5), last: false, chevron: true)
             }
             NavigationLink { CourseForumsView(course: course, kind: .discussion) } label: {
-                row(symbol: "bubble.left.and.bubble.right", title: String(localized: "Forum"), last: false, chevron: true)
+                row(symbol: "bubble.left.and.bubble.right", title: String(localized: "Forum"), tile: ramp.colour(2, of: 5), last: false, chevron: true)
             }
             NavigationLink { CourseSyllabusView(course: course) } label: {
-                row(symbol: "book.closed", title: String(localized: "Programma"), last: false, chevron: true)
+                row(symbol: "book.closed", title: String(localized: "Programma"), tile: ramp.colour(3, of: 5), last: false, chevron: true)
             }
             NavigationLink { CourseInfoView(course: course) } label: {
-                row(symbol: "info.circle", title: String(localized: "Informazioni"), last: true, chevron: true)
+                row(symbol: "info.circle", title: String(localized: "Informazioni"), tile: ramp.colour(4, of: 5), last: true, chevron: true)
             }
         }
         .buttonStyle(.plain)
@@ -284,7 +317,7 @@ struct CourseDetailView: View {
                    title: live ? String(localized: "In corso") : "\(dayLabel(lecture.start)) · \(time)",
                    detail: live ? String(localized: "fino alle \(lecture.end.formatted(.dateTime.hour().minute().locale(locale)))") : nil,
                    trailing: Text(lecture.roomAcronym ?? lecture.room ?? String(localized: "Aula da definire")),
-                   symbolTint: live ? .green : accent,
+                   tile: live ? Flavor.RGB(red: 0.2, green: 0.62, blue: 0.36) : nil,
                    last: last)
     }
 
@@ -343,7 +376,7 @@ struct CourseDetailView: View {
             VStack(alignment: .leading, spacing: 0) {
                 let lines = overviewLines(syllabus)
                 ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
-                    row(symbol: line.symbol, title: line.text, symbolTint: line.tint ?? accent, last: false)
+                    row(symbol: line.symbol, title: line.text, tile: line.tile, last: false)
                 }
                 if let objectives = syllabus.objectives?.nonEmpty {
                     Text(objectives)
@@ -368,7 +401,7 @@ struct CourseDetailView: View {
     private struct OverviewLine {
         let symbol: String
         let text: String
-        var tint: Color?
+        var tile: Flavor.RGB?
     }
 
     private func overviewLines(_ syllabus: Syllabus) -> [OverviewLine] {
@@ -378,10 +411,10 @@ struct CourseDetailView: View {
         switch PartialExams.policy(assessment: syllabus.assessment, notes: syllabus.assessmentNotes) {
         case .offered:
             lines.append(OverviewLine(symbol: "square.split.2x1", text: String(localized: "Prove in itinere previste"),
-                                      tint: .green))
+                                      tile: Flavor.RGB(red: 0.2, green: 0.62, blue: 0.36)))
         case .none:
             lines.append(OverviewLine(symbol: "square", text: String(localized: "Nessuna prova in itinere"),
-                                      tint: .secondary))
+                                      tile: ramp.neutral))
         case .unknown:
             break
         }
@@ -416,13 +449,10 @@ struct CourseDetailView: View {
 
     /// One of Oggi's rows: a symbol, a line or two, and a value at the end.
     private func row(symbol: String, title: String, detail: String? = nil, trailing: Text? = nil,
-                     symbolTint: Color? = nil, last: Bool, chevron: Bool = false) -> some View {
+                     tile: Flavor.RGB? = nil, last: Bool, chevron: Bool = false) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                Image(systemName: symbol)
-                    .font(.body)
-                    .foregroundStyle(symbolTint ?? accent)
-                    .frame(width: 24)
+                CourseRowTile(symbol: symbol, colour: tile ?? ramp.main)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title)
                         .font(.subheadline.weight(.medium))
@@ -448,7 +478,7 @@ struct CourseDetailView: View {
             }
             .padding(.vertical, 12)
             if !last {
-                Divider().padding(.leading, 36)
+                Divider().padding(.leading, 42)
             }
         }
         .contentShape(.rect)

@@ -18,6 +18,7 @@ struct ExamDetailView: View {
     @Environment(CareerService.self) private var career
     @Environment(CourseService.self) private var courses
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.colorScheme) private var scheme
     /// Captured when the button is tapped, so the sheet keeps its event even
     /// if the sitting's start passes while it is open.
     @State private var calendarDraft: ExamCalendarEvent?
@@ -352,9 +353,12 @@ struct ExamDetailView: View {
         section("Dettagli") {
             VStack(spacing: 0) {
                 let rows = detailRows(context)
+                let ramp = course.map { CourseRamp(course: $0, style: style, scheme: scheme) }
+                    ?? CourseRamp(name: exam.courseName, style: style, scheme: scheme)
+                let colours = ramp.colours(rows.count)
                 ForEach(Array(rows.enumerated()), id: \.offset) { index, item in
-                    detailRow(item.label, item.value, icon: item.icon)
-                    if index < rows.count - 1 { Divider().padding(.leading, 36) }
+                    detailRow(item.label, item.value, icon: item.icon, colour: colours[index])
+                    if index < rows.count - 1 { Divider().padding(.leading, 42) }
                 }
             }
             .padding(.horizontal, cardPadding)
@@ -379,11 +383,9 @@ struct ExamDetailView: View {
         return rows
     }
 
-    private func detailRow(_ label: String, _ value: String, icon: String) -> some View {
+    private func detailRow(_ label: String, _ value: String, icon: String, colour: Flavor.RGB) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon)
-                .foregroundStyle(courseColour)
-                .frame(width: 24)
+            CourseRowTile(symbol: icon, colour: colour)
             Text(label)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)

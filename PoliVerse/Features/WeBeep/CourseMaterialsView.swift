@@ -28,10 +28,33 @@ struct CourseMaterialsView: View {
     }
 
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.colorScheme) private var scheme
+
+    /// The kinds of file the course has, largest first, each with its colour.
+    private var kinds: [MaterialKind] {
+        let files: [WeBeepFile] = weBeep.sections.flatMap(\.files)
+        let groups: [String: [WeBeepFile]] = Dictionary(grouping: files) { $0.icon }
+        var totals: [(symbol: String, bytes: Int, count: Int)] = []
+        for (symbol, members) in groups {
+            let bytes = members.reduce(0) { $0 + $1.sizeBytes }
+            totals.append((symbol, bytes, members.count))
+        }
+        totals.sort { $0.bytes == $1.bytes ? $0.count > $1.count : $0.bytes > $1.bytes }
+        let colours = CourseRamp(course: course, style: style, scheme: scheme).colours(totals.count)
+        var kinds: [MaterialKind] = []
+        for (total, colour) in zip(totals, colours) {
+            kinds.append(MaterialKind(symbol: total.symbol, bytes: total.bytes, count: total.count, colour: colour))
+        }
+        return kinds
+    }
 
     var body: some View {
+        let kinds = kinds
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 24) {
+                if query.isEmpty, !needsLogin {
+                    hero(kinds)
+                }
                 if needsLogin {
                     VStack(alignment: .leading, spacing: 10) {
                         Label("Collega WeBeep", systemImage: "books.vertical")
@@ -61,7 +84,7 @@ struct CourseMaterialsView: View {
                 }
 
                 ForEach(sections) { section in
-                    sectionCard(section)
+                    sectionCard(section, kinds: kinds)
                 }
             }
             .padding(.horizontal, 20)
@@ -108,8 +131,43 @@ struct CourseMaterialsView: View {
         .refreshable { await weBeep.loadMaterials(for: course) }
     }
 
+    /// The kinds of file drawn as a pile, the largest in front, with how
+    /// much there is in words and the proportion on a bar.
+    @ViewBuilder
+    private func hero(_ kinds: [MaterialKind]) -> some View {
+        let ramp = CourseRamp(course: course, style: style, scheme: scheme)
+        let files = weBeep.sections.flatMap(\.files)
+        let downloaded = files.filter { if case .downloaded = downloads.status(for: $0) { true } else { false } }.count
+        let bytes = Int64(kinds.reduce(0) { $0 + $1.bytes })
+        VStack(spacing: 18) {
+            CoursePageHero(
+                tiles: kinds.map { HeroTile(id: $0.symbol, symbol: $0.symbol, colour: $0.colour, weight: Double($0.bytes)) },
+                placeholder: HeroTile(id: "empty", symbol: "folder", colour: ramp.main),
+                title: Text("Materiali"),
+                summary: summary(files: files.count, bytes: bytes, downloaded: downloaded),
+                badge: downloaded > 0 && downloaded == files.count
+                    ? HeroBadge(symbol: "checkmark", tint: .green) : nil,
+                mode: ramp.mode)
+            if kinds.count > 1 {
+                ShareBar(segments: kinds.prefix(5).map {
+                    ShareBar.Segment(id: $0.symbol, title: MaterialKind.title($0.symbol), colour: $0.colour.color,
+                                     value: Double(max($0.bytes, 1)))
+                }, neutral: ramp.neutral.color)
+                .padding(16)
+                .lookCard()
+            }
+        }
+    }
+
+    /// "24 file · 1,2 GB · 3 offline".
+    private func summary(files: Int, bytes: Int64, downloaded: Int) -> Text? {
+        guard files > 0 else { return nil }
+        let size = ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+        return downloaded > 0 ? Text("\(files) file · \(size) · \(downloaded) offline") : Text("\(files) file · \(size)")
+    }
+
     /// One Moodle section: its name and count, and its files on one card.
-    private func sectionCard(_ section: WeBeepSection) -> some View {
+    private func sectionCard(_ section: WeBeepSection, kinds: [MaterialKind]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             LookHeading(verbatim: section.name) {
                 Text("\(section.files.count)")
@@ -118,7 +176,9 @@ struct CourseMaterialsView: View {
             }
             VStack(spacing: 0) {
                 ForEach(section.files) { file in
-                    fileRow(file, last: file.id == section.files.last?.id)
+                    fileRow(file, colour: kinds.first { $0.symbol == file.icon }?.colour
+                                ?? CourseRamp(course: course, style: style, scheme: scheme).main,
+                            last: file.id == section.files.last?.id)
                 }
             }
             .padding(.horizontal, style.material.hasCard ? 14 : 0)
@@ -127,9 +187,9 @@ struct CourseMaterialsView: View {
         }
     }
 
-    private func fileRow(_ file: WeBeepFile, last: Bool) -> some View {
+    private func fileRow(_ file: WeBeepFile, colour: Flavor.RGB, last: Bool) -> some View {
         let status = downloads.status(for: file)
-        return FileRow(tint: tint, file: file, status: status, last: last, onTap: { Task { await open(file) } })
+        return FileRow(colour: colour, file: file, status: status, last: last, onTap: { Task { await open(file) } })
             .contextMenu {
                 if case .downloaded = status {
                     Button("Rimuovi il download", systemImage: "trash", role: .destructive) {
@@ -157,8 +217,29 @@ private struct PreviewItem: Identifiable {
     var id: String { url.path }
 }
 
+/// One kind of file on the page: what it weighs, how many, its colour.
+struct MaterialKind {
+    let symbol: String
+    let bytes: Int
+    let count: Int
+    let colour: Flavor.RGB
+
+    static func title(_ symbol: String) -> String {
+        switch symbol {
+        case "doc.richtext": String(localized: "PDF")
+        case "doc.zipper": String(localized: "Archivi")
+        case "play.rectangle": String(localized: "Video")
+        case "rectangle.on.rectangle": String(localized: "Slide")
+        case "doc.text": String(localized: "Documenti")
+        case "tablecells": String(localized: "Tabelle")
+        case "photo": String(localized: "Immagini")
+        default: String(localized: "Altro")
+        }
+    }
+}
+
 private struct FileRow: View {
-    let tint: Color
+    let colour: Flavor.RGB
     let file: WeBeepFile
     let status: FileDownloadService.Status
     /// The last row of its card draws no hairline under it.
@@ -173,11 +254,7 @@ private struct FileRow: View {
         Button(action: onTap) {
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
-                    Image(systemName: file.icon)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(tint)
-                        .frame(width: 40, height: 40)
-                        .background(tint.opacity(0.13), in: .rect(cornerRadius: 11, style: .continuous))
+                    CourseRowTile(symbol: file.icon, colour: colour)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(file.name)
@@ -219,7 +296,7 @@ private struct FileRow: View {
                 }
                 .padding(.vertical, 10)
                 if !last {
-                    Divider().padding(.leading, 52)
+                    Divider().padding(.leading, 42)
                 }
             }
             .contentShape(.rect)

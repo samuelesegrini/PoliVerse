@@ -14,6 +14,9 @@ struct CourseInfoView: View {
     @Environment(UpdateFeed.self) private var feed
     @Environment(\.locale) private var locale
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.colorScheme) private var scheme
+
+    private var ramp: CourseRamp { CourseRamp(course: course, style: style, scheme: scheme) }
 
     @State private var syllabus: Syllabus?
     @State private var pickTeachers: String?
@@ -29,6 +32,7 @@ struct CourseInfoView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
+                hero
                 facts
                 teacher
                 exam
@@ -65,38 +69,28 @@ struct CourseInfoView: View {
 
     // MARK: - Facts
 
+    /// What the page covers, as a pile: the facts in front, then the teacher,
+    /// the exam, the prove in itinere and the codes.
+    private var hero: some View {
+        let symbols = ["info.circle", "person", "pencil.and.list.clipboard", "square.split.2x1", "number"]
+        let colours = ramp.colours(symbols.count)
+        let name = pickTeachers ?? course.teacher
+        return CoursePageHero(
+            tiles: zip(symbols, colours).map { HeroTile(id: $0, symbol: $0, colour: $1) },
+            placeholder: HeroTile(id: "empty", symbol: "info.circle", colour: ramp.main),
+            title: Text(course.name),
+            summary: name == "—" ? nil : Text(name),
+            mode: ramp.mode)
+    }
+
     /// Credits, semester and year on one strip, the numbers large.
     private var facts: some View {
-        let items: [(value: String, label: String)] = [
-            course.cfu > 0 ? ("\(course.cfu)", String(localized: "CFU")) : nil,
-            course.semester != "—" ? (course.semester, String(localized: "semestre")) : nil,
-            course.academicYear != "—" ? (course.academicYear, String(localized: "anno accademico")) : nil,
-        ].compactMap { $0 }
-        return HStack(spacing: 0) {
-            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                if index > 0 {
-                    Rectangle().fill(.quaternary).frame(width: 1).padding(.vertical, 14)
-                }
-                VStack(spacing: 2) {
-                    Text(item.value)
-                        .font(style.dateFont.font(size: 30, weight: style.dateWeight))
-                        .foregroundStyle(accent)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                    Text(item.label)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .padding(.horizontal, 6)
-                .accessibilityElement(children: .combine)
-            }
-        }
-        .fixedSize(horizontal: false, vertical: true)
-        .lookCard()
+        GlanceStrip(items: [
+            course.cfu > 0 ? .init(id: "cfu", value: "\(course.cfu)", label: String(localized: "CFU")) : nil,
+            course.semester != "—" ? .init(id: "semester", value: course.semester, label: String(localized: "semestre")) : nil,
+            course.academicYear != "—"
+                ? .init(id: "year", value: course.academicYear, label: String(localized: "anno accademico")) : nil,
+        ].compactMap { $0 }, tint: ramp.main.color)
     }
 
     // MARK: - Teacher
@@ -160,18 +154,14 @@ struct CourseInfoView: View {
                 VStack(spacing: 0) {
                     ForEach(Array(assessment.enumerated()), id: \.offset) { index, item in
                         row(last: index == assessment.count - 1 && language == nil) {
-                            Text("\(index + 1)")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(Theme.onAccent)
-                                .frame(width: 22, height: 22)
-                                .background(accent, in: .circle)
+                            NumberTile(number: index + 1, colour: ramp.colour(0, of: 2))
                         } content: {
                             Text(item).font(.subheadline)
                         }
                     }
                     if let language {
                         row(last: true) {
-                            Image(systemName: "globe").foregroundStyle(accent)
+                            CourseRowTile(symbol: "globe", colour: ramp.colour(1, of: 2))
                         } content: {
                             Text(language.taughtIn).font(.subheadline)
                         }
@@ -335,7 +325,7 @@ struct CourseInfoView: View {
                 VStack(spacing: 0) {
                     ForEach(codes, id: \.label) { code in
                         row(last: code.label == codes.last?.label) {
-                            Image(systemName: "number").foregroundStyle(accent)
+                            CourseRowTile(symbol: "number", colour: ramp.main)
                         } content: {
                             HStack {
                                 Text(code.label).font(.subheadline).foregroundStyle(.secondary)
@@ -383,15 +373,35 @@ struct CourseInfoView: View {
     private func row<Icon: View, Content: View>(last: Bool, @ViewBuilder icon: () -> Icon,
                                                 @ViewBuilder content: () -> Content) -> some View {
         VStack(spacing: 0) {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                icon().frame(width: 24)
+            HStack(alignment: .center, spacing: 12) {
+                icon()
                 content()
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.vertical, 11)
-            if !last { Divider().padding(.leading, 36) }
+            if !last { Divider().padding(.leading, 42) }
         }
+    }
+}
+
+/// A step's number on a solid tile, as the rows' symbols are drawn.
+private struct NumberTile: View {
+    let number: Int
+    let colour: Flavor.RGB
+    @ScaledMetric(relativeTo: .body) private var side: CGFloat = 30
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: side * 0.2237, style: .continuous)
+            .fill(colour.color.gradient)
+            .frame(width: side, height: side)
+            .overlay {
+                Text("\(number)")
+                    .font(.system(size: side * 0.48, weight: .bold, design: .rounded))
+                    .foregroundStyle(colour.legibleGlyph)
+            }
+            .shadow(color: .black.opacity(0.22), radius: side * 0.08, y: side * 0.04)
+            .accessibilityHidden(true)
     }
 }
 

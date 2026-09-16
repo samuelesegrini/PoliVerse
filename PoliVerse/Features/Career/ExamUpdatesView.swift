@@ -13,6 +13,26 @@ struct ExamUpdatesView: View {
     /// dot for as long as the screen is open.
     @State private var seenBefore: Date?
     @State private var hasMarked = false
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.colorScheme) private var scheme
+
+    /// The kinds of news there are, the latest in front, and how many are
+    /// still to read.
+    private var hero: some View {
+        let ramp = FlavorRamp(style: style, scheme: scheme)
+        var symbols: [String] = []
+        for update in feed.updates.sorted(by: { $0.detectedAt > $1.detectedAt }) where !symbols.contains(update.kind.symbol) {
+            symbols.append(update.kind.symbol)
+        }
+        let unread = FeedItem.items(from: feed.updates).filter { $0.isUnread(since: seenBefore) }.count
+        return CoursePageHero(
+            tiles: zip(symbols.prefix(5), ramp.colours(min(symbols.count, 5))).map { HeroTile(id: $0, symbol: $0, colour: $1) },
+            placeholder: HeroTile(id: "empty", symbol: "bell.badge", colour: ramp.neutral),
+            title: unread == 0 ? Text("Tutto letto") : Text(unread == 1 ? "1 novità da leggere" : "\(unread) novità da leggere"),
+            summary: Text("Dai Servizi Online e da WeBeep"),
+            badge: unread > 0 ? HeroBadge(symbol: "bell.fill", tint: style.accent(scheme)) : nil,
+            mode: ramp.mode)
+    }
 
     private var days: [(Date, [FeedItem])] {
         let calendar = PoliMiDate.romeCalendar
@@ -41,6 +61,7 @@ struct ExamUpdatesView: View {
                     .padding(.top, 40)
             } else {
                 LazyVStack(alignment: .leading, spacing: 26) {
+                    hero
                     ForEach(days, id: \.0) { day, items in
                         // One card a day, under Oggi's heading.
                         VStack(alignment: .leading, spacing: 10) {

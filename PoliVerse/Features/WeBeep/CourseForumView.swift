@@ -40,7 +40,7 @@ struct CourseForumsView: View {
                 ContentUnavailableView("WeBeep non risponde", systemImage: "wifi.exclamationmark",
                                        description: Text("Riprova tra poco."))
             } else if matching.count == 1, let forum = matching.first {
-                DiscussionsList(forum: forum, tint: tint)
+                DiscussionsList(forum: forum, course: course, kind: kind, tint: tint)
             } else if matching.isEmpty {
                 ContentUnavailableView(
                     kind == .announcements ? "Nessun forum avvisi" : "Nessun forum",
@@ -52,7 +52,8 @@ struct CourseForumsView: View {
                         ForEach(Array(matching.enumerated()), id: \.element.id) { index, forum in
                             if index > 0 { CardDivider(inset: 60) }
                             NavigationLink {
-                                DiscussionsList(forum: forum, tint: tint).navigationTitle(forum.name)
+                                DiscussionsList(forum: forum, course: course, kind: kind, tint: tint)
+                                    .navigationTitle(forum.name)
                             } label: {
                                 HStack(spacing: 12) {
                                     Image(systemName: "bubble.left.and.bubble.right.fill")
@@ -93,7 +94,27 @@ struct CourseForumsView: View {
 /// The discussions in one forum, newest activity first as Moodle orders them.
 private struct DiscussionsList: View {
     let forum: CourseForum
+    let course: Course
+    let kind: CourseForum.Kind
     let tint: Color
+
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.colorScheme) private var scheme
+
+    /// The forum as a pile: its own symbol in front, then what fills it.
+    private func hero(_ discussions: [MoodleDiscussion]) -> some View {
+        let ramp = CourseRamp(course: course, style: style, scheme: scheme)
+        let front = kind == .announcements ? "megaphone" : "bubble.left.and.bubble.right"
+        let symbols = [front, "pin", "person.2", "paperclip", "bell"]
+        let latest = discussions.compactMap(\.created).max().map { Date(timeIntervalSince1970: TimeInterval($0)) }
+        let count = Text(discussions.count == 1 ? "1 discussione" : "\(discussions.count) discussioni")
+        return CoursePageHero(
+            tiles: zip(symbols, ramp.colours(symbols.count)).map { HeroTile(id: $0, symbol: $0, colour: $1) },
+            placeholder: HeroTile(id: "empty", symbol: front, colour: ramp.main),
+            title: Text(verbatim: forum.name),
+            summary: latest.map { Text("\(count) · l'ultima \($0.formatted(.relative(presentation: .named).locale(locale)))") } ?? count,
+            mode: ramp.mode)
+    }
 
     @Environment(WeBeepService.self) private var weBeep
     @Environment(\.locale) private var locale
@@ -108,6 +129,8 @@ private struct DiscussionsList: View {
                         ContentUnavailableView("Ancora nessun messaggio", systemImage: "bubble.left")
                             .padding(.top, 40)
                     } else {
+                        hero(discussions)
+                            .padding(.bottom, 14)
                         VStack(spacing: 0) {
                             ForEach(discussions, id: \.id) { discussion in
                                 NavigationLink {
