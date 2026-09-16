@@ -25,6 +25,29 @@ struct CampusOptions: DynamicOptionsProvider {
     }
 }
 
+/// The "Aggiorna" button: fetches the campus again, from the widget.
+///
+/// Runs in the extension, not the app, and WidgetKit reloads the timeline
+/// when `perform()` returns — without charging the reload to the widget's
+/// daily budget. So the fetch must be finished, and on disk, before returning.
+struct RefreshFreeRoomsIntent: AppIntent {
+    static let title: LocalizedStringResource = "Aggiorna aule libere"
+    static let isDiscoverable = false
+
+    @Parameter(title: "Sede")
+    var campus: String?
+
+    init() {}
+    init(campus: String?) { self.campus = campus }
+
+    func perform() async throws -> some IntentResult {
+        if let campus = FreeRoomsProvider.campus(campus) {
+            await FreeRoomsProvider.refresh(campus: campus, deadline: .now.addingTimeInterval(20))
+        }
+        return .result()
+    }
+}
+
 struct FreeRoomsEntry: TimelineEntry {
     let date: Date
     let campus: String?
@@ -54,6 +77,12 @@ struct FreeRoomsProvider: AppIntentTimelineProvider {
     /// timetable itself has.
     func timeline(for configuration: FreeRoomsConfiguration, in context: Context) async -> Timeline<FreeRoomsEntry> {
         let now = Date.now
+        // The one network call a widget makes on its own: only when there is
+        // nothing for today, so a timeline reload every half hour stays a
+        // read from disk.
+        if let campus = Self.campus(configuration.campus), Self.today(campus) == nil {
+            await Self.refresh(campus: campus, deadline: now.addingTimeInterval(15))
+        }
         let steps = stride(from: 0, through: 6 * 3600, by: 1800)
             .map { now.addingTimeInterval(TimeInterval($0)) }
         let entries = steps.map { entry(at: $0, campus: configuration.campus) }
@@ -61,8 +90,44 @@ struct FreeRoomsProvider: AppIntentTimelineProvider {
                         policy: .after(steps.last ?? now.addingTimeInterval(1800)))
     }
 
+    nonisolated static func campus(_ configured: String?) -> String? {
+        configured ?? FreeRoomsSnapshot.lastCampus ?? FreeRoomsSnapshot.knownCampuses.first
+    }
+
+    nonisolated private static var store: OfflineStore {
+        OfflineStore(groupIdentifier: OfflineStore.groupIdentifier)
+    }
+
+    /// Today's snapshot for `campus`, if one is on disk.
+    nonisolated static func today(_ campus: String) -> FreeRoomsSnapshot? {
+        store.load(FreeRoomsSnapshot.self, as: FreeRoomsSnapshot.cacheName, account: campus)
+            .map(\.value)
+            .flatMap { $0.covers(.now) ? $0 : nil }
+    }
+
+    /// Fetches today's bookings from the widget itself.
+    ///
+    /// Needs the room list the app publishes: an extension has no catalogue,
+    /// and fetching one here would be four more requests inside a budget of
+    /// seconds. Without it, nothing happens and the widget asks for the app.
+    /// A pass where no room answered is not written — an empty snapshot would
+    /// read as "no free rooms", which is a claim, not an absence.
+    nonisolated static func refresh(campus: String, deadline: Date) async {
+        guard let refs = store.load([FreeRoomsSnapshot.RoomRef].self,
+                                    as: FreeRoomsSnapshot.catalogueCacheName,
+                                    account: campus)?.value,
+              !refs.isEmpty
+        else { return }
+        let snapshot = await FreeRoomsSnapshot.fetch(
+            campus: campus, rooms: refs, day: .now, deadline: deadline)
+        guard !snapshot.rooms.isEmpty else { return }
+        let store = store
+        store.save(snapshot, as: FreeRoomsSnapshot.cacheName, account: campus)
+        await store.flushed()
+    }
+
     private func entry(at date: Date, campus: String?) -> FreeRoomsEntry {
-        let name = campus ?? FreeRoomsSnapshot.knownCampuses.first
+        let name = Self.campus(campus)
         guard let name,
               let slot = OfflineStore(groupIdentifier: OfflineStore.groupIdentifier)
                   .load(FreeRoomsSnapshot.self, as: FreeRoomsSnapshot.cacheName, account: name)
@@ -144,6 +209,12 @@ struct FreeRoomsWidgetView: View {
                 if let campus = entry.campus {
                     Text(campus).font(.caption2).lineLimit(1)
                 }
+                Button(intent: RefreshFreeRoomsIntent(campus: entry.campus)) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption2.weight(.semibold))
+                        .accessibilityLabel("Aggiorna")
+                }
+                .buttonStyle(.plain)
             }
             .foregroundStyle(.secondary)
 
@@ -152,6 +223,7 @@ struct FreeRoomsWidgetView: View {
                     Text("\(entry.free.count)").font(.title2.weight(.bold)).monospacedDigit()
                     Text("di \(entry.total)").font(.caption2).foregroundStyle(.secondary)
                 }
+                .invalidatableContent()
                 if family == .systemMedium {
                     // Two columns: the useful answer is a shortlist you can
                     // scan, and one column of six is taller than the widget.
@@ -193,7 +265,7 @@ struct FreeRoomsWidgetView: View {
         switch entry.state {
         case .ok: "Nessuna aula libera in questo momento."
         case .noData: "Apri l'app per caricare le aule."
-        case .staleDay: "Dati di un altro giorno. Apri l'app."
+        case .staleDay: "Dati di un altro giorno. Aggiorna o apri l'app."
         case .closed: "Fuori orario di apertura."
         }
     }

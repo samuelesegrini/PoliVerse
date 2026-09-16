@@ -54,7 +54,7 @@ nonisolated struct FreeRoomsSnapshot: Codable, Sendable, Equatable {
     }
 }
 
-extension FreeRoomsSnapshot {
+nonisolated extension FreeRoomsSnapshot {
     /// The campuses a snapshot has been written for.
     ///
     /// The widget's configuration has to offer a choice before it has ever
@@ -66,5 +66,16 @@ extension FreeRoomsSnapshot {
     static var knownCampuses: [String] {
         get { SharedAccount.defaults.stringArray(forKey: campusesKey) ?? [] }
         set { SharedAccount.defaults.set(newValue, forKey: campusesKey) }
+    }
+
+    /// The campus the app last wrote a snapshot for.
+    ///
+    /// What an unconfigured widget shows. The catalogue's first campus is
+    /// alphabetical, not the one the student uses, and usually has no data.
+    private static let lastCampusKey = "lastFreeRoomsCampus"
+
+    static var lastCampus: String? {
+        get { SharedAccount.defaults.string(forKey: lastCampusKey) }
+        set { SharedAccount.defaults.set(newValue, forKey: lastCampusKey) }
     }
 }

@@ -224,6 +224,7 @@ struct PoliVerseApp: App {
                             // at the multitasking view into five requests.
                             await freshness.revalidate()
                             await personalTimetable.refreshIfStale()
+                            await freeRooms.refreshForWidgetIfNeeded()
                         }
                     }
                 }

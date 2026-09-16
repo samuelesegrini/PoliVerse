@@ -1,4 +1,5 @@
 import Foundation
+import WidgetKit
 import Observation
 import OSLog
 
@@ -60,7 +61,6 @@ final class FreeRoomsService {
     private let catalogue: RoomsService
     private let session: URLSession
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "aule")
-    private let base = URL(string: "https://onlineservices.polimi.it/maps_rest/rest")!
 
     /// Sixty seconds, not the usual five minutes, and keyed on the day and
     /// campus being shown. Occupancy turns over on the lecture boundary, and
@@ -95,11 +95,13 @@ final class FreeRoomsService {
     }
 
     private var skipsLoading = false
+    /// Once a launch: the catalogue barely changes, and every load would
+    /// otherwise rewrite a file per campus.
+    private var publishedCatalogue = false
 
     init(catalogue: RoomsService, session: URLSession = .shared) {
         self.catalogue = catalogue
         self.session = session
-        let base = self.base
         loader = ResourceLoader(
             // A day's timetable does not change while the app is open, and a
             // past day never changes at all.
@@ -110,11 +112,8 @@ final class FreeRoomsService {
                 from: PoliMiDate.romeCalendar.dateComponents(
                     [.year, .month, .day],
                     from: PoliMiDate.parse(key.day) ?? .now)) ?? .now
-            let result = await Self.occupancy(
-                occupancyID: key.occupancyID, roomID: key.roomID,
-                on: key.day, day: day, base: base, session: session)
-            guard case .bookings(let bookings) = result else { return nil }
-            return bookings
+            return await Self.occupancy(
+                occupancyID: key.occupancyID, roomID: key.roomID, day: day, session: session)
         }
     }
 
@@ -176,6 +175,7 @@ final class FreeRoomsService {
         guard !skipsLoading else { return }
         await catalogue.load()
         if campus == nil { campus = catalogue.campuses.first }
+        publishWidgetCatalogue()
 
         let key = "\(PoliMiDate.queryString(day))|\(campus ?? "-")"
         guard !isLoading, window.shouldLoad(force: force, source: key) else { return }
@@ -280,7 +280,30 @@ final class FreeRoomsService {
         OfflineStore.shared.save(
             snapshot, as: FreeRoomsSnapshot.cacheName, account: campus)
         FreeRoomsSnapshot.knownCampuses = catalogue.campuses
+        FreeRoomsSnapshot.lastCampus = campus
         WidgetReloader.request([.freeRooms])
+    }
+
+    /// Fetches today's rooms when a widget on the Home Screen would otherwise
+    /// have nothing to show.
+    ///
+    /// The snapshot is written only by a load, and a load used to happen only
+    /// on the Aule libere screen — so a student who never opened it that day
+    /// had a widget saying "apri l'app" however often they opened the app.
+    /// Asks WidgetKit whether the widget is installed first: without one, 150
+    /// requests on every foregrounding would be spent on nothing.
+    func refreshForWidgetIfNeeded() async {
+        guard Calendar.current.isDateInToday(day) else { return }
+        let installed = (try? await WidgetCenter.shared.currentConfigurations())?
+            .contains { $0.kind == WidgetKind.freeRooms.rawValue } ?? false
+        guard installed else { return }
+        if let campus = FreeRoomsSnapshot.lastCampus ?? campus,
+           let cached = OfflineStore.shared.load(
+               FreeRoomsSnapshot.self, as: FreeRoomsSnapshot.cacheName, account: campus),
+           cached.value.covers(.now) {
+            return
+        }
+        await load()
     }
 
     /// One room's bookings for the day being shown.
@@ -316,61 +339,44 @@ final class FreeRoomsService {
         }
     }
 
-    private enum OccupancyResult: Sendable {
-        case bookings([RoomBooking])
-        /// `MSG_OCCUPAZIONI_NASCOSTE` — the university does not publish this
-        /// room's bookings.
-        case hidden
-        case failed
+    /// Static and parameterised so it carries no actor-isolated state and can
+    /// run concurrently off the main actor. The request itself is shared with
+    /// the widget, in ``RoomOccupancy``.
+    private static func occupancy(
+        occupancyID id: String, roomID: String, day: Date, session: URLSession
+    ) async -> [RoomBooking]? {
+        guard case .busy(let bands) = await RoomOccupancy.fetch(
+            occupancyID: id, on: day, session: session)
+        else { return nil }
+        return bands.enumerated().map { index, band in
+            RoomBooking(id: "\(roomID)-\(index)", start: band.start, end: band.end, title: nil)
+        }
     }
 
-    /// Static and parameterised so it carries no actor-isolated state and can
-    /// run concurrently off the main actor.
-    private static func occupancy(
-        occupancyID id: String, roomID: String, on stamp: String, day: Date,
-        base: URL, session: URLSession
-    ) async -> OccupancyResult {
-        let url = base.appendingPathComponent("ricerca/aula/occupazione/\(id)/\(stamp)")
-        do {
-            var request = URLRequest(url: url)
-            request.setValue("application/json", forHTTPHeaderField: "Accept")
-            request.timeoutInterval = 20
-            let (data, response) = try await session.data(for: request)
-            let body = String(data: data, encoding: .utf8) ?? ""
-
-            // The university hides some rooms' bookings deliberately. Reported
-            // as unknown, never as free — "we cannot tell" is not "it is
-            // empty", and the difference is someone walking into a lecture.
-            if body.contains("OCCUPAZIONI_NASCOSTE") { return .hidden }
-            if let http = response as? HTTPURLResponse, http.statusCode != 200 {
-                return .failed
-            }
-
-            let bands = try await BackgroundJSON.decode([OccupancyBand].self, from: data)
-            return .bookings(bands.enumerated().compactMap { index, band in
-                band.toBooking(roomID: roomID, on: day, index: index)
-            })
-        } catch {
-            return .failed
+    /// Hands the widget the rooms it needs to fetch a campus by itself.
+    ///
+    /// Every campus, not only the one on screen: the widget can be configured
+    /// for any of them, and the catalogue is already in memory.
+    private func publishWidgetCatalogue() {
+        guard !publishedCatalogue, !catalogue.rooms.isEmpty else { return }
+        publishedCatalogue = true
+        let refs = Dictionary(grouping: catalogue.rooms.compactMap { room -> (String, FreeRoomsSnapshot.RoomRef)? in
+            guard let campus = room.campusName, let occupancyID = room.occupancyID else { return nil }
+            return (campus, .init(id: room.id, name: room.id, building: room.buildingName,
+                                  seats: room.capacity > 0 ? room.capacity : nil,
+                                  occupancyID: occupancyID))
+        }, by: \.0)
+        for (campus, pairs) in refs {
+            OfflineStore.shared.save(pairs.map(\.1), as: FreeRoomsSnapshot.catalogueCacheName, account: campus)
         }
+        FreeRoomsSnapshot.knownCampuses = catalogue.campuses
     }
 }
 
-/// One busy band, as `/ricerca/aula/occupazione` sends it.
-///
-/// Times only — the date is the one that was asked for — and they are wall
-/// clock in Rome like every other timestamp these services produce.
-nonisolated struct OccupancyBand: Decodable, Sendable {
-    let inizio: String?
-    let fine: String?
-
+extension OccupancyBand {
     func toBooking(roomID: String, on day: Date, index: Int) -> RoomBooking? {
-        guard
-            let inizio, let fine,
-            let start = PoliMiDate.applying(time: inizio, to: day),
-            let end = PoliMiDate.applying(time: fine, to: day)
-        else { return nil }
-        return RoomBooking(
-            id: "\(roomID)-\(index)", start: start, end: max(start, end), title: nil)
+        interval(on: day).map {
+            RoomBooking(id: "\(roomID)-\(index)", start: $0.start, end: $0.end, title: nil)
+        }
     }
 }
