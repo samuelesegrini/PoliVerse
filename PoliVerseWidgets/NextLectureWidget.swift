@@ -14,6 +14,15 @@ struct NextLectureEntry: TimelineEntry {
     /// showing something stale.
     let age: TimeInterval?
     let signedIn: Bool
+
+    /// Top of the Smart Stack from half an hour before a lecture until it
+    /// ends; otherwise left to the system.
+    var relevance: TimelineEntryRelevance? {
+        guard let lecture else { return nil }
+        if lecture.start <= date { return .init(score: 1, duration: lecture.end.timeIntervalSince(date)) }
+        let until = lecture.start.timeIntervalSince(date)
+        return until <= 1800 ? .init(score: 0.9, duration: until + lecture.end.timeIntervalSince(lecture.start)) : .init(score: 0.1)
+    }
 }
 
 struct NextLectureProvider: TimelineProvider {
@@ -75,6 +84,7 @@ struct NextLectureWidget: Widget {
         StaticConfiguration(kind: WidgetKind.nextLecture.rawValue, provider: NextLectureProvider()) { entry in
             NextLectureView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
+                .widgetURL(AppDestination.calendar.url)
         }
         .configurationDisplayName("Prossima lezione")
         .description("Quando e dove inizia la prossima lezione.")
@@ -125,7 +135,7 @@ struct NextLectureView: View {
         VStack(alignment: .leading, spacing: 1) {
             if let lecture = entry.lecture {
                 Text(lecture.title).font(.headline).lineLimit(1)
-                Text(countdown(to: lecture)).font(.caption)
+                countdown(to: lecture).font(.caption)
                 if let room = lecture.room ?? lecture.roomAcronym {
                     Text(room).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                 }
@@ -149,6 +159,7 @@ struct NextLectureView: View {
                 Text(lecture.title).font(.subheadline.weight(.semibold)).lineLimit(2)
                 Spacer(minLength: 0)
                 Text(lecture.start, style: .time).font(.title3.weight(.bold)).monospacedDigit()
+                countdown(to: lecture).font(.caption2.weight(.medium)).foregroundStyle(.tint)
                 if let room = lecture.room ?? lecture.roomAcronym {
                     Text(room).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                 }
@@ -190,11 +201,20 @@ struct NextLectureView: View {
             : String(localized: "Accedi")
     }
 
-    private func countdown(to lecture: AgendaEvent) -> String {
+    /// Drawn by the system as time passes, so "tra 12 min" stays true between
+    /// timeline entries without spending a reload on every minute.
+    ///
+    /// Only within the day: "tra 3 giorni" is less useful than the start
+    /// time already beside it.
+    @ViewBuilder
+    private func countdown(to lecture: AgendaEvent) -> some View {
         if lecture.start <= entry.date {
-            return String(localized: "In corso · fino alle \(lecture.end.formatted(date: .omitted, time: .shortened))")
+            Text("In corso · fino alle \(lecture.end.formatted(date: .omitted, time: .shortened))")
+        } else if lecture.start.timeIntervalSince(entry.date) < 12 * 3600 {
+            Text(.currentDate, format: .reference(to: lecture.start, allowedFields: [.hour, .minute]))
+        } else {
+            Text(lecture.start, format: .dateTime.weekday(.abbreviated).hour().minute())
         }
-        return lecture.start.formatted(date: .omitted, time: .shortened)
     }
 
     /// Only when it matters. A widget reading from a cache should say so when

@@ -31,6 +31,20 @@ nonisolated enum AppDestination: String, Sendable {
         NotificationCenter.default.post(name: Self.notification, object: rawValue)
     }
 
+    /// `poliverse://open/<destination>`, for widgets.
+    ///
+    /// A widget tap cannot run an intent that opens the app to a screen — only
+    /// a URL — so the widgets' destinations travel through the app's own
+    /// scheme and land in the same routing as everything else.
+    var url: URL { URL(string: "poliverse://open/\(rawValue)")! }
+
+    init?(url: URL) {
+        guard url.scheme == "poliverse", url.host == "open",
+              let destination = AppDestination(rawValue: url.lastPathComponent)
+        else { return nil }
+        self = destination
+    }
+
     private static let pendingKey = "pendingDestination"
 
     /// The destination an out-of-process intent asked for, read once.

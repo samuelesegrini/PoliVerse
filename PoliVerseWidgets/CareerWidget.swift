@@ -8,6 +8,13 @@ struct CareerEntry: TimelineEntry {
     let snapshot: CareerSnapshot?
     let age: TimeInterval?
     let signedIn: Bool
+
+    /// Raised on the day before an exam and the day of it.
+    var relevance: TimelineEntryRelevance? {
+        guard let exam = snapshot?.nextExamDate, exam > date,
+              exam.timeIntervalSince(date) < 36 * 3600 else { return nil }
+        return .init(score: 0.6, duration: exam.timeIntervalSince(date))
+    }
 }
 
 struct CareerProvider: TimelineProvider {
@@ -50,6 +57,7 @@ struct CareerWidget: Widget {
         StaticConfiguration(kind: WidgetKind.career.rawValue, provider: CareerProvider()) { entry in
             CareerView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
+                .widgetURL(AppDestination.career.url)
         }
         .configurationDisplayName("Carriera")
         .description("Media, CFU e prossimo appello.")

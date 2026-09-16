@@ -12,6 +12,12 @@ struct TodayEntry: TimelineEntry {
     let events: [AgendaEvent]
     let age: TimeInterval?
     let signedIn: Bool
+
+    /// Worth surfacing in the morning, when the day is still ahead.
+    var relevance: TimelineEntryRelevance? {
+        let hour = Calendar.current.component(.hour, from: date)
+        return !events.isEmpty && (6..<10).contains(hour) ? .init(score: 0.7, duration: 3600) : nil
+    }
 }
 
 struct TodayProvider: TimelineProvider {
@@ -65,6 +71,7 @@ struct TodayWidget: Widget {
         StaticConfiguration(kind: WidgetKind.today.rawValue, provider: TodayProvider()) { entry in
             TodayView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
+                .widgetURL(AppDestination.calendar.url)
         }
         .configurationDisplayName("Oggi")
         .description("Le lezioni e le scadenze della giornata.")

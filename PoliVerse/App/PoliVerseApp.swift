@@ -201,6 +201,7 @@ struct PoliVerseApp: App {
                 // on screen so the session can continue where it left off.
                 .onOpenURL { url in
                     if cieID.handle(url) { return }
+                    AppDestination(url: url)?.send()
                 }
                 // Set once, here: a delegate assigned from a view would be
                 // replaced every time that view was rebuilt.

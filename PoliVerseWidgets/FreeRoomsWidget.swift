@@ -57,6 +57,11 @@ struct FreeRoomsEntry: TimelineEntry {
     let state: State
 
     enum State { case ok, noData, staleDay, closed }
+
+    /// Moderately relevant through the teaching day, when there is an answer.
+    var relevance: TimelineEntryRelevance? {
+        state == .ok ? .init(score: 0.4, duration: 1800) : nil
+    }
 }
 
 struct FreeRoomsProvider: AppIntentTimelineProvider {
@@ -164,6 +169,7 @@ struct FreeRoomsWidget: Widget {
                                provider: FreeRoomsProvider()) { entry in
             FreeRoomsWidgetView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
+                .widgetURL(AppDestination.freeRooms.url)
         }
         .configurationDisplayName("Aule libere")
         .description("Le aule libere adesso, nella sede che scegli.")
