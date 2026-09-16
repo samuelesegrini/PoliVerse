@@ -157,7 +157,7 @@ struct CustomizeControls: View {
                     let chosen = style.sheet == sheet
                     Button { withAnimation(.snappy) { style.sheet = sheet } } label: {
                         VStack(spacing: 6) {
-                            sheetPreview(sheet, selected: chosen)
+                            PaperTile(sheet: sheet, style: style, selected: chosen, showsTitle: false)
                                 .frame(height: 116)
                             Text(sheet.title)
                                 .font(.caption)
@@ -188,24 +188,6 @@ struct CustomizeControls: View {
             Text("Grana")
         } footer: {
             Text("Una grana di pellicola su tutta la pagina.")
-        }
-    }
-
-    /// A paper keeps its peeled corner; a decoration is drawn as the page.
-    @ViewBuilder
-    private func sheetPreview(_ sheet: TodaySheet, selected: Bool) -> some View {
-        switch sheet {
-        case .paper(let paper):
-            PaperTile(paper: paper, style: style, selected: selected, showsTitle: false)
-        case .decoration(let background):
-            TodayBackgroundView(background: background, flavor: style.flavor, paper: .plain,
-                                mode: style.appearance.flavorMode)
-                .clipShape(.rect(cornerRadius: 16))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 16)
-                        .strokeBorder(selected ? AnyShapeStyle(.tint) : AnyShapeStyle(.quaternary),
-                                      lineWidth: selected ? 3 : 1)
-                }
         }
     }
 
@@ -667,16 +649,37 @@ struct MaterialPreview: View {
 
 /// A sheet of paper with its bottom corner peeled up, as Kyo shows materials.
 struct PaperTile: View {
-    let paper: TodayPaper
+    /// Either sheet: a paper, or a decoration drawn instead of one. Both are
+    /// pages, so both are shown as a sheet with its corner peeled up.
+    let sheet: TodaySheet
     let style: TodayStyle
     var selected = false
     var showsTitle = true
     @Environment(\.colorScheme) private var scheme
 
+    init(sheet: TodaySheet, style: TodayStyle, selected: Bool = false, showsTitle: Bool = true) {
+        self.sheet = sheet
+        self.style = style
+        self.selected = selected
+        self.showsTitle = showsTitle
+    }
+
+    init(paper: TodayPaper, style: TodayStyle, selected: Bool = false, showsTitle: Bool = true) {
+        self.init(sheet: .paper(paper), style: style, selected: selected, showsTitle: showsTitle)
+    }
+
+    private var paper: TodayPaper {
+        if case .paper(let paper) = sheet { paper } else { .plain }
+    }
+
+    private var background: TodayBackground {
+        if case .decoration(let background) = sheet { background } else { .plain }
+    }
+
     var body: some View {
         let shape = UnevenRoundedRectangle(topLeadingRadius: 34, bottomLeadingRadius: 8, bottomTrailingRadius: 16,
                                            topTrailingRadius: 16, style: .continuous)
-        TodayBackgroundView(background: .plain, flavor: style.flavor, paper: paper, grain: style.grain,
+        TodayBackgroundView(background: background, flavor: style.flavor, paper: paper, grain: style.grain,
                             mode: style.appearance.flavorMode)
             .clipShape(shape)
             .overlay(alignment: .bottomLeading) {
@@ -685,7 +688,7 @@ struct PaperTile: View {
             }
             .overlay(alignment: .bottomTrailing) {
                 if showsTitle {
-                    Text(paper.title)
+                    Text(sheet.title)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(style.accent(scheme))
                         .padding(10)
