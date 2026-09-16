@@ -198,13 +198,23 @@ struct CustomizeOggi: View {
                     }
                     .buttonStyle(.glass)
 
-                    Button("Nuovo stile", systemImage: "plus", action: addLook)
-                        .accessibilityIdentifier("customize-add")
-                        .labelStyle(.iconOnly)
-                        .font(.title3)
-                        .frame(width: 50, height: 50)
-                        .buttonStyle(.glass)
-                        .buttonBorderShape(.circle)
+                    // The same 44-point label as Personalizza inside the same
+                    // glass style, so the two come out the same height. A frame
+                    // on the button itself sized only the hit area: the glass
+                    // is drawn around the label, and was left a small circle.
+                    Button(action: addLook) {
+                        Label("Nuovo stile", systemImage: "plus")
+                            .labelStyle(.iconOnly)
+                            // Larger than the brush beside it: alone in its
+                            // circle, a body-size plus reads as too light.
+                            // Sized inside the fixed frame, so the button keeps
+                            // Personalizza's height.
+                            .font(.title2)
+                            .frame(width: 44, height: 44)
+                    }
+                    .accessibilityIdentifier("customize-add")
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.circle)
                 }
                 .padding(.horizontal, 60)
             }
