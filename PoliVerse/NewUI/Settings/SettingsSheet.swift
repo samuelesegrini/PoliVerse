@@ -7,6 +7,7 @@ import SwiftUI
 /// lost while the new structure is tried out.
 struct SettingsSheet: View {
     @Environment(Session.self) private var session
+    @Environment(DataStatus.self) private var status
     @Environment(WeBeepService.self) private var weBeep
     @Environment(\.dismiss) private var dismiss
     @Environment(\.shell) private var shell
@@ -43,7 +44,23 @@ struct SettingsSheet: View {
                     NavigationLink {
                         DataStorageView()
                     } label: {
-                        Label("Dati e archiviazione", systemImage: "externaldrive")
+                        // A subtitle under the row rather than a value beside
+                        // it: "Dati di esempio" is the kind of thing a student
+                        // must be able to read at a glance, and a trailing
+                        // value is where the eye goes last and where a long
+                        // sentence gets truncated. Always present, so the row
+                        // reads the same way whether the news is good or bad —
+                        // as the iCloud row does in Impostazioni.
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Dati e archiviazione")
+                                Text(status.summary)
+                                    .font(.caption)
+                                    .foregroundStyle(status.badge == nil ? Color.secondary : .orange)
+                            }
+                        } icon: {
+                            Image(systemName: "externaldrive")
+                        }
                     }
                 }
 
@@ -119,35 +136,6 @@ struct SettingsSheet: View {
                 Text("Vengono rimossi i token dal portachiavi e i dati salvati sul dispositivo.")
             }
         }
-    }
-}
-
-/// What the app keeps on the device, and the buttons to free it.
-struct DataStorageView: View {
-    @State private var cacheBytes = DiskCache.sizeInBytes()
-    @State private var materialBytes = FileDownloadService.storageInBytes()
-
-    var body: some View {
-        List {
-            Section {
-                LabeledContent("Cache", value: ByteCountFormatter.string(fromByteCount: Int64(cacheBytes), countStyle: .file))
-                Button("Svuota cache") {
-                    DiskCache.clear()
-                    OfflineStore.shared.clearAll()
-                    cacheBytes = 0
-                }
-            } footer: {
-                Text("Orari, corsi e carriera salvati per aprire l’app senza rete.")
-            }
-            Section {
-                LabeledContent("Materiali scaricati", value: ByteCountFormatter.string(fromByteCount: Int64(materialBytes), countStyle: .file))
-                Button("Elimina materiali scaricati", role: .destructive) {
-                    FileDownloadService.clearStorage()
-                    materialBytes = 0
-                }
-            }
-        }
-        .navigationTitle("Dati e archiviazione")
     }
 }
 
