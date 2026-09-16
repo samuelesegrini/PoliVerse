@@ -12,5 +12,12 @@ import WidgetKit
 struct PoliVerseWidgetBundle: WidgetBundle {
     var body: some Widget {
         NextLectureWidget()
+        TodayWidget()
+        CareerWidget()
+        FreeRoomsWidget()
+        LectureLiveActivity()
+        FreeRoomsControl()
+        TimetableControl()
+        CareerControl()
     }
 }
