@@ -184,290 +184,62 @@ struct DataStorageView: View {
 
 // MARK: - The picture at the top
 
-/// The biggest thing on the device, drawn big, with the runners-up behind it.
-///
-/// The arrangement is the one iCloud's storage screen uses, and it works for
-/// the same reason: an icon is recognised before a label is read, so the
-/// screen has answered "what is taking the space" before the eye reaches the
-/// bar. The difference is that iCloud has app icons to show and this has file
-/// kinds, so the tiles are built — a squircle, a colour, a symbol — to read as
-/// icons rather than as a legend that floated up the page.
-///
-/// The four corners are copied from that screen rather than invented, and what
-/// makes them work is that **nothing about them is symmetric**: the tiles are
-/// four different sizes, the leading pair is bigger than the trailing pair, and
-/// the bottom pair hangs lower than the top pair rides high. Four equal squares
-/// at four equal offsets read as a diagram of a cross; this reads as a pile of
-/// icons, which is the thing being drawn.
+/// The biggest kind of file in front, with the runners-up behind it, sized by
+/// their bytes. The arrangement and the glass are ``HeroTileStack``'s, shared
+/// with the other settings pages.
 struct StorageHero: View {
     let categories: [StorageAudit.Category]
-    /// Before the first scan there is nothing to draw and nothing to say —
-    /// the placeholder would flash for a frame and read as "empty".
+    /// Before the first scan there is nothing to draw and nothing to say.
     var hasScanned = true
     let palette: FileKindPalette
 
-    /// Scaled, so the picture grows with the reader's text rather than staying
-    /// a postage stamp beside a headline they have turned up to Accessibility
-    /// sizes.
-    @ScaledMetric(relativeTo: .largeTitle) private var side: CGFloat = 112
-
-    private var hero: StorageAudit.Category? { categories.first }
-    private var satellites: [StorageAudit.Category] { Array(categories.dropFirst().prefix(4)) }
-
-    /// One corner, with the height and the size that corner wants — all three
-    /// measured off the reference, in units of the hero's side.
-    private struct Slot {
-        /// Which side of the hero: leading or trailing.
-        let x: CGFloat
-        /// How far above or below the hero's centre the tile sits. The two
-        /// numbers below the hero are larger than the two above it, which is
-        /// the asymmetry that keeps the group from reading as a cross.
-        let y: CGFloat
-        /// The size this position wants before the bytes have their say.
-        /// Strictly decreasing, so the four are never the same square.
-        let scale: CGFloat
-    }
-
-    /// Filled in rank order: the second-largest kind takes the big top-leading
-    /// corner, where the eye starts, and the fifth takes the small one.
-    private static let slots: [Slot] = [
-        Slot(x: -1, y: -0.38, scale: 0.62),
-        Slot(x: -1, y: 0.46, scale: 0.52),
-        Slot(x: 1, y: -0.32, scale: 0.44),
-        Slot(x: 1, y: 0.50, scale: 0.41),
-    ]
-
-    /// How much of a runner-up disappears behind the hero, as a fraction of
-    /// *its own* side — the proportion the reference keeps at every size.
-    /// Measured from the hero's edge rather than from a fixed centre: a fixed
-    /// centre leaves a gap behind a small tile and swallows a large one whole.
-    private static let tuck: CGFloat = 0.18
-
     var body: some View {
-        ZStack {
-            if let hero {
-                ForEach(Array(satellites.enumerated()), id: \.element.id) { index, category in
-                    let slot = Self.slots[index]
-                    let satellite = side * scale(of: category, against: hero, in: slot)
-                    FileKindTile(kind: category.kind, side: satellite, palette: palette, surface: .tintedGlass)
-                        .offset(x: slot.x * (side / 2 + satellite * (0.5 - Self.tuck)),
-                                y: slot.y * side)
-                }
-                FileKindTile(kind: hero.kind, side: side, palette: palette, surface: .glass)
-            } else {
-                FileKindTile(kind: nil, side: side, palette: palette, surface: .glass)
-                    .opacity(hasScanned ? 1 : 0)
-            }
-        }
-        // Tall enough for the lowest corner at its largest: 0.5 down plus half
-        // a tile, on both sides of the hero.
-        .frame(height: side * 1.6)
-        .animation(.snappy(duration: 0.4), value: categories)
-        // Decorative: every kind in it is named, with its size, in the rows
-        // below, and a VoiceOver reader has no use for "a picture of them".
-        .accessibilityHidden(true)
-    }
-
-    /// How big a runner-up is drawn: what its bytes ask for, met halfway with
-    /// what its corner asks for.
-    ///
-    /// Bytes alone are the honest answer and the wrong picture. Real storage on
-    /// this app is lopsided — a term of recordings against a handful of PDFs —
-    /// so strictly proportional tiles collapse into one big square and three
-    /// identical specks, which is exactly the monotony the arrangement exists
-    /// to avoid. Two things fix it. The fourth root rather than the square root
-    /// spreads the tail, so a kind at a tenth of the hero draws at 56% instead
-    /// of 32%; the geometric mean with the corner's own size then guarantees
-    /// the four are visibly different even when the data is extreme, while a
-    /// second place that is genuinely large still grows into the space.
-    ///
-    /// This is the picture, not the measurement: the exact sizes are in the
-    /// rows below, where nothing is rounded in anyone's favour.
-    private func scale(of category: StorageAudit.Category,
-                       against hero: StorageAudit.Category, in slot: Slot) -> CGFloat {
-        guard hero.bytes > 0, category.bytes > 0 else { return slot.scale }
-        let ratio = CGFloat(category.bytes) / CGFloat(hero.bytes)
-        let byBytes = min(1, pow(ratio, 0.25)) * 0.68
-        return (byBytes * slot.scale).squareRoot()
+        HeroTileStack(
+            tiles: categories.map {
+                HeroTile(id: $0.kind.rawValue, symbol: $0.kind.symbol,
+                         colour: palette.rgb($0.kind), weight: Double($0.bytes))
+            },
+            placeholder: HeroTile(id: "empty", symbol: "externaldrive", colour: palette.rgb(nil)),
+            showsPlaceholder: hasScanned,
+            mode: palette.mode)
     }
 }
 
-/// One kind of file as an app icon would be: a squircle, a colour, a symbol.
-///
-/// `nil` is the empty device — the same shape in grey, so the screen keeps its
-/// height and its shape when the last file goes and does not appear to have
-/// lost a section.
+/// One kind of file as a solid icon, for the rows.
 struct FileKindTile: View {
-    /// What the tile is made of.
-    enum Surface {
-        /// A filled squircle with a black or white symbol: the small icon in a
-        /// row, where it has to read at 30 points on a white card.
-        case solid
-        /// Liquid Glass tinted with the kind's colour, as Oggi's sections are
-        /// in the Vetro tinto material, with the symbol in that colour.
-        case tintedGlass
-        /// Plain Liquid Glass with the symbol carrying the colour as a
-        /// gradient: the front tile of the hero, which should read as an
-        /// object rather than as a swatch.
-        case glass
-    }
-
     let kind: StorageAudit.Kind?
     let side: CGFloat
     let palette: FileKindPalette
-    var surface: Surface = .solid
-
-    private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: side * 0.2237, style: .continuous)
-    }
 
     var body: some View {
-        switch surface {
-        case .solid:
-            shape
-                .fill(palette.tint(kind).gradient)
-                .frame(width: side, height: side)
-                .overlay { symbol(size: 0.42).foregroundStyle(palette.glyph(kind)) }
-                // The tiles overlap, so each needs an edge of its own: without
-                // the shadow they read as one torn shape.
-                .shadow(color: .black.opacity(0.22), radius: side * 0.08, y: side * 0.04)
-        case .tintedGlass:
-            Color.clear
-                .frame(width: side, height: side)
-                // The modifier Oggi's sections use, fed a Flavor made of this
-                // kind's colour: the same glass, the same tint strength, so
-                // the storage screen and the home screen are visibly one app.
-                .todayMaterial(.tintedGlass, flavor: Flavor(main: palette.rgb(kind)),
-                               mode: palette.mode, cornerRadius: side * 0.2237)
-                .overlay { symbol(size: 0.46).symbolVariant(.fill).foregroundStyle(palette.tint(kind)) }
-        case .glass:
-            Color.clear
-                .frame(width: side, height: side)
-                .todayMaterial(.glass, flavor: palette.flavor, mode: palette.mode,
-                               cornerRadius: side * 0.2237)
-                .overlay { symbol(size: 0.5).foregroundStyle(palette.gradient(kind)) }
-                // The glass alone is nearly the colour of the page; a soft
-                // lift is what separates it from the tinted tiles behind it.
-                .shadow(color: .black.opacity(0.12), radius: side * 0.1, y: side * 0.05)
-        }
-    }
-
-    private func symbol(size: CGFloat) -> some View {
-        Image(systemName: kind?.symbol ?? "externaldrive")
-            .font(.system(size: side * size, weight: .medium))
+        GlassTile(symbol: kind?.symbol ?? "externaldrive", colour: palette.rgb(kind), side: side)
     }
 }
 
-/// The colour of every tile, dot and bar segment on this screen, derived from
-/// the look the student chose.
-///
-/// The first version of this used system colours — a red PDF, a green
-/// spreadsheet — on the theory that the Files app has already taught everyone
-/// which is which. It was wrong for *this* app: PoliVerse lets a student pick
-/// a Flavor and then paints the whole of Oggi with it, and a storage screen
-/// that ignores that choice reads as a page borrowed from somewhere else.
-///
-/// So the colours are a ramp built **from** the Flavor, and a kind's place on
-/// it is its **place in this scan**: the largest is the deepest, the smallest
-/// the palest, the way iCloud's bar steps from dark to light green. Two
-/// earlier versions gave each kind a fixed colour instead, and both failed the
-/// same way — ten kinds from one hue leave neighbours a shade apart, and the
-/// bar happened to put the near-twins side by side. Spreading only the kinds
-/// actually present gives them the whole ramp between them, and "deeper means
-/// bigger" is a second reading of the bar rather than an arbitrary code. The
-/// cost is that a kind's colour can change after a deletion; the symbol, not
-/// the colour, is what says what a tile is.
-///
-/// A colourful Flavor gives a narrow hue ramp; a grey one gives a lightness
-/// ramp only, because spreading hues around a grey would invent a colour the
-/// student deliberately did not pick — the refusal ``Flavor/derived`` makes.
-///
-/// Built once per render rather than per tile: each colour walks a contrast
-/// loop to clear the page it sits on.
+/// The colour of every tile, dot and bar segment on this page: a
+/// ``FlavorRamp`` handed out by size, so the largest kind is the deepest and
+/// the smallest the palest — a second reading of the bar. The cost is that a
+/// kind's colour can change after a deletion; the symbol, not the colour, says
+/// what a tile is.
 struct FileKindPalette {
-    let flavor: Flavor
-    let mode: Flavor.Mode
+    private let ramp: FlavorRamp
     private let tints: [StorageAudit.Kind: Flavor.RGB]
-    private let empty: Flavor.RGB
 
-    /// How much of the colour wheel the ramp covers, centred on the Flavor's
-    /// hue. A sixth: roughly the span of "blues". Half the wheel was tried
-    /// first and turned a navy look into a green PDF and a purple archive.
-    private static let spread = 0.16
+    var mode: Flavor.Mode { ramp.mode }
 
     init(style: TodayStyle, scheme: ColorScheme, categories: [StorageAudit.Category]) {
-        flavor = style.flavor
-        mode = style.appearance.flavorMode
-        let dark = scheme == .dark
-        let ground = flavor.ground(dark: dark, mode: mode)
-        let (hue, saturation, _) = flavor.main.hsb
-        // The threshold ``Flavor/derived`` uses to decide a colour has no hue
-        // worth moving along.
-        let isGrey = saturation < 0.12
-
-        /// Nudges a colour until it clears the page, the way
-        /// ``Flavor/readable(_:dark:mode:)`` does for the roles: a dark look
-        /// would otherwise draw near-black marks on a near-black ground.
-        func visible(_ colour: Flavor.RGB) -> Flavor.RGB {
-            var candidate = colour
-            var (hue, saturation, brightness) = colour.hsb
-            var steps = 0
-            while Flavor.contrast(candidate, ground) < Flavor.readable, steps < 40 {
-                brightness = dark ? min(brightness + 0.04, 1) : max(brightness - 0.04, 0)
-                candidate = Flavor.RGB(hue: hue, saturation: saturation, brightness: brightness)
-                steps += 1
-            }
-            return candidate
-        }
-
-        var tints: [StorageAudit.Kind: Flavor.RGB] = [:]
-        for (index, category) in categories.enumerated() {
-            let position = categories.count > 1 ? Double(index) / Double(categories.count - 1) : 0
-            tints[category.kind] = visible(Flavor.RGB(
-                hue: isGrey ? hue : hue + Self.spread * (position - 0.5),
-                // Floored, so a washed-out Flavor still gives marks that read;
-                // capped, so a fluorescent one does not glare.
-                saturation: isGrey ? saturation : saturation.clamped(to: 0.40...0.95),
-                // Its own lightness range rather than the Flavor's: a deep
-                // navy look would otherwise give every kind a near-black.
-                brightness: 0.48 + 0.42 * position))
-        }
-        self.tints = tints
-        // Nothing measured: the Flavor with the colour taken out, so the
-        // placeholder is plainly not one of the kinds.
-        empty = visible(Flavor.RGB(hue: hue, saturation: saturation * 0.12,
-                                   brightness: dark ? 0.42 : 0.72))
+        ramp = FlavorRamp(style: style, scheme: scheme)
+        tints = Dictionary(uniqueKeysWithValues: zip(categories.map(\.kind), ramp.colours(categories.count)))
     }
 
     func rgb(_ kind: StorageAudit.Kind?) -> Flavor.RGB {
-        kind.flatMap { tints[$0] } ?? empty
+        kind.flatMap { tints[$0] } ?? ramp.neutral
     }
 
     func tint(_ kind: StorageAudit.Kind?) -> Color { rgb(kind).color }
 
-    /// Black or white on a solid tile, whichever reads — the choice
-    /// ``Flavor/onAccent(dark:mode:)`` makes, per tile because the ramp runs
-    /// from deep to pale and a fixed white would vanish at one end.
-    func glyph(_ kind: StorageAudit.Kind?) -> Color {
-        let tile = rgb(kind)
-        return Flavor.contrast(.white, tile) >= Flavor.contrast(.black, tile)
-            ? Flavor.RGB.white.color : Flavor.RGB.black.color
-    }
-
-    /// The front tile's symbol: lit from the top corner and deepening towards
-    /// the bottom, so the outline reads as a material rather than a flat ink.
-    /// Outline and not `.fill` on the front tile: on untinted glass a filled
-    /// glyph turns into a solid slab that fights the glass for attention, and
-    /// the tiles behind already carry the filled weight.
-    func gradient(_ kind: StorageAudit.Kind?) -> LinearGradient {
-        let (hue, saturation, brightness) = rgb(kind).hsb
-        let light = Flavor.RGB(hue: hue, saturation: saturation * 0.6, brightness: min(brightness + 0.32, 1))
-        let deep = Flavor.RGB(hue: hue, saturation: min(saturation * 1.1, 1), brightness: brightness * 0.68)
-        return LinearGradient(colors: [light.color, deep.color], startPoint: .topLeading, endPoint: .bottomTrailing)
-    }
-
     /// The fold-in segment and its dot, and the empty track.
-    var neutral: Color { empty.color }
+    var neutral: Color { ramp.neutral.color }
 }
 
 // MARK: - The bar

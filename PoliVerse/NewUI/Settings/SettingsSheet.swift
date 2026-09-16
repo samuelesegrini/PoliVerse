@@ -83,11 +83,8 @@ struct SettingsSheet: View {
                     } label: {
                         Label("Promemoria", systemImage: "bell")
                     }
-                    // The current settings screen holds both until they are
-                    // rebuilt: one row, named for both, rather than two rows
-                    // opening the same screen.
                     NavigationLink {
-                        SettingsView()
+                        ConnectionsView()
                     } label: {
                         LabeledContent {
                             Text(weBeep.isAuthenticated ? "Collegato" : "Non collegato")

@@ -1,31 +1,7 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
-    "Apri WeBeep in ${applicationName}" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringSet" : {
-            "state" : "translated",
-            "values" : [
-              "Open WeBeep in ${applicationName}",
-              "Course materials in ${applicationName}"
-            ]
-          }
-        },
-        "it" : {
-          "stringSet" : {
-            "state" : "translated",
-            "values" : [
-              "Apri WeBeep in ${applicationName}",
-              "Materiali dei corsi in ${applicationName}"
-            ]
-          }
-        }
-      }
-    },
     "Apri l'orario in ${applicationName}" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringSet" : {
@@ -48,7 +24,6 @@
       }
     },
     "Apri la carriera in ${applicationName}" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringSet" : {
@@ -70,8 +45,29 @@
         }
       }
     },
+    "Apri WeBeep in ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Open WeBeep in ${applicationName}",
+              "Course materials in ${applicationName}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Apri WeBeep in ${applicationName}",
+              "Materiali dei corsi in ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
     "Novità sui miei esami in ${applicationName}" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringSet" : {
@@ -94,7 +90,6 @@
       }
     },
     "Quando è il prossimo esame in ${applicationName}" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringSet" : {
@@ -117,7 +112,6 @@
       }
     },
     "Trova un'aula libera in ${applicationName}" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringSet" : {
