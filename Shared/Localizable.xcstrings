@@ -178,6 +178,22 @@
         }
       }
     },
+    "%@ prima dell’inizio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ before it starts"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ prima dell’inizio"
+          }
+        }
+      }
+    },
     "%@: %@" : {
       "localizations" : {
         "en" : {
@@ -2552,6 +2568,22 @@
         }
       }
     },
+    "Calcolati dal tuo orario e programmati sul dispositivo, senza inviare nulla. Scadenze, esami e iscrizioni arrivano il giorno prima, quando c’è ancora tempo per agire." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Worked out from your timetable and scheduled on your device, without sending anything. Deadlines, exams and enrolments arrive the day before, while there is still time to act."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calcolati dal tuo orario e programmati sul dispositivo, senza inviare nulla. Scadenze, esami e iscrizioni arrivano il giorno prima, quando c’è ancora tempo per agire."
+          }
+        }
+      }
+    },
     "Calcolati sul tuo orario e programmati sul dispositivo. Niente esce dal telefono: non c'è un server che sa quando hai lezione." : {
       "localizations" : {
         "en" : {
@@ -3038,18 +3070,24 @@
         }
       }
     },
-    "Ciò che conta — un esito, un'aula, un appello spostato — arriva appena l'app se ne accorge; il resto nel riepilogo, e di notte solo ciò che è urgente. Un tipo spento non notifica ma resta visibile nell'app." : {
+    "Circa una volta all’ora, quando iOS lo concede, l’app aggiorna orario, carriera e novità di WeBeep in circa trenta secondi, poi riprogramma i promemoria e aggiorna i widget. iOS decide quando: con Risparmio energetico o l’aggiornamento disattivato, non succede." : {
+
+    },
+    "Ciò che conta — un esito, un’aula, un appello spostato — arriva subito; il resto nel riepilogo. Un tipo spento non notifica ma resta visibile nell’app." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "What matters — a result, a room, a moved sitting — arrives as soon as the app notices; the rest in the summary, and at night only what is urgent. A kind switched off doesn't notify but stays visible in the app."
+            "value" : "What matters — a result, a room, a moved exam date — arrives straight away; the rest in the summary. A type that is off sends no notifications but stays visible in the app."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ciò che conta — un esito, un’aula, un appello spostato — arriva subito; il resto nel riepilogo. Un tipo spento non notifica ma resta visibile nell’app."
           }
         }
       }
-    },
-    "Circa una volta all’ora, quando iOS lo concede, l’app aggiorna orario, carriera e novità di WeBeep in circa trenta secondi, poi riprogramma i promemoria e aggiorna i widget. iOS decide quando: con Risparmio energetico o l’aggiornamento disattivato, non succede." : {
-
     },
     "Classico" : {
       "localizations" : {
@@ -3949,22 +3987,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Corso rimosso dai preferiti"
-          }
-        }
-      }
-    },
-    "Cosa notificare" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What to notify"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cosa notificare"
           }
         }
       }
@@ -5097,6 +5119,22 @@
         }
       }
     },
+    "Esiti, aule, appelli spostati" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Results, rooms, moved exam dates"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esiti, aule, appelli spostati"
+          }
+        }
+      }
+    },
     "Esito" : {
       "localizations" : {
         "en" : {
@@ -5249,6 +5287,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Files opened from WeBeep and kept so you can read them offline. They stay on WeBeep: they download again when you reopen them."
+          }
+        }
+      }
+    },
+    "File, annunci e consegne dei corsi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Course files, announcements and assignments"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File, annunci e consegne dei corsi"
           }
         }
       }
@@ -5666,6 +5720,22 @@
         }
       }
     },
+    "Hai spento ogni tipo di promemoria e di novità." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You turned off every kind of reminder and update."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai spento ogni tipo di promemoria e di novità."
+          }
+        }
+      }
+    },
     "Ho capito" : {
       "localizations" : {
         "en" : {
@@ -5893,6 +5963,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il codice persona è uno solo; ogni immatricolazione ha la sua matricola. I servizi del Politecnico rispondono solo per quella su cui è stato fatto l'accesso."
+          }
+        }
+      }
+    },
+    "Il giorno prima alle 18:00" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The day before at 6:00 PM"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il giorno prima alle 18:00"
           }
         }
       }
@@ -6179,6 +6265,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your next scheduled exam sitting, as of the app's last refresh."
+          }
+        }
+      }
+    },
+    "Il prossimo: %@, %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next: %1$@, %2$@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il prossimo: %1$@, %2$@."
           }
         }
       }
@@ -6581,12 +6683,18 @@
         }
       }
     },
-    "In queste ore arriva solo ciò che è urgente, come un esito o un appello spostato; il resto aspetta la fine del silenzio. Stessa ora per inizio e fine: nessun silenzio." : {
+    "In queste ore arriva solo ciò che è urgente, come un esito o un appello spostato; il resto aspetta la mattina." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "During these hours only urgent news comes through, like a result or a moved exam; the rest waits until the quiet hours end. Same start and end hour: no quiet hours."
+            "value" : "During these hours only urgent news arrives, like a result or a moved exam date; the rest waits for the morning."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In queste ore arriva solo ciò che è urgente, come un esito o un appello spostato; il resto aspetta la mattina."
           }
         }
       }
@@ -6865,6 +6973,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "iOS consente al massimo %lld promemoria in attesa: vengono tenuti i più vicini."
+          }
+        }
+      }
+    },
+    "iOS tiene al massimo %lld promemoria in attesa: vengono programmati i più vicini, gli altri man mano." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS keeps at most %lld pending reminders: the nearest are scheduled, the others as time goes on."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS tiene al massimo %lld promemoria in attesa: vengono programmati i più vicini, gli altri man mano."
           }
         }
       }
@@ -7372,18 +7496,24 @@
         }
       }
     },
-    "Le loro novità restano nell'app; nessuna notifica, promemoria o riepilogo. Scorri per riattivarle." : {
+    "Le modifiche fatte senza rete, come un corso tra i preferiti, restano in coda e partono appena torna la connessione. Dopo %lld tentativi rifiutati si fermano qui." : {
+
+    },
+    "Le notifiche di PoliVerse sono disattivate in Impostazioni." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Their updates stay in the app: no notifications, reminders or summaries. Swipe to unmute."
+            "value" : "PoliVerse notifications are turned off in Settings."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le notifiche di PoliVerse sono disattivate in Impostazioni."
           }
         }
       }
-    },
-    "Le modifiche fatte senza rete, come un corso tra i preferiti, restano in coda e partono appena torna la connessione. Dopo %lld tentativi rifiutati si fermano qui." : {
-
     },
     "Le notizie dal Politecnico compaiono qui." : {
       "localizations" : {
@@ -7407,6 +7537,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Updates come from Servizi Online when the app refreshes: when you open it, or in the background when iOS allows. Emails from lecturers are not included. Touch and hold an update to mute its course."
+          }
+        }
+      }
+    },
+    "Le novità restano nell’app, senza notifiche." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updates stay in the app, without notifications."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le novità restano nell’app, senza notifiche."
           }
         }
       }
@@ -7511,6 +7657,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lezioni"
+          }
+        }
+      }
+    },
+    "Lezioni, scadenze ed esami, un attimo prima che servano. Tutto resta sul dispositivo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lectures, deadlines and exams, just before you need them. Everything stays on your device."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lezioni, scadenze ed esami, un attimo prima che servano. Tutto resta sul dispositivo."
           }
         }
       }
@@ -8243,6 +8405,22 @@
         }
       }
     },
+    "Mostra tutti (%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show all (%lld)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra tutti (%lld)"
+          }
+        }
+      }
+    },
     "Musica" : {
       "localizations" : {
         "en" : {
@@ -8581,18 +8759,18 @@
         }
       }
     },
-    "Nessun promemoria programmato." : {
+    "Nessun promemoria in arrivo." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No reminders scheduled."
+            "value" : "No upcoming reminders."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nessun promemoria programmato."
+            "value" : "Nessun promemoria in arrivo."
           }
         }
       }
@@ -8699,6 +8877,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nessuna notifica"
+          }
+        }
+      }
+    },
+    "Nessuna notifica, promemoria o riepilogo; le novità restano nell’app. Scorri per riattivarli." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No notifications, reminders or summaries; updates stay in the app. Swipe to unmute them."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuna notifica, promemoria o riepilogo; le novità restano nell’app. Scorri per riattivarli."
           }
         }
       }
@@ -10005,6 +10199,22 @@
         }
       }
     },
+    "Per ora non c’è niente in arrivo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing coming up for now."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per ora non c’è niente in arrivo."
+          }
+        }
+      }
+    },
     "Per passare al tuo account: Impostazioni · Usa dati di esempio." : {
       "localizations" : {
         "en" : {
@@ -10428,6 +10638,22 @@
         }
       }
     },
+    "Privacy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy"
+          }
+        }
+      }
+    },
     "Probabile iscrizione libera" : {
       "localizations" : {
         "en" : {
@@ -10592,6 +10818,22 @@
         }
       }
     },
+    "Promemoria attivi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminders on"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promemoria attivi"
+          }
+        }
+      }
+    },
     "Promemoria attivi · da Impostazioni · Promemoria cambi anticipo e tipi." : {
       "localizations" : {
         "en" : {
@@ -10658,6 +10900,22 @@
     },
     "Promemoria programmati" : {
 
+    },
+    "Promemoria spenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminders off"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promemoria spenti"
+          }
+        }
+      }
     },
     "Prossima" : {
       "localizations" : {
@@ -10886,12 +11144,34 @@
     "Quando torna la rete l’app si ricollega da sola." : {
 
     },
-    "Quando un docente pubblica un file di esiti su WeBeep, l'app lo apre sul telefono e cerca solo la tua matricola. Conserva soltanto se compari e il tuo voto, che resta nell'app e non appare nelle notifiche; il file e i dati degli altri non vengono salvati né inviati. Funziona con PDF testuali e CSV." : {
+    "Quando un docente pubblica un file di esiti su WeBeep, l’app lo apre sul telefono e cerca solo la tua matricola. Tiene soltanto il tuo voto, che non appare nelle notifiche; i dati degli altri non vengono salvati né inviati. Funziona con PDF testuali e CSV." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "When a lecturer posts a results file on WeBeep, the app opens it on your phone and looks only for your student ID. It keeps only whether you appear and your grade, which stays in the app and never shows in notifications; the file and other students' data are neither saved nor sent. Works with text PDFs and CSV."
+            "value" : "When a lecturer posts a results file on WeBeep, the app opens it on your phone and looks only for your student number. It keeps just your grade, which never appears in notifications; other students’ data is neither saved nor sent. Works with text PDFs and CSV."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando un docente pubblica un file di esiti su WeBeep, l’app lo apre sul telefono e cerca solo la tua matricola. Tiene soltanto il tuo voto, che non appare nelle notifiche; i dati degli altri non vengono salvati né inviati. Funziona con PDF testuali e CSV."
+          }
+        }
+      }
+    },
+    "Quanto prima" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How early"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quanto prima"
           }
         }
       }
@@ -11028,6 +11308,22 @@
         }
       }
     },
+    "Restano visibili nell’app" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Still visible in the app"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restano visibili nell’app"
+          }
+        }
+      }
+    },
     "Rete" : {
 
     },
@@ -11067,12 +11363,18 @@
         }
       }
     },
-    "Riepilogo alle" : {
+    "Riepilogo giornaliero alle" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Summary at"
+            "value" : "Daily summary at"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riepilogo giornaliero alle"
           }
         }
       }
@@ -11377,22 +11679,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Scadenze, appelli e chiusura iscrizioni alle 18:00 del giorno prima."
-          }
-        }
-      }
-    },
-    "Scadenze, esami e chiusura iscrizioni arrivano alle 18:00 del giorno prima, quando c'è ancora tempo per agire." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deadlines, exams and enrolment closings arrive at 18:00 the day before, while there is still time to act."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scadenze, esami e chiusura iscrizioni arrivano alle 18:00 del giorno prima, quando c'è ancora tempo per agire."
           }
         }
       }
@@ -12440,6 +12726,22 @@
         }
       }
     },
+    "Stessa ora di inizio e fine: nessun silenzio." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Same start and end time: no quiet hours."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stessa ora di inizio e fine: nessun silenzio."
+          }
+        }
+      }
+    },
     "Sticker" : {
       "localizations" : {
         "en" : {
@@ -12895,6 +13197,22 @@
     "Tutto collegato" : {
 
     },
+    "Tutto in silenzio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everything silenced"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutto in silenzio"
+          }
+        }
+      }
+    },
     "Tutto pronto" : {
       "localizations" : {
         "en" : {
@@ -12923,22 +13241,6 @@
     },
     "Tutto quello che c’è in questa pagina, in testo, da allegare a una segnalazione. Non contiene password né token: se un messaggio d’errore ne cita uno, viene tolto." : {
 
-    },
-    "Tutto resta sul dispositivo: i promemoria vengono calcolati dal tuo orario e programmati localmente, senza inviare nulla." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Everything stays on the device: reminders are computed from your timetable and scheduled locally, sending nothing."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tutto resta sul dispositivo: i promemoria vengono calcolati dal tuo orario e programmati localmente, senza inviare nulla."
-          }
-        }
-      }
     },
     "Ufficiale" : {
       "localizations" : {
