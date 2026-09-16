@@ -43,6 +43,9 @@
         }
       }
     },
+    "%@" : {
+
+    },
     "%@ – %@" : {
       "localizations" : {
         "en" : {
@@ -313,6 +316,9 @@
         }
       }
     },
+    "%lld corsi" : {
+
+    },
     "%lld di %lld" : {
       "localizations" : {
         "en" : {
@@ -344,6 +350,9 @@
           }
         }
       }
+    },
+    "%lld elementi" : {
+
     },
     "%lld esami da sostenere, %lld CFU." : {
       "localizations" : {
@@ -545,6 +554,9 @@
         }
       }
     },
+    "%lld ms" : {
+
+    },
     "%lld non lette" : {
       "localizations" : {
         "en" : {
@@ -702,6 +714,19 @@
           }
         }
       }
+    },
+    "%lld sulle prestazioni, %lld su blocchi e chiusure" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld sulle prestazioni, %2$lld su blocchi e chiusure"
+          }
+        }
+      }
+    },
+    "%lld, tutti" : {
+
     },
     "%lld° semestre" : {
       "localizations" : {
@@ -1033,6 +1058,9 @@
         }
       }
     },
+    "Accesso al Politecnico" : {
+
+    },
     "Accesso annullato." : {
       "localizations" : {
         "en" : {
@@ -1048,6 +1076,9 @@
           }
         }
       }
+    },
+    "Accesso in corso" : {
+
     },
     "Accesso in corso…" : {
       "localizations" : {
@@ -1080,6 +1111,9 @@
           }
         }
       }
+    },
+    "Accesso salvato" : {
+
     },
     "Accesso WeBeep" : {
       "localizations" : {
@@ -1211,6 +1245,9 @@
         }
       }
     },
+    "Aggiornamento in background" : {
+
+    },
     "Aggiornamento in corso…" : {
       "localizations" : {
         "en" : {
@@ -1230,6 +1267,12 @@
           }
         }
       }
+    },
+    "Aggiornati %@" : {
+
+    },
+    "Aggiornati dal Politecnico" : {
+
     },
     "Aggiornato %@" : {
       "localizations" : {
@@ -1527,6 +1570,9 @@
         }
       }
     },
+    "Ambiti" : {
+
+    },
     "Ammesso" : {
       "localizations" : {
         "en" : {
@@ -1696,6 +1742,9 @@
           }
         }
       }
+    },
+    "App" : {
+
     },
     "App CieID non installata" : {
       "localizations" : {
@@ -2179,6 +2228,9 @@
         }
       }
     },
+    "Attivo" : {
+
+    },
     "Audio" : {
       "localizations" : {
         "en" : {
@@ -2296,6 +2348,9 @@
           }
         }
       }
+    },
+    "Autorizzazione" : {
+
     },
     "Avanti" : {
       "localizations" : {
@@ -2970,6 +3025,9 @@
         }
       }
     },
+    "CIE" : {
+
+    },
     "Cielo" : {
       "localizations" : {
         "en" : {
@@ -2989,6 +3047,9 @@
           }
         }
       }
+    },
+    "Circa una volta all’ora, quando iOS lo concede, l’app aggiorna orario, carriera e novità di WeBeep in circa trenta secondi, poi riprogramma i promemoria e aggiorna i widget. iOS decide quando: con Risparmio energetico o l’aggiornamento disattivato, non succede." : {
+
     },
     "Classico" : {
       "localizations" : {
@@ -3191,6 +3252,12 @@
           }
         }
       }
+    },
+    "Collegalo per vedere i materiali dei corsi e gli avvisi dei docenti." : {
+
+    },
+    "Collegati al tuo account" : {
+
     },
     "Collegato" : {
       "localizations" : {
@@ -3418,6 +3485,9 @@
         }
       }
     },
+    "Con i dati di esempio l’app funziona senza collegarsi ai server del Politecnico. Disattivalo per usare il tuo account." : {
+
+    },
     "Con il nome" : {
       "localizations" : {
         "en" : {
@@ -3437,6 +3507,12 @@
           }
         }
       }
+    },
+    "Concessa" : {
+
+    },
+    "Concluso" : {
+
     },
     "Condividi" : {
       "localizations" : {
@@ -3468,6 +3544,15 @@
         }
       }
     },
+    "Condividi rapporto" : {
+
+    },
+    "Connessa" : {
+
+    },
+    "Connessa, a consumo" : {
+
+    },
     "Consegna domani" : {
       "localizations" : {
         "en" : {
@@ -3493,6 +3578,15 @@
           }
         }
       }
+    },
+    "Consentite" : {
+
+    },
+    "Consentite in silenzio" : {
+
+    },
+    "Consentito" : {
+
     },
     "Contesto" : {
       "localizations" : {
@@ -3588,6 +3682,9 @@
         }
       }
     },
+    "Controllo in corso…" : {
+
+    },
     "Copia" : {
       "localizations" : {
         "en" : {
@@ -3597,6 +3694,9 @@
           }
         }
       }
+    },
+    "Copia rapporto" : {
+
     },
     "Corallo" : {
       "localizations" : {
@@ -3643,6 +3743,9 @@
           }
         }
       }
+    },
+    "Corsi ed esami" : {
+
     },
     "Corsi nascosti" : {
       "localizations" : {
@@ -4348,6 +4451,12 @@
         }
       }
     },
+    "Disattivate" : {
+
+    },
+    "Disattivato" : {
+
+    },
     "Dispense e registrazioni dei tuoi corsi, scaricabili per leggerle offline — in metropolitana, dove la rete del Politecnico non arriva." : {
       "localizations" : {
         "en" : {
@@ -4400,6 +4509,9 @@
         }
       }
     },
+    "Dispositivo" : {
+
+    },
     "Disposizione" : {
       "localizations" : {
         "en" : {
@@ -4409,6 +4521,9 @@
           }
         }
       }
+    },
+    "Diversi dalla richiesta" : {
+
     },
     "Docente" : {
       "localizations" : {
@@ -4497,6 +4612,9 @@
           }
         }
       }
+    },
+    "E %lld modifiche non inviate: le trovi più in basso." : {
+
     },
     "e altre %lld" : {
       "localizations" : {
@@ -4878,6 +4996,9 @@
         }
       }
     },
+    "Errore %lld" : {
+
+    },
     "Esagoni" : {
       "localizations" : {
         "en" : {
@@ -5147,6 +5268,9 @@
           }
         }
       }
+    },
+    "Finché li usi l’app non si collega né al Politecnico né a WeBeep." : {
+
     },
     "Fine" : {
       "localizations" : {
@@ -5654,6 +5778,9 @@
         }
       }
     },
+    "I materiali già scaricati restano sul dispositivo. Per vederne di nuovi dovrai ricollegarti." : {
+
+    },
     "I servizi del Politecnico non hanno restituito dati." : {
       "localizations" : {
         "en" : {
@@ -5914,6 +6041,9 @@
         }
       }
     },
+    "Il Politecnico non ha concesso l’accesso ai tuoi dati. Esci e rientra per rinnovarlo." : {
+
+    },
     "Il Politecnico non ha risposto. Riprova tra poco." : {
       "localizations" : {
         "en" : {
@@ -6020,6 +6150,9 @@
         }
       }
     },
+    "Il prossimo %@" : {
+
+    },
     "Il prossimo appello è %@, %@ alle %@." : {
       "localizations" : {
         "en" : {
@@ -6065,6 +6198,9 @@
           }
         }
       }
+    },
+    "Il token dura poco e si rinnova da solo, ma porta con sé solo gli ambiti chiesti quando è nato: se il Politecnico ne aggiunge uno, serve uscire e rientrare." : {
+
     },
     "il tuo" : {
       "localizations" : {
@@ -6348,6 +6484,12 @@
         }
       }
     },
+    "In attesa di invio" : {
+
+    },
+    "In background" : {
+
+    },
     "In breve" : {
       "localizations" : {
         "en" : {
@@ -6373,6 +6515,9 @@
           }
         }
       }
+    },
+    "In caricamento" : {
+
     },
     "In corso" : {
       "localizations" : {
@@ -6498,6 +6643,9 @@
         }
       }
     },
+    "Includi la matricola" : {
+
+    },
     "Indaco" : {
       "localizations" : {
         "en" : {
@@ -6523,6 +6671,9 @@
           }
         }
       }
+    },
+    "Indirizzi" : {
+
     },
     "Indirizzo" : {
       "localizations" : {
@@ -6696,6 +6847,12 @@
         }
       }
     },
+    "Interrotto da iOS" : {
+
+    },
+    "Interrotto o in corso" : {
+
+    },
     "iOS consente al massimo %lld promemoria in attesa: vengono tenuti i più vicini." : {
       "localizations" : {
         "en" : {
@@ -6711,6 +6868,9 @@
           }
         }
       }
+    },
+    "Irraggiungibile" : {
+
     },
     "Iscrizione" : {
       "localizations" : {
@@ -6998,6 +7158,9 @@
         }
       }
     },
+    "La verifica chiede a ogni servizio se c’è, senza credenziali: dice se la rete arriva al Politecnico e quanto risponde in fretta, non se i tuoi dati sono corretti." : {
+
+    },
     "Laboratorio" : {
       "localizations" : {
         "en" : {
@@ -7027,6 +7190,9 @@
           }
         }
       }
+    },
+    "Lasciale perdere" : {
+
     },
     "Lavanda" : {
       "localizations" : {
@@ -7215,6 +7381,9 @@
           }
         }
       }
+    },
+    "Le modifiche fatte senza rete, come un corso tra i preferiti, restano in coda e partono appena torna la connessione. Dopo %lld tentativi rifiutati si fermano qui." : {
+
     },
     "Le notizie dal Politecnico compaiono qui." : {
       "localizations" : {
@@ -7430,6 +7599,9 @@
         }
       }
     },
+    "Limitato dal sistema" : {
+
+    },
     "Lingua" : {
       "localizations" : {
         "en" : {
@@ -7460,6 +7632,9 @@
         }
       }
     },
+    "Live Activity" : {
+
+    },
     "Lo scaglione è per cognome, dal primo incluso al secondo escluso. Scrivi il tuo cognome per vedere quale ti riguarda." : {
       "localizations" : {
         "en" : {
@@ -7475,6 +7650,9 @@
           }
         }
       }
+    },
+    "Lo spazio condiviso è dove l’app lascia orario e carriera per i widget: senza, l’app funziona ma i widget restano vuoti." : {
+
     },
     "Luminoso" : {
       "localizations" : {
@@ -7515,6 +7693,18 @@
           }
         }
       }
+    },
+    "Mai chieste" : {
+
+    },
+    "Mai indicizzato" : {
+
+    },
+    "Mai registrato" : {
+
+    },
+    "Mancano" : {
+
     },
     "Mandarino" : {
       "localizations" : {
@@ -7615,6 +7805,9 @@
           }
         }
       }
+    },
+    "Materiali dei corsi" : {
+
     },
     "Materiali e consegne" : {
       "localizations" : {
@@ -7866,6 +8059,9 @@
         }
       }
     },
+    "Modello" : {
+
+    },
     "Modifica" : {
       "localizations" : {
         "en" : {
@@ -7891,6 +8087,9 @@
           }
         }
       }
+    },
+    "Modifiche in coda" : {
+
     },
     "Moduli" : {
       "localizations" : {
@@ -8598,6 +8797,9 @@
         }
       }
     },
+    "Nessuna risposta" : {
+
+    },
     "Nessuna risposta dopo %lld tentativi." : {
       "localizations" : {
         "en" : {
@@ -8848,6 +9050,9 @@
         }
       }
     },
+    "Non concessa" : {
+
+    },
     "Non hai effettuato l'accesso." : {
       "localizations" : {
         "en" : {
@@ -8922,6 +9127,9 @@
         }
       }
     },
+    "Non registrati" : {
+
+    },
     "Non riesco a leggere questo forum." : {
       "localizations" : {
         "en" : {
@@ -8973,6 +9181,9 @@
           }
         }
       }
+    },
+    "Non riuscito: %@" : {
+
     },
     "Non si può annullare." : {
       "localizations" : {
@@ -10034,6 +10245,9 @@
         }
       }
     },
+    "PoliVerse — diagnostica" : {
+
+    },
     "PoliVerse non è affiliata al Politecnico di Milano." : {
       "localizations" : {
         "en" : {
@@ -10181,6 +10395,12 @@
           }
         }
       }
+    },
+    "Presente" : {
+
+    },
+    "Prestazioni" : {
+
     },
     "Previste" : {
       "localizations" : {
@@ -10436,6 +10656,9 @@
         }
       }
     },
+    "Promemoria programmati" : {
+
+    },
     "Prossima" : {
       "localizations" : {
         "en" : {
@@ -10660,6 +10883,9 @@
         }
       }
     },
+    "Quando torna la rete l’app si ricollega da sola." : {
+
+    },
     "Quando un docente pubblica un file di esiti su WeBeep, l'app lo apre sul telefono e cerca solo la tua matricola. Conserva soltanto se compari e il tuo voto, che resta nell'app e non appare nelle notifiche; il file e i dati degli altri non vengono salvati né inviati. Funziona con PDF testuali e CSV." : {
       "localizations" : {
         "en" : {
@@ -10776,6 +11002,12 @@
         }
       }
     },
+    "Rapporti di iOS" : {
+
+    },
+    "Rapporto" : {
+
+    },
     "Registrato nel libretto" : {
       "localizations" : {
         "en" : {
@@ -10795,6 +11027,9 @@
           }
         }
       }
+    },
+    "Rete" : {
+
     },
     "Retino" : {
       "localizations" : {
@@ -10958,6 +11193,9 @@
         }
       }
     },
+    "Riprova a inviarle" : {
+
+    },
     "Riprova tra poco." : {
       "localizations" : {
         "en" : {
@@ -10983,6 +11221,9 @@
           }
         }
       }
+    },
+    "Risparmio energetico" : {
+
     },
     "Risposta del server non leggibile." : {
       "localizations" : {
@@ -11378,6 +11619,9 @@
         }
       }
     },
+    "Scollega" : {
+
+    },
     "Scollega WeBeep" : {
       "localizations" : {
         "en" : {
@@ -11393,6 +11637,15 @@
           }
         }
       }
+    },
+    "Scollegare WeBeep?" : {
+
+    },
+    "Sconosciute" : {
+
+    },
+    "Sconosciuto" : {
+
     },
     "Scope OAuth" : {
       "localizations" : {
@@ -11618,6 +11871,9 @@
         }
       }
     },
+    "Senza account" : {
+
+    },
     "Senza aprire l'app" : {
       "localizations" : {
         "en" : {
@@ -11675,6 +11931,9 @@
           }
         }
       }
+    },
+    "Servizi del Politecnico" : {
+
     },
     "Servizi esami non abilitati" : {
       "localizations" : {
@@ -11743,6 +12002,9 @@
           }
         }
       }
+    },
+    "Sessione" : {
+
     },
     "Settimana" : {
       "localizations" : {
@@ -11905,6 +12167,9 @@
           }
         }
       }
+    },
+    "Si rinnova alla prossima richiesta" : {
+
     },
     "Sigla aula, edificio o sede" : {
       "localizations" : {
@@ -12120,6 +12385,12 @@
         }
       }
     },
+    "Spazio condiviso con i widget" : {
+
+    },
+    "Spento" : {
+
+    },
     "Spessore" : {
       "localizations" : {
         "en" : {
@@ -12149,6 +12420,9 @@
           }
         }
       }
+    },
+    "Spotlight" : {
+
     },
     "Stai guardando dati di esempio" : {
       "localizations" : {
@@ -12360,6 +12634,9 @@
         }
       }
     },
+    "Temporanee" : {
+
+    },
     "Tentativi precedenti" : {
       "localizations" : {
         "en" : {
@@ -12492,6 +12769,9 @@
         }
       }
     },
+    "Token" : {
+
+    },
     "Torna a usarlo" : {
       "localizations" : {
         "en" : {
@@ -12612,6 +12892,9 @@
         }
       }
     },
+    "Tutto collegato" : {
+
+    },
     "Tutto pronto" : {
       "localizations" : {
         "en" : {
@@ -12637,6 +12920,9 @@
           }
         }
       }
+    },
+    "Tutto quello che c’è in questa pagina, in testo, da allegare a una segnalazione. Non contiene password né token: se un messaggio d’errore ne cita uno, viene tolto." : {
+
     },
     "Tutto resta sul dispositivo: i promemoria vengono calcolati dal tuo orario e programmati localmente, senza inviare nulla." : {
       "localizations" : {
@@ -12670,6 +12956,9 @@
         }
       }
     },
+    "Ultimi aggiornamenti dei dati" : {
+
+    },
     "Ultimi esiti" : {
       "localizations" : {
         "en" : {
@@ -12685,6 +12974,15 @@
           }
         }
       }
+    },
+    "Ultimo giro" : {
+
+    },
+    "Ultimo metodo di accesso" : {
+
+    },
+    "Un accesso separato da quello del Politecnico, che può scadere per conto suo. Serve per i materiali dei corsi e per gli avvisi dei docenti." : {
+
     },
     "Un Flavor condiviso è un codice: incollalo qui per usarlo." : {
       "localizations" : {
@@ -12794,6 +13092,9 @@
         }
       }
     },
+    "Una volta al giorno iOS consegna all’app un riassunto di avvio, memoria e batteria, e un rapporto per ogni blocco o chiusura. Restano sul dispositivo." : {
+
+    },
     "Usa" : {
       "localizations" : {
         "en" : {
@@ -12862,6 +13163,9 @@
         }
       }
     },
+    "Valido fino alle %@" : {
+
+    },
     "Vedi e modifica il profilo" : {
       "localizations" : {
         "en" : {
@@ -12881,6 +13185,12 @@
           }
         }
       }
+    },
+    "Verifica collegamenti" : {
+
+    },
+    "Verifica di nuovo" : {
+
     },
     "Verifiche" : {
       "localizations" : {
@@ -13144,6 +13454,12 @@
         }
       }
     },
+    "WeBeep e i servizi del Politecnico rispondono." : {
+
+    },
+    "WeBeep non collegato" : {
+
+    },
     "WeBeep non collegato · si collega dalla scheda WeBeep." : {
       "localizations" : {
         "en" : {
@@ -13191,6 +13507,9 @@
           }
         }
       }
+    },
+    "Widget" : {
+
     },
     "Widget con la prossima lezione e la media, controlli in Centro di Controllo e una Live Activity mentre sei in viaggio verso l'aula." : {
       "localizations" : {

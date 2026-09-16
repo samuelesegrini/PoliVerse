@@ -99,6 +99,7 @@ final class SpotlightIndex {
                 log.error("Spotlight indexing failed: \(error.localizedDescription)")
             } else {
                 log.notice("Indexed \(count, privacy: .public) items for Spotlight")
+                DiagnosticsLog.shared.spotlightIndexed(count: count)
             }
         }
     }

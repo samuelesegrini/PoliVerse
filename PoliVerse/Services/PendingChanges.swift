@@ -93,6 +93,24 @@ final class PendingChanges {
         }
     }
 
+    /// Puts abandoned changes back in the queue with a fresh budget and tries
+    /// again: for the student who has fixed whatever made the Politecnico
+    /// refuse them — usually by signing in again.
+    ///
+    /// A change whose target has something newer waiting is dropped, not
+    /// retried: `enqueue` replaces by target, so retrying it would put the
+    /// old value back over the student's later decision.
+    func retryFailures() async {
+        var queue = queue()
+        let waiting = Set(queue.pending.map(\.targetKey))
+        for action in queue.abandoned where !waiting.contains(action.targetKey) {
+            queue.enqueue(action)
+        }
+        queue.clearAbandoned()
+        refresh()
+        await flush()
+    }
+
     func acknowledgeFailures() {
         var queue = queue()
         queue.clearAbandoned()

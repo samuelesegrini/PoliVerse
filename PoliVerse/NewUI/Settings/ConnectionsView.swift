@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// What the app is connected to, whether it is working, and the detail to
-/// quote when it is not.
+/// What the app is connected to, whether it is working, how its moving parts
+/// are doing, and the detail to quote when something is not.
 ///
 /// Built on the same principles as ``DataStorageView``, so the two read as
 /// one kind of page:
@@ -12,22 +12,34 @@ import SwiftUI
 ///    plus. A student who opened this page because something is wrong sees
 ///    *whether* it is wrong before reading anything.
 /// 2. **One sentence** under it that says what the badge means and what to do.
-/// 3. **The rows**, each with the action that belongs to it.
+/// 3. **The rows**, each section with a footer that says in one sentence how
+///    that part of the app works, so a row that looks wrong can be read
+///    against what it should be doing.
 ///
-/// The screen it replaces mixed account details, interface toggles, cache
-/// sizes, sign-out and a disclosure group of URLs in one form. Everything else
-/// already has its own page in Impostazioni; this keeps the connections and
-/// the diagnostics, and the sample-data switch, which is the other thing a
-/// student reaches for when the real data will not come.
+/// The diagnostic sections are read from one ``DiagnosticsSnapshot``, the same
+/// value "Condividi rapporto" writes out, so what the student reads there and
+/// what they send cannot disagree. The WeBeep, services and pending sections
+/// read the live services instead, because their buttons change them and the
+/// row must follow at once.
 struct ConnectionsView: View {
     @Environment(Session.self) private var session
     @Environment(WeBeepService.self) private var weBeep
     @Environment(NetworkMonitor.self) private var network
+    @Environment(PendingChanges.self) private var pending
+    @Environment(NotificationService.self) private var notifications
+    @Environment(LiveActivityController.self) private var liveActivity
+    @Environment(CieIDRouter.self) private var cieID
+    @Environment(LoginMethodMemory.self) private var loginMemory
     @Environment(\.colorScheme) private var scheme
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
 
     @State private var connectingWeBeep = false
     @State private var confirmingDisconnect = false
+    @State private var snapshot: DiagnosticsSnapshot?
+    @State private var probes: [DiagnosticsSnapshot.Probe] = []
+    @State private var isProbing = false
+    @State private var isRetrying = false
+    @State private var includesMatricola = false
 
     /// Drawn behind WeBeep, in this order. Three, because the badge takes the
     /// fourth corner. Accesso and Aule are left out of the picture: one is the
@@ -36,6 +48,12 @@ struct ConnectionsView: View {
     private static let pictured: [ServiceDirectory.Service] = [.iae, .agenda, .libretto]
     /// Listed under Servizi del Politecnico. WeBeep has a section of its own.
     private static let listed: [ServiceDirectory.Service] = [.app, .iae, .agenda, .libretto, .wsAule]
+
+    private var collector: DiagnosticsCollector {
+        DiagnosticsCollector(session: session, weBeep: weBeep, network: network, pending: pending,
+                             notifications: notifications, liveActivity: liveActivity,
+                             cieID: cieID, loginMemory: loginMemory)
+    }
 
     var body: some View {
         @Bindable var session = session
@@ -62,6 +80,16 @@ struct ConnectionsView: View {
                         Text(health.detail)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                        // Not a reason for the badge — it stays the one piece
+                        // of news — but lost changes are the student's own
+                        // work, and they should not have to scroll to learn it.
+                        if !pending.failed.isEmpty {
+                            // Worded around the number, so one lost change
+                            // does not read "1 modifiche".
+                            Text("Modifiche non inviate: \(pending.failed.count). Le trovi più in basso.")
+                                .font(.footnote)
+                                .foregroundStyle(.orange)
+                        }
                     }
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
@@ -74,55 +102,323 @@ struct ConnectionsView: View {
                 .listRowSeparator(.hidden)
             }
 
-            Section {
-                ServiceRow(title: "WeBeep", detail: weBeepDetail, symbol: ServiceDirectory.Service.weBeep.symbol,
-                           colour: colours[.weBeep] ?? ramp.neutral) {
-                    StatusLabel(ok: weBeep.isAuthenticated,
-                                text: weBeep.isAuthenticated ? "Collegato" : "Non collegato")
-                }
-                if weBeep.isAuthenticated {
-                    Button("Scollega WeBeep", role: .destructive) { confirmingDisconnect = true }
-                } else {
-                    Button("Collega WeBeep") { connectingWeBeep = true }
-                }
-            } header: {
-                Text("WeBeep")
-            } footer: {
-                Text("Un accesso separato da quello del Politecnico, che può scadere per conto suo. Serve per i materiali dei corsi e per gli avvisi dei docenti.")
-            }
-
-            Section {
-                ForEach(Self.listed, id: \.rawValue) { service in
-                    ServiceRow(title: service.title, detail: host(of: service), symbol: service.symbol,
-                               colour: colours[service] ?? ramp.neutral) { EmptyView() }
-                }
-                LabeledContent("Indirizzi") {
-                    Text(session.directory.didLoad ? "Aggiornati dal Politecnico" : "Predefiniti")
-                }
-                LabeledContent("Autorizzazione") {
-                    StatusLabel(ok: !session.serviceAuthorizationFailed,
-                                text: session.serviceAuthorizationFailed ? "Non concessa" : "Concessa")
-                }
-                LabeledContent("Ambiti OAuth") {
-                    Text(session.directory.oauth.scope.split(separator: " ").count, format: .number)
-                }
-                LabeledContent("Profilo") {
-                    Text(verbatim: String(session.profileID))
-                }
-            } header: {
-                Text("Servizi del Politecnico")
-            } footer: {
-                Text("Utile per segnalare un problema: dove l’app cerca i servizi del Politecnico e con quale accesso.")
-            }
+            weBeepSection(colour: colours[.weBeep] ?? ramp.neutral)
+            accountSection
+            servicesSection(colours: colours, neutral: ramp.neutral)
+            pendingSection
+            backgroundSection
+            deviceSection
+            performanceSection
+            reportSection
 
             Section {
                 Toggle("Usa dati di esempio", isOn: $session.useMockData)
             } footer: {
                 Text("Con i dati di esempio l’app funziona senza collegarsi ai server del Politecnico. Disattivalo per usare il tuo account.")
             }
+        }
+        .navigationTitle("WeBeep e diagnostica")
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            // The course count is the proof the connection works, not just
+            // that a token is stored; ask once if nothing has asked yet.
+            if weBeep.isAuthenticated, weBeep.courses.isEmpty, weBeep.state != .loading {
+                await weBeep.loadCourses()
+            }
+        }
+        // Re-read whenever something the snapshot depends on moves, so a row
+        // never shows the state from before the button the student just
+        // pressed.
+        .task(id: RefreshKey(session: session.state, authorised: !session.serviceAuthorizationFailed,
+                             weBeep: weBeep.isAuthenticated, courses: weBeep.courses.count,
+                             online: network.isOnline, pending: pending.count,
+                             failed: pending.failed.count, mock: session.useMockData)) {
+            await reload()
+        }
+        .refreshable { await reload() }
+        .sheet(isPresented: $connectingWeBeep) {
+            WeBeepLoginSheet { await weBeep.loadCourses() }
+        }
+        .confirmationDialog("Scollegare WeBeep?", isPresented: $confirmingDisconnect, titleVisibility: .visible) {
+            Button("Scollega", role: .destructive) { weBeep.signOut() }
+        } message: {
+            Text("I materiali già scaricati restano sul dispositivo. Per vederne di nuovi dovrai ricollegarti.")
+        }
+    }
 
-            #if DEBUG
+    private struct RefreshKey: Equatable {
+        let session: Session.State, authorised: Bool
+        let weBeep: Bool, courses: Int, online: Bool, pending: Int, failed: Int, mock: Bool
+    }
+
+    private func reload() async {
+        snapshot = await collector.snapshot(probes: probes)
+    }
+
+    // MARK: - Sections
+
+    private func weBeepSection(colour: Flavor.RGB) -> some View {
+        Section {
+            ServiceRow(title: "WeBeep", detail: weBeepDetail, symbol: ServiceDirectory.Service.weBeep.symbol,
+                       colour: colour) {
+                VStack(alignment: .trailing, spacing: 2) {
+                    StatusLabel(ok: weBeep.isAuthenticated,
+                                text: weBeep.isAuthenticated ? "Collegato" : "Non collegato")
+                    if let probe = probe(for: .weBeep) {
+                        ProbeLabel(result: probe.result)
+                    }
+                }
+            }
+            if weBeep.isAuthenticated {
+                Button("Scollega WeBeep", role: .destructive) { confirmingDisconnect = true }
+            } else {
+                Button("Collega WeBeep") { connectingWeBeep = true }
+            }
+        } header: {
+            Text("WeBeep")
+        } footer: {
+            Text("Un accesso separato da quello del Politecnico, che può scadere per conto suo. Serve per i materiali dei corsi e per gli avvisi dei docenti.")
+        }
+    }
+
+    @ViewBuilder
+    private var accountSection: some View {
+        if let account = snapshot?.account {
             Section {
+                LabeledContent("Sessione", value: account.state)
+                if let method = account.loginMethod {
+                    LabeledContent("Ultimo metodo di accesso", value: method)
+                }
+                LabeledContent("Token") {
+                    if let expiry = account.tokenExpiresAt {
+                        if expiry > .now {
+                            Text("Valido fino alle \(expiry.formatted(date: .omitted, time: .shortened))")
+                        } else {
+                            Text("Si rinnova alla prossima richiesta")
+                        }
+                    } else {
+                        Text("Nessuno")
+                    }
+                }
+                if let scopes = account.scopes {
+                    LabeledContent("Ambiti") {
+                        StatusLabel(ok: scopes.isCurrent, text: scopeSummary(scopes))
+                    }
+                    if !scopes.missing.isEmpty {
+                        LabeledContent("Mancano", value: scopes.missing.joined(separator: ", "))
+                    }
+                }
+                LabeledContent("Autorizzazione") {
+                    StatusLabel(ok: account.authorised, text: account.authorised ? "Concessa" : "Non concessa")
+                }
+                LabeledContent("Profilo") { Text(verbatim: String(account.profile)) }
+                if account.cieAwaiting {
+                    LabeledContent("CIE") { Text("In attesa dell’app CieID") }
+                }
+                if let error = account.cieError {
+                    LabeledContent("Errore CIE") {
+                        Text(error).foregroundStyle(.orange)
+                    }
+                }
+            } header: {
+                Text("Accesso al Politecnico")
+            } footer: {
+                Text("Il token dura poco e si rinnova da solo, ma porta con sé solo gli ambiti chiesti quando è nato: se il Politecnico ne aggiunge uno, serve uscire e rientrare.")
+            }
+        }
+    }
+
+    private func servicesSection(colours: [ServiceDirectory.Service: Flavor.RGB], neutral: Flavor.RGB) -> some View {
+        Section {
+            ForEach(Self.listed, id: \.rawValue) { service in
+                ServiceRow(title: service.title, detail: host(of: service), symbol: service.symbol,
+                           colour: colours[service] ?? neutral) {
+                    if let probe = probe(for: service) {
+                        ProbeLabel(result: probe.result)
+                    }
+                }
+            }
+            Button {
+                isProbing = true
+                Task {
+                    probes = await collector.probe()
+                    await reload()
+                    isProbing = false
+                }
+            } label: {
+                LabeledContent {
+                    if isProbing { ProgressView() }
+                } label: {
+                    Text(probes.isEmpty ? "Verifica collegamenti" : "Verifica di nuovo")
+                }
+            }
+            .disabled(isProbing || !network.isOnline)
+            .accessibilityIdentifier("diagnostics-probe")
+            LabeledContent("Indirizzi") {
+                Text(session.directory.didLoad ? "Aggiornati dal Politecnico" : "Predefiniti")
+            }
+            NavigationLink {
+                DataStorageView()
+            } label: {
+                Text("Ultimi aggiornamenti dei dati")
+            }
+        } header: {
+            Text("Servizi del Politecnico")
+        } footer: {
+            Text("La verifica chiede a ogni servizio, WeBeep compreso, se c’è, senza credenziali. Conta che risponda, anche con un errore come 404: dice se la rete arriva al Politecnico e quanto in fretta, non se i tuoi dati sono corretti.")
+        }
+    }
+
+    @ViewBuilder
+    private var pendingSection: some View {
+        Section {
+            LabeledContent("In attesa di invio") {
+                if pending.isFlushing {
+                    ProgressView()
+                } else {
+                    Text(pending.count, format: .number)
+                }
+            }
+            ForEach(Array(pending.failed.enumerated()), id: \.offset) { _, action in
+                Label(action.label, systemImage: "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90")
+                    .foregroundStyle(.orange)
+            }
+            if !pending.failed.isEmpty {
+                Button {
+                    isRetrying = true
+                    Task {
+                        await pending.retryFailures()
+                        isRetrying = false
+                    }
+                } label: {
+                    LabeledContent {
+                        if isRetrying { ProgressView() }
+                    } label: {
+                        Text("Riprova a inviarle")
+                    }
+                }
+                .disabled(isRetrying || !network.isOnline)
+                Button("Lasciale perdere", role: .destructive) { pending.acknowledgeFailures() }
+            }
+        } header: {
+            Text("Modifiche in coda")
+        } footer: {
+            Text("Le modifiche fatte senza rete, come un corso tra i preferiti, restano in coda e partono appena torna la connessione. Dopo \(ActionQueue.maxAttempts) tentativi rifiutati si fermano qui.")
+        }
+    }
+
+    @ViewBuilder
+    private var backgroundSection: some View {
+        if let background = snapshot?.background {
+            Section {
+                LabeledContent("Aggiornamento in background", value: background.refreshPermission)
+                LabeledContent("Ultimo giro") {
+                    if let run = background.lastRun {
+                        VStack(alignment: .trailing, spacing: 1) {
+                            Text(run.started, format: .relative(presentation: .named))
+                            Text(outcome(of: run))
+                                .font(.caption)
+                                .foregroundStyle(run.outcome == .completed ? Color.secondary : .orange)
+                        }
+                    } else {
+                        Text("Mai registrato")
+                    }
+                }
+                LabeledContent("Notifiche", value: background.notifications)
+                LabeledContent("Promemoria programmati") {
+                    VStack(alignment: .trailing, spacing: 1) {
+                        Text(background.scheduledReminders, format: .number)
+                        if let next = background.nextReminder {
+                            Text("Il prossimo \(next.formatted(.relative(presentation: .named)))")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                LabeledContent("Live Activity") {
+                    VStack(alignment: .trailing, spacing: 1) {
+                        StatusLabel(ok: background.liveActivities,
+                                    text: background.liveActivities ? "Consentite" : "Disattivate")
+                        if background.liveActivityShowing {
+                            Text("Una in corso")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                LabeledContent("Widget") {
+                    VStack(alignment: .trailing, spacing: 1) {
+                        StatusLabel(ok: background.widgetsKnowAccount,
+                                    text: background.widgetsKnowAccount ? "Collegati al tuo account" : "Senza account")
+                        if let reload = background.lastWidgetReload {
+                            Text("Aggiornati \(reload.formatted(.relative(presentation: .named)))")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                LabeledContent("Spotlight") {
+                    if let items = background.spotlightItems, let at = background.spotlightIndexedAt {
+                        VStack(alignment: .trailing, spacing: 1) {
+                            Text("\(items) elementi")
+                            Text(at, format: .relative(presentation: .named))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Text("Mai indicizzato")
+                    }
+                }
+            } header: {
+                Text("In background")
+            } footer: {
+                Text("Circa una volta all’ora, quando iOS lo concede, l’app aggiorna orario, carriera e novità di WeBeep in circa trenta secondi, poi riprogramma i promemoria e aggiorna i widget. iOS decide quando: con Risparmio energetico o l’aggiornamento disattivato, non succede.")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var deviceSection: some View {
+        if let device = snapshot?.device {
+            Section {
+                LabeledContent("App", value: device.appVersion)
+                LabeledContent("Sistema", value: device.system)
+                LabeledContent("Modello", value: device.model)
+                LabeledContent("Lingua", value: device.language)
+                LabeledContent("Rete") {
+                    StatusLabel(ok: device.online,
+                                text: device.online ? (device.expensive ? "Connessa, a consumo" : "Connessa") : "Assente")
+                }
+                LabeledContent("Risparmio energetico") {
+                    Text(device.lowPowerMode ? "Attivo" : "Spento")
+                }
+                LabeledContent("Spazio condiviso con i widget") {
+                    StatusLabel(ok: device.sharedContainer, text: device.sharedContainer ? "Presente" : "Assente")
+                }
+            } header: {
+                Text("Dispositivo")
+            } footer: {
+                Text("Lo spazio condiviso è dove l’app lascia orario e carriera per i widget: senza, l’app funziona ma i widget restano vuoti.")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var performanceSection: some View {
+        if let performance = snapshot?.performance {
+            Section {
+                LabeledContent("Rapporti di iOS") {
+                    VStack(alignment: .trailing, spacing: 1) {
+                        Text("\(performance.metricReports) sulle prestazioni, \(performance.diagnosticReports) su blocchi e chiusure")
+                        if let latest = performance.latest {
+                            Text(latest, format: .relative(presentation: .named))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .multilineTextAlignment(.trailing)
+                }
+                #if DEBUG
                 NavigationLink {
                     MetricReportsView()
                 } label: {
@@ -133,27 +429,54 @@ struct ConnectionsView: View {
                 } label: {
                     Text(verbatim: "Diagnostica carriera")
                 }
+                #endif
             } header: {
-                Text(verbatim: "Sviluppo")
-            }
-            #endif
-        }
-        .navigationTitle("WeBeep e diagnostica")
-        .navigationBarTitleDisplayMode(.inline)
-        // The course count is the proof the connection works, not just that a
-        // token is stored; ask once if nothing has asked yet.
-        .task {
-            if weBeep.isAuthenticated, weBeep.courses.isEmpty, weBeep.state != .loading {
-                await weBeep.loadCourses()
+                Text("Prestazioni")
+            } footer: {
+                Text("Una volta al giorno iOS consegna all’app un riassunto di avvio, memoria e batteria, e un rapporto per ogni blocco o chiusura. Restano sul dispositivo.")
             }
         }
-        .sheet(isPresented: $connectingWeBeep) {
-            WeBeepLoginSheet { await weBeep.loadCourses() }
+    }
+
+    @ViewBuilder
+    private var reportSection: some View {
+        if let snapshot {
+            let report = DiagnosticsReport(snapshot, includesMatricola: includesMatricola).text
+            Section {
+                Toggle("Includi la matricola", isOn: $includesMatricola)
+                ShareLink(item: report, subject: Text("PoliVerse — diagnostica")) {
+                    Label("Condividi rapporto", systemImage: "square.and.arrow.up")
+                }
+                Button {
+                    UIPasteboard.general.string = report
+                } label: {
+                    Label("Copia rapporto", systemImage: "doc.on.doc")
+                }
+            } header: {
+                Text("Rapporto")
+            } footer: {
+                Text("Tutto quello che c’è in questa pagina, in testo, da allegare a una segnalazione. Non contiene password né token: se un messaggio d’errore ne cita uno, viene tolto.")
+            }
         }
-        .confirmationDialog("Scollegare WeBeep?", isPresented: $confirmingDisconnect, titleVisibility: .visible) {
-            Button("Scollega", role: .destructive) { weBeep.signOut() }
-        } message: {
-            Text("I materiali già scaricati restano sul dispositivo. Per vederne di nuovi dovrai ricollegarti.")
+    }
+
+    // MARK: - Helpers
+
+    private func probe(for service: ServiceDirectory.Service) -> DiagnosticsSnapshot.Probe? {
+        guard let index = DiagnosticsCollector.services.firstIndex(of: service), index < probes.count else { return nil }
+        return probes[index]
+    }
+
+    private func scopeSummary(_ scopes: ScopeAudit) -> LocalizedStringResource {
+        if scopes.isUnknown { return "Non registrati" }
+        return "\(scopes.grantedCount) su \(scopes.requestedCount)"
+    }
+
+    private func outcome(of run: DiagnosticsLog.BackgroundRun) -> LocalizedStringResource {
+        switch run.outcome {
+        case .completed: "Concluso"
+        case .expired: "Interrotto da iOS"
+        case .unfinished: "Interrotto o in corso"
         }
     }
 
@@ -261,6 +584,24 @@ private struct ServiceRow<Trailing: View>: View {
             trailing
         }
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// A probe's answer, short enough for a row's trailing edge.
+private struct ProbeLabel: View {
+    let result: ConnectionProbe.Result
+
+    var body: some View {
+        switch result.verdict {
+        case .reachable:
+            StatusLabel(ok: true, text: "Risponde · \(result.milliseconds ?? 0) ms")
+        case .serverFault(let status):
+            StatusLabel(ok: false, text: "Errore \(status)")
+        case .timedOut:
+            StatusLabel(ok: false, text: "Nessuna risposta")
+        case .unreachable:
+            StatusLabel(ok: false, text: "Irraggiungibile")
+        }
     }
 }
 

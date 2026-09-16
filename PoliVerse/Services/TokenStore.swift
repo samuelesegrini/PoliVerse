@@ -62,6 +62,10 @@ actor TokenStore {
     /// The scope the stored token was granted, if any.
     var grantedScope: String? { current()?.grantedScope }
 
+    /// When the access token stops working, for the diagnostics page. Never
+    /// the token itself: a date says everything a bug report needs.
+    var expiresAt: Date? { current()?.expiresAt }
+
     /// Records the scope a freshly-exchanged token was minted with.
     func setGrantedScope(_ scope: String) {
         guard var current = current() else { return }

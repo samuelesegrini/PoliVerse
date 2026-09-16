@@ -57,14 +57,24 @@ final class BackgroundRefresh {
         // reschedule would end background refresh permanently.
         schedule()
 
+        // Recorded, so the diagnostics page can say when the last run was and
+        // whether it finished: the unified log is the only other witness, and
+        // nobody reporting a problem can read it.
+        DiagnosticsLog.shared.backgroundRefreshStarted()
         let work = Task {
             await refresh()
+            // A cancelled run was already recorded by the expiration handler,
+            // with the moment iOS stopped it; writing again would move it.
+            if !Task.isCancelled {
+                DiagnosticsLog.shared.backgroundRefreshFinished(completed: true)
+            }
             task.setTaskCompleted(success: true)
         }
 
         // iOS gives warning before it kills the task. Cancelling cleanly beats
         // being terminated mid-write.
         task.expirationHandler = {
+            DiagnosticsLog.shared.backgroundRefreshFinished(completed: false)
             work.cancel()
         }
     }

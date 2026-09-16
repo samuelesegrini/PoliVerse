@@ -45,6 +45,7 @@ enum WidgetReloader {
         for kind in kinds {
             WidgetCenter.shared.reloadTimelines(ofKind: kind.rawValue)
         }
+        DiagnosticsLog.shared.widgetsReloaded()
     }
 
     /// The final reload WidgetKit recommends as the app leaves the screen.
