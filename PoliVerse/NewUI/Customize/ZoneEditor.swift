@@ -73,7 +73,8 @@ struct CustomizeControls: View {
             case .layout: layoutControls
             case .greeting: greetingControls
             case .bar: barControls
-            case .section(let kind): sectionControls(kind)
+            // A section's page is the card in ``SectionFormPicker``.
+            case .section: EmptyView()
             case .stickerPicker: EmptyView()
             }
         }
@@ -405,7 +406,7 @@ struct CustomizeControls: View {
             Text("Sulla pagina")
         }
         .environment(\.editMode, .constant(.active))
-        Section("Ogni sezione") {
+        Section("Forma e superficie di ogni sezione") {
             ForEach(style.visibleSections) { section in
                 NavigationLink(value: CustomizePage.section(section.kind)) {
                     Label(section.kind.title, systemImage: section.kind.systemImage)
@@ -429,51 +430,6 @@ struct CustomizeControls: View {
             .accessibilityIdentifier("customize-editor-arrange")
         } footer: {
             Text("Oppure tieni premuto sulla pagina per trascinare le sezioni.")
-        }
-    }
-
-    // MARK: Sections
-
-    private func section(_ kind: TodaySection.Kind) -> Binding<TodaySection> {
-        Binding {
-            style.section(kind) ?? TodaySection(kind: kind)
-        } set: { new in
-            style.updateSection(kind) { $0 = new }
-        }
-    }
-
-    @ViewBuilder
-    private func sectionControls(_ kind: TodaySection.Kind) -> some View {
-        let section = section(kind)
-        Section("Superficie") {
-            Picker("Superficie", selection: section.material) {
-                Text("Come la pagina").tag(TodayMaterial?.none)
-                ForEach(TodayMaterial.allCases) { Text($0.title).tag(TodayMaterial?.some($0)) }
-            }
-            .accessibilityIdentifier("section-material")
-            Picker("Densità", selection: section.density) {
-                ForEach(TodaySection.Density.allCases) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            Toggle("Colore del Flavor", isOn: section.tinted)
-            if kind.hasCourseColours {
-                Toggle("Colori dei corsi", isOn: section.courseColours)
-            }
-        }
-        if kind.listsItems {
-            Section {
-                Stepper(value: section.itemLimit, in: TodaySection.itemLimits) {
-                    Text("Elementi mostrati: \(section.wrappedValue.itemLimit)")
-                }
-            }
-        }
-        Section {
-            Button("Nascondi dalla pagina", systemImage: "eye.slash", role: .destructive) {
-                style.hideSection(kind)
-                close()
-            }
-        } footer: {
-            Text("Una sezione nascosta tiene le sue impostazioni.")
         }
     }
 

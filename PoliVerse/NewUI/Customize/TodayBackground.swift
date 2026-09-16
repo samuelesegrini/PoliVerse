@@ -68,28 +68,49 @@ struct TodayBackgroundView: View {
     var paper = TodayPaper.plain
     var grain = 0.0
     var mode = Flavor.Mode.standard
+    /// Rounded here rather than by the caller: the grain shader rasterises the
+    /// page, and a clip put around it afterwards does not reach the corners.
+    var cornerRadius: CGFloat = 0
 
     @Environment(\.colorScheme) private var scheme
 
     /// A look's whole page: paper, decoration, grain, in its appearance.
-    init(style: TodayStyle) {
+    init(style: TodayStyle, cornerRadius: CGFloat = 0) {
         self.init(background: style.background, flavor: style.flavor, paper: style.paper, grain: style.grain,
-                  mode: style.appearance.flavorMode)
+                  mode: style.appearance.flavorMode, cornerRadius: cornerRadius)
     }
 
     init(background: TodayBackground, flavor: Flavor, paper: TodayPaper = .plain, grain: Double = 0,
-         mode: Flavor.Mode = .standard) {
+         mode: Flavor.Mode = .standard, cornerRadius: CGFloat = 0) {
         self.background = background
         self.flavor = flavor
         self.paper = paper
         self.grain = grain
         self.mode = mode
+        self.cornerRadius = cornerRadius
     }
 
     private var strength: Double { scheme == .dark ? 1.4 : 1 }
     private var tint: Color { flavor.accent(dark: scheme == .dark, mode: mode).color }
 
     var body: some View {
+        page
+            .paperGrain(grain)
+            .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private var page: some View {
+        // Rounded only when a card asks for it: the whole page draws faster
+        // without a clip around its Canvas.
+        if cornerRadius > 0 {
+            ground.clipShape(.rect(cornerRadius: cornerRadius, style: .continuous))
+        } else {
+            ground
+        }
+    }
+
+    private var ground: some View {
         ZStack {
             // The system's own background only for a page with nothing on it.
             if background == .plain && paper == .plain && mode == .standard {
@@ -100,8 +121,6 @@ struct TodayBackgroundView: View {
             paperTexture
             pattern
         }
-        .paperGrain(grain)
-        .accessibilityHidden(true)
     }
 
     @ViewBuilder

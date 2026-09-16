@@ -1,0 +1,322 @@
+import SwiftUI
+
+/// A section's page in Personalizza, in the shape of adding a widget: one card
+/// of the page per form, swiped through at full size, then turned over for the
+/// surface controls.
+///
+/// The card is a slice of the real page — its background, its Flavor, the
+/// section drawn by ``TodaySectionView`` — so what is chosen is what appears.
+/// Turning it over keeps it one object: the controls belong to that card, not
+/// to a screen somewhere else.
+struct SectionFormPicker: View {
+    let kind: TodaySection.Kind
+    @Binding var style: TodayStyle
+    /// Back to the bento, once the section is off the page.
+    var close: () -> Void = {}
+
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.shell) private var shell
+    @State private var page: TodaySection.Form = .list
+    @State private var flipped = false
+
+    private static let turn = Animation.spring(duration: 0.45, bounce: 0.12)
+
+    private var forms: [TodaySection.Form] { kind.forms }
+
+    private var section: TodaySection {
+        style.section(kind) ?? TodaySection(kind: kind)
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if !flipped, forms.count > 1 {
+                header
+            }
+
+            card
+                .padding(.horizontal, 20)
+                .padding(.top, flipped ? 8 : 18)
+
+            Spacer(minLength: 12)
+
+            if flipped {
+                Button("Fine", systemImage: "checkmark") { withAnimation(Self.turn) { flipped = false } }
+                    .buttonStyle(FlavorGlossButtonStyle(flavor: style.flavor))
+                    .padding(.horizontal, 20)
+                    .accessibilityIdentifier("form-done")
+            } else {
+                footer
+            }
+        }
+        .padding(.bottom, 18)
+        .navigationTitle(kind.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { page = section.form }
+        // Swiping to a card is choosing it: the page behind follows at once,
+        // the way the gallery's carousel works.
+        .onChange(of: page) { _, form in
+            guard section.form != form else { return }
+            withAnimation(.snappy) { style.updateSection(kind) { $0.form = form } }
+        }
+    }
+
+    // MARK: - Front
+
+    private var header: some View {
+        VStack(spacing: 5) {
+            Text("Forma")
+                .font(.largeTitle.weight(.bold))
+            Text("Come sono disposti gli elementi. Puoi cambiarla quando vuoi.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, 28)
+        .padding(.top, 6)
+    }
+
+    private var footer: some View {
+        VStack(spacing: 14) {
+            Button {
+                withAnimation(Self.turn) { flipped = true }
+            } label: {
+                Label(forms.count > 1 ? "Usa questa forma" : "Superficie e contenuto", systemImage: "checkmark.circle.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(FlavorGlossButtonStyle(flavor: style.flavor))
+            .padding(.horizontal, 20)
+            .accessibilityIdentifier("form-use")
+        }
+    }
+
+    // MARK: - The card, and its back
+
+    private var card: some View {
+        ZStack {
+            front
+                .opacity(flipped ? 0 : 1)
+                .accessibilityHidden(flipped)
+            back
+                .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
+                .opacity(flipped ? 1 : 0)
+                .accessibilityHidden(!flipped)
+        }
+        .rotation3DEffect(.degrees(flipped ? 180 : 0), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
+    }
+
+    private var front: some View {
+        TabView(selection: $page) {
+            ForEach(forms) { form in
+                SectionPageCard(kind: kind, form: form, style: style, day: shell.day)
+                    .padding(.bottom, 2)
+                    .tag(form)
+                    .accessibilityIdentifier("form-\(form.rawValue)")
+            }
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .frame(height: 340)
+        .overlay(alignment: .bottom) {
+            if forms.count > 1 {
+                VStack(spacing: 9) {
+                    Text(page.title)
+                        .font(.subheadline.weight(.semibold))
+                    HStack(spacing: 7) {
+                        ForEach(forms) { form in
+                            Circle()
+                                .fill(form == page ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
+                                .frame(width: 7, height: 7)
+                        }
+                    }
+                    .animation(.snappy, value: page)
+                }
+                .padding(.bottom, -44)
+            }
+        }
+        .padding(.bottom, forms.count > 1 ? 44 : 0)
+    }
+
+    private var back: some View {
+        SectionControlsCard(kind: kind, style: $style, onFlip: { withAnimation(Self.turn) { flipped = false } },
+                            onHide: {
+                                style.hideSection(kind)
+                                close()
+                            })
+            .frame(height: 340)
+    }
+}
+
+// MARK: - The page as a card
+
+/// One form drawn as a slice of the page: the background, the section, and the
+/// top of whatever comes next fading out at the card's edge.
+private struct SectionPageCard: View {
+    let kind: TodaySection.Kind
+    let form: TodaySection.Form
+    let style: TodayStyle
+    let day: Date
+
+    /// The look this card shows: the same one, with this form on the section.
+    private var preview: TodayStyle {
+        var preview = style
+        preview.updateSection(kind) { $0.form = form }
+        if preview.section(kind) == nil { preview.sections.append(shownSection) }
+        return preview
+    }
+
+    private var shownSection: TodaySection {
+        var section = style.section(kind) ?? TodaySection(kind: kind)
+        section.form = form
+        return section
+    }
+
+    /// The next section on the page, to say that this is a page and not a
+    /// floating card.
+    private var following: TodaySection? {
+        let visible = style.visibleSections
+        guard let index = visible.firstIndex(where: { $0.kind == kind }), index + 1 < visible.count else { return nil }
+        return visible[index + 1]
+    }
+
+    var body: some View {
+        let preview = preview
+        VStack(alignment: .leading, spacing: 14) {
+            TodaySectionView(section: shownSection, style: preview, day: day)
+            if let following {
+                TodaySectionView(section: following, style: preview, day: day)
+                    .opacity(0.55)
+                    .mask(LinearGradient(colors: [.black, .black.opacity(0.15), .clear],
+                                         startPoint: .top, endPoint: .bottom))
+                    .allowsHitTesting(false)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background { TodayBackgroundView(style: preview, cornerRadius: 28) }
+        .clipShape(.rect(cornerRadius: 28, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .strokeBorder(.quaternary, lineWidth: 0.5)
+        }
+        .shadow(color: .black.opacity(0.14), radius: 16, y: 8)
+        .environment(\.colorScheme, preview.appearance.colorScheme ?? .light)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(form.title))
+    }
+}
+
+// MARK: - The back
+
+/// The card's back: what the section is made of and how much it shows.
+private struct SectionControlsCard: View {
+    let kind: TodaySection.Kind
+    @Binding var style: TodayStyle
+    var onFlip: () -> Void
+    var onHide: () -> Void
+
+    @Environment(\.colorScheme) private var scheme
+
+    private var section: Binding<TodaySection> {
+        Binding {
+            style.section(kind) ?? TodaySection(kind: kind)
+        } set: { new in
+            style.updateSection(kind) { $0 = new }
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            materials
+            Picker("Densità", selection: section.density) {
+                ForEach(TodaySection.Density.allCases) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
+
+            if kind.listsItems {
+                Stepper(value: section.itemLimit, in: TodaySection.itemLimits) {
+                    Text("Elementi mostrati: \(section.wrappedValue.itemLimit)")
+                        .font(.subheadline)
+                }
+            }
+            Toggle("Colore del Flavor", isOn: section.tinted)
+                .font(.subheadline)
+            if kind.hasCourseColours {
+                Toggle("Colori dei corsi", isOn: section.courseColours)
+                    .font(.subheadline)
+            }
+            Spacer(minLength: 0)
+            Button("Nascondi dalla pagina", systemImage: "eye.slash", role: .destructive, action: onHide)
+                .font(.subheadline)
+                .accessibilityIdentifier("form-hide")
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background { TodayBackgroundView(style: style, cornerRadius: 28) }
+        .clipShape(.rect(cornerRadius: 28, style: .continuous))
+        .overlay(alignment: .topTrailing) {
+            Button("Gira la scheda", systemImage: "arrow.trianglehead.2.clockwise.rotate.90", action: onFlip)
+                .labelStyle(.iconOnly)
+                .font(.footnote.weight(.semibold))
+                .frame(width: 30, height: 30)
+                .background(.quaternary.opacity(0.7), in: .circle)
+                .padding(12)
+                .accessibilityIdentifier("form-flip-back")
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .strokeBorder(.quaternary, lineWidth: 0.5)
+        }
+        .shadow(color: .black.opacity(0.14), radius: 16, y: 8)
+    }
+
+    /// The materials as swatches, the page's own first.
+    private var materials: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Superficie")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            ScrollView(.horizontal) {
+                HStack(spacing: 10) {
+                    swatch(nil, title: "Come la pagina")
+                    ForEach(TodayMaterial.allCases) { material in
+                        swatch(material, title: material.title)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+            .scrollIndicators(.hidden)
+        }
+    }
+
+    private func swatch(_ material: TodayMaterial?, title: LocalizedStringKey) -> some View {
+        let chosen = section.wrappedValue.material == material
+        return Button {
+            withAnimation(.snappy) { style.updateSection(kind) { $0.material = material } }
+        } label: {
+            VStack(spacing: 5) {
+                MaterialPreview(material: material ?? style.material, style: style)
+                    .frame(width: 62, height: 52)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14)
+                            .strokeBorder(chosen ? AnyShapeStyle(.tint) : AnyShapeStyle(.clear), lineWidth: 2.5)
+                    }
+                Text(title)
+                    .font(.caption2.weight(chosen ? .semibold : .regular))
+                    .foregroundStyle(chosen ? .primary : .secondary)
+                    .lineLimit(1)
+            }
+            .frame(width: 66)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("section-material-\(material?.rawValue ?? "page")")
+        .accessibilityAddTraits(chosen ? .isSelected : [])
+    }
+}
+
+#Preview("Forma") {
+    @Previewable @State var style = TodayStyle()
+    NavigationStack {
+        SectionFormPicker(kind: .upcoming, style: $style)
+    }
+    .previewEnvironment()
+}

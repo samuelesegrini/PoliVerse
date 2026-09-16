@@ -45,13 +45,17 @@ struct TodaySectionView: View {
     @ViewBuilder
     private var card: some View {
         let lessons = TodayDigest.timetable(events: agenda.events, day: day)
-        if section.kind.hasCourseColours && section.courseColours && !collapsed && !lessons.isEmpty {
+        if section.kind.hasCourseColours && section.courseColours && !collapsed
+            && section.form == .list && !lessons.isEmpty {
             // Each lesson its own card in its course's colour.
             VStack(spacing: compact ? 6 : 8) {
                 ForEach(lessons) { lesson in
                     lessonCard(lesson)
                 }
             }
+        } else if section.form == .tiles && !collapsed && !entries.isEmpty {
+            // Tiles are cards of their own, as the small widgets are.
+            tiles
         } else {
             materialCard
         }
@@ -141,75 +145,242 @@ struct TodaySectionView: View {
                     .foregroundStyle(.tertiary)
             }
             .padding(.vertical, 12)
+        } else if entries.isEmpty {
+            empty(emptyText)
         } else {
-            list(now: now)
+            switch section.form {
+            case .list: rows
+            case .highlight: highlight
+            case .rail: rail
+            // Tiles are drawn by ``card``, which gives each its own surface.
+            case .tiles: rows
+            }
         }
     }
 
-    @ViewBuilder
-    private func list(now: Date) -> some View {
+    /// What this section lists, in one shape the forms can all draw.
+    private var entries: [TodayEntry] {
+        let now = Date.now
         switch section.kind {
         case .currentClass:
-            if let current = CurrentClass.forAccessory(from: agenda.events, now: now) {
-                row(symbol: current.event.kind == .exam ? "pencil.and.list.clipboard" : "person.bubble",
-                    title: current.event.title,
-                    detail: [current.isOngoing ? String(localized: "Adesso") : String(localized: "Prossima"),
-                             current.event.room ?? current.event.roomAcronym].compactMap { $0 }.joined(separator: " · "),
-                    trailing: current.isOngoing
-                        ? String(localized: "fino alle \(current.event.end.formatted(.dateTime.hour().minute().locale(locale)))")
-                        : current.event.start.formatted(.dateTime.hour().minute().locale(locale)),
-                    last: true, opens: .event(current.event))
-            } else {
-                empty("Nessuna lezione oggi")
-            }
+            guard let current = CurrentClass.forAccessory(from: agenda.events, now: now) else { return [] }
+            let when = current.isOngoing
+                ? String(localized: "fino alle \(current.event.end.formatted(.dateTime.hour().minute().locale(locale)))")
+                : current.event.start.formatted(.dateTime.hour().minute().locale(locale))
+            return [TodayEntry(id: "current-\(current.event.id)",
+                               symbol: current.event.kind == .exam ? "pencil.and.list.clipboard" : "person.bubble",
+                               title: current.event.title,
+                               detail: [current.isOngoing ? String(localized: "Adesso") : String(localized: "Prossima"),
+                                        current.event.room ?? current.event.roomAcronym].compactMap { $0 }.joined(separator: " · "),
+                               when: when, date: current.event.start, opens: .event(current.event))]
         case .upcoming:
-            let items = TodayDigest.upcoming(events: agenda.events, deadlines: updates.deadlines, exams: career.sessions,
-                                             now: now, limit: section.itemLimit)
-            if items.isEmpty {
-                empty("Niente in arrivo")
-            } else {
-                ForEach(items) { item in
-                    row(symbol: item.source == .exam ? "graduationcap" : "pencil.and.list.clipboard",
-                        title: item.title, detail: item.detail,
-                        trailing: item.date.formatted(.relative(presentation: .named).locale(locale)),
-                        last: item.id == items.last?.id, opens: item.opens)
+            return TodayDigest.upcoming(events: agenda.events, deadlines: updates.deadlines, exams: career.sessions,
+                                        now: now, limit: section.itemLimit)
+                .map { item in
+                    TodayEntry(id: item.id, symbol: item.source == .exam ? "graduationcap" : "pencil.and.list.clipboard",
+                               title: item.title, detail: item.detail,
+                               when: item.date.formatted(.relative(presentation: .named).locale(locale)),
+                               date: item.date, opens: item.opens)
                 }
-            }
         case .timetable:
-            let events = TodayDigest.timetable(events: agenda.events, day: day)
-            if events.isEmpty {
-                empty("Nessuna lezione")
-            } else {
-                ForEach(events) { event in
-                    row(symbol: event.kind == .exam ? "pencil.and.list.clipboard" : "clock",
-                        title: event.title, detail: event.room ?? event.roomAcronym,
-                        trailing: event.start.formatted(.dateTime.hour().minute().locale(locale)),
-                        last: event.id == events.last?.id, opens: .event(event))
-                }
+            return TodayDigest.timetable(events: agenda.events, day: day).map { event in
+                TodayEntry(id: "event-\(event.id)", symbol: event.kind == .exam ? "pencil.and.list.clipboard" : "clock",
+                           title: event.title, detail: event.room ?? event.roomAcronym,
+                           when: event.start.formatted(.dateTime.hour().minute().locale(locale)),
+                           date: event.start, opens: .event(event))
             }
         case .deadlines:
-            let deadlines = TodayDigest.deadlines(updates.deadlines, now: now, limit: section.itemLimit)
-            if deadlines.isEmpty {
-                empty("Nessuna scadenza")
-            } else {
-                ForEach(deadlines) { deadline in
-                    row(symbol: "pencil.and.list.clipboard", title: deadline.name, detail: deadline.courseName,
-                        trailing: deadline.due.formatted(.dateTime.day().month(.abbreviated).locale(locale)),
-                        last: deadline.id == deadlines.last?.id)
-                }
+            return TodayDigest.deadlines(updates.deadlines, now: now, limit: section.itemLimit).map { deadline in
+                TodayEntry(id: "deadline-\(deadline.id)", symbol: "pencil.and.list.clipboard",
+                           title: deadline.name, detail: deadline.courseName,
+                           when: deadline.due.formatted(.dateTime.day().month(.abbreviated).locale(locale)),
+                           date: deadline.due, opens: nil)
             }
         case .exams:
-            let sessions = TodayDigest.exams(career.sessions, now: now, limit: section.itemLimit)
-            if sessions.isEmpty {
-                empty("Nessun esame in programma")
-            } else {
-                ForEach(sessions) { session in
-                    row(symbol: "graduationcap", title: session.courseName, detail: session.room,
-                        trailing: session.date?.formatted(.dateTime.day().month(.abbreviated).locale(locale)) ?? "",
-                        last: session.id == sessions.last?.id, opens: .exam(session))
+            return TodayDigest.exams(career.sessions, now: now, limit: section.itemLimit).map { session in
+                TodayEntry(id: "exam-\(session.id)", symbol: "graduationcap",
+                           title: session.courseName, detail: session.room,
+                           when: session.date?.formatted(.dateTime.day().month(.abbreviated).locale(locale)) ?? "",
+                           date: session.date, opens: .exam(session))
+            }
+        }
+    }
+
+    private var emptyText: LocalizedStringKey {
+        switch section.kind {
+        case .currentClass: "Nessuna lezione oggi"
+        case .upcoming: "Niente in arrivo"
+        case .timetable: "Nessuna lezione"
+        case .deadlines: "Nessuna scadenza"
+        case .exams: "Nessun esame in programma"
+        }
+    }
+
+    // MARK: - Forms
+
+    /// One row per entry: the shape every section had before forms.
+    private var rows: some View {
+        let entries = entries
+        return ForEach(entries) { entry in
+            row(symbol: entry.symbol, title: entry.title, detail: entry.detail,
+                trailing: entry.when, last: entry.id == entries.last?.id, opens: entry.opens)
+        }
+    }
+
+    /// The first entry large — the answer to "what have I got next" — and the
+    /// rest as thin rows under a rule.
+    @ViewBuilder
+    private var highlight: some View {
+        let entries = entries
+        if let lead = entries.first {
+            VStack(alignment: .leading, spacing: compact ? 10 : 14) {
+                opening(lead.opens) {
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: lead.symbol)
+                            .font(compact ? .subheadline : .body)
+                            .foregroundStyle(accent)
+                            .frame(width: 24)
+                            .padding(.top, 2)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(lead.when.localizedCapitalized)
+                                .font(.system(size: compact ? 22 : 27, weight: .bold, design: style.textDesign.design))
+                                .foregroundStyle(style.accent(scheme))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                            Text(lead.title)
+                                .font(.headline)
+                                .lineLimit(2)
+                            if let detail = lead.detail, !detail.isEmpty {
+                                Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                            }
+                        }
+                        Spacer(minLength: 0)
+                    }
+                }
+                if entries.count > 1 {
+                    Divider()
+                    VStack(spacing: 0) {
+                        ForEach(entries.dropFirst()) { entry in
+                            opening(entry.opens) {
+                                HStack(spacing: 10) {
+                                    Circle()
+                                        .fill(entry.id == entries.dropFirst().first?.id ? AnyShapeStyle(accent) : AnyShapeStyle(.tertiary))
+                                        .frame(width: 6, height: 6)
+                                    Text(entry.title).font(.subheadline).lineLimit(1)
+                                    Spacer(minLength: 8)
+                                    Text(entry.when)
+                                        .font(.caption.weight(.medium))
+                                        .monospacedDigit()
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+                                .padding(.vertical, compact ? 5 : 7)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.vertical, compact ? 4 : 6)
+        }
+    }
+
+    /// Two columns of small cards, as the small widgets are.
+    private var tiles: some View {
+        let material = style.material(for: section)
+        let corner: CGFloat = compact ? 18 : 22
+        return LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+            ForEach(entries) { entry in
+                opening(entry.opens) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(alignment: .top) {
+                            Image(systemName: entry.symbol)
+                                .font(.subheadline)
+                                .foregroundStyle(accent)
+                            Spacer(minLength: 6)
+                            Text(entry.when)
+                                .font(.caption2.weight(.semibold))
+                                .lineLimit(1)
+                                .foregroundStyle(section.tinted ? AnyShapeStyle(style.accent(scheme)) : AnyShapeStyle(.secondary))
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background(.quaternary.opacity(0.5), in: .capsule)
+                        }
+                        Spacer(minLength: 0)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(entry.title).font(.footnote.weight(.semibold)).lineLimit(2)
+                            if let detail = entry.detail, !detail.isEmpty {
+                                Text(detail).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                            }
+                        }
+                    }
+                    .padding(compact ? 10 : 13)
+                    .frame(maxWidth: .infinity, minHeight: compact ? 88 : 104, alignment: .topLeading)
+                    .todayMaterial(material, flavor: style.flavor, mode: style.appearance.flavorMode, cornerRadius: corner)
                 }
             }
         }
+    }
+
+    /// A rail down the left, so when a thing happens reads without the rows.
+    ///
+    /// Entries all on the day being shown — the timetable, always — carry the
+    /// hour there instead of the date: the date is the page's already.
+    private var rail: some View {
+        let entries = entries
+        let calendar = PoliMiDate.romeCalendar
+        let sameDay = entries.allSatisfy { entry in
+            guard let date = entry.date else { return false }
+            return calendar.isDate(date, inSameDayAs: day)
+        }
+        return VStack(spacing: 0) {
+            ForEach(entries) { entry in
+                let isLast = entry.id == entries.last?.id
+                opening(entry.opens) {
+                    HStack(alignment: .top, spacing: 12) {
+                        VStack(spacing: 1) {
+                            if sameDay {
+                                Text(entry.date?.formatted(.dateTime.hour().minute().locale(locale)) ?? "—")
+                                    .font(.footnote.weight(.bold))
+                                    .monospacedDigit()
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
+                            } else {
+                                Text(entry.date?.formatted(.dateTime.day().locale(locale)) ?? "—")
+                                    .font(.footnote.weight(.bold))
+                                    .monospacedDigit()
+                                Text((entry.date?.formatted(.dateTime.month(.abbreviated).locale(locale)) ?? "").uppercased())
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .frame(width: sameDay ? 44 : 34)
+                        VStack(spacing: 0) {
+                            Circle()
+                                .fill(entry.id == entries.first?.id ? AnyShapeStyle(style.accent(scheme)) : AnyShapeStyle(.clear))
+                                .frame(width: 10, height: 10)
+                                .overlay(Circle().strokeBorder(.tertiary, lineWidth: entry.id == entries.first?.id ? 0 : 2))
+                                .padding(.top, 3)
+                            if !isLast {
+                                Rectangle().fill(.quaternary).frame(width: 2)
+                            }
+                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(entry.title).font(.subheadline.weight(.medium)).lineLimit(2)
+                            // The rail already says when: the row says where.
+                            Text([sameDay ? nil : entry.when, entry.detail]
+                                .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                        .padding(.bottom, isLast ? 0 : (compact ? 12 : 16))
+                        Spacer(minLength: 0)
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .padding(.vertical, compact ? 4 : 6)
     }
 
     private func row(symbol: String, title: String, detail: String?, trailing: String, last: Bool,

@@ -78,6 +78,21 @@ nonisolated enum TodayDigest {
     }
 }
 
+/// One entry of a section, whatever the section lists and whatever form it
+/// is drawn in.
+nonisolated struct TodayEntry: Identifiable, Equatable, Sendable {
+    let id: String
+    let symbol: String
+    let title: String
+    let detail: String?
+    /// When it happens, written as the rows write it: "domani", "09:15".
+    let when: String
+    /// The day it falls on, for the forms that show a date.
+    let date: Date?
+    /// The screen a tap opens, when there is one.
+    let opens: TodayDetail?
+}
+
 /// A detail an Oggi row opens: the same screens the calendar and the career
 /// open, presented over the page.
 nonisolated enum TodayDetail: Identifiable, Equatable, Sendable {

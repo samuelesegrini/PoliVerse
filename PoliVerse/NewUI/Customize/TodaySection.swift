@@ -43,12 +43,55 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
         /// Lessons, which each have a course colour.
         var hasCourseColours: Bool { self == .timetable }
 
+        /// The forms this kind can take. The current class is a single row
+        /// whatever happens, and the timetable's own course-coloured cards
+        /// leave only the rail as an alternative.
+        var forms: [Form] {
+            switch self {
+            case .currentClass: [.list]
+            case .timetable: [.list, .rail]
+            case .upcoming, .deadlines, .exams: Form.allCases
+            }
+        }
+
         /// Lists entries that can run long, so the number shown can be chosen.
         /// The timetable always shows the whole day.
         var listsItems: Bool {
             switch self {
             case .upcoming, .deadlines, .exams: true
             case .currentClass, .timetable: false
+            }
+        }
+    }
+
+    /// How a section lays its entries out, chosen like a widget's size.
+    nonisolated enum Form: String, Codable, CaseIterable, Identifiable, Sendable {
+        /// One row per entry, as sections have always looked.
+        case list
+        /// The first entry large, the rest as thin rows under it.
+        case highlight
+        /// Two columns of small cards.
+        case tiles
+        /// A rail of dates down the left, entries beside it.
+        case rail
+
+        var id: String { rawValue }
+
+        var title: LocalizedStringKey {
+            switch self {
+            case .list: "Elenco"
+            case .highlight: "In evidenza"
+            case .tiles: "Riquadri"
+            case .rail: "Binario"
+            }
+        }
+
+        var systemImage: String {
+            switch self {
+            case .list: "list.bullet"
+            case .highlight: "rectangle.grid.1x2"
+            case .tiles: "square.grid.2x2"
+            case .rail: "calendar.day.timeline.left"
             }
         }
     }
@@ -69,6 +112,10 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
     var kind: Kind
     /// The section's own material; nil draws it in the page's.
     var material: TodayMaterial?
+    /// How the entries are laid out; a form the kind cannot take is refused.
+    var form: Form = .list {
+        didSet { if !kind.forms.contains(form) { form = .list } }
+    }
     var density: Density = .comfortable
     /// How many entries a listing section shows.
     var itemLimit = 3 {
@@ -95,7 +142,7 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
 /// its defaults for anything it did not have.
 nonisolated extension TodaySection: Codable {
     private enum CodingKeys: String, CodingKey {
-        case kind, material, density, itemLimit, tinted, isHidden, courseColours
+        case kind, material, form, density, itemLimit, tinted, isHidden, courseColours
         /// Before materials: glass, filled or plain.
         case card
     }
@@ -114,6 +161,9 @@ nonisolated extension TodaySection: Codable {
             default: material = nil
             }
         }
+        // Observers do not run in an initialiser: check the kind by hand.
+        let stored = try container.decodeIfPresent(Form.self, forKey: .form) ?? form
+        form = kind.forms.contains(stored) ? stored : .list
         density = try container.decodeIfPresent(Density.self, forKey: .density) ?? density
         // Observers do not run in an initialiser: clamp by hand.
         itemLimit = (try container.decodeIfPresent(Int.self, forKey: .itemLimit) ?? itemLimit).clamped(to: Self.itemLimits)
@@ -126,6 +176,7 @@ nonisolated extension TodaySection: Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(kind, forKey: .kind)
         try container.encodeIfPresent(material, forKey: .material)
+        try container.encode(form, forKey: .form)
         try container.encode(density, forKey: .density)
         try container.encode(itemLimit, forKey: .itemLimit)
         try container.encode(tinted, forKey: .tinted)

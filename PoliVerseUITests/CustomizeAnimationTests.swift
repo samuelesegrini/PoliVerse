@@ -197,16 +197,28 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         back(app)
         settle()
 
-        // A section's appearance, from the layout page.
+        // A section's card: swipe to another form, turn it over, change the
+        // surface and how much it shows.
         app.buttons["bento-layout"].tap()
         settle()
         reveal(app.buttons["layout-section-upcoming"].firstMatch, in: app).tap()
         settle()
-        app.buttons["section-material"].firstMatch.tap()
-        app.buttons["Vetro"].firstMatch.tap()
+        shot(app, "34-section-form")
+        app.descendants(matching: .any)["form-list"].firstMatch.swipeLeft()
+        settle()
+        shot(app, "34b-section-form-swiped")
+        app.buttons["form-use"].tap()
+        settle()
+        shot(app, "34c-section-back")
+        app.buttons["section-material-glass"].firstMatch.tap()
         app.steppers.firstMatch.buttons.element(boundBy: 1).tap()
         settle()
-        shot(app, "34-section")
+        shot(app, "34d-section-controls")
+        app.buttons["form-done"].tap()
+        settle()
+        // Out of the section's card, then out of Sezioni.
+        back(app)
+        settle()
         back(app)
         settle()
 

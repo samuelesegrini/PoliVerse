@@ -68,7 +68,10 @@ struct BentoPanel: View {
             .onGeometryChange(for: CGFloat.self) { $0.size.width - 24 } action: { width = $0 }
             .toolbarVisibility(.hidden, for: .navigationBar)
             .navigationDestination(for: CustomizePage.self) { page in
-                if page == .stickerPicker {
+                if case .section(let kind) = page {
+                    SectionFormPicker(kind: kind, style: $style,
+                                      close: { withAnimation(.snappy) { path.removeAll() } })
+                } else if page == .stickerPicker {
                     StickerPicker(remaining: TodayStyle.maxStickers - style.stickers.count) { content in
                         withAnimation(.snappy) { _ = style.addSticker(content) }
                     }
@@ -81,9 +84,15 @@ struct BentoPanel: View {
         }
         .tint(style.controlTint(scheme))
         // Back at the bento, the panel rests low again so the page and its
-        // Fine show.
+        // Fine show. A section's card needs the whole sheet instead.
         .onChange(of: path) { _, path in
-            if path.isEmpty { withAnimation(.snappy) { detent = BentoPanel.small } }
+            withAnimation(.snappy) {
+                if path.isEmpty {
+                    detent = BentoPanel.small
+                } else if case .section = path.last {
+                    detent = .large
+                }
+            }
         }
     }
 
