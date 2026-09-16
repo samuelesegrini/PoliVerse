@@ -27,6 +27,10 @@ struct CoursesPage: View {
     @State private var showingHidden = false
     /// The big title has scrolled under the bar, so the bar names the page.
     @State private var titleInBar = false
+    #if DEBUG
+    @State private var debugCourse: Course?
+    @State private var openedDebugCourse = false
+    #endif
 
     private var origins: CourseOrigins {
         CourseOrigins(student: session.student, career: career, programmes: programmes, otherPlans: otherPlans,
@@ -118,7 +122,19 @@ struct CoursesPage: View {
             }
             ToolbarItem(placement: .topBarTrailing) { menu }
         }
-        .navigationDestination(for: Course.self) { CourseMaterialsView(course: $0) }
+        // The course's own page, with its lessons, sittings, and every part
+        // of it — notices, materials, forum, programme — one tap away.
+        .navigationDestination(for: Course.self) { CourseDetailView(course: $0) }
+        #if DEBUG
+        // `-OpenCourse 2` opens the third course at launch, for trying it out.
+        .navigationDestination(item: $debugCourse) { CourseDetailView(course: $0) }
+        .onChange(of: courses.courses.isEmpty, initial: true) { _, empty in
+            guard !empty, let index = UserDefaults.standard.string(forKey: "OpenCourse").flatMap(Int.init),
+                  !openedDebugCourse, courses.visibleCourses.indices.contains(index) else { return }
+            openedDebugCourse = true
+            debugCourse = courses.visibleCourses[index]
+        }
+        #endif
         .task {
             await CourseOrigins.load(courses: courses, careers: careers, career: career, programmes: programmes,
                                      weBeep: weBeep, student: session.student) { otherPlans = $0 }
