@@ -2,15 +2,25 @@ import SwiftUI
 
 /// Equipment and software for one room, as list sections.
 ///
-/// Silent while nothing is known and silent when the answer is "nothing
-/// recorded", which is the case for most rooms — an empty "Dotazioni" header
-/// on every screen would be noise standing in for information.
+/// Silent once the answer is known to be "nothing recorded", which is the case
+/// for a good number of rooms — an empty "Dotazioni" header on every screen
+/// would be noise standing in for information. Until then it shows a
+/// placeholder, which is also what gives the fetch somewhere to live: a
+/// `Group` hands its modifiers to each child, so a `.task` on a Group with no
+/// children never runs. Attached to the conditional sections alone, the fetch
+/// only ever started for rooms whose equipment was already known — so a room
+/// that had not been warmed by the list's prefetch stayed empty for good, and
+/// "Dotazioni" never appeared.
 struct RoomFacilitiesSection: View {
     /// `idaula` — the same key the occupancy call takes. Passed rather than a
     /// whole `Classroom` so the free-rooms detail, which holds a schedule
     /// instead, can show the same sections.
     let roomID: String?
     @Environment(RoomFacilitiesService.self) private var facilities
+    /// Whether the fetch has been tried for ``roomID``. Both endpoints
+    /// failing leaves nothing loaded, and without this the placeholder would
+    /// spin for as long as the screen was open.
+    @State private var attempted = false
 
     private var equipment: [RoomFacility] {
         roomID.flatMap { facilities.equipment[$0] } ?? []
@@ -20,8 +30,32 @@ struct RoomFacilitiesSection: View {
         roomID.flatMap { facilities.software[$0] } ?? []
     }
 
+    /// Whether the answer has arrived. A room with no id has nothing to ask
+    /// about, so it counts as answered rather than perpetually loading.
+    private var isLoaded: Bool {
+        guard let roomID else { return true }
+        return facilities.isLoaded(roomID)
+    }
+
     var body: some View {
         Group {
+            if !isLoaded && !attempted {
+                Section("Dotazioni") {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text("Carico…").font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    // On the row rather than the section: this is the view that
+                    // is certain to be in the list, and it exists exactly while
+                    // the answer is still missing.
+                    .task(id: roomID) {
+                        attempted = false
+                        await facilities.load(id: roomID)
+                        attempted = true
+                    }
+                }
+            }
+
             if !equipment.isEmpty {
                 Section("Dotazioni") {
                     ForEach(equipment) { item in
@@ -44,7 +78,6 @@ struct RoomFacilitiesSection: View {
                 }
             }
         }
-        .task { await facilities.load(id: roomID) }
     }
 }
 

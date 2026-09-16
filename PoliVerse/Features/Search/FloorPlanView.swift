@@ -24,6 +24,12 @@ struct FloorPlanView: View {
                         .buttonStyle(.plain)
                         .accessibilityLabel("Pianta dell'aula \(room.id)")
                         .accessibilityHint("Apre la pianta a schermo intero")
+                        // Presented from the row, not from the `Section`: a
+                        // presentation on the section took the sheet holding
+                        // the aula down with it instead of covering it.
+                        .fullScreenCover(isPresented: $fullScreen) {
+                            FloorPlanFullScreen(image: image, title: room.id)
+                        }
                     } else {
                         ProgressView().frame(maxWidth: .infinity, minHeight: 120)
                     }
@@ -37,9 +43,6 @@ struct FloorPlanView: View {
                 Text(room.roomCode == nil
                      ? "Pianta del piano. Tocca per ingrandire."
                      : "L'aula è evidenziata sulla pianta. Tocca per ingrandire.")
-            }
-            .fullScreenCover(isPresented: $fullScreen) {
-                if let image { FloorPlanFullScreen(image: image, title: room.id) }
             }
         }
     }
