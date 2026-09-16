@@ -84,6 +84,8 @@ struct ExamUpdateRow: View {
     let item: FeedItem
     var showsClockTime = false
     var isUnread = false
+    /// On a card of its own; off where the rows share one card.
+    var card = true
     @Environment(\.locale) private var locale
     @Environment(NotificationService.self) private var notifications
 
@@ -128,7 +130,7 @@ struct ExamUpdateRow: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardBackground()
+        .background(card ? Color(.secondarySystemGroupedBackground) : .clear, in: .rect(cornerRadius: Theme.cardCorner))
         .opacity(item.isSuperseded ? 0.6 : 1)
         .accessibilityElement(children: .combine)
         .contextMenu { muteButton }
