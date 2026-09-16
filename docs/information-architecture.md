@@ -59,7 +59,7 @@ si elimina tenendo premuta la sua scheda (resta sempre almeno uno stile).
 | **Stile** | uno degli aspetti salvati di Oggi, nella galleria di Personalizza | — |
 | **Aspetto** | sistema, chiaro, scuro, contrasto, tinto | gli stili salvati, l'aspetto delle sezioni |
 | **Flavor** | i tre colori dello stile | — |
-| **Carta** | la carta della pagina (liscia, millimetrata, da disegno, puntinata) e la grana | la superficie delle sezioni |
+| **Carta** | su cosa è stampata la pagina — una carta (liscia, millimetrata, da disegno, puntinata) **oppure** una decorazione nel colore del Flavor — più la grana | la superficie delle sezioni |
 | **Superficie** | come è disegnata una sezione (vetro, pieno, bagliore…) | la carta |
 | **Data** | il blocco della data; la sua **Forma** è come è composta | «Widget», che nell'app sono i widget della Home |
 | **Sezioni** | la pagina che ordina, nasconde e aggiunge le sezioni | «Layout» |

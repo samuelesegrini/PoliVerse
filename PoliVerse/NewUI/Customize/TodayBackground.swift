@@ -58,6 +58,53 @@ nonisolated enum TodayBackground: String, Codable, CaseIterable, Identifiable, S
     }
 }
 
+/// What the page is printed on: either a paper texture or a decoration in the
+/// Flavor's colour, never both. Two separate settings only ever read as one
+/// question — what does the page look like — so the app asks it once.
+nonisolated enum TodaySheet: Hashable, Sendable, Identifiable {
+    case paper(TodayPaper)
+    case decoration(TodayBackground)
+
+    var id: String {
+        switch self {
+        case .paper(let paper): "paper-\(paper.rawValue)"
+        case .decoration(let background): "decoration-\(background.rawValue)"
+        }
+    }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .paper(let paper): paper.title
+        case .decoration(let background): background.title
+        }
+    }
+
+    /// Every sheet, papers first. Plain paper stands for "no decoration", so
+    /// the decoration's own plain is left out.
+    static var all: [TodaySheet] {
+        TodayPaper.allCases.map(TodaySheet.paper)
+            + TodayBackground.allCases.filter { $0 != .plain }.map(TodaySheet.decoration)
+    }
+}
+
+nonisolated extension TodayStyle {
+    /// The page's sheet. Setting one clears the other: a look saved with both
+    /// shows its decoration, which is the one drawn on top.
+    var sheet: TodaySheet {
+        get { background == .plain ? .paper(paper) : .decoration(background) }
+        set {
+            switch newValue {
+            case .paper(let paper):
+                self.paper = paper
+                background = .plain
+            case .decoration(let background):
+                self.background = background
+                paper = .plain
+            }
+        }
+    }
+}
+
 /// Draws a ``TodayBackground`` in a Flavor: its ground, with the pattern in
 /// its accent. Patterns are drawn with `Canvas`, so they stay sharp at any
 /// size and cost one layer. With no pattern the page keeps the system's

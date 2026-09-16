@@ -3,7 +3,7 @@ import SwiftUI
 
 /// A page of Personalizza's panel: one part of the look.
 enum CustomizePage: Hashable, Identifiable {
-    case flavor, paper, decoration, cards, appearance, widget, accessory, layout, greeting, bar
+    case flavor, paper, cards, appearance, widget, accessory, layout, greeting, bar
     case section(TodaySection.Kind)
     /// The emoji keyboard, pushed from the accessory page rather than
     /// presented over the panel.
@@ -32,7 +32,6 @@ enum CustomizePage: Hashable, Identifiable {
         switch self {
         case .flavor: "Flavor"
         case .paper: "Carta"
-        case .decoration: "Decorazione"
         case .cards: "Superficie"
         case .appearance: "Aspetto"
         case .widget: "Data"
@@ -63,7 +62,6 @@ struct CustomizeControls: View {
             switch page {
             case .flavor: flavorControls
             case .paper: paperControls
-            case .decoration: decorationControls
             case .cards: cardControls
             case .appearance: appearanceControls
             case .widget: dateControls
@@ -149,23 +147,33 @@ struct CustomizeControls: View {
 
     // MARK: Paper
 
+    /// One question, one answer: the page is on a paper or under a decoration,
+    /// never both, so they are offered in a single grid.
     @ViewBuilder
     private var paperControls: some View {
         Section {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2), spacing: 12) {
-                ForEach(TodayPaper.allCases) { paper in
-                    Button { style.paper = paper } label: {
-                        PaperTile(paper: paper, style: style, selected: style.paper == paper)
-                            .frame(height: 120)
+                ForEach(TodaySheet.all) { sheet in
+                    let chosen = style.sheet == sheet
+                    Button { withAnimation(.snappy) { style.sheet = sheet } } label: {
+                        VStack(spacing: 6) {
+                            sheetPreview(sheet, selected: chosen)
+                                .frame(height: 116)
+                            Text(sheet.title)
+                                .font(.caption)
+                                .foregroundStyle(chosen ? .primary : .secondary)
+                        }
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(Text(paper.title))
-                    .accessibilityIdentifier("paper-\(paper.rawValue)")
-                    .accessibilityAddTraits(style.paper == paper ? .isSelected : [])
+                    .accessibilityLabel(Text(sheet.title))
+                    .accessibilityIdentifier(sheet.id)
+                    .accessibilityAddTraits(chosen ? .isSelected : [])
                 }
             }
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets())
+        } footer: {
+            Text("Una carta su cui stampare la pagina, o un motivo nel colore del Flavor.")
         }
         Section {
             Slider(value: $style.grain, in: 0...1) {
@@ -183,35 +191,21 @@ struct CustomizeControls: View {
         }
     }
 
-    // MARK: Decoration
-
-    private var decorationControls: some View {
-        Section {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
-                ForEach(TodayBackground.allCases) { background in
-                    Button { style.background = background } label: {
-                        VStack(spacing: 6) {
-                            TodayBackgroundView(background: background, flavor: style.flavor, paper: style.paper,
-                                                mode: style.appearance.flavorMode)
-                                .frame(height: 96)
-                                .clipShape(.rect(cornerRadius: 16))
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .strokeBorder(style.background == background ? AnyShapeStyle(.tint) : AnyShapeStyle(.quaternary),
-                                                      lineWidth: style.background == background ? 2.5 : 1)
-                                }
-                            Text(background.title)
-                                .font(.caption)
-                                .foregroundStyle(style.background == background ? .primary : .secondary)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(style.background == background ? .isSelected : [])
+    /// A paper keeps its peeled corner; a decoration is drawn as the page.
+    @ViewBuilder
+    private func sheetPreview(_ sheet: TodaySheet, selected: Bool) -> some View {
+        switch sheet {
+        case .paper(let paper):
+            PaperTile(paper: paper, style: style, selected: selected, showsTitle: false)
+        case .decoration(let background):
+            TodayBackgroundView(background: background, flavor: style.flavor, paper: .plain,
+                                mode: style.appearance.flavorMode)
+                .clipShape(.rect(cornerRadius: 16))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(selected ? AnyShapeStyle(.tint) : AnyShapeStyle(.quaternary),
+                                      lineWidth: selected ? 3 : 1)
                 }
-            }
-            .listRowBackground(Color.clear)
-        } footer: {
-            Text("Il motivo prende il colore del Flavor.")
         }
     }
 

@@ -25,7 +25,7 @@ struct BentoPanel: View {
             ScrollView {
                 VStack(spacing: gap) {
                     HStack(spacing: gap) {
-                        tile(.paper) { PaperTile(paper: style.paper, style: style, showsTitle: false) }
+                        tile(.paper) { sheetPreview }
                         tile(.flavor, columns: 2) { flavorPreview }
                     }
                     HStack(spacing: gap) {
@@ -37,8 +37,7 @@ struct BentoPanel: View {
                         tile(.accessory) { accessoryPreview }
                     }
                     HStack(spacing: gap) {
-                        tile(.decoration) { TodayBackgroundView(background: style.background, flavor: style.flavor) }
-                        tile(.layout, columns: 2) { layoutPreview }
+                        tile(.layout, columns: 3) { layoutPreview }
                     }
                     HStack(spacing: gap) {
                         tile(.cards) { MaterialPreview(material: style.material, style: style).padding(10).padding(.bottom, 14) }
@@ -118,6 +117,17 @@ struct BentoPanel: View {
         .buttonStyle(BentoTileStyle())
         .accessibilityLabel(Text(page.title))
         .accessibilityIdentifier("bento-\(page.id)")
+    }
+
+    /// The page's sheet: its paper, or the decoration drawn instead of one.
+    @ViewBuilder
+    private var sheetPreview: some View {
+        if case .paper(let paper) = style.sheet {
+            PaperTile(paper: paper, style: style, showsTitle: false)
+        } else {
+            TodayBackgroundView(background: style.background, flavor: style.flavor,
+                                mode: style.appearance.flavorMode)
+        }
     }
 
     private var flavorPreview: some View {

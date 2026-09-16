@@ -73,9 +73,10 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         shot(app, "06-zone-closed")
         XCTAssertTrue(done.exists, "Closing a page closed the editor")
 
-        app.buttons["bento-decoration"].tap()
+        // Papers and decorations are one choice: a decoration from the same grid.
+        app.buttons["bento-paper"].tap()
         settle()
-        reveal(app.buttons["Righe"].firstMatch, in: app).tap()
+        reveal(app.buttons["decoration-stripes"].firstMatch, in: app).tap()
         settle()
         shot(app, "06b-background")
         back(app)
@@ -176,6 +177,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         app.buttons["bento-paper"].tap()
         settle()
         app.buttons["paper-plot"].firstMatch.tap()
+        XCTAssertFalse(app.buttons["bento-decoration"].exists, "Decorations still have a page of their own")
         reveal(app.sliders["paper-grain"].firstMatch, in: app).adjust(toNormalizedSliderPosition: 0.5)
         settle()
         shot(app, "32-paper")
