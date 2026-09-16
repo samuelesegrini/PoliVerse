@@ -77,6 +77,11 @@ extension LookHeading {
         self.title = Text(title)
         self.trailing = trailing()
     }
+
+    init(verbatim title: String, @ViewBuilder trailing: () -> Trailing) {
+        self.title = Text(verbatim: title)
+        self.trailing = trailing()
+    }
 }
 
 /// A page title in the typeface the look gives Oggi's date, so the pages past

@@ -304,7 +304,7 @@ struct CourseSyllabusView: View {
                 }
                 programmeSection
             }
-            .padding()
+            .padding(.horizontal, 20).padding(.vertical)
             .padding(.bottom, 20)
         }
         .courseScreen()
@@ -358,7 +358,7 @@ struct CourseSyllabusView: View {
                     .padding(12)
                 }
             }
-            .cardBackground()
+            .lookCard()
 
             // Which row was chosen: from the plan when there is one, a guess
             // otherwise — say which.

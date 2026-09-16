@@ -103,7 +103,7 @@ struct CourseInfoView: View {
 
                 partialExamsSection
             }
-            .padding()
+            .padding(.horizontal, 20).padding(.vertical)
             .padding(.bottom, 20)
         }
         .courseScreen()

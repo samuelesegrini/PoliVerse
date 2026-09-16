@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// WeBeep materials for one course, grouped by Moodle section.
+/// WeBeep materials for one course, grouped by Moodle section: one card of
+/// files per section, on the look in use, as Oggi draws its lists.
 struct CourseMaterialsView: View {
     let course: Course
 
@@ -26,74 +27,50 @@ struct CourseMaterialsView: View {
         !session.useMockData && !weBeep.isAuthenticated
     }
 
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+
     var body: some View {
-        List {
-            if needsLogin {
-                Section {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 24) {
+                if needsLogin {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Collega WeBeep")
-                            .font(.subheadline.weight(.semibold))
+                        Label("Collega WeBeep", systemImage: "books.vertical")
+                            .font(.headline)
                         Text("WeBeep usa un accesso separato da quello dei servizi d'ateneo. Serve una sola volta.")
-                            .font(.caption)
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
                         Button("Accedi a WeBeep") { showingLogin = true }
-                            .buttonStyle(.borderedProminent)
+                            .buttonStyle(.glassProminent)
                             .tint(tint)
                     }
-                    .padding(.vertical, 4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(18)
+                    .lookCard()
+                } else if session.useMockData {
+                    Label("Dati di esempio: disattivali per usare WeBeep reale.", systemImage: "info.circle")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 4)
                 }
-            } else if session.useMockData {
-                Section {
-                    Label {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Dati di esempio").font(.subheadline.weight(.semibold))
-                            Text("Disattiva i dati di esempio per usare WeBeep reale.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    } icon: {
-                        Image(systemName: "info.circle.fill").foregroundStyle(.blue)
-                    }
-                }
-            }
 
-            if case .failed(let message) = weBeep.state {
-                Section {
+                if case .failed(let message) = weBeep.state {
                     Label(message, systemImage: "exclamationmark.triangle.fill")
                         .font(.footnote)
                         .foregroundStyle(.orange)
+                        .padding(.horizontal, 4)
                 }
-            }
 
-            ForEach(sections) { section in
-                Section {
-                    ForEach(section.files) { file in
-                        FileRow(
-                            tint: tint,
-                            file: file,
-                            status: downloads.status(for: file),
-                            onTap: { Task { await open(file) } }
-                        )
-                        .swipeActions(edge: .trailing) {
-                            if case .downloaded = downloads.status(for: file) {
-                                Button("Rimuovi", systemImage: "trash", role: .destructive) {
-                                    downloads.delete(file)
-                                }
-                            }
-                        }
-                    }
-                } header: {
-                    HStack {
-                        Text(section.name)
-                        Spacer()
-                        Text("\(section.files.count)").monospacedDigit()
-                    }
-                    .font(.subheadline.weight(.semibold))
-                    .textCase(nil)
+                ForEach(sections) { section in
+                    sectionCard(section)
                 }
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            .padding(.bottom, 40)
+            .frame(maxWidth: 700)
+            .frame(maxWidth: .infinity)
         }
-        .listSectionSpacing(16)
+        .lookPage()
         .searchable(text: $query, prompt: "Cerca nei materiali")
         .navigationTitle(course.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -131,6 +108,37 @@ struct CourseMaterialsView: View {
         .refreshable { await weBeep.loadMaterials(for: course) }
     }
 
+    /// One Moodle section: its name and count, and its files on one card.
+    private func sectionCard(_ section: WeBeepSection) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            LookHeading(verbatim: section.name) {
+                Text("\(section.files.count)")
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+            }
+            VStack(spacing: 0) {
+                ForEach(section.files) { file in
+                    fileRow(file, last: file.id == section.files.last?.id)
+                }
+            }
+            .padding(.horizontal, style.material.hasCard ? 14 : 0)
+            .padding(.vertical, style.material.hasCard ? 4 : 0)
+            .lookCard()
+        }
+    }
+
+    private func fileRow(_ file: WeBeepFile, last: Bool) -> some View {
+        let status = downloads.status(for: file)
+        return FileRow(tint: tint, file: file, status: status, last: last, onTap: { Task { await open(file) } })
+            .contextMenu {
+                if case .downloaded = status {
+                    Button("Rimuovi il download", systemImage: "trash", role: .destructive) {
+                        downloads.delete(file)
+                    }
+                }
+            }
+    }
+
     /// Downloads on first tap, previews thereafter.
     private func open(_ file: WeBeepFile) async {
         if case .downloaded(let url) = downloads.status(for: file) {
@@ -153,6 +161,8 @@ private struct FileRow: View {
     let tint: Color
     let file: WeBeepFile
     let status: FileDownloadService.Status
+    /// The last row of its card draws no hairline under it.
+    var last = false
     let onTap: () -> Void
 
     // `Date.formatted` reads `Locale.current`, not the SwiftUI environment, so
@@ -161,51 +171,57 @@ private struct FileRow: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 12) {
-                Image(systemName: file.icon)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(tint)
-                    .frame(width: 40, height: 40)
-                    .background(tint.opacity(0.13), in: .rect(cornerRadius: 11))
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    Image(systemName: file.icon)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(tint)
+                        .frame(width: 40, height: 40)
+                        .background(tint.opacity(0.13), in: .rect(cornerRadius: 11, style: .continuous))
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(file.name)
-                        .font(.subheadline.weight(.medium))
-                        .lineLimit(2)
-                        .foregroundStyle(.primary)
-                    if case .failed(let message) = status {
-                        Text(message)
-                            .font(.caption)
-                            .foregroundStyle(.orange)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(file.name)
+                            .font(.subheadline.weight(.medium))
                             .lineLimit(2)
-                    } else {
-                        Text("\(file.formattedSize) · \(file.modifiedAt.formatted(.relative(presentation: .named).locale(locale)))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.leading)
+                            .foregroundStyle(.primary)
+                        if case .failed(let message) = status {
+                            Text(message)
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                                .lineLimit(2)
+                        } else {
+                            Text("\(file.formattedSize) · \(file.modifiedAt.formatted(.relative(presentation: .named).locale(locale)))")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Spacer(minLength: 4)
+
+                    switch status {
+                    case .idle:
+                        if file.downloadURL != nil {
+                            Image(systemName: "arrow.down.circle")
+                                .foregroundStyle(.secondary)
+                        }
+                    case .downloading(let progress):
+                        ProgressView(value: progress > 0 ? progress : nil)
+                            .progressViewStyle(.circular)
+                            .controlSize(.small)
+                    case .downloaded:
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                    case .failed:
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .foregroundStyle(.orange)
                     }
                 }
-
-                Spacer(minLength: 4)
-
-                switch status {
-                case .idle:
-                    if file.downloadURL != nil {
-                        Image(systemName: "arrow.down.circle")
-                            .foregroundStyle(.secondary)
-                    }
-                case .downloading(let progress):
-                    ProgressView(value: progress > 0 ? progress : nil)
-                        .progressViewStyle(.circular)
-                        .controlSize(.small)
-                case .downloaded:
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                case .failed:
-                    Image(systemName: "exclamationmark.circle.fill")
-                        .foregroundStyle(.orange)
+                .padding(.vertical, 10)
+                if !last {
+                    Divider().padding(.leading, 52)
                 }
             }
-            .padding(.vertical, 4)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)

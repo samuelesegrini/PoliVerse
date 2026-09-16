@@ -69,8 +69,8 @@ struct CourseForumsView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .cardBackground()
-                    .padding()
+                    .lookCard()
+                    .padding(.horizontal, 20).padding(.vertical)
                 }
             }
         }
@@ -124,7 +124,7 @@ private struct DiscussionsList: View {
                     ProgressView().frame(maxWidth: .infinity).padding(.top, 40)
                 }
             }
-            .padding()
+            .padding(.horizontal, 20).padding(.vertical)
         }
         .courseScreen()
         .refreshable { await load() }
@@ -168,7 +168,7 @@ private struct DiscussionsList: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardBackground()
+        .lookCard()
         .overlay(alignment: .leading) {
             if discussion.pinned == true {
                 RoundedRectangle(cornerRadius: 2).fill(.orange).frame(width: 3).padding(.vertical, 16)
@@ -223,7 +223,7 @@ private struct DiscussionView: View {
                     }
                     .padding(14)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .cardBackground()
+                    .lookCard()
                     .padding(.leading, post.isReply ? 20 : 0)
                     .overlay(alignment: .leading) {
                         if post.isReply {
@@ -235,7 +235,7 @@ private struct DiscussionView: View {
                     ProgressView().frame(maxWidth: .infinity)
                 }
             }
-            .padding()
+            .padding(.horizontal, 20).padding(.vertical)
         }
         .courseScreen()
         .navigationTitle(discussion.subject ?? discussion.name ?? "")
