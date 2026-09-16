@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: -apple-system, "SF Pro Text", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #0F3D6E; } a:hover { color: #0A2B4E; }
+    .row-title { font-size: 15px; font-weight: 500; color: #000000; letter-spacing: -0.2px; }
+    .row-detail { font-size: 12px; color: #8A8A8E; letter-spacing: -0.05px; }
+    .row-when { font-size: 12px; font-weight: 500; color: #8A8A8E; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .sec-title { font-size: 15px; font-weight: 600; color: #000000; letter-spacing: -0.2px; }
+  </style>
+</helmet>
+<div style="background: {{ground}}; background-image: {{paperImage}}; background-size: {{paperSize}}; min-height: 100%; box-sizing: border-box; padding: 24px 20px 24px 20px; display: flex; flex-direction: column; gap: 10px">
+  <div class="sec-title">In arrivo</div>
+  <div style="background: {{card}}; border-radius: 26px; padding: 7px 14px; display: flex; flex-direction: column">
+
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 24px">
+        <rect x="5" y="4" width="14" height="17" rx="2.5"></rect>
+        <path d="M9 4.5h6v-1a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"></path>
+        <path d="M8.5 11.5l1.6 1.6 3-3.2"></path><path d="M14.5 16.5h2.5"></path><path d="M8.5 16.5h3"></path>
+      </svg>
+      <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto">
+        <div class="row-title">Consegna progetto IS</div>
+        <div class="row-detail">Ingegneria del Software</div>
+      </div>
+      <div class="row-when">domani</div>
+    </div>
+    <div style="height: 1px; background: {{line}}; margin-left: 32px"></div>
+
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 24px">
+        <path d="M2.5 8.5 12 4l9.5 4.5L12 13z"></path><path d="M6.5 10.5v5c0 1.4 2.5 2.6 5.5 2.6s5.5-1.2 5.5-2.6v-5"></path><path d="M20.5 9v5"></path>
+      </svg>
+      <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto">
+        <div class="row-title">Prova in itinere — Analisi 2</div>
+        <div class="row-detail">Aula Magna</div>
+      </div>
+      <div class="row-when">tra 3 giorni</div>
+    </div>
+    <div style="height: 1px; background: {{line}}; margin-left: 32px"></div>
+
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 24px">
+        <path d="M2.5 8.5 12 4l9.5 4.5L12 13z"></path><path d="M6.5 10.5v5c0 1.4 2.5 2.6 5.5 2.6s5.5-1.2 5.5-2.6v-5"></path><path d="M20.5 9v5"></path>
+      </svg>
+      <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto">
+        <div class="row-title">Ingegneria del Software</div>
+        <div class="row-detail">Aula Magna</div>
+      </div>
+      <div class="row-when">settimana prossima</div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"flavor":{"editor":"color","default":"#0F3D6E","options":["#0F3D6E","#C2386F","#E8751A","#2FA88A"],"section":"Pagina"},"paper":{"editor":"enum","options":["Liscia","Puntinata","Millimetrata"],"default":"Puntinata","section":"Pagina"},"$preview":{"width":402,"height":330}}'>
+class Component extends DCLogic {
+  // The page's colours the way Flavor derives them: a faint tint of Main for
+  // the ground, a deeper one for cards. Same formulas as Flavor.ground /
+  // Flavor.surface, so a Flavor tweak restains the whole preview.
+  hsb(hex) {
+    const n = parseInt(String(hex).replace('#', ''), 16);
+    const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+    let h = 0;
+    if (d) {
+      if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+      else if (max === g) h = ((b - r) / d + 2) / 6;
+      else h = ((r - g) / d + 4) / 6;
+    }
+    return [h, max ? d / max : 0, max];
+  }
+  hex(h, s, v) {
+    const f = (n) => {
+      const k = (n + h * 6) % 6;
+      return Math.round(255 * (v - v * s * Math.max(0, Math.min(k, 4 - k, 1))));
+    };
+    return '#' + [f(5), f(3), f(1)].map((c) => c.toString(16).padStart(2, '0')).join('').toUpperCase();
+  }
+  page() {
+    const main = this.props.flavor ?? '#0F3D6E';
+    const [h, s] = this.hsb(main);
+    const ground = this.hex(h, Math.min(s * 0.06, 0.06), 0.98);
+    const card = this.hex(h, Math.min(s * 0.11, 0.1), 0.945);
+    const surface = this.hex(h, Math.min(s * 0.16, 0.14), 0.9);
+    const line = this.hex(h, Math.min(s * 0.2, 0.18), 0.82);
+    const paper = this.props.paper ?? 'Puntinata';
+    const dot = this.hex(h, Math.min(s * 0.3, 0.3), 0.78);
+    const papers = {
+      Liscia: { image: 'none', size: 'auto' },
+      Puntinata: { image: 'radial-gradient(' + dot + ' 1.1px, transparent 1.2px)', size: '12px 12px' },
+      Millimetrata: {
+        image: 'linear-gradient(' + dot + ' 0.6px, transparent 0.6px), linear-gradient(90deg, ' + dot + ' 0.6px, transparent 0.6px)',
+        size: '9px 9px',
+      },
+    };
+    const chosen = papers[paper] ?? papers.Puntinata;
+    return { accent: main, ground, card, surface, line, paperImage: chosen.image, paperSize: chosen.size };
+  }
+  renderVals() {
+    return this.page();
+  }
+}
+</script>
+</body>
+</html>

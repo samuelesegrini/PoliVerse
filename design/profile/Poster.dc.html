@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,800;125,900&amp;display=swap">
+  <style>
+    body { margin: 0; font-family: -apple-system, "SF Pro Text", system-ui, "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; color: #1A1715; }
+    a { color: #003352; } a:hover { color: #00233A; }
+    .wide { font-family: Archivo, "Helvetica Neue", Arial, sans-serif; font-stretch: 125%; font-weight: 900; }
+    .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
+    .glass { background: rgba(255,255,255,0.62); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), 0 0 0 0.5px rgba(0,0,0,0.05), 0 6px 18px rgba(0,0,0,0.06); }
+  </style>
+</helmet>
+<div style="width: 402px; min-height: 1180px; position: relative; overflow: hidden; background: {{c.sheet}}; display: flex; flex-direction: column; padding-bottom: 44px; box-sizing: border-box;">
+  <div style="position: absolute; left: 0; right: 0; top: 0; height: 470px; background-color: {{c.soft}}; background-image: radial-gradient({{c.dot}} 1.4px, transparent 1.5px); background-size: 14px 14px;"></div>
+  <div style="position: absolute; left: 0; right: 0; top: 330px; height: 140px; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, {{c.sheet}} 100%);"></div>
+
+  <div style="position: relative; display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 0 16px;">
+    <span class="glass" style="width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center; color: #1C1C1E;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12 M18 6L6 18"></path></svg></span>
+    <span class="glass" style="height: 44px; border-radius: 22px; padding: 0 16px; display: flex; align-items: center; gap: 7px; font-size: 15px; font-weight: 600; color: #1C1C1E;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z M14 14h2 M19 14h1v2 M14 18h2v2 M19 19v1"></path></svg>Condividi</span>
+  </div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 16px; padding: 34px 26px 0 26px;">
+    <div style="width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(180deg, {{c.hi}} 0%, {{c.accent}} 100%); box-shadow: 0 0 0 4px rgba(255,255,255,0.85), 0 12px 28px {{c.shadow}}; color: #fff; display: flex; align-items: center; justify-content: center; font-family: ui-rounded, 'SF Pro Rounded', system-ui; font-size: 38px; font-weight: 600;">SS</div>
+    <div class="wide" style="display: flex; flex-direction: column; font-size: 46px; line-height: 0.98; letter-spacing: -0.8px; color: {{c.ink}};"><span>SAMUELE</span><span>SEGRINI</span></div>
+    <span style="font-size: 17px; font-weight: 600; color: #3A3632;">Laurea Magistrale<br><span style="font-weight: 400; color: #6E6862;">Ingegneria Informatica</span></span>
+  </div>
+
+  <div style="position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 28px 14px 0 14px;">
+    <div class="glass" style="border-radius: 26px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px;">
+      <span style="font-size: 13px; color: #8A847E;">Matricola</span>
+      <span class="mono" style="font-size: 24px; font-weight: 600;">332218</span>
+    </div>
+    <div class="glass" style="border-radius: 26px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px;">
+      <span style="font-size: 13px; color: #8A847E;">Codice persona</span>
+      <span class="mono" style="font-size: 24px; font-weight: 600;">10659812</span>
+    </div>
+  </div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 10px; padding: 24px 0 0 0;">
+    <span style="font-size: 16px; font-weight: 500; padding: 0 26px;">Contatti</span>
+    <div style="margin: 0 14px; border-radius: 30px; background: rgba(255,255,255,0.72); display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; gap: 14px; padding: 0 20px; min-height: 58px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="{{c.accent}}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6h17v12h-17z M3.5 7l8.5 6 8.5-6"></path></svg>
+        <div style="display: flex; flex-direction: column; flex-grow: 1; min-width: 0;"><span style="font-size: 13px; color: #8A847E;">Email</span><span style="font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">samuele.segrini@mail.polimi.it</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 10px; padding: 24px 0 0 0;">
+    <span style="font-size: 16px; font-weight: 500; padding: 0 26px;">Carriere</span>
+    <div style="margin: 0 14px; padding: 10px; border-radius: 36px; background: rgba(255,255,255,0.58); box-shadow: inset 0 1px 0 rgba(255,255,255,0.9); display: flex; flex-direction: column; gap: 8px;">
+      <div style="border-radius: 26px; background: {{c.accent}}; color: #fff; padding: 16px 18px; display: flex; align-items: center; gap: 14px;">
+        <div style="display: flex; flex-direction: column; gap: 1px; flex-grow: 1;"><span style="font-size: 13px; opacity: 0.8;">In uso</span><span style="font-size: 19px; font-weight: 700;">Laurea Magistrale</span><span class="mono" style="font-size: 14px; opacity: 0.85;">332218 · Attiva</span></div>
+        <span style="width: 34px; height: 34px; border-radius: 17px; background: rgba(255,255,255,0.95); color: {{c.accent}}; display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+      </div>
+      <div style="border-radius: 26px; background: #E7E6EC; padding: 14px 18px; display: flex; flex-direction: column; gap: 1px;">
+        <span style="font-size: 17px; font-weight: 700; color: #6F6C76;">Laurea Triennale</span><span class="mono" style="font-size: 14px; color: #8C8993;">986617 · Chiusa</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 10px; padding: 24px 0 0 0;">
+    <span style="font-size: 16px; font-weight: 500; padding: 0 26px;">Accesso</span>
+    <div style="margin: 0 14px; border-radius: 30px; background: rgba(255,255,255,0.72); padding: 4px 20px; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; min-height: 52px; font-size: 16px;"><span style="flex-grow: 1;">Politecnico</span><span style="color: #8A847E;">con SPID</span></div>
+      <span style="height: 1px; background: rgba(0,0,0,0.07);"></span>
+      <div style="display: flex; align-items: center; min-height: 52px; font-size: 16px; gap: 6px;"><span style="flex-grow: 1;">WeBeep</span><span style="width: 8px; height: 8px; border-radius: 4px; background: #34C759;"></span><span style="color: #8A847E;">Collegato</span></div>
+    </div>
+  </div>
+
+  <div style="position: relative; padding: 26px 14px 0 14px;">
+    <div style="border-radius: 30px; background: rgba(255,255,255,0.72); min-height: 54px; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 600; color: #D93B30;">Esci</div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"accent":{"editor":"enum","options":["Politecnico","Arancio","Viola","Rosa","Verde"],"default":"Arancio"},"$preview":{"width":402,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const all = {
+      Politecnico: { accent: '#003352', hi: '#1D5E86', ink: '#003352', soft: '#E1EAF0', sheet: '#EEF2F5', dot: 'rgba(0,51,82,0.28)', shadow: 'rgba(0,51,82,0.3)' },
+      Arancio: { accent: '#E8751A', hi: '#F6B27A', ink: '#B35A10', soft: '#F7E9DC', sheet: '#F6F0EA', dot: 'rgba(232,117,26,0.35)', shadow: 'rgba(232,117,26,0.3)' },
+      Viola: { accent: '#7063D9', hi: '#AFA6EE', ink: '#4B41A8', soft: '#E6E3F3', sheet: '#EFEDF6', dot: 'rgba(112,99,217,0.35)', shadow: 'rgba(112,99,217,0.3)' },
+      Rosa: { accent: '#D9547A', hi: '#F0A0B6', ink: '#A83858', soft: '#F6E6EA', sheet: '#F5EDEF', dot: 'rgba(217,84,122,0.35)', shadow: 'rgba(217,84,122,0.3)' },
+      Verde: { accent: '#408F66', hi: '#8CC4A5', ink: '#2C6A4A', soft: '#E2EFE7', sheet: '#EEF4F0', dot: 'rgba(64,143,102,0.35)', shadow: 'rgba(64,143,102,0.3)' }
+    };
+    return { c: all[this.props.accent ?? 'Arancio'] ?? all.Arancio };
+  }
+}
+</script>
+</body>
+</html>

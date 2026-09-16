@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: #2B2B2E; font-family: -apple-system, "SF Pro Text", system-ui, "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; color: #000; }
+    a { color: #003352; } a:hover { color: #00233A; }
+    .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
+    .glass { background: rgba(120,120,128,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 0 0 0.5px rgba(0,0,0,0.04); }
+  </style>
+</helmet>
+<div style="width: 402px; height: 874px; position: relative; overflow: hidden; background: #F2F2F7;">
+  <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding-top: 82px; gap: 10px;">
+    <div style="width: 112px; height: 112px; border-radius: 50%; background: #003352;"></div>
+    <div style="width: 210px; height: 22px; border-radius: 11px; background: #D1D1D6;"></div>
+    <div style="width: 260px; height: 14px; border-radius: 7px; background: #E5E5EA;"></div>
+    <div style="align-self: stretch; margin: 26px 16px 0 16px; height: 150px; border-radius: 26px; background: #fff;"></div>
+  </div>
+  <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.26);"></div>
+  <div style="position: absolute; left: 0; right: 0; top: 330px; bottom: 0; background: #fff; border-radius: 38px 38px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,0.12);">
+    <div style="position: absolute; top: 6px; left: 50%; margin-left: -18px; width: 36px; height: 5px; border-radius: 3px; background: rgba(60,60,67,0.3);"></div>
+    <div style="position: absolute; top: 18px; right: 18px; width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center; color: #3A3A3C;" class="glass"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12 M18 6L6 18"></path></svg></div>
+    <div style="display: flex; flex-direction: column; align-items: center; padding: 34px 28px 0 28px; gap: 6px;">
+      <span style="width: 56px; height: 56px; border-radius: 18px; background: rgba(0,51,82,0.1); color: #003352; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.5L12 5l9.5 4.5L12 14z M6.5 11.5v4.5c0 1.4 2.5 2.8 5.5 2.8s5.5-1.4 5.5-2.8v-4.5"></path></svg></span>
+      <span style="font-size: 22px; font-weight: 700;">Carriera</span>
+      <span style="font-size: 15px; color: rgba(60,60,67,0.6); text-align: center; text-wrap: pretty;">Hai due matricole. L’app legge i dati di quella che scegli.</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px; padding: 22px 20px 0 20px;">
+      <div style="border-radius: 24px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; background: rgba(0,51,82,0.06); box-shadow: inset 0 0 0 2px #003352;">
+        <div style="display: flex; flex-direction: column; gap: 1px; flex-grow: 1;"><span style="font-size: 17px; font-weight: 600;">Laurea Magistrale</span><span class="mono" style="font-size: 14px; color: rgba(60,60,67,0.6);">332218</span></div>
+        <span style="font-size: 12px; font-weight: 600; color: #248A3D; background: rgba(52,199,89,0.14); padding: 4px 9px; border-radius: 10px;">Attiva</span>
+        <span style="width: 24px; height: 24px; border-radius: 12px; background: #003352; color: #fff; display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+      </div>
+      <div style="border-radius: 24px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; background: #F2F2F7;">
+        <div style="display: flex; flex-direction: column; gap: 1px; flex-grow: 1;"><span style="font-size: 17px; font-weight: 600;">Laurea Triennale</span><span class="mono" style="font-size: 14px; color: rgba(60,60,67,0.6);">986617</span></div>
+        <span style="font-size: 12px; font-weight: 600; color: #6C6C70; background: rgba(120,120,128,0.14); padding: 4px 9px; border-radius: 10px;">Chiusa</span>
+        <span style="width: 24px; height: 24px; border-radius: 12px; box-shadow: inset 0 0 0 1.5px rgba(60,60,67,0.3);"></span>
+      </div>
+    </div>
+    <div style="position: absolute; left: 20px; right: 20px; bottom: 40px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 13px; color: rgba(60,60,67,0.6); text-align: center; line-height: 1.35; padding: 0 12px; text-wrap: pretty;">Su una carriera chiusa appelli e iscrizioni di solito non rispondono.</span>
+      <div style="height: 52px; border-radius: 26px; background: #003352; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 600;">Fine</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

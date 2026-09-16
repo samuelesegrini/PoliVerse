@@ -1,0 +1,181 @@
+{
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Scelta e controlli"
+    },
+    {
+      "id": "page-2",
+      "name": "Forme"
+    }
+  ],
+  "artboards": [
+    {
+      "file": "Scelta.dc.html",
+      "title": "1 · Scegli la forma",
+      "page": "page-1",
+      "x": 0,
+      "y": 0,
+      "w": 402,
+      "h": 874
+    },
+    {
+      "file": "Retro.dc.html",
+      "title": "2a · Il retro della scheda",
+      "page": "page-1",
+      "x": 502,
+      "y": 0,
+      "w": 402,
+      "h": 874
+    },
+    {
+      "file": "Sotto.dc.html",
+      "title": "2b · Controlli sotto la scheda",
+      "page": "page-1",
+      "x": 1004,
+      "y": 0,
+      "w": 402,
+      "h": 874
+    },
+    {
+      "file": "Flip.dc.html",
+      "title": "Il giro della scheda",
+      "page": "page-1",
+      "x": 1506,
+      "y": 0,
+      "w": 860,
+      "h": 300
+    },
+    {
+      "file": "Main.dc.html",
+      "title": "In evidenza",
+      "page": "page-2",
+      "x": 0,
+      "y": 0,
+      "w": 402,
+      "h": 330
+    },
+    {
+      "file": "Elenco.dc.html",
+      "title": "Elenco (oggi)",
+      "page": "page-2",
+      "x": 502,
+      "y": 0,
+      "w": 402,
+      "h": 330
+    },
+    {
+      "file": "Riquadri.dc.html",
+      "title": "Riquadri",
+      "page": "page-2",
+      "x": 1004,
+      "y": 0,
+      "w": 402,
+      "h": 330
+    },
+    {
+      "file": "Binario.dc.html",
+      "title": "Binario",
+      "page": "page-2",
+      "x": 1506,
+      "y": 0,
+      "w": 402,
+      "h": 330
+    },
+    {
+      "file": "Picker.dc.html",
+      "title": "Elenco di Personalizza (prima versione)",
+      "page": "page-2",
+      "x": 502,
+      "y": 620,
+      "w": 402,
+      "h": 560
+    }
+  ],
+  "annotations": [
+    {
+      "id": "brief-2",
+      "page": "page-1",
+      "x": 0,
+      "y": -170,
+      "w": 402,
+      "text": "Come l'aggiunta di un widget: una scheda grande al centro, le vicine che sbirciano, i puntini, un solo pulsante.\nScorri per cambiare forma, tocchi «Usa questa forma» e si passa alla superficie."
+    },
+    {
+      "id": "note-retro",
+      "page": "page-1",
+      "x": 502,
+      "y": 894,
+      "w": 402,
+      "text": "2a — la scheda gira e i controlli stanno sul retro.\nPerché: un oggetto solo, la superficie è «dentro» la scheda.\nCosto: mentre scegli il materiale non vedi più l'anteprima; il retro deve stare in un'altezza sola."
+    },
+    {
+      "id": "note-sotto",
+      "page": "page-1",
+      "x": 1004,
+      "y": 894,
+      "w": 402,
+      "text": "2b — la scheda resta, i controlli scorrono sotto.\nPerché: cambi materiale e lo vedi subito sull'anteprima; le frecce sotto la scheda cambiano ancora forma.\nCosto: due blocchi invece di uno, e la scheda si rimpicciolisce."
+    },
+    {
+      "id": "note-flip",
+      "page": "page-1",
+      "x": 1506,
+      "y": 260,
+      "w": 402,
+      "text": "Il giro è la stessa scheda, non un'altra schermata: asse Y, 0,35 s, angoli e ombra che seguono. Il chip in alto a destra la rigira."
+    },
+    {
+      "id": "brief",
+      "page": "page-2",
+      "x": 0,
+      "y": -150,
+      "w": 402,
+      "text": "Le quattro forme, disegnate con i valori dell'app (Flavor Blu Politecnico, schede #EEEEEE, r26)."
+    },
+    {
+      "id": "note-evidenza",
+      "page": "page-2",
+      "x": 0,
+      "y": 350,
+      "w": 402,
+      "text": "In evidenza — la prossima cosa in grande, il resto in due righe.\nPerché: la domanda vera è \"cosa ho adesso\".\nCosto: occupa più spazio e mostra meno elementi."
+    },
+    {
+      "id": "note-elenco",
+      "page": "page-2",
+      "x": 502,
+      "y": 350,
+      "w": 402,
+      "text": "Elenco — quello di oggi, invariato.\nPerché: denso, prevedibile, regge 6 elementi.\nCosto: tutto ha lo stesso peso, la scadenza di domani non salta all'occhio."
+    },
+    {
+      "id": "note-riquadri",
+      "page": "page-2",
+      "x": 1004,
+      "y": 350,
+      "w": 402,
+      "text": "Riquadri — due colonne, come i widget piccoli.\nPerché: scansione rapida, bello con pochi elementi.\nCosto: titoli lunghi vanno a capo o si tagliano; numero pari o resta un buco."
+    },
+    {
+      "id": "note-binario",
+      "page": "page-2",
+      "x": 1506,
+      "y": 350,
+      "w": 402,
+      "text": "Binario — rail con data a sinistra.\nPerché: dice \"quando\" senza leggere le righe, raggruppa per giorno.\nCosto: 38px di colonna in meno per i titoli."
+    },
+    {
+      "id": "note-picker",
+      "page": "page-2",
+      "x": 1004,
+      "y": 620,
+      "w": 402,
+      "text": "La prima versione: la stessa scelta come riga di anteprime dentro la pagina della sezione. Tenuta come alternativa più sobria."
+    }
+  ],
+  "launch": {
+    "view": "canvas",
+    "page": "page-1"
+  }
+}

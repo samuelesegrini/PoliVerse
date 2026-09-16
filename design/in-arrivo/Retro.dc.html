@@ -1,0 +1,186 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: #20272E; font-family: -apple-system, "SF Pro Text", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #0F3D6E; } a:hover { color: #0A2B4E; }
+    .sheet-title { font-size: 34px; font-weight: 700; color: #000000; letter-spacing: -1px; }
+    .sheet-sub { font-size: 17px; color: #8A8A8E; letter-spacing: -0.4px; line-height: 1.32; text-wrap: pretty; }
+    .sheet-app { font-size: 17px; font-weight: 600; color: #000000; letter-spacing: -0.4px; }
+    .ctl-label { font-size: 13px; font-weight: 600; color: #6D6D72; letter-spacing: 0.3px; }
+    .swatch-name { font-size: 11px; color: #3C3C43; letter-spacing: -0.05px; }
+    .row-label { font-size: 16px; color: #000000; letter-spacing: -0.2px; }
+    .cta { font-size: 17px; font-weight: 600; color: #FFFFFF; letter-spacing: -0.4px; }
+  </style>
+</helmet>
+<div style="height: 100%; display: flex; flex-direction: column; background: #20272E">
+
+  <div style="height: 104px; position: relative; overflow: hidden; background: #FFFFFF">
+    <div style="padding: 52px 20px 0 20px; display: flex; align-items: center; gap: 12px">
+      <span style="width: 30px; height: 30px; border-radius: 15px; background: #0F3D6E"></span>
+      <span style="width: 30px; height: 30px; border-radius: 15px; background: rgba(60,60,67,0.12)"></span>
+      <span style="flex: 1 1 auto"></span>
+      <span style="width: 30px; height: 30px; border-radius: 15px; background: rgba(60,60,67,0.12)"></span>
+    </div>
+    <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.45)"></div>
+  </div>
+
+  <div style="flex: 1 1 auto; background: #F2F2F7; border-radius: 38px 38px 0 0; display: flex; flex-direction: column; padding: 0 0 22px 0; min-height: 0">
+
+    <div style="display: flex; justify-content: center; padding: 7px 0 0 0">
+      <span style="width: 36px; height: 5px; border-radius: 3px; background: rgba(60,60,67,0.3)"></span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; padding: 12px 20px 0 20px">
+      <span style="width: 30px; height: 30px; border-radius: 8px; background: {{accent}}; display: flex; align-items: center; justify-content: center; flex: 0 0 auto">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 7.5l2 2 3.5-4"></path><path d="M13 7.5h7"></path>
+          <path d="M4 15.5l2 2 3.5-4"></path><path d="M13 15.5h7"></path>
+        </svg>
+      </span>
+      <div class="sheet-app" style="flex: 1 1 auto">In arrivo · In evidenza</div>
+      <span style="width: 30px; height: 30px; border-radius: 15px; background: rgba(60,60,67,0.12); display: flex; align-items: center; justify-content: center; flex: 0 0 auto">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3C3C43" stroke-width="2.6" stroke-linecap="round">
+          <path d="M6 6l12 12M18 6L6 18"></path>
+        </svg>
+      </span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 26px 34px 0 34px; text-align: center">
+      <div class="sheet-title">Superficie</div>
+      <div class="sheet-sub">Di cosa è fatta la scheda. Tocca il retro per tornare all'anteprima.</div>
+    </div>
+
+    <div style="flex: 1 1 auto; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 0 20px">
+      <div style="width: 318px; flex: 0 0 auto; background: {{ground}}; background-image: {{paperImage}}; background-size: {{paperSize}}; border-radius: 28px; box-shadow: 0 14px 30px rgba(0,0,0,0.14); border: 1px solid rgba(60,60,67,0.08); padding: 18px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px; position: relative">
+
+        <div style="position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; border-radius: 14px; background: rgba(60,60,67,0.10); display: flex; align-items: center; justify-content: center">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3C3C43" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4.5 9.5A8 8 0 0 1 19 8"></path><path d="M19.5 14.5A8 8 0 0 1 5 16"></path>
+            <path d="M19.5 4.5V8H16"></path><path d="M4.5 19.5V16H8"></path>
+          </svg>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 11px">
+          <div class="ctl-label">MATERIALE</div>
+          <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px">
+            <div style="display: flex; flex-direction: column; gap: 6px; align-items: center">
+              <div style="width: 100%; height: 52px; border-radius: 13px; background: {{card}}; border: 2.5px solid {{accent}}; box-sizing: border-box"></div>
+              <div class="swatch-name" style=" font-weight: 600; text-align: center; line-height: 1.15">Come la pagina</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; align-items: center">
+              <div style="width: 100%; height: 52px; border-radius: 13px; background: rgba(60,60,67,0.10); border: 1px solid rgba(60,60,67,0.12); box-sizing: border-box"></div>
+              <div class="swatch-name" style=" text-align: center; line-height: 1.15">Morbido</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; align-items: center">
+              <div style="width: 100%; height: 52px; border-radius: 13px; background: {{surface}}; border: 1px solid rgba(60,60,67,0.12); box-sizing: border-box"></div>
+              <div class="swatch-name" style=" text-align: center; line-height: 1.15">Pieno</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; align-items: center">
+              <div style="width: 100%; height: 52px; border-radius: 13px; background: linear-gradient(140deg, rgba(255,255,255,0.92), rgba(255,255,255,0.35)); border: 1px solid rgba(255,255,255,0.9); box-shadow: inset 0 1px 2px rgba(255,255,255,0.9);  box-sizing: border-box"></div>
+              <div class="swatch-name" style=" text-align: center; line-height: 1.15">Vetro</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; align-items: center">
+              <div style="width: 100%; height: 52px; border-radius: 13px; background: {{card}}; box-shadow: 0 0 12px {{accent}}; border: 1px solid rgba(60,60,67,0.12); box-sizing: border-box"></div>
+              <div class="swatch-name" style=" text-align: center; line-height: 1.15">Luminoso</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 11px">
+          <div class="ctl-label">DENSITÀ</div>
+          <div style="display: flex; background: rgba(118,118,128,0.12); border-radius: 10px; padding: 2px; gap: 2px">
+            <div style="flex: 1 1 0; text-align: center; font-size: 14px; font-weight: 600; color: #000; background: #FFFFFF; border-radius: 8px; padding: 8px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.12)">Ariosa</div>
+            <div style="flex: 1 1 0; text-align: center; font-size: 14px; color: #000; padding: 8px 0">Compatta</div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <div class="row-label" style="flex: 1 1 auto">Elementi mostrati</div>
+            <div style="display: flex; align-items: center; gap: 12px">
+              <span style="font-size: 16px; font-weight: 600; color: #000; font-variant-numeric: tabular-nums">3</span>
+              <div style="display: flex; background: rgba(118,118,128,0.12); border-radius: 9px; overflow: hidden">
+                <div style="width: 42px; text-align: center; font-size: 17px; color: #000; padding: 5px 0">−</div>
+                <div style="width: 1px; background: rgba(60,60,67,0.2)"></div>
+                <div style="width: 42px; text-align: center; font-size: 17px; color: #000; padding: 5px 0">+</div>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <div class="row-label" style="flex: 1 1 auto">Colore del Flavor</div>
+            <div style="width: 51px; height: 31px; border-radius: 16px; background: {{accent}}; display: flex; align-items: center; justify-content: flex-end; padding: 2px; box-sizing: border-box">
+              <span style="width: 27px; height: 27px; border-radius: 14px; background: #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2)"></span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="padding: 18px 20px 0 20px">
+      <div style="height: 50px; border-radius: 25px; background: {{accent}}; display: flex; align-items: center; justify-content: center">
+        <span class="cta">Fine</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"flavor":{"editor":"color","default":"#0F3D6E","options":["#0F3D6E","#C2386F","#E8751A","#2FA88A"],"section":"Pagina"},"paper":{"editor":"enum","options":["Liscia","Puntinata","Millimetrata"],"default":"Puntinata","section":"Pagina"},"$preview":{"width":402,"height":874}}'>
+class Component extends DCLogic {
+  // The page's colours the way Flavor derives them: a faint tint of Main for
+  // the ground, a deeper one for cards. Same formulas as Flavor.ground /
+  // Flavor.surface, so a Flavor tweak restains the whole preview.
+  hsb(hex) {
+    const n = parseInt(String(hex).replace('#', ''), 16);
+    const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+    let h = 0;
+    if (d) {
+      if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+      else if (max === g) h = ((b - r) / d + 2) / 6;
+      else h = ((r - g) / d + 4) / 6;
+    }
+    return [h, max ? d / max : 0, max];
+  }
+  hex(h, s, v) {
+    const f = (n) => {
+      const k = (n + h * 6) % 6;
+      return Math.round(255 * (v - v * s * Math.max(0, Math.min(k, 4 - k, 1))));
+    };
+    return '#' + [f(5), f(3), f(1)].map((c) => c.toString(16).padStart(2, '0')).join('').toUpperCase();
+  }
+  page() {
+    const main = this.props.flavor ?? '#0F3D6E';
+    const [h, s] = this.hsb(main);
+    const ground = this.hex(h, Math.min(s * 0.06, 0.06), 0.98);
+    const card = this.hex(h, Math.min(s * 0.11, 0.1), 0.945);
+    const surface = this.hex(h, Math.min(s * 0.16, 0.14), 0.9);
+    const line = this.hex(h, Math.min(s * 0.2, 0.18), 0.82);
+    const paper = this.props.paper ?? 'Puntinata';
+    const dot = this.hex(h, Math.min(s * 0.3, 0.3), 0.78);
+    const papers = {
+      Liscia: { image: 'none', size: 'auto' },
+      Puntinata: { image: 'radial-gradient(' + dot + ' 1.1px, transparent 1.2px)', size: '12px 12px' },
+      Millimetrata: {
+        image: 'linear-gradient(' + dot + ' 0.6px, transparent 0.6px), linear-gradient(90deg, ' + dot + ' 0.6px, transparent 0.6px)',
+        size: '9px 9px',
+      },
+    };
+    const chosen = papers[paper] ?? papers.Puntinata;
+    return { accent: main, ground, card, surface, line, paperImage: chosen.image, paperSize: chosen.size };
+  }
+  renderVals() {
+    return this.page();
+  }
+}
+</script>
+</body>
+</html>

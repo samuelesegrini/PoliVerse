@@ -1,0 +1,16 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Profilo · consigliato", "x": 0, "y": 0, "w": 402, "h": 1300 },
+    { "file": "Poster.dc.html", "title": "Variante · Poster", "x": 522, "y": 0, "w": 402, "h": 1180 },
+    { "file": "Pass.dc.html", "title": "Variante · Carta", "x": 1044, "y": 0, "w": 402, "h": 1060 },
+    { "file": "Essenziale.dc.html", "title": "Variante · Essenziale", "x": 1566, "y": 0, "w": 402, "h": 1000 },
+    { "file": "ShareSheet.dc.html", "title": "Codice QR", "x": 0, "y": 1560, "w": 402, "h": 874 },
+    { "file": "CareerSheet.dc.html", "title": "Carriera", "x": 522, "y": 1560, "w": 402, "h": 874 },
+    { "file": "PhotoSheet.dc.html", "title": "Foto", "x": 1044, "y": 1560, "w": 402, "h": 874 }
+  ],
+  "annotations": [
+    { "id": "boundary", "x": 0, "y": -250, "w": 1968, "text": "Profile = who you are and how the app reaches the Politecnico. Nothing here is about how your studies are going.\nKept here: photo and its shape, name and course of study, matricola and codice persona (tap to copy), email, the list of careers and which one the app uses, how you sign in (SPID/CIE/password), WeBeep link, sign out.\nLeft in Carriera: average, base out of 110, CFU, results and libretto, grade chart, exams and enrolments, study plan, simulator, milestones.\nAll four variants hold the same content; they differ only in how it is laid out. Sample data." },
+    { "id": "flows", "x": 0, "y": 1380, "w": 1446, "text": "Sheets opened from the profile: Codice QR (the quick action or the share button; only name and email), Carriera (only when there is more than one matricola), Foto (source and shape; replaces the old Aspetto menu)." }
+  ],
+  "launch": { "view": "canvas" }
+}

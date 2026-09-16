@@ -1,0 +1,147 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: #F2F2F7; font-family: -apple-system, "SF Pro Text", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #0F3D6E; } a:hover { color: #0A2B4E; }
+    .nav-title { font-size: 17px; font-weight: 600; color: #000000; letter-spacing: -0.4px; }
+    .group-header { font-size: 13px; color: #6D6D72; letter-spacing: 0.06px; padding: 0 16px 6px 16px; }
+    .group-footer { font-size: 13px; color: #6D6D72; letter-spacing: -0.08px; padding: 6px 16px 0 16px; }
+    .row-label { font-size: 17px; color: #000000; letter-spacing: -0.4px; }
+    .row-value { font-size: 17px; color: #8A8A8E; letter-spacing: -0.4px; }
+    .tile-name { font-size: 12px; letter-spacing: -0.05px; }
+    .mini { font-size: 4px; }
+  </style>
+</helmet>
+<div style="display: flex; flex-direction: column; height: 100%; background: #F2F2F7">
+
+  <div style="display: flex; align-items: center; gap: 6px; padding: 14px 16px; background: rgba(255,255,255,0.86); border-bottom: 1px solid rgba(60,60,67,0.2)">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto">
+      <path d="M14.5 5 8 12l6.5 7"></path>
+    </svg>
+    <div style="flex: 1 1 auto; text-align: center" class="nav-title">In arrivo</div>
+    <span style="width: 18px; flex: 0 0 auto"></span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 22px; padding: 18px 0 0 0">
+
+    <div style="display: flex; flex-direction: column">
+      <div class="group-header">FORMA</div>
+      <div style="display: flex; gap: 10px; padding: 4px 16px 0 16px; overflow: hidden">
+
+        <div style="display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto">
+          <div style="width: 104px; height: 74px; border-radius: 14px; background: #FFFFFF; border: 2.5px solid {{accent}}; padding: 9px; box-sizing: border-box; display: flex; flex-direction: column; gap: 5px">
+            <div style="height: 13px; border-radius: 4px; background: {{accent}}; width: 62%"></div>
+            <div style="height: 5px; border-radius: 3px; background: rgba(60,60,67,0.5); width: 80%"></div>
+            <div style="height: 1px; background: rgba(60,60,67,0.2); margin: 2px 0"></div>
+            <div style="height: 4px; border-radius: 2px; background: rgba(60,60,67,0.25); width: 90%"></div>
+            <div style="height: 4px; border-radius: 2px; background: rgba(60,60,67,0.25); width: 70%"></div>
+          </div>
+          <div class="tile-name" style="color: #000000; font-weight: 600; text-align: center">In evidenza</div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto">
+          <div style="width: 104px; height: 74px; border-radius: 14px; background: #FFFFFF; border: 1px solid rgba(60,60,67,0.18); padding: 9px; box-sizing: border-box; display: flex; flex-direction: column; gap: 7px">
+            <div style="display: flex; align-items: center; gap: 6px">
+              <span style="width: 8px; height: 8px; border-radius: 2px; background: rgba(60,60,67,0.35)"></span>
+              <span style="height: 4px; border-radius: 2px; background: rgba(60,60,67,0.3); flex: 1 1 auto"></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px">
+              <span style="width: 8px; height: 8px; border-radius: 2px; background: rgba(60,60,67,0.35)"></span>
+              <span style="height: 4px; border-radius: 2px; background: rgba(60,60,67,0.3); flex: 1 1 auto"></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px">
+              <span style="width: 8px; height: 8px; border-radius: 2px; background: rgba(60,60,67,0.35)"></span>
+              <span style="height: 4px; border-radius: 2px; background: rgba(60,60,67,0.3); flex: 1 1 auto"></span>
+            </div>
+          </div>
+          <div class="tile-name" style="color: #8A8A8E; text-align: center">Elenco</div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto">
+          <div style="width: 104px; height: 74px; border-radius: 14px; background: #FFFFFF; border: 1px solid rgba(60,60,67,0.18); padding: 9px; box-sizing: border-box; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px">
+            <div style="border-radius: 6px; background: rgba(60,60,67,0.14)"></div>
+            <div style="border-radius: 6px; background: rgba(60,60,67,0.14)"></div>
+            <div style="border-radius: 6px; background: rgba(60,60,67,0.14)"></div>
+            <div style="border-radius: 6px; background: rgba(60,60,67,0.14)"></div>
+          </div>
+          <div class="tile-name" style="color: #8A8A8E; text-align: center">Riquadri</div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto">
+          <div style="width: 104px; height: 74px; border-radius: 14px; background: #FFFFFF; border: 1px solid rgba(60,60,67,0.18); padding: 9px; box-sizing: border-box; display: flex; gap: 8px">
+            <div style="flex: 0 0 10px; display: flex; flex-direction: column; align-items: center; gap: 0">
+              <span style="width: 7px; height: 7px; border-radius: 4px; background: rgba(60,60,67,0.45)"></span>
+              <span style="width: 2px; flex: 1 1 auto; background: rgba(60,60,67,0.18)"></span>
+              <span style="width: 7px; height: 7px; border-radius: 4px; background: rgba(60,60,67,0.45)"></span>
+              <span style="width: 2px; flex: 1 1 auto; background: rgba(60,60,67,0.18)"></span>
+              <span style="width: 7px; height: 7px; border-radius: 4px; background: rgba(60,60,67,0.45)"></span>
+            </div>
+            <div style="flex: 1 1 auto; display: flex; flex-direction: column; justify-content: space-between; padding: 1px 0">
+              <span style="height: 4px; border-radius: 2px; background: rgba(60,60,67,0.3); width: 90%"></span>
+              <span style="height: 4px; border-radius: 2px; background: rgba(60,60,67,0.3); width: 70%"></span>
+              <span style="height: 4px; border-radius: 2px; background: rgba(60,60,67,0.3); width: 80%"></span>
+            </div>
+          </div>
+          <div class="tile-name" style="color: #8A8A8E; text-align: center">Binario</div>
+        </div>
+
+      </div>
+      <div class="group-footer">Come sono disposti gli elementi dentro la sezione.</div>
+    </div>
+
+    <div style="display: flex; flex-direction: column">
+      <div class="group-header">SUPERFICIE</div>
+      <div style="background: #FFFFFF; display: flex; flex-direction: column">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 44px">
+          <div class="row-label" style="flex: 1 1 auto">Superficie</div>
+          <div class="row-value">Come la pagina</div>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C4C4C6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 5l7 7-7 7"></path>
+          </svg>
+        </div>
+        <div style="height: 1px; background: rgba(60,60,67,0.2); margin-left: 16px"></div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 8px 16px; height: 44px; box-sizing: border-box">
+          <div class="row-label" style="flex: 0 0 auto">Densità</div>
+          <div style="flex: 1 1 auto; display: flex; background: rgba(118,118,128,0.12); border-radius: 9px; padding: 2px; gap: 2px">
+            <div style="flex: 1 1 0; text-align: center; font-size: 13px; font-weight: 600; color: #000; background: #FFFFFF; border-radius: 7px; padding: 5px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.12)">Ariosa</div>
+            <div style="flex: 1 1 0; text-align: center; font-size: 13px; color: #000; padding: 5px 0">Compatta</div>
+          </div>
+        </div>
+        <div style="height: 1px; background: rgba(60,60,67,0.2); margin-left: 16px"></div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 44px">
+          <div class="row-label" style="flex: 1 1 auto">Elementi mostrati: 3</div>
+          <div style="display: flex; background: rgba(118,118,128,0.12); border-radius: 9px; overflow: hidden">
+            <div style="width: 44px; text-align: center; font-size: 17px; color: #000; padding: 4px 0">−</div>
+            <div style="width: 1px; background: rgba(60,60,67,0.2)"></div>
+            <div style="width: 44px; text-align: center; font-size: 17px; color: #000; padding: 4px 0">+</div>
+          </div>
+        </div>
+        <div style="height: 1px; background: rgba(60,60,67,0.2); margin-left: 16px"></div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 44px">
+          <div class="row-label" style="flex: 1 1 auto">Colore del Flavor</div>
+          <div style="width: 51px; height: 31px; border-radius: 16px; background: {{accent}}; display: flex; align-items: center; justify-content: flex-end; padding: 2px; box-sizing: border-box">
+            <span style="width: 27px; height: 27px; border-radius: 14px; background: #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2)"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#0F3D6E","options":["#0F3D6E","#C2386F","#E8751A","#2FA88A"],"section":"Colore"},"$preview":{"width":402,"height":560}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#0F3D6E' };
+  }
+}
+</script>
+</body>
+</html>

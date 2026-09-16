@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: #F2F2F7; font-family: -apple-system, "SF Pro Text", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #0F3D6E; } a:hover { color: #0A2B4E; }
+    .step { font-size: 12px; font-weight: 600; color: #6D6D72; letter-spacing: 0.2px; text-align: center; }
+    .mini-sec { font-size: 11px; font-weight: 600; color: #000000; }
+    .mini-when-big { font-size: 18px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.05; }
+    .mini-title { font-size: 11px; font-weight: 600; color: #000000; }
+    .ctl-label { font-size: 9px; font-weight: 600; color: #6D6D72; letter-spacing: 0.3px; }
+  </style>
+</helmet>
+<div style="padding: 26px 24px; display: flex; align-items: center; gap: 26px; justify-content: center">
+
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; flex: 0 0 auto">
+    <div style="width: 230px; height: 200px; background: {{ground}}; background-image: {{paperImage}}; background-size: {{paperSize}}; border-radius: 20px; box-shadow: 0 10px 22px rgba(0,0,0,0.12); padding: 13px; box-sizing: border-box; display: flex; flex-direction: column; gap: 7px">
+      <div class="mini-sec">In arrivo</div>
+      <div style="flex: 1 1 auto; background: {{card}}; border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 5px">
+        <div class="mini-when-big" style="color: {{accent}}">Domani, 09:00</div>
+        <div class="mini-title">Consegna progetto IS</div>
+        <div style="height: 1px; background: {{line}}; margin: 3px 0"></div>
+        <div style="height: 4px; border-radius: 2px; background: rgba(60,60,67,0.22); width: 86%"></div>
+        <div style="height: 4px; border-radius: 2px; background: rgba(60,60,67,0.22); width: 66%"></div>
+      </div>
+    </div>
+    <div class="step">Tocchi la scheda scelta</div>
+  </div>
+
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(60,60,67,0.35)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto">
+    <path d="M5 12h13"></path><path d="M13 6.5 18.5 12 13 17.5"></path>
+  </svg>
+
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; flex: 0 0 auto">
+    <div style="width: 230px; height: 200px; display: flex; align-items: center; justify-content: center; perspective: 900px">
+      <div style="width: 230px; height: 200px; background: linear-gradient(100deg, #FFFFFF, #E8ECF2); border-radius: 20px; box-shadow: 0 14px 26px rgba(0,0,0,0.16); transform: rotateY(62deg); transform-origin: center; padding: 13px; box-sizing: border-box; display: flex; flex-direction: column; gap: 7px; opacity: 0.96">
+        <div class="mini-sec" style="opacity: 0.35">In arrivo</div>
+        <div style="flex: 1 1 auto; background: {{card}}; border-radius: 14px; opacity: 0.5"></div>
+      </div>
+    </div>
+    <div class="step">0,35 s · gira sull'asse Y</div>
+  </div>
+
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(60,60,67,0.35)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto">
+    <path d="M5 12h13"></path><path d="M13 6.5 18.5 12 13 17.5"></path>
+  </svg>
+
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; flex: 0 0 auto">
+    <div style="width: 230px; height: 200px; background: {{ground}}; background-image: {{paperImage}}; background-size: {{paperSize}}; border-radius: 20px; box-shadow: 0 10px 22px rgba(0,0,0,0.12); padding: 13px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; position: relative">
+      <div style="position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; border-radius: 10px; background: rgba(60,60,67,0.10); display: flex; align-items: center; justify-content: center">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3C3C43" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4.5 9.5A8 8 0 0 1 19 8"></path><path d="M19.5 14.5A8 8 0 0 1 5 16"></path>
+          <path d="M19.5 4.5V8H16"></path><path d="M4.5 19.5V16H8"></path>
+        </svg>
+      </div>
+      <div class="ctl-label">MATERIALE</div>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px">
+        <div style="height: 28px; border-radius: 8px; background: {{card}}; border: 2px solid {{accent}}; box-sizing: border-box"></div>
+        <div style="height: 28px; border-radius: 8px; background: rgba(60,60,67,0.10)"></div>
+        <div style="height: 28px; border-radius: 8px; background: {{surface}}"></div>
+        <div style="height: 28px; border-radius: 8px; background: linear-gradient(140deg, rgba(255,255,255,0.92), rgba(255,255,255,0.35)); border: 1px solid rgba(255,255,255,0.9); box-sizing: border-box"></div>
+        <div style="height: 28px; border-radius: 8px; background: {{card}}; box-shadow: 0 0 9px {{accent}}"></div>
+      </div>
+      <div style="display: flex; background: rgba(118,118,128,0.12); border-radius: 8px; padding: 2px; gap: 2px; margin-top: auto">
+        <div style="flex: 1 1 0; text-align: center; font-size: 10px; font-weight: 600; color: #000; background: #FFF; border-radius: 6px; padding: 4px 0">Ariosa</div>
+        <div style="flex: 1 1 0; text-align: center; font-size: 10px; color: #000; padding: 4px 0">Compatta</div>
+      </div>
+    </div>
+    <div class="step">Il retro porta i controlli</div>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"flavor":{"editor":"color","default":"#0F3D6E","options":["#0F3D6E","#C2386F","#E8751A","#2FA88A"],"section":"Pagina"},"paper":{"editor":"enum","options":["Liscia","Puntinata","Millimetrata"],"default":"Puntinata","section":"Pagina"},"$preview":{"width":860,"height":300}}'>
+class Component extends DCLogic {
+  // The page's colours the way Flavor derives them: a faint tint of Main for
+  // the ground, a deeper one for cards. Same formulas as Flavor.ground /
+  // Flavor.surface, so a Flavor tweak restains the whole preview.
+  hsb(hex) {
+    const n = parseInt(String(hex).replace('#', ''), 16);
+    const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+    let h = 0;
+    if (d) {
+      if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+      else if (max === g) h = ((b - r) / d + 2) / 6;
+      else h = ((r - g) / d + 4) / 6;
+    }
+    return [h, max ? d / max : 0, max];
+  }
+  hex(h, s, v) {
+    const f = (n) => {
+      const k = (n + h * 6) % 6;
+      return Math.round(255 * (v - v * s * Math.max(0, Math.min(k, 4 - k, 1))));
+    };
+    return '#' + [f(5), f(3), f(1)].map((c) => c.toString(16).padStart(2, '0')).join('').toUpperCase();
+  }
+  page() {
+    const main = this.props.flavor ?? '#0F3D6E';
+    const [h, s] = this.hsb(main);
+    const ground = this.hex(h, Math.min(s * 0.06, 0.06), 0.98);
+    const card = this.hex(h, Math.min(s * 0.11, 0.1), 0.945);
+    const surface = this.hex(h, Math.min(s * 0.16, 0.14), 0.9);
+    const line = this.hex(h, Math.min(s * 0.2, 0.18), 0.82);
+    const paper = this.props.paper ?? 'Puntinata';
+    const dot = this.hex(h, Math.min(s * 0.3, 0.3), 0.78);
+    const papers = {
+      Liscia: { image: 'none', size: 'auto' },
+      Puntinata: { image: 'radial-gradient(' + dot + ' 1.1px, transparent 1.2px)', size: '12px 12px' },
+      Millimetrata: {
+        image: 'linear-gradient(' + dot + ' 0.6px, transparent 0.6px), linear-gradient(90deg, ' + dot + ' 0.6px, transparent 0.6px)',
+        size: '9px 9px',
+      },
+    };
+    const chosen = papers[paper] ?? papers.Puntinata;
+    return { accent: main, ground, card, surface, line, paperImage: chosen.image, paperSize: chosen.size };
+  }
+  renderVals() {
+    return this.page();
+  }
+}
+</script>
+</body>
+</html>

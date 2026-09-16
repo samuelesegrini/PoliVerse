@@ -1,0 +1,147 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: #F2F2F7; font-family: -apple-system, "SF Pro Text", system-ui, "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; color: #000; }
+    a { color: #003352; } a:hover { color: #00233A; }
+    .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
+    .glass { background: rgba(255,255,255,0.74); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), 0 0 0 0.5px rgba(0,0,0,0.06), 0 6px 18px rgba(0,0,0,0.07); }
+  </style>
+</helmet>
+<div style="width: 402px; min-height: 1300px; background: #F2F2F7; display: flex; flex-direction: column; padding: 16px 0 44px 0; box-sizing: border-box;">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 16px; height: 44px;">
+    <span class="glass" style="width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center; color: #1C1C1E;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12 M18 6L6 18"></path></svg></span>
+    <span style="font-size: 17px; font-weight: 600;">Profilo</span>
+    <span class="glass" style="width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center; color: #1C1C1E;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12 M7.5 7.5L12 3l4.5 4.5 M5 12v8h14v-8"></path></svg></span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 22px 24px 0 24px;">
+    <div style="width: 112px; height: 112px; margin-bottom: 12px; {{avatarClip}} background: linear-gradient(180deg, #1D5E86 0%, #003352 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-family: ui-rounded, 'SF Pro Rounded', system-ui; font-size: 44px; font-weight: 600;">SS</div>
+    <span style="font-size: 28px; font-weight: 700; letter-spacing: 0.2px;">Samuele Segrini</span>
+    <span style="font-size: 15px; color: rgba(60,60,67,0.6); text-align: center; text-wrap: pretty;">Laurea Magistrale · Ingegneria Informatica</span>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 20px 16px 0 16px;">
+    <div style="height: 64px; border-radius: 22px; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; color: #003352;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z M14 14h2 M19 14h1v2 M14 18h2v2 M19 19v1"></path></svg><span style="font-size: 12px; font-weight: 600;">Codice QR</span></div>
+    <div style="height: 64px; border-radius: 22px; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; color: #003352;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6h17v12h-17z M3.5 7l8.5 6 8.5-6"></path></svg><span style="font-size: 12px; font-weight: 600;">Posta</span></div>
+    <div style="height: 64px; border-radius: 22px; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; color: #003352;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12a4 4 0 1 0 0-8a4 4 0 0 0 0 8z M4.5 20c1.4-3.3 4.2-5 7.5-5s6.1 1.7 7.5 5"></path></svg><span style="font-size: 12px; font-weight: 600;">Foto</span></div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px; padding: 30px 16px 0 16px;">
+    <span style="font-size: 13px; color: rgba(60,60,67,0.6); padding: 0 16px; text-transform: uppercase; letter-spacing: 0.3px;">Codici</span>
+    <div style="border-radius: 26px; background: #fff; display: flex; flex-direction: column;">
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0;">
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 16px 16px 14px 18px; border-right: 0.5px solid rgba(60,60,67,0.18);">
+          <span style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: rgba(60,60,67,0.6);">Matricola<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#003352" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9h11v11H9z M5 15H4V4h11v1"></path></svg></span>
+          <span class="mono" style="font-size: 26px; font-weight: 600; letter-spacing: 0.5px;">332218</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 16px 18px 14px 16px;">
+          <span style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: rgba(60,60,67,0.6);">Codice persona<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#003352" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9h11v11H9z M5 15H4V4h11v1"></path></svg></span>
+          <span class="mono" style="font-size: 26px; font-weight: 600; letter-spacing: 0.5px;">10659812</span>
+        </div>
+      </div>
+      <div style="height: 0.5px; background: rgba(60,60,67,0.18); margin-left: 18px;"></div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 0 18px; min-height: 52px;">
+        <span style="font-size: 17px;">Email</span>
+        <span style="margin-left: auto; font-size: 15px; color: rgba(60,60,67,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">samuele.segrini@mail.polimi.it</span>
+      </div>
+    </div>
+    <span style="font-size: 13px; color: rgba(60,60,67,0.6); padding: 0 16px; line-height: 1.35;">Tocca un codice per copiarlo. Arrivano dal tuo account del Politecnico.</span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px; padding: 26px 16px 0 16px;">
+    <span style="font-size: 13px; color: rgba(60,60,67,0.6); padding: 0 16px; text-transform: uppercase; letter-spacing: 0.3px;">Carriere</span>
+    <div style="border-radius: 26px; background: #fff; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; gap: 14px; padding: 12px 18px; min-height: 64px; box-sizing: border-box;">
+        <span style="flex: 0 0 36px; height: 36px; border-radius: 11px; background: #003352; color: #fff; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.5L12 5l9.5 4.5L12 14z M6.5 11.5v4.5c0 1.4 2.5 2.8 5.5 2.8s5.5-1.4 5.5-2.8v-4.5"></path></svg></span>
+        <div style="display: flex; flex-direction: column; gap: 1px; flex-grow: 1;">
+          <span style="font-size: 17px;">Laurea Magistrale</span>
+          <span style="font-size: 13px; color: rgba(60,60,67,0.6);"><span class="mono">332218</span> · Attiva</span>
+        </div>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#003352" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+      </div>
+      <div style="height: 0.5px; background: rgba(60,60,67,0.18); margin-left: 68px;"></div>
+      <div style="display: flex; align-items: center; gap: 14px; padding: 12px 18px; min-height: 64px; box-sizing: border-box;">
+        <span style="flex: 0 0 36px; height: 36px; border-radius: 11px; background: #E5E5EA; color: #6C6C70; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.5L12 5l9.5 4.5L12 14z M6.5 11.5v4.5c0 1.4 2.5 2.8 5.5 2.8s5.5-1.4 5.5-2.8v-4.5"></path></svg></span>
+        <div style="display: flex; flex-direction: column; gap: 1px; flex-grow: 1;">
+          <span style="font-size: 17px;">Laurea Triennale</span>
+          <span style="font-size: 13px; color: rgba(60,60,67,0.6);"><span class="mono">986617</span> · Chiusa</span>
+        </div>
+      </div>
+    </div>
+    <span style="font-size: 13px; color: rgba(60,60,67,0.6); padding: 0 16px; line-height: 1.35;">La scheda Carriera mostra la carriera scelta qui.</span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px; padding: 26px 16px 0 16px;">
+    <span style="font-size: 13px; color: rgba(60,60,67,0.6); padding: 0 16px; text-transform: uppercase; letter-spacing: 0.3px;">Accesso</span>
+    <div style="border-radius: 26px; background: #fff; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; gap: 14px; padding: 0 18px; min-height: 56px;">
+        <span style="flex: 0 0 30px; height: 30px; border-radius: 9px; background: #003352; color: #fff; display: flex; align-items: center; justify-content: center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h12v9H6z M8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg></span>
+        <span style="font-size: 17px; flex-grow: 1;">Politecnico</span>
+        <span style="font-size: 15px; color: rgba(60,60,67,0.6);">con SPID</span>
+      </div>
+      <div style="height: 0.5px; background: rgba(60,60,67,0.18); margin-left: 62px;"></div>
+      <div style="display: flex; align-items: center; gap: 14px; padding: 0 18px; min-height: 56px;">
+        <span style="flex: 0 0 30px; height: 30px; border-radius: 9px; background: #E8751A; color: #fff; display: flex; align-items: center; justify-content: center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 4.5h4v15h-4z M10.5 4.5h4v15h-4z M16.3 5.3l3.2-.8 3 14.6-3.2.8z"></path></svg></span>
+        <span style="font-size: 17px; flex-grow: 1;">WeBeep</span>
+        <span style="display: flex; align-items: center; gap: 6px; font-size: 15px; color: rgba(60,60,67,0.6);"><span style="width: 8px; height: 8px; border-radius: 4px; background: #34C759;"></span>Collegato</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px; padding: 26px 16px 0 16px;">
+    <span style="font-size: 13px; color: rgba(60,60,67,0.6); padding: 0 16px; text-transform: uppercase; letter-spacing: 0.3px;">Forma della foto</span>
+    <div style="border-radius: 26px; background: #fff; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; padding: 16px 8px;">
+      <sc-for list="{{shapes}}" as="s" hint-placeholder-count="3">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <div style="width: 70px; height: 70px; border-radius: 50%; box-shadow: {{s.ring}}; display: flex; align-items: center; justify-content: center;">
+            <div style="width: 58px; height: 58px; {{s.clip}} background: linear-gradient(180deg, #1D5E86 0%, #003352 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-family: ui-rounded, 'SF Pro Rounded', system-ui; font-size: 22px; font-weight: 600;">SS</div>
+          </div>
+          <span style="font-size: 13px; font-weight: {{s.weight}}; color: {{s.color}};">{{s.label}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="padding: 30px 16px 0 16px;">
+    <div style="border-radius: 26px; background: #fff; min-height: 52px; display: flex; align-items: center; justify-content: center; font-size: 17px; color: #FF3B30;">Esci</div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"shape":{"editor":"enum","options":["Cerchio","Quadrato","Coccarda"],"default":"Cerchio"},"$preview":{"width":402,"height":1300}}'>
+class Component extends DCLogic {
+  clip(name) {
+    if (name === 'Quadrato') return 'border-radius: 28%;';
+    if (name === 'Coccarda') {
+      const pts = [];
+      for (let i = 0; i < 180; i++) {
+        const a = i / 180 * Math.PI * 2;
+        const r = 47 + 3 * Math.cos(12 * a);
+        pts.push((50 + r * Math.cos(a)).toFixed(2) + '% ' + (50 + r * Math.sin(a)).toFixed(2) + '%');
+      }
+      return 'clip-path: polygon(' + pts.join(', ') + ');';
+    }
+    return 'border-radius: 50%;';
+  }
+  renderVals() {
+    const shape = this.props.shape ?? 'Cerchio';
+    const shapes = ['Cerchio', 'Quadrato', 'Coccarda'].map((label) => ({
+      label,
+      clip: this.clip(label),
+      ring: label === shape ? '0 0 0 2.5px #003352' : 'none',
+      weight: label === shape ? '600' : '400',
+      color: label === shape ? '#003352' : 'rgba(60,60,67,0.6)'
+    }));
+    return { avatarClip: this.clip(shape), shapes };
+  }
+}
+</script>
+</body>
+</html>

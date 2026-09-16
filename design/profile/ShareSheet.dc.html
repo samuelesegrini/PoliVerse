@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: #2B2B2E; font-family: -apple-system, "SF Pro Text", system-ui, "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; color: #000; }
+    a { color: #003352; } a:hover { color: #00233A; }
+    .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
+    .glass { background: rgba(120,120,128,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 0 0 0.5px rgba(0,0,0,0.04); }
+  </style>
+</helmet>
+<div style="width: 402px; height: 874px; position: relative; overflow: hidden; background: #F2F2F7;">
+  <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding-top: 82px; gap: 10px;">
+    <div style="width: 112px; height: 112px; border-radius: 50%; background: #003352;"></div>
+    <div style="width: 210px; height: 22px; border-radius: 11px; background: #D1D1D6;"></div>
+    <div style="width: 260px; height: 14px; border-radius: 7px; background: #E5E5EA;"></div>
+    <div style="align-self: stretch; margin: 26px 16px 0 16px; height: 150px; border-radius: 26px; background: #fff;"></div>
+  </div>
+  <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.26);"></div>
+  <div style="position: absolute; left: 0; right: 0; top: 236px; bottom: 0; background: #fff; border-radius: 38px 38px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,0.12);">
+    <div style="position: absolute; top: 6px; left: 50%; margin-left: -18px; width: 36px; height: 5px; border-radius: 3px; background: rgba(60,60,67,0.3);"></div>
+    <div style="position: absolute; top: 18px; right: 18px; width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center; color: #3A3A3C;" class="glass"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12 M18 6L6 18"></path></svg></div>
+    <div style="display: flex; flex-direction: column; align-items: center; padding: 34px 28px 0 28px; gap: 6px;">
+      <span style="font-size: 22px; font-weight: 700;">Il tuo contatto</span>
+      <span style="font-size: 15px; color: rgba(60,60,67,0.6); text-align: center; text-wrap: pretty;">Fallo inquadrare a un compagno per salvare nome ed email.</span>
+      <div style="margin-top: 22px; padding: 18px; border-radius: 30px; background: #fff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 10px 30px rgba(0,0,0,0.08);">
+        <div style="width: 200px; height: 200px; display: grid; grid-template-columns: repeat(25, minmax(0, 1fr)); gap: 0;">
+          <sc-for list="{{cells}}" as="cell" hint-placeholder-count="625"><span style="background: {{cell.fill}}; border-radius: {{cell.round}};"></span></sc-for>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 20px;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(180deg, #1D5E86 0%, #003352 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-family: ui-rounded, 'SF Pro Rounded', system-ui; font-size: 14px; font-weight: 600;">SS</div>
+        <div style="display: flex; flex-direction: column;"><span style="font-size: 17px; font-weight: 600;">Samuele Segrini</span><span style="font-size: 13px; color: rgba(60,60,67,0.6);">samuele.segrini@mail.polimi.it</span></div>
+      </div>
+    </div>
+    <div style="position: absolute; left: 20px; right: 20px; bottom: 40px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="height: 52px; border-radius: 26px; background: #003352; color: #fff; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 17px; font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12 M7.5 7.5L12 3l4.5 4.5 M5 12v8h14v-8"></path></svg>Condividi</div>
+      <span style="font-size: 13px; color: rgba(60,60,67,0.6); text-align: center;">Matricola e codice persona non sono inclusi.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":402,"height":874}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const n = 25;
+    let seed = 20260915;
+    const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+    const finder = (r, c, r0, c0) => {
+      const y = r - r0, x = c - c0;
+      if (y < 0 || x < 0 || y > 6 || x > 6) return null;
+      const edge = y === 0 || y === 6 || x === 0 || x === 6;
+      const core = y >= 2 && y <= 4 && x >= 2 && x <= 4;
+      return edge || core;
+    };
+    const cells = [];
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        let on = finder(r, c, 0, 0);
+        if (on === null) on = finder(r, c, 0, n - 7);
+        if (on === null) on = finder(r, c, n - 7, 0);
+        const nearFinder = (r < 8 && c < 8) || (r < 8 && c > n - 9) || (r > n - 9 && c < 8);
+        if (on === null) on = nearFinder ? false : rnd() > 0.52;
+        cells.push({ fill: on ? '#003352' : 'transparent', round: on && !nearFinder ? '2px' : '0' });
+      }
+    }
+    return { cells };
+  }
+}
+</script>
+</body>
+</html>
