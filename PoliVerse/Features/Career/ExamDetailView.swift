@@ -20,6 +20,9 @@ struct ExamDetailView: View {
     @Environment(CareerService.self) private var career
     @Environment(CourseService.self) private var courses
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.colorScheme) private var scheme
+    /// Scaled, so the tile grows with the reader's text like the settings pictures.
+    @ScaledMetric(relativeTo: .largeTitle) private var tileSide: CGFloat = 104
     /// Captured when the button is tapped, so the sheet keeps its event even
     /// if the sitting's start passes while it is open.
     @State private var calendarDraft: ExamCalendarEvent?
@@ -95,31 +98,38 @@ struct ExamDetailView: View {
 
     // MARK: - Header
 
-    /// Which course, and when — with how far off it is in a glass pill.
+    /// The subject as a glass tile in the middle, then which course and when,
+    /// with how far off it is in a glass pill.
     private var header: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(exam.courseName)
-                    .font(.title.weight(.bold))
-                    .fixedSize(horizontal: false, vertical: true)
-                if let date = exam.date {
-                    Text("\(date.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)).capitalized) · \(date.formatted(.dateTime.hour().minute().locale(locale)))")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
+        let ramp = course.map { CourseRamp(course: $0, style: style, scheme: scheme) }
+            ?? CourseRamp(name: exam.courseName, style: style, scheme: scheme)
+        return VStack(spacing: 10) {
+            GlassTile(symbol: SubjectSymbol.symbol(for: exam.courseName), colour: ramp.main, side: tileSide,
+                      surface: .glass, mode: ramp.mode)
+                .padding(.bottom, 8)
+                .accessibilityHidden(true)
+            Text(exam.courseName)
+                .font(.title.weight(.bold))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            if let date = exam.date {
+                Text("\(date.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)).capitalized) · \(date.formatted(.dateTime.hour().minute().locale(locale)))")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
-            Spacer(minLength: 8)
             if let countdown {
                 Text(countdown)
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
                     .glassEffect(.regular, in: .capsule)
-                    .padding(.top, 4)
+                    .padding(.top, 2)
             }
         }
-        .padding(.horizontal, 4)
-        .padding(.top, 8)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 12)
+        .padding(.top, 12)
+        .padding(.bottom, 6)
         .accessibilityElement(children: .combine)
     }
 
