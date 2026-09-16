@@ -17,102 +17,18 @@
         }
       }
     },
-    "—" : {
+    "%@ %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "—"
+            "value" : "%1$@ %2$@"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "—"
-          }
-        }
-      }
-    },
-    "«%@»" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@”"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "«%@»"
-          }
-        }
-      }
-    },
-    "/30" : {
-
-    },
-    "%@ – %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ – %@"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ – %2$@"
-          }
-        }
-      }
-    },
-    "%@ · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ · %@"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$@"
-          }
-        }
-      }
-    },
-    "%@ · %@%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ · %@%@"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$@%3$@"
-          }
-        }
-      }
-    },
-    "%@ · %lld posti" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ · %lld seats"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$lld posti"
+            "value" : "%1$@ %2$@"
           }
         }
       }
@@ -143,6 +59,96 @@
         }
       }
     },
+    "%@ del piano di studi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of the study plan"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ del piano di studi"
+          }
+        }
+      }
+    },
+    "%@ di file. Restano su WeBeep." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of files. They stay on WeBeep."
+          }
+        }
+      }
+    },
+    "%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@%@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@%3$@"
+          }
+        }
+      }
+    },
+    "%@ · %lld posti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %lld seats"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$lld posti"
+          }
+        }
+      }
+    },
+    "%@ – %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ – %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ – %2$@"
+          }
+        }
+      }
+    },
     "%@: %@" : {
       "localizations" : {
         "en" : {
@@ -153,8 +159,18 @@
         },
         "it" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@: %2$@"
+          }
+        }
+      }
+    },
+    "%@: aggiornamento non riuscito" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: refresh failed"
           }
         }
       }
@@ -217,8 +233,24 @@
         },
         "it" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$lld / %2$lld CFU"
+          }
+        }
+      }
+    },
+    "%lld CFU" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld credits"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld CFU"
           }
         }
       }
@@ -255,22 +287,6 @@
         }
       }
     },
-    "%lld CFU" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld credits"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld CFU"
-          }
-        }
-      }
-    },
     "%lld di %lld" : {
       "localizations" : {
         "en" : {
@@ -281,7 +297,7 @@
         },
         "it" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$lld di %2$lld"
           }
         }
@@ -297,7 +313,7 @@
         },
         "it" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$lld di %2$lld aule"
           }
         }
@@ -313,7 +329,7 @@
         },
         "it" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$lld esami da sostenere, %2$lld CFU."
           }
         }
@@ -335,25 +351,41 @@
         }
       }
     },
-    "%lld eventi settimanali nel calendario predefinito." : {
-      "extractionState" : "stale",
+    "%lld file" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld weekly events in the default calendar."
+            "value" : "%lld files"
+          }
+        }
+      }
+    },
+    "%lld file, %@. Restano su WeBeep." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld files, %2$@. They stay on WeBeep."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld eventi settimanali nel calendario predefinito."
+            "value" : "%1$lld file, %2$@. Restano su WeBeep."
           }
         }
       }
     },
     "%lld gg" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld d"
+          }
+        }
+      }
     },
     "%lld giorni fa" : {
       "localizations" : {
@@ -499,9 +531,15 @@
     },
     "%lld novità %@" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld updates %2$@"
+          }
+        },
         "it" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$lld novità %2$@"
           }
         }
@@ -639,22 +677,6 @@
         }
       }
     },
-    "%lld%% del piano di studi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%% of the study plan"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%% del piano di studi"
-          }
-        }
-      }
-    },
     "%lld° semestre" : {
       "localizations" : {
         "en" : {
@@ -677,6 +699,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "+%lld"
+          }
+        }
+      }
+    },
+    "/30" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "/30"
+          }
+        }
+      }
+    },
+    "1 file" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 file"
           }
         }
       }
@@ -713,38 +755,6 @@
         }
       }
     },
-    "2 ore" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2 hours"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2 ore"
-          }
-        }
-      }
-    },
-    "5 minuti" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "5 minutes"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "5 minuti"
-          }
-        }
-      }
-    },
     "10 minuti" : {
       "localizations" : {
         "en" : {
@@ -762,7 +772,14 @@
       }
     },
     "15" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15"
+          }
+        }
+      }
     },
     "15 minuti" : {
       "localizations" : {
@@ -776,6 +793,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "15 minuti"
+          }
+        }
+      }
+    },
+    "2 ore" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 hours"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 ore"
           }
         }
       }
@@ -812,8 +845,31 @@
         }
       }
     },
+    "5 minuti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 minutes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 minuti"
+          }
+        }
+      }
+    },
     "A parole" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Words"
+          }
+        }
+      }
     },
     "A scelta · %@" : {
       "localizations" : {
@@ -831,8 +887,25 @@
         }
       }
     },
+    "ACCENTO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ACCENT"
+          }
+        }
+      }
+    },
     "Accanto alla data" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next to the date"
+          }
+        }
+      }
     },
     "Accedi" : {
       "localizations" : {
@@ -928,9 +1001,6 @@
         }
       }
     },
-    "ACCENTO" : {
-
-    },
     "Accesso" : {
       "localizations" : {
         "en" : {
@@ -943,6 +1013,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Accesso"
+          }
+        }
+      }
+    },
+    "Accesso WeBeep" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WeBeep sign-in"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accesso WeBeep"
           }
         }
       }
@@ -995,24 +1081,15 @@
         }
       }
     },
-    "Accesso WeBeep" : {
+    "Accessorio" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WeBeep sign-in"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accesso WeBeep"
+            "value" : "Accessory"
           }
         }
       }
-    },
-    "Accessorio" : {
-
     },
     "Account" : {
       "localizations" : {
@@ -1047,10 +1124,34 @@
       }
     },
     "Adesso" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now"
+          }
+        }
+      }
     },
     "Adesso e più tardi" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now and later"
+          }
+        }
+      }
+    },
+    "Aggiorna adesso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh now"
+          }
+        }
+      }
     },
     "Aggiorna disponibilità" : {
       "localizations" : {
@@ -1084,6 +1185,36 @@
         }
       }
     },
+    "Aggiornamenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updates"
+          }
+        }
+      }
+    },
+    "Aggiornamento in corso…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refreshing…"
+          }
+        }
+      }
+    },
+    "Aggiornamento non riuscito per %lld servizi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh failed for %lld services"
+          }
+        }
+      }
+    },
     "Aggiornato %@" : {
       "localizations" : {
         "en" : {
@@ -1100,19 +1231,12 @@
         }
       }
     },
-    "Aggiungere le lezioni al Calendario?" : {
-      "extractionState" : "stale",
+    "Aggiornato alle %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add the lessons to Calendar?"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aggiungere le lezioni al Calendario?"
+            "value" : "Updated at %@"
           }
         }
       }
@@ -1149,17 +1273,6 @@
         }
       }
     },
-    "Aggiungi al calendario" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to Calendar"
-          }
-        }
-      }
-    },
     "Aggiungi al Calendario" : {
       "localizations" : {
         "en" : {
@@ -1192,28 +1305,25 @@
         }
       }
     },
-    "Aggiungi insegnamenti dalla loro scheda nel manifesto. L'orario personalizzato è uno strumento informale del Politecnico e non sostituisce il piano di studi." : {
-      "extractionState" : "stale",
+    "Aggiungi sezione" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add courses from their page in the catalogue. The personal timetable is an informal Politecnico tool and does not replace your study plan."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aggiungi insegnamenti dalla loro scheda nel manifesto. L'orario personalizzato è uno strumento informale del Politecnico e non sostituisce il piano di studi."
+            "value" : "Add section"
           }
         }
       }
     },
-    "Aggiungi sezione" : {
-
-    },
     "Aggiungi sticker" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add sticker"
+          }
+        }
+      }
     },
     "Aggiungo gli insegnamenti: %lld di %lld" : {
       "localizations" : {
@@ -1231,25 +1341,15 @@
         }
       }
     },
-    "Aggiungo…" : {
-      "extractionState" : "stale",
+    "Aggiunti: %lld" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adding…"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aggiungo…"
+            "value" : "Added: %lld"
           }
         }
       }
-    },
-    "Aggiunti: %lld" : {
-
     },
     "Alle" : {
       "localizations" : {
@@ -1262,10 +1362,24 @@
       }
     },
     "Alle %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At %@"
+          }
+        }
+      }
     },
     "Allineamento" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alignment"
+          }
+        }
+      }
     },
     "Almeno" : {
       "localizations" : {
@@ -1316,7 +1430,14 @@
       }
     },
     "Altri appelli" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other sittings"
+          }
+        }
+      }
     },
     "Altri corsi" : {
       "localizations" : {
@@ -1330,6 +1451,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Altri corsi"
+          }
+        }
+      }
+    },
+    "Altri file" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other files"
           }
         }
       }
@@ -1351,13 +1482,34 @@
       }
     },
     "Altro" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More"
+          }
+        }
+      }
     },
     "Altro colore" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Another colour"
+          }
+        }
+      }
     },
     "Altro scaglione" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Another bracket"
+          }
+        }
+      }
     },
     "Ammesso" : {
       "localizations" : {
@@ -1380,30 +1532,34 @@
       }
     },
     "Anche questa è fatta." : {
-
-    },
-    "Ancora nessun messaggio" : {
-
-    },
-    "Ancora nessun messaggio." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No messages yet."
+            "value" : "That one's done too."
           }
-        },
-        "it" : {
+        }
+      }
+    },
+    "Ancora nessun messaggio" : {
+      "localizations" : {
+        "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ancora nessun messaggio."
+            "value" : "No messages yet"
           }
         }
       }
     },
     "Ancora sveglio%@?" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Still up%@?"
+          }
+        }
+      }
     },
     "Anno" : {
       "localizations" : {
@@ -1420,9 +1576,6 @@
           }
         }
       }
-    },
-    "anno accademico" : {
-
     },
     "Anno accademico" : {
       "localizations" : {
@@ -1499,7 +1652,14 @@
       }
     },
     "Apertura" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opening"
+          }
+        }
+      }
     },
     "Apertura iscrizioni" : {
       "localizations" : {
@@ -1544,16 +1704,44 @@
       }
     },
     "Appello" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exam sitting"
+          }
+        }
+      }
     },
     "Appello %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sitting %@"
+          }
+        }
+      }
     },
     "Appello da definire" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sitting to be confirmed"
+          }
+        }
+      }
     },
     "Appello del %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sitting on %@"
+          }
+        }
+      }
     },
     "Appello non più disponibile" : {
       "localizations" : {
@@ -1575,8 +1763,25 @@
         }
       }
     },
+    "Apre Impostazioni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens Settings"
+          }
+        }
+      }
+    },
     "Apre il corso" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the course"
+          }
+        }
+      }
     },
     "Apre la pianta a schermo intero" : {
       "localizations" : {
@@ -1624,23 +1829,6 @@
         }
       }
     },
-    "Apri" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apri"
-          }
-        }
-      }
-    },
     "Apri App Store" : {
       "localizations" : {
         "en" : {
@@ -1657,16 +1845,6 @@
         }
       }
     },
-    "Apri il link" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open link"
-          }
-        }
-      }
-    },
     "Apri Impostazioni" : {
       "localizations" : {
         "en" : {
@@ -1679,6 +1857,32 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apri Impostazioni"
+          }
+        }
+      }
+    },
+    "Apri WeBeep" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open WeBeep"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri WeBeep"
+          }
+        }
+      }
+    },
+    "Apri il link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open link"
           }
         }
       }
@@ -1767,18 +1971,18 @@
         }
       }
     },
-    "Apri WeBeep" : {
+    "Apro l'accesso EduGAIN…" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open WeBeep"
+            "value" : "Opening EduGAIN sign-in…"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apri WeBeep"
+            "value" : "Apro l'accesso EduGAIN…"
           }
         }
       }
@@ -1795,22 +1999,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apro l'accesso con Carta d'Identità Elettronica…"
-          }
-        }
-      }
-    },
-    "Apro l'accesso EduGAIN…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Opening EduGAIN sign-in…"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apro l'accesso EduGAIN…"
           }
         }
       }
@@ -1843,6 +2031,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apro la pagina del Politecnico…"
+          }
+        }
+      }
+    },
+    "Archivi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archives"
           }
         }
       }
@@ -1880,22 +2078,44 @@
       }
     },
     "Ardesia" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slate"
+          }
+        }
+      }
     },
     "Ariosa" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comfortable"
+          }
+        }
+      }
     },
     "Arrotondato" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rounded"
+          }
+        }
+      }
     },
     "Aspetto" : {
-
-    },
-    "Aspetto %lld" : {
-
-    },
-    "Aspetto delle sezioni" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appearance"
+          }
+        }
+      }
     },
     "Assente" : {
       "localizations" : {
@@ -1933,8 +2153,25 @@
         }
       }
     },
+    "Audio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio"
+          }
+        }
+      }
+    },
     "Aula" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Room"
+          }
+        }
+      }
     },
     "Aula %@" : {
       "localizations" : {
@@ -1957,7 +2194,14 @@
       }
     },
     "Aula da definire" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Room to be confirmed"
+          }
+        }
+      }
     },
     "Aula pubblicata" : {
       "localizations" : {
@@ -2044,7 +2288,14 @@
       }
     },
     "Avenir Next" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avenir Next"
+          }
+        }
+      }
     },
     "Avvisi" : {
       "localizations" : {
@@ -2079,10 +2330,14 @@
       }
     },
     "Barra" : {
-
-    },
-    "Barra e colore" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bar"
+          }
+        }
+      }
     },
     "Bibliografia" : {
       "localizations" : {
@@ -2094,26 +2349,117 @@
         }
       }
     },
+    "Binario" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rail"
+          }
+        }
+      }
+    },
     "Blu Politecnico" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Politecnico blue"
+          }
+        }
+      }
     },
     "Bodoni" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bodoni"
+          }
+        }
+      }
     },
     "Bordo bianco" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "White border"
+          }
+        }
+      }
     },
     "Buon pomeriggio%@!" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good afternoon%@!"
+          }
+        }
+      }
     },
     "Buona giornata!" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Have a good day!"
+          }
+        }
+      }
     },
     "Buonasera%@!" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good evening%@!"
+          }
+        }
+      }
     },
     "Buongiorno%@!" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good morning%@!"
+          }
+        }
+      }
+    },
+    "CFU" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Credits"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CFU"
+          }
+        }
+      }
+    },
+    "CFU acquisiti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Credits earned"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CFU acquisiti"
+          }
+        }
+      }
     },
     "Cache" : {
       "localizations" : {
@@ -2132,7 +2478,14 @@
       }
     },
     "Caffè" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coffee"
+          }
+        }
+      }
     },
     "Calcola" : {
       "localizations" : {
@@ -2231,7 +2584,14 @@
       }
     },
     "Cambia" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change"
+          }
+        }
+      }
     },
     "Cambia corso di studi" : {
       "localizations" : {
@@ -2249,8 +2609,15 @@
         }
       }
     },
-    "Campus e edifici" : {
-
+    "Campus ed edifici" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Campuses and buildings"
+          }
+        }
+      }
     },
     "Capienza" : {
       "localizations" : {
@@ -2269,7 +2636,14 @@
       }
     },
     "Carattere" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typeface"
+          }
+        }
+      }
     },
     "Caricati" : {
       "localizations" : {
@@ -2283,6 +2657,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Caricati"
+          }
+        }
+      }
+    },
+    "Carico gli edifici…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading buildings…"
           }
         }
       }
@@ -2319,11 +2703,35 @@
         }
       }
     },
+    "Carriera mostra la carriera scelta qui." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record shows the record you choose here."
+          }
+        }
+      }
+    },
     "Carriere" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Records"
+          }
+        }
+      }
     },
     "Carta" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paper"
+          }
+        }
+      }
     },
     "Catalogo non disponibile" : {
       "localizations" : {
@@ -2358,7 +2766,14 @@
       }
     },
     "Cerca corsi, aule, docenti" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search courses, rooms, teachers"
+          }
+        }
+      }
     },
     "Cerca la mia matricola negli esiti" : {
       "localizations" : {
@@ -2402,9 +2817,6 @@
         }
       }
     },
-    "Cerca nelle impostazioni" : {
-
-    },
     "Cerca un insegnamento" : {
       "localizations" : {
         "en" : {
@@ -2421,57 +2833,22 @@
         }
       }
     },
-    "Cerca un insegnamento per nome o codice e toccalo per aggiungerlo." : {
-      "extractionState" : "stale",
+    "Cerchi" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search for a teaching by name or code and tap it to add it."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cerca un insegnamento per nome o codice e toccalo per aggiungerlo."
+            "value" : "Rings"
           }
         }
       }
-    },
-    "Cerchi" : {
-
     },
     "Cerchio" : {
-
-    },
-    "CFU" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Credits"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "CFU"
-          }
-        }
-      }
-    },
-    "CFU acquisiti" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Credits earned"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "CFU acquisiti"
+            "value" : "Circle"
           }
         }
       }
@@ -2493,7 +2870,14 @@
       }
     },
     "Chiaro" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light"
+          }
+        }
+      }
     },
     "Chiudi" : {
       "localizations" : {
@@ -2512,7 +2896,14 @@
       }
     },
     "Chiusura" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Closing"
+          }
+        }
+      }
     },
     "Chiusura iscrizioni" : {
       "localizations" : {
@@ -2530,14 +2921,35 @@
         }
       }
     },
-    "Ciao, %@" : {
-
-    },
     "Ciao!" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hello!"
+          }
+        }
+      }
+    },
+    "Ciao, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hello, %@"
+          }
+        }
+      }
     },
     "Cielo" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sky"
+          }
+        }
+      }
     },
     "Ciò che conta — un esito, un'aula, un appello spostato — arriva appena l'app se ne accorge; il resto nel riepilogo, e di notte solo ciò che è urgente. Un tipo spento non notifica ma resta visibile nell'app." : {
       "localizations" : {
@@ -2550,7 +2962,14 @@
       }
     },
     "Classico" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classic"
+          }
+        }
+      }
     },
     "Co-titolare" : {
       "localizations" : {
@@ -2563,7 +2982,14 @@
       }
     },
     "Coccarda" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scalloped"
+          }
+        }
+      }
     },
     "Codice" : {
       "localizations" : {
@@ -2581,8 +3007,35 @@
         }
       }
     },
+    "Codice QR" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "QR code"
+          }
+        }
+      }
+    },
+    "Codice QR con nome ed email" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "QR code with name and email"
+          }
+        }
+      }
+    },
     "Codice insegnamento" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Course code"
+          }
+        }
+      }
     },
     "Codice persona" : {
       "localizations" : {
@@ -2632,12 +3085,6 @@
         }
       }
     },
-    "Codice QR" : {
-
-    },
-    "Codice QR con nome ed email" : {
-
-    },
     "Codice: %@" : {
       "localizations" : {
         "en" : {
@@ -2649,7 +3096,14 @@
       }
     },
     "Codici" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codes"
+          }
+        }
+      }
     },
     "Cognome" : {
       "localizations" : {
@@ -2667,36 +3121,18 @@
         }
       }
     },
-    "Cognome e nome" : {
-      "extractionState" : "stale",
+    "Collega WeBeep" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Surname and first name"
+            "value" : "Connect WeBeep"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cognome e nome"
-          }
-        }
-      }
-    },
-    "Collega a un altro insegnamento del piano" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link to another teaching in the plan"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Collega a un altro insegnamento del piano"
+            "value" : "Collega WeBeep"
           }
         }
       }
@@ -2718,20 +3154,11 @@
       }
     },
     "Collega altro insegnamento" : {
-
-    },
-    "Collega WeBeep" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Connect WeBeep"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Collega WeBeep"
+            "value" : "Link another course"
           }
         }
       }
@@ -2753,25 +3180,74 @@
       }
     },
     "Colore" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour"
+          }
+        }
+      }
     },
     "Colore del Flavor" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flavor colour"
+          }
+        }
+      }
     },
     "Colori" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colours"
+          }
+        }
+      }
     },
     "Colori da una foto" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colours from a photo"
+          }
+        }
+      }
     },
     "Colori dei corsi" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Course colours"
+          }
+        }
+      }
     },
     "Colori suggeriti" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggested colours"
+          }
+        }
+      }
     },
     "Come la pagina" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Same as the page"
+          }
+        }
+      }
     },
     "Come lo descrive il docente" : {
       "localizations" : {
@@ -2809,8 +3285,25 @@
         }
       }
     },
+    "Come sono disposti gli elementi. Puoi cambiarla quando vuoi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How the items are arranged. You can change it whenever you like."
+          }
+        }
+      }
+    },
     "Compatta" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compact"
+          }
+        }
+      }
     },
     "Completa l'accesso nell'app CieID, poi torna qui." : {
       "localizations" : {
@@ -2824,6 +3317,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Completa l'accesso nell'app CieID, poi torna qui."
+          }
+        }
+      }
+    },
+    "Comunicazioni per te" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Announcements for you"
           }
         }
       }
@@ -2861,7 +3364,14 @@
       }
     },
     "Con grazie" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serif"
+          }
+        }
+      }
     },
     "Con i dati di esempio l'app funziona senza collegarsi ai server del Politecnico. Disattivalo per usare il tuo account reale." : {
       "localizations" : {
@@ -2880,19 +3390,54 @@
       }
     },
     "Con il nome" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With your name"
+          }
+        }
+      }
     },
     "Con un accessorio la data occupa metà della larghezza." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With an accessory the date takes up half the width."
+          }
+        }
+      }
     },
     "Condividi" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
+          }
+        }
+      }
     },
     "Condividi contatto" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share contact"
+          }
+        }
+      }
     },
     "Condividi il Flavor" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share the Flavor"
+          }
+        }
+      }
     },
     "Consegna domani" : {
       "localizations" : {
@@ -2900,23 +3445,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Assignment due tomorrow"
-          }
-        }
-      }
-    },
-    "Consenti a PoliVerse di aggiungere eventi in Impostazioni › Privacy › Calendari." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Allow PoliVerse to add events in Settings › Privacy › Calendars."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Consenti a PoliVerse di aggiungere eventi in Impostazioni › Privacy › Calendari."
           }
         }
       }
@@ -2969,6 +3497,16 @@
         }
       }
     },
+    "Continua a modificare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep editing"
+          }
+        }
+      }
+    },
     "Continua con questa" : {
       "localizations" : {
         "en" : {
@@ -2996,7 +3534,14 @@
       }
     },
     "Contrasto" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contrast"
+          }
+        }
+      }
     },
     "Controllo aula per aula…" : {
       "localizations" : {
@@ -3015,13 +3560,34 @@
       }
     },
     "Copia" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy"
+          }
+        }
+      }
     },
     "Corallo" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coral"
+          }
+        }
+      }
     },
     "Coriandoli" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confetti"
+          }
+        }
+      }
     },
     "Correzione disponibile" : {
       "localizations" : {
@@ -3091,12 +3657,6 @@
         }
       }
     },
-    "Corsi, aule, docenti" : {
-
-    },
-    "Corsi, aule, docenti ed esami." : {
-
-    },
     "Corsi, docenti, aule, notizie, materiali" : {
       "localizations" : {
         "en" : {
@@ -3130,7 +3690,14 @@
       }
     },
     "Corsivo" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Italic"
+          }
+        }
+      }
     },
     "Corso" : {
       "localizations" : {
@@ -3303,7 +3870,14 @@
       }
     },
     "Croci" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crosses"
+          }
+        }
+      }
     },
     "Cronologia" : {
       "localizations" : {
@@ -3325,8 +3899,18 @@
         },
         "it" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "Da %1$@ a %2$@"
+          }
+        }
+      }
+    },
+    "Da Servizi Online · verifica aula e orario prima dell'esame." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From Servizi Online · check the room and time before the exam."
           }
         }
       }
@@ -3347,12 +3931,12 @@
         }
       }
     },
-    "Da Servizi Online · verifica aula e orario prima dell'esame." : {
+    "Da disegno" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "From Servizi Online · check the room and time before the exam."
+            "value" : "Drawing paper"
           }
         }
       }
@@ -3373,33 +3957,6 @@
         }
       }
     },
-    "Dai tuoi corsi" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "From your courses"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dai tuoi corsi"
-          }
-        }
-      }
-    },
-    "Dal nome del file, ambiguo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "From the file name, ambiguous"
-          }
-        }
-      }
-    },
     "Dal Politecnico" : {
       "localizations" : {
         "en" : {
@@ -3416,23 +3973,22 @@
         }
       }
     },
+    "Dal nome del file, ambiguo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From the file name, ambiguous"
+          }
+        }
+      }
+    },
     "Dal primo cognome incluso al secondo escluso." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "From the first surname, included, to the second, excluded."
-          }
-        }
-      }
-    },
-    "Dalla scheda del Manifesto degli studi" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "From the course's page in the study programme catalogue"
           }
         }
       }
@@ -3474,10 +4030,24 @@
       }
     },
     "Data" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date"
+          }
+        }
+      }
     },
     "Data da definire" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date to be confirmed"
+          }
+        }
+      }
     },
     "Dati" : {
       "localizations" : {
@@ -3491,6 +4061,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dati"
+          }
+        }
+      }
+    },
+    "Dati dell’app" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App data"
           }
         }
       }
@@ -3522,10 +4102,14 @@
       }
     },
     "Dati e archiviazione" : {
-
-    },
-    "Decorazione" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data and storage"
+          }
+        }
+      }
     },
     "Dedotto confrontando i corsi con il piano di studi di ogni tua matricola. Tieni premuto un corso per correggerlo." : {
       "localizations" : {
@@ -3638,27 +4222,24 @@
       }
     },
     "Densità" : {
-
-    },
-    "Determina il mio scaglione" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find my alphabetical bracket"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Determina il mio scaglione"
+            "value" : "Density"
           }
         }
       }
     },
     "Dettagli" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Details"
+          }
+        }
+      }
     },
     "Dettaglio" : {
       "localizations" : {
@@ -3672,27 +4253,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dettaglio"
-          }
-        }
-      }
-    },
-    "di %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "of %lld"
-          }
-        }
-      }
-    },
-    "Di tutti i corsi" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "From every course"
           }
         }
       }
@@ -3724,7 +4284,14 @@
       }
     },
     "Didot" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Didot"
+          }
+        }
+      }
     },
     "Disattiva i dati di esempio per usare WeBeep reale." : {
       "localizations" : {
@@ -3775,13 +4342,34 @@
       }
     },
     "Disponi" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrange"
+          }
+        }
+      }
     },
     "Disponi sulla pagina" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrange on the page"
+          }
+        }
+      }
     },
     "Disposizione" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrangement"
+          }
+        }
+      }
     },
     "Docente" : {
       "localizations" : {
@@ -3825,11 +4413,35 @@
         }
       }
     },
+    "Documenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documents"
+          }
+        }
+      }
+    },
     "Domani" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomorrow"
+          }
+        }
+      }
     },
     "Domani alle %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomorrow at %@"
+          }
+        }
+      }
     },
     "Dotazioni" : {
       "localizations" : {
@@ -3847,58 +4459,12 @@
         }
       }
     },
-    "e altre %lld" : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "and %lld more"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "and %lld more"
-                }
-              }
-            }
-          }
-        },
-        "it" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "e un'altra"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "e altre %lld"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "È il mio corso di studi" : {
+    "EXTRA" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This is my degree course"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "È il mio corso di studi"
+            "value" : "EXTRA"
           }
         }
       }
@@ -3951,27 +4517,35 @@
         }
       }
     },
-    "eIDAS · identità di un altro paese UE" : {
+    "Elaborato corretto consultabile sui Servizi Online." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "eIDAS · an identity from another EU country"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "eIDAS · identità di un altro paese UE"
+            "value" : "The marked script can be viewed on Servizi Online."
           }
         }
       }
     },
-    "Elaborato corretto consultabile sui Servizi Online." : {
-
-    },
     "Elementi mostrati: %lld" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Items shown: %lld"
+          }
+        }
+      }
+    },
+    "Elenco" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List"
+          }
+        }
+      }
     },
     "Elimina" : {
       "localizations" : {
@@ -4021,6 +4595,36 @@
         }
       }
     },
+    "Elimina stile" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete style"
+          }
+        }
+      }
+    },
+    "Elimina tutti i materiali" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete all materials"
+          }
+        }
+      }
+    },
+    "Eliminare %@?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete %@?"
+          }
+        }
+      }
+    },
     "Eliminare l'orario personalizzato?" : {
       "localizations" : {
         "en" : {
@@ -4033,6 +4637,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Eliminare l'orario personalizzato?"
+          }
+        }
+      }
+    },
+    "Eliminare questo stile?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this style?"
+          }
+        }
+      }
+    },
+    "Eliminare tutti i materiali scaricati?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete all downloaded materials?"
           }
         }
       }
@@ -4054,7 +4678,14 @@
       }
     },
     "Emoji" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emoji"
+          }
+        }
+      }
     },
     "Entra con CIE" : {
       "localizations" : {
@@ -4068,38 +4699,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Entra con CIE"
-          }
-        }
-      }
-    },
-    "Entra con eduGAIN" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign in with eduGAIN"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Entra con eduGAIN"
-          }
-        }
-      }
-    },
-    "Entra con eIDAS" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign in with eIDAS"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Entra con eIDAS"
           }
         }
       }
@@ -4136,29 +4735,47 @@
         }
       }
     },
-    "entro %@" : {
+    "Entra con eIDAS" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "due %@"
+            "value" : "Sign in with eIDAS"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entra con eIDAS"
           }
         }
       }
     },
-    "Erogato in" : {
-      "extractionState" : "stale",
+    "Entra con eduGAIN" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Taught in"
+            "value" : "Sign in with eduGAIN"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entra con eduGAIN"
           }
         }
       }
     },
     "Esagoni" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hexagons"
+          }
+        }
+      }
     },
     "Esame" : {
       "localizations" : {
@@ -4249,7 +4866,14 @@
       }
     },
     "Esito" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Result"
+          }
+        }
+      }
     },
     "Esito pubblicato" : {
       "localizations" : {
@@ -4309,9 +4933,6 @@
         }
       }
     },
-    "EXTRA" : {
-
-    },
     "Facoltativo" : {
       "localizations" : {
         "en" : {
@@ -4323,7 +4944,14 @@
       }
     },
     "Fallo inquadrare a un compagno per salvare nome ed email." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Have a classmate scan it to save your name and email."
+          }
+        }
+      }
     },
     "Fasce libere per giorno, ricavate dalle lezioni prenotate." : {
       "localizations" : {
@@ -4373,6 +5001,16 @@
         }
       }
     },
+    "File aperti da WeBeep e tenuti per leggerli offline. Restano su WeBeep: si riscaricano quando li riapri." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Files opened from WeBeep and kept so you can read them offline. They stay on WeBeep: they download again when you reopen them."
+          }
+        }
+      }
+    },
     "Filtro" : {
       "localizations" : {
         "en" : {
@@ -4416,22 +5054,84 @@
       }
     },
     "Fino a tre, impilate come stampe." : {
-
-    },
-    "fino alle %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to three, stacked like prints."
+          }
+        }
+      }
     },
     "Fino alle %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Until %@"
+          }
+        }
+      }
     },
     "Flavor" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flavor"
+          }
+        }
+      }
     },
     "Flavor %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flavor %@"
+          }
+        }
+      }
+    },
+    "Fogli di calcolo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spreadsheets"
+          }
+        }
+      }
+    },
+    "Forma" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shape"
+          }
+        }
+      }
     },
     "Forma della foto" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo shape"
+          }
+        }
+      }
+    },
+    "Forma e superficie di ogni sezione" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shape and surface of each section"
+          }
+        }
+      }
     },
     "Formato non riconosciuto" : {
       "localizations" : {
@@ -4466,16 +5166,44 @@
       }
     },
     "Forum non disponibile" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forum unavailable"
+          }
+        }
+      }
     },
     "Foto" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos"
+          }
+        }
+      }
     },
     "Foto del Politecnico" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Politecnico photo"
+          }
+        }
+      }
     },
     "Frase del giorno" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quote of the day"
+          }
+        }
+      }
     },
     "Fuori dal piano di studi" : {
       "localizations" : {
@@ -4520,23 +5248,21 @@
       }
     },
     "Futura" : {
-
-    },
-    "Gessetto" : {
-
-    },
-    "Già nell'agenda ufficiale" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Already in the official agenda"
+            "value" : "Futura"
           }
-        },
-        "it" : {
+        }
+      }
+    },
+    "Gessetto" : {
+      "localizations" : {
+        "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Già nell'agenda ufficiale"
+            "value" : "Chalkboard"
           }
         }
       }
@@ -4558,22 +5284,90 @@
       }
     },
     "Giorno grande" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Big day"
+          }
+        }
+      }
     },
     "Giorno mostrato: %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day shown: %@"
+          }
+        }
+      }
+    },
+    "Gira la scheda" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flip the card"
+          }
+        }
+      }
+    },
+    "Già nell'agenda ufficiale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already in the official agenda"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Già nell'agenda ufficiale"
+          }
+        }
+      }
     },
     "Grafite" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Graphite"
+          }
+        }
+      }
     },
     "Grana" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grain"
+          }
+        }
+      }
     },
     "Grandezza" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Size"
+          }
+        }
+      }
     },
     "Griglia" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grid"
+          }
+        }
+      }
     },
     "Guarda l'app senza accedere" : {
       "localizations" : {
@@ -4592,7 +5386,14 @@
       }
     },
     "Hai %lld matricole. L’app legge i dati di quella che scegli." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have %lld student numbers. The app reads the data of the one you choose."
+          }
+        }
+      }
     },
     "Hai più di una carriera" : {
       "localizations" : {
@@ -4738,11 +5539,15 @@
         }
       }
     },
-    "I tuoi corsi con materiali, avvisi e appelli." : {
-
-    },
     "Identificativi" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identifiers"
+          }
+        }
+      }
     },
     "Idoneo" : {
       "localizations" : {
@@ -4750,102 +5555,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pass"
-          }
-        }
-      }
-    },
-    "Il catalogo del Politecnico non ha risposto." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The Politecnico's catalogue did not respond."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il catalogo del Politecnico non ha risposto."
-          }
-        }
-      }
-    },
-    "Il catalogo indica l'indirizzo dell'edificio, non la posizione esatta dell'aula." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The catalogue gives the building's address, not the room's exact position."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il catalogo indica l'indirizzo dell'edificio, non la posizione esatta dell'aula."
-          }
-        }
-      }
-    },
-    "Il catalogo non ha restituito questa scheda." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The catalogue returned no page for this."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il catalogo non ha restituito questa scheda."
-          }
-        }
-      }
-    },
-    "Il codice persona è uno solo, ma ogni immatricolazione ha la sua matricola — e i servizi del Politecnico rispondono solo per quella con cui hai fatto l'accesso." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your person code is one, but each enrolment has its own student number — and the Politecnico's services only answer for the one you signed in with."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il codice persona è uno solo, ma ogni immatricolazione ha la sua matricola — e i servizi del Politecnico rispondono solo per quella con cui hai fatto l'accesso."
-          }
-        }
-      }
-    },
-    "Il codice persona è uno solo; ogni immatricolazione ha la sua matricola. I servizi del Politecnico rispondono solo per quella su cui è stato fatto l'accesso." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You have one person code; each enrolment has its own student number. The Politecnico's services answer only for the one you signed in with."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il codice persona è uno solo; ogni immatricolazione ha la sua matricola. I servizi del Politecnico rispondono solo per quella su cui è stato fatto l'accesso."
-          }
-        }
-      }
-    },
-    "Il libretto non ha restituito insegnamenti." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The transcript returned no courses."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il libretto non ha restituito insegnamenti."
           }
         }
       }
@@ -4865,28 +5574,6 @@
           }
         }
       }
-    },
-    "Il manifesto è il catalogo ufficiale: programmi, docenti, scaglioni e bibliografia di tutti gli insegnamenti, anche quelli che non segui." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The catalogue is official: syllabi, teachers, alphabetical brackets and reading lists for every course, including ones you are not taking."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il manifesto è il catalogo ufficiale: programmi, docenti, scaglioni e bibliografia di tutti gli insegnamenti, anche quelli che non segui."
-          }
-        }
-      }
-    },
-    "Il menu ••• resta sempre: è da lì che si torna in Personalizza." : {
-
-    },
-    "Il motivo prende il colore del Flavor." : {
-
     },
     "Il Politecnico ha accettato l'accesso ma non autorizza questa app a leggere corsi, orario e carriera. WeBeep continua a funzionare." : {
       "localizations" : {
@@ -5001,7 +5688,14 @@
       }
     },
     "Il Politecnico non ha una tua foto." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Politecnico has no photo of you."
+          }
+        }
+      }
     },
     "Il Politecnico non permette di cambiare matricola senza un nuovo accesso: l'app uscirà e ti chiederà di rientrare con CIE o SPID." : {
       "localizations" : {
@@ -5083,6 +5777,128 @@
         }
       }
     },
+    "Il catalogo del Politecnico non ha risposto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Politecnico's catalogue did not respond."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il catalogo del Politecnico non ha risposto."
+          }
+        }
+      }
+    },
+    "Il catalogo indica l'indirizzo dell'edificio, non la posizione esatta dell'aula." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The catalogue gives the building's address, not the room's exact position."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il catalogo indica l'indirizzo dell'edificio, non la posizione esatta dell'aula."
+          }
+        }
+      }
+    },
+    "Il catalogo non ha restituito questa scheda." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The catalogue returned no page for this."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il catalogo non ha restituito questa scheda."
+          }
+        }
+      }
+    },
+    "Il codice persona è uno solo, ma ogni immatricolazione ha la sua matricola — e i servizi del Politecnico rispondono solo per quella con cui hai fatto l'accesso." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your person code is one, but each enrolment has its own student number — and the Politecnico's services only answer for the one you signed in with."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il codice persona è uno solo, ma ogni immatricolazione ha la sua matricola — e i servizi del Politecnico rispondono solo per quella con cui hai fatto l'accesso."
+          }
+        }
+      }
+    },
+    "Il codice persona è uno solo; ogni immatricolazione ha la sua matricola. I servizi del Politecnico rispondono solo per quella su cui è stato fatto l'accesso." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have one person code; each enrolment has its own student number. The Politecnico's services answer only for the one you signed in with."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il codice persona è uno solo; ogni immatricolazione ha la sua matricola. I servizi del Politecnico rispondono solo per quella su cui è stato fatto l'accesso."
+          }
+        }
+      }
+    },
+    "Il libretto non ha restituito insegnamenti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The transcript returned no courses."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il libretto non ha restituito insegnamenti."
+          }
+        }
+      }
+    },
+    "Il manifesto è il catalogo ufficiale: programmi, docenti, scaglioni e bibliografia di tutti gli insegnamenti, anche quelli che non segui." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The catalogue is official: syllabi, teachers, alphabetical brackets and reading lists for every course, including ones you are not taking."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il manifesto è il catalogo ufficiale: programmi, docenti, scaglioni e bibliografia di tutti gli insegnamenti, anche quelli che non segui."
+          }
+        }
+      }
+    },
+    "Il prossimo appello in programma, secondo l'ultimo aggiornamento dell'app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your next scheduled exam sitting, as of the app's last refresh."
+          }
+        }
+      }
+    },
     "Il prossimo appello è %@, %@ alle %@." : {
       "localizations" : {
         "en" : {
@@ -5103,16 +5919,6 @@
         }
       }
     },
-    "Il prossimo appello in programma, secondo l'ultimo aggiornamento dell'app." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your next scheduled exam sitting, as of the app's last refresh."
-          }
-        }
-      }
-    },
     "Il server ha risposto %lld." : {
       "localizations" : {
         "en" : {
@@ -5125,22 +5931,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il server ha risposto %lld."
-          }
-        }
-      }
-    },
-    "il tuo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "yours"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "il tuo"
           }
         }
       }
@@ -5178,7 +5968,14 @@
       }
     },
     "Il tuo contatto" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your contact details"
+          }
+        }
+      }
     },
     "Il tuo corso di studi" : {
       "localizations" : {
@@ -5271,7 +6068,24 @@
       }
     },
     "Il voto non entra nella media: puoi ripresentarti a un prossimo appello." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The mark does not count towards your average: you can sit it again at a future sitting."
+          }
+        }
+      }
+    },
+    "Immagini" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Images"
+          }
+        }
+      }
     },
     "Impegno" : {
       "localizations" : {
@@ -5284,7 +6098,14 @@
       }
     },
     "Impilata" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stacked"
+          }
+        }
+      }
     },
     "Impossibile caricare i dati di carriera." : {
       "localizations" : {
@@ -5318,23 +6139,6 @@
         }
       }
     },
-    "Impostato" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Set"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impostato"
-          }
-        }
-      }
-    },
     "Impostazioni" : {
       "localizations" : {
         "en" : {
@@ -5347,6 +6151,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Impostazioni"
+          }
+        }
+      }
+    },
+    "Impostazioni e Personalizza restano sempre nella barra: sono la strada per tornarci." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings and Customise always stay in the bar: they are the way back."
+          }
+        }
+      }
+    },
+    "Impostazioni, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings, %@"
           }
         }
       }
@@ -5368,21 +6192,24 @@
       }
     },
     "In arrivo" : {
-
-    },
-    "In aula, in tutto" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In class, in total"
+            "value" : "Upcoming"
           }
         }
       }
     },
     "In breve" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In brief"
+          }
+        }
+      }
     },
     "In calendario" : {
       "localizations" : {
@@ -5453,7 +6280,14 @@
       }
     },
     "In linea" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inline"
+          }
+        }
+      }
     },
     "In queste ore arriva solo ciò che è urgente, come un esito o un appello spostato; il resto aspetta la fine del silenzio. Stessa ora per inizio e fine: nessun silenzio." : {
       "localizations" : {
@@ -5461,6 +6295,32 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "During these hours only urgent news comes through, like a result or a moved exam; the rest waits until the quiet hours end. Same start and end hour: no quiet hours."
+          }
+        }
+      }
+    },
+    "In tutto %@ su questo dispositivo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ in total on this device."
+          }
+        }
+      }
+    },
+    "In tutto %@. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ in total. %2$@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In tutto %1$@. %2$@"
           }
         }
       }
@@ -5482,10 +6342,24 @@
       }
     },
     "Inchiostro" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ink"
+          }
+        }
+      }
     },
     "Indaco" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indigo"
+          }
+        }
+      }
     },
     "Indietro" : {
       "localizations" : {
@@ -5588,7 +6462,14 @@
       }
     },
     "Iniziali" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Initials"
+          }
+        }
+      }
     },
     "Insegnamenti" : {
       "localizations" : {
@@ -5668,24 +6549,15 @@
         }
       }
     },
-    "iOS consente al massimo %lld promemoria in attesa: vengono tenuti i più vicini." : {
+    "Iscrizione" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iOS allows at most %lld pending reminders: the soonest are kept."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iOS consente al massimo %lld promemoria in attesa: vengono tenuti i più vicini."
+            "value" : "Registration"
           }
         }
       }
-    },
-    "Iscrizione" : {
-
     },
     "Iscrizione annullata" : {
       "localizations" : {
@@ -5744,10 +6616,24 @@
       }
     },
     "Iscrizioni aperte fino al %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registration open until %@"
+          }
+        }
+      }
     },
     "Iscrizioni chiuse" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registration closed"
+          }
+        }
+      }
     },
     "Iscrizioni entro il %@" : {
       "localizations" : {
@@ -5823,23 +6709,6 @@
         }
       }
     },
-    "L'orario personalizzato è uno strumento informale del Politecnico: non sostituisce la presentazione del piano di studi." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The personal timetable is an informal Politecnico tool: it does not replace submitting your study plan."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L'orario personalizzato è uno strumento informale del Politecnico: non sostituisce la presentazione del piano di studi."
-          }
-        }
-      }
-    },
     "L'orario ufficiale è arrivato" : {
       "localizations" : {
         "en" : {
@@ -5882,14 +6751,21 @@
         },
         "it" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "La carriera %1$@ (%2$@) è quella attiva. Esami e orario rispondono solo per quella."
           }
         }
       }
     },
     "La nuova interfaccia è in prova. Puoi riattivarla dalle impostazioni." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The new interface is in testing. You can turn it back on in Settings."
+          }
+        }
+      }
     },
     "La pagina WeBeep di questo corso non ne ha." : {
       "localizations" : {
@@ -5906,9 +6782,6 @@
           }
         }
       }
-    },
-    "La scheda Carriera mostra la carriera scelta qui." : {
-
     },
     "La scheda non lo dice" : {
       "localizations" : {
@@ -5953,16 +6826,34 @@
       }
     },
     "Lampone" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raspberry"
+          }
+        }
+      }
     },
     "Largo" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expanded"
+          }
+        }
+      }
     },
     "Lavanda" : {
-
-    },
-    "Layout" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lavender"
+          }
+        }
+      }
     },
     "Le attività in tempo reale sono disattivate per PoliVerse." : {
       "localizations" : {
@@ -6065,7 +6956,14 @@
       }
     },
     "Le iscrizioni aprono il %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registration opens on %@"
+          }
+        }
+      }
     },
     "Le lezioni del giorno appena apri l'app, con l'aula e quanto manca. Sulla schermata di blocco e in Centro di Controllo, se vuoi." : {
       "localizations" : {
@@ -6194,7 +7092,14 @@
       }
     },
     "Leggi tutto" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read all"
+          }
+        }
+      }
     },
     "Leggo l'orario…" : {
       "localizations" : {
@@ -6233,7 +7138,14 @@
       }
     },
     "Lezione in corso" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Class in progress"
+          }
+        }
+      }
     },
     "Lezioni" : {
       "localizations" : {
@@ -6247,23 +7159,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lezioni"
-          }
-        }
-      }
-    },
-    "Lezioni aggiunte" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lessons added"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lezioni aggiunte"
           }
         }
       }
@@ -6332,11 +7227,15 @@
         }
       }
     },
-    "Libretto, piano di studi e media." : {
-
-    },
-    "Libretto, piano e media" : {
-
+    "Libretto, esami e media" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transcript, exams and average"
+          }
+        }
+      }
     },
     "Libri di testo in inglese" : {
       "localizations" : {
@@ -6369,7 +7268,14 @@
       }
     },
     "Liscia" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plain"
+          }
+        }
+      }
     },
     "Lo scaglione è per cognome, dal primo incluso al secondo escluso. Scrivi il tuo cognome per vedere quale ti riguarda." : {
       "localizations" : {
@@ -6388,16 +7294,74 @@
       }
     },
     "Luminoso" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glow"
+          }
+        }
+      }
+    },
+    "L’app aggiorna da sola quando la apri e quando torna la connessione." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The app refreshes on its own when you open it and when the connection returns."
+          }
+        }
+      }
+    },
+    "L’app non sta occupando spazio su questo dispositivo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The app is not using any space on this device."
+          }
+        }
+      }
     },
     "Macchina da scrivere" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typewriter"
+          }
+        }
+      }
     },
     "Maglia ovale" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ovals"
+          }
+        }
+      }
+    },
+    "Mai" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never"
+          }
+        }
+      }
     },
     "Mandarino" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tangerine"
+          }
+        }
+      }
     },
     "Manifesto" : {
       "localizations" : {
@@ -6464,10 +7428,14 @@
       }
     },
     "Matematica" : {
-
-    },
-    "Materiale" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maths"
+          }
+        }
+      }
     },
     "Materiali" : {
       "localizations" : {
@@ -6481,23 +7449,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Materiali"
-          }
-        }
-      }
-    },
-    "Materiali di %@" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ materials"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Materiali di %@"
           }
         }
       }
@@ -6529,7 +7480,14 @@
       }
     },
     "Materiali, avvisi e appelli" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Materials, announcements and sittings"
+          }
+        }
+      }
     },
     "Matricola" : {
       "localizations" : {
@@ -6596,7 +7554,14 @@
       }
     },
     "Matricola e codice persona non sono inclusi." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your student number and person code are not included."
+          }
+        }
+      }
     },
     "Matricola preferita %@" : {
       "localizations" : {
@@ -6610,16 +7575,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Matricola preferita %@"
-          }
-        }
-      }
-    },
-    "media" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "average"
           }
         }
       }
@@ -6651,7 +7606,14 @@
       }
     },
     "Media dopo la registrazione" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Average after recording"
+          }
+        }
+      }
     },
     "Media finale" : {
       "localizations" : {
@@ -6696,7 +7658,14 @@
       }
     },
     "Menta" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mint"
+          }
+        }
+      }
     },
     "Mettere le lezioni nel Calendario?" : {
       "localizations" : {
@@ -6715,10 +7684,24 @@
       }
     },
     "Millimetrata" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plot paper"
+          }
+        }
+      }
     },
     "Modifica" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit"
+          }
+        }
+      }
     },
     "Modifica insegnamenti" : {
       "localizations" : {
@@ -6769,10 +7752,24 @@
       }
     },
     "Monospaziato" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monospaced"
+          }
+        }
+      }
     },
     "Morbido" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soft"
+          }
+        }
+      }
     },
     "Mostra" : {
       "localizations" : {
@@ -6791,7 +7788,14 @@
       }
     },
     "Mostra il saluto" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show the greeting"
+          }
+        }
+      }
     },
     "Mostra la pagina del Politecnico" : {
       "localizations" : {
@@ -6858,10 +7862,24 @@
       }
     },
     "Mostra meno" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show less"
+          }
+        }
+      }
     },
     "Musica" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Music"
+          }
+        }
+      }
     },
     "Nascondi" : {
       "localizations" : {
@@ -6875,6 +7893,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nascondi"
+          }
+        }
+      }
+    },
+    "Nascondi %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide %@"
+          }
+        }
+      }
+    },
+    "Nascondi dalla pagina" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide from the page"
           }
         }
       }
@@ -6896,7 +7934,14 @@
       }
     },
     "Natura" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nature"
+          }
+        }
+      }
     },
     "Nel file: %@ (non ancora ufficiale)" : {
       "localizations" : {
@@ -7059,7 +8104,14 @@
       }
     },
     "Nessun esame in programma" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No scheduled exams"
+          }
+        }
+      }
     },
     "Nessun esito" : {
       "localizations" : {
@@ -7173,23 +8225,6 @@
         }
       }
     },
-    "Nessun risultato nel tuo corso di studi: disattiva il filtro per vedere gli altri corsi." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No results in your degree course: turn off the filter to see other courses."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nessun risultato nel tuo corso di studi: disattiva il filtro per vedere gli altri corsi."
-          }
-        }
-      }
-    },
     "Nessuna aula con un intervallo libero abbastanza lungo." : {
       "localizations" : {
         "en" : {
@@ -7271,7 +8306,14 @@
       }
     },
     "Nessuna lezione oggi" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No classes today"
+          }
+        }
+      }
     },
     "Nessuna notifica" : {
       "localizations" : {
@@ -7374,7 +8416,14 @@
       }
     },
     "Nessuna prova in itinere" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No partial exams"
+          }
+        }
+      }
     },
     "Nessuna risposta dopo %lld tentativi." : {
       "localizations" : {
@@ -7393,10 +8442,24 @@
       }
     },
     "Nessuna scadenza" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No deadlines"
+          }
+        }
+      }
     },
     "Nessuna scheda" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No card"
+          }
+        }
+      }
     },
     "Nessuna statistica, nessun tracciamento, nessun account da creare." : {
       "localizations" : {
@@ -7415,13 +8478,34 @@
       }
     },
     "Nessuno" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        }
+      }
     },
     "New York" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New York"
+          }
+        }
+      }
     },
     "Niente in arrivo" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing upcoming"
+          }
+        }
+      }
     },
     "Niente in programma" : {
       "localizations" : {
@@ -7451,23 +8535,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nome"
-          }
-        }
-      }
-    },
-    "Nome o codice dell'insegnamento" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Teaching name or code"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nome o codice dell'insegnamento"
           }
         }
       }
@@ -7510,6 +8577,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not admitted"
+          }
+        }
+      }
+    },
+    "Non ancora aggiornato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not refreshed yet"
           }
         }
       }
@@ -7714,6 +8791,26 @@
         }
       }
     },
+    "Non riuscito" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed"
+          }
+        }
+      }
+    },
+    "Non si può annullare." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This cannot be undone."
+          }
+        }
+      }
+    },
     "Non superato" : {
       "localizations" : {
         "en" : {
@@ -7836,8 +8933,15 @@
         }
       }
     },
-    "Notizie e avvisi" : {
-
+    "Notizie dall’ateneo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "University news"
+          }
+        }
+      }
     },
     "Notizie non disponibili" : {
       "localizations" : {
@@ -7916,7 +9020,14 @@
       }
     },
     "Nuova interfaccia (in prova)" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New interface (in testing)"
+          }
+        }
+      }
     },
     "Nuovo annuncio del docente" : {
       "localizations" : {
@@ -7938,9 +9049,6 @@
         }
       }
     },
-    "Nuovo aspetto" : {
-
-    },
     "Nuovo avviso d'esame" : {
       "localizations" : {
         "en" : {
@@ -7957,6 +9065,32 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New material"
+          }
+        }
+      }
+    },
+    "Nuovo stile" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New style"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
           }
         }
       }
@@ -8132,13 +9266,34 @@
       }
     },
     "Oggi alle %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today at %@"
+          }
+        }
+      }
     },
     "Oggi conta." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today counts."
+          }
+        }
+      }
     },
     "Oggi, Corsi, Carriera e Cerca in schede separate." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today, Courses, Record and Search in separate tabs."
+          }
+        }
+      }
     },
     "Ogni carriera ha il suo corso di studi: i corsi dell'altra carriera sono letti dal piano scelto per lei." : {
       "localizations" : {
@@ -8156,47 +9311,35 @@
         }
       }
     },
-    "Ogni lezione diventa un evento settimanale fino alla fine delle lezioni. Se le hai già aggiunte, verranno duplicate." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Each lesson becomes a weekly event until lessons end. If you already added them, they will be duplicated."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ogni lezione diventa un evento settimanale fino alla fine delle lezioni. Se le hai già aggiunte, verranno duplicate."
-          }
-        }
-      }
-    },
     "Ogni sezione può averne uno suo." : {
-
-    },
-    "OK" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OK"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OK"
+            "value" : "Each section can have its own."
           }
         }
       }
     },
     "Onde" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waves"
+          }
+        }
+      }
     },
     "Oppure tieni premuto sulla pagina per trascinare le sezioni." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Or touch and hold the page to drag the sections."
+          }
+        }
+      }
     },
     "Opzioni" : {
       "localizations" : {
@@ -8230,8 +9373,15 @@
         }
       }
     },
-    "Orari, corsi e carriera salvati per aprire l’app senza rete." : {
-
+    "Orari, corsi e carriera, per aprire l’app senza rete. Si ricostruisce da sola al prossimo aggiornamento: niente di tuo viene perso." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timetables, courses and record, so the app opens without a network. It rebuilds itself on the next refresh: nothing of yours is lost."
+          }
+        }
+      }
     },
     "Orario" : {
       "localizations" : {
@@ -8281,12 +9431,6 @@
         }
       }
     },
-    "ore di studio" : {
-
-    },
-    "ore in aula" : {
-
-    },
     "Ore indicate dalla scheda del Politecnico." : {
       "localizations" : {
         "en" : {
@@ -8314,13 +9458,54 @@
       }
     },
     "Origine" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source"
+          }
+        }
+      }
     },
     "Ospite" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guest"
+          }
+        }
+      }
+    },
+    "PDF" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF"
+          }
+        }
+      }
+    },
+    "PRINCIPALE" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MAIN"
+          }
+        }
+      }
     },
     "Pagina unica" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Single page"
+          }
+        }
+      }
     },
     "Passare a %@?" : {
       "localizations" : {
@@ -8355,13 +9540,34 @@
       }
     },
     "Password" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password"
+          }
+        }
+      }
     },
     "Pausa caffè" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coffee break"
+          }
+        }
+      }
     },
     "Pausa caffè meritata." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A well-earned coffee break."
+          }
+        }
+      }
     },
     "Per accedere con la Carta d'Identità Elettronica serve l'app CieID." : {
       "localizations" : {
@@ -8380,7 +9586,14 @@
       }
     },
     "Per cambiare matricola il Politecnico chiede un nuovo accesso." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To change student number the Politecnico requires a new sign-in."
+          }
+        }
+      }
     },
     "Per cambiare serve un nuovo accesso: lo trovi in Impostazioni · Matricola. Da lì l'app te lo spiega prima di farlo." : {
       "localizations" : {
@@ -8431,10 +9644,24 @@
       }
     },
     "Personalizza" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Customise"
+          }
+        }
+      }
     },
     "Personalizzato" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom"
+          }
+        }
+      }
     },
     "Piano" : {
       "localizations" : {
@@ -8484,8 +9711,25 @@
         }
       }
     },
+    "Piano e simulazione della media" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan and average simulation"
+          }
+        }
+      }
+    },
     "Piano piano, ma senza fermarsi." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slowly, but without stopping."
+          }
+        }
+      }
     },
     "Pianta" : {
       "localizations" : {
@@ -8536,7 +9780,14 @@
       }
     },
     "Pieno" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solid"
+          }
+        }
+      }
     },
     "Più tardi" : {
       "localizations" : {
@@ -8555,7 +9806,14 @@
       }
     },
     "Poche parole, nel carattere della data e nel colore del Flavor." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A few words, in the date's typeface and the Flavor's colour."
+          }
+        }
+      }
     },
     "Poi" : {
       "localizations" : {
@@ -8566,9 +9824,6 @@
           }
         }
       }
-    },
-    "Politecnico" : {
-
     },
     "PoliVerse" : {
       "localizations" : {
@@ -8634,8 +9889,25 @@
         }
       }
     },
+    "Politecnico" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Politecnico"
+          }
+        }
+      }
+    },
     "Posta" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mail"
+          }
+        }
+      }
     },
     "Posti" : {
       "localizations" : {
@@ -8717,6 +9989,16 @@
         }
       }
     },
+    "Presentazioni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Presentations"
+          }
+        }
+      }
+    },
     "Previste" : {
       "localizations" : {
         "en" : {
@@ -8732,9 +10014,6 @@
           }
         }
       }
-    },
-    "PRINCIPALE" : {
-
     },
     "Probabile iscrizione libera" : {
       "localizations" : {
@@ -8826,19 +10105,15 @@
         }
       }
     },
-    "Programma, esame e libri" : {
-      "extractionState" : "stale",
+    "Programma, libri e dettagli" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Syllabus, exam and books"
+            "value" : "Syllabus, books and details"
           }
         }
       }
-    },
-    "Programma, libri e dettagli" : {
-
     },
     "Programma, prerequisiti e bibliografia" : {
       "localizations" : {
@@ -8920,9 +10195,6 @@
         }
       }
     },
-    "Promemoria d’esame" : {
-
-    },
     "Promemoria non attivi · si accendono da Impostazioni · Promemoria." : {
       "localizations" : {
         "en" : {
@@ -8972,7 +10244,14 @@
       }
     },
     "Prossima" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next"
+          }
+        }
+      }
     },
     "Prossima lezione" : {
       "localizations" : {
@@ -9001,7 +10280,14 @@
       }
     },
     "Prossimi appelli" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next sittings"
+          }
+        }
+      }
     },
     "Prossimo appello" : {
       "localizations" : {
@@ -9046,7 +10332,14 @@
       }
     },
     "Prove in itinere previste" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scheduled partial exams"
+          }
+        }
+      }
     },
     "Pubblicate le soluzioni" : {
       "localizations" : {
@@ -9069,33 +10362,44 @@
       }
     },
     "Pulsanti" : {
-
-    },
-    "Puntinata" : {
-
-    },
-    "Puntini" : {
-
-    },
-    "Puoi ancora rifiutare questo voto dai servizi online." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You can still decline this mark in Servizi Online."
+            "value" : "Buttons"
           }
-        },
-        "it" : {
+        }
+      }
+    },
+    "Puntinata" : {
+      "localizations" : {
+        "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Puoi ancora rifiutare questo voto dai servizi online."
+            "value" : "Dotted"
+          }
+        }
+      }
+    },
+    "Puntini" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dots"
           }
         }
       }
     },
     "Puoi ancora rifiutare questo voto dai Servizi Online." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can still decline this mark from Servizi Online."
+          }
+        }
+      }
     },
     "Puoi rifiutare il voto" : {
       "localizations" : {
@@ -9118,7 +10422,14 @@
       }
     },
     "Quadrato" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rounded square"
+          }
+        }
+      }
     },
     "Quali aule sono libere adesso, in quale edificio e per quanto ancora. Dai dati pubblici del Politecnico, senza account." : {
       "localizations" : {
@@ -9167,7 +10478,14 @@
       }
     },
     "Quattro schede con Oggi, oppure una pagina unica con un pannello dal basso." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Four tabs with Today, or a single page with a panel from the bottom."
+          }
+        }
+      }
     },
     "Questo corso non ha file pubblicati." : {
       "localizations" : {
@@ -9181,17 +10499,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Questo corso non ha file pubblicati."
-          }
-        }
-      }
-    },
-    "Questo corso non ha un codice d'insegnamento del Politecnico, quindi non si trova nel Manifesto degli studi." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This course has no Politecnico course code, so it can't be found in the study programme catalogue."
           }
         }
       }
@@ -9212,22 +10519,6 @@
         }
       }
     },
-    "Questo insegnamento è diviso in sezioni: scegli quella che frequenti. Se non scegli, il Politecnico usa quella del tuo scaglione." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This teaching is split into sections: choose the one you attend. If you don't, the Politecnico uses your bracket's."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Questo insegnamento è diviso in sezioni: scegli quella che frequenti. Se non scegli, il Politecnico usa quella del tuo scaglione."
-          }
-        }
-      }
-    },
     "Questo insegnamento ha un solo scaglione per tutti." : {
       "localizations" : {
         "en" : {
@@ -9240,6 +10531,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Questo insegnamento ha un solo scaglione per tutti."
+          }
+        }
+      }
+    },
+    "Questo insegnamento è diviso in sezioni: scegli quella che frequenti. Se non scegli, il Politecnico usa quella del tuo scaglione." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This teaching is split into sections: choose the one you attend. If you don't, the Politecnico uses your bracket's."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo insegnamento è diviso in sezioni: scegli quella che frequenti. Se non scegli, il Politecnico usa quella del tuo scaglione."
           }
         }
       }
@@ -9277,7 +10584,14 @@
       }
     },
     "Registrato nel libretto" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recorded in the transcript"
+          }
+        }
+      }
     },
     "Respinto" : {
       "localizations" : {
@@ -9290,7 +10604,14 @@
       }
     },
     "Retino" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halftone"
+          }
+        }
+      }
     },
     "Riattiva le notifiche di %@" : {
       "localizations" : {
@@ -9345,7 +10666,14 @@
       }
     },
     "Righe" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stripes"
+          }
+        }
+      }
     },
     "Rimuovi" : {
       "localizations" : {
@@ -9362,9 +10690,6 @@
           }
         }
       }
-    },
-    "Rimuovi %@" : {
-
     },
     "Rimuovi dai preferiti" : {
       "localizations" : {
@@ -9415,7 +10740,14 @@
       }
     },
     "Rimuovi sticker" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove sticker"
+          }
+        }
+      }
     },
     "Riprova" : {
       "localizations" : {
@@ -9449,6 +10781,16 @@
         }
       }
     },
+    "Riquadri" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiles"
+          }
+        }
+      }
+    },
     "Risposta del server non leggibile." : {
       "localizations" : {
         "en" : {
@@ -9465,23 +10807,6 @@
         }
       }
     },
-    "Risultati" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Results"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Risultati"
-          }
-        }
-      }
-    },
     "Ritirato" : {
       "localizations" : {
         "en" : {
@@ -9493,10 +10818,24 @@
       }
     },
     "Rockwell" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rockwell"
+          }
+        }
+      }
     },
     "Saluto" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Greeting"
+          }
+        }
+      }
     },
     "Salva" : {
       "localizations" : {
@@ -9547,13 +10886,24 @@
       }
     },
     "Salvia" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sage"
+          }
+        }
+      }
     },
     "Scacchi" : {
-
-    },
-    "Scadenza" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checker"
+          }
+        }
+      }
     },
     "Scadenza della consegna cambiata" : {
       "localizations" : {
@@ -9671,6 +11021,26 @@
         }
       }
     },
+    "Scarta modifiche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discard changes"
+          }
+        }
+      }
+    },
+    "Scartare le modifiche?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discard changes?"
+          }
+        }
+      }
+    },
     "Scegli gli insegnamenti che segui e l'app ne ricava l'orario settimanale, con aule e indirizzi. Utile finché il piano di studi non arriva nell'agenda." : {
       "localizations" : {
         "en" : {
@@ -9719,23 +11089,6 @@
         }
       }
     },
-    "Scegli la riga del tuo corso di studi: lo stesso insegnamento può avere orari diversi in corsi diversi." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pick the row for your degree course: the same teaching can have different times in different courses."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scegli la riga del tuo corso di studi: lo stesso insegnamento può avere orari diversi in corsi diversi."
-          }
-        }
-      }
-    },
     "Scegli la sede da mostrare." : {
       "localizations" : {
         "en" : {
@@ -9747,33 +11100,34 @@
       }
     },
     "Scegli le foto" : {
-
-    },
-    "Scegli un altro scaglione" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose another bracket"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scegli un altro scaglione"
+            "value" : "Choose photos"
           }
         }
       }
     },
     "Scegli uno sticker o un’emoji dalla tastiera." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a sticker or an emoji from the keyboard."
+          }
+        }
+      }
     },
     "Scelti da soli a partire dal principale: tocca un colore per cambiarlo." : {
-
-    },
-    "Scheda" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chosen automatically from the main one: tap a colour to change it."
+          }
+        }
+      }
     },
     "Scheda completa: programma e libri" : {
       "localizations" : {
@@ -9802,27 +11156,34 @@
       }
     },
     "Scheda non trovata" : {
-
-    },
-    "Scheda scelta in base al tuo corso di studi e al tuo cognome, dal Manifesto degli studi." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Page chosen from your degree programme and surname, from the study programme catalogue."
+            "value" : "Card not found"
           }
         }
       }
     },
-    "Schede" : {
-
-    },
     "Scienze" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Science"
+          }
+        }
+      }
     },
     "Scintille" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sparkles"
+          }
+        }
+      }
     },
     "Scollega WeBeep" : {
       "localizations" : {
@@ -9857,7 +11218,14 @@
       }
     },
     "Scrivi al docente" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Email the teacher"
+          }
+        }
+      }
     },
     "Scrivi il nome di un insegnamento e premi invio." : {
       "localizations" : {
@@ -9876,7 +11244,14 @@
       }
     },
     "Scrivi il tuo saluto" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write your own greeting"
+          }
+        }
+      }
     },
     "Scuola" : {
       "localizations" : {
@@ -9895,7 +11270,14 @@
       }
     },
     "Scuro" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dark"
+          }
+        }
+      }
     },
     "Se prendo" : {
       "localizations" : {
@@ -9914,7 +11296,14 @@
       }
     },
     "Secondo l’ora" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time of day"
+          }
+        }
+      }
     },
     "Sede" : {
       "localizations" : {
@@ -9949,7 +11338,14 @@
       }
     },
     "Sei iscritto a questo appello" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You are registered for this sitting"
+          }
+        }
+      }
     },
     "Sei negli esiti" : {
       "localizations" : {
@@ -9994,10 +11390,14 @@
       }
     },
     "Sem. %@" : {
-
-    },
-    "semestre" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem. %@"
+          }
+        }
+      }
     },
     "Semestre" : {
       "localizations" : {
@@ -10031,19 +11431,12 @@
         }
       }
     },
-    "Serve cognome **e** nome: con il solo cognome il Politecnico avverte che lo scaglione può risultare sbagliato." : {
-      "extractionState" : "stale",
+    "Senza connessione" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Both surname **and** first name are needed: with the surname alone the Politecnico warns the bracket may come out wrong."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Serve cognome **e** nome: con il solo cognome il Politecnico avverte che lo scaglione può risultare sbagliato."
+            "value" : "No connection"
           }
         }
       }
@@ -10060,6 +11453,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Servizi"
+          }
+        }
+      }
+    },
+    "Servizi Online" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servizi Online"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servizi Online"
+          }
+        }
+      }
+    },
+    "Servizi Online · iscrizione esami" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servizi Online · exam registration"
+          }
+        }
+      }
+    },
+    "Servizi Online · libretto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servizi Online · transcript"
           }
         }
       }
@@ -10112,57 +11541,41 @@
         }
       }
     },
-    "Servizi Online" : {
+    "Settimana" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Servizi Online"
+            "value" : "Week"
+          }
+        }
+      }
+    },
+    "Settimana %lld · giorno %lld di 7" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Week %1$lld · day %2$lld of 7"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Servizi Online"
-          }
-        }
-      }
-    },
-    "Servizi Online · iscrizione esami" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Servizi Online · exam registration"
-          }
-        }
-      }
-    },
-    "Servizi Online · libretto" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Servizi Online · transcript"
-          }
-        }
-      }
-    },
-    "Settimana" : {
-
-    },
-    "Settimana %lld · giorno %lld di 7" : {
-      "localizations" : {
-        "it" : {
-          "stringUnit" : {
-            "state" : "new",
             "value" : "Settimana %1$lld · giorno %2$lld di 7"
           }
         }
       }
     },
     "Settimana e mese" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Week and month"
+          }
+        }
+      }
     },
     "Settimana precedente" : {
       "localizations" : {
@@ -10228,8 +11641,25 @@
         }
       }
     },
+    "Sezioni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sections"
+          }
+        }
+      }
+    },
     "Sfumatura" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mesh"
+          }
+        }
+      }
     },
     "Si cambia quando vuoi da Impostazioni · Promemoria." : {
       "localizations" : {
@@ -10248,7 +11678,14 @@
       }
     },
     "Si parte!" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Here we go!"
+          }
+        }
+      }
     },
     "Si può fare più tardi: la trovi nella scheda WeBeep quando ti serve." : {
       "localizations" : {
@@ -10351,7 +11788,14 @@
       }
     },
     "Sistema" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        }
+      }
     },
     "Slide e materiale in inglese" : {
       "localizations" : {
@@ -10364,7 +11808,14 @@
       }
     },
     "Smerigliato" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frosted"
+          }
+        }
+      }
     },
     "Software" : {
       "localizations" : {
@@ -10383,7 +11834,14 @@
       }
     },
     "Solo giorno" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weekday only"
+          }
+        }
+      }
     },
     "Solo i corsi WeBeep già aperti: cercarli tutti richiederebbe una richiesta per corso." : {
       "localizations" : {
@@ -10397,23 +11855,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Solo i corsi WeBeep già aperti: cercarli tutti richiederebbe una richiesta per corso."
-          }
-        }
-      }
-    },
-    "Solo il mio corso di studi" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Only my degree course"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Solo il mio corso di studi"
           }
         }
       }
@@ -10467,16 +11908,44 @@
       }
     },
     "Spazio" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Space"
+          }
+        }
+      }
     },
     "Spessore" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weight"
+          }
+        }
+      }
     },
     "Sposta giù" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move down"
+          }
+        }
+      }
     },
     "Sposta su" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move up"
+          }
+        }
+      }
     },
     "Stai guardando dati di esempio" : {
       "localizations" : {
@@ -10494,30 +11963,45 @@
         }
       }
     },
-    "Stai guardando dati di esempio, non il tuo account." : {
+    "Sticker" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You're looking at sample data, not your account."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stai guardando dati di esempio, non il tuo account."
+            "value" : "Stickers"
           }
         }
       }
     },
-    "Sticker" : {
-
-    },
     "Stile" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Style"
+          }
+        }
+      }
+    },
+    "Stile %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Style %lld"
+          }
+        }
+      }
     },
     "Stima sui voti del libretto pesati per CFU (%lld CFU per questo esame)." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An estimate from your transcript marks weighted by credits (%lld credits for this exam)."
+          }
+        }
+      }
     },
     "Sto andando a lezione" : {
       "localizations" : {
@@ -10530,24 +12014,34 @@
       }
     },
     "Stretto" : {
-
-    },
-    "Studio" : {
-
-    },
-    "Studio autonomo" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Self-study"
+            "value" : "Condensed"
+          }
+        }
+      }
+    },
+    "Studio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Study"
           }
         }
       }
     },
     "Su una carriera chiusa appelli e iscrizioni di solito non rispondono." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On a closed record, sittings and registration usually do not respond."
+          }
+        }
+      }
     },
     "Suggerita" : {
       "localizations" : {
@@ -10566,7 +12060,14 @@
       }
     },
     "Sulla pagina" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On the page"
+          }
+        }
+      }
     },
     "Superati" : {
       "localizations" : {
@@ -10600,6 +12101,26 @@
         }
       }
     },
+    "Superficie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Surface"
+          }
+        }
+      }
+    },
+    "Superficie e contenuto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Surface and content"
+          }
+        }
+      }
+    },
     "Supporto didattico in inglese" : {
       "localizations" : {
         "en" : {
@@ -10609,9 +12130,6 @@
           }
         }
       }
-    },
-    "Sviluppo e diagnostica" : {
-
     },
     "Svuota cache" : {
       "localizations" : {
@@ -10629,34 +12147,35 @@
         }
       }
     },
-    "Svuota l'orario" : {
-      "extractionState" : "stale",
+    "Tab" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Clear the timetable"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Svuota l'orario"
+            "value" : "Tabs"
           }
         }
       }
     },
-    "Tab" : {
-
-    },
-    "Tema" : {
-
-    },
     "Tentativi precedenti" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous attempts"
+          }
+        }
+      }
     },
     "Testo" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text"
+          }
+        }
+      }
     },
     "Ti porto su %@…" : {
       "localizations" : {
@@ -10691,16 +12210,34 @@
       }
     },
     "Tieni premuto sulla pagina per spostarli, ingrandirli e ruotarli." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touch and hold the page to move, resize and rotate them."
+          }
+        }
+      }
     },
     "Tinta" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wash"
+          }
+        }
+      }
     },
     "Tinto" : {
-
-    },
-    "tipo" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tinted"
+          }
+        }
+      }
     },
     "Tipo" : {
       "localizations" : {
@@ -10723,13 +12260,14 @@
       }
     },
     "Tocca un codice per copiarlo. Arrivano dal tuo account del Politecnico." : {
-
-    },
-    "Togli" : {
-
-    },
-    "Togli dalla pagina" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap a code to copy it. They come from your Politecnico account."
+          }
+        }
+      }
     },
     "Togli dalla schermata di blocco" : {
       "localizations" : {
@@ -10774,13 +12312,34 @@
       }
     },
     "Torna all’interfaccia attuale" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to the current interface"
+          }
+        }
+      }
     },
     "Tra %lld giorni" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %lld days"
+          }
+        }
+      }
     },
     "Trascina per spostare" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to move"
+          }
+        }
+      }
     },
     "Trova un'aula libera" : {
       "localizations" : {
@@ -10857,7 +12416,14 @@
       }
     },
     "Tutto pronto?" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All set?"
+          }
+        }
+      }
     },
     "Tutto resta sul dispositivo: i promemoria vengono calcolati dal tuo orario e programmati localmente, senza inviare nulla." : {
       "localizations" : {
@@ -10908,10 +12474,24 @@
       }
     },
     "Un Flavor condiviso è un codice: incollalo qui per usarlo." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A shared Flavor is a code: paste it here to use it."
+          }
+        }
+      }
     },
     "Un passo alla volta." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One step at a time."
+          }
+        }
+      }
     },
     "Un'aula dove studiare" : {
       "localizations" : {
@@ -10929,8 +12509,25 @@
         }
       }
     },
+    "Una carta su cui stampare la pagina, o un motivo nel colore del Flavor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A paper to print the page on, or a pattern in the Flavor's colour."
+          }
+        }
+      }
+    },
     "Una grana di pellicola su tutta la pagina." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A film grain over the whole page."
+          }
+        }
+      }
     },
     "Una notifica prima di ogni lezione, con l'aula." : {
       "localizations" : {
@@ -10948,11 +12545,25 @@
         }
       }
     },
-    "Una sezione tolta tiene le sue impostazioni." : {
-
+    "Una sezione nascosta tiene le sue impostazioni." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A hidden section keeps its settings."
+          }
+        }
+      }
     },
     "Una sola pagina con il giorno, e tutto il resto in un pannello dal basso." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A single page with the day, and everything else in a panel from the bottom."
+          }
+        }
+      }
     },
     "Una striscia in cima a ogni schermata te lo ricorda." : {
       "localizations" : {
@@ -10971,7 +12582,14 @@
       }
     },
     "Usa" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use"
+          }
+        }
+      }
     },
     "Usa dati di esempio" : {
       "localizations" : {
@@ -11006,7 +12624,14 @@
       }
     },
     "Uscire dall’account?" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign out of your account?"
+          }
+        }
+      }
     },
     "Utile per segnalare un problema: mostra dove l'app sta cercando i servizi del Politecnico." : {
       "localizations" : {
@@ -11024,31 +12649,25 @@
         }
       }
     },
-    "Vai a oggi" : {
-
-    },
     "Vedi e modifica il profilo" : {
-
-    },
-    "Vedi l'orario settimanale" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "See the weekly timetable"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vedi l'orario settimanale"
+            "value" : "View and edit your profile"
           }
         }
       }
     },
     "Vengono rimossi i token dal portachiavi e i dati salvati sul dispositivo." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This removes the tokens from the keychain and the data saved on the device."
+          }
+        }
+      }
     },
     "Verifiche" : {
       "localizations" : {
@@ -11077,16 +12696,54 @@
       }
     },
     "Vetro" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glass"
+          }
+        }
+      }
     },
     "Vetro chiaro" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear glass"
+          }
+        }
+      }
     },
     "Vetro tinto" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tinted glass"
+          }
+        }
+      }
     },
     "Viaggi" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Travel"
+          }
+        }
+      }
+    },
+    "Video" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video"
+          }
+        }
+      }
     },
     "Viene aggiunto alla selezione dell'orario personalizzato: calcola l'orario da lì. È uno strumento informale del Politecnico e non sostituisce il piano di studi." : {
       "localizations" : {
@@ -11121,7 +12778,14 @@
       }
     },
     "Voto %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark %@"
+          }
+        }
+      }
     },
     "Voto confermato sui Servizi Online" : {
       "localizations" : {
@@ -11211,36 +12875,6 @@
         }
       }
     },
-    "WeBeep · consegne" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "WeBeep · assignments"
-          }
-        }
-      }
-    },
-    "WeBeep · forum Annunci" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "WeBeep · Announcements forum"
-          }
-        }
-      }
-    },
-    "WeBeep · pagina del corso" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "WeBeep · course page"
-          }
-        }
-      }
-    },
     "WeBeep collegato · i materiali sono nella scheda WeBeep." : {
       "localizations" : {
         "en" : {
@@ -11253,6 +12887,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "WeBeep collegato · i materiali sono nella scheda WeBeep."
+          }
+        }
+      }
+    },
+    "WeBeep e diagnostica" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WeBeep and diagnostics"
           }
         }
       }
@@ -11305,8 +12949,35 @@
         }
       }
     },
-    "Widget" : {
-
+    "WeBeep · consegne" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WeBeep · assignments"
+          }
+        }
+      }
+    },
+    "WeBeep · forum Annunci" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WeBeep · Announcements forum"
+          }
+        }
+      }
+    },
+    "WeBeep · pagina del corso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WeBeep · course page"
+          }
+        }
+      }
     },
     "Widget con la prossima lezione e la media, controlli in Centro di Controllo e una Live Activity mentre sei in viaggio verso l'aula." : {
       "localizations" : {
@@ -11341,7 +13012,224 @@
       }
     },
     "Zig-zag" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zigzag"
+          }
+        }
+      }
+    },
+    "anno accademico" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "academic year"
+          }
+        }
+      }
+    },
+    "di %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "of %lld"
+          }
+        }
+      }
+    },
+    "e altre %lld" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "and %lld more"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "and %lld more"
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "e un'altra"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "e altre %lld"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "eIDAS · identità di un altro paese UE" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "eIDAS · an identity from another EU country"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "eIDAS · identità di un altro paese UE"
+          }
+        }
+      }
+    },
+    "entro %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "due %@"
+          }
+        }
+      }
+    },
+    "fino alle %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "until %@"
+          }
+        }
+      }
+    },
+    "iOS consente al massimo %lld promemoria in attesa: vengono tenuti i più vicini." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS allows at most %lld pending reminders: the soonest are kept."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS consente al massimo %lld promemoria in attesa: vengono tenuti i più vicini."
+          }
+        }
+      }
+    },
+    "il tuo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yours"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "il tuo"
+          }
+        }
+      }
+    },
+    "media" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "average"
+          }
+        }
+      }
+    },
+    "ore di studio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "study hours"
+          }
+        }
+      }
+    },
+    "ore in aula" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "class hours"
+          }
+        }
+      }
+    },
+    "semestre" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "semester"
+          }
+        }
+      }
+    },
+    "tipo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "kind"
+          }
+        }
+      }
+    },
+    "È il mio corso di studi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is my degree course"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "È il mio corso di studi"
+          }
+        }
+      }
+    },
+    "—" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "—"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "—"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

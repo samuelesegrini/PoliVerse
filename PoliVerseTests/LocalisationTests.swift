@@ -91,7 +91,7 @@ struct LocalisationTests {
         let keys = [
             "Esito pubblicato", "Puoi rifiutare il voto", "Aula cambiata", "Sei negli esiti",
             "Pubblicato un file di esiti", "Nuovo annuncio del docente", "Nuova consegna",
-            "Consegna domani", "Novità esami", "Cronologia", "Aggiungi al calendario",
+            "Consegna domani", "Novità esami", "Cronologia", "Aggiungi al Calendario",
             "Corsi silenziati", "Cerca la mia matricola negli esiti", "Voto confermato sui Servizi Online",
         ]
         for key in keys {

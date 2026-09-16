@@ -136,7 +136,7 @@ struct CareerView: View {
                 }
                 ProgressView(value: book.progress)
                     .tint(Theme.brand)
-                Text("\(Int(book.progress * 100))% del piano di studi")
+                Text("\(book.progress.formatted(.percent.precision(.fractionLength(0)))) del piano di studi")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

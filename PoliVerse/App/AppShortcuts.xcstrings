@@ -1,126 +1,144 @@
 {
-  "sourceLanguage": "it",
-  "strings": {
-    "Apri WeBeep in ${applicationName}": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open WeBeep in ${applicationName}"
+  "sourceLanguage" : "it",
+  "strings" : {
+    "Apri WeBeep in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Open WeBeep in ${applicationName}",
+              "Course materials in ${applicationName}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Apri WeBeep in ${applicationName}",
+              "Materiali dei corsi in ${applicationName}"
+            ]
           }
         }
       }
     },
-    "Apri l'orario in ${applicationName}": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open the timetable in ${applicationName}"
+    "Apri l'orario in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Open the timetable in ${applicationName}",
+              "Today's lectures in ${applicationName}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Apri l'orario in ${applicationName}",
+              "Lezioni di oggi in ${applicationName}"
+            ]
           }
         }
       }
     },
-    "Apri la carriera in ${applicationName}": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open my career in ${applicationName}"
+    "Apri la carriera in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Open my career in ${applicationName}",
+              "My average in ${applicationName}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Apri la carriera in ${applicationName}",
+              "La mia media in ${applicationName}"
+            ]
           }
         }
       }
     },
-    "Aule libere in ${applicationName}": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Free rooms in ${applicationName}"
+    "Novità sui miei esami in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Updates on my exams in ${applicationName}",
+              "Any new results in ${applicationName}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Novità sui miei esami in ${applicationName}",
+              "Ci sono esiti nuovi in ${applicationName}"
+            ]
           }
         }
       }
     },
-    "Ci sono esiti nuovi in ${applicationName}": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Any new results in ${applicationName}"
+    "Quando è il prossimo esame in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "When is my next exam in ${applicationName}",
+              "Next exam in ${applicationName}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Quando è il prossimo esame in ${applicationName}",
+              "Prossimo esame in ${applicationName}"
+            ]
           }
         }
       }
     },
-    "La mia media in ${applicationName}": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "My average in ${applicationName}"
+    "Trova un'aula libera in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Find a free room in ${applicationName}",
+              "Free rooms in ${applicationName}"
+            ]
           }
-        }
-      }
-    },
-    "Lezioni di oggi in ${applicationName}": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Today's lectures in ${applicationName}"
-          }
-        }
-      }
-    },
-    "Materiali dei corsi in ${applicationName}": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Course materials in ${applicationName}"
-          }
-        }
-      }
-    },
-    "Novità sui miei esami in ${applicationName}": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Updates on my exams in ${applicationName}"
-          }
-        }
-      }
-    },
-    "Prossimo esame in ${applicationName}": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next exam in ${applicationName}"
-          }
-        }
-      }
-    },
-    "Quando è il prossimo esame in ${applicationName}": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "When is my next exam in ${applicationName}"
-          }
-        }
-      }
-    },
-    "Trova un'aula libera in ${applicationName}": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Find a free room in ${applicationName}"
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Trova un'aula libera in ${applicationName}",
+              "Aule libere in ${applicationName}"
+            ]
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }
