@@ -12,10 +12,20 @@ extension View {
         modifier(LookPage())
     }
 
-    /// A card in the look's material, as Oggi's sections draw theirs.
+    /// A card in the look's material, as Oggi's sections draw theirs — or in
+    /// Liquid Glass, on the pages that ask for it with ``lookSurface``.
     func lookCard(cornerRadius: CGFloat = 26) -> some View {
         modifier(LookCard(cornerRadius: cornerRadius))
     }
+}
+
+/// What a page's cards are made of: the look's material, or glass.
+enum LookSurface: Sendable {
+    case material, glass
+}
+
+extension EnvironmentValues {
+    @Entry var lookSurface: LookSurface = .material
 }
 
 private struct LookPage: ViewModifier {
@@ -33,10 +43,16 @@ private struct LookPage: ViewModifier {
 private struct LookCard: ViewModifier {
     let cornerRadius: CGFloat
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.lookSurface) private var surface
 
     func body(content: Content) -> some View {
-        content.todayMaterial(style.material, flavor: style.flavor, mode: style.appearance.flavorMode,
-                              cornerRadius: cornerRadius)
+        switch surface {
+        case .material:
+            content.todayMaterial(style.material, flavor: style.flavor, mode: style.appearance.flavorMode,
+                                  cornerRadius: cornerRadius)
+        case .glass:
+            content.glassEffect(.regular, in: .rect(cornerRadius: cornerRadius + 4))
+        }
     }
 }
 

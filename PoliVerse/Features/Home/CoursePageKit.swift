@@ -39,8 +39,8 @@ struct CourseRamp {
     var neutral: Flavor.RGB { ramp.neutral }
 }
 
-/// A page's picture and headline: one thing in front with what stands behind
-/// it, a title, and one line saying where things are.
+/// A page's headline, as the exam page opens: one glass tile in the middle
+/// with the page's symbol, a title, and one line saying where things are.
 struct CoursePageHero: View {
     let tiles: [HeroTile]
     let placeholder: HeroTile
@@ -49,10 +49,25 @@ struct CoursePageHero: View {
     var badge: HeroBadge?
     let mode: Flavor.Mode
 
+    /// Scaled, so the tile grows with the reader's text.
+    @ScaledMetric(relativeTo: .largeTitle) private var side: CGFloat = 104
+
     var body: some View {
+        let front = tiles.first ?? placeholder
         VStack(spacing: 14) {
-            HeroTileStack(tiles: tiles, placeholder: placeholder, badge: badge, mode: mode)
-                .frame(maxWidth: .infinity)
+            GlassTile(symbol: front.symbol, colour: front.colour, side: side, surface: .glass, mode: mode)
+                .overlay(alignment: .bottomTrailing) {
+                    if let badge {
+                        Image(systemName: badge.symbol)
+                            .font(.system(size: side * 0.14, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: side * 0.3, height: side * 0.3)
+                            .background(badge.tint.gradient, in: .circle)
+                            .offset(x: side * 0.08, y: side * 0.08)
+                    }
+                }
+                .padding(.bottom, 4)
+                .accessibilityHidden(true)
             VStack(spacing: 6) {
                 title
                     .font(.title2.weight(.bold))
@@ -75,14 +90,17 @@ struct CoursePageHero: View {
     }
 }
 
-/// The solid icon at the start of a course page's row.
+/// The symbol at the start of a course page's row, in the course's colour.
 struct CourseRowTile: View {
     let symbol: String
     let colour: Flavor.RGB
     @ScaledMetric(relativeTo: .body) private var side: CGFloat = 30
 
     var body: some View {
-        GlassTile(symbol: symbol, colour: colour, side: side)
+        Image(systemName: symbol)
+            .font(.body.weight(.medium))
+            .foregroundStyle(colour.color)
+            .frame(width: side, height: side)
             .accessibilityHidden(true)
     }
 }
@@ -174,8 +192,8 @@ struct GlanceStrip: View {
                 }
                 VStack(spacing: 2) {
                     Text(item.value)
-                        .font(style.dateFont.font(size: 28, weight: style.dateWeight))
-                        .foregroundStyle(tint)
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.primary)
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.45)
