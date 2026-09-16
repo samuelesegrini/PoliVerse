@@ -82,7 +82,7 @@ struct ExamDetailView: View {
                 .frame(maxWidth: .infinity)
                 .animation(.snappy, value: exam.id)
             }
-            .lookPage()
+            .courseScreen()
             .sheet(item: $calendarDraft) { AddToCalendarSheet(event: $0).ignoresSafeArea() }
             .navigationTitle(exam.courseName)
             .navigationBarTitleDisplayMode(.inline)

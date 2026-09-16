@@ -560,9 +560,10 @@ private struct PlanLinkSheet: View {
                     ProgressView().frame(maxWidth: .infinity)
                 }
             }
+            .courseScreen()
             .navigationTitle(course.name)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Chiudi") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Chiudi", systemImage: "xmark") { dismiss() } } }
             .task { plan = await programmes.plan(forYear: course.academicYearStart) }
         }
     }

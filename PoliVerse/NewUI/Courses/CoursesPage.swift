@@ -502,7 +502,7 @@ private struct HiddenCoursesSheet: View {
                         .buttonStyle(.borderless)
                 }
             }
-            .lookPage()
+            .courseScreen()
             .navigationTitle("Corsi nascosti")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

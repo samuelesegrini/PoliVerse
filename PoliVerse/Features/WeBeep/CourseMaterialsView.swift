@@ -93,7 +93,7 @@ struct CourseMaterialsView: View {
             .frame(maxWidth: 700)
             .frame(maxWidth: .infinity)
         }
-        .lookPage()
+        .courseScreen()
         .searchable(text: $query, prompt: "Cerca nei materiali")
         .navigationTitle(course.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -141,7 +141,7 @@ struct CourseMaterialsView: View {
         let bytes = Int64(kinds.reduce(0) { $0 + $1.bytes })
         VStack(spacing: 18) {
             CoursePageHero(
-                tiles: kinds.map { HeroTile(id: $0.symbol, symbol: $0.symbol, colour: $0.colour, weight: Double($0.bytes)) },
+                tiles: [HeroTile(id: "folder", symbol: "folder", colour: ramp.main)],
                 placeholder: HeroTile(id: "empty", symbol: "folder", colour: ramp.main),
                 title: Text("Materiali"),
                 summary: summary(files: files.count, bytes: bytes, downloaded: downloaded),

@@ -24,6 +24,8 @@ struct CourseDetailView: View {
     @Environment(\.colorScheme) private var scheme
 
     private var ramp: CourseRamp { CourseRamp(course: course, style: style, scheme: scheme) }
+    /// Scaled, so the tile grows with the reader's text.
+    @ScaledMetric(relativeTo: .largeTitle) private var tileSide: CGFloat = 104
 
     @State private var selectedExam: ExamSession?
     @State private var bracketTeacher: String?
@@ -131,7 +133,7 @@ struct CourseDetailView: View {
             .frame(maxWidth: 700)
             .frame(maxWidth: .infinity)
         }
-        .lookPage()
+        .courseScreen()
         .navigationTitle(course.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -172,9 +174,10 @@ struct CourseDetailView: View {
     /// facts under, and where the student stands with it.
     private var hero: some View {
         VStack(spacing: 10) {
-            CourseMonogram(course: course, size: 76)
-                .shadow(color: accent.opacity(0.35), radius: 14, y: 6)
-                .padding(.bottom, 4)
+            GlassTile(symbol: SubjectSymbol.symbol(for: course.name), colour: ramp.main, side: tileSide,
+                      surface: .glass, mode: ramp.mode)
+                .padding(.bottom, 8)
+                .accessibilityHidden(true)
             Text(course.name)
                 .font(.title.weight(.bold))
                 .multilineTextAlignment(.center)
@@ -503,49 +506,61 @@ private struct NextSittingCard: View {
     }
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top) {
-                Text(exam.date?.formatted(.dateTime.day().month(.abbreviated).locale(locale))
-                     ?? String(localized: "Da definire"))
-                    .font(style.dateFont.font(size: 40, weight: style.dateWeight))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(exam.kind?.nonEmpty ?? String(localized: "Appello"))
+                        .font(.title3.weight(.bold))
+                    Label {
+                        Text(exam.status.label)
+                    } icon: {
+                        Circle().fill(ExamDetailView.accent(for: exam.status)).frame(width: 8, height: 8)
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                }
                 Spacer(minLength: 8)
                 if let days = daysAway {
                     Text(days == 0 ? String(localized: "Oggi") : days == 1 ? String(localized: "Domani")
-                         : String(localized: "tra \(days) giorni"))
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(.white.opacity(0.22), in: .capsule)
+                         : String(localized: "Tra \(days) giorni"))
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .glassEffect(.regular, in: .capsule)
                 }
             }
-            Text([exam.kind?.nonEmpty,
-                  exam.date?.formatted(.dateTime.hour().minute().locale(locale)),
-                  exam.room,
-                  exam.status.label].compactMap { $0 }.joined(separator: " · "))
-                .font(.subheadline)
-                .opacity(0.92)
-            if exam.status == .open, let closes = exam.enrolmentCloses {
-                Label("Iscrizioni entro il \(closes.formatted(.dateTime.day().month(.wide).locale(locale)))",
-                      systemImage: "exclamationmark.circle")
+            HStack(alignment: .top, spacing: 20) {
+                fact(String(localized: "Data"), exam.date?.formatted(.dateTime.day().month(.abbreviated).locale(locale)))
+                fact(String(localized: "Ora"), exam.date?.formatted(.dateTime.hour().minute().locale(locale)))
+                fact(String(localized: "Aula"), exam.room)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .padding(.top, 10)
+            }
+            if exam.status == .open, let closes = exam.enrolmentCloses {
+                Text("Iscrizioni entro il \(closes.formatted(.dateTime.day().month(.wide).locale(locale)))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
-        .foregroundStyle(Theme.onAccent)
-        .padding(18)
+        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            shape.fill(accent)
-                .visualEffect { content, proxy in
-                    content.colorEffect(ShaderLibrary.glossSheen(.float2(proxy.size), .float(0.5)))
-                }
-        }
-        .shadow(color: accent.opacity(0.3), radius: 10, y: 5)
-        .contentShape(shape)
+        .lookCard()
+        .contentShape(.rect)
         .accessibilityElement(children: .combine)
         .accessibilityHint("Apre l’appello")
+    }
+
+    @ViewBuilder
+    private func fact(_ label: String, _ value: String?) -> some View {
+        if let value {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(label).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                Text(value).font(.headline).lineLimit(1)
+            }
+        }
     }
 }
 

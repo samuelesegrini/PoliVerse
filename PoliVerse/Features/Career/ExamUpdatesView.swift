@@ -16,17 +16,12 @@ struct ExamUpdatesView: View {
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
     @Environment(\.colorScheme) private var scheme
 
-    /// The kinds of news there are, the latest in front, and how many are
-    /// still to read.
+    /// The bell, and how many are still to read.
     private var hero: some View {
         let ramp = FlavorRamp(style: style, scheme: scheme)
-        var symbols: [String] = []
-        for update in feed.updates.sorted(by: { $0.detectedAt > $1.detectedAt }) where !symbols.contains(update.kind.symbol) {
-            symbols.append(update.kind.symbol)
-        }
         let unread = FeedItem.items(from: feed.updates).filter { $0.isUnread(since: seenBefore) }.count
         return CoursePageHero(
-            tiles: zip(symbols.prefix(5), ramp.colours(min(symbols.count, 5))).map { HeroTile(id: $0, symbol: $0, colour: $1) },
+            tiles: [HeroTile(id: "bell", symbol: "bell.badge", colour: ramp.colour(at: 0.3))],
             placeholder: HeroTile(id: "empty", symbol: "bell.badge", colour: ramp.neutral),
             title: unread == 0 ? Text("Tutto letto") : Text(unread == 1 ? "1 novità da leggere" : "\(unread) novità da leggere"),
             summary: Text("Dai Servizi Online e da WeBeep"),
@@ -96,7 +91,7 @@ struct ExamUpdatesView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 40)
         }
-        .lookPage()
+        .courseScreen()
         .navigationTitle("Novità esami")
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await career.load(force: true) }
@@ -214,7 +209,7 @@ struct ExamTimelineSection: View {
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .glassEffect(.regular, in: .rect(cornerRadius: 26))
+                .lookCard()
             }
         }
     }

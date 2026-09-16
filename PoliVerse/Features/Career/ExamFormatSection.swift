@@ -82,7 +82,7 @@ struct ExamFormatSection: View {
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .glassEffect(.regular, in: .rect(cornerRadius: 26))
+                    .lookCard()
                 }
             }
         }

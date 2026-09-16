@@ -45,7 +45,7 @@ struct CourseInfoView: View {
             .frame(maxWidth: 700)
             .frame(maxWidth: .infinity)
         }
-        .lookPage()
+        .courseScreen()
         .navigationTitle("Informazioni")
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(.success, trigger: copied)
@@ -69,14 +69,11 @@ struct CourseInfoView: View {
 
     // MARK: - Facts
 
-    /// What the page covers, as a pile: the facts in front, then the teacher,
-    /// the exam, the prove in itinere and the codes.
+    /// The subject's tile, the course and its teacher.
     private var hero: some View {
-        let symbols = ["info.circle", "person", "pencil.and.list.clipboard", "square.split.2x1", "number"]
-        let colours = ramp.colours(symbols.count)
         let name = pickTeachers ?? course.teacher
         return CoursePageHero(
-            tiles: zip(symbols, colours).map { HeroTile(id: $0, symbol: $0, colour: $1) },
+            tiles: [HeroTile(id: "subject", symbol: SubjectSymbol.symbol(for: course.name), colour: ramp.main)],
             placeholder: HeroTile(id: "empty", symbol: "info.circle", colour: ramp.main),
             title: Text(course.name),
             summary: name == "—" ? nil : Text(name),
@@ -385,22 +382,19 @@ struct CourseInfoView: View {
     }
 }
 
-/// A step's number on a solid tile, as the rows' symbols are drawn.
+/// A step's number in a thin ring, in the course's colour.
 private struct NumberTile: View {
     let number: Int
     let colour: Flavor.RGB
     @ScaledMetric(relativeTo: .body) private var side: CGFloat = 30
 
     var body: some View {
-        RoundedRectangle(cornerRadius: side * 0.2237, style: .continuous)
-            .fill(colour.color.gradient)
+        Text("\(number)")
+            .font(.system(size: side * 0.46, weight: .semibold, design: .rounded))
+            .foregroundStyle(colour.color)
+            .frame(width: side * 0.8, height: side * 0.8)
+            .overlay { Circle().strokeBorder(colour.color.opacity(0.5), lineWidth: 1.5) }
             .frame(width: side, height: side)
-            .overlay {
-                Text("\(number)")
-                    .font(.system(size: side * 0.48, weight: .bold, design: .rounded))
-                    .foregroundStyle(colour.legibleGlyph)
-            }
-            .shadow(color: .black.opacity(0.22), radius: side * 0.08, y: side * 0.04)
             .accessibilityHidden(true)
     }
 }
