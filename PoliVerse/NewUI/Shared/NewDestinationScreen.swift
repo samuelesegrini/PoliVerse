@@ -6,7 +6,7 @@ extension NewDestination {
     @MainActor @ViewBuilder
     var screen: some View {
         switch self {
-        case .courses: WeBeepView(embedded: true)
+        case .courses: CoursesPage()
         case .career: CareerView(embedded: true)
         case .calendar: CalendarView(embedded: true)
         case .freeRooms: FreeRoomsView()

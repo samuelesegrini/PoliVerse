@@ -10,7 +10,12 @@ import SwiftUI
 final class ShellState {
     var day = Date.now
     /// The tab on screen in the tab layout.
+    #if DEBUG
+    /// `-Tab courses` opens a tab at launch, for trying it out.
+    var selection = UserDefaults.standard.string(forKey: "Tab").flatMap(NewDestination.Tab.init(rawValue:)) ?? .today
+    #else
     var selection = NewDestination.Tab.today
+    #endif
     /// Cerca's pushed screens, so a way in from outside can open a place.
     /// Untyped: the screens pushed further in push courses and teachers.
     var searchPath = NavigationPath()

@@ -12,53 +12,16 @@ struct WeBeepView: View {
     @Environment(CareerService.self) private var career
     @Environment(StudyProgrammeService.self) private var programmes
     @Environment(CareersService.self) private var careers
-    @State private var originFilter: OriginFilter = .all
+    @State private var originFilter: CourseOrigins.Filter = .all
     @State private var overrides = EnrolmentOverrides.all()
-
-    enum OriginFilter: Hashable {
-        case all, plan, otherCareer, byChoice
-    }
 
     /// Other careers' plans, read from their caches once rather than on
     /// every redraw.
     @State private var otherPlans: [EnrolmentOrigin.Plan] = []
 
-    private var plans: [EnrolmentOrigin.Plan] {
-        // The libretto, and the teachings of the plan pages read for this
-        // career: a course of the plan counts even before the libretto lists it.
-        let current = EnrolmentOrigin.Plan(matricola: session.student?.matricola ?? "", isCurrent: true,
-                                           libretto: career.libretto)
-        return [EnrolmentOrigin.Plan(matricola: current.matricola, isCurrent: true,
-                                     codes: current.codes.union(programmes.planCodes),
-                                     names: Set(career.libretto.map(\.name)))] + otherPlans
-    }
-
-    private func origin(_ course: Course, plans: [EnrolmentOrigin.Plan]) -> EnrolmentOrigin {
-        let moodle = course.moodleID.flatMap(weBeep.moodleCourse(id:))
-        return EnrolmentOrigin.classify(
-            codes: EnrolmentOrigin.codes(in: [course.teachingCode, moodle?.idnumber, moodle?.shortname]),
-            name: course.name, plans: plans, override: overrides[course.id],
-            selfEnrolmentOpen: course.moodleID.flatMap { weBeep.selfEnrolment[$0] })
-    }
-
-    private func filtered(_ list: [Course]) -> [Course] {
-        guard originFilter != .all else { return list }
-        let plans = plans
-        return list.filter { course in
-            switch (origin(course, plans: plans), originFilter) {
-            case (.currentPlan, .plan), (.otherCareer, .otherCareer), (.outsidePlan, .byChoice), (.selfEnrolled, .byChoice): true
-            default: false
-            }
-        }
-    }
-
-    private func originLabel(_ origin: EnrolmentOrigin) -> String? {
-        switch origin {
-        case .currentPlan, .unknown: nil
-        case .otherCareer(let matricola): String(localized: "Piano della matricola \(matricola)")
-        case .outsidePlan: String(localized: "Fuori dal piano di studi")
-        case .selfEnrolled: String(localized: "Probabile iscrizione libera")
-        }
+    private var origins: CourseOrigins {
+        CourseOrigins(student: session.student, career: career, programmes: programmes, otherPlans: otherPlans,
+                      overrides: overrides, weBeep: weBeep)
     }
 
     /// WeBeep is the source of the course list, so when it is not connected the
@@ -78,7 +41,7 @@ struct WeBeepView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(course.name).font(.subheadline.weight(.medium)).lineLimit(2)
                     Text([course.academicYear == "—" ? course.teacher : course.academicYear,
-                          originLabel(origin)].compactMap { $0 }.joined(separator: " · "))
+                          CourseOrigins.label(origin)].compactMap { $0 }.joined(separator: " · "))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
@@ -135,10 +98,10 @@ struct WeBeepView: View {
 
                 Section {
                     Picker("Mostra", selection: $originFilter) {
-                        Text("Tutti").tag(OriginFilter.all)
-                        Text("Del piano").tag(OriginFilter.plan)
-                        if careers.hasChoice { Text("Altra carriera").tag(OriginFilter.otherCareer) }
-                        Text("Iscrizione libera").tag(OriginFilter.byChoice)
+                        Text("Tutti").tag(CourseOrigins.Filter.all)
+                        Text("Del piano").tag(CourseOrigins.Filter.plan)
+                        if careers.hasChoice { Text("Altra carriera").tag(CourseOrigins.Filter.otherCareer) }
+                        Text("Iscrizione libera").tag(CourseOrigins.Filter.byChoice)
                     }
                 } footer: {
                     if originFilter != .all {
@@ -146,18 +109,19 @@ struct WeBeepView: View {
                     }
                 }
 
-                let plans = plans
-                let favourites = filtered(courses.courses(in: year)).filter(\.isFavourite)
-                let others = filtered(courses.courses(in: year)).filter { !$0.isFavourite }
+                let origins = origins
+                let shown = origins.filter(courses.courses(in: year), by: originFilter)
+                let favourites = shown.filter(\.isFavourite)
+                let others = shown.filter { !$0.isFavourite }
 
                 if !favourites.isEmpty {
                     Section("Preferiti") {
-                        ForEach(favourites) { row($0, origin: origin($0, plans: plans)) }
+                        ForEach(favourites) { row($0, origin: origins.origin(of: $0)) }
                     }
                 }
 
                 Section(favourites.isEmpty ? "" : "Altri corsi") {
-                    ForEach(others) { row($0, origin: origin($0, plans: plans)) }
+                    ForEach(others) { row($0, origin: origins.origin(of: $0)) }
                 }
 
                 if !courses.hiddenOnly.isEmpty {
@@ -174,33 +138,8 @@ struct WeBeepView: View {
             .navigationTitle("WeBeep")
             .navigationDestination(for: Course.self) { CourseMaterialsView(course: $0) }
             .task {
-                await courses.load()
-                await careers.load()
-                let current = session.student?.matricola
-                otherPlans = careers.careers.filter { $0.matricola != current }.compactMap { other in
-                    CareerService.cachedLibretto(account: other.matricola).map {
-                        EnrolmentOrigin.Plan(matricola: other.matricola, isCurrent: false, libretto: $0)
-                    }
-                }
-                await career.load()
-                // The plan of every year the list covers, so its courses read
-                // as "del piano" by the plan itself, not only by the libretto.
-                await programmes.prepare()
-                for year in Set(courses.courses.compactMap(\.academicYearStart)) {
-                    _ = await programmes.plan(forYear: year)
-                }
-                // This year's lecturers say which bracket each course is followed in.
-                let thisYear = AcademicYear.recent().first?.code
-                let thisYearCourses = courses.courses.filter { $0.academicYearStart == thisYear }
-                await weBeep.loadContacts(for: thisYearCourses.compactMap(\.moodleID))
-                await programmes.inferBrackets(courses: thisYearCourses, contacts: weBeep.contacts)
-                // Only pages outside every plan need asking how they enrol.
-                let plans = plans
-                let unplanned = courses.courses.filter {
-                    if case .outsidePlan = origin($0, plans: plans) { return true }
-                    return false
-                }.compactMap(\.moodleID)
-                await weBeep.loadSelfEnrolment(for: unplanned)
+                await CourseOrigins.load(courses: courses, careers: careers, career: career, programmes: programmes,
+                                         weBeep: weBeep, student: session.student) { otherPlans = $0 }
             }
             .overlay {
                 if needsLogin {
