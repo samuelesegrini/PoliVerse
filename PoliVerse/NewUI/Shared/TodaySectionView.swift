@@ -44,9 +44,10 @@ struct TodaySectionView: View {
 
     @ViewBuilder
     private var card: some View {
-        let lessons = TodayDigest.timetable(events: agenda.events, day: day)
+        let entries = entries(now: .now)
         if section.kind.hasCourseColours && section.courseColours && !collapsed
-            && section.form == .list && !lessons.isEmpty {
+            && section.form == .list && !entries.isEmpty {
+            let lessons = TodayDigest.timetable(events: agenda.events, day: day)
             // Each lesson its own card in its course's colour.
             VStack(spacing: compact ? 6 : 8) {
                 ForEach(lessons) { lesson in
@@ -55,7 +56,7 @@ struct TodaySectionView: View {
             }
         } else if section.form == .tiles && !collapsed && !entries.isEmpty {
             // Tiles are cards of their own, as the small widgets are.
-            tiles
+            tiles(entries)
         } else {
             materialCard
         }
@@ -131,7 +132,8 @@ struct TodaySectionView: View {
 
     @ViewBuilder
     private var content: some View {
-        let now = Date.now
+        // Read once: two passes either side of a lesson's end would disagree.
+        let entries = entries(now: .now)
         if collapsed {
             HStack(spacing: 12) {
                 Image(systemName: section.kind.systemImage)
@@ -149,18 +151,17 @@ struct TodaySectionView: View {
             empty(emptyText)
         } else {
             switch section.form {
-            case .list: rows
-            case .highlight: highlight
-            case .rail: rail
+            case .list: rows(entries)
+            case .highlight: highlight(entries)
+            case .rail: rail(entries)
             // Tiles are drawn by ``card``, which gives each its own surface.
-            case .tiles: rows
+            case .tiles: EmptyView()
             }
         }
     }
 
     /// What this section lists, in one shape the forms can all draw.
-    private var entries: [TodayEntry] {
-        let now = Date.now
+    private func entries(now: Date) -> [TodayEntry] {
         switch section.kind {
         case .currentClass:
             guard let current = CurrentClass.forAccessory(from: agenda.events, now: now) else { return [] }
@@ -219,9 +220,8 @@ struct TodaySectionView: View {
     // MARK: - Forms
 
     /// One row per entry: the shape every section had before forms.
-    private var rows: some View {
-        let entries = entries
-        return ForEach(entries) { entry in
+    private func rows(_ entries: [TodayEntry]) -> some View {
+        ForEach(entries) { entry in
             row(symbol: entry.symbol, title: entry.title, detail: entry.detail,
                 trailing: entry.when, last: entry.id == entries.last?.id, opens: entry.opens)
         }
@@ -230,8 +230,7 @@ struct TodaySectionView: View {
     /// The first entry large — the answer to "what have I got next" — and the
     /// rest as thin rows under a rule.
     @ViewBuilder
-    private var highlight: some View {
-        let entries = entries
+    private func highlight(_ entries: [TodayEntry]) -> some View {
         if let lead = entries.first {
             VStack(alignment: .leading, spacing: compact ? 10 : 14) {
                 opening(lead.opens) {
@@ -256,6 +255,7 @@ struct TodaySectionView: View {
                         }
                         Spacer(minLength: 0)
                     }
+                    .accessibilityElement(children: .combine)
                 }
                 if entries.count > 1 {
                     Divider()
@@ -275,6 +275,7 @@ struct TodaySectionView: View {
                                         .lineLimit(1)
                                 }
                                 .padding(.vertical, compact ? 5 : 7)
+                                .accessibilityElement(children: .combine)
                             }
                         }
                     }
@@ -285,7 +286,7 @@ struct TodaySectionView: View {
     }
 
     /// Two columns of small cards, as the small widgets are.
-    private var tiles: some View {
+    private func tiles(_ entries: [TodayEntry]) -> some View {
         let material = style.material(for: section)
         let corner: CGFloat = compact ? 18 : 22
         return LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
@@ -314,6 +315,7 @@ struct TodaySectionView: View {
                         }
                     }
                     .padding(compact ? 10 : 13)
+                    .accessibilityElement(children: .combine)
                     .frame(maxWidth: .infinity, minHeight: compact ? 88 : 104, alignment: .topLeading)
                     .todayMaterial(material, flavor: style.flavor, mode: style.appearance.flavorMode, cornerRadius: corner)
                 }
@@ -325,8 +327,7 @@ struct TodaySectionView: View {
     ///
     /// Entries all on the day being shown — the timetable, always — carry the
     /// hour there instead of the date: the date is the page's already.
-    private var rail: some View {
-        let entries = entries
+    private func rail(_ entries: [TodayEntry]) -> some View {
         let calendar = PoliMiDate.romeCalendar
         let sameDay = entries.allSatisfy { entry in
             guard let date = entry.date else { return false }
@@ -377,6 +378,7 @@ struct TodaySectionView: View {
                         Spacer(minLength: 0)
                     }
                     .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityElement(children: .combine)
                 }
             }
         }

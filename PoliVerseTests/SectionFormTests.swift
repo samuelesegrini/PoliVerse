@@ -12,7 +12,7 @@ struct SectionFormTests {
         #expect(TodaySection.Form.allCases.first == .list)
     }
 
-    @Test("Every form has a name and a symbol")
+    @Test("Every form has a symbol of its own")
     func labelled() {
         for form in TodaySection.Form.allCases {
             #expect(!form.systemImage.isEmpty)

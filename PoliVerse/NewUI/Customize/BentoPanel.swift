@@ -77,8 +77,7 @@ struct BentoPanel: View {
                     }
                 } else {
                     CustomizeControls(page: page, style: $style, arranging: $arranging,
-                                      pickStickers: { path.append(.stickerPicker) },
-                                      close: { withAnimation(.snappy) { path.removeAll() } })
+                                      pickStickers: { path.append(.stickerPicker) })
                 }
             }
         }

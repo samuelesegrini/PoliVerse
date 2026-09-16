@@ -52,8 +52,6 @@ struct CustomizeControls: View {
     @Binding var style: TodayStyle
     @Binding var arranging: Bool
     var pickStickers: () -> Void = {}
-    /// Back to the bento, after a change that empties the page.
-    var close: () -> Void = {}
 
     @Environment(Session.self) private var session
     @Environment(\.colorScheme) private var scheme

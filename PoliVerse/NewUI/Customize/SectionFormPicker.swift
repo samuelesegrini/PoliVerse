@@ -16,8 +16,17 @@ struct SectionFormPicker: View {
 
     @Environment(\.colorScheme) private var scheme
     @Environment(\.shell) private var shell
-    @State private var page: TodaySection.Form = .list
+    @State private var page: TodaySection.Form
     @State private var flipped = false
+
+    init(kind: TodaySection.Kind, style: Binding<TodayStyle>, close: @escaping () -> Void = {}) {
+        self.kind = kind
+        _style = style
+        self.close = close
+        // Set before the first layout, so a section already in another form
+        // does not open on the list and jump.
+        _page = State(initialValue: style.wrappedValue.section(kind)?.form ?? .list)
+    }
 
     private static let turn = Animation.spring(duration: 0.45, bounce: 0.12)
 
@@ -51,7 +60,6 @@ struct SectionFormPicker: View {
         .padding(.bottom, 18)
         .navigationTitle(kind.title)
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { page = section.form }
         // Swiping to a card is choosing it: the page behind follows at once,
         // the way the gallery's carousel works.
         .onChange(of: page) { _, form in
@@ -80,7 +88,7 @@ struct SectionFormPicker: View {
             Button {
                 withAnimation(Self.turn) { flipped = true }
             } label: {
-                Label(forms.count > 1 ? "Usa questa forma" : "Superficie e contenuto", systemImage: "checkmark.circle.fill")
+                Label("Superficie e contenuto", systemImage: "arrow.trianglehead.2.clockwise.rotate.90")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(FlavorGlossButtonStyle(flavor: style.flavor))
@@ -155,6 +163,8 @@ private struct SectionPageCard: View {
     let style: TodayStyle
     let day: Date
 
+    @Environment(\.colorScheme) private var scheme
+
     /// The look this card shows: the same one, with this form on the section.
     private var preview: TodayStyle {
         var preview = style
@@ -199,7 +209,8 @@ private struct SectionPageCard: View {
                 .strokeBorder(.quaternary, lineWidth: 0.5)
         }
         .shadow(color: .black.opacity(0.14), radius: 16, y: 8)
-        .environment(\.colorScheme, preview.appearance.colorScheme ?? .light)
+        // Only a look that fixes an appearance overrides the viewer's.
+        .environment(\.colorScheme, preview.appearance.colorScheme ?? scheme)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(form.title))
     }
@@ -213,8 +224,6 @@ private struct SectionControlsCard: View {
     @Binding var style: TodayStyle
     var onFlip: () -> Void
     var onHide: () -> Void
-
-    @Environment(\.colorScheme) private var scheme
 
     private var section: Binding<TodaySection> {
         Binding {
@@ -240,14 +249,20 @@ private struct SectionControlsCard: View {
             }
             Toggle("Colore del Flavor", isOn: section.tinted)
                 .font(.subheadline)
-            if kind.hasCourseColours {
+            // Course colours draw one card per lesson: only the list has them.
+            if kind.hasCourseColours, section.wrappedValue.form == .list {
                 Toggle("Colori dei corsi", isOn: section.courseColours)
                     .font(.subheadline)
             }
             Spacer(minLength: 0)
-            Button("Nascondi dalla pagina", systemImage: "eye.slash", role: .destructive, action: onHide)
-                .font(.subheadline)
-                .accessibilityIdentifier("form-hide")
+            VStack(alignment: .leading, spacing: 4) {
+                Button("Nascondi dalla pagina", systemImage: "eye.slash", role: .destructive, action: onHide)
+                    .font(.subheadline)
+                    .accessibilityIdentifier("form-hide")
+                Text("Una sezione nascosta tiene le sue impostazioni.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .topLeading)
