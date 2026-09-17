@@ -215,6 +215,10 @@ struct SearchView: View {
             .scrollDismissesKeyboard(.immediately)
             .courseScreen()
             .navigationTitle("Cerca")
+            // The page's own title says "Cerca": the bar keeps it only as the
+            // back button's label.
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .principal) { Text(verbatim: "") } }
             // Donated so the screen can be handed off and offered as a
             // suggestion. The query travels with it; nothing else does.
             .userActivity(SpotlightIndex.activityType) { activity in
@@ -267,6 +271,7 @@ struct SearchView: View {
     @ViewBuilder
     private var browseContent: some View {
         LookTitle("Cerca")
+
 
         kindChips
 

@@ -14,6 +14,7 @@ struct NewRootView: View {
     /// The look in use sets the colour of the app's controls.
     @AppStorage(TodayStyle.storageKey) private var todayStyle = TodayStyle()
     @Environment(\.colorScheme) private var scheme
+    @AppStorage(SearchTabKeyboard.storageKey) private var searchOpensKeyboard = true
     @State private var layoutChangePending = false
     @Environment(AgendaService.self) private var agenda
     @Environment(UpdateFeed.self) private var feed
@@ -113,8 +114,9 @@ struct NewRootView: View {
         }
         .tint(todayStyle.controlTint(scheme))
         .preferredColorScheme(todayStyle.appearance.colorScheme)
-        // Selecting the search tab opens its field straight away.
-        .tabViewSearchActivation(.searchTabSelection)
+        // Selecting the search tab opens its field straight away, unless the
+        // student turned that off in Impostazioni.
+        .tabViewSearchActivation(searchOpensKeyboard ? .searchTabSelection : .automatic)
         .tabBarMinimizeBehavior(.onScrollDown)
     }
 }
