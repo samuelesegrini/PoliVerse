@@ -33,6 +33,18 @@ there as well as attached to the report:
 POLIVERSE_UI_SHOTS=/tmp/poliverse-shots xcodebuild test -scheme PoliVerseUI …
 ```
 
+## The suites
+
+| Suite | Target | What it walks |
+| --- | --- | --- |
+| `ShellNavigationUITests` | UI | The four tabs, every place in Cerca, the profile and Impostazioni, the single page's panel |
+| `SearchUITests` | UI | Cerca: field, results, empty state, cleared query |
+| `ContentScreensUITests` | UI | A course opened from Corsi, Carriera's three sections, Oggi scrolled |
+| `LifecycleUITests` | UI | Rotation, return from the background, a second launch, a fresh install |
+| `AccessibilityAuditUITests` | UI | Xcode's audit per screen, and at AX5 |
+| `CustomizeAnimationTests` | UI | Personalizza from start to finish, with a screenshot per step |
+| `PerformanceTests` | UI | Launch, agenda load, hitches |
+
 ## How the UI tests launch the app
 
 Every UI test goes through `PoliVerseUITestCase`, which launches with sample
