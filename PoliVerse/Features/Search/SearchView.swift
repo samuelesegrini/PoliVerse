@@ -214,6 +214,7 @@ struct SearchView: View {
             }
             .scrollDismissesKeyboard(.immediately)
             .courseScreen()
+            .accessibilityIdentifier("search-list")
             .navigationTitle("Cerca")
             // The page's own title says "Cerca": the bar keeps it only as the
             // back button's label.
@@ -404,6 +405,7 @@ struct SearchView: View {
         if results.isEmpty {
             ContentUnavailableView.search(text: trimmed)
                 .padding(.top, 40)
+                .accessibilityIdentifier("search-empty")
         } else {
             if let hit = topHit(in: results) {
                 VStack(alignment: .leading, spacing: 10) {

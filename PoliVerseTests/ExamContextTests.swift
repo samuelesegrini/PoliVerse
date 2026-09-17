@@ -23,6 +23,23 @@ struct ExamContextTests {
                      statusText: nil, isPassed: passed)
     }
 
+    /// The libretto row is found by the sitting's code, or by its name where
+    /// the codes disagree. A row whose id is blank — the libretto has no
+    /// course code of its own, so an id can fall back to nothing — used to be
+    /// handed to any sitting that also had none, which put a stranger's mark
+    /// on the exam sheet.
+    @Test("La riga di libretto è quella di questo esame, non la prima senza codice")
+    func librettoRowIsNotTheFirstBlankOne() {
+        let blank = row("", "Analisi", grade: 18, cfu: 10, passed: true)
+        let mine = row("F1", "Fisica", grade: 28, cfu: 10, passed: true)
+        let exam = ExamSession(id: 1, courseName: "Fisica", courseCode: "", teacher: nil,
+                               date: day(-3), room: nil, enrolmentOpens: nil, enrolmentCloses: nil,
+                               enrolledCount: nil, kind: nil, status: .open)
+
+        let context = ExamContext(exam: exam, sittings: [], libretto: [blank, mine], now: now)
+        #expect(context.librettoEntry?.name == "Fisica", "L’esame ha preso la riga sbagliata")
+    }
+
     @Test("An unrecorded pass moves the CFU-weighted mean")
     func impact() throws {
         let libretto = [row("A", "Analisi", grade: 24, cfu: 10, passed: true),

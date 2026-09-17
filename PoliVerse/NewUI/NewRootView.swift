@@ -89,18 +89,18 @@ struct NewRootView: View {
     private var tabs: some View {
         TabView(selection: $shell.selection) {
             Tab("Oggi", systemImage: "calendar.day.timeline.left", value: .today) {
-                TodayTab()
+                TodayTab().accessibilityIdentifier("tab-today")
             }
             Tab(NewDestination.courses.title, systemImage: NewDestination.courses.systemImage, value: .courses) {
-                CoursesTab()
+                CoursesTab().accessibilityIdentifier("tab-courses")
             }
             Tab(NewDestination.career.title, systemImage: NewDestination.career.systemImage, value: .career) {
-                CareerTab()
+                CareerTab().accessibilityIdentifier("tab-career")
             }
             // What changed since the feed was last opened, one per fact.
             .badge(feed.unreadCount)
             Tab(value: .search, role: .search) {
-                SearchTab()
+                SearchTab().accessibilityIdentifier("tab-search")
             }
         }
         // Above the tab bar while there is a class today, like Music's player.

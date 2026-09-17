@@ -54,6 +54,7 @@ struct OnboardingView: View {
                         .buttonStyle(.plain)
                         .foregroundStyle(.secondary)
                         .accessibilityLabel("Torna al passo precedente")
+                        .accessibilityIdentifier("onboarding-back")
                     }
                     OnboardingProgress(steps: steps, current: onboarding.step)
                 }
