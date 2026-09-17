@@ -2,16 +2,17 @@ import Foundation
 import Testing
 @testable import PoliVerse
 
-/// The authorize request, which has to match the official app byte for byte.
+/// Which authorization is being asked for, and what goes with it.
 ///
-/// Every rule pinned here was learned from a failure that looked like
-/// something else: a token minted without the `agenda` scope that reaches the
-/// right endpoint and is refused with 401; a `redirect_uri` sent raw because
-/// `queryItems` leaves `:` and `/` unescaped; a career change that asks for
-/// scopes and comes back as a login. None of them shows up as a bad request —
-/// they show up as a feature that does not work.
-@Suite("OAuth del Politecnico")
-struct PoliMiOAuthTests {
+/// A login and a career change differ in four parameters at once — endpoint,
+/// matricola, access token and scope — and getting one wrong silently produces
+/// the other flow. None of it shows up as a bad request: it shows up as a
+/// feature that does not work, or as a token that comes back with no authority.
+///
+/// The encoding of those values, and reading the code out of the redirect, are
+/// pinned in `ServiceDirectoryTests` and `ModelTests`; this is the flow.
+@Suite("Flussi OAuth")
+struct PoliMiOAuthFlowTests {
     private let params = ServiceDirectory.OAuthParams(
         oauthServer: "https://oauthidp.polimi.it/oauthidp/oauth2",
         clientId: "1057407812",
@@ -30,20 +31,6 @@ struct PoliMiOAuthTests {
 
     private func value(_ name: String, in url: URL) -> String? {
         rawQuery(url).first { $0.0 == name }?.1
-    }
-
-    // MARK: Codifica
-
-    /// `URLSearchParams`, which the official app builds its query with, is
-    /// `application/x-www-form-urlencoded`: spaces become `+` and everything
-    /// outside the unreserved set is escaped.
-    @Test("Gli spazi diventano più, il resto è codificato come nel form")
-    func formEncoding() {
-        #expect(PoliMiOAuth.formURLEncoded("agenda carriera") == "agenda+carriera")
-        #expect(PoliMiOAuth.formURLEncoded("https://polimiapp.polimi.it/polimi_app/app")
-                == "https%3A%2F%2Fpolimiapp.polimi.it%2Fpolimi_app%2Fapp")
-        #expect(PoliMiOAuth.formURLEncoded("a*b-c.d_e") == "a*b-c.d_e")
-        #expect(PoliMiOAuth.formURLEncoded("") == "")
     }
 
     // MARK: Login
@@ -73,12 +60,6 @@ struct PoliMiOAuthTests {
     func loginAsksForTheScopes() {
         let url = PoliMiOAuth.authorizationURL(params: params)
         #expect(value("scope", in: url) == "agenda+carriera+webeep")
-    }
-
-    @Test("Il redirect_uri viaggia codificato, non grezzo")
-    func redirectIsEscaped() {
-        let url = PoliMiOAuth.authorizationURL(params: params)
-        #expect(value("redirect_uri", in: url) == "https%3A%2F%2Fpolimiapp.polimi.it%2Fpolimi_app%2Fapp")
     }
 
     @Test("Lo stato chiesto è quello che parte")
@@ -135,30 +116,6 @@ struct PoliMiOAuthTests {
         #expect(PoliMiOAuth.AuthorizationFlow.login(hintMatricola: "986617").matricola == "986617")
         #expect(PoliMiOAuth.AuthorizationFlow.careerChange(matricola: "337940", accessToken: "t")
             .matricola == "337940")
-    }
-
-    // MARK: Il codice che torna
-
-    /// Parsed rather than cut out of the string: the IdP appends `state` and
-    /// reorders parameters, and a string replacement breaks the moment it does.
-    @Test("Il codice si legge dalla query, in qualunque ordine")
-    func authCode() {
-        let withState = URL(string: "\(PoliMiOAuth.redirectURI)?state=abc&code=XYZ789")!
-        let codeFirst = URL(string: "\(PoliMiOAuth.redirectURI)?code=XYZ789&state=abc")!
-        #expect(PoliMiOAuth.authCode(from: withState) == "XYZ789")
-        #expect(PoliMiOAuth.authCode(from: codeFirst) == "XYZ789")
-    }
-
-    @Test("Un indirizzo che non è il nostro redirect non dà codice")
-    func authCodeFromAnotherURL() {
-        #expect(PoliMiOAuth.authCode(from: URL(string: "https://example.com/app?code=XYZ")!) == nil)
-    }
-
-    /// The IdP redirects back on failure too, with an error instead of a code.
-    @Test("Un redirect senza codice non inventa un codice")
-    func authCodeMissing() {
-        #expect(PoliMiOAuth.authCode(from: URL(string: "\(PoliMiOAuth.redirectURI)?error=access_denied")!) == nil)
-        #expect(PoliMiOAuth.authCode(from: URL(string: PoliMiOAuth.redirectURI)!) == nil)
     }
 
     // MARK: Le chiamate

@@ -9,7 +9,7 @@ import Testing
 /// own instead, which is also how the app uses it.
 @Suite("Cache su disco")
 struct DiskCacheTests {
-    private struct Payload: Codable, Equatable, Sendable {
+    private nonisolated struct Payload: Codable, Equatable, Sendable {
         var courses: [String]
         var count: Int
     }
