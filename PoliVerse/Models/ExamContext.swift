@@ -25,9 +25,11 @@ nonisolated struct ExamContext: Sendable, Equatable {
     }
 
     init(exam: ExamSession, sittings: [ExamSession], libretto: [LibrettoExam], now: Date) {
-        let entry = libretto.first {
-            $0.id == exam.courseCode || exam.isOf(courseCode: $0.id, courseName: $0.name)
-        }
+        // `isOf` compares the row's id against the sitting's code itself, so
+        // the plain `==` that used to lead here added nothing — except that it
+        // also matched two *blank* ids, handing this exam the first libretto
+        // row that happened to have none.
+        let entry = libretto.first { exam.isOf(courseCode: $0.id, courseName: $0.name) }
         librettoEntry = entry
 
         let course = sittings.filter { $0.id != exam.id && $0.isOf(courseCode: exam.courseCode, courseName: exam.courseName) }

@@ -35,6 +35,44 @@ struct ExamSessionMatchTests {
         #expect(exam.isOf(courseCode: "086089", courseName: "Basi di Dati"))
     }
 
+    /// The bug this rule exists for. Two sittings that arrived without a code
+    /// used to count as the same course as each other and as every course
+    /// that also lacked one, so one of them appeared under all of them at
+    /// once — in the timeline, on the course card and in the course screen.
+    @Test("Due codici mancanti non sono lo stesso codice")
+    func missingCodesDoNotMatch() {
+        let exam = sitting(code: "", name: "Basi di Dati")
+        #expect(!exam.isOf(courseCode: "", courseName: "Analisi"))
+        #expect(!exam.isOf(courseCode: "", courseName: "Reti Logiche"))
+    }
+
+    /// The same holds for the dashes these endpoints use to spell "not
+    /// recorded": they are an absence written down, not a value.
+    @Test("I trattini con cui i servizi scrivono «non registrato» non combaciano", arguments: ["", " ", "—", "-"])
+    func blankCodes(blank: String) {
+        let exam = sitting(code: blank, name: "Basi di Dati")
+        #expect(!exam.isOf(courseCode: blank, courseName: "Analisi"),
+                "Un codice assente «\(blank)» non deve identificare niente")
+    }
+
+    /// A sitting with no code is still placed by its name, which is the whole
+    /// point of consulting the name at all.
+    @Test("Senza codice si decide sul nome, in un senso e nell’altro")
+    func withoutACodeTheNameDecides() {
+        let exam = sitting(code: "", name: "Basi di Dati")
+        #expect(exam.isOf(courseCode: "097785", courseName: "Basi di Dati"))
+        #expect(!exam.isOf(courseCode: "097785", courseName: "Analisi"))
+    }
+
+    /// And a sitting with no name either belongs to nothing: there is nothing
+    /// left to decide on, and guessing would put it under a random course.
+    @Test("Senza codice e senza nome non appartiene a niente")
+    func withNeither() {
+        let exam = sitting(code: "", name: "")
+        #expect(!exam.isOf(courseCode: "", courseName: ""))
+        #expect(!exam.isOf(courseCode: "097785", courseName: "Basi di Dati"))
+    }
+
     @Test("Né il codice né il nome: non è quel corso")
     func neither() {
         let exam = sitting(code: "097785", name: "Basi di Dati")
