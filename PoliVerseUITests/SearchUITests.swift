@@ -25,7 +25,10 @@ nonisolated final class SearchUITests: PoliVerseUITestCase {
         switchTab(app, to: "Cerca", expecting: "tab-search")
         let field = require(app.searchFields.firstMatch, "Cerca has no search field")
         field.tap()
-        field.typeText("Basi")
+        // Submitted, not just typed: the field offers completions drawn from
+        // the loaded data, and a suggestion sits over the results with the
+        // same words on it. Return puts them away and leaves the list.
+        field.typeText("Basi\n")
         settle()
         shot(app, "search-02-results")
 
@@ -49,7 +52,7 @@ nonisolated final class SearchUITests: PoliVerseUITestCase {
         switchTab(app, to: "Cerca", expecting: "tab-search")
         let field = require(app.searchFields.firstMatch, "Cerca has no search field")
         field.tap()
-        field.typeText("zzzqwerty")
+        field.typeText("zzzqwerty\n")
         settle()
 
         require(
