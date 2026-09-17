@@ -79,6 +79,7 @@ struct OnboardingSkipButton: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
+        .accessibilityIdentifier("onboarding-skip")
     }
 }
 
@@ -96,5 +97,6 @@ struct OnboardingPrimaryButton: View {
         .background(Theme.brand, in: .capsule)
         .foregroundStyle(Theme.onAccent)
         .buttonStyle(.plain)
+        .accessibilityIdentifier("onboarding-primary")
     }
 }

@@ -21,6 +21,8 @@ struct AppShellDuties: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            // Remote pictures load through a session with a cache of their own.
+            .asyncImageURLSession(ImageSession.shared)
             // Every way in from outside — Siri, Shortcuts, Spotlight's action
             // row — arrives as one notification, so the routing exists once.
             .onReceive(NotificationCenter.default.publisher(for: AppDestination.notification)) {

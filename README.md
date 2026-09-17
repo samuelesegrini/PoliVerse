@@ -49,7 +49,7 @@ where a one-row layout overflowed.
 
 ## Requirements
 
-- Xcode 27, iOS 26 SDK
+- Xcode 27, iOS 27 SDK (deployment target iOS 27)
 - Swift 6 (strict concurrency, `MainActor` default isolation)
 - No third-party dependencies
 
@@ -59,6 +59,11 @@ where a one-row layout overflowed.
 xcodebuild test -project PoliVerse.xcodeproj -scheme PoliVerse \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
+
+Unit tests run from the `PoliVerse` scheme, the functional UI tests — including
+the automated accessibility audits — from `PoliVerseUI`, and the launch, hitch
+and signpost measurements from `PoliVersePerformance`. See
+[docs/testing.md](docs/testing.md).
 
 24 tests covering the parts that are easy to get wrong and hard to notice:
 timezone-less timestamp parsing across CET and CEST, refresh coalescing under

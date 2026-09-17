@@ -13,6 +13,10 @@ struct FreeRoomsView: View {
 
         List {
             Section {
+                PageHero(symbol: "door.left.hand.open", title: Text("Aule libere"), summary: Text("Adesso e più tardi, per sede"))
+                    .listHeader()
+            }
+            Section {
                 DatePicker("Giorno", selection: $aule.day, displayedComponents: .date)
                 if aule.campuses.count > 1 {
                     Picker("Sede", selection: $aule.campus) {
@@ -30,9 +34,11 @@ struct FreeRoomsView: View {
                 }
                 .pickerStyle(.segmented)
             }
+            .glassRow()
 
             content
         }
+        .glassList()
         .safeAreaInset(edge: .top, spacing: 0) { FreshnessBar(age: aule.age) }
         .navigationTitle("Aule libere")
         .navigationBarTitleDisplayMode(.inline)
@@ -79,6 +85,7 @@ struct FreeRoomsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            .glassRow()
         } else if onlyNow && isToday {
             freeNowSection
         } else {
@@ -106,6 +113,7 @@ struct FreeRoomsView: View {
         } footer: {
             Text("Libere per almeno la prossima mezz'ora.")
         }
+        .glassRow()
     }
 
     private var daySection: some View {
@@ -136,6 +144,7 @@ struct FreeRoomsView: View {
                 }
             }
         }
+        .glassRow()
     }
 }
 
@@ -174,6 +183,10 @@ struct RoomScheduleView: View {
 
     var body: some View {
         List {
+            Section {
+                PageHero(symbol: "clock", title: Text(verbatim: room.name), summary: Text("Quando è libera e quando no"))
+                    .listHeader()
+            }
             Section("Libera") {
                 let free = room.freeSlots(in: day)
                 if free.isEmpty {
@@ -185,6 +198,7 @@ struct RoomScheduleView: View {
                     }
                 }
             }
+            .glassRow()
 
             RoomFacilitiesSection(roomID: room.occupancyID)
 
@@ -203,7 +217,9 @@ struct RoomScheduleView: View {
                     }
                 }
             }
+            .glassRow()
         }
+        .glassList()
         .navigationTitle(room.name)
         .navigationBarTitleDisplayMode(.inline)
     }

@@ -1,7 +1,8 @@
 # Lazy loading, and the APIs behind it
 
 Toolchain as measured, not assumed: **Swift 6.4** (swiftlang-6.4.0.33.1),
-**Xcode 27**, **iOS SDK 27**, deployment target **iOS 26**, language mode 6,
+**Xcode 27**, **iOS SDK 27**, deployment target **iOS 26** at the time of
+measuring (now iOS 27), language mode 6,
 `SWIFT_STRICT_CONCURRENCY = complete`, `SWIFT_APPROACHABLE_CONCURRENCY = YES`,
 `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`.
 
@@ -151,6 +152,11 @@ only scene- or launch-adjacent ones are underscored private API
 (`_makeSceneAccessory`). There is no public launch, prewarm or scene-caching
 API added in this release, and raising the deployment target from 26 to 27
 would drop users for no launch benefit.
+
+> Update 2026-09-17: the owner raised the deployment target to iOS 27 anyway,
+> for the other iOS 27 APIs (MetricKit's `MetricManager`, StateReporting,
+> system reordering, `systemPrefersReducedResourceUsage`,
+> `asyncImageURLSession`). The launch finding above still holds.
 
 ## What was actually on the launch path
 

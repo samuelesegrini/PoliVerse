@@ -301,9 +301,13 @@ calls `MetricManager.stateReporter(for:stableMetadata:)`. **That symbol is not i
 the iOS 27.0 SDK** (`grep` of every framework `.swiftinterface`); the real entry
 point is `StateReporter.reporter(for:…)` in `StateReporting.swiftinterface:66`.
 
-Natural domain for PoliVerse: the selected tab in `MainTabView`
-(`PoliVerse/App/RootView.swift:60`), labels `home`, `webeep`, … — a small fixed
-set, exactly what Apple recommends.
+Natural domain for PoliVerse: the selected tab in `NewRootView`
+(`PoliVerse/NewUI/NewRootView.swift`), labels `today`, `courses`, `career`,
+`search` — a small fixed set, exactly what Apple recommends. Taken from
+`NewDestination.Tab.allCases` rather than written out, so the labels cannot
+drift from the tabs on screen. They did once: the set was the five tabs of the
+previous interface, kept after that interface stopped being the one students
+see, and every report was filtered out in silence.
 
 ### 1.9 Extensions and widgets
 
@@ -947,8 +951,8 @@ signpost.
 ### Phase 3 — context and regression guards
 
 1. **[iOS 27]** `StateReporting`: domain `one.wape.PoliVerse.tab`, labels = tab
-   values from `MainTabView` (`RootView.swift:60-…`), reported from
-   `.onChange(of: selection, initial: true)`. Register the domain in
+   values from `NewDestination.Tab`, reported by `NewRootView` from
+   `.onChange(of: shell.selection, initial: true)`. Register the domain in
    `MetricManager(enabledStateReportingDomains:)` (Step 1.2 changes from
    `MetricManager()`). Validate in Points of Interest before shipping.
    Optional second domain: data source (`live` / `offline` / `mock`) — three

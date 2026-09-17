@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// A titled group of rows on one card — the course pages' replacement for a
-/// grouped `List` section, so every course screen shares one look.
+/// grouped `List` section, so every course screen shares one look: Oggi's,
+/// with its headings and the material the student chose for its cards.
 struct CardSection<Content: View>: View {
     var title: Text?
     var icon: String?
@@ -28,13 +29,14 @@ struct CardSection<Content: View>: View {
                     title
                 }
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
                 .padding(.horizontal, 4)
+                .accessibilityAddTraits(.isHeader)
             }
 
             VStack(alignment: .leading, spacing: 0) { content }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .cardBackground()
+                .lookCard()
 
             if let footer {
                 Text(footer)
@@ -111,13 +113,15 @@ struct FactTiles: View {
     let facts: [(value: String, label: String)]
     var tint: Color = Theme.brand
 
+    /// The values in the typeface of Oggi's date.
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+
     var body: some View {
         HStack(spacing: 8) {
             ForEach(Array(facts.enumerated()), id: \.offset) { _, fact in
                 VStack(spacing: 2) {
                     Text(fact.value)
-                        .font(.title3.weight(.bold))
-                        .fontDesign(.rounded)
+                        .font(style.dateFont.font(size: 22, weight: style.dateWeight))
                         .foregroundStyle(tint)
                         .monospacedDigit()
                         .lineLimit(1)
@@ -130,7 +134,7 @@ struct FactTiles: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
-                .cardBackground()
+                .lookCard(cornerRadius: 20)
             }
         }
     }
@@ -157,8 +161,10 @@ struct InitialsAvatar: View {
 }
 
 extension View {
-    /// The scrolling, grouped ground every course subpage sits on.
+    /// The ground every course subpage sits on: the look's sheet, as Oggi's,
+    /// with its cards in glass — the course section's own surface.
     func courseScreen() -> some View {
-        background(Color(.systemGroupedBackground))
+        lookPage()
+            .environment(\.lookSurface, .glass)
     }
 }

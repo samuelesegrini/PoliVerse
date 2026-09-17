@@ -14,6 +14,7 @@ struct SettingsSheet: View {
 
     @AppStorage(NewInterface.storageKey) private var usesNewInterface = true
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
+    @AppStorage(SearchTabKeyboard.storageKey) private var searchOpensKeyboard = true
     @State private var confirmingSignOut = false
 
     #if DEBUG
@@ -73,8 +74,21 @@ struct SettingsSheet: View {
                         Label("Disposizione", systemImage: "square.grid.2x2")
                     }
                     .pickerStyle(.menu)
+                    .accessibilityIdentifier("settings-layout")
                 } footer: {
                     Text(layout.detail)
+                }
+
+                if layout == .tabs {
+                    Section {
+                        Toggle(isOn: $searchOpensKeyboard) {
+                            Label("Apri la tastiera in Cerca", systemImage: "keyboard")
+                        }
+                    } footer: {
+                        Text(searchOpensKeyboard
+                             ? "Toccando Cerca il campo si attiva subito."
+                             : "Toccando Cerca vedi prima le ricerche recenti e i luoghi; la tastiera si apre quando tocchi il campo.")
+                    }
                 }
 
                 Section {
@@ -114,6 +128,7 @@ struct SettingsSheet: View {
                     Text("PoliVerse non è affiliata al Politecnico di Milano.")
                 }
             }
+            .accessibilityIdentifier("settings-list")
             .navigationTitle("Impostazioni")
             .navigationDestination(for: ShellState.SettingsPage.self) { page in
                 switch page {
@@ -123,6 +138,7 @@ struct SettingsSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Chiudi", systemImage: "xmark") { dismiss() }
+                        .accessibilityIdentifier("settings-close")
                 }
             }
             .confirmationDialog("Uscire dall’account?", isPresented: $confirmingSignOut, titleVisibility: .visible) {

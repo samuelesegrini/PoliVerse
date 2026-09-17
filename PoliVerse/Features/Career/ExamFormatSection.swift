@@ -16,15 +16,13 @@ struct ExamFormatSection: View {
     @State private var syllabus: Syllabus?
     @State private var classID: String?
     @State private var notesExpanded = false
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
 
     var body: some View {
         Group {
             if let syllabus, !syllabus.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Come si svolge")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 4)
+                VStack(alignment: .leading, spacing: 10) {
+                    LookHeading("Come si svolge")
 
                     VStack(alignment: .leading, spacing: 12) {
                         facts(syllabus)
@@ -58,7 +56,7 @@ struct ExamFormatSection: View {
                             }
                             .padding(10)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(.tertiarySystemGroupedBackground), in: .rect(cornerRadius: 12))
+                            .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 12, style: .continuous))
                         }
 
                         if !syllabus.teachers.isEmpty {
@@ -82,9 +80,9 @@ struct ExamFormatSection: View {
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                     }
-                    .padding(14)
+                    .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .cardBackground()
+                    .lookCard()
                 }
             }
         }
@@ -114,14 +112,13 @@ struct ExamFormatSection: View {
                 ForEach(tiles, id: \.1) { value, label in
                     VStack(spacing: 2) {
                         Text(value)
-                            .font(.headline.weight(.bold))
-                            .fontDesign(.rounded)
+                            .font(style.dateFont.font(size: 20, weight: style.dateWeight))
                             .monospacedDigit()
                         Text(label).font(.caption2).foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
-                    .background(Color(.tertiarySystemGroupedBackground), in: .rect(cornerRadius: 12))
+                    .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 12, style: .continuous))
                 }
             }
         }

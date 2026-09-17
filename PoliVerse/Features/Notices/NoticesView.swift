@@ -55,15 +55,22 @@ struct NoticesView: View {
 
     private var list: some View {
         List {
-            ForEach(notices.notices) { notice in
-                NavigationLink {
-                    NoticeDetailView(notice: notice)
-                } label: {
-                    NoticeRow(notice: notice)
+            Section {
+                PageHero(symbol: "megaphone", title: Text("Notifiche"), summary: notices.unreadCount > 0 ? Text("\(notices.unreadCount) da leggere") : Text("Tutto letto"))
+                    .listHeader()
+            }
+            Section {
+                ForEach(notices.notices) { notice in
+                    NavigationLink {
+                        NoticeDetailView(notice: notice)
+                    } label: {
+                        NoticeRow(notice: notice)
+                    }
                 }
             }
+            .glassRow()
         }
-        .listStyle(.plain)
+        .glassList()
     }
 }
 
@@ -131,7 +138,7 @@ struct NoticeDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 Text(notice.title)
-                    .font(.title3.weight(.semibold))
+                    .font(.title2.weight(.bold))
 
                 if let date = notice.date {
                     Text(date.formatted(date: .long, time: .shortened))
@@ -157,12 +164,17 @@ struct NoticeDetailView: View {
                     } label: {
                         Label("Apri sul sito", systemImage: "safari")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.glass)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
+            .padding(20)
+            .lookCard(cornerRadius: 30)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 40)
         }
+        .courseScreen()
         .navigationTitle("Notifica")
         .navigationBarTitleDisplayMode(.inline)
         .task {

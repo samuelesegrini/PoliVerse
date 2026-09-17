@@ -22,16 +22,26 @@ enum Theme {
     ///
     /// Every pair clears 4.5:1 against its own background. The orange and ochre
     /// needed darkening in light mode to get there.
-    static let courseAccents: [Color] = [
-        adaptive(light: (0.11, 0.42, 0.68), dark: (0.42, 0.68, 0.94)),
-        adaptive(light: (0.72, 0.30, 0.12), dark: (0.96, 0.55, 0.32)),
-        adaptive(light: (0.20, 0.51, 0.36), dark: (0.40, 0.78, 0.57)),
-        adaptive(light: (0.51, 0.24, 0.60), dark: (0.76, 0.53, 0.88)),
-        adaptive(light: (0.72, 0.18, 0.35), dark: (0.95, 0.45, 0.58)),
-        adaptive(light: (0.15, 0.45, 0.55), dark: (0.38, 0.75, 0.85)),
-        adaptive(light: (0.52, 0.39, 0.09), dark: (0.89, 0.72, 0.30)),
-        adaptive(light: (0.33, 0.35, 0.72), dark: (0.58, 0.62, 0.95)),
+    static let courseAccents: [Color] = courseAccentComponents.map { adaptive(light: $0.light, dark: $0.dark) }
+
+    private static let courseAccentComponents: [(light: (Double, Double, Double), dark: (Double, Double, Double))] = [
+        ((0.11, 0.42, 0.68), (0.42, 0.68, 0.94)),
+        ((0.72, 0.30, 0.12), (0.96, 0.55, 0.32)),
+        ((0.20, 0.51, 0.36), (0.40, 0.78, 0.57)),
+        ((0.51, 0.24, 0.60), (0.76, 0.53, 0.88)),
+        ((0.72, 0.18, 0.35), (0.95, 0.45, 0.58)),
+        ((0.15, 0.45, 0.55), (0.38, 0.75, 0.85)),
+        ((0.52, 0.39, 0.09), (0.89, 0.72, 0.30)),
+        ((0.33, 0.35, 0.72), (0.58, 0.62, 0.95)),
     ]
+
+    /// A course accent as components, for the pages that build a ramp of
+    /// colours around it.
+    static func courseAccentRGB(_ index: Int, dark: Bool) -> Flavor.RGB {
+        let parts = courseAccentComponents[index % courseAccentComponents.count]
+        let c = dark ? parts.dark : parts.light
+        return Flavor.RGB(red: c.0, green: c.1, blue: c.2)
+    }
 
     private static func adaptive(
         light: (Double, Double, Double), dark: (Double, Double, Double)

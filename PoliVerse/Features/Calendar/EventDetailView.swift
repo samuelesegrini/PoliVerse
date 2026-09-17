@@ -28,78 +28,94 @@ struct EventDetailView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     header
 
+                    factsPanel
+
                     if LiveActivityController.canStart(event) {
                         liveActivityButton
                     }
 
-                    section("Quando") {
-                        row("Data",
-                            event.start.formatted(.dateTime.weekday(.wide).day().month(.wide).year().locale(locale)).capitalized,
-                            icon: "calendar")
-                        // A deadline is an instant; showing "23:59 – 23:59"
-                        // would read as a mistake.
-                        if event.duration > 0 {
-                            row("Orario",
-                                "\(event.start.formatted(.dateTime.hour().minute().locale(locale))) – \(event.end.formatted(.dateTime.hour().minute().locale(locale)))",
-                                icon: "clock")
-                            row("Durata", durationText, icon: "hourglass")
-                        } else {
-                            row("Ora", event.start.formatted(.dateTime.hour().minute().locale(locale)),
-                                icon: "clock")
-                        }
-                    }
-
-                    if event.room != nil || event.roomAcronym != nil {
-                        section("Dove") {
-                            if let room = event.room {
-                                row("Aula", room, icon: "mappin.and.ellipse")
-                            }
-                            if let acronym = event.roomAcronym, acronym != event.room {
-                                row("Codice", acronym, icon: "number")
-                            }
-                        }
-                    }
-
-                    if event.calendarName?.isEmpty == false || event.subtype?.isEmpty == false {
-                        section("Corso") {
-                            if let calendar = event.calendarName, !calendar.isEmpty {
-                                row("Calendario", calendar, icon: "books.vertical")
-                            }
-                            if let subtype = event.subtype, !subtype.isEmpty {
-                                row("Tipo", subtype, icon: "person.bubble")
-                            }
-                        }
-                    }
-
                     if let details = event.details, !details.isEmpty {
-                        section("Dettagli") {
+                        VStack(alignment: .leading, spacing: 10) {
+                            LookHeading("Dettagli")
                             Text(details)
                                 .font(.subheadline)
                                 .fixedSize(horizontal: false, vertical: true)
-                                .padding(12)
+                                .padding(18)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .cardBackground()
+                                .lookCard()
                         }
+                        .padding(.top, 8)
                     }
 
                     if !event.tags.isEmpty {
-                        section("Etichette") {
+                        VStack(alignment: .leading, spacing: 10) {
+                            LookHeading("Etichette")
                             FlowTags(tags: event.tags, accent: accent)
                         }
+                        .padding(.top, 8)
                     }
                 }
-                .padding()
-                .padding(.bottom, 20)
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
+                .padding(.bottom, 40)
+                .frame(maxWidth: 640)
+                .frame(maxWidth: .infinity)
             }
-            .background(Color(.systemGroupedBackground))
-            .navigationTitle("Dettaglio")
+            .courseScreen()
+            .navigationTitle(event.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // The header names the event: the bar only closes the sheet.
+                ToolbarItem(placement: .principal) { Text(verbatim: "") }
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Chiudi") { dismiss() }
+                    Button("Chiudi", systemImage: "xmark") { dismiss() }
                 }
             }
         }
+    }
+
+    /// When, where and what, side by side on one glass panel, as the exam
+    /// page lays out a sitting.
+    private var factsPanel: some View {
+        let facts: [(label: String, value: String)] = [
+            (String(localized: "Data"), event.start.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).locale(locale)).capitalized),
+            event.duration > 0
+                ? (String(localized: "Orario"), "\(event.start.formatted(.dateTime.hour().minute().locale(locale))) – \(event.end.formatted(.dateTime.hour().minute().locale(locale)))")
+                : (String(localized: "Ora"), event.start.formatted(.dateTime.hour().minute().locale(locale))),
+            event.duration > 0 ? (String(localized: "Durata"), durationText) : nil,
+            event.room.map { (String(localized: "Aula"), $0) },
+            event.roomAcronym.flatMap { $0 != event.room ? (String(localized: "Codice"), $0) : nil },
+            event.subtype.flatMap { $0.isEmpty ? nil : (String(localized: "Tipo"), $0) },
+            event.calendarName.flatMap { $0.isEmpty ? nil : (String(localized: "Calendario"), $0) },
+        ].compactMap { $0 }
+        return VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 8) {
+                Label(event.kind.label, systemImage: event.kind.icon)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(accent)
+                Spacer(minLength: 8)
+                if event.isOngoing() {
+                    Label("In corso", systemImage: "dot.radiowaves.left.and.right")
+                        .font(.caption.weight(.bold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .glassEffect(.regular.tint(accent.opacity(0.25)), in: .capsule)
+                }
+            }
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 12, alignment: .topLeading)],
+                      alignment: .leading, spacing: 14) {
+                ForEach(facts, id: \.label) { fact in
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(fact.label).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                        Text(fact.value).font(.headline).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassEffect(.regular, in: .rect(cornerRadius: 30))
     }
 
     /// Offered rather than automatic: a Live Activity nobody asked for is
@@ -114,7 +130,8 @@ struct EventDetailView: View {
                     Label("Togli dalla schermata di blocco", systemImage: "stop.circle")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.glass)
+                .controlSize(.large)
             } else {
                 Button {
                     liveActivity.start(for: event)
@@ -122,7 +139,8 @@ struct EventDetailView: View {
                     Label("Sto andando a lezione", systemImage: "figure.walk")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
                 .disabled(!liveActivity.isAvailable)
             }
 
@@ -150,62 +168,15 @@ struct EventDetailView: View {
         return rest == 0 ? "\(hours) h" : "\(hours) h \(rest) min"
     }
 
+    /// The subject as a glass tile in the middle, then the title and when.
     private var header: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(event.title)
-                .font(.title2.weight(.bold))
-                .fontDesign(.rounded)
-                .fixedSize(horizontal: false, vertical: true)
-
-            HStack(spacing: 8) {
-                Label(event.kind.label, systemImage: event.kind.icon)
-                    .font(.caption.weight(.medium))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(accent.opacity(0.15), in: .capsule)
-                    .foregroundStyle(accent)
-
-                if event.isOngoing() {
-                    Text("In corso")
-                        .font(.caption.weight(.bold))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(accent, in: .capsule)
-                        .foregroundStyle(Theme.onAccent)
-                }
-            }
+        VStack(spacing: 10) {
+            PageHero(symbol: event.kind == .lecture || event.kind == .exam
+                        ? SubjectSymbol.symbol(for: event.title) : event.kind.icon,
+                     title: Text(event.title),
+                     summary: Text(event.start.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)).capitalized))
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .cardBackground()
-    }
-
-    @ViewBuilder
-    private func section<Content: View>(
-        _ title: String, @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-            VStack(spacing: 8) { content() }
-        }
-    }
-
-    private func row(_ label: String, _ value: String, icon: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .foregroundStyle(accent)
-                .frame(width: 24)
-            Text(label).font(.subheadline).foregroundStyle(.secondary)
-            Spacer(minLength: 8)
-            Text(value)
-                .font(.subheadline.weight(.medium))
-                .multilineTextAlignment(.trailing)
-        }
-        .padding(12)
         .frame(maxWidth: .infinity)
-        .cardBackground()
     }
 }
 
@@ -228,8 +199,8 @@ private struct FlowTags: View {
                 .font(.caption.weight(.medium))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(accent.opacity(0.15), in: .capsule)
                 .foregroundStyle(accent)
+                .glassEffect(.regular, in: .capsule)
         }
     }
 }

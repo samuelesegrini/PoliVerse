@@ -133,46 +133,78 @@ struct BracketPicker: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                if let brackets {
-                    if brackets.isEmpty {
-                        Text("Questo insegnamento ha un solo scaglione per tutti.").foregroundStyle(.secondary)
-                    }
-                    Section {
-                        ForEach(brackets, id: \.self) { bracket in
-                            let mine = bracket.covers(surname: surname)
-                            let selected = chosen.map { $0 == bracket } ?? mine
-                            Button {
-                                onChoose(mine ? nil : bracket)
-                                dismiss()
-                            } label: {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(bracket.label).font(.subheadline.weight(.medium))
-                                        Text(bracket.teachers.joined(separator: ", ")).font(.caption).foregroundStyle(.secondary)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    if let brackets {
+                        if brackets.isEmpty {
+                            Text("Questo insegnamento ha un solo scaglione per tutti.")
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, 30)
+                        } else {
+                            // One glass row per bracket; the chosen one is the
+                            // row with the check.
+                            GlassEffectContainer(spacing: 10) {
+                                VStack(spacing: 10) {
+                                    ForEach(brackets, id: \.self) { bracket in
+                                        row(bracket)
                                     }
-                                    Spacer()
-                                    if mine { Text("Il tuo").font(.caption).foregroundStyle(.secondary) }
-                                    if selected { Image(systemName: "checkmark").foregroundStyle(Theme.brand) }
                                 }
-                                .contentShape(.rect)
                             }
-                            .buttonStyle(.plain)
-                        }
-                    } footer: {
-                        if !brackets.isEmpty {
                             Text("Il tuo scaglione dipende dal cognome. Sceglierne un altro vale solo per questo insegnamento.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 4)
                         }
+                    } else {
+                        ProgressView().frame(maxWidth: .infinity).padding(.top, 30)
                     }
-                } else {
-                    ProgressView().frame(maxWidth: .infinity)
                 }
+                .padding(20)
             }
+            .courseScreen()
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .task { brackets = await load() }
         }
         .presentationDetents([.medium, .large])
+    }
+
+    private func row(_ bracket: BracketChoice) -> some View {
+        let mine = bracket.covers(surname: surname)
+        let selected = chosen.map { $0 == bracket } ?? mine
+        return Button {
+            onChoose(mine ? nil : bracket)
+            dismiss()
+        } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(bracket.label).font(.headline)
+                        if mine {
+                            Text("Il tuo")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(.quaternary.opacity(0.6), in: .capsule)
+                        }
+                    }
+                    Text(bracket.teachers.joined(separator: ", "))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(selected ? AnyShapeStyle(.tint) : AnyShapeStyle(.tertiary))
+            }
+            .padding(16)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 22))
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
@@ -203,12 +235,13 @@ struct StudyProgrammeSheet: View {
                 CatalogueCascade(page: $page, initial: target.flatMap(programmes.initialSelection(for:)),
                                  locatesFromCareer: career == nil || career == session.student?.matricola)
             }
+            .courseScreen()
             .navigationTitle("Corso di studi")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Annulla") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annulla", systemImage: "xmark") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Salva") {
+                    Button("Salva", systemImage: "checkmark") {
                         if let page, let target { programmes.set(page, for: target) }
                         dismiss()
                     }

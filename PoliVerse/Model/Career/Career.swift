@@ -106,8 +106,25 @@ nonisolated struct ExamSession: Identifiable, Sendable, Equatable {
     /// By code first; by name where the codes differ — WeBeep's title code,
     /// the libretto's `c_insegn` and `/v1/insegn`'s `c_insegn_piano` are not
     /// guaranteed to agree, while the names are normalised the same way.
+    ///
+    /// Neither comparison is made on a blank value. Comparing them plainly
+    /// meant two *missing* codes counted as the same code, so one sitting that
+    /// arrived without one matched every course that also lacked one — and,
+    /// through ``ExamTimeline`` and the course screens, showed up under all of
+    /// them at once. A value nobody has is not evidence that two things are
+    /// the same.
     func isOf(courseCode: String, courseName: String) -> Bool {
-        courseCode == self.courseCode
-            || Course.normalise(courseName).caseInsensitiveCompare(self.courseName) == .orderedSame
+        if isMeaningful(courseCode), isMeaningful(self.courseCode), courseCode == self.courseCode {
+            return true
+        }
+        let name = Course.normalise(courseName)
+        guard isMeaningful(name), isMeaningful(self.courseName) else { return false }
+        return name.caseInsensitiveCompare(self.courseName) == .orderedSame
+    }
+
+    /// Blank, or one of the dashes these endpoints use for "not recorded".
+    private func isMeaningful(_ value: String) -> Bool {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty && trimmed != "—" && trimmed != "-"
     }
 }

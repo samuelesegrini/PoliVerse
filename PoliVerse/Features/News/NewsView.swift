@@ -22,15 +22,22 @@ struct NewsView: View {
                                        description: Text("Le notizie dal Politecnico compaiono qui."))
             } else {
                 List {
-                    ForEach(news.items) { item in
-                        NavigationLink {
-                            NewsDetailView(item: item)
-                        } label: {
-                            NewsRow(item: item)
+                    Section {
+                        PageHero(symbol: "newspaper", title: Text("Notizie"), summary: Text("Dal Politecnico"))
+                            .listHeader()
+                    }
+                    Section {
+                        ForEach(news.items) { item in
+                            NavigationLink {
+                                NewsDetailView(item: item)
+                            } label: {
+                                NewsRow(item: item)
+                            }
                         }
                     }
+                    .glassRow()
                 }
-                .listStyle(.plain)
+                .glassList()
             }
         }
         .navigationTitle("Notizie")
@@ -95,7 +102,7 @@ struct NewsDetailView: View {
                 }
 
                 Text(item.title)
-                    .font(.title3.weight(.semibold))
+                    .font(.title2.weight(.bold))
 
                 if let date = item.eventStart {
                     // An announced event gets its full span, since "when" is
@@ -103,7 +110,7 @@ struct NewsDetailView: View {
                     Label(NewsItem.span(from: date, to: item.eventEnd),
                           systemImage: "calendar")
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Theme.brand)
+                        .foregroundStyle(.tint)
                 } else if let published = item.published {
                     Text(published.formatted(date: .long, time: .omitted))
                         .font(.caption)
@@ -118,12 +125,17 @@ struct NewsDetailView: View {
                     } label: {
                         Label("Leggi sul sito", systemImage: "safari")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.glass)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
+            .padding(20)
+            .lookCard(cornerRadius: 30)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 40)
         }
+        .courseScreen()
         .navigationTitle("Notizia")
         .navigationBarTitleDisplayMode(.inline)
     }

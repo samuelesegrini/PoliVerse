@@ -18,6 +18,11 @@ struct ManifestoDetailView: View {
 
     var body: some View {
         List {
+            Section {
+                PageHero(symbol: SubjectSymbol.symbol(for: teaching.name), title: Text(verbatim: teaching.name),
+                         summary: Text(verbatim: teaching.code))
+                    .listHeader()
+            }
             if loading && detail == nil {
                 Section { ProgressView().frame(maxWidth: .infinity) }
             }
@@ -27,6 +32,7 @@ struct ManifestoDetailView: View {
                     Section("Programma sintetico") {
                         Text(summary).font(.subheadline)
                     }
+                    .glassRow()
                 }
 
                 if !detail.facts.isEmpty || !detail.languages.isEmpty {
@@ -41,6 +47,7 @@ struct ManifestoDetailView: View {
                             LabeledContent(fact.label, value: fact.value)
                         }
                     }
+                    .glassRow()
                 }
 
                 if !detail.context.isEmpty {
@@ -49,6 +56,7 @@ struct ManifestoDetailView: View {
                             LabeledContent(fact.label, value: fact.value)
                         }
                     }
+                    .glassRow()
                 }
 
                 if !detail.ssd.isEmpty {
@@ -64,6 +72,7 @@ struct ManifestoDetailView: View {
                             }
                         }
                     }
+                    .glassRow()
                 }
 
                 modulesSection(detail)
@@ -83,13 +92,16 @@ struct ManifestoDetailView: View {
                 } footer: {
                     Text("Viene aggiunto alla selezione dell'orario personalizzato: calcola l'orario da lì. È uno strumento informale del Politecnico e non sostituisce il piano di studi.")
                 }
+                .glassRow()
             } else if !loading {
                 Section {
                     Text("Il catalogo non ha restituito questa scheda.")
                         .foregroundStyle(.secondary)
                 }
+                .glassRow()
             }
         }
+        .glassList()
         .navigationTitle(teaching.name)
         .navigationBarTitleDisplayMode(.inline)
         .task {
@@ -121,6 +133,7 @@ struct ManifestoDetailView: View {
                     Text("Lo scaglione è per cognome, dal primo incluso al secondo escluso. Scrivi il tuo cognome per vedere quale ti riguarda.")
                 }
             }
+            .glassRow()
         }
     }
 }

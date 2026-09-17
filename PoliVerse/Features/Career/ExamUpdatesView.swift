@@ -13,6 +13,21 @@ struct ExamUpdatesView: View {
     /// dot for as long as the screen is open.
     @State private var seenBefore: Date?
     @State private var hasMarked = false
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.colorScheme) private var scheme
+
+    /// The bell, and how many are still to read.
+    private var hero: some View {
+        let ramp = FlavorRamp(style: style, scheme: scheme)
+        let unread = FeedItem.items(from: feed.updates).filter { $0.isUnread(since: seenBefore) }.count
+        return CoursePageHero(
+            tiles: [HeroTile(id: "bell", symbol: "bell.badge", colour: ramp.colour(at: 0.3))],
+            placeholder: HeroTile(id: "empty", symbol: "bell.badge", colour: ramp.neutral),
+            title: unread == 0 ? Text("Tutto letto") : Text(unread == 1 ? "1 novità da leggere" : "\(unread) novità da leggere"),
+            summary: Text("Dai Servizi Online e da WeBeep"),
+            badge: unread > 0 ? HeroBadge(symbol: "bell.fill", tint: style.accent(scheme)) : nil,
+            mode: ramp.mode)
+    }
 
     private var days: [(Date, [FeedItem])] {
         let calendar = PoliMiDate.romeCalendar
@@ -21,6 +36,14 @@ struct ExamUpdatesView: View {
         }
         .sorted { $0.key > $1.key }
         .map { ($0.key, $0.value.sorted { $0.update.detectedAt > $1.update.detectedAt }) }
+    }
+
+    /// "Oggi", "Ieri", or the day in words.
+    private func dayTitle(_ day: Date) -> String {
+        let calendar = PoliMiDate.romeCalendar
+        if calendar.isDateInToday(day) { return String(localized: "Oggi") }
+        if calendar.isDateInYesterday(day) { return String(localized: "Ieri") }
+        return day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)).capitalized
     }
 
     var body: some View {
@@ -32,37 +55,43 @@ struct ExamUpdatesView: View {
                     description: Text("Quando cambia qualcosa nei tuoi appelli — un'aula, un esito, un appello spostato — lo trovi qui."))
                     .padding(.top, 40)
             } else {
-                LazyVStack(alignment: .leading, spacing: 18) {
+                LazyVStack(alignment: .leading, spacing: 26) {
+                    hero
                     ForEach(days, id: \.0) { day, items in
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)).capitalized)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            ForEach(items) { item in
-                                let sitting = career.sitting(for: item.update)
-                                Button { selectedExam = sitting } label: {
-                                    // Under a day heading, the time says more
-                                    // than "3 days ago".
-                                    ExamUpdateRow(item: item, showsClockTime: true,
-                                                  isUnread: item.isUnread(since: seenBefore))
+                        // One card a day, under Oggi's heading.
+                        VStack(alignment: .leading, spacing: 10) {
+                            LookHeading(verbatim: dayTitle(day))
+                            VStack(spacing: 0) {
+                                ForEach(items) { item in
+                                    let sitting = career.sitting(for: item.update)
+                                    Button { selectedExam = sitting } label: {
+                                        // Under a day heading, the time says more
+                                        // than "3 days ago".
+                                        ExamUpdateRow(item: item, showsClockTime: true,
+                                                      isUnread: item.isUnread(since: seenBefore), card: false)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .disabled(sitting == nil)
+                                    if item.id != items.last?.id { Divider().padding(.leading, 52) }
                                 }
-                                .buttonStyle(.plain)
-                                .disabled(sitting == nil)
                             }
+                            .lookCard()
                         }
                     }
                 }
-                .padding()
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 20)
             }
 
             // Honest about what this can and cannot see, and how to quiet it.
             Text("Le novità arrivano dai Servizi Online quando l'app si aggiorna: aprendola, o in background quando iOS lo consente. Le email dei docenti non sono incluse. Tieni premuta una novità per silenziarne il corso.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .padding(.horizontal)
-                .padding(.bottom, 24)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 40)
         }
-        .background(Color(.systemGroupedBackground))
+        .courseScreen()
         .navigationTitle("Novità esami")
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await career.load(force: true) }
@@ -84,6 +113,8 @@ struct ExamUpdateRow: View {
     let item: FeedItem
     var showsClockTime = false
     var isUnread = false
+    /// On a card of its own; off where the rows share one card.
+    var card = true
     @Environment(\.locale) private var locale
     @Environment(NotificationModel.self) private var notifications
 
@@ -128,7 +159,7 @@ struct ExamUpdateRow: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardBackground()
+        .background(card ? Color(.secondarySystemGroupedBackground) : .clear, in: .rect(cornerRadius: Theme.cardCorner))
         .opacity(item.isSuperseded ? 0.6 : 1)
         .accessibilityElement(children: .combine)
         .contextMenu { muteButton }
@@ -168,19 +199,17 @@ struct ExamTimelineSection: View {
     var body: some View {
         let entries = entries
         if !entries.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Cronologia")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 10) {
+                LookHeading("Cronologia")
 
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
                         line(entry, isLast: index == entries.count - 1)
                     }
                 }
-                .padding(12)
+                .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .cardBackground()
+                .lookCard()
             }
         }
     }
@@ -255,6 +284,6 @@ extension ExamUpdate.Kind {
     ScrollView {
         ExamTimelineSection(exam: ExamSession.samples()[0]).padding()
     }
-    .background(Color(.systemGroupedBackground))
+    .lookPage()
     .previewEnvironment()
 }

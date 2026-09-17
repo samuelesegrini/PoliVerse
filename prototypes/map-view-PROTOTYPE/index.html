@@ -1,0 +1,285 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PoliVerse — map view PROTOTYPE</title>
+<style>
+:root{--bg:#f2f2f7;--card:#fff;--ink:#11181c;--dim:#687076;--line:#e3e5e8;
+  --brand:#003352;--accent:#2a6f97;--free:#2e9e5b;--busy:#c1462c;--warn:#b8860b}
+@media (prefers-color-scheme:dark){:root{--bg:#000;--card:#1c1c1e;--ink:#f2f2f7;
+  --dim:#98989d;--line:#2c2c2e;--brand:#59a6e0;--accent:#59a6e0}}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  background:#8a8a8e;color:var(--ink);-webkit-font-smoothing:antialiased}
+.banner{background:#b8860b;color:#fff;padding:6px 12px;font-size:12px;text-align:center;font-weight:600}
+.finding{background:#3a2f00;color:#ffd97a;padding:8px 14px;font-size:12px;text-align:center;line-height:1.4}
+@media (prefers-color-scheme:light){.finding{background:#fff4d1;color:#6b4e00}}
+.stage{display:flex;justify-content:center;padding:16px 12px 96px}
+.phone{width:390px;max-width:100%;height:780px;background:var(--bg);border-radius:32px;
+  overflow:hidden;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.45);display:flex;flex-direction:column}
+.nav{padding:10px 14px;background:var(--card);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.nav h1{font-size:17px;margin:0;font-weight:650;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.back{color:var(--accent);cursor:pointer;font-size:15px;background:none;border:0;padding:0}
+.body{flex:1;overflow:auto}
+.seg{display:flex;gap:2px;background:var(--line);border-radius:9px;padding:2px;margin:10px 12px}
+.seg button{flex:1;border:0;background:none;padding:7px;border-radius:7px;font:inherit;font-size:13px;cursor:pointer;color:var(--dim)}
+.seg button[aria-pressed=true]{background:var(--card);color:var(--ink);font-weight:600}
+.chips{display:flex;gap:6px;padding:0 12px 8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--dim);border-radius:999px;
+  padding:5px 11px;font:inherit;font-size:12px;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+svg{display:block;width:100%}
+.basemap{background:repeating-linear-gradient(45deg,#e8edf0,#e8edf0 10px,#e2e8ec 10px,#e2e8ec 20px)}
+@media (prefers-color-scheme:dark){.basemap{background:repeating-linear-gradient(45deg,#1a2027,#1a2027 10px,#151a20 10px,#151a20 20px)}}
+.pin{stroke:#fff;stroke-width:1.5;cursor:pointer;fill:var(--accent)}
+.pin.sel{stroke-width:2.5}
+.raw{fill:var(--warn);fill-opacity:.14;stroke:var(--warn);stroke-width:1;stroke-dasharray:3 3}
+.card{background:var(--card);margin:10px 12px;border-radius:14px;overflow:hidden}
+.row{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;cursor:pointer}
+.row:last-child{border-bottom:0}
+.code{font-weight:650;font-variant-numeric:tabular-nums}
+small{color:var(--dim);font-size:12px}
+.spacer{flex:1}
+.pill{font-size:11px;padding:2px 8px;border-radius:999px;font-weight:600;
+  background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.pill.free{background:color-mix(in srgb,var(--free) 18%,transparent);color:var(--free)}
+.pill.busy{background:color-mix(in srgb,var(--busy) 16%,transparent);color:var(--busy)}
+.sec{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--dim);
+  padding:12px 16px 4px;font-weight:650;display:flex;align-items:center;gap:6px}
+.src{font-size:10px;text-transform:none;letter-spacing:0;opacity:.75;font-weight:400;margin-left:auto;font-family:ui-monospace,monospace}
+.note{padding:8px 16px 12px;color:var(--dim);font-size:12px}
+.plan{width:100%;display:block;background:#fff}
+.kv{display:flex;padding:8px 14px;border-bottom:1px solid var(--line);font-size:13px;gap:10px}
+.kv:last-child{border-bottom:0}
+.kv b{font-weight:600;min-width:118px;color:var(--dim)}
+.kv span{font-family:ui-monospace,monospace;font-size:12px}
+.bars{display:flex;height:26px;border-radius:6px;overflow:hidden;margin:8px 14px;background:color-mix(in srgb,var(--free) 22%,transparent)}
+.bars i{display:block;background:var(--busy);opacity:.85}
+.scale{display:flex;justify-content:space-between;margin:0 14px 8px;font-size:10px;color:var(--dim)}
+.legend{display:flex;gap:12px;padding:6px 16px;font-size:12px;color:var(--dim);flex-wrap:wrap}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px}
+.tag{font-size:12px;background:color-mix(in srgb,var(--accent) 12%,transparent);
+  color:var(--accent);border-radius:8px;padding:4px 9px}
+</style>
+
+<div class="banner">PROTOTYPE — throwaway. Every number below is live public data except where marked.</div>
+<div class="finding"><b>Finding:</b> the public geojson has <b>no real building footprints</b> —
+142 polygons are generated ellipses, 155 are bounding boxes. Only the coordinates are true,
+so the map uses pins over MapKit. Toggle <b>Geometria</b> to see why drawing them was rejected.</div>
+
+<div class="stage"><div class="phone">
+  <div class="nav"><button class="back" id="back" hidden>‹</button><h1 id="title">Mappa</h1></div>
+  <div class="body" id="screen"></div>
+</div></div>
+
+<script src="data.js"></script>
+<script>
+const D = window.POLIMAP;
+const byCsie = {}; D.aule.forEach(a => (byCsie[a.csie] ||= []).push(a));
+const bldById = Object.fromEntries(D.edifici.map(b => [b.id, b]));
+const detailOf = id => D.dettagli?.[id] || null;
+const name = id => D.nomiEdifici[id]?.nome || id;
+const addr = id => [D.nomiEdifici[id]?.indirizzo, D.nomiEdifici[id]?.citta].filter(Boolean).join(', ');
+
+const usable = D.edifici.filter(b => b.bbox && byCsie[b.id]?.length);
+const campusOf = id => D.nomiEdifici[id]?.csic || id.slice(0,5);
+const campuses = [...new Set(usable.map(b => campusOf(b.id)))]
+  .map(c => ({id:c, name:D.nomiCampus[c] || c, blds:usable.filter(b => campusOf(b.id)===c)}))
+  .sort((a,b) => b.blds.length - a.blds.length);
+
+const DAY = [8, 20];                       // the teaching day, in hours
+const hhmm = h => String(Math.floor(h)).padStart(2,'0')+':'+String(Math.round((h%1)*60)).padStart(2,'0');
+const toH = t => { const [a,b] = t.split(':').map(Number); return a + b/60; };
+
+/** Busy bands → free gaps. Merged first: overlapping bookings would otherwise
+ *  reopen the overlap as free. Same arithmetic the app ships. */
+function freeSlots(bands, min=0.5){
+  const busy = bands.map(b => [toH(b.inizio), toH(b.fine)])
+    .filter(([a,b]) => b > a).sort((x,y) => x[0]-y[0])
+    .reduce((acc,cur) => {
+      const last = acc[acc.length-1];
+      if (last && cur[0] <= last[1]) last[1] = Math.max(last[1], cur[1]); else acc.push([...cur]);
+      return acc;
+    }, []);
+  const out = []; let cur = DAY[0];
+  for (const [s,e] of busy){ if (s > cur) out.push([cur, Math.min(s, DAY[1])]); cur = Math.max(cur, e); }
+  if (cur < DAY[1]) out.push([cur, DAY[1]]);
+  return out.filter(([a,b]) => b-a >= min);
+}
+const nowH = () => { const d = new Date(); return d.getHours() + d.getMinutes()/60; };
+const isFreeNow = bands => freeSlots(bands, 0).some(([a,b]) => nowH() >= a && nowH() < b);
+
+/** Real where we fetched it, simulated elsewhere — and the UI says which. */
+function freeInfo(bld){
+  const rooms = byCsie[bld.id] || [];
+  const real = rooms.filter(r => detailOf(r.idaula));
+  if (real.length === rooms.length && real.length) {
+    return {free: real.filter(r => isFreeNow(detailOf(r.idaula).occupazione||[])).length,
+            total: rooms.length, real: true};
+  }
+  let h = 0; for (const ch of bld.id) h = (h*31 + ch.charCodeAt(0)) % 997;
+  return {free: rooms.filter((_,i) => ((h + i*7) % 10) > 5).length, total: rooms.length, real: false};
+}
+
+// ---- state ---------------------------------------------------------------
+const S = {view:'map', freeLayer:true, raw:false, onlyRooms:true,
+           campus: (campuses.find(c => c.blds.some(b => b.id === D.dettaglioEdificio)) || campuses[0]).id,
+           bld:null, room:null};
+const el = id => document.getElementById(id);
+
+function project(blds, w, h, pad=26){
+  const xs = blds.flatMap(b => [b.bbox[0], b.bbox[2]]), ys = blds.flatMap(b => [b.bbox[1], b.bbox[3]]);
+  const [x0,x1,y0,y1] = [Math.min(...xs),Math.max(...xs),Math.min(...ys),Math.max(...ys)];
+  const kx = Math.cos((y0+y1)/2*Math.PI/180), dw = (x1-x0)*kx || 1e-4, dh = (y1-y0) || 1e-4;
+  const s = Math.min((w-pad*2)/dw, (h-pad*2)/dh);
+  const ox = pad + ((w-pad*2)-dw*s)/2, oy = pad + ((h-pad*2)-dh*s)/2;
+  return ([x,y]) => [ox + (x-x0)*kx*s, oy + (y1-y)*s];
+}
+
+function mapView(blds, h=380){
+  const p = project(blds, 390, h);
+  const raw = S.raw ? blds.filter(b=>b.ring).map(b =>
+    `<path class="raw" d="M${b.ring.map(c=>p(c).map(n=>n.toFixed(1)).join(',')).join('L')}Z"/>`).join('') : '';
+  const pins = blds.map(b => {
+    const [x,y] = p([(b.bbox[0]+b.bbox[2])/2, (b.bbox[1]+b.bbox[3])/2]);
+    const f = freeInfo(b), r = f.total ? f.free/f.total : 0;
+    const fill = S.freeLayer ? (r>.6?'var(--free)':r>.3?'var(--warn)':'var(--busy)') : 'var(--accent)';
+    const sel = S.bld === b.id;
+    return `<g onclick="pickBld('${b.id}')"><circle class="pin ${sel?'sel':''}" cx="${x.toFixed(1)}"
+      cy="${y.toFixed(1)}" r="${sel?10:6.5}" style="fill:${fill}"><title>${name(b.id)}</title></circle>
+      ${sel?`<text x="${x.toFixed(1)}" y="${(y-15).toFixed(1)}" text-anchor="middle"
+        style="font-size:11px;font-weight:600;fill:var(--ink)">${name(b.id)}</text>`:''}</g>`;
+  }).join('');
+  return `<svg class="basemap" viewBox="0 0 390 ${h}" height="${h}">${raw}${pins}</svg>
+    ${S.raw?`<div class="note"><b>Geometria grezza.</b> Ellissi generate e bounding box, non sagome.
+      È il motivo per cui la mappa usa i pin: le coordinate sono vere, i contorni no.</div>`:''}`;
+}
+
+// ---- screens -------------------------------------------------------------
+function controls(){
+  const c = campuses.find(x=>x.id===S.campus);
+  return `<div class="seg">
+      <button aria-pressed="${S.view==='map'}" onclick="set('view','map')">Mappa</button>
+      <button aria-pressed="${S.view==='list'}" onclick="set('view','list')">Elenco</button>
+    </div>
+    <div class="chips">
+      <button class="chip" aria-pressed="${S.freeLayer}" onclick="toggle('freeLayer')">Libere ora</button>
+      <button class="chip" aria-pressed="${S.raw}" onclick="toggle('raw')">Geometria</button>
+      ${campuses.slice(0,4).map(x=>`<button class="chip" aria-pressed="${x.id===S.campus}"
+        onclick="setCampus('${x.id}')">${x.name.split(' ').slice(0,2).join(' ')}</button>`).join('')}
+    </div>`;
+}
+
+function roomRow(a){
+  const d = detailOf(a.idaula);
+  const free = d ? isFreeNow(d.occupazione||[]) : null;
+  return `<div class="row" onclick="pickRoom('${a.idaula}')">
+    <div><span class="code">${a.sigla}</span><br><small>${a.capienza} posti${
+      d?.dotazioni?.length ? ' · ' + d.dotazioni.length + ' dotazioni' : ''}${
+      d?.software?.length ? ' · ' + d.software.length + ' software' : ''}</small></div>
+    <span class="spacer"></span>
+    ${free===null ? '<span class="pill">›</span>'
+      : `<span class="pill ${free?'free':'busy'}">${free?'libera':'occupata'}</span>`}</div>`;
+}
+
+function screenRoom(){
+  const a = D.aule.find(r => r.idaula === S.room), d = detailOf(a.idaula) || {};
+  const bands = d.occupazione || [], slots = freeSlots(bands);
+  const span = DAY[1]-DAY[0];
+  // Absolutely positioned over a free-coloured track, so overlapping bookings
+  // paint over each other instead of pushing one another sideways.
+  const bars = bands.map(b => {
+    const s = Math.max(toH(b.inizio), DAY[0]), e = Math.min(toH(b.fine), DAY[1]);
+    if (e <= s) return '';
+    return `<i style="position:absolute;top:0;bottom:0;left:${((s-DAY[0])/span*100).toFixed(2)}%;` +
+           `width:${((e-s)/span*100).toFixed(2)}%"></i>`;
+  }).join('');
+  el('title').textContent = a.sigla;
+  return `
+    ${d.pianta ? `<div class="card"><img class="plan" src="${d.pianta}" alt="pianta">
+      <div class="note">Pianta ufficiale del piano, aula evidenziata.
+        <code>/download/img/piano/{csip}/{csiv}</code></div></div>`
+      : `<div class="card"><div class="note">Pianta non inclusa nel prototipo (ne incorpora 8).</div></div>`}
+
+    <div class="sec">Occupazione <span class="src">/ricerca/aula/occupazione/${a.idaula}/${D.dataOccupazione}</span></div>
+    <div class="card">
+      <div class="bars" style="position:relative;display:block">${bars}</div>
+      <div class="scale"><span>08:00</span><span>14:00</span><span>20:00</span></div>
+      ${bands.length ? bands.map(b=>`<div class="kv"><b>occupata</b><span>${b.inizio}–${b.fine}</span></div>`).join('')
+        : '<div class="kv"><b>occupata</b><span>mai — nessuna prenotazione</span></div>'}
+      ${slots.map(([s,e])=>`<div class="kv"><b style="color:var(--free)">libera</b><span>${hhmm(s)}–${hhmm(e)}</span></div>`).join('')}
+    </div>
+
+    ${d.dotazioni?.length ? `<div class="sec">Dotazioni <span class="src">/ricerca/aula/dotazioni/${a.idaula}</span></div>
+      <div class="card"><div class="tags">${d.dotazioni.map(x=>`<span class="tag">${x.it||x.en}</span>`).join('')}</div></div>` : ''}
+    ${d.software?.length ? `<div class="sec">Software <span class="src">/ricerca/aula/software/${a.idaula}</span></div>
+      <div class="card"><div class="tags">${d.software.map(x=>`<span class="tag">${x.it||x.en}</span>`).join('')}</div></div>` : ''}
+
+    <div class="sec">Anagrafica <span class="src">/spazi/aula</span></div>
+    <div class="card">
+      <div class="kv"><b>sigla</b><span>${a.sigla}</span></div>
+      <div class="kv"><b>capienza</b><span>${a.capienza} posti</span></div>
+      <div class="kv"><b>posti disabili</b><span>${a.disabili || '—'}</span></div>
+      <div class="kv"><b>idaula</b><span>${a.idaula}</span></div>
+      <div class="kv"><b>csiv (vano)</b><span>${a.csiv||'—'}</span></div>
+      <div class="kv"><b>csip (piano)</b><span>${a.csip||'—'}</span></div>
+      <div class="kv"><b>csie (edificio)</b><span>${a.csie||'—'}</span></div>
+      <div class="kv"><b>edificio</b><span>${name(a.csie)}</span></div>
+      <div class="kv"><b>indirizzo</b><span>${addr(a.csie)||'—'}</span></div>
+    </div>
+    <div class="note">Ogni riga sopra riporta l'endpoint che la produce: tutto pubblico, nessun token.</div>`;
+}
+
+function screenBld(){
+  const b = bldById[S.bld], rooms = byCsie[S.bld] || [], f = freeInfo(b);
+  const floors = [...new Set(rooms.map(r=>r.csip))].sort();
+  el('title').textContent = name(S.bld);
+  return `${mapView([b], 170)}
+    <div class="card">
+      <div class="kv"><b>aule</b><span>${rooms.length} su ${floors.length} piani</span></div>
+      <div class="kv"><b>libere ora</b><span>${f.free}/${f.total} ${f.real?'(reale)':'(simulato)'}</span></div>
+      <div class="kv"><b>posti totali</b><span>${rooms.reduce((n,r)=>n+r.capienza,0)}</span></div>
+      <div class="kv"><b>indirizzo</b><span>${addr(S.bld)||'—'}</span></div>
+      <div class="kv"><b>csie</b><span>${S.bld}</span></div>
+    </div>
+    ${floors.map(fl=>`<div class="sec">Piano ${fl?.slice(-3) ?? '—'}</div>
+      <div class="card">${rooms.filter(r=>r.csip===fl).map(roomRow).join('')}</div>`).join('')}`;
+}
+
+function screenHome(){
+  const c = campuses.find(x=>x.id===S.campus);
+  const blds = [...c.blds].sort((a,b)=>freeInfo(b).free-freeInfo(a).free);
+  el('title').textContent = c.name;
+  const rows = blds.map(b=>{ const f = freeInfo(b), r = f.total?f.free/f.total:0;
+    return `<div class="row" onclick="pickBld('${b.id}')">
+      <div><span class="code">${name(b.id)}</span><br><small>${f.total} aule · ${addr(b.id)}</small></div>
+      <span class="spacer"></span>
+      <span class="pill ${r>.6?'free':r>.3?'':'busy'}">${f.free}/${f.total}</span></div>`;}).join('');
+  return controls()
+    + (S.view==='map' ? mapView(c.blds) : '')
+    + (S.freeLayer ? `<div class="legend">
+        <span><span class="dot" style="background:var(--free)"></span>molte libere</span>
+        <span><span class="dot" style="background:var(--warn)"></span>alcune</span>
+        <span><span class="dot" style="background:var(--busy)"></span>quasi piene</span></div>` : '')
+    + `<div class="card">${rows}</div>
+       <div class="note">Occupazione reale solo per <b>${name(D.dettaglioEdificio)}</b>
+       (${(byCsie[D.dettaglioEdificio]||[]).length} aule scaricate davvero); altrove è simulata.
+       Una schermata così, con dati veri ovunque, costa una richiesta per aula:
+       ${c.blds.reduce((n,b)=>n+(byCsie[b.id]||[]).length,0)} per questa sede.</div>`;
+}
+
+// ---- shell ---------------------------------------------------------------
+function draw(){
+  el('back').hidden = !(S.bld || S.room);
+  el('screen').innerHTML = S.room ? screenRoom() : S.bld ? screenBld() : screenHome();
+  el('screen').scrollTop = 0;
+}
+function set(k,v){ S[k]=v; draw(); }
+function toggle(k){ S[k]=!S[k]; draw(); }
+function setCampus(id){ S.campus=id; S.bld=null; S.room=null; draw(); }
+function pickBld(id){ S.bld=id; S.room=null; draw(); }
+function pickRoom(id){ S.room=id; draw(); }
+el('back').onclick = () => { if(S.room) S.room=null; else S.bld=null; draw(); };
+draw();
+</script>

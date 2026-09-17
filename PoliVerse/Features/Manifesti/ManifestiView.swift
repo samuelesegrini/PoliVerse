@@ -15,6 +15,10 @@ struct ManifestiView: View {
 
         List {
             Section {
+                PageHero(symbol: "books.vertical", title: Text("Manifesto degli studi"), summary: Text("Corsi di studi, insegnamenti e schede"))
+                    .listHeader()
+            }
+            Section {
                 Picker("Anno accademico", selection: $manifesti.year) {
                     ForEach(AcademicYear.recent()) { year in
                         Text(year.label).tag(year)
@@ -23,6 +27,7 @@ struct ManifestiView: View {
             } footer: {
                 Text("Il manifesto è il catalogo ufficiale: programmi, docenti, scaglioni e bibliografia di tutti gli insegnamenti, anche quelli che non segui.")
             }
+            .glassRow()
 
             if manifesti.isSearching && manifesti.results.isEmpty {
                 Section { ProgressView().frame(maxWidth: .infinity) }
@@ -33,6 +38,7 @@ struct ManifestiView: View {
                     Label(message, systemImage: "exclamationmark.triangle")
                         .foregroundStyle(.orange)
                 }
+                .glassRow()
             }
 
             if !manifesti.results.isEmpty {
@@ -45,23 +51,27 @@ struct ManifestiView: View {
                         }
                     }
                 }
+                .glassRow()
+            }
+            // Under the page's header rather than over it.
+            if manifesti.results.isEmpty && !manifesti.isSearching {
+                Section {
+                    if submitted.isEmpty {
+                        Text("Scrivi il nome di un insegnamento nel campo di ricerca e premi invio.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ContentUnavailableView.search(text: submitted)
+                    }
+                }
+                .glassRow()
             }
         }
+        .glassList()
         .navigationTitle("Manifesto")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $query, prompt: "Cerca un insegnamento")
         .onSubmit(of: .search) { runSearch() }
-        .overlay {
-            if manifesti.results.isEmpty && !manifesti.isSearching {
-                if submitted.isEmpty {
-                    ContentUnavailableView(
-                        "Cerca nel manifesto", systemImage: "books.vertical",
-                        description: Text("Scrivi il nome di un insegnamento e premi invio."))
-                } else {
-                    ContentUnavailableView.search(text: submitted)
-                }
-            }
-        }
         // Warms the detail pages of what is on screen, so opening one is
         // instant — each is a page fetch and a parse.
         .prefetching(manifesti.results.map(\.id)) { ids in

@@ -15,6 +15,12 @@ struct StudyPlanView: View {
 
     var body: some View {
         List {
+            Section {
+                PageHero(symbol: "list.bullet.rectangle", title: Text("Piano di studi"),
+                         summary: Text("\(plan.earnedCFU) di \(plan.totalCFU) CFU"))
+                    .listHeader()
+            }
+            .glassRow()
             if let header = career.planHeader {
                 Section {
                     if let course = header.course {
@@ -27,6 +33,7 @@ struct StudyPlanView: View {
                         LabeledContent("Anno", value: year)
                     }
                 }
+                .glassRow()
             }
 
             Section {
@@ -43,11 +50,13 @@ struct StudyPlanView: View {
                     Label("Simulazione media", systemImage: "function")
                 }
             }
+            .glassRow()
 
             Section {
                 Toggle("Superati", isOn: $showPassed)
                 Toggle("Da sostenere", isOn: $showPending)
             }
+            .glassRow()
 
             ForEach(shownByYear, id: \.year) { group in
                 Section(group.year) {
@@ -55,6 +64,7 @@ struct StudyPlanView: View {
                         PlanRow(exam: exam)
                     }
                 }
+                .glassRow()
             }
 
             if shown.isEmpty && !career.isLoading {
@@ -64,8 +74,10 @@ struct StudyPlanView: View {
                          : "Nessun insegnamento nel piano.")
                         .foregroundStyle(.secondary)
                 }
+                .glassRow()
             }
         }
+        .glassList()
         .navigationTitle("Piano di studi")
         .navigationBarTitleDisplayMode(.inline)
         .task { await career.load() }

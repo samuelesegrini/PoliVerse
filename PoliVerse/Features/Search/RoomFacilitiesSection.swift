@@ -54,6 +54,7 @@ struct RoomFacilitiesSection: View {
                         attempted = true
                     }
                 }
+                .glassRow()
             }
 
             if !equipment.isEmpty {
@@ -63,6 +64,7 @@ struct RoomFacilitiesSection: View {
                             .font(.subheadline)
                     }
                 }
+                .glassRow()
             }
 
             if !software.isEmpty {
@@ -76,6 +78,7 @@ struct RoomFacilitiesSection: View {
                 } footer: {
                     Text("Installato sulle postazioni dell'aula.")
                 }
+                .glassRow()
             }
         }
     }
@@ -88,6 +91,10 @@ struct ClassroomDetailView: View {
 
     var body: some View {
         List {
+            Section {
+                PageHero(symbol: "door.left.hand.open", title: Text(verbatim: room.id), summary: room.locationLabel.isEmpty ? nil : Text(verbatim: room.locationLabel))
+                    .listHeader()
+            }
             Section {
                 LabeledContent("Capienza", value: "\(room.capacity) posti")
                 if let accessible = room.accessibleSeats {
@@ -103,6 +110,7 @@ struct ClassroomDetailView: View {
                     LabeledContent("Sede", value: campus)
                 }
             }
+            .glassRow()
 
             RoomDayView(room: room)
 
@@ -122,8 +130,10 @@ struct ClassroomDetailView: View {
                     // be in the wrong place.
                     Text("Il catalogo indica l'indirizzo dell'edificio, non la posizione esatta dell'aula.")
                 }
+                .glassRow()
             }
         }
+        .glassList()
         .navigationTitle(room.id)
         .navigationBarTitleDisplayMode(.inline)
     }

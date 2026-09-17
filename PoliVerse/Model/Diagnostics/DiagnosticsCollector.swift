@@ -116,7 +116,7 @@ struct DiagnosticsCollector {
     static func label(for method: PoliMiLoginMethod) -> String {
         switch method {
         case .password: String(localized: "Codice persona e password")
-        case .spid(let provider): "SPID · \(provider.name ?? provider.slug)"
+        case .spid(let provider): "SPID · \(provider.name)"
         case .cie: "CIE"
         case .eidas: "eIDAS"
         case .eduGAIN: "eduGAIN"

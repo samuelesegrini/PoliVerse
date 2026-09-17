@@ -23,6 +23,10 @@ struct RoomsView: View {
     var body: some View {
         List {
             Section {
+                PageHero(symbol: "building.2", title: Text("Aule"), summary: Text("Tutte le aule del Politecnico"))
+                    .listHeader()
+            }
+            Section {
                 NavigationLink {
                     CampusMapView()
                 } label: {
@@ -56,6 +60,7 @@ struct RoomsView: View {
                     }
                 }
             }
+            .glassRow()
 
             if rooms.campuses.count > 1 {
                 Section {
@@ -66,6 +71,7 @@ struct RoomsView: View {
                         }
                     }
                 }
+                .glassRow()
             }
 
             ForEach(grouped, id: \.building) { group in
@@ -84,6 +90,7 @@ struct RoomsView: View {
                         Text(address)
                     }
                 }
+                .glassRow()
             }
         }
         // Warms the equipment and occupancy of rows just off screen, so
@@ -93,6 +100,7 @@ struct RoomsView: View {
             facilities.prefetch(wanted)
             freeRooms.prefetch(wanted)
         }
+        .glassList()
         .navigationTitle("Aule")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $query, prompt: "Sigla aula, edificio o sede")

@@ -36,6 +36,10 @@ struct TeacherDetailView: View {
 
     var body: some View {
         List {
+            Section {
+                PageHero(symbol: "person", title: Text(verbatim: teacher.name), summary: teacher.courses.isEmpty ? nil : Text("\(teacher.courses.count) insegnamenti"))
+                    .listHeader()
+            }
             if let email = teacher.email {
                 Section {
                     Button {
@@ -44,6 +48,7 @@ struct TeacherDetailView: View {
                         Label(email, systemImage: "envelope")
                     }
                 }
+                .glassRow()
             }
 
             if !teacher.courses.isEmpty {
@@ -60,6 +65,7 @@ struct TeacherDetailView: View {
                         }
                     }
                 }
+                .glassRow()
             }
 
             Section {
@@ -86,6 +92,7 @@ struct TeacherDetailView: View {
                 // course taught by two people shows both their lectures.
                 Text("Le lezioni sono ricavate dai suoi insegnamenti nel tuo orario.")
             }
+            .glassRow()
 
             if !exams.isEmpty {
                 Section("Appelli") {
@@ -97,8 +104,10 @@ struct TeacherDetailView: View {
                         }
                     }
                 }
+                .glassRow()
             }
         }
+        .glassList()
         .navigationTitle(teacher.name)
         .navigationBarTitleDisplayMode(.inline)
     }

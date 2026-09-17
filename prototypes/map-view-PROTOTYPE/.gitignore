@@ -1,0 +1,3 @@
+# Regenerate with `python3 build-data.py` — 1.3 MB of embedded JPEGs does not
+# belong in git history, prototype or not.
+data.js
