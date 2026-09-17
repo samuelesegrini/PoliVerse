@@ -357,13 +357,13 @@ struct YearFilter: View {
 }
 
 #Preview("Componente · Prossima lezione") {
-    NextUpCard(event: MockData.agendaEvents(around: .now)[0])
+    NextUpCard(event: AgendaEvent.samples(around: .now)[0])
         .padding()
         .previewEnvironment()
 }
 
 #Preview("Componente · Prossimo esame") {
-    ExamSummaryCard(exam: MockData.examSessions()[0])
+    ExamSummaryCard(exam: ExamSession.samples()[0])
         .padding()
         .previewEnvironment()
 }

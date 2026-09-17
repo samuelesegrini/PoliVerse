@@ -27,18 +27,18 @@ enum PreviewEnvironment {
     static let notices = NoticeModel(session: session)
     static let news = NewsModel(session: session)
     static let careers = CareersModel(session: session)
-    static let rooms = RoomsModel(preview: MockData.classrooms())
-    static let freeRooms = FreeRoomsModel(catalogue: rooms, preview: MockData.roomSchedules(on: .now))
-    static let facilities = RoomFacilitiesModel(preview: MockData.facilities())
+    static let rooms = RoomsModel(preview: Classroom.samples())
+    static let freeRooms = FreeRoomsModel(catalogue: rooms, preview: RoomSchedule.samples(on: .now))
+    static let facilities = RoomFacilitiesModel(preview: RoomFacility.samples())
     static let campusMap = CampusMapModel(
-        catalogue: rooms, freeRooms: freeRooms, preview: MockData.mapPins())
+        catalogue: rooms, freeRooms: freeRooms, preview: MapPin.samples())
     static let downloads = FileDownloadModel()
     static let cieID = CieIDRouter()
     static let network = NetworkMonitor()
     static let pending = PendingChanges(session: session, network: network)
     static let manifesti = ManifestiModel()
     static let programmes = StudyProgrammeModel(manifesti: manifesti, session: session, career: career)
-    static let personalTimetable = PersonalTimetableModel(manifesti: manifesti, agenda: agenda, preview: MockData.personalTimetable)
+    static let personalTimetable = PersonalTimetableModel(manifesti: manifesti, agenda: agenda, preview: PersonalTimetable.sample)
     static let liveActivity = LiveActivityController()
     /// Its own defaults suite, so opening a preview cannot mark the real
     /// install's onboarding as done.

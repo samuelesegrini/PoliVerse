@@ -203,12 +203,12 @@ struct NoticesToolbarButton: View {
 }
 
 #Preview("Notifica") {
-    NoticeDetailView(notice: MockData.notices()[0]).previewInNavigation()
+    NoticeDetailView(notice: Notice.samples()[0]).previewInNavigation()
 }
 
 #Preview("Componente · Riga notifica") {
     List {
-        ForEach(MockData.notices()) { NoticeRow(notice: $0) }
+        ForEach(Notice.samples()) { NoticeRow(notice: $0) }
     }
     .listStyle(.plain)
     .previewEnvironment()

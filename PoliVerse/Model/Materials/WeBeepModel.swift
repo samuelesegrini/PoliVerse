@@ -155,7 +155,7 @@ final class WeBeepModel {
         restoreMaterials(for: course)
 
         if session.useMockData || api == nil {
-            sections = MockData.weBeepSections(for: course)
+            sections = WeBeepSection.samples(for: course)
             if api == nil && !session.useMockData { state = .needsLogin }
             return
         }
@@ -450,7 +450,7 @@ final class WeBeepModel {
 
     /// The forums on a course's page; nil when WeBeep cannot say.
     func forums(for course: Course) async -> [CourseForum]? {
-        if session.useMockData { return MockData.forums }
+        if session.useMockData { return CourseForum.samples }
         guard let api else { return nil }
         if courses.isEmpty { await loadCourses() }
         guard let moodleID = moodleCourseID(for: course) else { return nil }
@@ -471,14 +471,14 @@ final class WeBeepModel {
     }
 
     func discussions(in forum: CourseForum) async throws -> [MoodleDiscussion] {
-        if session.useMockData { return MockData.discussions }
+        if session.useMockData { return MoodleDiscussion.samples }
         // Not connected: the forum screen offers the login before asking.
         guard let api else { throw URLError(.userAuthenticationRequired) }
         return try await api.discussions(forumID: forum.id, perPage: 30)
     }
 
     func posts(in discussion: MoodleDiscussion) async throws -> [MoodlePosts.Post] {
-        if session.useMockData { return MockData.posts(for: discussion) }
+        if session.useMockData { return MoodlePosts.Post.samples(for: discussion) }
         // Not connected: the forum screen offers the login before asking.
         guard let api else { throw URLError(.userAuthenticationRequired) }
         return try await api.discussionPosts(discussionID: discussion.discussion ?? discussion.id).chronological

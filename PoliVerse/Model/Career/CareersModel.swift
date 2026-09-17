@@ -45,7 +45,7 @@ final class CareersModel {
         defer { isLoading = false }
 
         if session.useMockData {
-            careers = MockData.careers()
+            careers = Career.samples()
             return
         }
 

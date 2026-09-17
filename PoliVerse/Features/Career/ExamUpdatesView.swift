@@ -253,7 +253,7 @@ extension ExamUpdate.Kind {
 
 #Preview("Cronologia appello") {
     ScrollView {
-        ExamTimelineSection(exam: MockData.examSessions()[0]).padding()
+        ExamTimelineSection(exam: ExamSession.samples()[0]).padding()
     }
     .background(Color(.systemGroupedBackground))
     .previewEnvironment()

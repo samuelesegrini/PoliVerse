@@ -34,7 +34,7 @@ final class LoginFlow {
         await session.directory.load()
 
         if session.useMockData {
-            await session.signIn(MockData.student)
+            await session.signIn(Student.sample)
             return
         }
         guard await session.tokens.hasToken else {
@@ -137,7 +137,7 @@ final class LoginFlow {
     /// The enrolment the next login should land on.
     ///
     /// Persisted, because the login it applies to happens after the app has
-    /// signed out and the in-memory session.state is gone. Cleared once used.
+    /// signed out and the in-memory state is gone. Cleared once used.
     var pendingMatricola: String? {
         get { UserDefaults.standard.string(forKey: "pendingMatricola") }
         set { UserDefaults.standard.set(newValue, forKey: "pendingMatricola") }
@@ -159,12 +159,12 @@ final class LoginFlow {
 
     /// Adopts a token minted for a different enrolment.
     ///
-    /// Deliberately not ``completeLogin(token:)``: that moves the session.state to
+    /// Deliberately not ``completeLogin(token:)``: that moves the state to
     /// `.exchangingCode`, which drops the whole UI back to the login screen.
     /// A career change is not a login — the person stays signed in, and only
     /// the matricola their grant is bound to moves. If reading the user back
     /// fails, the previous career is still signed in and working, so the old
-    /// session.state is kept rather than replaced with an error screen.
+    /// state is kept rather than replaced with an error screen.
     func adopt(_ token: PoliMiToken) async {
         await session.tokens.set(token)
         await session.tokens.setGrantedScope(session.directory.oauth.scope)
@@ -185,7 +185,7 @@ final class LoginFlow {
     /// Exchanges the authcode from the web flow for a token pair.
     func completeLogin(authCode: String) async {
         session.enter(.exchangingCode)
-        // The login web view may have been opened before the session.directory landed.
+        // The login web view may have been opened before the directory landed.
         await session.directory.load()
         do {
             let token = try await session.api.send(
@@ -217,7 +217,7 @@ final class LoginFlow {
         }
         await session.tokens.clear()
         // Otherwise the next person to sign in on this device finds the
-        // previous session.student's courses in Spotlight.
+        // previous student's courses in Spotlight.
         SpotlightIndex().clear()
         // Same reason: reminders naming someone else's lectures would keep
         // arriving after they signed out.
@@ -225,13 +225,13 @@ final class LoginFlow {
         // Cookies only: the login page's 13.7 MB of JavaScript and CSS stays
         // cached, so signing back in is fast. Nothing identifying remains.
         await LoginWebKit.endSession()
-        // The offline copies are this session.student's record. Someone else signing
+        // The offline copies are this student's record. Someone else signing
         // in on the same device must not find them.
         if let matricola = session.student?.matricola {
             OfflineStore.shared.clear(account: matricola)
         }
         if session.useMockData {
-            await session.signIn(MockData.student)
+            await session.signIn(Student.sample)
         } else {
             session.enter(.signedOut)
             await session.profileBox.set(matricola: nil)

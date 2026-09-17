@@ -45,7 +45,7 @@ final class RoomFacilitiesModel {
 
     convenience init(preview facilities: [RoomFacility]) {
         self.init()
-        for id in MockData.classrooms().compactMap(\.occupancyID) {
+        for id in Classroom.samples().compactMap(\.occupancyID) {
             equipment[id] = facilities
             software[id] = []
         }

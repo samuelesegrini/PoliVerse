@@ -53,7 +53,7 @@ final class NewsModel {
         restoreCache()
 
         if session.useMockData {
-            items = MockData.news()
+            items = NewsItem.samples()
             payloadUnreadable = false
             window.markLoaded(source: source)
             return

@@ -166,10 +166,10 @@ final class CareerModel {
         restoreCache()
 
         if session.useMockData {
-            gradeBook = MockData.gradeBook
-            sessions = MockData.examSessions()
-            libretto = MockData.libretto()
-            feed.showSample(MockData.examUpdates())
+            gradeBook = GradeBook.sample
+            sessions = ExamSession.samples()
+            libretto = LibrettoExam.samples()
+            feed.showSample(ExamUpdate.samples())
             window.markLoaded(source: source)
             return
         }

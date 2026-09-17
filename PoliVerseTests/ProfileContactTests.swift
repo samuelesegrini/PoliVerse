@@ -20,9 +20,9 @@ struct ProfileContactTests {
 
     @Test("The university codes stay out of the card")
     func leavesCodesOut() {
-        let card = ProfileContact(student: MockData.student).vCard
-        #expect(!card.contains(MockData.student.matricola))
-        #expect(!card.contains(MockData.student.personCode))
+        let card = ProfileContact(student: Student.sample).vCard
+        #expect(!card.contains(Student.sample.matricola))
+        #expect(!card.contains(Student.sample.personCode))
     }
 
     @Test("Separators in a name are escaped")

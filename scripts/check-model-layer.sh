@@ -57,7 +57,8 @@ for a in $areas; do
         references "$MODEL/$a" "$(types_of "$o")" && edges=$((edges + 1))
     done
 done
-baseline=$(cat "$BASELINE_FILE" 2>/dev/null || echo "$edges")
+baseline=$(grep -oE "^[0-9]+" "$BASELINE_FILE" 2>/dev/null | head -1)
+[ -z "$baseline" ] && baseline=$edges
 echo "  $edges edges (baseline $baseline)"
 if [ "$edges" -gt "$baseline" ]; then
     echo "  FAIL  the areas got more tangled, not less"

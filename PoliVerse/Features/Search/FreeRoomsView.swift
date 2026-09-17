@@ -222,7 +222,7 @@ struct RoomScheduleView: View {
 
 #Preview("Giornata di un'aula") {
     RoomScheduleView(
-        room: MockData.roomSchedules(on: .now)[0],
+        room: RoomSchedule.samples(on: .now)[0],
         day: DateInterval(start: PoliMiDate.time(8, on: .now),
                           end: PoliMiDate.time(20, on: .now)))
     .previewInNavigation()
@@ -232,7 +232,7 @@ struct RoomScheduleView: View {
     let day = DateInterval(start: PoliMiDate.time(8, on: .now),
                            end: PoliMiDate.time(20, on: .now))
     return List {
-        ForEach(MockData.roomSchedules(on: .now)) { room in
+        ForEach(RoomSchedule.samples(on: .now)) { room in
             RoomFreeRow(room: room, slots: room.freeSlots(in: day))
         }
     }

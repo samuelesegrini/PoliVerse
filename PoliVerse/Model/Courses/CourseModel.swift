@@ -90,7 +90,7 @@ final class CourseModel {
         restoreCache()
 
         if session.useMockData {
-            courses = applyFavourites(MockData.courses)
+            courses = applyFavourites(Course.samples)
             window.markLoaded(source: source)
             return
         }

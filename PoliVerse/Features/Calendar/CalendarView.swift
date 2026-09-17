@@ -334,7 +334,7 @@ private struct EventRow: View {
 
 #Preview("Componente · Riga evento") {
     List {
-        ForEach(MockData.agendaEvents(around: .now).prefix(4)) { EventRow(event: $0) }
+        ForEach(AgendaEvent.samples(around: .now).prefix(4)) { EventRow(event: $0) }
     }
     .previewEnvironment()
 }

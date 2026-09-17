@@ -287,5 +287,5 @@ struct CieIDWaitingBanner: View {
 // MARK: - Previews
 
 #Preview("Materiali") {
-    CourseMaterialsView(course: MockData.courses[0]).previewInNavigation()
+    CourseMaterialsView(course: Course.samples[0]).previewInNavigation()
 }

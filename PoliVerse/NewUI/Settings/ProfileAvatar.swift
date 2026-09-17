@@ -93,7 +93,7 @@ nonisolated struct ScallopedCircle: Shape {
 
 #Preview("Avatar") {
     HStack(spacing: 20) {
-        ProfileAvatar(student: MockData.student, size: 64)
+        ProfileAvatar(student: Student.sample, size: 64)
         ProfileAvatar(student: nil, size: 64)
     }
 }

@@ -154,7 +154,7 @@ private struct RoomRow: View {
 
 #Preview("Componente · Riga aula") {
     List {
-        ForEach(MockData.classrooms()) { RoomRow(room: $0) }
+        ForEach(Classroom.samples()) { RoomRow(room: $0) }
     }
     .previewEnvironment()
 }

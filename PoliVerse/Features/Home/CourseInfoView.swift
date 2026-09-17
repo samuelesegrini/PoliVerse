@@ -201,5 +201,5 @@ struct CourseInfoView: View {
 }
 
 #Preview("Informazioni corso") {
-    CourseInfoView(course: MockData.courses[0]).previewInNavigation()
+    CourseInfoView(course: Course.samples[0]).previewInNavigation()
 }

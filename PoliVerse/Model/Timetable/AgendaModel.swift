@@ -106,7 +106,7 @@ final class AgendaModel {
 
         if session.useMockData {
             loadedRange = from...to
-            officialEvents = MockData.agendaEvents(around: date)
+            officialEvents = AgendaEvent.samples(around: date)
             rebuild()
             window.markLoaded(source: source)
             return

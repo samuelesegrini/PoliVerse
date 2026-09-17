@@ -68,7 +68,7 @@ final class NoticeModel {
         restoreCache()
 
         if session.useMockData {
-            notices = applyReadState(MockData.notices())
+            notices = applyReadState(Notice.samples())
             payloadUnreadable = false
             window.markLoaded(source: source)
             return

@@ -136,6 +136,8 @@ PoliVerse/
                           NotificationService · CalendarExporter · BackgroundRefresh
     Diagnostics/          DiagnosticsLog · DiagnosticsReport · ConnectionProbe
                           StorageAudit · PerformanceMonitor · PerfSignpost
+    <Area>/Samples.swift  the area's sample data, as extensions on its own
+                          types — Course.samples, ExamSession.samples(now:)
     Support/              shared by every area, names none of them
                           PoliMiAPI · ServiceDirectory · PoliMiProfile
                           Tokens · TokenStore · KeychainStore · DiskCache
@@ -227,7 +229,28 @@ synchronized root group picks the new tree up by path, exactly as predicted.
 
 Areas as they came out, largest first: Support 15, Identity 12, Materials 12,
 Diagnostics 12, Updates 10, Places 9, Career 8, Study 8, Courses 6, Platform 6,
-Sync 6, Timetable 4, Mock 1 — 109 files, plus `AuthWebView` to the views.
+Sync 6, Timetable 4 — 109 files, plus `AuthWebView` to the views.
+
+### The sample data
+
+`MockData` was 392 lines and one `enum` naming every area, which is why it
+needed a folder of its own: rule 1 would not have it in `Support/`. It is gone.
+Each area now carries its own `Samples.swift` — `extension Course { static let
+samples }`, `extension ExamSession { static func samples(now:) }` — so the
+sample data sits beside the type it describes, and the folder that existed only
+to hold the exception no longer exists.
+
+The straight split would have made one thing worse. `"Basi di Dati"` and its
+code `097785` were typed out **six times across five areas**; in one file you
+could at least see the copies together, and in six folders you could not. So
+the courses became the spine: `Course.samples`, with a name for each, and every
+other area's samples take the name and the code from it. **No course code is
+written out by hand twice anywhere in the app.**
+
+That cost one edge — `Timetable -> Courses`, the ratchet caught it at 53 — and
+it is written down in `scripts/model-layer-baseline.txt` with the reason. One
+edge for one source of truth, on data a student actually sees: sample data
+ships here, it is what "Esplora con dati di esempio" shows.
 
 ### What step 3 did, and did not do
 

@@ -294,11 +294,11 @@ struct CareerPage: View {
 }
 
 #Preview("Contatto") {
-    NavigationStack { ContactPage(student: MockData.student) }
+    NavigationStack { ContactPage(student: Student.sample) }
         .previewEnvironment()
 }
 
 #Preview("Foto") {
-    NavigationStack { PhotoPage(student: MockData.student) }
+    NavigationStack { PhotoPage(student: Student.sample) }
         .previewEnvironment()
 }

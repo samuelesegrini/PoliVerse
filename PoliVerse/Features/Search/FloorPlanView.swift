@@ -318,12 +318,12 @@ struct RoomDayView: View {
     return List {
         Section("Oggi") {
             OccupancyTimeline(
-                bookings: MockData.roomSchedules(on: .now)[0].bookings, day: day)
+                bookings: RoomSchedule.samples(on: .now)[0].bookings, day: day)
         }
     }
     .previewEnvironment()
 }
 
 #Preview("Giornata aula") {
-    List { RoomDayView(room: MockData.classrooms()[0]) }.previewEnvironment()
+    List { RoomDayView(room: Classroom.samples()[0]) }.previewEnvironment()
 }

@@ -140,10 +140,10 @@ struct ClassroomDetailView: View {
 // MARK: - Previews
 
 #Preview("Dettaglio aula") {
-    ClassroomDetailView(room: MockData.classrooms()[0]).previewInNavigation()
+    ClassroomDetailView(room: Classroom.samples()[0]).previewInNavigation()
 }
 
 #Preview("Dotazioni") {
-    List { RoomFacilitiesSection(roomID: MockData.classrooms()[0].occupancyID) }
+    List { RoomFacilitiesSection(roomID: Classroom.samples()[0].occupancyID) }
         .previewEnvironment()
 }

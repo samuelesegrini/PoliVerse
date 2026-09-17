@@ -542,9 +542,9 @@ private struct EnrolmentWindowBar: View {
 // MARK: - Previews
 
 #Preview("Appello") {
-    ExamDetailView(exam: MockData.examSessions()[0]).previewEnvironment()
+    ExamDetailView(exam: ExamSession.samples()[0]).previewEnvironment()
 }
 
 #Preview("Esito") {
-    ExamDetailView(exam: MockData.examSessions().first { $0.grade != nil }!).previewEnvironment()
+    ExamDetailView(exam: ExamSession.samples().first { $0.grade != nil }!).previewEnvironment()
 }

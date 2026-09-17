@@ -121,7 +121,7 @@ private struct PlanRow: View {
 
 #Preview("Componente · Riga piano") {
     List {
-        ForEach(MockData.libretto().prefix(5)) { PlanRow(exam: $0) }
+        ForEach(LibrettoExam.samples().prefix(5)) { PlanRow(exam: $0) }
     }
     .previewEnvironment()
 }

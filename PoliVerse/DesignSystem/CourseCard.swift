@@ -215,7 +215,7 @@ private struct CardPressStyle: ButtonStyle {
 }
 
 #Preview(traits: .sizeThatFitsLayout) {
-    CourseCard(course: MockData.courses[0], onOpen: {}, onFavourite: {}, onMaterials: {})
+    CourseCard(course: Course.samples[0], onOpen: {}, onFavourite: {}, onMaterials: {})
         .padding()
         .previewEnvironment()
 }

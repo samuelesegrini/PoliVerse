@@ -199,7 +199,7 @@ private struct NewsHighlightCard: View {
 }
 
 #Preview("Notizia") {
-    NewsDetailView(item: MockData.news()[0]).previewInNavigation()
+    NewsDetailView(item: NewsItem.samples()[0]).previewInNavigation()
 }
 
 #Preview("In evidenza") {
@@ -208,7 +208,7 @@ private struct NewsHighlightCard: View {
 
 #Preview("Componente · Riga notizia") {
     List {
-        ForEach(MockData.news()) { NewsRow(item: $0) }
+        ForEach(NewsItem.samples()) { NewsRow(item: $0) }
     }
     .listStyle(.plain)
     .previewEnvironment()
@@ -216,7 +216,7 @@ private struct NewsHighlightCard: View {
 
 #Preview("Componente · Card notizia") {
     VStack(spacing: 10) {
-        ForEach(MockData.news()) { NewsHighlightCard(item: $0) }
+        ForEach(NewsItem.samples()) { NewsHighlightCard(item: $0) }
     }
     .padding()
     .previewEnvironment()

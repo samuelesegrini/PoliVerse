@@ -108,7 +108,7 @@ struct TeacherDetailView: View {
 
 #Preview("Docente") {
     TeacherDetailView(
-        teacher: Teacher.roster(courses: MockData.courses,
-                                sessions: MockData.examSessions())[0])
+        teacher: Teacher.roster(courses: Course.samples,
+                                sessions: ExamSession.samples())[0])
         .previewInNavigation()
 }

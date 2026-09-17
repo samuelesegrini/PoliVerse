@@ -255,5 +255,5 @@ private struct DiscussionView: View {
 // MARK: - Previews
 
 #Preview("Avvisi") {
-    CourseForumsView(course: MockData.courses[0], kind: .announcements).previewInNavigation()
+    CourseForumsView(course: Course.samples[0], kind: .announcements).previewInNavigation()
 }

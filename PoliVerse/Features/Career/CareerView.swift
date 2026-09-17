@@ -472,14 +472,14 @@ private struct ExamRow: View {
 
 #Preview("Componente · Riga libretto") {
     List {
-        ForEach(MockData.libretto().prefix(4)) { LibrettoRow(exam: $0) }
+        ForEach(LibrettoExam.samples().prefix(4)) { LibrettoRow(exam: $0) }
     }
     .previewEnvironment()
 }
 
 #Preview("Componente · Riga appello") {
     List {
-        ForEach(MockData.examSessions().prefix(3)) { ExamRow(exam: $0) }
+        ForEach(ExamSession.samples().prefix(3)) { ExamRow(exam: $0) }
     }
     .previewEnvironment()
 }

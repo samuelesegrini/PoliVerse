@@ -573,5 +573,5 @@ struct CourseDetailView: View {
 // MARK: - Previews
 
 #Preview("Corso") {
-    CourseDetailView(course: MockData.courses[0]).previewInNavigation()
+    CourseDetailView(course: Course.samples[0]).previewInNavigation()
 }
