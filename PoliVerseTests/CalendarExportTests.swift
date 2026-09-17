@@ -9,6 +9,8 @@ import Testing
 /// last lesson, a hidden teaching that comes back in the student's calendar.
 /// `CalendarExporter` itself is not tested — it needs EventKit and the
 /// student's permission — but everything it writes comes from here.
+/// `PersonalTimetableTests` walks one whole draft end to end; these take the
+/// edges apart one at a time.
 @Suite("Esportazione nel calendario")
 struct CalendarExportTests {
     private let calendar = PoliMiDate.romeCalendar

@@ -83,6 +83,7 @@ struct WelcomeStepView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(Theme.brand)
+                .accessibilityIdentifier("onboarding-demo")
 
                 Text("PoliVerse non è un'app ufficiale del Politecnico di Milano. Le credenziali si inseriscono solo nella pagina di ateneo.")
                     .font(.caption2)
