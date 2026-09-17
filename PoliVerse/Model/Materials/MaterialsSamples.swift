@@ -15,7 +15,16 @@ nonisolated extension CourseForum {
 }
 
 nonisolated extension MoodleDiscussion {
-    static var samples: [MoodleDiscussion]
+    static let samples = [
+        MoodleDiscussion(id: 1, discussion: 1, name: nil, subject: "Spostamento appello del 10 giugno",
+                         message: "Buongiorno, l'appello del 10 giugno è spostato al 12 giugno per indisponibilità dell'aula.",
+                         created: Int(Date.now.addingTimeInterval(-3 * 86_400).timeIntervalSince1970),
+                         timemodified: nil, userfullname: "Prof. Marco Rossi", pinned: true),
+        MoodleDiscussion(id: 2, discussion: 2, name: nil, subject: "Dubbio esercizio 4 - Assembly MIPS",
+                         message: "Qualcuno ha capito come gestire il caso dell'overflow nell'esercizio 4?",
+                         created: Int(Date.now.addingTimeInterval(-1 * 86_400).timeIntervalSince1970),
+                         timemodified: nil, userfullname: "Giulia Bianchi", pinned: false),
+    ]
 }
 
 nonisolated extension MoodlePosts.Post {

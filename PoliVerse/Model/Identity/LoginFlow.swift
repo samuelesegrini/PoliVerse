@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import OSLog
+import UserNotifications
 
 /// How the student got in: the login, the logout, the restore at launch, and
 /// the career re-login.

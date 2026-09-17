@@ -8,7 +8,20 @@ import Foundation
 /// incoherent demo is something a student sees.
 
 nonisolated extension Course {
-    static let samples: [Course]
+    static let samples: [Course] = [
+        Course(id: "086655", name: "Architetture dei Sistemi di Elaborazione", teacher: "Marco Santambrogio",
+               cfu: 10, semester: "1", academicYear: "2024/25"),
+        Course(id: "095946", name: "Ingegneria del Software 2", teacher: "Carlo Ghezzi",
+               cfu: 10, semester: "1", academicYear: "2024/25"),
+        Course(id: "052470", name: "Geometria e Algebra Lineare", teacher: "Federico Bambozzi",
+               cfu: 10, semester: "1", academicYear: "2024/25"),
+        Course(id: "095951", name: "Basi di Dati", teacher: "Stefano Ceri",
+               cfu: 10, semester: "2", academicYear: "2024/25"),
+        Course(id: "086944", name: "Reti Logiche", teacher: "Fabrizio Ferrandi",
+               cfu: 10, semester: "1", academicYear: "2024/25"),
+        Course(id: "095857", name: "Automatica", teacher: "Sergio Matteo Savaresi",
+               cfu: 10, semester: "2", academicYear: "2024/25"),
+    ]
 
     /// Named so that the other areas' samples can point at the same course
     /// instead of retyping its name and its code. Six copies of "Basi di Dati"
