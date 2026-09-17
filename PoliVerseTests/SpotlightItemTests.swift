@@ -15,7 +15,7 @@ struct SpotlightItemTests {
     @Test("Ogni tipo si riconosce dal suo identificativo", arguments: [
         Item.course("085923"), Item.room("3.1.4"), Item.teacher("rossi-matteo"), Item.exam("41287"),
     ])
-    func roundTrip(item: Item) {
+    private func roundTrip(item: Item) {
         #expect(Item(identifier: item.identifier) == item)
     }
 
