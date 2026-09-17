@@ -49,7 +49,7 @@ where a one-row layout overflowed.
 
 ## Requirements
 
-- Xcode 27, iOS 26 SDK
+- Xcode 27, iOS 27 SDK (deployment target iOS 27)
 - Swift 6 (strict concurrency, `MainActor` default isolation)
 - No third-party dependencies
 
