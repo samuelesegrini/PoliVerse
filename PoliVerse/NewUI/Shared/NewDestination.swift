@@ -10,7 +10,9 @@ nonisolated enum NewDestination: String, CaseIterable, Identifiable, Hashable, S
     var id: String { rawValue }
 
     /// The tab a place lives in, in the tab layout.
-    nonisolated enum Tab: String, Hashable, Sendable {
+    /// `CaseIterable` because the field metrics are split by tab, and the set
+    /// of labels reported has to be this one rather than a copy that drifts.
+    nonisolated enum Tab: String, CaseIterable, Hashable, Sendable {
         case today, courses, career, search
     }
 

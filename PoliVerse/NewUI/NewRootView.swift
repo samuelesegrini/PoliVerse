@@ -94,6 +94,11 @@ struct NewRootView: View {
         }
         // Above the tab bar while there is a class today, like Music's player.
         .currentClassAccessory(shell.singlePage ? nil : current)
+        // Hangs and hitches in the field arrive split by tab.
+        .onChange(of: shell.selection, initial: true) { _, tab in
+            PerformanceStates.tabSelected(tab.rawValue)
+        }
+        .onDisappear { PerformanceStates.tabSelected(nil) }
         // Around the day shown, so a day picked two months out is not empty.
         .task(id: shell.day) { await agenda.ensureLoaded(covering: shell.day) }
         .task {
