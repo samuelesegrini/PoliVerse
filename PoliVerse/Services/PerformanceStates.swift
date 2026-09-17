@@ -16,7 +16,7 @@ import StateReporting
 ///
 /// Apple's sample calls `MetricManager.stateReporter(for:)`, which the iOS 27
 /// SDK does not have; `StateReporter.reporter(for:)` is the real entry point
-/// (`docs/metrickit-performance.md` §1.8). On iOS 26 everything here is a no-op.
+/// (`docs/metrickit-performance.md` §1.8).
 @MainActor
 enum PerformanceStates {
     nonisolated enum Domain: String, CaseIterable {
@@ -38,25 +38,21 @@ enum PerformanceStates {
         // report of the same state spends that budget for nothing.
         guard lastTab != .some(label) else { return }
         lastTab = .some(label)
-        guard #available(iOS 27, *) else { return }
         Reporters.tab.reportTransition(to: label)
     }
 
     static func dataSource(usesSampleData: Bool) {
         guard lastData != usesSampleData else { return }
         lastData = usesSampleData
-        guard #available(iOS 27, *) else { return }
         Reporters.data.reportTransition(to: usesSampleData ? "sample" : "live")
     }
 
-    @available(iOS 27, *)
     nonisolated static var enabledDomains: Set<StateReportingDomain> {
         Set(Domain.allCases.map { StateReportingDomain(rawValue: $0.rawValue) })
     }
 
     /// One reporter per domain for the process: asking again for the same
     /// domain with different metadata types crashes.
-    @available(iOS 27, *)
     private enum Reporters {
         static let tab = StateReporter<Never, Never>.reporter(for: Domain.tab.rawValue)
         static let data = StateReporter<Never, Never>.reporter(for: Domain.data.rawValue)

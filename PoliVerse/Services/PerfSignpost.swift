@@ -42,13 +42,7 @@ nonisolated enum PerfSignpost {
     private static let signposter = OSSignposter(
         subsystem: "one.wape.PoliVerse", category: .pointsOfInterest)
 
-    private static let metricLog: OSLog = {
-        if #available(iOS 27, *) {
-            MetricManager.logHandle(category: "PoliVerse")
-        } else {
-            MXMetricManager.makeLogHandle(category: "PoliVerse")
-        }
-    }()
+    private static let metricLog = MetricManager.logHandle(category: "PoliVerse")
 
     /// Pair with ``end(_:)``, usually through `defer`.
     static func begin(_ name: Name) -> Interval {

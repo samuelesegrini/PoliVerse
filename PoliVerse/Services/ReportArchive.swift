@@ -51,8 +51,7 @@ actor ReportArchive {
         self.maxBytes = maxBytes
     }
 
-    /// Stores a report already in JSON: the iOS 26 path, from
-    /// `jsonRepresentation()`. `label` names what is inside — `crash`, `hang`
+    /// Stores a report already encoded as JSON. `label` names what is inside — `crash`, `hang`
     /// — and ends up in the file name, so a directory listing reads as a log.
     func store(json: Data, kind: Kind, label: String? = nil, receivedAt: Date = .now) {
         do {
@@ -66,9 +65,8 @@ actor ReportArchive {
         prune()
     }
 
-    /// iOS 27. Encoded here rather than where it arrives: a day's report is
+    /// Encoded here rather than where it arrives: a day's report is
     /// real work, and nothing on screen is waiting for it.
-    @available(iOS 27, *)
     func store(_ report: MetricReport) {
         let encoder = JSONEncoder()
         encoder.userInfo[MetricReport.encodingFormatKey] = MetricReport.EncodingFormat.byStateReportingDomain
@@ -80,7 +78,6 @@ actor ReportArchive {
         }
     }
 
-    @available(iOS 27, *)
     func store(_ report: DiagnosticReport) {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -91,7 +88,6 @@ actor ReportArchive {
         }
     }
 
-    @available(iOS 27, *)
     nonisolated static func label(for result: DiagnosticResult) -> String {
         switch result {
         case .crash: "crash"
