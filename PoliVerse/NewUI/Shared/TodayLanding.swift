@@ -331,10 +331,11 @@ private struct ZoneBadge: View {
 /// The Home Screen's jiggle, a little slower so a page of cards stays calm.
 private struct Wiggle: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.systemPrefersReducedResourceUsage) private var reducedResources
     @State private var phase = Double.random(in: 0...1)
 
     func body(content: Content) -> some View {
-        if reduceMotion {
+        if reduceMotion || reducedResources {
             content
         } else {
             content.phaseAnimator([-0.6, 0.6]) { view, angle in

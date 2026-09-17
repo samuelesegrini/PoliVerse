@@ -24,10 +24,13 @@ enum PerformanceStates {
         case data = "one.wape.PoliVerse.data"
     }
 
-    /// The tab values `MainTabView` uses. Anything else is reported as no
-    /// state rather than as a new one: an unbounded label set is exactly
-    /// what the state limit punishes, and an empty label is a fatal error.
-    static let tabs: Set<String> = ["home", "webeep", "calendar", "career", "search"]
+    /// The tab values both interfaces use: `MainTabView`'s, then the new
+    /// interface's (``NewDestination/Tab``, and `single` for the single page).
+    /// Anything else is reported as no state rather than as a new one: an
+    /// unbounded label set is exactly what the state limit punishes, and an
+    /// empty label is a fatal error.
+    static let tabs: Set<String> = ["home", "webeep", "calendar", "career", "search",
+                                    "today", "courses", "single"]
 
     private static var lastTab: String??
     private static var lastData: Bool?

@@ -10,9 +10,12 @@ struct CurrentClassAccessory: View {
 
     @Environment(\.tabViewBottomAccessoryPlacement) private var placement
     @Environment(\.locale) private var locale
+    @Environment(\.systemPrefersReducedResourceUsage) private var reducedResources
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 30)) { context in
+        // The progress moves by a minute at a time; when the system asks for
+        // less work, by five.
+        TimelineView(.periodic(from: .now, by: reducedResources ? 300 : 30)) { context in
             let now = context.date
             HStack(spacing: 12) {
                 Image(systemName: current.event.kind == .exam ? "pencil.and.list.clipboard" : "person.bubble")
