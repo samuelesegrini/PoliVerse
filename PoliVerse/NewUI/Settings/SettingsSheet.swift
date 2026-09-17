@@ -114,6 +114,7 @@ struct SettingsSheet: View {
                     Text("PoliVerse non è affiliata al Politecnico di Milano.")
                 }
             }
+            .accessibilityIdentifier("settings-list")
             .navigationTitle("Impostazioni")
             .navigationDestination(for: ShellState.SettingsPage.self) { page in
                 switch page {
@@ -123,6 +124,7 @@ struct SettingsSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Chiudi", systemImage: "xmark") { dismiss() }
+                        .accessibilityIdentifier("settings-close")
                 }
             }
             .confirmationDialog("Uscire dall’account?", isPresented: $confirmingSignOut, titleVisibility: .visible) {

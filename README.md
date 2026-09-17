@@ -60,6 +60,11 @@ xcodebuild test -project PoliVerse.xcodeproj -scheme PoliVerse \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 
+Unit tests run from the `PoliVerse` scheme, the functional UI tests — including
+the automated accessibility audits — from `PoliVerseUI`, and the launch, hitch
+and signpost measurements from `PoliVersePerformance`. See
+[docs/testing.md](docs/testing.md).
+
 24 tests covering the parts that are easy to get wrong and hard to notice:
 timezone-less timestamp parsing across CET and CEST, refresh coalescing under
 concurrency, exam status mapping, authcode extraction, and the cache's refusal

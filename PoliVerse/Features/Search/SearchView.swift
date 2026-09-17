@@ -323,6 +323,7 @@ struct SearchView: View {
                     }
                 }
             }
+            .accessibilityIdentifier("search-list")
             .navigationTitle("Cerca")
             // Donated so the screen can be handed off and offered as a
             // suggestion. The query travels with it; nothing else does.
@@ -350,6 +351,7 @@ struct SearchView: View {
             .overlay {
                 if isEmpty && !trimmed.isEmpty {
                     ContentUnavailableView.search(text: trimmed)
+                        .accessibilityIdentifier("search-empty")
                 }
             }
             .navigationDestination(item: $spotlightRoom) { ClassroomDetailView(room: $0) }
