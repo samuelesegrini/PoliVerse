@@ -40,7 +40,7 @@ struct CourseForumsView: View {
                 ContentUnavailableView("WeBeep non risponde", systemImage: "wifi.exclamationmark",
                                        description: Text("Riprova tra poco."))
             } else if matching.count == 1, let forum = matching.first {
-                DiscussionsList(forum: forum, tint: tint)
+                DiscussionsList(forum: forum, course: course, kind: kind, tint: tint)
             } else if matching.isEmpty {
                 ContentUnavailableView(
                     kind == .announcements ? "Nessun forum avvisi" : "Nessun forum",
@@ -52,7 +52,8 @@ struct CourseForumsView: View {
                         ForEach(Array(matching.enumerated()), id: \.element.id) { index, forum in
                             if index > 0 { CardDivider(inset: 60) }
                             NavigationLink {
-                                DiscussionsList(forum: forum, tint: tint).navigationTitle(forum.name)
+                                DiscussionsList(forum: forum, course: course, kind: kind, tint: tint)
+                                    .navigationTitle(forum.name)
                             } label: {
                                 HStack(spacing: 12) {
                                     Image(systemName: "bubble.left.and.bubble.right.fill")
@@ -69,8 +70,8 @@ struct CourseForumsView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .cardBackground()
-                    .padding()
+                    .lookCard()
+                    .padding(.horizontal, 20).padding(.vertical)
                 }
             }
         }
@@ -93,7 +94,27 @@ struct CourseForumsView: View {
 /// The discussions in one forum, newest activity first as Moodle orders them.
 private struct DiscussionsList: View {
     let forum: CourseForum
+    let course: Course
+    let kind: CourseForum.Kind
     let tint: Color
+
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.colorScheme) private var scheme
+
+    /// The forum as a pile: its own symbol in front, then what fills it.
+    private func hero(_ discussions: [MoodleDiscussion]) -> some View {
+        let ramp = CourseRamp(course: course, style: style, scheme: scheme)
+        let front = kind == .announcements ? "megaphone" : "bubble.left.and.bubble.right"
+        let symbols = [front, "pin", "person.2", "paperclip", "bell"]
+        let latest = discussions.compactMap(\.created).max().map { Date(timeIntervalSince1970: TimeInterval($0)) }
+        let count = Text(discussions.count == 1 ? "1 discussione" : "\(discussions.count) discussioni")
+        return CoursePageHero(
+            tiles: zip(symbols, ramp.colours(symbols.count)).map { HeroTile(id: $0, symbol: $0, colour: $1) },
+            placeholder: HeroTile(id: "empty", symbol: front, colour: ramp.main),
+            title: Text(verbatim: forum.name),
+            summary: latest.map { Text("\(count) · l'ultima \($0.formatted(.relative(presentation: .named).locale(locale)))") } ?? count,
+            mode: ramp.mode)
+    }
 
     @Environment(WeBeepService.self) private var weBeep
     @Environment(\.locale) private var locale
@@ -107,14 +128,21 @@ private struct DiscussionsList: View {
                     if discussions.isEmpty {
                         ContentUnavailableView("Ancora nessun messaggio", systemImage: "bubble.left")
                             .padding(.top, 40)
-                    }
-                    ForEach(discussions, id: \.id) { discussion in
-                        NavigationLink {
-                            DiscussionView(discussion: discussion, tint: tint)
-                        } label: {
-                            row(discussion)
+                    } else {
+                        hero(discussions)
+                            .padding(.bottom, 14)
+                        VStack(spacing: 0) {
+                            ForEach(discussions, id: \.id) { discussion in
+                                NavigationLink {
+                                    DiscussionView(discussion: discussion, tint: tint)
+                                } label: {
+                                    row(discussion, last: discussion.id == discussions.last?.id)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
-                        .buttonStyle(.plain)
+                        .padding(.horizontal, 14)
+                        .lookCard()
                     }
                 } else if failed {
                     ContentUnavailableView("Forum non disponibile", systemImage: "wifi.exclamationmark",
@@ -124,57 +152,57 @@ private struct DiscussionsList: View {
                     ProgressView().frame(maxWidth: .infinity).padding(.top, 40)
                 }
             }
-            .padding()
+            .padding(.horizontal, 20).padding(.vertical)
         }
         .courseScreen()
         .refreshable { await load() }
         .task { if discussions == nil { await load() } }
     }
 
-    private func row(_ discussion: MoodleDiscussion) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            InitialsAvatar(name: discussion.userfullname ?? "?", tint: tint, size: 38)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
+    /// A discussion as a row of the forum's card: who, what, and the start
+    /// of what they said; a pinned one says so with the course's colour.
+    private func row(_ discussion: MoodleDiscussion, last: Bool) -> some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 12) {
+                InitialsAvatar(name: discussion.userfullname ?? "?", tint: tint, size: 38)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        if discussion.pinned == true {
+                            Label("In evidenza", systemImage: "pin.fill")
+                                .labelStyle(.iconOnly)
+                                .font(.caption)
+                                .foregroundStyle(tint)
+                        }
+                        Text(discussion.subject ?? discussion.name ?? "")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(2)
+                        Spacer(minLength: 4)
+                        if let created = discussion.created {
+                            Text(Date(timeIntervalSince1970: TimeInterval(created))
+                                .formatted(.relative(presentation: .named).locale(locale)))
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                                .lineLimit(1)
+                        }
+                    }
                     Text(discussion.userfullname ?? "")
-                        .font(.caption.weight(.semibold))
+                        .font(.caption.weight(.medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
-                    Spacer(minLength: 4)
-                    if let created = discussion.created {
-                        Text(Date(timeIntervalSince1970: TimeInterval(created))
-                            .formatted(.relative(presentation: .named).locale(locale)))
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
-                }
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    if discussion.pinned == true {
-                        Image(systemName: "pin.fill").font(.caption).foregroundStyle(.orange)
-                            .accessibilityLabel("In evidenza")
-                    }
-                    Text(discussion.subject ?? discussion.name ?? "")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
+                    Text(HTMLText.plain(discussion.message ?? ""))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.leading)
                         .lineLimit(2)
                 }
-                Text(HTMLText.plain(discussion.message ?? ""))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(3)
             }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .cardBackground()
-        .overlay(alignment: .leading) {
-            if discussion.pinned == true {
-                RoundedRectangle(cornerRadius: 2).fill(.orange).frame(width: 3).padding(.vertical, 16)
-            }
+            .padding(.vertical, 12)
+            if !last { Divider().padding(.leading, 50) }
         }
         .contentShape(.rect)
+        .accessibilityElement(children: .combine)
     }
 
     private func load() async {
@@ -200,9 +228,10 @@ private struct DiscussionView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 12) {
                 Text(discussion.subject ?? discussion.name ?? "")
-                    .font(.title3.weight(.bold))
-                    .fontDesign(.rounded)
+                    .font(.title2.weight(.bold))
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 4)
+                    .padding(.bottom, 4)
 
                 ForEach(posts ?? fallback) { post in
                     VStack(alignment: .leading, spacing: 10) {
@@ -223,7 +252,7 @@ private struct DiscussionView: View {
                     }
                     .padding(14)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .cardBackground()
+                    .lookCard()
                     .padding(.leading, post.isReply ? 20 : 0)
                     .overlay(alignment: .leading) {
                         if post.isReply {
@@ -235,7 +264,7 @@ private struct DiscussionView: View {
                     ProgressView().frame(maxWidth: .infinity)
                 }
             }
-            .padding()
+            .padding(.horizontal, 20).padding(.vertical)
         }
         .courseScreen()
         .navigationTitle(discussion.subject ?? discussion.name ?? "")

@@ -5,30 +5,45 @@ import Testing
 /// The labels the app reports to StateReporting, so hangs and hitches from the
 /// field arrive attributed: "Carriera hitches", not "the app hitches".
 ///
-/// Two rules Apple states and one this app learned. Theirs: a small, fixed set
-/// of labels per domain — an unbounded set is what the state limit punishes —
-/// and never an empty label, which is a fatal error. Ours: the set has to be
-/// the tabs actually on screen. It was five labels from the previous
-/// interface, kept long after students stopped seeing it, so every report was
-/// filtered out and the field numbers came back split by nothing.
+/// Two rules Apple states: a small, fixed set of labels per domain — an
+/// unbounded set is what the state limit punishes — and never an empty label,
+/// which is a fatal error.
+///
+/// One this app learned: the set has to cover the tabs actually on screen. It
+/// was once the five of the previous interface alone, so everything the new
+/// one reported was filtered out and the field numbers came back split by
+/// nothing. Both interfaces ship — Impostazioni switches between them — so
+/// both are in the set, and so is `single`, because the single page is a state
+/// a student can sit in for a whole session.
 @MainActor
 @Suite("Stati per le prestazioni")
 struct PerformanceStatesTests {
-    /// Taken from the tab enum rather than written out again, which is the
-    /// point: a tab added to the interface is a label reported, without
-    /// anybody remembering to come here.
-    @Test("Le schede riportate sono quelle dell’interfaccia in uso")
-    func labelsAreTheTabsOnScreen() {
-        #expect(PerformanceStates.tabs == ["today", "courses", "career", "search"])
-        #expect(PerformanceStates.tabs == Set(NewDestination.Tab.allCases.map(\.rawValue)))
+    /// The check that survives a change: the labels are written out by hand in
+    /// `PerformanceStates`, so a tab added to ``NewDestination/Tab`` would
+    /// otherwise be reported as no state at all, silently. That is what
+    /// `CaseIterable` on that enum is for.
+    @Test("Ogni scheda dell’interfaccia in uso ha la sua etichetta")
+    func everyShippingTabIsReported() {
+        for tab in NewDestination.Tab.allCases {
+            #expect(PerformanceStates.tabs.contains(tab.rawValue),
+                    "La scheda «\(tab.rawValue)» non verrebbe riportata al campo")
+        }
     }
 
-    /// The previous interface's five: none of them may come back, or the
-    /// reports go back to being filtered out in silence.
-    @Test("Le schede della vecchia interfaccia non sono più riportate")
-    func theOldLabelsAreGone() {
+    /// Not a tab, but a state: in the single-page layout there is no tab bar,
+    /// and a hitch there belongs to that layout rather than to Oggi.
+    @Test("Anche la pagina unica è uno stato")
+    func singlePageIsAState() {
+        #expect(PerformanceStates.tabs.contains("single"))
+    }
+
+    /// The previous interface is still reachable from Impostazioni, so its
+    /// tabs still report. Dropping them would blind the numbers for whoever
+    /// switched back.
+    @Test("Le schede della vecchia interfaccia riportano ancora, perché esiste ancora")
+    func theOldInterfaceStillReports() {
         for old in ["home", "webeep", "calendar"] {
-            #expect(!PerformanceStates.tabs.contains(old), "\(old) è una scheda che non esiste più")
+            #expect(PerformanceStates.tabs.contains(old))
         }
     }
 
@@ -36,9 +51,8 @@ struct PerformanceStatesTests {
     /// is a crash rather than a missing one.
     @Test("Poche etichette, nessuna vuota")
     func boundedAndNonEmpty() {
-        #expect(PerformanceStates.tabs.count <= 8, "Il limite di stati punisce un insieme che cresce")
-        #expect(!PerformanceStates.tabs.contains(""), "Un’etichetta vuota è un errore fatale")
-        #expect(PerformanceStates.tabs.allSatisfy { !$0.isEmpty })
+        #expect(PerformanceStates.tabs.count <= 12, "Il limite di stati punisce un insieme che cresce")
+        #expect(PerformanceStates.tabs.allSatisfy { !$0.isEmpty }, "Un’etichetta vuota è un errore fatale")
     }
 
     /// Two domains, each a small fixed set, as Apple asks.

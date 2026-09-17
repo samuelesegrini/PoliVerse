@@ -83,11 +83,6 @@ nonisolated enum CieIDBridge {
         return URL(string: "\(cieIDScheme)://\(withSource)")
     }
 
-    @MainActor static var isCieIDInstalled: Bool {
-        guard let probe = URL(string: "\(cieIDScheme)://") else { return false }
-        return UIApplication.shared.canOpenURL(probe)
-    }
-
     // MARK: - Inbound
 
     /// Extracts the https URL CieID handed back.

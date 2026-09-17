@@ -429,6 +429,7 @@
       }
     },
     "%lld gg" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -580,6 +581,9 @@
         }
       }
     },
+    "%lld novità" : {
+
+    },
     "%lld novità %@" : {
       "localizations" : {
         "en" : {
@@ -639,6 +643,9 @@
           }
         }
       }
+    },
+    "%lld nuovi" : {
+
     },
     "%lld nuovi file" : {
       "localizations" : {
@@ -800,6 +807,9 @@
         }
       }
     },
+    "1 nuovo" : {
+
+    },
     "1 ora" : {
       "localizations" : {
         "en" : {
@@ -921,6 +931,9 @@
           }
         }
       }
+    },
+    "A lezione oggi" : {
+
     },
     "A parole" : {
       "localizations" : {
@@ -1835,6 +1848,7 @@
       }
     },
     "Appello del %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1883,6 +1897,9 @@
           }
         }
       }
+    },
+    "Apre l’appello" : {
+
     },
     "Apre la pianta a schermo intero" : {
       "localizations" : {
@@ -3714,6 +3731,9 @@
         }
       }
     },
+    "Controlla gli avvisi del corso o chiedi al docente." : {
+
+    },
     "Controllo aula per aula…" : {
       "localizations" : {
         "en" : {
@@ -3743,7 +3763,16 @@
         }
       }
     },
+    "Copia %@" : {
+
+    },
+    "Copia indirizzo" : {
+
+    },
     "Copia rapporto" : {
+
+    },
+    "Copiato" : {
 
     },
     "Corallo" : {
@@ -4001,6 +4030,9 @@
         }
       }
     },
+    "Corso WeBeep" : {
+
+    },
     "Crea l'orario" : {
       "localizations" : {
         "en" : {
@@ -4084,6 +4116,9 @@
           }
         }
       }
+    },
+    "Da definire" : {
+
     },
     "Da disegno" : {
       "localizations" : {
@@ -4254,6 +4289,9 @@
           }
         }
       }
+    },
+    "Dati di esempio: disattivali per usare WeBeep reale." : {
+
     },
     "Dati di un altro giorno. Aggiorna o apri l'app." : {
 
@@ -4472,6 +4510,7 @@
       }
     },
     "Disattiva i dati di esempio per usare WeBeep reale." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4573,6 +4612,9 @@
           }
         }
       }
+    },
+    "Docente non indicato" : {
+
     },
     "Docente: %@" : {
       "localizations" : {
@@ -5052,6 +5094,9 @@
         }
       }
     },
+    "Esame non ancora sostenuto" : {
+
+    },
     "Esame sostenibile in inglese" : {
       "localizations" : {
         "en" : {
@@ -5317,6 +5362,9 @@
           }
         }
       }
+    },
+    "Filtra" : {
+
     },
     "Filtro" : {
       "localizations" : {
@@ -5877,6 +5925,9 @@
           }
         }
       }
+    },
+    "I tuoi corsi" : {
+
     },
     "Identificativi" : {
       "localizations" : {
@@ -6814,6 +6865,7 @@
       }
     },
     "Info" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7191,6 +7243,9 @@
         }
       }
     },
+    "L'esame si sostiene tutto insieme, a fine corso." : {
+
+    },
     "L'orario ufficiale è arrivato" : {
       "localizations" : {
         "en" : {
@@ -7280,6 +7335,9 @@
           }
         }
       }
+    },
+    "La scheda prevede prove durante il semestre." : {
+
     },
     "La sessione è scaduta. Accedi di nuovo." : {
       "localizations" : {
@@ -8623,6 +8681,9 @@
         }
       }
     },
+    "Nessun corso corrisponde ai filtri scelti." : {
+
+    },
     "Nessun corso di studi con questa scelta. Prova un'altra sede o un altro anno." : {
       "localizations" : {
         "en" : {
@@ -8654,6 +8715,9 @@
           }
         }
       }
+    },
+    "Nessun corso qui" : {
+
     },
     "Nessun dato di carriera" : {
       "localizations" : {
@@ -11034,6 +11098,9 @@
         }
       }
     },
+    "Provenienza" : {
+
+    },
     "Pubblicate le soluzioni" : {
       "localizations" : {
         "en" : {
@@ -11488,6 +11555,9 @@
         }
       }
     },
+    "Rimuovi il download" : {
+
+    },
     "Rimuovi sticker" : {
       "localizations" : {
         "en" : {
@@ -11564,6 +11634,9 @@
           }
         }
       }
+    },
+    "Risultati" : {
+
     },
     "Ritirato" : {
       "localizations" : {
@@ -11971,6 +12044,9 @@
         }
       }
     },
+    "Scrivi" : {
+
+    },
     "Scrivi al docente" : {
       "localizations" : {
         "en" : {
@@ -12178,6 +12254,9 @@
           }
         }
       }
+    },
+    "Semestre %@" : {
+
     },
     "Senza account" : {
 
@@ -12902,6 +12981,9 @@
         }
       }
     },
+    "Superato il %@" : {
+
+    },
     "Superficie" : {
       "localizations" : {
         "en" : {
@@ -13093,6 +13175,9 @@
         }
       }
     },
+    "Togli il filtro" : {
+
+    },
     "Token" : {
 
     },
@@ -13137,6 +13222,9 @@
           }
         }
       }
+    },
+    "tra %lld giorni" : {
+
     },
     "Tra %lld giorni" : {
       "localizations" : {
@@ -13215,6 +13303,9 @@
           }
         }
       }
+    },
+    "Tutti gli anni" : {
+
     },
     "Tutto collegato" : {
 

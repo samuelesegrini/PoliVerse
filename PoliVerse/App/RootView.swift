@@ -78,6 +78,11 @@ struct MainTabView: View {
                 SearchView()
             }
         }
+        // Hangs and hitches in the field arrive split by tab.
+        .onChange(of: selection, initial: true) { _, tab in
+            PerformanceStates.tabSelected(tab)
+        }
+        .onDisappear { PerformanceStates.tabSelected(nil) }
         // Above the tabs rather than on one screen: sample data replaces
         // every one of them, so saying it once on the Home would leave the
         // libretto looking like a real libretto.

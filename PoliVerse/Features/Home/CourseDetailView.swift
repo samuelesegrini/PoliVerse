@@ -1,8 +1,14 @@
 import SwiftUI
 
-/// Everything about one course: where it stands in the libretto, the next
-/// lecture and sitting, every part of it one tap away, how the exam works,
-/// and what changed.
+/// Everything about one course, drawn as Oggi is: the look's sheet behind,
+/// Oggi's headings, rows on cards of the look's material, and the course's own
+/// colour for what belongs to it.
+///
+/// In order of what a student opens a course for: when the next lessons are,
+/// the next sitting and the ones around it, the parts of the course — notices,
+/// materials, forum, programme, information — how the exam works, and what
+/// changed. Where they stand with it — passed, or not yet — sits under the
+/// name, before any of that.
 struct CourseDetailView: View {
     let course: Course
 
@@ -14,6 +20,13 @@ struct CourseDetailView: View {
     @Environment(ManifestiService.self) private var manifesti
     @Environment(StudyProgrammeService.self) private var programmes
     @Environment(Session.self) private var session
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.colorScheme) private var scheme
+
+    private var ramp: CourseRamp { CourseRamp(course: course, style: style, scheme: scheme) }
+    /// Scaled, so the tile grows with the reader's text.
+    @ScaledMetric(relativeTo: .largeTitle) private var tileSide: CGFloat = 104
+
     @State private var selectedExam: ExamSession?
     @State private var bracketTeacher: String?
     @State private var syllabus: Syllabus?
@@ -57,66 +70,70 @@ struct CourseDetailView: View {
         let news = FeedItem.items(from: feed.recent, for: course)
         let lectures = lectures
 
-        ScrollViewReader { reader in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    hero(next: upcoming.first)
-                    hub(reader, hasExams: !sittings.isEmpty)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 26) {
+                hero
 
-                    if !lectures.isEmpty {
-                        section("Prossime lezioni") {
-                            grouped(lectures) { lectureRow($0) }
-                        }
+                glance(lectures: lectures, next: upcoming.first, news: news)
+
+                if !lectures.isEmpty {
+                    block("Lezioni") {
+                        rows(lectures) { lecture, last in lectureRow(lecture, last: last) }
                     }
+                }
 
-                    if !sittings.isEmpty {
-                        section("Appelli") {
-                            VStack(spacing: 10) {
-                                if let next = upcoming.first {
-                                    Button { selectedExam = next } label: { nextSittingCard(next) }
-                                        .buttonStyle(.plain)
-                                }
-                                let others = Array(upcoming.dropFirst()) + past
-                                if !others.isEmpty {
-                                    grouped(others) { sitting in
-                                        Button { selectedExam = sitting } label: { sittingRow(sitting) }
-                                            .buttonStyle(.plain)
-                                    }
-                                }
-                            }
-                        }
-                        .id(Self.examsAnchor)
-                    }
-
-                    if let syllabus, !syllabus.isEmpty {
-                        section("In breve") { overview(syllabus) }
-                    }
-
-                    if !news.isEmpty {
-                        section("Novità") {
-                            VStack(spacing: 8) {
-                                ForEach(news.prefix(3)) { item in
-                                    ExamUpdateRow(item: item, isUnread: item.isUnread(since: feed.seenAt))
-                                }
-                                if news.count > 3 {
-                                    NavigationLink { ExamUpdatesView() } label: {
-                                        Label("Tutte le novità esami", systemImage: "bell.badge")
-                                            .font(.subheadline.weight(.medium))
-                                            .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 12)
-                                            .cardBackground()
-                                    }
+                if !sittings.isEmpty {
+                    block("Appelli") {
+                        VStack(spacing: 10) {
+                            if let next = upcoming.first {
+                                Button { selectedExam = next } label: { NextSittingCard(exam: next, accent: accent) }
                                     .buttonStyle(.plain)
+                            }
+                            let others = Array(upcoming.dropFirst()) + past
+                            if !others.isEmpty {
+                                rows(others) { sitting, last in
+                                    Button { selectedExam = sitting } label: { sittingRow(sitting, last: last) }
+                                        .buttonStyle(.plain)
                                 }
                             }
                         }
                     }
                 }
-                .padding()
-                .padding(.bottom, 20)
+
+                block("Corso") { parts }
+
+                if let syllabus, !syllabus.isEmpty {
+                    block("In breve") { overview(syllabus) }
+                }
+
+                if !news.isEmpty {
+                    block("Novità") {
+                        VStack(spacing: 0) {
+                            ForEach(news.prefix(3)) { item in
+                                ExamUpdateRow(item: item, isUnread: item.isUnread(since: feed.seenAt), card: false)
+                                if item.id != news.prefix(3).last?.id { Divider().padding(.leading, 52) }
+                            }
+                            if news.count > 3 {
+                                Divider()
+                                NavigationLink { ExamUpdatesView() } label: {
+                                    row(symbol: "bell.badge", title: String(localized: "Tutte le novità esami"),
+                                        last: true, chevron: true)
+                                        .padding(.horizontal, 12)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .lookCard()
+                    }
+                }
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            .padding(.bottom, 40)
+            .frame(maxWidth: 700)
+            .frame(maxWidth: .infinity)
         }
-        .background(Color(.systemGroupedBackground))
+        .courseScreen()
         .navigationTitle(course.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -126,6 +143,7 @@ struct CourseDetailView: View {
                 } label: {
                     Image(systemName: course.isFavourite ? "star.fill" : "star")
                         .foregroundStyle(course.isFavourite ? .yellow : accent)
+                        .contentTransition(.symbolEffect(.replace))
                 }
                 .accessibilityLabel(course.isFavourite ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti")
             }
@@ -150,324 +168,185 @@ struct CourseDetailView: View {
         }
     }
 
-    private static let examsAnchor = "appelli"
-
     // MARK: - Hero
 
-    private func hero(next: ExamSession?) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top, spacing: 14) {
-                Text(monogram)
-                    .font(.title2.weight(.bold))
-                    .fontDesign(.rounded)
-                    .foregroundStyle(Theme.onAccent)
-                    .frame(width: 60, height: 60)
-                    .background(accent.gradient, in: .rect(cornerRadius: 18))
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(course.name)
-                        .font(.title2.weight(.bold))
-                        .fontDesign(.rounded)
-                        .fixedSize(horizontal: false, vertical: true)
-                    // The lecturer of the student's bracket, once the plan
-                    // says who: a WeBeep course alone carries no teacher.
-                    Text(bracketTeacher ?? course.teacher)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
+    /// The course's colour and name in the middle, who teaches it and its
+    /// facts under, and where the student stands with it.
+    private var hero: some View {
+        VStack(spacing: 10) {
+            GlassTile(symbol: SubjectSymbol.symbol(for: course.name), colour: ramp.main, side: tileSide,
+                      surface: .glass, mode: ramp.mode)
+                .padding(.bottom, 8)
+                .accessibilityHidden(true)
+            Text(course.name)
+                .font(.title.weight(.bold))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            if let facts {
+                Text(facts)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
             }
-
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 6) { chips }
-                VStack(alignment: .leading, spacing: 6) { chips }
-            }
-
-            standing(next: next)
-
+            standing
+                .padding(.top, 6)
             if let email = course.teacherEmail, let url = URL(string: "mailto:\(email)") {
                 Link(destination: url) {
-                    Label("Scrivi al docente", systemImage: "envelope.fill")
+                    Label("Scrivi al docente", systemImage: "envelope")
                         .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(accent.opacity(0.14), in: .capsule)
-                        .foregroundStyle(accent)
+                        .padding(.horizontal, 6)
+                }
+                .buttonStyle(.glass)
+                .tint(accent)
+                .padding(.top, 4)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 12)
+        .padding(.top, 8)
+    }
+
+    /// "Stefano Ceri · 8 CFU · Semestre 2 · 2025/26": the lecturer of the
+    /// student's bracket once the plan says who, since a WeBeep course alone
+    /// carries no teacher.
+    private var facts: String? {
+        var parts: [String] = []
+        let teacher = bracketTeacher ?? course.teacher
+        if !teacher.isEmpty, teacher != "—" { parts.append(teacher) }
+        if course.cfu > 0 { parts.append(String(localized: "\(course.cfu) CFU")) }
+        if course.semester != "—" { parts.append(String(localized: "Semestre \(course.semester)")) }
+        if course.academicYear != "—" { parts.append(course.academicYear) }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// Passed with its mark, or not yet: a capsule under the name rather than
+    /// a card of its own, since the sittings say the rest.
+    @ViewBuilder
+    private var standing: some View {
+        if let entry = librettoEntry {
+            let passed = entry.isPassed
+            HStack(spacing: 8) {
+                Image(systemName: passed ? "checkmark.seal.fill" : "hourglass")
+                    .foregroundStyle(passed ? .green : .secondary)
+                if passed {
+                    Text(entry.date.map { String(localized: "Superato il \($0.formatted(.dateTime.day().month(.wide).year().locale(locale)))") }
+                         ?? String(localized: "Superato"))
+                    if entry.displayGrade != "—" {
+                        Text(entry.displayGrade)
+                            .font(style.dateFont.font(size: 20, weight: style.dateWeight))
+                            .foregroundStyle(.green)
+                    }
+                } else {
+                    Text("Esame non ancora sostenuto")
                 }
             }
-        }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: Theme.cardCorner)
-                .fill(Color(.secondarySystemGroupedBackground))
-                .overlay(alignment: .topTrailing) {
-                    Circle()
-                        .fill(RadialGradient(colors: [accent.opacity(0.3), accent.opacity(0)],
-                                             center: .center, startRadius: 0, endRadius: 140))
-                        .frame(width: 260, height: 260)
-                        .offset(x: 90, y: -110)
-                }
-                .clipShape(.rect(cornerRadius: Theme.cardCorner))
+            .font(.subheadline.weight(.medium))
+            .padding(.horizontal, 14)
+            .frame(minHeight: 38)
+            .lookCard(cornerRadius: 19)
+            .accessibilityElement(children: .combine)
         }
     }
 
+    /// The next lesson, the next sitting and what is new, before the blocks
+    /// that say each at length.
     @ViewBuilder
-    private var chips: some View {
-        if course.cfu > 0 { chip("\(course.cfu) CFU", "graduationcap") }
-        if course.semester != "—" { chip("Semestre \(course.semester)", "calendar") }
-        chip("A.A. \(course.academicYear)", "clock.arrow.circlepath")
-    }
-
-    /// Where the student is with this course: passed, or the sitting ahead.
-    @ViewBuilder
-    private func standing(next: ExamSession?) -> some View {
-        if let entry = librettoEntry, entry.isPassed {
-            statusStrip(icon: "checkmark.seal.fill", tint: .green,
-                        title: String(localized: "Superato"),
-                        detail: entry.date.map { $0.formatted(.dateTime.day().month(.wide).year().locale(locale)) },
-                        value: entry.displayGrade == "—" ? nil : entry.displayGrade)
-        } else if let next, let date = next.date {
-            let days = PoliMiDate.romeCalendar.dateComponents(
-                [.day], from: PoliMiDate.romeCalendar.startOfDay(for: .now),
-                to: PoliMiDate.romeCalendar.startOfDay(for: date)).day ?? 0
-            statusStrip(icon: "pencil.and.list.clipboard", tint: ExamDetailView.accent(for: next.status),
-                        title: next.status.label,
-                        detail: String(localized: "Appello del \(date.formatted(.dateTime.day().month(.wide).locale(locale)))"),
-                        value: days == 0 ? String(localized: "Oggi") : String(localized: "\(days) gg"))
+    private func glance(lectures: [AgendaEvent], next: ExamSession?, news: [FeedItem]) -> some View {
+        let unread = news.filter { $0.isUnread(since: feed.seenAt) }.count
+        var items: [GlanceStrip.Item] = []
+        let _ = {
+            if let lecture = lectures.first {
+                items.append(.init(id: "lesson",
+                                   value: lecture.start <= .now ? String(localized: "Ora")
+                                       : lecture.start.formatted(.dateTime.hour().minute().locale(locale)),
+                                   label: lecture.start <= .now ? String(localized: "a lezione") : dayLabel(lecture.start)))
+            }
+            if let date = next?.date {
+                let calendar = PoliMiDate.romeCalendar
+                let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: .now),
+                                                   to: calendar.startOfDay(for: date)).day ?? 0
+                items.append(.init(id: "exam", value: "\(days)",
+                                   label: days == 1 ? String(localized: "giorno all'appello") : String(localized: "giorni all'appello")))
+            }
+            items.append(.init(id: "news", value: "\(unread)",
+                               label: unread == 1 ? String(localized: "novità") : String(localized: "novità")))
+        }()
+        if items.count > 1 {
+            GlanceStrip(items: items, tint: ramp.main.color)
         }
     }
 
-    private func statusStrip(icon: String, tint: Color, title: String, detail: String?, value: String?) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(tint)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title).font(.subheadline.weight(.semibold))
-                if let detail { Text(detail).font(.caption).foregroundStyle(.secondary) }
-            }
-            Spacer(minLength: 8)
-            if let value {
-                Text(value)
-                    .font(.title3.weight(.bold))
-                    .fontDesign(.rounded)
-                    .monospacedDigit()
-                    .foregroundStyle(tint)
-            }
-        }
-        .padding(12)
-        .background(tint.opacity(0.1), in: .rect(cornerRadius: 16))
-    }
+    // MARK: - Parts
 
-    private var monogram: String {
-        let skip: Set<String> = ["di", "dei", "del", "della", "delle", "e", "ed", "per", "a", "and", "of", "the", "in"]
-        return String(course.name
-            .split(whereSeparator: { !$0.isLetter })
-            .filter { !skip.contains($0.lowercased()) }
-            .prefix(2)
-            .compactMap(\.first)).uppercased()
-    }
-
-    // MARK: - Hub
-
-    /// The course in one place: every part of it one tap from the top.
-    private func hub(_ reader: ScrollViewProxy, hasExams: Bool) -> some View {
+    /// The parts of the course, with what is new in each.
+    private var parts: some View {
         let badges = CourseHubBadges(items: FeedItem.items(from: feed.recent, for: course), seenAt: feed.seenAt)
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+        return VStack(spacing: 0) {
             NavigationLink { CourseForumsView(course: course, kind: .announcements) } label: {
-                tile("Avvisi", "megaphone.fill", badge: badges.announcements)
+                row(symbol: "megaphone", title: String(localized: "Avvisi"), trailing: newCount(badges.announcements),
+                    tile: ramp.colour(0, of: 5), last: false, chevron: true)
             }
             NavigationLink { CourseMaterialsView(course: course) } label: {
-                tile("Materiali", "folder.fill", badge: badges.materials)
+                row(symbol: "folder", title: String(localized: "Materiali"), trailing: newCount(badges.materials),
+                    tile: ramp.colour(1, of: 5), last: false, chevron: true)
             }
-            Button {
-                withAnimation { reader.scrollTo(Self.examsAnchor, anchor: .top) }
-            } label: {
-                tile("Appelli", "pencil.and.list.clipboard", badge: badges.exams)
-            }
-            .disabled(!hasExams)
             NavigationLink { CourseForumsView(course: course, kind: .discussion) } label: {
-                tile("Forum", "bubble.left.and.bubble.right.fill")
+                row(symbol: "bubble.left.and.bubble.right", title: String(localized: "Forum"), tile: ramp.colour(2, of: 5), last: false, chevron: true)
             }
             NavigationLink { CourseSyllabusView(course: course) } label: {
-                tile("Programma", "book.closed.fill")
+                row(symbol: "book.closed", title: String(localized: "Programma"), tile: ramp.colour(3, of: 5), last: false, chevron: true)
             }
             NavigationLink { CourseInfoView(course: course) } label: {
-                tile("Info", "info.circle.fill")
+                row(symbol: "info.circle", title: String(localized: "Informazioni"), tile: ramp.colour(4, of: 5), last: true, chevron: true)
             }
         }
         .buttonStyle(.plain)
+        .padding(.horizontal, cardPadding)
+        .padding(.vertical, cardPadding / 2)
+        .lookCard()
     }
 
-    private func tile(_ title: LocalizedStringKey, _ icon: String, badge: Int = 0) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(accent)
-                .frame(width: 38, height: 38)
-                .background(accent.opacity(0.13), in: .circle)
-            Text(title)
-                .font(.caption.weight(.medium))
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        .frame(maxWidth: .infinity, minHeight: 84)
-        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 20))
-        .overlay(alignment: .topTrailing) {
-            if badge > 0 {
-                Text(badge, format: .number)
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(.red, in: .capsule)
-                    .padding(8)
-                    .accessibilityLabel(Text("\(badge) non lette"))
-            }
-        }
-        .contentShape(.rect)
+    private func newCount(_ count: Int) -> Text? {
+        guard count > 0 else { return nil }
+        return Text(count == 1 ? "1 nuovo" : "\(count) nuovi")
     }
 
     // MARK: - Lectures
 
-    private func lectureRow(_ lecture: AgendaEvent) -> some View {
+    private func lectureRow(_ lecture: AgendaEvent, last: Bool) -> some View {
         let live = lecture.start <= .now
-        return HStack(spacing: 12) {
-            VStack(spacing: 0) {
-                Text(lecture.start.formatted(.dateTime.hour().minute().locale(locale)))
-                    .font(.subheadline.weight(.semibold))
-                    .monospacedDigit()
-                Text(lecture.end.formatted(.dateTime.hour().minute().locale(locale)))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-            }
-            .frame(width: 52)
-
-            RoundedRectangle(cornerRadius: 2)
-                .fill(live ? .green : accent)
-                .frame(width: 3, height: 34)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(live ? String(localized: "In corso") : dayLabel(lecture.start))
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(live ? .green : .primary)
-                Text(lecture.room ?? lecture.roomAcronym ?? String(localized: "Aula da definire"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 0)
-            Image(systemName: lecture.kind.icon)
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-        }
-        .padding(12)
+        let time = lecture.start.formatted(.dateTime.hour().minute().locale(locale))
+        return row(symbol: live ? "dot.radiowaves.left.and.right" : "clock",
+                   title: live ? String(localized: "In corso") : "\(dayLabel(lecture.start)) · \(time)",
+                   detail: live ? String(localized: "fino alle \(lecture.end.formatted(.dateTime.hour().minute().locale(locale)))") : nil,
+                   trailing: Text(lecture.roomAcronym ?? lecture.room ?? String(localized: "Aula da definire")),
+                   tile: live ? Flavor.RGB(red: 0.2, green: 0.62, blue: 0.36) : nil,
+                   last: last)
     }
 
     private func dayLabel(_ date: Date) -> String {
         let calendar = PoliMiDate.romeCalendar
         if calendar.isDateInToday(date) { return String(localized: "Oggi") }
         if calendar.isDateInTomorrow(date) { return String(localized: "Domani") }
-        return date.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)).capitalized
+        return date.formatted(.dateTime.weekday(.wide).day().month(.abbreviated).locale(locale)).capitalized
     }
 
     // MARK: - Sittings
 
-    private func nextSittingCard(_ exam: ExamSession) -> some View {
-        let tint = ExamDetailView.accent(for: exam.status)
-        return HStack(spacing: 14) {
-            if let date = exam.date {
-                VStack(spacing: 0) {
-                    Text(date.formatted(.dateTime.month(.abbreviated).locale(locale)).uppercased())
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 3)
-                        .background(tint)
-                    Text(date.formatted(.dateTime.day().locale(locale)))
-                        .font(.title2.weight(.bold))
-                        .fontDesign(.rounded)
-                        .monospacedDigit()
-                        .padding(.vertical, 4)
-                }
-                .frame(width: 58)
-                .background(Color(.tertiarySystemGroupedBackground))
-                .clipShape(.rect(cornerRadius: 12))
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Prossimo appello")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text([exam.kind?.nonEmpty, exam.date?.formatted(.dateTime.hour().minute().locale(locale))]
-                    .compactMap { $0 }.joined(separator: " · "))
-                    .font(.subheadline.weight(.semibold))
-                HStack(spacing: 6) {
-                    Text(exam.status.label)
-                        .font(.caption2.weight(.medium))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(tint.opacity(0.15), in: .capsule)
-                        .foregroundStyle(tint)
-                    if let room = exam.room {
-                        Label(room, systemImage: "mappin.and.ellipse")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-                if exam.status == .open, let closes = exam.enrolmentCloses {
-                    Text("Iscrizioni entro il \(closes.formatted(.dateTime.day().month(.wide).locale(locale)))")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                }
-            }
-            Spacer(minLength: 0)
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .cardBackground()
-        .contentShape(.rect)
-    }
-
-    private func sittingRow(_ sitting: ExamSession) -> some View {
+    private func sittingRow(_ sitting: ExamSession, last: Bool) -> some View {
         let tint = ExamDetailView.accent(for: sitting.status)
-        return HStack(spacing: 12) {
-            Group {
-                if let grade = sitting.grade {
-                    Text(grade.display)
-                        .font(.headline.weight(.bold))
-                        .fontDesign(.rounded)
-                        .foregroundStyle(tint)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                } else {
-                    Image(systemName: "calendar").foregroundStyle(tint)
-                }
-            }
-            .frame(width: 40)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(sitting.date?.formatted(.dateTime.day().month(.wide).year().locale(locale))
-                     ?? String(localized: "Data da definire"))
-                    .font(.subheadline.weight(.medium))
-                Text(sitting.grade.map { $0.passed ? String(localized: "Superato") : String(localized: "Non superato") }
-                     ?? sitting.status.label)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 0)
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
+        let trailing: Text = if let grade = sitting.grade {
+            Text(grade.display)
+                .font(style.dateFont.font(size: 20, weight: style.dateWeight))
+                .foregroundStyle(tint)
+        } else {
+            Text(sitting.status.label).foregroundStyle(tint)
         }
-        .padding(12)
-        .contentShape(.rect)
+        return row(symbol: sitting.grade == nil ? "calendar" : "pencil.and.list.clipboard",
+                   title: sitting.date?.formatted(.dateTime.day().month(.wide).year().locale(locale))
+                       ?? String(localized: "Data da definire"),
+                   detail: sitting.kind?.nonEmpty,
+                   trailing: trailing, last: last, chevron: true)
     }
 
     // MARK: - Overview
@@ -484,89 +363,204 @@ struct CourseDetailView: View {
                     ForEach(facts, id: \.1) { value, label in
                         VStack(spacing: 2) {
                             Text(value)
-                                .font(.subheadline.weight(.bold))
-                                .fontDesign(.rounded)
+                                .font(style.dateFont.font(size: 22, weight: style.dateWeight))
+                                .foregroundStyle(accent)
                                 .lineLimit(1)
-                                .minimumScaleFactor(0.6)
+                                .minimumScaleFactor(0.5)
                             Text(label).font(.caption2).foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(Color(.tertiarySystemGroupedBackground), in: .rect(cornerRadius: 12))
+                        .padding(.vertical, 10)
+                        .lookCard(cornerRadius: 18)
                     }
                 }
             }
 
-            if let language = syllabus.language {
-                Label(language.taughtIn, systemImage: "globe").font(.subheadline)
-            }
-            ForEach(syllabus.assessment, id: \.self) { item in
-                Label(item, systemImage: "pencil.and.list.clipboard").font(.subheadline)
-            }
-            switch PartialExams.policy(assessment: syllabus.assessment, notes: syllabus.assessmentNotes) {
-            case .offered:
-                Label("Prove in itinere previste", systemImage: "square.split.2x1")
-                    .font(.subheadline.weight(.medium)).foregroundStyle(.green)
-            case .none:
-                Label("Nessuna prova in itinere", systemImage: "square")
-                    .font(.subheadline).foregroundStyle(.secondary)
-            case .unknown:
-                EmptyView()
-            }
-            if let objectives = syllabus.objectives?.nonEmpty {
-                Text(objectives)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(4)
-            }
-            NavigationLink { CourseSyllabusView(course: course) } label: {
-                HStack {
-                    Label("Programma, libri e dettagli", systemImage: "book.closed")
-                    Spacer()
-                    Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+            VStack(alignment: .leading, spacing: 0) {
+                let lines = overviewLines(syllabus)
+                ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
+                    row(symbol: line.symbol, title: line.text, tile: line.tile, last: false)
                 }
-                .font(.subheadline.weight(.medium))
+                if let objectives = syllabus.objectives?.nonEmpty {
+                    Text(objectives)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(4)
+                        .padding(.vertical, 12)
+                    Divider()
+                }
+                NavigationLink { CourseSyllabusView(course: course) } label: {
+                    row(symbol: "book.closed", title: String(localized: "Programma, libri e dettagli"),
+                        last: true, chevron: true)
+                }
+                .buttonStyle(.plain)
             }
+            .padding(.horizontal, cardPadding)
+            .padding(.vertical, cardPadding / 2)
+            .lookCard()
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .cardBackground()
+    }
+
+    private struct OverviewLine {
+        let symbol: String
+        let text: String
+        var tile: Flavor.RGB?
+    }
+
+    private func overviewLines(_ syllabus: Syllabus) -> [OverviewLine] {
+        var lines: [OverviewLine] = []
+        if let language = syllabus.language { lines.append(OverviewLine(symbol: "globe", text: language.taughtIn)) }
+        lines += syllabus.assessment.map { OverviewLine(symbol: "pencil.and.list.clipboard", text: $0) }
+        switch PartialExams.policy(assessment: syllabus.assessment, notes: syllabus.assessmentNotes) {
+        case .offered:
+            lines.append(OverviewLine(symbol: "square.split.2x1", text: String(localized: "Prove in itinere previste"),
+                                      tile: Flavor.RGB(red: 0.2, green: 0.62, blue: 0.36)))
+        case .none:
+            lines.append(OverviewLine(symbol: "square", text: String(localized: "Nessuna prova in itinere"),
+                                      tile: ramp.neutral))
+        case .unknown:
+            break
+        }
+        return lines
     }
 
     // MARK: - Building blocks
 
-    private func chip(_ text: String, _ icon: String) -> some View {
-        Label(text, systemImage: icon)
-            .font(.caption.weight(.medium))
-            .lineLimit(1)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(accent.opacity(0.15), in: .capsule)
-            .foregroundStyle(accent)
-    }
+    /// Inside a card, rows keep off its edge; on a bare page they meet it.
+    private var cardPadding: CGFloat { style.material.hasCard ? 14 : 0 }
 
-    @ViewBuilder
-    private func section<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 4)
+    private func block<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            LookHeading(title)
             content()
         }
     }
 
-    /// Rows in one card with hairlines between them, like a grouped list.
-    private func grouped<Item: Identifiable, Row: View>(
-        _ items: [Item], @ViewBuilder row: @escaping (Item) -> Row
+    /// Rows on one card with hairlines between them, as Oggi's lists are.
+    private func rows<Item: Identifiable, Row: View>(
+        _ items: [Item], @ViewBuilder row: @escaping (Item, _ last: Bool) -> Row
     ) -> some View {
         VStack(spacing: 0) {
-            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                row(item)
-                if index < items.count - 1 { Divider().padding(.leading, 64) }
+            ForEach(items) { item in
+                row(item, item.id == items.last?.id)
             }
         }
-        .cardBackground()
+        .padding(.horizontal, cardPadding)
+        .padding(.vertical, cardPadding / 2)
+        .lookCard()
+    }
+
+    /// One of Oggi's rows: a symbol, a line or two, and a value at the end.
+    private func row(symbol: String, title: String, detail: String? = nil, trailing: Text? = nil,
+                     tile: Flavor.RGB? = nil, last: Bool, chevron: Bool = false) -> some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                CourseRowTile(symbol: symbol, colour: tile ?? ramp.main)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                    if let detail {
+                        Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                }
+                Spacer(minLength: 8)
+                if let trailing {
+                    trailing
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                }
+                if chevron {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .padding(.vertical, 12)
+            if !last {
+                Divider().padding(.leading, 42)
+            }
+        }
+        .contentShape(.rect)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// The next sitting, large, in the course's colour with Oggi's sheen: the
+/// date in the look's typeface, how far off it is, and how it goes.
+private struct NextSittingCard: View {
+    let exam: ExamSession
+    let accent: Color
+
+    @Environment(\.locale) private var locale
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+
+    private var daysAway: Int? {
+        guard let date = exam.date else { return nil }
+        let calendar = PoliMiDate.romeCalendar
+        return calendar.dateComponents([.day], from: calendar.startOfDay(for: .now),
+                                       to: calendar.startOfDay(for: date)).day
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(exam.kind?.nonEmpty ?? String(localized: "Appello"))
+                        .font(.title3.weight(.bold))
+                    Label {
+                        Text(exam.status.label)
+                    } icon: {
+                        Circle().fill(ExamDetailView.accent(for: exam.status)).frame(width: 8, height: 8)
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 8)
+                if let days = daysAway {
+                    Text(days == 0 ? String(localized: "Oggi") : days == 1 ? String(localized: "Domani")
+                         : String(localized: "Tra \(days) giorni"))
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .glassEffect(.regular, in: .capsule)
+                }
+            }
+            HStack(alignment: .top, spacing: 20) {
+                fact(String(localized: "Data"), exam.date?.formatted(.dateTime.day().month(.abbreviated).locale(locale)))
+                fact(String(localized: "Ora"), exam.date?.formatted(.dateTime.hour().minute().locale(locale)))
+                fact(String(localized: "Aula"), exam.room)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .padding(.top, 10)
+            }
+            if exam.status == .open, let closes = exam.enrolmentCloses {
+                Text("Iscrizioni entro il \(closes.formatted(.dateTime.day().month(.wide).locale(locale)))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .lookCard()
+        .contentShape(.rect)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Apre l’appello")
+    }
+
+    @ViewBuilder
+    private func fact(_ label: String, _ value: String?) -> some View {
+        if let value {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(label).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                Text(value).font(.headline).lineLimit(1)
+            }
+        }
     }
 }
 

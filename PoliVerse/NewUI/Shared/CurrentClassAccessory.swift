@@ -10,9 +10,12 @@ struct CurrentClassAccessory: View {
 
     @Environment(\.tabViewBottomAccessoryPlacement) private var placement
     @Environment(\.locale) private var locale
+    @Environment(\.systemPrefersReducedResourceUsage) private var reducedResources
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 30)) { context in
+        // The progress moves by a minute at a time; when the system asks for
+        // less work, by five.
+        TimelineView(.periodic(from: .now, by: reducedResources ? 300 : 30)) { context in
             let now = context.date
             HStack(spacing: 12) {
                 Image(systemName: current.event.kind == .exam ? "pencil.and.list.clipboard" : "person.bubble")
@@ -86,24 +89,10 @@ struct CurrentClassButton: View {
 }
 
 extension View {
-    /// Shows the accessory only while there is a class. Hiding it needs
-    /// iOS 26.1; on 26.0 the bar stays with a quiet placeholder.
-    @ViewBuilder
+    /// Shows the accessory only while there is a class.
     func currentClassAccessory(_ current: CurrentClass?) -> some View {
-        if #available(iOS 26.1, *) {
-            tabViewBottomAccessory(isEnabled: current != nil) {
-                if let current { CurrentClassButton(current: current) }
-            }
-        } else {
-            tabViewBottomAccessory {
-                if let current {
-                    CurrentClassButton(current: current)
-                } else {
-                    Label("Nessuna lezione oggi", systemImage: "checkmark.circle")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
+        tabViewBottomAccessory(isEnabled: current != nil) {
+            if let current { CurrentClassButton(current: current) }
         }
     }
 }

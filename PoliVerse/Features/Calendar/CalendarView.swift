@@ -45,21 +45,27 @@ struct CalendarView: View {
 
     var body: some View {
         RootStack(embedded: embedded) {
-            VStack(spacing: 0) {
-                weekStrip
-                Picker("Filtro", selection: $filter) {
-                    ForEach(Filter.allCases) { Text($0.rawValue).tag($0) }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    weekStrip
+                    filters
+                    VStack(alignment: .leading, spacing: 10) {
+                        LookHeading(verbatim: selectedDay.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)).capitalized)
+                        dayList
+                    }
                 }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .padding(.bottom, 10)
-                .background(Color(.systemBackground))
-                Divider()
-                dayList
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 40)
+                .frame(maxWidth: 700)
+                .frame(maxWidth: .infinity)
+                .animation(.snappy(duration: 0.25), value: selectedDay)
+                .animation(.snappy(duration: 0.25), value: filter)
             }
-            .background(Color(.systemGroupedBackground))
+            .courseScreen()
             .safeAreaInset(edge: .top, spacing: 0) { FreshnessBar(age: agenda.age) }
             .navigationTitle("Calendario")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Oggi") {
@@ -82,20 +88,24 @@ struct CalendarView: View {
 
     // MARK: - Week strip
 
+    /// The week on one glass card: the month with arrows either side, and the
+    /// seven days under it, the chosen one filled in the app's tint.
     private var weekStrip: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             HStack {
                 Button {
                     withAnimation { shiftWeek(by: -1) }
                 } label: {
-                    Image(systemName: "chevron.left")
+                    Image(systemName: "chevron.left").frame(width: 32, height: 32)
                 }
+                .buttonStyle(.glass)
+                .buttonBorderShape(.circle)
                 .accessibilityLabel("Settimana precedente")
 
                 Spacer()
 
                 Text(monthTitle)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.headline)
                     .contentTransition(.numericText())
 
                 Spacer()
@@ -103,21 +113,21 @@ struct CalendarView: View {
                 Button {
                     withAnimation { shiftWeek(by: 1) }
                 } label: {
-                    Image(systemName: "chevron.right")
+                    Image(systemName: "chevron.right").frame(width: 32, height: 32)
                 }
+                .buttonStyle(.glass)
+                .buttonBorderShape(.circle)
                 .accessibilityLabel("Settimana successiva")
             }
-            .padding(.horizontal)
 
-            HStack(spacing: 6) {
+            HStack(spacing: 4) {
                 ForEach(weekDays, id: \.self) { day in
                     dayCell(day)
                 }
             }
-            .padding(.horizontal, 10)
         }
-        .padding(.vertical, 10)
-        .background(Color(.systemBackground))
+        .padding(14)
+        .lookCard(cornerRadius: 28)
     }
 
     private func dayCell(_ day: Date) -> some View {
@@ -130,13 +140,14 @@ struct CalendarView: View {
         } label: {
             VStack(spacing: 4) {
                 Text(weekdaySymbol(day))
-                    .font(.caption2)
-                    .foregroundStyle(isSelected ? Theme.onAccent.opacity(0.85) : .secondary)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(isSelected ? AnyShapeStyle(Theme.onAccent.opacity(0.85)) : AnyShapeStyle(.secondary))
                 Text(dayNumber(day))
-                    .font(.callout.weight(isToday ? .bold : .regular))
-                    .foregroundStyle(isSelected ? Theme.onAccent : (isToday ? Theme.brand : .primary))
+                    .font(.title3.weight(isSelected || isToday ? .bold : .medium))
+                    .monospacedDigit()
+                    .foregroundStyle(isSelected ? AnyShapeStyle(Theme.onAccent) : (isToday ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary)))
                 Circle()
-                    .fill(isSelected ? Theme.onAccent : Theme.brand)
+                    .fill(isSelected ? AnyShapeStyle(Theme.onAccent) : AnyShapeStyle(.tint))
                     .frame(width: 5, height: 5)
                     .opacity(hasEvents ? 1 : 0)
             }
@@ -144,15 +155,40 @@ struct CalendarView: View {
             .padding(.vertical, 8)
             .background {
                 if isSelected {
-                    RoundedRectangle(cornerRadius: 12).fill(Theme.brand)
+                    Capsule().fill(.tint)
                 } else if isToday {
-                    RoundedRectangle(cornerRadius: 12).fill(Theme.brand.opacity(0.12))
+                    Capsule().strokeBorder(.tint.opacity(0.5), lineWidth: 1.5)
                 }
             }
+            .contentShape(.capsule)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    /// What to show, as glass chips, as Cerca narrows its results.
+    private var filters: some View {
+        GlassEffectContainer(spacing: 8) {
+            HStack(spacing: 8) {
+                ForEach(Filter.allCases) { item in
+                    let on = filter == item
+                    Button { withAnimation(.snappy) { filter = item } } label: {
+                        Text(item.rawValue)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(on ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 9)
+                            .contentShape(.capsule)
+                    }
+                    .buttonStyle(.plain)
+                    .glassEffect(on ? .regular.tint(Color.accentColor.opacity(0.18)).interactive() : .regular.interactive(),
+                                 in: .capsule)
+                    .accessibilityAddTraits(on ? .isSelected : [])
+                }
+                Spacer(minLength: 0)
+            }
+        }
     }
 
     // MARK: - Day list
@@ -160,35 +196,31 @@ struct CalendarView: View {
     @ViewBuilder
     private var dayList: some View {
         if agenda.isLoading && agenda.events.isEmpty {
-            Spacer()
-            ProgressView()
-            Spacer()
-        } else if dayEvents.isEmpty {
-            ContentUnavailableView {
-                Label(filter == .lectures ? "Nessuna lezione" : "Niente in programma",
-                      systemImage: "calendar")
-            } description: {
-                Text(selectedDay.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)).capitalized)
-            }
+            ProgressView().frame(maxWidth: .infinity).padding(.vertical, 40)
         } else {
-            ScrollView {
+            if let message = agenda.errorMessage {
+                Label(message, systemImage: "exclamationmark.triangle.fill")
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+                    .padding(.horizontal, 4)
+            }
+            if dayEvents.isEmpty {
+                ContentUnavailableView {
+                    Label(filter == .lectures ? "Nessuna lezione" : "Niente in programma", systemImage: "calendar")
+                } description: {
+                    Text("Un giorno libero.")
+                }
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity)
+                .lookCard()
+            } else {
                 LazyVStack(spacing: 10) {
-                    if let message = agenda.errorMessage {
-                        Label(message, systemImage: "exclamationmark.triangle.fill")
-                            .font(.footnote)
-                            .padding(12)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(.orange.opacity(0.15), in: .rect(cornerRadius: 14))
-                            .foregroundStyle(.orange)
-                    }
-
                     ForEach(dayEvents) { event in
                         Button { selectedEvent = event } label: { EventRow(event: event,
                             marksOfficial: TimetableMerge.marksOfficial(event, timetable: agenda.personalTimetable)) }
                             .buttonStyle(.plain)
                     }
                 }
-                .padding()
             }
         }
     }
@@ -312,14 +344,14 @@ private struct EventRow: View {
 
             Spacer(minLength: 0)
         }
-        .padding(12)
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 16))
+        .lookCard(cornerRadius: 22)
         .overlay {
             // Ongoing events get a ring so "where am I supposed to be" is
             // answerable at a glance.
             if event.isOngoing() {
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
                     .strokeBorder(accent, lineWidth: 2)
             }
         }

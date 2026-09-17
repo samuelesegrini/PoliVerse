@@ -14,10 +14,12 @@ struct NewRootView: View {
     /// The look in use sets the colour of the app's controls.
     @AppStorage(TodayStyle.storageKey) private var todayStyle = TodayStyle()
     @Environment(\.colorScheme) private var scheme
+    @AppStorage(SearchTabKeyboard.storageKey) private var searchOpensKeyboard = true
     @State private var layoutChangePending = false
     @Environment(AgendaService.self) private var agenda
     @Environment(UpdateFeed.self) private var feed
-    /// Re-read every minute so the accessory moves on when a lesson ends.
+    /// Moved on when a lesson starts or ends, so the accessory follows the
+    /// timetable without redrawing the whole tab tree every minute.
     @State private var now = Date.now
 
     /// The class now, except on Oggi when the page already shows it.
@@ -37,7 +39,16 @@ struct NewRootView: View {
             .overlay {
                 if shell.isCustomizing { CustomizeOggi() }
             }
-            .onAppear { shell.singlePage = layout == .singlePage }
+            .onAppear {
+                shell.singlePage = layout == .singlePage
+                #if DEBUG
+                // `-OpenPlace calendar` opens a place at launch, for trying it out.
+                if let raw = UserDefaults.standard.string(forKey: "OpenPlace"),
+                   let place = NewDestination(rawValue: raw) {
+                    shell.route(to: .destination(place))
+                }
+                #endif
+            }
             .onChange(of: layout) { _, new in
                 if shell.showingSettings {
                     layoutChangePending = true
@@ -94,24 +105,31 @@ struct NewRootView: View {
         }
         // Above the tab bar while there is a class today, like Music's player.
         .currentClassAccessory(shell.singlePage ? nil : current)
-        // Hangs and hitches in the field arrive split by tab.
-        .onChange(of: shell.selection, initial: true) { _, tab in
-            PerformanceStates.tabSelected(tab.rawValue)
-        }
-        .onDisappear { PerformanceStates.tabSelected(nil) }
         // Around the day shown, so a day picked two months out is not empty.
         .task(id: shell.day) { await agenda.ensureLoaded(covering: shell.day) }
-        .task {
+        // Wakes at the next start or end of a lesson today rather than every
+        // minute: between lessons nothing on the accessory can change.
+        .task(id: agenda.events.count) {
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(60))
+                let wait = CurrentClass.nextChange(in: agenda.events, after: .now).timeIntervalSinceNow
+                try? await Task.sleep(for: .seconds(max(wait, 1)))
                 now = .now
             }
         }
+        // Hangs and hitches in the field arrive split by tab.
+        .onChange(of: shell.selection, initial: true) { _, tab in
+            PerformanceStates.tabSelected(shell.singlePage ? "single" : tab.rawValue)
+        }
+        .onChange(of: shell.singlePage) { _, single in
+            PerformanceStates.tabSelected(single ? "single" : shell.selection.rawValue)
+        }
+        .onDisappear { PerformanceStates.tabSelected(nil) }
         .tint(todayStyle.controlTint(scheme))
         .preferredColorScheme(todayStyle.appearance.colorScheme)
-        // Selecting the search tab opens its field straight away.
-        .tabViewSearchActivation(.searchTabSelection)
-        .tabBarMinimizeBehavior(.onScrollDown)
+        // Selecting the search tab opens its field straight away, unless the
+        // student turned that off in Impostazioni.
+        .tabViewSearchActivation(searchOpensKeyboard ? .searchTabSelection : .automatic)
+        .toolbarMinimizationBehavior(.onScrollDown, for: .tabBar)
     }
 }
 

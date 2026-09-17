@@ -272,6 +272,15 @@ struct FlavorRamp {
         ground = flavor.ground(dark: dark, mode: mode)
     }
 
+    /// A ramp around another colour — a course's — still checked against the
+    /// look's own page, so its marks read on the sheet they are drawn on.
+    init(colour: Flavor.RGB, style: TodayStyle, scheme: ColorScheme) {
+        flavor = Flavor(main: colour)
+        mode = style.appearance.flavorMode
+        dark = scheme == .dark
+        ground = style.flavor.ground(dark: dark, mode: mode)
+    }
+
     /// `count` colours, deepest first.
     func colours(_ count: Int) -> [Flavor.RGB] {
         (0..<count).map { index in

@@ -279,9 +279,34 @@ struct CourseSyllabusView: View {
 
     private var tint: Color { Theme.accent(for: course) }
 
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.colorScheme) private var scheme
+
+    /// The scheda as a pile: the programme in front, then the exam, the books,
+    /// the hours and the teachers, with whose scheda it is under the title.
+    private var hero: some View {
+        let ramp = CourseRamp(course: course, style: style, scheme: scheme)
+        let symbols = ["book.closed", "pencil.and.list.clipboard", "books.vertical", "clock", "person.2"]
+        let summary: Text? = if loading {
+            nil
+        } else if syllabus?.isEmpty == false {
+            pick?.matchesDegree == true ? Text("Dalla scheda del tuo piano di studi") : Text("Dal Manifesto degli studi")
+        } else {
+            Text("Scheda non trovata")
+        }
+        return CoursePageHero(
+            tiles: zip(symbols, ramp.colours(symbols.count)).map { HeroTile(id: $0, symbol: $0, colour: $1) },
+            placeholder: HeroTile(id: "empty", symbol: "book.closed", colour: ramp.main),
+            title: Text(course.name),
+            summary: summary,
+            badge: pick?.matchesDegree == true ? HeroBadge(symbol: "checkmark", tint: .green) : nil,
+            mode: ramp.mode)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                hero
                 if loading {
                     ProgressView().frame(maxWidth: .infinity).padding(.top, 40)
                 } else if let syllabus, !syllabus.isEmpty {
@@ -289,22 +314,26 @@ struct CourseSyllabusView: View {
                     if let pick, pick.isIntegrated { modulesSection(pick) }
                     SyllabusSections(syllabus: syllabus, tint: tint)
                 } else {
+                    // The picture above already says it was not found: here,
+                    // only why, and what to do about it.
                     VStack(spacing: 12) {
-                        ContentUnavailableView(
-                            "Scheda non trovata", systemImage: "book.closed",
-                            description: Text(programmes.programme == nil && course.teachingCode == nil
-                                ? "Questo corso non ha un codice d'insegnamento: scegli il tuo corso di studi per trovarlo nel tuo piano."
-                                : "Non trovo la scheda di questo insegnamento nel Manifesto degli studi."))
+                        Text(programmes.programme == nil && course.teachingCode == nil
+                            ? "Questo corso non ha un codice d'insegnamento: scegli il tuo corso di studi per trovarlo nel tuo piano."
+                            : "Non trovo la scheda di questo insegnamento nel Manifesto degli studi.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
                         if programmes.programme != nil {
                             Button("Collega a un insegnamento del piano") { linking = true }
-                                .buttonStyle(.borderedProminent)
+                                .buttonStyle(.glassProminent)
                                 .tint(tint)
                         }
                     }
                 }
                 programmeSection
             }
-            .padding()
+            .padding(.horizontal, 20).padding(.vertical)
             .padding(.bottom, 20)
         }
         .courseScreen()
@@ -352,13 +381,13 @@ struct CourseSyllabusView: View {
                         Button("Altro scaglione") { choosingBracket = true }
                         Button("Collega altro insegnamento") { linking = true }
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.glass)
                     .controlSize(.small)
                     .tint(tint)
                     .padding(12)
                 }
             }
-            .cardBackground()
+            .lookCard()
 
             // Which row was chosen: from the plan when there is one, a guess
             // otherwise — say which.
@@ -410,10 +439,10 @@ struct CourseSyllabusView: View {
                     HStack(spacing: 8) {
                         if !programme.isConfirmed {
                             Button("È il mio corso di studi") { programmes.confirm() }
-                                .buttonStyle(.borderedProminent)
+                                .buttonStyle(.glassProminent)
                         }
                         Button("Cambia corso di studi") { changingProgramme = true }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(.glass)
                     }
                     .controlSize(.small)
                     .tint(tint)
@@ -531,9 +560,10 @@ private struct PlanLinkSheet: View {
                     ProgressView().frame(maxWidth: .infinity)
                 }
             }
+            .courseScreen()
             .navigationTitle(course.name)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Chiudi") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Chiudi", systemImage: "xmark") { dismiss() } } }
             .task { plan = await programmes.plan(forYear: course.academicYearStart) }
         }
     }

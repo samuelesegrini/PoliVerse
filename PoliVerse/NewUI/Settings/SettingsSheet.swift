@@ -14,6 +14,7 @@ struct SettingsSheet: View {
 
     @AppStorage(NewInterface.storageKey) private var usesNewInterface = true
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
+    @AppStorage(SearchTabKeyboard.storageKey) private var searchOpensKeyboard = true
     @State private var confirmingSignOut = false
 
     #if DEBUG
@@ -76,6 +77,18 @@ struct SettingsSheet: View {
                     .accessibilityIdentifier("settings-layout")
                 } footer: {
                     Text(layout.detail)
+                }
+
+                if layout == .tabs {
+                    Section {
+                        Toggle(isOn: $searchOpensKeyboard) {
+                            Label("Apri la tastiera in Cerca", systemImage: "keyboard")
+                        }
+                    } footer: {
+                        Text(searchOpensKeyboard
+                             ? "Toccando Cerca il campo si attiva subito."
+                             : "Toccando Cerca vedi prima le ricerche recenti e i luoghi; la tastiera si apre quando tocchi il campo.")
+                    }
                 }
 
                 Section {
