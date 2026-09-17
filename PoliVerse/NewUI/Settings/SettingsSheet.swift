@@ -8,7 +8,7 @@ import SwiftUI
 struct SettingsSheet: View {
     @Environment(Session.self) private var session
     @Environment(DataStatus.self) private var status
-    @Environment(WeBeepService.self) private var weBeep
+    @Environment(WeBeepModel.self) private var weBeep
     @Environment(\.dismiss) private var dismiss
     @Environment(\.shell) private var shell
 
@@ -143,7 +143,7 @@ struct SettingsSheet: View {
             }
             .confirmationDialog("Uscire dall’account?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
                 Button("Esci", role: .destructive) {
-                    Task { await session.signOut() }
+                    Task { await session.login.signOut() }
                 }
             } message: {
                 Text("Vengono rimossi i token dal portachiavi e i dati salvati sul dispositivo.")

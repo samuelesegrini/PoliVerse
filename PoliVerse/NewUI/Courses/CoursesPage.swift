@@ -7,13 +7,13 @@ import SwiftUI
 /// "which course am I going to" is the reason most visits start. Then the
 /// favourites and the rest, one card each, with what is new beside a course.
 struct CoursesPage: View {
-    @Environment(CourseService.self) private var courses
+    @Environment(CourseModel.self) private var courses
     @Environment(Session.self) private var session
-    @Environment(WeBeepService.self) private var weBeep
-    @Environment(CareerService.self) private var career
-    @Environment(StudyProgrammeService.self) private var programmes
-    @Environment(CareersService.self) private var careers
-    @Environment(AgendaService.self) private var agenda
+    @Environment(WeBeepModel.self) private var weBeep
+    @Environment(CareerModel.self) private var career
+    @Environment(StudyProgrammeModel.self) private var programmes
+    @Environment(CareersModel.self) private var careers
+    @Environment(AgendaModel.self) private var agenda
     @Environment(UpdateFeed.self) private var feed
     @Environment(\.locale) private var locale
 
@@ -288,7 +288,7 @@ struct CoursesPage: View {
 
     private var placeholder: some View {
         VStack(spacing: 0) {
-            ForEach(MockData.courses.prefix(4)) { course in
+            ForEach(Course.samples.prefix(4)) { course in
                 CourseRow(course: course, origin: .unknown, nextLecture: nil,
                           news: CourseHubBadges(items: [], seenAt: nil), last: false)
             }
@@ -488,7 +488,7 @@ extension Course {
 // MARK: - Hidden courses
 
 private struct HiddenCoursesSheet: View {
-    @Environment(CourseService.self) private var courses
+    @Environment(CourseModel.self) private var courses
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {

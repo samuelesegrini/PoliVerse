@@ -19,14 +19,14 @@ struct CourseOrigins {
 
     let plans: [EnrolmentOrigin.Plan]
     let overrides: [String: EnrolmentOrigin.Override]
-    let weBeep: WeBeepService
+    let weBeep: WeBeepModel
 
     /// The current career's plan — the libretto and the plan pages read for
     /// it, so a course of the plan counts even before the libretto lists it —
     /// then the other careers'.
     @MainActor
-    init(student: Student?, career: CareerService, programmes: StudyProgrammeService, otherPlans: [EnrolmentOrigin.Plan],
-         overrides: [String: EnrolmentOrigin.Override], weBeep: WeBeepService) {
+    init(student: Student?, career: CareerModel, programmes: StudyProgrammeModel, otherPlans: [EnrolmentOrigin.Plan],
+         overrides: [String: EnrolmentOrigin.Override], weBeep: WeBeepModel) {
         let current = EnrolmentOrigin.Plan(matricola: student?.matricola ?? "", isCurrent: true, libretto: career.libretto)
         plans = [EnrolmentOrigin.Plan(matricola: current.matricola, isCurrent: true,
                                       codes: current.codes.union(programmes.planCodes),
@@ -72,14 +72,14 @@ struct CourseOrigins {
     ///
     /// - Returns: the other careers' plans, read from their caches.
     @MainActor
-    static func load(courses: CourseService, careers: CareersService, career: CareerService,
-                     programmes: StudyProgrammeService, weBeep: WeBeepService, student: Student?,
+    static func load(courses: CourseModel, careers: CareersModel, career: CareerModel,
+                     programmes: StudyProgrammeModel, weBeep: WeBeepModel, student: Student?,
                      otherPlans: (([EnrolmentOrigin.Plan]) -> Void)) async {
         await courses.load()
         await careers.load()
         let current = student?.matricola
         let others = careers.careers.filter { $0.matricola != current }.compactMap { other in
-            CareerService.cachedLibretto(account: other.matricola).map {
+            CareerModel.cachedLibretto(account: other.matricola).map {
                 EnrolmentOrigin.Plan(matricola: other.matricola, isCurrent: false, libretto: $0)
             }
         }

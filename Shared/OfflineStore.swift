@@ -6,7 +6,7 @@ import OSLog
 /// ## Why this replaces the old cache
 ///
 /// ``DiskCache`` stored two things — courses and rooms — under global names.
-/// Everything else vanished when the network did, and `CareerService` went
+/// Everything else vanished when the network did, and `CareerModel` went
 /// further: a failed load actively wiped the gradebook, the sittings and the
 /// libretto, so walking into a basement replaced a student's exam record with
 /// an empty screen.

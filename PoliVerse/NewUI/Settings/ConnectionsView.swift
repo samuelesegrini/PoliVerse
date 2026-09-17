@@ -23,10 +23,10 @@ import SwiftUI
 /// row must follow at once.
 struct ConnectionsView: View {
     @Environment(Session.self) private var session
-    @Environment(WeBeepService.self) private var weBeep
+    @Environment(WeBeepModel.self) private var weBeep
     @Environment(NetworkMonitor.self) private var network
     @Environment(PendingChanges.self) private var pending
-    @Environment(NotificationService.self) private var notifications
+    @Environment(NotificationModel.self) private var notifications
     @Environment(LiveActivityController.self) private var liveActivity
     @Environment(CieIDRouter.self) private var cieID
     @Environment(LoginMethodMemory.self) private var loginMemory

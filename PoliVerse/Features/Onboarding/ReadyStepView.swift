@@ -25,8 +25,8 @@ struct ReadyStepView: View {
 
 /// The end of the flow for someone who signed in.
 private struct AccountReadyView: View {
-    @Environment(WeBeepService.self) private var weBeep
-    @Environment(NotificationService.self) private var notifications
+    @Environment(WeBeepModel.self) private var weBeep
+    @Environment(NotificationModel.self) private var notifications
     let finish: () -> Void
 
     var body: some View {

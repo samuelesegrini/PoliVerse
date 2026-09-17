@@ -224,16 +224,16 @@ struct PersonalTimetableRefreshTests {
 
     @Test("Rebuilt after a week, while lessons still run")
     func stale() {
-        #expect(PersonalTimetableService.needsRefresh(timetable(builtDaysAgo: 8), now: now))
-        #expect(!PersonalTimetableService.needsRefresh(timetable(builtDaysAgo: 2), now: now))
+        #expect(PersonalTimetableModel.needsRefresh(timetable(builtDaysAgo: 8), now: now))
+        #expect(!PersonalTimetableModel.needsRefresh(timetable(builtDaysAgo: 2), now: now))
     }
 
     @Test("Not rebuilt once retired, or once every teaching's lessons have ended")
     func notNeeded() {
         var retired = timetable(builtDaysAgo: 8)
         retired.retiredAt = now
-        #expect(!PersonalTimetableService.needsRefresh(retired, now: now))
-        #expect(!PersonalTimetableService.needsRefresh(timetable(builtDaysAgo: 8, lessonsEndInDays: -1), now: now))
+        #expect(!PersonalTimetableModel.needsRefresh(retired, now: now))
+        #expect(!PersonalTimetableModel.needsRefresh(timetable(builtDaysAgo: 8, lessonsEndInDays: -1), now: now))
     }
 }
 

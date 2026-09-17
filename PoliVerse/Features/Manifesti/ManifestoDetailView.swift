@@ -9,12 +9,12 @@ import SwiftUI
 struct ManifestoDetailView: View {
     let teaching: ManifestoTeaching
 
-    @Environment(ManifestiService.self) private var manifesti
+    @Environment(ManifestiModel.self) private var manifesti
     @AppStorage("manifestoSurname") private var surname = ""
 
     @State private var detail: ManifestoDetail?
     @State private var loading = true
-    @Environment(PersonalTimetableService.self) private var personal
+    @Environment(PersonalTimetableModel.self) private var personal
 
     var body: some View {
         List {
@@ -88,7 +88,7 @@ struct ManifestoDetailView: View {
                         }
                     }
                     .disabled(!personal.isSelected(teaching)
-                              && personal.selection.count >= PersonalTimetableService.capacity)
+                              && personal.selection.count >= PersonalTimetableModel.capacity)
                 } footer: {
                     Text("Viene aggiunto alla selezione dell'orario personalizzato: calcola l'orario da lì. È uno strumento informale del Politecnico e non sostituisce il piano di studi.")
                 }

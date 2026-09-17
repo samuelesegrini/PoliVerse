@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The full news list.
 struct NewsView: View {
-    @Environment(NewsService.self) private var news
+    @Environment(NewsModel.self) private var news
 
     var body: some View {
         Group {
@@ -143,7 +143,7 @@ struct NewsDetailView: View {
 
 /// The Home section: a few headlines, with a way through to the rest.
 struct NewsHighlights: View {
-    @Environment(NewsService.self) private var news
+    @Environment(NewsModel.self) private var news
 
     var body: some View {
         // Silent when there is nothing: an error banner for news would push
@@ -211,7 +211,7 @@ private struct NewsHighlightCard: View {
 }
 
 #Preview("Notizia") {
-    NewsDetailView(item: MockData.news()[0]).previewInNavigation()
+    NewsDetailView(item: NewsItem.samples()[0]).previewInNavigation()
 }
 
 #Preview("In evidenza") {
@@ -220,7 +220,7 @@ private struct NewsHighlightCard: View {
 
 #Preview("Componente · Riga notizia") {
     List {
-        ForEach(MockData.news()) { NewsRow(item: $0) }
+        ForEach(NewsItem.samples()) { NewsRow(item: $0) }
     }
     .listStyle(.plain)
     .previewEnvironment()
@@ -228,7 +228,7 @@ private struct NewsHighlightCard: View {
 
 #Preview("Componente · Card notizia") {
     VStack(spacing: 10) {
-        ForEach(MockData.news()) { NewsHighlightCard(item: $0) }
+        ForEach(NewsItem.samples()) { NewsHighlightCard(item: $0) }
     }
     .padding()
     .previewEnvironment()

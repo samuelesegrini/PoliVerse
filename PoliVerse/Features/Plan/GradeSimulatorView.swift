@@ -7,7 +7,7 @@ import SwiftUI
 /// go to the Politecnico is saving a target, and that happens on an explicit
 /// button, never from the slider.
 struct GradeSimulatorView: View {
-    @Environment(CareerService.self) private var career
+    @Environment(CareerModel.self) private var career
 
     @State private var target: Double = 27
     @State private var assumed: Double = 27

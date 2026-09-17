@@ -5,7 +5,7 @@ import SwiftUI
 /// its list only once it is full height, and lets the page behind stay live.
 struct SinglePagePanel: View {
     @Environment(\.shell) private var shell
-    @Environment(AgendaService.self) private var agenda
+    @Environment(AgendaModel.self) private var agenda
     @State private var now = Date.now
 
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()

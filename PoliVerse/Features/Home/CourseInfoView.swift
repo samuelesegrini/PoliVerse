@@ -7,10 +7,10 @@ import UIKit
 struct CourseInfoView: View {
     let course: Course
 
-    @Environment(ManifestiService.self) private var manifesti
-    @Environment(StudyProgrammeService.self) private var programmes
-    @Environment(CareerService.self) private var career
-    @Environment(AgendaService.self) private var agenda
+    @Environment(ManifestiModel.self) private var manifesti
+    @Environment(StudyProgrammeModel.self) private var programmes
+    @Environment(CareerModel.self) private var career
+    @Environment(AgendaModel.self) private var agenda
     @Environment(UpdateFeed.self) private var feed
     @Environment(\.locale) private var locale
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
@@ -412,5 +412,5 @@ private struct RailLabelStyle: LabelStyle {
 }
 
 #Preview("Informazioni corso") {
-    CourseInfoView(course: MockData.courses[0]).previewInNavigation()
+    CourseInfoView(course: Course.samples[0]).previewInNavigation()
 }

@@ -5,7 +5,7 @@ import SwiftUI
 /// The feed replaces the habit of opening each sitting to see whether anything
 /// moved. It says only what official data said, and where it said it.
 struct ExamUpdatesView: View {
-    @Environment(CareerService.self) private var career
+    @Environment(CareerModel.self) private var career
     @Environment(UpdateFeed.self) private var feed
     @Environment(\.locale) private var locale
     @State private var selectedExam: ExamSession?
@@ -116,7 +116,7 @@ struct ExamUpdateRow: View {
     /// On a card of its own; off where the rows share one card.
     var card = true
     @Environment(\.locale) private var locale
-    @Environment(NotificationService.self) private var notifications
+    @Environment(NotificationModel.self) private var notifications
 
     private var update: ExamUpdate { item.update }
 
@@ -188,7 +188,7 @@ struct ExamUpdateRow: View {
 /// A sitting's timeline, for the detail sheet.
 struct ExamTimelineSection: View {
     let exam: ExamSession
-    @Environment(CareerService.self) private var career
+    @Environment(CareerModel.self) private var career
     @Environment(UpdateFeed.self) private var feed
     @Environment(\.locale) private var locale
 
@@ -282,7 +282,7 @@ extension ExamUpdate.Kind {
 
 #Preview("Cronologia appello") {
     ScrollView {
-        ExamTimelineSection(exam: MockData.examSessions()[0]).padding()
+        ExamTimelineSection(exam: ExamSession.samples()[0]).padding()
     }
     .lookPage()
     .previewEnvironment()

@@ -2,9 +2,9 @@ import SwiftUI
 
 /// Browse and search the room catalogue.
 struct RoomsView: View {
-    @Environment(RoomsService.self) private var rooms
-    @Environment(RoomFacilitiesService.self) private var facilities
-    @Environment(FreeRoomsService.self) private var freeRooms
+    @Environment(RoomsModel.self) private var rooms
+    @Environment(RoomFacilitiesModel.self) private var facilities
+    @Environment(FreeRoomsModel.self) private var freeRooms
 
     @State private var query = ""
     @State private var campus: String?
@@ -162,7 +162,7 @@ private struct RoomRow: View {
 
 #Preview("Componente · Riga aula") {
     List {
-        ForEach(MockData.classrooms()) { RoomRow(room: $0) }
+        ForEach(Classroom.samples()) { RoomRow(room: $0) }
     }
     .previewEnvironment()
 }

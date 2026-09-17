@@ -10,13 +10,13 @@ struct AppShellDuties: ViewModifier {
     let route: (AppDestination) -> Void
 
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(CourseService.self) private var courses
-    @Environment(RoomsService.self) private var rooms
-    @Environment(CareerService.self) private var career
+    @Environment(CourseModel.self) private var courses
+    @Environment(RoomsModel.self) private var rooms
+    @Environment(CareerModel.self) private var career
     @Environment(UpdateFeed.self) private var feed
     @Environment(Session.self) private var session
-    @Environment(NotificationService.self) private var notifications
-    @Environment(AgendaService.self) private var agenda
+    @Environment(NotificationModel.self) private var notifications
+    @Environment(AgendaModel.self) private var agenda
     @State private var spotlight = SpotlightIndex()
 
     func body(content: Content) -> some View {

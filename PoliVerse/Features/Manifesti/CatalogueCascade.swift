@@ -14,8 +14,8 @@ struct CatalogueCascade: View {
     /// there is nothing to open on — wrong for picking another career's.
     var locatesFromCareer = true
 
-    @Environment(ManifestiService.self) private var manifesti
-    @Environment(CareerService.self) private var career
+    @Environment(ManifestiModel.self) private var manifesti
+    @Environment(CareerModel.self) private var career
     @State private var loading = false
     @State private var message: String?
 
@@ -213,7 +213,7 @@ struct StudyProgrammeSheet: View {
     /// Nil for the career in use.
     var career: String? = nil
 
-    @Environment(StudyProgrammeService.self) private var programmes
+    @Environment(StudyProgrammeModel.self) private var programmes
     @Environment(Session.self) private var session
     @Environment(\.dismiss) private var dismiss
     @State private var page: CataloguePage?

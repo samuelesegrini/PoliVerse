@@ -8,7 +8,7 @@ import SwiftUI
 /// (nowhere — the device).
 struct SignInStepView: View {
     @Environment(Session.self) private var session
-    @Environment(CareersService.self) private var careers
+    @Environment(CareersModel.self) private var careers
     let advance: () -> Void
 
     var body: some View {

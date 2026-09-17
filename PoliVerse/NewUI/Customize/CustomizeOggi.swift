@@ -17,7 +17,7 @@ import SwiftUI
 struct CustomizeOggi: View {
     @Environment(\.shell) private var shell
     @Environment(Session.self) private var session
-    @Environment(AgendaService.self) private var agenda
+    @Environment(AgendaModel.self) private var agenda
     @Environment(\.colorScheme) private var scheme
     @AppStorage(TodayStyle.storageKey) private var active = TodayStyle()
     @AppStorage(TodayStyle.libraryKey) private var storedLibrary = ""

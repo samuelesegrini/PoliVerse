@@ -59,7 +59,7 @@ nonisolated final class HotPathPerformanceTests: XCTestCase {
         let events = (try? JSONDecoder().decode([AgendaEventDTO].self, from: Self.agendaPayload))?
             .compactMap { $0.toEvent() } ?? []
         measure {
-            XCTAssertEqual(AgendaService.index(events).count, 28)
+            XCTAssertEqual(AgendaModel.index(events).count, 28)
         }
     }
 

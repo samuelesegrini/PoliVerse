@@ -8,8 +8,8 @@ import SwiftUI
 /// reads the result back into a week it keeps on the phone. The manifesto's
 /// own pages are never shown.
 struct PersonalTimetableView: View {
-    @Environment(PersonalTimetableService.self) private var personal
-    @Environment(AgendaService.self) private var agenda
+    @Environment(PersonalTimetableModel.self) private var personal
+    @Environment(AgendaModel.self) private var agenda
     @Environment(\.locale) private var locale
 
     @State private var building = false
@@ -250,21 +250,21 @@ private struct SlotRow: View {
 
 /// Name, teachings, result: the manifesto's cart flow as three native steps.
 private struct PersonalTimetableBuilder: View {
-    @Environment(PersonalTimetableService.self) private var personal
-    @Environment(ManifestiService.self) private var manifesti
+    @Environment(PersonalTimetableModel.self) private var personal
+    @Environment(ManifestiModel.self) private var manifesti
     @Environment(Session.self) private var session
-    @Environment(CourseService.self) private var courses
+    @Environment(CourseModel.self) private var courses
     @Environment(\.dismiss) private var dismiss
     @AppStorage("manifestoSurname") private var surname = ""
     @AppStorage("personalTimetableFirstName") private var storedFirstName = ""
-    @Environment(CareerService.self) private var career
+    @Environment(CareerModel.self) private var career
 
     enum Step { case name, course, teachings, build }
     @State private var step: Step = .name
     @State private var lastName = ""
     @State private var firstName = ""
     @State private var page: CataloguePage?
-    @Environment(StudyProgrammeService.self) private var programmes
+    @Environment(StudyProgrammeModel.self) private var programmes
     @State private var yearOfCourse: String?
     @State private var bracketTeaching: ManifestoTeaching?
 
@@ -437,7 +437,7 @@ private struct PersonalTimetableBuilder: View {
                 }
             }
         }
-        .navigationTitle("Selezionati \(personal.selection.count)/\(PersonalTimetableService.capacity)")
+        .navigationTitle("Selezionati \(personal.selection.count)/\(PersonalTimetableModel.capacity)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -494,7 +494,7 @@ private struct PersonalTimetableBuilder: View {
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .disabled(!selected && personal.selection.count >= PersonalTimetableService.capacity)
+            .disabled(!selected && personal.selection.count >= PersonalTimetableModel.capacity)
 
             if selected, !row.hasSections {
                 Button("Scaglione", systemImage: "person.2.badge.gearshape") { bracketTeaching = row.teaching }

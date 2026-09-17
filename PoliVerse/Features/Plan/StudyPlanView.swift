@@ -6,7 +6,7 @@ import SwiftUI
 /// `/elencoinsegnamenti/{matricola}` returns both halves already split — with
 /// the header from `/testatapiano/{matricola}` on top.
 struct StudyPlanView: View {
-    @Environment(CareerService.self) private var career
+    @Environment(CareerModel.self) private var career
 
     @State private var showPassed = true
     @State private var showPending = true
@@ -133,7 +133,7 @@ private struct PlanRow: View {
 
 #Preview("Componente · Riga piano") {
     List {
-        ForEach(MockData.libretto().prefix(5)) { PlanRow(exam: $0) }
+        ForEach(LibrettoExam.samples().prefix(5)) { PlanRow(exam: $0) }
     }
     .previewEnvironment()
 }

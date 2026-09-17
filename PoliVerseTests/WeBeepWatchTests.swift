@@ -19,10 +19,10 @@ struct WeBeepWatchTests {
             course(1, year: "2025-26"), course(2, year: "2024-25", favourite: true),
             course(3, year: "2025/26", hidden: true), course(4, year: "2025-2026", favourite: true),
         ] + (10..<20).map { course($0, year: "2025-26") }
-        let watched = WeBeepService.watched(courses, now: now)
+        let watched = WeBeepModel.watched(courses, now: now)
         #expect(watched.first?.moodleID == 4)
         #expect(!watched.contains { $0.moodleID == 2 || $0.moodleID == 3 })
-        #expect(watched.count == WeBeepService.watchLimit)
+        #expect(watched.count == WeBeepModel.watchLimit)
     }
 }
 
@@ -38,8 +38,8 @@ struct WeBeepRotationTests {
         }
         var seen: Set<Int> = []
         for pass in 0..<3 {
-            let watched = WeBeepService.watched(courses, now: now, pass: pass)
-            #expect(watched.count == WeBeepService.watchLimit)
+            let watched = WeBeepModel.watched(courses, now: now, pass: pass)
+            #expect(watched.count == WeBeepModel.watchLimit)
             #expect(watched.first?.moodleID == 7)
             seen.formUnion(watched.compactMap(\.moodleID))
         }

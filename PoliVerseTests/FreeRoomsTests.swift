@@ -363,8 +363,8 @@ struct CancellationTests {
 @Suite("Free rooms freshness")
 @MainActor
 struct FreeRoomsFreshnessTests {
-    private func service() -> FreeRoomsService {
-        FreeRoomsService(catalogue: RoomsService(preview: []), preview: [])
+    private func service() -> FreeRoomsModel {
+        FreeRoomsModel(catalogue: RoomsModel(preview: []), preview: [])
     }
 
     @Test("A service that has not fetched has no age")

@@ -5,7 +5,7 @@ import SwiftUI
 /// Not just the ones the student is enrolled in — this is the manifesto, so it
 /// covers every degree course, every year, and the years before this one.
 struct ManifestiView: View {
-    @Environment(ManifestiService.self) private var manifesti
+    @Environment(ManifestiModel.self) private var manifesti
 
     @State private var query = ""
     @State private var submitted = ""

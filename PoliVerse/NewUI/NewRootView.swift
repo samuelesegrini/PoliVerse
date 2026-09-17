@@ -16,7 +16,7 @@ struct NewRootView: View {
     @Environment(\.colorScheme) private var scheme
     @AppStorage(SearchTabKeyboard.storageKey) private var searchOpensKeyboard = true
     @State private var layoutChangePending = false
-    @Environment(AgendaService.self) private var agenda
+    @Environment(AgendaModel.self) private var agenda
     @Environment(UpdateFeed.self) private var feed
     /// Moved on when a lesson starts or ends, so the accessory follows the
     /// timetable without redrawing the whole tab tree every minute.

@@ -7,9 +7,9 @@ import UserNotifications
 /// install and a refusal is permanent — so it is worth spending a screen
 /// explaining what the notifications are before spending the prompt.
 struct RemindersStepView: View {
-    @Environment(NotificationService.self) private var notifications
-    @Environment(AgendaService.self) private var agenda
-    @Environment(CareerService.self) private var career
+    @Environment(NotificationModel.self) private var notifications
+    @Environment(AgendaModel.self) private var agenda
+    @Environment(CareerModel.self) private var career
     @Environment(UpdateFeed.self) private var feed
     let advance: () -> Void
 

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Lectures, exams and deadlines, one day at a time with a scrubbable week strip.
 struct CalendarView: View {
-    @Environment(AgendaService.self) private var agenda
+    @Environment(AgendaModel.self) private var agenda
     @Environment(\.locale) private var locale
 
     @State private var selectedDay: Date = PoliMiDate.romeCalendar.startOfDay(for: .now)
@@ -366,7 +366,7 @@ private struct EventRow: View {
 
 #Preview("Componente · Riga evento") {
     List {
-        ForEach(MockData.agendaEvents(around: .now).prefix(4)) { EventRow(event: $0) }
+        ForEach(AgendaEvent.samples(around: .now).prefix(4)) { EventRow(event: $0) }
     }
     .previewEnvironment()
 }

@@ -2,10 +2,10 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(Session.self) private var session
-    @Environment(WeBeepService.self) private var weBeep
-    @Environment(CareersService.self) private var careers
+    @Environment(WeBeepModel.self) private var weBeep
+    @Environment(CareersModel.self) private var careers
     @State private var cacheBytes = DiskCache.sizeInBytes()
-    @State private var materialBytes = FileDownloadService.storageInBytes()
+    @State private var materialBytes = FileDownloadModel.storageInBytes()
     @State private var showingDiagnostics = false
     @AppStorage(NewInterface.storageKey) private var usesNewInterface = true
 
@@ -85,7 +85,7 @@ struct SettingsView: View {
                     cacheBytes = 0
                 }
                 Button("Elimina materiali scaricati", role: .destructive) {
-                    FileDownloadService.clearStorage()
+                    FileDownloadModel.clearStorage()
                     materialBytes = 0
                 }
             }
@@ -133,7 +133,7 @@ struct SettingsView: View {
                     Task {
                         DiskCache.clear()
                     OfflineStore.shared.clearAll()
-                        await session.signOut()
+                        await session.login.signOut()
                     }
                 }
             } footer: {
@@ -150,7 +150,7 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             cacheBytes = DiskCache.sizeInBytes() + OfflineStore.shared.sizeInBytes
-            materialBytes = FileDownloadService.storageInBytes()
+            materialBytes = FileDownloadModel.storageInBytes()
         }
     }
 }

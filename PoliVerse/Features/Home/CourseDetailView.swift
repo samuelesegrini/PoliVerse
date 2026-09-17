@@ -12,13 +12,13 @@ import SwiftUI
 struct CourseDetailView: View {
     let course: Course
 
-    @Environment(AgendaService.self) private var agenda
-    @Environment(CareerService.self) private var career
-    @Environment(CourseService.self) private var courses
+    @Environment(AgendaModel.self) private var agenda
+    @Environment(CareerModel.self) private var career
+    @Environment(CourseModel.self) private var courses
     @Environment(\.locale) private var locale
     @Environment(UpdateFeed.self) private var feed
-    @Environment(ManifestiService.self) private var manifesti
-    @Environment(StudyProgrammeService.self) private var programmes
+    @Environment(ManifestiModel.self) private var manifesti
+    @Environment(StudyProgrammeModel.self) private var programmes
     @Environment(Session.self) private var session
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
     @Environment(\.colorScheme) private var scheme
@@ -567,5 +567,5 @@ private struct NextSittingCard: View {
 // MARK: - Previews
 
 #Preview("Corso") {
-    CourseDetailView(course: MockData.courses[0]).previewInNavigation()
+    CourseDetailView(course: Course.samples[0]).previewInNavigation()
 }

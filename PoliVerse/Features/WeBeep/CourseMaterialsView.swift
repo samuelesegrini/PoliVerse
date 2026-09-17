@@ -6,8 +6,8 @@ struct CourseMaterialsView: View {
     let course: Course
 
     @Environment(Session.self) private var session
-    @Environment(WeBeepService.self) private var weBeep
-    @Environment(FileDownloadService.self) private var downloads
+    @Environment(WeBeepModel.self) private var weBeep
+    @Environment(FileDownloadModel.self) private var downloads
 
     @State private var query = ""
     @State private var showingLogin = false
@@ -241,7 +241,7 @@ struct MaterialKind {
 private struct FileRow: View {
     let colour: Flavor.RGB
     let file: WeBeepFile
-    let status: FileDownloadService.Status
+    let status: FileDownloadModel.Status
     /// The last row of its card draws no hairline under it.
     var last = false
     let onTap: () -> Void
@@ -308,7 +308,7 @@ private struct FileRow: View {
 
 /// Wraps ``WeBeepLoginView`` in a dismissible sheet.
 struct WeBeepLoginSheet: View {
-    @Environment(WeBeepService.self) private var weBeep
+    @Environment(WeBeepModel.self) private var weBeep
     @Environment(CieIDRouter.self) private var cieID
     @Environment(\.dismiss) private var dismiss
 
@@ -380,5 +380,5 @@ struct CieIDWaitingBanner: View {
 // MARK: - Previews
 
 #Preview("Materiali") {
-    CourseMaterialsView(course: MockData.courses[0]).previewInNavigation()
+    CourseMaterialsView(course: Course.samples[0]).previewInNavigation()
 }
