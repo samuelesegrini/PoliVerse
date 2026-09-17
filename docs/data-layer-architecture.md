@@ -1,12 +1,10 @@
-# Data layer architecture
+# Model layer: naming and structure
 
-A plan for reorganising everything in the app that is not a view: the 49 files
-in `PoliVerse/Models`, the 61 in `PoliVerse/Services`, and the 8 in `Shared`.
+A plan for reorganising the 110 files that are not views: 49 in
+`PoliVerse/Models`, 61 in `PoliVerse/Services`.
 
-Nothing here has been done. This is the document to argue with before any file
-moves. Where it states a fact about the code as it stands, the number was
-measured on the branch this was written from; where it proposes something, it
-says so.
+Nothing here has been done. Numbers were measured on the branch this was
+written from; proposals say so.
 
 ---
 
@@ -14,401 +12,225 @@ says so.
 
 | Folder | Files | Lines | What lives there |
 | --- | ---: | ---: | --- |
-| `PoliVerse/Models` | 49 | 7 100 | Domain types, wire types, and pure algorithms, in one flat list |
-| `PoliVerse/Services` | 61 | 11 532 | Observable stores, actors, network gateways and pure helpers, in one flat list |
-| `PoliVerse/Features` | 50 | 10 602 | The screens of the interface being replaced |
-| `PoliVerse/NewUI` | 43 | 9 249 | The screens of the interface that ships |
-| `PoliVerse/DesignSystem` | 7 | 718 | Theme, cards, previews |
-| `PoliVerse/App` | 5 | 510 | Entry point, routing, intents |
-| `Shared` | 8 | 1 021 | Types the widget extension needs too |
-| `PoliVerseWidgets` | 9 | 1 368 | The widget extension |
+| `PoliVerse/Models` | 49 | 7 100 | Domain types, wire types and pure algorithms, one flat list |
+| `PoliVerse/Services` | 61 | 11 532 | 27 `@Observable` models, 20 pure `enum`s, 4 actors, 20 that do networking, one flat list |
+| `PoliVerse/Features` + `NewUI` | 93 | 19 851 | The two interfaces |
+| `Shared` | 8 | 1 021 | What the widget extension needs too |
 
 One app target. Xcode file-system-synchronized groups, so **moving a file on
-disk does not touch `project.pbxproj`** — which is what makes a restructuring
-of this size cheap to do and cheap to undo.
+disk does not touch `project.pbxproj`** — which is what makes this cheap to do
+and cheap to undo.
 
-```mermaid
-flowchart TD
-    F["Features/ · NewUI/<br/>93 files"] --> S["Services/<br/>61 files, flat"]
-    F --> M["Models/<br/>49 files, flat"]
-    S --> M
-    S --> SH["Shared/<br/>8 files"]
-    W["PoliVerseWidgets/"] --> SH
-    S -.-> S2["Services depend on<br/>each other, ungoverned"]
-    style S fill:#c0392b22,stroke:#c0392b
-    style M fill:#c0392b22,stroke:#c0392b
-```
+Three facts worth having before deciding anything:
 
-The layering is already right in the one way that matters most: **the data
-layer does not import SwiftUI.** One file does — `Services/AuthWebView.swift`,
-which is a view sitting in the wrong folder. That is the whole leak. Everything
-below is about organisation and coupling, not about a tangled dependency
-direction, which is a much better starting point than it could have been.
+- **The model layer does not import SwiftUI.** One file does —
+  `Services/AuthWebView.swift` — and it is a view in the wrong folder. There is
+  no dependency direction to straighten out here, only filing.
+- **`Session` is named by 49 files**, a quarter of the app, and holds four
+  unrelated things: who the student is, the OAuth session, the sample-data
+  switch, and login orchestration.
+- **Six files hold both the shape the Politecnico sends and the shape the app
+  reasons about** (`Career`, `Classroom`, `Course`, `Libretto`,
+  `PoliMiProfile`, `User`). The endpoints move without notice
+  (`docs/endpoint-status.md`), so this is the one boundary that has a real
+  failure mode rather than a legibility complaint.
 
-### 1.1 The four problems, with evidence
-
-**A flat folder is not a structure.** 61 files in `Services/` hold at least
-four different kinds of thing:
-
-| Kind | Count | Examples |
-| --- | ---: | --- |
-| `@Observable` stores (state the UI reads) | 27 | `CareerService`, `AgendaService`, `WeBeepService` |
-| Pure `nonisolated enum` (no state, no I/O) | 20 | `JSONShape`, `OnboardingFlow`, `LoadWindow` |
-| `actor` (serialised state) | 4 | `TokenStore` and friends |
-| Does networking | 20 | `PoliMiAPI`, `CourseService`, `RoomsService` |
-
-These have different testing needs, different concurrency rules and different
-reasons to change. Nothing in the folder name says which is which, so the only
-way to know what a file is, is to open it.
-
-**`Session` is a god object.** It is named by **49 files** — a quarter of the
-app. It holds at least four unrelated responsibilities: who the student is, the
-OAuth session and its tokens, the sample-data switch, and login orchestration.
-Every screen that needs any one of them depends on all four.
-
-```mermaid
-flowchart LR
-    subgraph Now["Session today — fan-in 49"]
-      direction TB
-      SES["Session<br/>387 lines"]
-      SES --- I["student, matricola"]
-      SES --- A["tokens, sign in/out"]
-      SES --- D["useMockData"]
-      SES --- L["login orchestration"]
-    end
-```
-
-**Wire types and domain types share a file.** Six files hold both the shape the
-Politecnico sends and the shape the app reasons about: `Career.swift`,
-`Classroom.swift`, `Course.swift`, `Libretto.swift`, `PoliMiProfile.swift`,
-`User.swift`. Fourteen `Models` files mention `Decodable` at all. The endpoints
-are private and change without notice (`docs/endpoint-status.md`), so the
-boundary between "what they sent" and "what we mean" is the one boundary this
-app most needs to be able to move.
-
-**Screens know the whole service graph.** `@Environment` dependencies per view:
-
-| View | Services injected |
-| --- | ---: |
-| `HomeView` | 14 |
-| `PersonalTimetableView` | 10 |
-| `ConnectionsView` | 9 |
-| `SearchView`, `ExamUpdatesView`, `CourseInfoView`, `CourseDetailView` | 8 |
-
-A view with fourteen dependencies cannot be reasoned about, previewed cheaply,
-or moved. It is also a symptom rather than a cause: there is no unit of
-"everything the Home screen needs", so the screen assembles one by hand.
-
-### 1.2 What is already good, and must not be lost
-
-- The data layer is free of SwiftUI (one misplaced file aside).
-- 20 pure `enum`s with no state — the parsers, the classifiers, the policy
-  engines — are already the most valuable and most testable code in the repo.
-- 100 test files cover it. That test suite is the safety net that makes this
-  restructuring possible at all, and every phase below is verified by it.
-- `Shared/` already draws a real boundary: the app and the widget extension.
+Only the third is a defect. The first two are the app being harder to read
+than it needs to be — which is worth fixing, but not worth pretending is
+urgent.
 
 ---
 
-## 2. Where this is going
+## 2. The architecture the app already has: MV
 
-### 2.1 Three principles
+`PoliVerseApp` injects **27 `@Observable` objects** into the environment, and
+views read them directly. There is not one `ViewModel` in the repository.
 
-**One direction.** Dependencies point inward, towards code that knows nothing
-about the outside world. The inner layers may not name the outer ones. This is
-the dependency rule of Clean Architecture ([Martin, 2012][clean]) and the same
-idea as ports and adapters ([Cockburn, 2005][hex]); the names differ, the rule
-does not.
+That is Model–View. Apple does not name a pattern, but its data-flow guidance
+and sample code do exactly this: model types in the environment, SwiftUI
+observing the properties a view actually reads, no object in between. The
+community calls it MV.
 
-**Three kinds of code, never mixed in one file.**
+So the question is not which architecture to adopt. It is whether the folders
+say what the code already does. They do not.
 
-| Kind | Rule | How it is tested |
-| --- | --- | --- |
-| **Pure** — value types, parsers, policies | No I/O, no clock of its own, no global state. `nonisolated`. | Swift Testing, in memory, in milliseconds |
-| **Gateway** — talks to a service | Owns one endpoint family. Returns domain types, never wire types. | `URLProtocol` stub |
-| **Store** — state the UI observes | `@Observable`, `@MainActor`. Holds no parsing and no `URLSession`. | Driven through its gateway's stub |
+**Why not MVC.** MVC's controller mediates between a view and a model because
+UIKit's view cannot describe itself. A SwiftUI `View` is a description that
+re-runs when the state it read changes — it is already the controller's job,
+done by the framework. Adding controllers means writing by hand what
+`@Observable` does, and introducing a layer with no state of its own.
 
-**Wire is not domain.** Every `…DTO` is an implementation detail of one
-gateway. It is declared next to that gateway, it is `internal` to its area, and
-it never appears in a function signature a screen can see. When the Politecnico
-moves an endpoint — which the docs record happening repeatedly — exactly one
-file changes.
+**Why not MVVM.** A ViewModel per view duplicates the `View` struct: both
+would hold per-screen state, and `@State` already does that without a second
+type. MVVM earns its keep where a view framework cannot observe a model
+directly. SwiftUI can.
 
-### 2.2 The target shape
+**Why not the Clean/hexagonal shape** (an earlier draft of this document
+proposed it): ports, gateways and adapters add three vocabulary items and a
+wiring step at launch, to make testable something the test suite already tests
+with `URLProtocol` stubs (`ConnectionProbeTests`, `RoomOccupancyTests`). That
+is a layer bought at full price to replace a stub that works.
+
+**What MV gets wrong, and the rule that fixes it.** MV's failure mode is one
+enormous model object that the whole app depends on. This app already has it:
+`Session`, fan-in 49. So the rule that matters is not a layering rule, it is
+this one:
+
+> **One model per area, never one model for the app.** A model owns one
+> subject — the career, the courses, the materials — and knows nothing about
+> the others.
 
 ```mermaid
-flowchart TD
-    subgraph UI["Presentation"]
-      V["Screens<br/>Features/ → NewUI/"]
+flowchart LR
+    V["Views<br/>read what they need"] -->|"@Environment"| M
+    subgraph M["Model layer — one per area"]
+      direction TB
+      C["CareerModel"]
+      K["CoursesModel"]
+      W["MaterialsModel"]
+      A["AgendaModel"]
     end
-    subgraph APP["Application"]
-      ST["Stores<br/>@Observable, @MainActor"]
-    end
-    subgraph DOM["Domain — pure, no I/O"]
-      DM["Domain types"]
-      AL["Algorithms<br/>parsers · policies · differs"]
-      PT["Ports<br/>protocols the stores need"]
-    end
-    subgraph INF["Infrastructure — adapters"]
-      GW["Gateways<br/>+ their wire types"]
-      PS["Persistence<br/>disk · keychain · queue"]
-      PL["Platform<br/>Spotlight · widgets · notifications"]
-    end
-
-    V --> ST
-    ST --> DM
-    ST --> AL
-    ST --> PT
-    GW -.implements.-> PT
-    PS -.implements.-> PT
-    PL -.implements.-> PT
-    GW --> DM
-    PS --> DM
-
-    style DOM fill:#27ae6022,stroke:#27ae60
-    style INF fill:#2980b922,stroke:#2980b9
+    M --> P["Pure types and algorithms<br/>no I/O, no clock"]
+    M --> N["Endpoints<br/>+ their wire types"]
+    style P fill:#27ae6022,stroke:#27ae60
 ```
 
-The arrow that matters is the dotted one: infrastructure depends on the domain,
-never the other way round. A store asks for "the career of this student"
-through a protocol the domain declares; which endpoint answers is not its
-business.
+---
 
-### 2.3 The folders
+## 3. The structure: one folder per area
+
+The previous draft grouped by layer — `Domain/`, `Stores/`, `Gateways/`. That
+was a mistake, and a measurable one: it spread Carriera across **four**
+folders, where today it sits in two. The question asked every day is "where is
+everything about the career?", and a layout should answer it in one place.
+
+The layer belongs in the **file name**, where a reader sees it and the compiler
+never needs it.
 
 ```
 PoliVerse/
-  App/                        entry point, routing, intents          (unchanged)
-  DesignSystem/                                                      (unchanged)
-  UI/
-    Today/  Courses/  Career/  Search/  Settings/  Onboarding/
-                              ← Features/ and NewUI/ converge here, later
-  Data/
-    Core/                     pure, depends on nothing
-      Text/                   HTMLText · HTMLScraper · RegexCache · SearchMatch
-      Time/                   LoadWindow          (PoliMiDate stays in Shared — see §7.4)
-      JSON/                   JSONValue · JSONShape · PayloadInspector
-    Domain/
-      Career/                 Career · Libretto · ExamTimeline · ExamContext · PartialExams
-      Courses/                Course · Teacher · Enrolment · CourseHubBadges
-      Materials/              WeBeepFile · Moodle · MaterialChange · DocumentClassifier · Assignment
-      Timetable/              PersonalTimetable · CalendarExport
-                              (AgendaEvent stays in Shared — see §7.4)
-      Places/                 Classroom · RoomBooking · RoomFacility · BuildingLocation · MapPlacement
-      Study/                  Manifesto · StudyPlan · StudyProgramme · SyllabusPicker
-      Updates/                ExamUpdate · FeedItem · Notice · NewsItem · NotificationPlan
-      Identity/               User · Tokens · PoliMiProfile · PoliMiLanguage
-    Stores/
-      CareerStore · CoursesStore · MaterialsStore · AgendaStore · RoomsStore ·
-      UpdatesFeed · …          ← today's *Service classes, renamed for what they are
-    Gateways/
-      PoliMiAPI/              APIRequest · ServiceDirectory · retry · profile headers
-      Career/  Courses/  Materials/  Agenda/  Rooms/  Manifesti/  News/
-                              each with its own Wire.swift
-    Persistence/              DiskCache · OfflineStore · KeychainStore · ActionQueue · ReportArchive
-    Platform/                 SpotlightIndex · LiveActivityController · WidgetReloader ·
-                              NotificationService · CalendarExporter · BackgroundRefresh
-    Diagnostics/              DiagnosticsLog · DiagnosticsReport · ConnectionProbe · StorageAudit ·
-                              ScopeAudit · PerformanceMonitor · PerfSignpost · PerformanceStates
-    Auth/                     PoliMiOAuth · TokenStore · LoginWebKit · CieID · SPIDCatalogue ·
-                              AuthSession
-  Shared/                     app + widget extension                 (unchanged boundary)
+  App/                    entry point, routing, intents          (unchanged)
+  DesignSystem/                                                  (unchanged)
+  Views/                  Features/ + NewUI/ converge here, later
+  Model/
+    Career/               Career.swift · CareerModel.swift · CareerAPI.swift · Wire.swift
+                          ExamTimeline.swift · ExamContext.swift · Libretto.swift
+    Courses/              Course.swift · CoursesModel.swift · CoursesAPI.swift · Wire.swift
+                          Teacher.swift · Enrolment.swift
+    Materials/            WeBeepFile.swift · MaterialsModel.swift · WeBeepAPI.swift · Wire.swift
+                          MaterialChange.swift · DocumentClassifier.swift
+    Timetable/            PersonalTimetable.swift · AgendaModel.swift · AgendaAPI.swift
+                          CalendarExport.swift
+    Places/               Classroom.swift · RoomsModel.swift · RoomsAPI.swift · Wire.swift
+                          RoomBooking.swift · RoomFacility.swift · MapPlacement.swift
+    Study/                Manifesto.swift · ManifestiModel.swift · ManifestiAPI.swift
+                          StudyPlan.swift · StudyProgramme.swift
+    Updates/              ExamUpdate.swift · UpdatesModel.swift · FeedItem.swift
+                          Notice.swift · NewsItem.swift · NotificationPlan.swift
+    Identity/             User.swift · IdentityModel.swift · AuthModel.swift
+                          Tokens.swift · PoliMiOAuth.swift · LoginWebKit.swift · CieID.swift
+    Platform/             SpotlightIndex · LiveActivityController · WidgetReloader
+                          NotificationService · CalendarExporter · BackgroundRefresh
+    Diagnostics/          DiagnosticsLog · DiagnosticsReport · ConnectionProbe
+                          StorageAudit · PerformanceMonitor · PerfSignpost
+    Support/              shared by every area, depends on none of them
+                          PoliMiAPI · ServiceDirectory · DiskCache · OfflineStore
+                          KeychainStore · ActionQueue · HTMLText · HTMLScraper
+                          RegexCache · JSONValue · SearchMatch
+  Shared/                 app + widget extension                 (unchanged)
 ```
 
-Names change where the current one hides what a type is: `CareerService` is a
-store, `WeBeepAPI` is a gateway, `ManifestoParser` is pure. A folder should not
-need a convention document to be read correctly.
+Suffixes carry the role, and are the whole convention:
 
-### 2.4 One vertical slice, in full
+| Suffix | What it is | How it is tested |
+| --- | --- | --- |
+| *(none)* | Value types and pure algorithms. No I/O, no clock of its own. | In memory, in milliseconds |
+| `…Model` | The `@Observable` a view reads. `@MainActor`. Holds no parsing and no `URLSession`. | Driven through its API with a `URLProtocol` stub |
+| `…API` | One endpoint family. Returns the area's own types, never wire types. | `URLProtocol` stub |
+| `Wire` | The `…DTO`s of that area, `internal` to it, never in a signature a view can see. | The decoding tests that exist |
 
-What "Carriera" looks like once it is arranged this way:
-
-```mermaid
-sequenceDiagram
-    participant V as CareerTab (view)
-    participant S as CareerStore (@Observable)
-    participant P as CareerReading (port)
-    participant G as CareerGateway
-    participant W as Wire (ExamDTO…)
-    participant A as ExamTimeline (pure)
-
-    V->>S: .task { await load() }
-    S->>P: career(for: matricola)
-    P->>G: (the app wires this at launch)
-    G->>W: decode the response
-    W-->>G: ExamDTO, LibrettoEntryDTO
-    G->>G: toSession() / toExam()
-    G-->>S: [ExamSession], [LibrettoExam]  (domain only)
-    S->>A: timeline(sittings:updates:)
-    A-->>S: what changed, ordered
-    S-->>V: observable state
-```
-
-The test for `ExamTimeline` needs no network and no store. The test for
-`CareerStore` needs a stub port, not a `URLProtocol`. The test for
-`CareerGateway` needs a `URLProtocol` and no store. Each is the cheapest test
-that can fail for the right reason — which is the point of the arrangement, not
-a side effect of it.
-
-### 2.5 Breaking up `Session`
-
-```mermaid
-flowchart LR
-    S["Session<br/>fan-in 49"] --> I["Identity<br/>who the student is"]
-    S --> A["AuthSession<br/>tokens, sign in/out"]
-    S --> R["RuntimeFlags<br/>sample data"]
-    S --> O["LoginFlow<br/>orchestration only"]
-    style S fill:#c0392b22,stroke:#c0392b
-```
-
-Most of the 49 dependants want `Identity` alone — a matricola and a name. A few
-want `RuntimeFlags` to say "this is sample data". Only the login screens want
-`AuthSession` or `LoginFlow`. Splitting turns one 49-way dependency into four
-small ones, and makes it possible to preview a screen without an auth stack.
-
-Do this **last** among the code moves (phase 5): it is the only phase that
-changes call sites rather than file paths, and it wants the rest to be stable
-underneath it.
+`CareerService` becomes `CareerModel` because it is a model, not a service.
+`WeBeepAPI` already says what it is. `ManifestoParser` keeps no suffix because
+it is pure. A folder should not need a glossary to be read correctly.
 
 ---
 
-## 3. The dependency rule, written so it can be checked
+## 4. Three rules, in place of a matrix
 
-| From ↓ may import → | Core | Domain | Stores | Gateways | Persistence | Platform | UI |
-| --- | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
-| **Core** | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| **Domain** | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| **Stores** | ✓ | ✓ | ~ | ✗¹ | ✗¹ | ✗¹ | ✗ |
-| **Gateways** | ✓ | ✓ | ✗ | ✓ | ✓ | ✗ | ✗ |
-| **Persistence** | ✓ | ✓ | ✗ | ✗ | ✓ | ✗ | ✗ |
-| **Platform** | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ | ✗ |
-| **UI** | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✓ |
+1. **`Support/` names no area.** If something in `Support/` needs to know about
+   Carriera, it belongs in `Model/Career/`.
+2. **An area names no other area.** Where two must meet — a course and its
+   sittings — the view that shows both does the meeting, or a pure type in
+   `Support/` takes both as arguments.
+3. **Nothing under `Model/` imports SwiftUI.** True today except for one
+   misplaced file; a grep keeps it true.
 
-¹ Through a port declared in `Domain`, never by naming the concrete type.
-~ A store may read another store; that edge is allowed but counted, because it
-is how a second god object gets built.
-
-Two ways to enforce it, and the honest difference between them:
-
-**A script, in CI.** Greps imports and folder paths against the table. Cheap,
-runs on Linux, catches the common case, and can be added *before* any file
-moves so the rule is in place while the moving happens. It cannot see through
-`@testable` or type inference: it is a lint, not a proof.
-
-**SPM modules.** The compiler enforces it, exactly, with no script to maintain.
-The cost is stated in §5 and it is not small.
-
-Start with the script. Reach for modules only where the boundary has proved
-worth paying for.
+All three are greppable. A five-line script in CI is enough, and can be added
+before anything moves, so the rules are in force while the moving happens.
 
 ---
 
-## 4. Migration, in phases
+## 5. The path
 
-Each phase is a pull request, reversible on its own, and green before the next
-begins. "Green" means the unit suite plus the UI suite — the navigation, search,
-lifecycle and accessibility walks are the net that catches a move that compiled
-but broke the app (`docs/testing.md`).
+**Precondition, not a phase.** The unit suite and the UI suite have to run
+green on a Mac, once, before any file moves. The repo has no CI — no
+`.github` at all — and the UI suite has never been compiled, so the safety net
+every step below leans on is, at the moment, unproven. Tensioning it is step
+zero and it is not optional.
+
+Then three steps, three pull requests:
+
+| Step | What | Touches logic | Effort |
+| --- | --- | :-: | --- |
+| **1** | Split the six files that hold both a DTO and a domain type; the DTOs become `Wire.swift` in their area, `internal`. | no | half a day |
+| **2** | `git mv` the 110 files into `Model/<Area>/`, and rename `…Service` to `…Model` / `…API` where the name lies. `AuthWebView` goes to the views. | no | a day, one PR |
+| **3** | Split `Session` into two: **who the student is** and **how they got in**. The sample-data flag goes with the first. | **yes** | a day |
+
+Nothing else. `Session` is split into two rather than four because a type for
+one boolean is not a type. The two interfaces converge when it is decided which
+one ships — that is a product question, and filing does not answer it.
 
 ```mermaid
 flowchart LR
-    P0["0 · Rule<br/>no moves"] --> P1["1 · Core<br/>pure code out"]
-    P1 --> P2["2 · Wire<br/>DTOs to gateways"]
-    P2 --> P3["3 · Domain<br/>grouped by area"]
-    P3 --> P4["4 · Stores &<br/>Gateways named"]
-    P4 --> P5["5 · Session<br/>split"]
-    P5 --> P6["6 · UI<br/>Features + NewUI"]
-    P6 -.optional.-> P7["7 · SPM<br/>Core only"]
+    P["0 · Tests green<br/>on a Mac, once"] --> S1["1 · Wire out<br/>6 files"]
+    S1 --> S2["2 · Areas<br/>110 files, one git mv"]
+    S2 --> S3["3 · Session<br/>in two"]
+    style P fill:#c0392b22,stroke:#c0392b
 ```
 
-| Phase | What moves | Touches logic? | Risk | Verified by |
-| --- | --- | :-: | :-: | --- |
-| **0** | Nothing. The import-rule script, and an `docs/adr/` folder with this document's decisions. | no | none | The script passes on the current tree, or its first report is the backlog |
-| **1** | The ~20 pure files into `Data/Core/` and `Data/Domain/*/`. Pure code has no dependants to break beyond its name. | no | low | Unit suite |
-| **2** | Each `…DTO` out of its shared file into its gateway's `Wire.swift`; make it `internal` to the area. | no¹ | medium | Unit suite — the decoding tests are the check |
-| **3** | The remaining `Models/` into `Data/Domain/<Area>/`. | no | low | Unit suite |
-| **4** | `Services/` split into `Stores/`, `Gateways/`, `Persistence/`, `Platform/`, `Diagnostics/`, `Auth/`; rename to match. `AuthWebView` moves to the UI. | no | medium | Unit + UI suites |
-| **5** | `Session` into `Identity`, `AuthSession`, `RuntimeFlags`, `LoginFlow`. | **yes** | **high** | Unit + UI suites; the signed-out and onboarding walks especially |
-| **6** | `Features/` and `NewUI/` converge into `UI/<Area>/`; the interface that is not shipping is deleted rather than moved. | **yes** | **high** | Full UI suite, screenshot sweep before/after |
-| **7** | *Optional.* `Data/Core` becomes a local SPM package. | no | medium | Build time measured before and after |
-
-¹ Phase 2 changes no behaviour, but it does change access levels, which the
-compiler will find. Expect the diff to be wide and shallow.
-
-**Order is not arbitrary.** Pure code first, because it is the only code that
-can move with no dependants breaking. Wire types next, because that boundary is
-the one the endpoints keep forcing. `Session` late, because it is the only step
-that edits call sites across the app, and doing it on a tree that is still
-moving underneath means two hard problems at once. The UI last, because the two
-interfaces are a product decision, not a filing one.
-
-**Every phase is a `git mv`.** With synchronized groups there is no project file
-to merge, so a phase can be abandoned with `git revert` and nothing is left
-behind.
+Every step is a `git mv` plus renames, so a step is abandoned with
+`git revert` and nothing is left behind.
 
 ---
 
-## 5. Should this become SPM modules?
+## 6. What this plan refuses
 
-Not yet, and here is the number that decides it: **all 100 test files import
-`@testable import PoliVerse`.** Splitting the app target into modules breaks
-every one of them, and `@testable` does not cross a module boundary the way a
-single target lets it — internal types that tests reach today would need to
-become `public`, or the tests would need to move into the module that owns
-them.
-
-That is not an argument against modules for ever. It is an argument for:
-
-1. doing the folder restructuring first, where **no import statement changes at
-   all**, because one target needs none;
-2. proving the boundary is real with the lint;
-3. then extracting **`Data/Core` alone** — pure code, no dependants outside the
-   app, the tests for it move with it — and measuring what it buys in build
-   time before extracting a second.
-
-A module split that is done for tidiness costs real time and buys nothing a
-folder plus a lint does not. A module split done to make a boundary
-compiler-enforced, on a boundary that has already proved itself, is worth it.
-
----
-
-## 6. What not to do
-
-- **Do not introduce a repository protocol per type.** Ports exist where a
-  store needs to be tested without a network, not as a matter of course. One
-  port per area, not one per noun.
-- **Do not move `Shared/`.** Its boundary is a real one — two processes — and
-  it is already right.
-- **Do not mix a rename with a move in the same commit.** `git mv` alone keeps
-  the history readable; a rename on top of it does not.
-- **Do not restructure the UI while the two interfaces both exist.** Decide
-  which one ships first; filing does not resolve a product question.
-- **Do not add a dependency-injection framework.** `@Environment` plus ports is
-  enough at this size, and a container would hide exactly the graph this plan
-  is trying to make visible.
+- **SPM modules, for now.** All 100 test files import
+  `@testable import PoliVerse`. Splitting the target breaks every one of them,
+  and `@testable` does not cross a module boundary the way a single target
+  allows. The folder move changes **no import statement at all**, because one
+  target needs none. Revisit only if build time is measured and found wanting.
+- **A dependency-injection framework.** `@Environment` is the injection
+  mechanism SwiftUI already provides, and 27 registrations at the root are a
+  graph you can read. A container would hide it.
+- **Ports and protocols between a model and its API.** The `URLProtocol` stubs
+  already in the suite do that job with no extra type.
+- **ADR files.** `docs/` is already a decision record, written better than any
+  template.
+- **Restructuring the views.** Later, and only after the interface question is
+  settled.
 
 ---
 
 ## 7. Open questions
 
-1. **`Features/` vs `NewUI/`.** Is the old interface going away? Phase 6 is
-   cheap if it is deleted, expensive if both must live.
-2. **Ports: how far?** The table assumes stores reach infrastructure through
-   protocols. That is worth it for the seven gateways that do networking; it is
-   probably not worth it for `DiskCache`.
-3. **Where does `ExamContext` belong?** It reads a sitting, the libretto and
-   other sittings together. Either `Domain/Career/`, or a `Domain/Insight/`
-   that also takes `ExamTimeline` and `PartialExams`.
-4. **`Shared/` and the domain.** Some domain types the app would want in
-   `Data/Domain/` are needed by the widget too, and so live in `Shared/`:
-   `AgendaEvent` and the `PoliMiDate` helpers inside it, `FreeRoomsSnapshot`,
-   `CareerSnapshot`, `RoomOccupancy`. The tree above leaves them where they
-   are, which means one area's types sit in two places. Either `Shared/` grows
-   to hold the whole of those areas' domains, or `Domain/` is extracted as a
-   module both targets depend on — which needs the SPM question in §5 answered
-   first. Leaving it as it is, and saying so, is also a defensible answer.
-
----
-
-[clean]: https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html
-[hex]: https://alistair.cockburn.us/hexagonal-architecture/
+1. **`Features/` vs `NewUI/`.** Is the old interface going away? Step 2 does
+   not depend on the answer; the view reorganisation does entirely.
+2. **`Shared/` and the areas.** `AgendaEvent`, `PoliMiDate`,
+   `FreeRoomsSnapshot`, `CareerSnapshot` and `RoomOccupancy` are needed by the
+   widget and so live in `Shared/`, which means Timetable and Places will each
+   sit in two places. Leaving them and saying so is defensible; the
+   alternative needs the SPM question reopened.
+3. **`ExamContext` and `ExamTimeline`** read sittings, the libretto and updates
+   together. `Model/Career/` is proposed above; a case can be made for a small
+   area of their own.
