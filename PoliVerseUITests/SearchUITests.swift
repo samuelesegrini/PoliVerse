@@ -4,7 +4,7 @@ import XCTest
 /// come back, clear.
 ///
 /// All of it on sample data, so the courses, teachers and notices searched for
-/// here are the ones `MockData` ships.
+/// here are the ones `Course.samples` and its neighbours ship.
 nonisolated final class SearchUITests: PoliVerseUITestCase {
     /// Selecting the search tab activates its field — `tabViewSearchActivation`
     /// — and the places are listed until something is typed.

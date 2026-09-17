@@ -3,8 +3,8 @@ import XCTest
 /// The two screens with the student's own data in them: Corsi and Carriera.
 ///
 /// Navigation is covered elsewhere; what these walk is the content — a course
-/// opened from the list, the three sections of Carriera — on the sample data
-/// `MockData` ships, so the names looked for here are fixed.
+/// opened from the list, the three sections of Carriera — on each area's own
+/// `Samples.swift`, so the names looked for here are fixed.
 nonisolated final class ContentScreensUITests: PoliVerseUITestCase {
     /// Corsi lists the courses and each one opens. The list is the way into
     /// materials, notices and sittings, so an empty list is the app's worst
