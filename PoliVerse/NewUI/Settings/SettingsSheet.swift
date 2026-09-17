@@ -73,6 +73,7 @@ struct SettingsSheet: View {
                         Label("Disposizione", systemImage: "square.grid.2x2")
                     }
                     .pickerStyle(.menu)
+                    .accessibilityIdentifier("settings-layout")
                 } footer: {
                     Text(layout.detail)
                 }
