@@ -9,8 +9,8 @@ import SwiftUI
 struct TeacherDetailView: View {
     let teacher: Teacher
 
-    @Environment(AgendaService.self) private var agenda
-    @Environment(CareerService.self) private var career
+    @Environment(AgendaModel.self) private var agenda
+    @Environment(CareerModel.self) private var career
     @Environment(\.openURL) private var openURL
     @Environment(\.locale) private var locale
 
@@ -108,7 +108,7 @@ struct TeacherDetailView: View {
 
 #Preview("Docente") {
     TeacherDetailView(
-        teacher: Teacher.roster(courses: MockData.courses,
-                                sessions: MockData.examSessions())[0])
+        teacher: Teacher.roster(courses: Course.samples,
+                                sessions: ExamSession.samples())[0])
         .previewInNavigation()
 }

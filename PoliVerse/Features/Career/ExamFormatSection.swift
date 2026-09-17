@@ -10,8 +10,8 @@ import SwiftUI
 struct ExamFormatSection: View {
     let exam: ExamSession
 
-    @Environment(ManifestiService.self) private var manifesti
-    @Environment(StudyProgrammeService.self) private var programmes
+    @Environment(ManifestiModel.self) private var manifesti
+    @Environment(StudyProgrammeModel.self) private var programmes
     @Environment(Session.self) private var session
     @State private var syllabus: Syllabus?
     @State private var classID: String?

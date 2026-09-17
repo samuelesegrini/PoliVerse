@@ -5,8 +5,8 @@ struct CourseMaterialsView: View {
     let course: Course
 
     @Environment(Session.self) private var session
-    @Environment(WeBeepService.self) private var weBeep
-    @Environment(FileDownloadService.self) private var downloads
+    @Environment(WeBeepModel.self) private var weBeep
+    @Environment(FileDownloadModel.self) private var downloads
 
     @State private var query = ""
     @State private var showingLogin = false
@@ -152,7 +152,7 @@ private struct PreviewItem: Identifiable {
 private struct FileRow: View {
     let tint: Color
     let file: WeBeepFile
-    let status: FileDownloadService.Status
+    let status: FileDownloadModel.Status
     let onTap: () -> Void
 
     // `Date.formatted` reads `Locale.current`, not the SwiftUI environment, so
@@ -215,7 +215,7 @@ private struct FileRow: View {
 
 /// Wraps ``WeBeepLoginView`` in a dismissible sheet.
 struct WeBeepLoginSheet: View {
-    @Environment(WeBeepService.self) private var weBeep
+    @Environment(WeBeepModel.self) private var weBeep
     @Environment(CieIDRouter.self) private var cieID
     @Environment(\.dismiss) private var dismiss
 
@@ -287,5 +287,5 @@ struct CieIDWaitingBanner: View {
 // MARK: - Previews
 
 #Preview("Materiali") {
-    CourseMaterialsView(course: MockData.courses[0]).previewInNavigation()
+    CourseMaterialsView(course: Course.samples[0]).previewInNavigation()
 }

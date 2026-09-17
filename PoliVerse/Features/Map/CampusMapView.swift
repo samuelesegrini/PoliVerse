@@ -8,8 +8,8 @@ import SwiftUI
 /// ellipses and bounding boxes rather than footprints, so nothing is drawn
 /// from them. See ``BuildingLocation``.
 struct CampusMapView: View {
-    @Environment(CampusMapService.self) private var map
-    @Environment(RoomsService.self) private var rooms
+    @Environment(CampusMapModel.self) private var map
+    @Environment(RoomsModel.self) private var rooms
 
     @State private var campus: String?
     /// Opens on a campus rather than `.automatic`, which with no pins yet is
@@ -158,7 +158,7 @@ struct CampusMapView: View {
 /// What is in one building, reached by tapping its pin.
 private struct BuildingSheet: View {
     let pin: MapPin
-    @Environment(CampusMapService.self) private var map
+    @Environment(CampusMapModel.self) private var map
     @Environment(\.dismiss) private var dismiss
 
     private var rooms: [Classroom] { map.rooms(in: pin.id) }

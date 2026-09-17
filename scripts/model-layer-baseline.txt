@@ -1,0 +1,11 @@
+53
+
+Edges between areas of Model/, as scripts/check-model-layer.sh counts them.
+The check fails if this number grows. Every raise is written down here with
+the reason, so the ratchet is a record and not just a number.
+
+52 → 53, Timetable -> Courses. The sample data used to retype the course
+names: "Basi di Dati" was written out six times across five areas, and the
+demo's coherence was held together by copy-paste. The agenda's samples now
+take the name from Course.databases, so the six copies became one. One edge
+bought one source of truth on data a student actually sees.

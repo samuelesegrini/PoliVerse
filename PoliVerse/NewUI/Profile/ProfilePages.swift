@@ -165,7 +165,7 @@ struct PhotoPage: View {
 /// Which matricola the app reads. Changing it takes a fresh sign-in: the
 /// Politecnico binds the token to one enrolment.
 struct CareerPage: View {
-    @Environment(CareersService.self) private var careers
+    @Environment(CareersModel.self) private var careers
     @Environment(Session.self) private var session
     @Environment(\.dismiss) private var dismiss
 
@@ -286,7 +286,7 @@ struct CareerPage: View {
         Task {
             careers.remember(career)
             await careers.markFavourite(career)
-            await session.beginCareerRelogin(matricola: career.matricola)
+            await session.login.beginCareerRelogin(matricola: career.matricola)
             working = false
             dismiss()
         }
@@ -294,11 +294,11 @@ struct CareerPage: View {
 }
 
 #Preview("Contatto") {
-    NavigationStack { ContactPage(student: MockData.student) }
+    NavigationStack { ContactPage(student: Student.sample) }
         .previewEnvironment()
 }
 
 #Preview("Foto") {
-    NavigationStack { PhotoPage(student: MockData.student) }
+    NavigationStack { PhotoPage(student: Student.sample) }
         .previewEnvironment()
 }

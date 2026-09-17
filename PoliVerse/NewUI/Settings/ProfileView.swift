@@ -8,9 +8,9 @@ import SwiftUI
 /// university account and cannot be edited; only the photo's look can.
 struct ProfileView: View {
     @Environment(Session.self) private var session
-    @Environment(CareerService.self) private var career
-    @Environment(CareersService.self) private var careers
-    @Environment(WeBeepService.self) private var weBeep
+    @Environment(CareerModel.self) private var career
+    @Environment(CareersModel.self) private var careers
+    @Environment(WeBeepModel.self) private var weBeep
     @Environment(LoginMethodMemory.self) private var loginMemory
     @Environment(\.openURL) private var openURL
 

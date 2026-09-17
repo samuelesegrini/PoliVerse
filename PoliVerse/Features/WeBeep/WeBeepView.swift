@@ -2,16 +2,16 @@ import SwiftUI
 
 /// Tab-level entry point: pick a course, then see its materials.
 struct WeBeepView: View {
-    @Environment(CourseService.self) private var courses
+    @Environment(CourseModel.self) private var courses
     @Environment(Session.self) private var session
-    @Environment(WeBeepService.self) private var weBeep
+    @Environment(WeBeepModel.self) private var weBeep
 
     @State private var showingLogin = false
     @State private var year: String?
     @State private var showingHidden = false
-    @Environment(CareerService.self) private var career
-    @Environment(StudyProgrammeService.self) private var programmes
-    @Environment(CareersService.self) private var careers
+    @Environment(CareerModel.self) private var career
+    @Environment(StudyProgrammeModel.self) private var programmes
+    @Environment(CareersModel.self) private var careers
     @State private var originFilter: OriginFilter = .all
     @State private var overrides = EnrolmentOverrides.all()
 
@@ -178,7 +178,7 @@ struct WeBeepView: View {
                 await careers.load()
                 let current = session.student?.matricola
                 otherPlans = careers.careers.filter { $0.matricola != current }.compactMap { other in
-                    CareerService.cachedLibretto(account: other.matricola).map {
+                    CareerModel.cachedLibretto(account: other.matricola).map {
                         EnrolmentOrigin.Plan(matricola: other.matricola, isCurrent: false, libretto: $0)
                     }
                 }

@@ -478,7 +478,7 @@ measurement. Remaining launch items:
 | `PoliVerseApp.init()` builds ~20 services eagerly | `PoliVerse/App/PoliVerseApp.swift:33-117` | measure first; only services with I/O in `init` matter. The State-macro change below may already help |
 | `@State` holding `@Observable` classes | same file | **[iOS 27 SDK]** "classes initialized and stored using State properties are now lazy … only initialized once", back-deployed to iOS 17 ([What's new in SwiftUI, WWDC26](https://developer.apple.com/videos/play/wwdc2026/269/)). Here the values are assigned in `App.init`, which runs once anyway, so expect no launch change; building with Xcode 27 may surface the new "use before initialization" error if a default is also given |
 | Metric subscription deferred to `.task` | `PoliVerseApp.swift:166` | move into `init` (1.2) |
-| `LaunchMetrics.measure` never called | `PoliVerse/Services/LaunchMetrics.swift:36` | wrap `session.restore()` and first cached render, or delete |
+| `LaunchMetrics.measure` never called | `PoliVerse/Model/Diagnostics/LaunchMetrics.swift:36` | wrap `session.restore()` and first cached render, or delete |
 | No field number for the real "ready" moment | `RootView.swift:25` | extended launch around `session.restore()` (1.7) |
 
 No new public launch API exists in iOS 27 beyond MetricKit's measurement, which
@@ -515,7 +515,7 @@ PoliVerse findings (static reading; confirm with the SwiftUI instrument):
 
 | Finding | Where | Why it matters | Fix |
 | --- | --- | --- | --- |
-| Week strip filters and sorts the day's events **per day, per body evaluation** | `PoliVerse/Features/Calendar/CalendarView.swift:119` calls `agenda.events(on:)` which filters + sorts all events (`PoliVerse/Services/AgendaService.swift:199-204`) | 7 × O(n log n) on the main thread each time the view updates | use `daysWithEvents()` (`AgendaService.swift:208`) once, or cache a `[Date: [AgendaEvent]]` in `AgendaService` when `events` changes |
+| Week strip filters and sorts the day's events **per day, per body evaluation** | `PoliVerse/Features/Calendar/CalendarView.swift:119` calls `agenda.events(on:)` which filters + sorts all events (`PoliVerse/Model/Timetable/AgendaService.swift:199-204`) | 7 × O(n log n) on the main thread each time the view updates | use `daysWithEvents()` (`AgendaService.swift:208`) once, or cache a `[Date: [AgendaEvent]]` in `AgendaService` when `events` changes |
 | `dayEvents` recomputed in body the same way | `CalendarView.swift:36`, `HomeView.swift:33` | same | same cache |
 | `AnyView` | none found | — | keep it that way |
 | Lazy containers | `HomeView.swift:39`, `CalendarView.swift:168` use `LazyVStack`; 52 `ScrollView`/`List` sites vs 4 lazy stacks | eager `VStack` inside long `ScrollView`s builds every row | audit the long lists (`NewsView`, `NoticesView`, `ExamUpdatesView`, `CourseDetailView`) with the SwiftUI instrument before changing |
@@ -547,12 +547,12 @@ is unmeasured.
 
 | # | Finding | Where | Fix |
 | --- | --- | --- | --- |
-| H1 | `PoliMiAPI` is a `nonisolated final class`; `send(_:as:)` decodes JSON after `await session.data(for:)`. Called from `@MainActor` services, the decode runs on the main actor | `PoliVerse/Services/PoliMiAPI.swift:176-190` | mark the decoding helper `@concurrent`, or make `send` `@concurrent` (its arguments and result are `Sendable`) |
+| H1 | `PoliMiAPI` is a `nonisolated final class`; `send(_:as:)` decodes JSON after `await session.data(for:)`. Called from `@MainActor` services, the decode runs on the main actor | `PoliVerse/Model/Support/PoliMiAPI.swift:176-190` | mark the decoding helper `@concurrent`, or make `send` `@concurrent` (its arguments and result are `Sendable`) |
 | H2 | Services decode again themselves on the main actor | `NewsService.swift:84`, `NoticeService.swift:84,115`, `CareerService.swift:269,287`, `CareersService.swift:56`, `RoomsService.swift:137`, `RoomFacilitiesService.swift:106`, `FreeRoomsService.swift:350`, `CampusMapService.swift:136`, `WeBeepAPI.swift:72,79`, `ServiceDirectory.swift:220,268` | a `@concurrent static func decode<T: Decodable & Sendable>` helper next to `PoliMiAPI` |
 | H3 | Every payload is parsed **a second time** just to log its shape, at `.notice` | `JSONShape.describe(data)` at 6 sites, e.g. `NewsService.swift:82`, `CareerService.swift:268,286` | wrap in `#if DEBUG`, or log at `.debug`. Whether OSLog skips evaluating a `.notice` argument is not documented; notice is persisted, so assume it runs **[unverified]** |
 | H4 | `OfflineStore.save` encodes and writes `.atomic` synchronously; its callers are main-actor services | `Shared/OfflineStore.swift:110-118`; callers `AgendaService.swift:118`, `CareerService.swift:228,257`, `CourseService.swift:109,129`, `NewsService.swift:93`, `NoticeService.swift:92`, `WeBeepService.swift:367`, `FreeRoomsService.swift:281`, `UpdateFeed.swift:60,186`, `ActionQueue.swift:158` | give `OfflineStore` an async `@concurrent` save (the type is already `Sendable`), or route writes through an actor that coalesces repeated saves of the same slot |
-| H5 | `ISO8601DateFormatter()` allocated twice **per parsed value** | `PoliVerse/Models/Notice.swift:137-138` | `static let` formatters, as `PoliMiDate` already does (`Shared/AgendaEvent.swift:201-216`); or `Date.ISO8601FormatStyle` |
-| H6 | `NSRegularExpression` compiled on every call | `PoliVerse/Models/HTMLScraper.swift:103,112`, `HTMLText.swift:276`, `ResultsFileReader.swift:121` | cache compiled patterns per pattern string (the type is `nonisolated`, so a `Mutex`-guarded dictionary or static lets) |
+| H5 | `ISO8601DateFormatter()` allocated twice **per parsed value** | `PoliVerse/Model/Updates/Notice.swift:137-138` | `static let` formatters, as `PoliMiDate` already does (`Shared/AgendaEvent.swift:201-216`); or `Date.ISO8601FormatStyle` |
+| H6 | `NSRegularExpression` compiled on every call | `PoliVerse/Model/Support/HTMLScraper.swift:103,112`, `HTMLText.swift:276`, `ResultsFileReader.swift:121` | cache compiled patterns per pattern string (the type is `nonisolated`, so a `Mutex`-guarded dictionary or static lets) |
 | H7 | `OfflineStore.url(…)` runs a regex replacement on the account for every read and write | `Shared/OfflineStore.swift:101-104` | compute the sanitised account once per store/slot |
 | H8 | Widget reload after every service save, all kinds | `AgendaService.swift:122`, `CareerService.swift:258`, `FreeRoomsService.swift:284` — `reloadAllTimelines()` | see 3.7 |
 
@@ -720,7 +720,7 @@ nothing leaves the device.
 - No subscription in the widget extension in this phase.
 - No `Info.plist` or entitlement changes; no upload.
 
-**Step 1.1 — `PoliVerse/Services/ReportArchive.swift` (new)**
+**Step 1.1 — `PoliVerse/Model/Diagnostics/ReportArchive.swift` (new)**
 
 ```swift
 import Foundation
@@ -776,7 +776,7 @@ Test: `PoliVerseTests/ReportArchiveTests.swift` — temp directory, store 70
 small JSON blobs, assert 60 remain and the oldest were removed; assert the byte
 cap; assert `summary()` counts. Same style as `CachedSlotTests.swift`.
 
-**Step 1.2 — `PoliVerse/Services/PerformanceMonitor.swift` (new; replaces `LaunchMetrics.swift`)**
+**Step 1.2 — `PoliVerse/Model/Diagnostics/PerformanceMonitor.swift` (new; replaces `LaunchMetrics.swift`)**
 
 ```swift
 import MetricKit
@@ -832,7 +832,7 @@ nonisolated final class LegacySubscriber: NSObject, MXMetricManagerSubscriber, S
   after the archive call; on iOS 27 log `timeToFirstDraw` /
   `optimizedTimeToFirstDraw` / `extendedLaunch` bucket counts from
   `report.intervalEntries.fullDayEntry`.
-- Delete `PoliVerse/Services/LaunchMetrics.swift` once its content has moved;
+- Delete `PoliVerse/Model/Diagnostics/LaunchMetrics.swift` once its content has moved;
   its doc comment's history belongs at the top of the new file.
 
 **Step 1.3 — wire it in `PoliVerse/App/PoliVerseApp.swift`**
@@ -867,7 +867,7 @@ if #available(iOS 27, *) {
   spelling of `MXLaunchTaskID` construction is **[unverified]**: check
   `MXMetricManager.h` before writing it.
 
-**Step 1.5 — signposts: `PoliVerse/Services/PerfSignpost.swift` (new)**
+**Step 1.5 — signposts: `PoliVerse/Model/Diagnostics/PerfSignpost.swift` (new)**
 
 ```swift
 nonisolated enum PerfSignpost {

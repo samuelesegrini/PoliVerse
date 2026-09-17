@@ -14,9 +14,9 @@ struct TodaySectionView: View {
     var opensDetails = false
 
     @Environment(\.shell) private var shell
-    @Environment(AgendaService.self) private var agenda
+    @Environment(AgendaModel.self) private var agenda
     @Environment(UpdateFeed.self) private var updates
-    @Environment(CareerService.self) private var career
+    @Environment(CareerModel.self) private var career
     @Environment(\.locale) private var locale
     @Environment(\.colorScheme) private var scheme
 

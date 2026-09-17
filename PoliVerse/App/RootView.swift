@@ -40,7 +40,7 @@ struct RootView: View {
             await PerformanceMonitor.trackLaunch("session-restore") {
                 let interval = PerfSignpost.begin(.sessionRestore)
                 defer { PerfSignpost.end(interval) }
-                await session.restore()
+                await session.login.restore()
             }
             // After the restore, not before: a token in the Keychain is what
             // says this install predates the onboarding.

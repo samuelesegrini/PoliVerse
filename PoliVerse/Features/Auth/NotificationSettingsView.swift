@@ -15,9 +15,9 @@ import UserNotifications
 ///    *not when* — each kind with its icon and a line saying when it arrives,
 ///    so a toggle is never a bare word the reader has to interpret.
 struct NotificationSettingsView: View {
-    @Environment(NotificationService.self) private var notifications
-    @Environment(AgendaService.self) private var agenda
-    @Environment(CareerService.self) private var career
+    @Environment(NotificationModel.self) private var notifications
+    @Environment(AgendaModel.self) private var agenda
+    @Environment(CareerModel.self) private var career
     @Environment(UpdateFeed.self) private var feed
     @Environment(\.openURL) private var openURL
     @Environment(\.locale) private var locale

@@ -16,7 +16,7 @@ struct RoomFacilitiesSection: View {
     /// whole `Classroom` so the free-rooms detail, which holds a schedule
     /// instead, can show the same sections.
     let roomID: String?
-    @Environment(RoomFacilitiesService.self) private var facilities
+    @Environment(RoomFacilitiesModel.self) private var facilities
     /// Whether the fetch has been tried for ``roomID``. Both endpoints
     /// failing leaves nothing loaded, and without this the placeholder would
     /// spin for as long as the screen was open.
@@ -140,10 +140,10 @@ struct ClassroomDetailView: View {
 // MARK: - Previews
 
 #Preview("Dettaglio aula") {
-    ClassroomDetailView(room: MockData.classrooms()[0]).previewInNavigation()
+    ClassroomDetailView(room: Classroom.samples()[0]).previewInNavigation()
 }
 
 #Preview("Dotazioni") {
-    List { RoomFacilitiesSection(roomID: MockData.classrooms()[0].occupancyID) }
+    List { RoomFacilitiesSection(roomID: Classroom.samples()[0].occupancyID) }
         .previewEnvironment()
 }

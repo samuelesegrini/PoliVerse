@@ -127,16 +127,22 @@ PoliVerse/
                           StudyPlan.swift · StudyProgramme.swift
     Updates/              ExamUpdate.swift · UpdatesModel.swift · FeedItem.swift
                           Notice.swift · NewsItem.swift · NotificationPlan.swift
-    Identity/             User.swift · IdentityModel.swift · AuthModel.swift
-                          Tokens.swift · PoliMiOAuth.swift · LoginWebKit.swift · CieID.swift
+    Identity/             User.swift · Session.swift · PoliMiOAuth.swift
+                          LoginWebKit.swift · CieID · SPIDCatalogue · Onboarding
+    Sync/                 what was changed offline, and when to refresh
+                          PendingChanges · ActionQueue · OptimisticFlags
+                          FreshnessCoordinator · LoadWindow · DataStatus
     Platform/             SpotlightIndex · LiveActivityController · WidgetReloader
                           NotificationService · CalendarExporter · BackgroundRefresh
     Diagnostics/          DiagnosticsLog · DiagnosticsReport · ConnectionProbe
                           StorageAudit · PerformanceMonitor · PerfSignpost
-    Support/              shared by every area, depends on none of them
-                          PoliMiAPI · ServiceDirectory · DiskCache · OfflineStore
-                          KeychainStore · ActionQueue · HTMLText · HTMLScraper
-                          RegexCache · JSONValue · SearchMatch
+    <Area>/Samples.swift  the area's sample data, as extensions on its own
+                          types — Course.samples, ExamSession.samples(now:)
+    Support/              shared by every area, names none of them
+                          PoliMiAPI · ServiceDirectory · PoliMiProfile
+                          Tokens · TokenStore · KeychainStore · DiskCache
+                          HTMLText · HTMLScraper · RegexCache · JSONValue
+                          SearchMatch · ResourceLoader · BackgroundJSON · NetworkMonitor
   Shared/                 app + widget extension                 (unchanged)
 ```
 
@@ -158,15 +164,27 @@ it is pure. A folder should not need a glossary to be read correctly.
 ## 4. Three rules, in place of a matrix
 
 1. **`Support/` names no area.** If something in `Support/` needs to know about
-   Carriera, it belongs in `Model/Career/`.
-2. **An area names no other area.** Where two must meet — a course and its
-   sittings — the view that shows both does the meeting, or a pure type in
-   `Support/` takes both as arguments.
-3. **Nothing under `Model/` imports SwiftUI.** True today except for one
-   misplaced file; a grep keeps it true.
+   Carriera, it belongs in `Model/Career/`. **Enforced.**
+2. **The areas do not get more tangled.** Not "an area names no other area":
+   that was this document's first draft, and measuring it killed it — **every
+   area names between two and seven others, 52 edges in all.** Reaching zero
+   is a rewrite, not a move, and a rule nobody can satisfy is decoration. So
+   the edge count is recorded and the check fails only if it **grows**. The
+   direction of travel is enforced; today's state is not pretended away.
+3. **Nothing under `Model/` imports SwiftUI.** **Enforced**, and true as of the
+   move: the one file that broke it, `AuthWebView`, was a view and now lives
+   with the views.
 
-All three are greppable. A five-line script in CI is enough, and can be added
-before anything moves, so the rules are in force while the moving happens.
+`scripts/check-model-layer.sh` is all three, in bash and grep. It needs no
+Xcode and no Swift toolchain, which makes it the one check in this repository
+that can run on any machine, and in whatever CI it eventually gets.
+
+Two rules earned their keep the moment they were first run. Rule 1 caught
+`PoliMiAPI` reaching for `TokenStore` and `DataStatus` reaching for `Session`.
+So the credential store (`Tokens`, `TokenStore`, `KeychainStore`) and the
+transport's header values (`PoliMiProfile`) went to `Support/`, where
+infrastructure belongs, and `DataStatus` went to `Sync/`, whose subject is
+freshness. None of that was visible from reading the folders.
 
 ---
 
@@ -182,9 +200,10 @@ Then three steps, three pull requests:
 
 | Step | What | Touches logic | Effort |
 | --- | --- | :-: | --- |
-| **1** | Split the six files that hold both a DTO and a domain type; the DTOs become `Wire.swift` in their area, `internal`. | no | half a day |
-| **2** | `git mv` the 110 files into `Model/<Area>/`, and rename `…Service` to `…Model` / `…API` where the name lies. `AuthWebView` goes to the views. | no | a day, one PR |
-| **3** | Split `Session` into two: **who the student is** and **how they got in**. The sample-data flag goes with the first. | **yes** | a day |
+| **1** | Split the six files that hold both a DTO and a domain type; the DTOs become `Wire.swift` in their area. **Done.** | no | done |
+| **2** | `git mv` the 110 files into `Model/<Area>/`. `AuthWebView` goes to the views. **Done** — see below. | no | done |
+| **2b** | Rename `…Service` to `…Model` where the name lies. **Done** — all sixteen were `@Observable`, so all sixteen are models; `…API` stayed for the two that already said so. | no | done |
+| **3** | Split `Session` into two: **who the student is** and **how they got in**. **Done, partly** — see below. | **yes** | done, with a remainder |
 
 Nothing else. `Session` is split into two rather than four because a type for
 one boolean is not a type. The two interfaces converge when it is decided which
@@ -200,6 +219,65 @@ flowchart LR
 
 Every step is a `git mv` plus renames, so a step is abandoned with
 `git revert` and nothing is left behind.
+
+### What step 2 actually did
+
+110 files, `git mv` only — git recorded all 110 as renames and nothing else
+changed. `project.pbxproj` was not touched and did not need to be: the
+synchronized root group picks the new tree up by path, exactly as predicted.
+71 path references in `docs/` were updated to match.
+
+Areas as they came out, largest first: Support 15, Identity 12, Materials 12,
+Diagnostics 12, Updates 10, Places 9, Career 8, Study 8, Courses 6, Platform 6,
+Sync 6, Timetable 4 — 109 files, plus `AuthWebView` to the views.
+
+### The sample data
+
+`MockData` was 392 lines and one `enum` naming every area, which is why it
+needed a folder of its own: rule 1 would not have it in `Support/`. It is gone.
+Each area now carries its own `Samples.swift` — `extension Course { static let
+samples }`, `extension ExamSession { static func samples(now:) }` — so the
+sample data sits beside the type it describes, and the folder that existed only
+to hold the exception no longer exists.
+
+The straight split would have made one thing worse. `"Basi di Dati"` and its
+code `097785` were typed out **six times across five areas**; in one file you
+could at least see the copies together, and in six folders you could not. So
+the courses became the spine: `Course.samples`, with a name for each, and every
+other area's samples take the name and the code from it. **No course code is
+written out by hand twice anywhere in the app.**
+
+That cost one edge — `Timetable -> Courses`, the ratchet caught it at 53 — and
+it is written down in `scripts/model-layer-baseline.txt` with the reason. One
+edge for one source of truth, on data a student actually sees: sample data
+ships here, it is what "Esplora con dati di esempio" shows.
+
+### What step 3 did, and did not do
+
+`Session` was 387 lines. It is now 185, and `LoginFlow` is 241: the restore at
+launch, the login, the logout and the career re-login moved out whole, bodies
+unchanged.
+
+The usage data decided the cut. Of roughly 150 uses of a `Session` across the
+app, **140 are `student` and `useMockData`** — who the student is, and which
+mode the app is in. The OAuth machinery is reached from thirteen places. So
+the identity half kept the name and the call sites, and the login half became
+its own type.
+
+`LoginFlow` is reached as `session.login`, not injected on its own. That is
+the part that is deliberately unfinished, and it matters: **`Session`'s fan-in
+is still 49.** Separating the code is done; separating the dependencies means
+injecting `LoginFlow` into the six views that drive a login, which is a
+one-line change per view — and it is the one change that wants a compiler,
+because the login path is the only path in this app that no test can
+exercise. It needs a real Politecnico account.
+
+`Sync/` was not in the plan. It exists because rule 1 found two files —
+`PendingChanges` and `FreshnessCoordinator` — that name four to six area
+models each and so could not be shared infrastructure. Their subject is
+"what was changed offline, and when to refresh", which is an area like any
+other. A rule that produces a folder nobody thought of is a rule doing its
+job.
 
 ---
 

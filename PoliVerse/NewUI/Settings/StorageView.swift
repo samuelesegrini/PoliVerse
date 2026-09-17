@@ -158,7 +158,7 @@ struct DataStorageView: View {
         .confirmationDialog("Eliminare tutti i materiali scaricati?",
                             isPresented: $confirmingMaterials, titleVisibility: .visible) {
             Button("Elimina", role: .destructive) {
-                FileDownloadService.clearStorage()
+                FileDownloadModel.clearStorage()
                 Task { await measure() }
             }
         } message: {

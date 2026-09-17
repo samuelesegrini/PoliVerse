@@ -9,7 +9,7 @@ import SwiftUI
 /// exams are missing because the app is pointed at the triennale they
 /// finished.
 struct CareerStepView: View {
-    @Environment(CareersService.self) private var careers
+    @Environment(CareersModel.self) private var careers
     @Environment(Session.self) private var session
     let advance: () -> Void
 

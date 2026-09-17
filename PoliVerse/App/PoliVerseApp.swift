@@ -4,24 +4,24 @@ import UserNotifications
 @main
 struct PoliVerseApp: App {
     @State private var session: Session
-    @State private var courses: CourseService
-    @State private var agenda: AgendaService
-    @State private var career: CareerService
+    @State private var courses: CourseModel
+    @State private var agenda: AgendaModel
+    @State private var career: CareerModel
     @State private var updates: UpdateFeed
-    @State private var weBeep: WeBeepService
+    @State private var weBeep: WeBeepModel
     @State private var cieID = CieIDRouter()
-    @State private var downloads = FileDownloadService()
-    @State private var rooms: RoomsService
-    @State private var notices: NoticeService
-    @State private var news: NewsService
-    @State private var freeRooms: FreeRoomsService
-    @State private var facilities = RoomFacilitiesService()
-    @State private var campusMap: CampusMapService
-    @State private var careers: CareersService
-    @State private var notifications: NotificationService
-    @State private var manifesti: ManifestiService
-    @State private var personalTimetable: PersonalTimetableService
-    @State private var programmes: StudyProgrammeService
+    @State private var downloads = FileDownloadModel()
+    @State private var rooms: RoomsModel
+    @State private var notices: NoticeModel
+    @State private var news: NewsModel
+    @State private var freeRooms: FreeRoomsModel
+    @State private var facilities = RoomFacilitiesModel()
+    @State private var campusMap: CampusMapModel
+    @State private var careers: CareersModel
+    @State private var notifications: NotificationModel
+    @State private var manifesti: ManifestiModel
+    @State private var personalTimetable: PersonalTimetableModel
+    @State private var programmes: StudyProgrammeModel
     @State private var network: NetworkMonitor
     @State private var pending: PendingChanges
     @State private var liveActivity = LiveActivityController()
@@ -58,43 +58,43 @@ struct PoliVerseApp: App {
         // Through locals, like the rest: the `@State` wrappers are not
         // readable until the struct is fully initialised, and the freshness
         // registrations below need the instances themselves.
-        let notices = NoticeService(session: session)
+        let notices = NoticeModel(session: session)
         _notices = State(initialValue: notices)
-        let careers = CareersService(session: session)
+        let careers = CareersModel(session: session)
         _careers = State(initialValue: careers)
-        let news = NewsService(session: session)
+        let news = NewsModel(session: session)
         _news = State(initialValue: news)
         // Reads the public catalogue rather than the API client: occupancy
         // comes from maps_rest, which needs no token.
-        let rooms = RoomsService()
+        let rooms = RoomsModel()
         _rooms = State(initialValue: rooms)
-        let manifesti = ManifestiService()
+        let manifesti = ManifestiModel()
         _manifesti = State(initialValue: manifesti)
-        let freeRooms = FreeRoomsService(catalogue: rooms)
+        let freeRooms = FreeRoomsModel(catalogue: rooms)
         _freeRooms = State(initialValue: freeRooms)
-        _campusMap = State(initialValue: CampusMapService(catalogue: rooms, freeRooms: freeRooms))
+        _campusMap = State(initialValue: CampusMapModel(catalogue: rooms, freeRooms: freeRooms))
         // Before the two services that write to it.
         let updates = UpdateFeed()
         _updates = State(initialValue: updates)
-        let weBeep = WeBeepService(session: session, feed: updates)
+        let weBeep = WeBeepModel(session: session, feed: updates)
         _weBeep = State(initialValue: weBeep)
-        let courses = CourseService(session: session, weBeep: weBeep)
+        let courses = CourseModel(session: session, weBeep: weBeep)
         _courses = State(initialValue: courses)
 
         // Registered here, at the end of init: it has to happen before the
         // app finishes launching — registering later throws — and it captures
         // the services directly rather than through the State wrappers, which
         // are not readable until the struct is fully initialised.
-        let agenda = AgendaService(session: session)
+        let agenda = AgendaModel(session: session)
         _agenda = State(initialValue: agenda)
-        _personalTimetable = State(initialValue: PersonalTimetableService(manifesti: manifesti, agenda: agenda))
-        let career = CareerService(session: session, feed: updates)
+        _personalTimetable = State(initialValue: PersonalTimetableModel(manifesti: manifesti, agenda: agenda))
+        let career = CareerModel(session: session, feed: updates)
         _career = State(initialValue: career)
-        let programmes = StudyProgrammeService(manifesti: manifesti, session: session, career: career,
+        let programmes = StudyProgrammeModel(manifesti: manifesti, session: session, career: career,
                                                careers: careers)
         _programmes = State(initialValue: programmes)
         courses.programme = programmes
-        let notifications = NotificationService()
+        let notifications = NotificationModel()
         _notifications = State(initialValue: notifications)
         // A change a load notices is news: delivered as it is found, from the
         // foreground or from a background refresh alike.

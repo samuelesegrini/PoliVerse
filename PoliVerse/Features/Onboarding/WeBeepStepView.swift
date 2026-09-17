@@ -7,8 +7,8 @@ import SwiftUI
 /// simply empty with a login button on it, which reads as a broken feature
 /// rather than a second front door.
 struct WeBeepStepView: View {
-    @Environment(WeBeepService.self) private var weBeep
-    @Environment(CourseService.self) private var courses
+    @Environment(WeBeepModel.self) private var weBeep
+    @Environment(CourseModel.self) private var courses
     let advance: () -> Void
 
     @State private var showingLogin = false

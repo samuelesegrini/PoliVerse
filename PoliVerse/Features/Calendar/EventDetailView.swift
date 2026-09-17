@@ -237,7 +237,7 @@ private struct FlowTags: View {
 // MARK: - Previews
 
 #Preview("Lezione") {
-    EventDetailView(event: MockData.agendaEvents(around: .now)[0])
+    EventDetailView(event: AgendaEvent.samples(around: .now)[0])
         .previewInNavigation()
 }
 

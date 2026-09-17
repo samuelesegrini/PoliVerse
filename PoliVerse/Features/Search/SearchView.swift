@@ -9,13 +9,13 @@ import SwiftUI
 /// because reaching the rest would mean 22 requests per keystroke, and the
 /// footer says so rather than leaving the gap to be discovered.
 struct SearchView: View {
-    @Environment(CourseService.self) private var courses
-    @Environment(AgendaService.self) private var agenda
-    @Environment(CareerService.self) private var career
-    @Environment(RoomsService.self) private var rooms
-    @Environment(NewsService.self) private var news
-    @Environment(NoticeService.self) private var notices
-    @Environment(WeBeepService.self) private var weBeep
+    @Environment(CourseModel.self) private var courses
+    @Environment(AgendaModel.self) private var agenda
+    @Environment(CareerModel.self) private var career
+    @Environment(RoomsModel.self) private var rooms
+    @Environment(NewsModel.self) private var news
+    @Environment(NoticeModel.self) private var notices
+    @Environment(WeBeepModel.self) private var weBeep
     @Environment(\.locale) private var locale
 
     @State private var query = ""

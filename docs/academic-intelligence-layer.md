@@ -22,10 +22,10 @@ repo. Etichette:
 
 | Domanda | Risposta breve |
 | --- | --- |
-| **Fattibile?** | **Sì, on-device**, per la parte che conta. I dati ufficiali dell'appello arrivano già strutturati e con un id stabile (`c_appello`, date, aula, stato iscrizione, esito, `rifiutabile`, `hasCorrezioni`) da `iae/v1/insegn` (`PoliVerse/Models/Career.swift:143-163`, [polimi-api-research.md §4c](polimi-api-research.md)); WeBeep espone `core_course_get_updates_since` / `core_course_check_updates` e `timemodified` per file ([sorgente Moodle 4.5](https://github.com/moodle/moodle/blob/MOODLE_405_STABLE/course/externallib.php)). Il rilevamento cambiamenti è quindi in larga parte **deterministico**. |
+| **Fattibile?** | **Sì, on-device**, per la parte che conta. I dati ufficiali dell'appello arrivano già strutturati e con un id stabile (`c_appello`, date, aula, stato iscrizione, esito, `rifiutabile`, `hasCorrezioni`) da `iae/v1/insegn` (`PoliVerse/Model/Career/Career.swift:143-163`, [polimi-api-research.md §4c](polimi-api-research.md)); WeBeep espone `core_course_get_updates_since` / `core_course_check_updates` e `timemodified` per file ([sorgente Moodle 4.5](https://github.com/moodle/moodle/blob/MOODLE_405_STABLE/course/externallib.php)). Il rilevamento cambiamenti è quindi in larga parte **deterministico**. |
 | **Permesso?** | **Zona grigia, nessuna autorizzazione esplicita trovata.** Il Regolamento PoliMi D.R. 6751/2025 vieta a "erogatori di servizi" di raccogliere e **memorizzare credenziali** (art. 19 c.6) e impone di non renderle accessibili a terzi (art. 21 c.2) ([PDF](https://www.normativa.polimi.it/fileadmin/user_upload/regolamenti/privacy_e_sicurezza/REGOLAMENTO_trattamento_dati_e_ICT__marzo2025.pdf)). Nessuna norma su client non ufficiali o scraping trovata [NON TROVATO]. Conseguenza pratica: **un collector server-side con credenziali/token degli studenti è da escludere**; un'app che usa la sessione dello studente sul suo dispositivo resta nel perimetro in cui PoliVerse opera già. |
 | **Ne vale la pena?** | **In parte.** Alto valore / basso costo: timeline dell'appello dai dati ufficiali + notifiche di transizione di stato (iscrizioni aperte/chiudono, aula pubblicata, esito pubblicato, finestra di rifiuto) + "novità nel corso WeBeep" con etichette da regole. Basso valore / alto rischio: parsing di PDF/Excel di esiti con dati di altri studenti, entity resolution probabilistica completa, LLM, server con push. |
-| **Approccio raccomandato** | Tutto sul dispositivo, sopra i servizi esistenti: snapshot → diff deterministico → **event log** locale → policy di notifica che estende `NotificationPlan` (`PoliVerse/Models/NotificationPlan.swift:52`). Identità esame = `c_appello`. Identità corso = codice insegnamento + AA, collegata a WeBeep solo con match Exact/High. Classificazione documenti a regole (nome file, sezione, regex italiane); Foundation Models solo come fallback opzionale su testo già locale e mai per decidere un'auto-associazione. Nessun server. |
+| **Approccio raccomandato** | Tutto sul dispositivo, sopra i servizi esistenti: snapshot → diff deterministico → **event log** locale → policy di notifica che estende `NotificationPlan` (`PoliVerse/Model/Updates/NotificationPlan.swift:52`). Identità esame = `c_appello`. Identità corso = codice insegnamento + AA, collegata a WeBeep solo con match Exact/High. Classificazione documenti a regole (nome file, sezione, regex italiane); Foundation Models solo come fallback opzionale su testo già locale e mai per decidere un'auto-associazione. Nessun server. |
 | **MVP** | "Novità d'esame": (1) diff di `iae/v1/insegn` → eventi + notifiche; (2) diff WeBeep per i corsi dell'AA corrente → "nuovi materiali" con tag *Soluzioni / Esiti / Avviso esame*; (3) schermata timeline dell'appello (c'è già lo stub `PoliVerse/TestUI/ExamUI.swift`). Vedi §21. |
 | **Rischi principali** | (1) nessuna garanzia di tempestività: `BGAppRefreshTask` è a discrezione del sistema ([Apple](https://developer.apple.com/documentation/backgroundtasks/bgapprefreshtask), [data-freshness.md](data-freshness.md)); (2) dati personali di terzi nei file di esiti (GDPR art. 5.1.c minimizzazione); (3) API private non documentate che cambiano senza preavviso ([endpoint-status.md "What moved"](endpoint-status.md)). |
 
@@ -38,12 +38,12 @@ momenti diversi, senza identificatore comune:
 
 | Informazione | Dove appare oggi | Fonte |
 | --- | --- | --- |
-| Appello esiste, date, finestra iscrizioni, aula | Servizi Online → iscrizione esami (`iae`) | `PoliVerse/Models/Career.swift:154-163` (`d_app`, `ora_ok`, `d_apertura`, `d_chiusura`, `xaula`) |
-| Iscritto / esito / rifiutabile | stesso servizio, `iscrizioneAttiva` | `PoliVerse/Models/Career.swift:144-152` |
+| Appello esiste, date, finestra iscrizioni, aula | Servizi Online → iscrizione esami (`iae`) | `PoliVerse/Model/Career/Career.swift:154-163` (`d_app`, `ora_ok`, `d_apertura`, `d_chiusura`, `xaula`) |
+| Iscritto / esito / rifiutabile | stesso servizio, `iscrizioneAttiva` | `PoliVerse/Model/Career/Career.swift:144-152` |
 | Correzioni / compito corretto | `iae/v1/prove/correzioni/{c_appello}` (blob) | [polimi-api-research.md §4c](polimi-api-research.md) |
-| Voto registrato nel libretto | `piano_studente/elencoinsegnamenti` | `PoliVerse/Services/CareerService.swift:326-341`, `PoliVerse/Models/Libretto.swift:9-26` |
+| Voto registrato nel libretto | `piano_studente/elencoinsegnamenti` | `PoliVerse/Model/Career/CareerService.swift:326-341`, `PoliVerse/Model/Career/Libretto.swift:9-26` |
 | Esame nel calendario | agenda, `typeId 2` | [polimi-auth.md "Agenda"](polimi-auth.md) |
-| Avvisi del docente, soluzioni, "Risultati appello del…" | WeBeep (sezioni, forum Annunci, file) | [webeep.md](webeep.md), `PoliVerse/Services/WeBeepService.swift:159-183` |
+| Avvisi del docente, soluzioni, "Risultati appello del…" | WeBeep (sezioni, forum Annunci, file) | [webeep.md](webeep.md), `PoliVerse/Model/Materials/WeBeepService.swift:159-183` |
 | Chi insegna il mio scaglione | Manifesto degli studi | [manifesti.md "The scaglione"](manifesti.md) |
 | Email del docente / di sistema | casella @mail.polimi.it | fuori dal perimetro dell'app [DEDOTTO: nessun endpoint mail in `jaf/public/props`, `docs/endpoint-status.md:11-21`] |
 
@@ -53,9 +53,9 @@ di più anni accademici; scopre in ritardo che è uscito un file "Esiti"; deve
 ricordare da solo la scadenza di rifiuto. PoliVerse oggi:
 
 - mostra appelli e stato (`PoliVerse/Features/Home/CourseDetailView.swift:32-36`, `:57-67`);
-- programma promemoria locali per "esame domani" e "iscrizioni in chiusura" (`PoliVerse/Models/NotificationPlan.swift:113-136`);
-- elenca i file WeBeep per sezione, ma **scarta tutto ciò che non è `type == "file"`** (link, label, forum) (`PoliVerse/Services/WeBeepService.swift:163-167`);
-- **non ricorda lo stato precedente**, quindi non può dire "cosa è cambiato": ogni load sovrascrive (`PoliVerse/Services/CareerService.swift:186-187`).
+- programma promemoria locali per "esame domani" e "iscrizioni in chiusura" (`PoliVerse/Model/Updates/NotificationPlan.swift:113-136`);
+- elenca i file WeBeep per sezione, ma **scarta tutto ciò che non è `type == "file"`** (link, label, forum) (`PoliVerse/Model/Materials/WeBeepService.swift:163-167`);
+- **non ricorda lo stato precedente**, quindi non può dire "cosa è cambiato": ogni load sovrascrive (`PoliVerse/Model/Career/CareerService.swift:186-187`).
 
 Quest'ultimo punto è il vero gap: senza uno stato precedente persistito non c'è
 né change detection né notifica di evento.
@@ -84,14 +84,14 @@ né change detection né notifica di evento.
 
 | Livello | Identificatore disponibile | Fonte | Unico? |
 | --- | --- | --- | --- |
-| Insegnamento (catalogo) | codice numerico, es. `097785` | Manifesto `code` (`PoliVerse/Models/Manifesto.swift:18`); WeBeep lo mette nel titolo `"097785 - BASI DI DATI [2025-26]"` (`PoliVerse/Models/Course.swift:101-104`) | **No** tra anni e tra lezione/laboratorio (`PoliVerse/Models/Course.swift:18-24`) |
-| Insegnamento nel piano | `c_insegn_piano`, fallback `c_classe_m` | `PoliVerse/Models/Course.swift:185-199` | per matricola |
-| Edizione / scaglione | modulo con `scaglioneFrom`/`scaglioneTo`, docenti `kDoc` | `PoliVerse/Models/Manifesto.swift:39-52`, `:73-78` | per AA + corso di studi |
-| Istanza WeBeep | `MoodleCourse.id` (numerico) + `shortname`, `fullname`, `startdate`, `enddate` | `PoliVerse/Models/Moodle.swift:19-27` | **Sì**, ma una per anno/docente |
+| Insegnamento (catalogo) | codice numerico, es. `097785` | Manifesto `code` (`PoliVerse/Model/Study/Manifesto.swift:18`); WeBeep lo mette nel titolo `"097785 - BASI DI DATI [2025-26]"` (`PoliVerse/Model/Courses/Course.swift:101-104`) | **No** tra anni e tra lezione/laboratorio (`PoliVerse/Model/Courses/Course.swift:18-24`) |
+| Insegnamento nel piano | `c_insegn_piano`, fallback `c_classe_m` | `PoliVerse/Model/Courses/Course.swift:185-199` | per matricola |
+| Edizione / scaglione | modulo con `scaglioneFrom`/`scaglioneTo`, docenti `kDoc` | `PoliVerse/Model/Study/Manifesto.swift:39-52`, `:73-78` | per AA + corso di studi |
+| Istanza WeBeep | `MoodleCourse.id` (numerico) + `shortname`, `fullname`, `startdate`, `enddate` | `PoliVerse/Model/Materials/Moodle.swift:19-27` | **Sì**, ma una per anno/docente |
 | Classe syllabus | `c_classe` | [manifesti.md](manifesti.md) | per incarico |
 
 Moodle espone anche `idnumber` e `categoryid` sui corsi; PoliVerse non li decodifica
-ancora (`PoliVerse/Models/Moodle.swift:19-27`) [VERIFICATO assenza]. Se WeBeep li
+ancora (`PoliVerse/Model/Materials/Moodle.swift:19-27`) [VERIFICATO assenza]. Se WeBeep li
 valorizza con il codice PoliMi è **da verificare** su un account reale (Open
 questions).
 
@@ -109,17 +109,17 @@ Course (identità logica, stabile negli anni)
 Regole:
 
 1. **Course** esiste solo se c'è un codice insegnamento (dal piano, da IAE o
-   estratto dal titolo WeBeep con `Course.splitCode`, `PoliVerse/Models/Course.swift:135-150`).
+   estratto dal titolo WeBeep con `Course.splitCode`, `PoliVerse/Model/Courses/Course.swift:135-150`).
    Un corso WeBeep senza codice diventa `Course(key: "webeep-only:<id>")` e **non
    viene fuso** con nulla automaticamente.
-2. **Edition** = (codice, AA). L'AA viene da `aa_freq` (IAE, `PoliVerse/Models/Course.swift:190`),
+2. **Edition** = (codice, AA). L'AA viene da `aa_freq` (IAE, `PoliVerse/Model/Courses/Course.swift:190`),
    dal bracket del titolo WeBeep (`Course.academicYear(from:)`, `:164-171`) o da
    `startdate` con `academicYearLabel` (`:157-162`). Lo scaglione, quando noto
    dal Manifesto e dal cognome, discrimina i docenti ([manifesti.md](manifesti.md)).
 3. **LMSInstance** si collega a una Edition con il resolver di §7; più istanze
    per la stessa Edition sono ammesse (lezione + esercitazioni, lab).
 4. Lo studente vede **tutte** le istanze di anni passati sotto lo stesso Course
-   (è ciò che già accade con `academicYears`, `PoliVerse/Services/CourseService.swift:64-66`),
+   (è ciò che già accade con `academicYears`, `PoliVerse/Model/Courses/CourseService.swift:64-66`),
    ma la "edizione corrente" è quella con `aa_freq` del piano.
 
 ---
@@ -138,8 +138,8 @@ ExamKey =
 - `c_appello` è l'id del servizio iscrizioni, usato anche nei path
   `/v1/prove/{c_appello}` e `/v1/prove/correzioni/{c_appello}`
   ([polimi-api-research.md §4c](polimi-api-research.md)); PoliVerse lo usa già
-  come `ExamSession.id` (`PoliVerse/Models/Career.swift:199`) e come chiave di
-  dedup delle notifiche (`PoliVerse/Models/NotificationPlan.swift:117`). [VERIFICATO]
+  come `ExamSession.id` (`PoliVerse/Model/Career/Career.swift:199`) e come chiave di
+  dedup delle notifiche (`PoliVerse/Model/Updates/NotificationPlan.swift:117`). [VERIFICATO]
 - La chiave composita serve solo per esami **visti prima nel calendario o in
   WeBeep** ("Appello del 31 agosto") e non ancora nel portale. Quando arriva il
   record IAE con stesso codice + data, l'entità composita viene **promossa**
@@ -147,7 +147,7 @@ ExamKey =
   Roma (`PoliMiDate`, [polimi-auth.md "The timestamp trap"](polimi-auth.md)).
 - **Mai** usare la data come unica chiave: due appelli nello stesso giorno
   (scritto/orale, parti A/B) esistono [DEDOTTO: `descTipoAppello` distingue il
-  tipo, `PoliVerse/Models/Career.swift:160`].
+  tipo, `PoliVerse/Model/Career/Career.swift:160`].
 
 ### 4.2 Attributi dell'esame e loro fonte autorevole
 
@@ -322,7 +322,7 @@ nonisolated struct AcademicEvent: Codable, Sendable, Identifiable {
     let source: DataSource
     let confidence: MatchConfidence
     let evidence: EvidenceRef
-    let oldValue: JSONValue?              // JSONValue esiste già: PoliVerse/Models/JSONValue.swift
+    let oldValue: JSONValue?              // JSONValue esiste già: PoliVerse/Model/Support/JSONValue.swift
     let newValue: JSONValue?
     var relevance: Relevance              // calcolata dalla policy (§11), non dal detector
     /// Stabile: stesso cambiamento osservato due volte → stesso id logico.
@@ -348,7 +348,7 @@ nonisolated enum EventType: String, Codable, Sendable {
 | `registered` / `unregistered` | `iscrizioneAttiva` nil↔non-nil | IAE | Exact |
 | `roomPublished` / `roomChanged` | `xaula` vuoto→valore / valore→altro | IAE | Exact |
 | `dateChanged` | `d_app`/`ora_ok` diversi per stesso `c_appello` | IAE | Exact |
-| `examWithdrawn` | `c_appello` sparisce **prima** della data (dopo la data è normale, `PoliVerse/Services/CareerService.swift:96-98`) | IAE | High (può essere solo servizio chiuso: Code 6) |
+| `examWithdrawn` | `c_appello` sparisce **prima** della data (dopo la data è normale, `PoliVerse/Model/Career/CareerService.swift:96-98`) | IAE | High (può essere solo servizio chiuso: Code 6) |
 | `teacherCommunication` | nuovo post in forum "Annunci"/news o label modificata nel corso collegato | WeBeep | Exact sull'item, tier del link sull'esame |
 | `examHeld` | temporale: `now > date + 3h` | derivato | Exact |
 | `solutionPublished` | item WeBeep taggato `solutions` collegato all'esame | WeBeep | tier del match (§7) |
@@ -359,7 +359,7 @@ nonisolated enum EventType: String, Codable, Sendable {
 | `gradeRegistered` | riga con `c_insegn`/nome passa da `daSostenere` a `sostenuti` | libretto | High (join per nome/codice) |
 
 La fase dell'esame (`ExamPhase`) è una funzione pura `fold(events) -> ExamPhase`,
-testabile come `NotificationPlan` (`PoliVerse/Models/NotificationPlan.swift:48-52`).
+testabile come `NotificationPlan` (`PoliVerse/Model/Updates/NotificationPlan.swift:48-52`).
 
 ---
 
@@ -391,7 +391,7 @@ correttezza (non confrontare anni diversi) che alle prestazioni. [DEDOTTO]
 
 | Tier | Condizione | Azione |
 | --- | --- | --- |
-| **Exact** | id ufficiale condiviso (`c_appello`, `moodleID` già noto, `Course.moodleID` diretto `PoliVerse/Services/WeBeepService.swift:227`) | collega automaticamente |
+| **Exact** | id ufficiale condiviso (`c_appello`, `moodleID` già noto, `Course.moodleID` diretto `PoliVerse/Model/Materials/WeBeepService.swift:227`) | collega automaticamente |
 | **High** | codice insegnamento + AA uguali, **unico candidato** | collega automaticamente, mostra "collegato automaticamente" |
 | **Probable** | punteggio ≥ soglia alta ma senza codice, oppure codice con ≥2 candidati nello stesso AA | **non** collega; suggerisce con "È questo il corso?" |
 | **Ambiguous** | ≥2 candidati con punteggi entro Δ | non collega; chiede solo se l'utente apre il corso |
@@ -436,14 +436,14 @@ appello di quell'Edition.
 WeBeep `fullname = "097785 - BASI DI DATI [2025-26]"`, `startdate` = 2025-09-22.
 Piano: `c_insegn_piano = 097785`, `aa_freq = 2025/26`, unica Edition.
 → codice ✔ AA ✔ candidati = 1 → **High**, auto-link. (Formato del titolo come in
-`PoliVerse/Models/Course.swift:101-104`.)
+`PoliVerse/Model/Courses/Course.swift:101-104`.)
 
 **Esempio B — Ambiguous → disambiguato a High.**
 Due istanze WeBeep: `"054321 - FISICA [2025-26] - Sez. A-L"` e
 `"054321 - FISICA [2025-26] - Sez. M-Z"`. Studente "Rossi", Manifesto: modulo
 con scaglione `MAA`–`ZZZ` (da, compreso / a, escluso) docente *Bianchi*.
 Regola deterministica secondaria: il cognome cade nello scaglione M–Z
-(`ManifestoModule` `PoliVerse/Models/Manifesto.swift:48-62`) **e** il nome del
+(`ManifestoModule` `PoliVerse/Model/Study/Manifesto.swift:48-62`) **e** il nome del
 docente del Manifesto compare nel `fullname`/partecipanti → un solo candidato →
 **High**. Se il suffisso della sezione non è interpretabile → resta
 **Ambiguous** e si chiede all'utente. [Nomi e formato del suffisso sono
@@ -549,7 +549,7 @@ func diffIAE(old: [Int: ExamDTO], new: [Int: ExamDTO]) -> [AcademicEvent] {
 Guard-rail indispensabili [PROPOSTA]:
 
 - **Mai diffare contro una risposta degradata.** Un `insegn` vuoto per Code 6
-  (`PoliVerse/Services/CareerService.swift:318`, `:372`) o per errore non deve
+  (`PoliVerse/Model/Career/CareerService.swift:318`, `:372`) o per errore non deve
   generare "esame ritirato" per tutti gli appelli: si diffa solo tra due
   snapshot *riusciti*, e le scomparse richiedono conferma in due passate.
 - **Primo avvio = baseline silenziosa**: tutti gli item esistenti diventano
@@ -561,7 +561,7 @@ Guard-rail indispensabili [PROPOSTA]:
 
 - **Text diff** solo su testi piccoli già scaricati dalle API (label, summary di
   sezione, post di forum): diff a righe (Myers) sul testo HTML→plain già
-  prodotto da `HTMLText` (`PoliVerse/Models/HTMLText.swift`). I PDF **non** si
+  prodotto da `HTMLText` (`PoliVerse/Model/Support/HTMLText.swift`). I PDF **non** si
   diffano a testo nell'MVP: si confronta `contentHash`/`timemodified`.
 - **Semantic diff** = regole che mappano un cambio grezzo in un evento di
   dominio:
@@ -577,7 +577,7 @@ Guard-rail indispensabili [PROPOSTA]:
 
 > Nota: `MoodleContent` nel repo decodifica oggi solo `type, filename, filesize,
 > fileurl, timemodified, mimetype` e `MoodleModule` non ha `visible`/`url`/`dates`
-> (`PoliVerse/Models/Moodle.swift:51-66`). Il fingerprint sopra richiede di
+> (`PoliVerse/Model/Materials/Moodle.swift:51-66`). Il fingerprint sopra richiede di
 > aggiungere `filepath`, `timecreated`, `sortorder`, `author`, `visible`,
 > `contentsinfo` (tutti presenti nella risposta Moodle, vedi §8.1).
 
@@ -678,7 +678,7 @@ on-device non è "ospitato fuori" in senso cloud [DEDOTTO]; un LLM cloud è inve
 
 L'esito del **proprio** esame è già esposto in forma strutturata:
 `iscrizioneAttiva.hasEsito`, `xverbEsito`, `verb_esito_number`, `verb_positivo`,
-`rifiutabile` (`PoliVerse/Models/Career.swift:144-152`, `:169-181`). Quindi il
+`rifiutabile` (`PoliVerse/Model/Career/Career.swift:144-152`, `:169-181`). Quindi il
 file "Esiti" su WeBeep **non serve per conoscere il voto**: serve solo come
 **segnale anticipato** ("il docente ha pubblicato qualcosa") nei casi in cui il
 file precede la pubblicazione sul portale. [DEDOTTO]
@@ -721,7 +721,7 @@ third-party dependencies" (`README.md:54`): XLSX è quindi fase ≥3 o si evita.
 
 - **Mai persistere righe di altri studenti.** Il file intero resta solo dove
   già sta oggi se lo studente lo scarica (`FileDownloadService`,
-  `PoliVerse/Services/FileDownloadService.swift:41-52`); l'indice estratto
+  `PoliVerse/Model/Materials/FileDownloadService.swift:41-52`); l'indice estratto
   conserva **solo**: `{examKey, contentHash, found: Bool, ownGrade?}`.
 - Il testo estratto vive in memoria e viene rilasciato a fine analisi; niente
   log di valori (come già fa `NoticeService`: "keys and types, never values",
@@ -748,13 +748,13 @@ third-party dependencies" (`README.md:54`): XLSX è quindi fase ≥3 o si evita.
 ```swift
 nonisolated struct StudentContext: Sendable {
     var enrolledEditions: Set<EditionKey>        // piano + WeBeep AA corrente
-    var bookmarkedCourses: Set<CourseKey>        // Course.isFavourite (PoliVerse/Models/Course.swift:25)
+    var bookmarkedCourses: Set<CourseKey>        // Course.isFavourite (PoliVerse/Model/Courses/Course.swift:25)
     var registeredExams: Set<ExamKey>            // iscrizioneAttiva != nil
     var upcomingExams: [ExamKey: Date]
     var passedCourses: Set<CourseKey>            // libretto sostenuti
     var mutedCourses: Set<CourseKey>
     var quietHours: ClosedRange<Int> = 23...7    // ora di Roma
-    var prefs: NotificationPreferences           // esistente, PoliVerse/Models/NotificationPlan.swift:4
+    var prefs: NotificationPreferences           // esistente, PoliVerse/Model/Updates/NotificationPlan.swift:4
 }
 ```
 
@@ -784,7 +784,7 @@ or play sound"; `.timeSensitive` "May be presented during Do Not Disturb"
 (`UserNotifications.framework/Headers/UNNotificationContent.h:20-28`, SDK iOS 27;
 `interruptionLevel` e `relevanceScore` iOS 15+, `filterCriteria` iOS 16+,
 `:81-86`). L'app richiede già l'opzione `.timeSensitive`
-(`PoliVerse/Services/NotificationService.swift:39-40`).
+(`PoliVerse/Model/Platform/NotificationService.swift:39-40`).
 `relevanceScore` (0…1) decide quale notifica è in evidenza nel riepilogo
 programmato ([Apple](https://developer.apple.com/documentation/usernotifications/unnotificationcontent/relevancescore)).
 
@@ -829,11 +829,11 @@ func content(_ e: AcademicEvent, priority p: Priority) -> UNMutableNotificationC
   (stesso `identifier`) invece di aggiungerne una. Coerente con la HIG:
   "Avoid sending multiple notifications for the same thing"
   ([Apple HIG, Notifications](https://developer.apple.com/design/human-interface-guidelines/notifications)).
-- **Digest** giornaliero alle 18:00 (orario già usato da `NotificationPlan.eveningHour`, `PoliVerse/Models/NotificationPlan.swift:59`).
+- **Digest** giornaliero alle 18:00 (orario già usato da `NotificationPlan.eveningHour`, `PoliVerse/Model/Updates/NotificationPlan.swift:59`).
 - **Quiet hours** e **budget** giornaliero.
 - **Baseline silenziosa** al primo avvio e dopo un re-login WeBeep.
 - **Limite iOS di 64 notifiche locali pendenti** già gestito con priorità per
-  data (`PoliVerse/Models/NotificationPlan.swift:53-55`, `:158-168`): le notifiche
+  data (`PoliVerse/Model/Updates/NotificationPlan.swift:53-55`, `:158-168`): le notifiche
   di evento (consegna immediata) non occupano slot a lungo, ma il digest sì.
 - **Nota di fattibilità**: una notifica "subito" parte solo quando l'app gira
   (foreground o `BGAppRefreshTask`); senza server non esiste un "subito" vero (§14).
@@ -878,13 +878,13 @@ intatta; i tag semantici sono filtri e badge sopra, mai un riordino.
 | `UpdatesFeedView` ("Novità") | nuova | accanto a `NoticesView` (`PoliVerse/Features/Notices/NoticesView.swift`) | feed eventi; swipe "segna letto", "silenzia corso" |
 | `LinkReviewSheet` | nuova | — | per Probable/Ambiguous: "Questo corso WeBeep è *Basi di Dati 2025/26*?" Sì / No / Non chiedere |
 | Impostazioni notifiche | estesa | `PoliVerse/Features/Auth/NotificationSettingsView.swift` | toggle per categoria di evento, quiet hours, digest |
-| Widget / Live Activity giorno d'esame | estensione | `PoliVerseWidgets/LectureLiveActivity.swift`, `PoliVerse/Services/LiveActivityController.swift` | aula + orario + "iscritto ✓"; avvio manuale come oggi (senza push, `LiveActivityController.swift:8-11`) |
+| Widget / Live Activity giorno d'esame | estensione | `PoliVerseWidgets/LectureLiveActivity.swift`, `PoliVerse/Model/Platform/LiveActivityController.swift` | aula + orario + "iscritto ✓"; avvio manuale come oggi (senza push, `LiveActivityController.swift:8-11`) |
 | Calendario | opzionale | EventKit `requestWriteOnlyAccessToEvents` (iOS 17+, `EKEventStore.h:86`) | "Aggiungi al calendario" per l'appello |
 
 Principi: ogni valore mostra la sua **fonte** con un tap (§17); nessun
 "indovinato" presentato come ufficiale; stato vuoto esplicito quando il servizio
 esami risponde Code 6 (già gestito con `examServicesRefused`,
-`PoliVerse/Services/CareerService.swift:29-36`).
+`PoliVerse/Model/Career/CareerService.swift:29-36`).
 
 ---
 
@@ -930,7 +930,7 @@ flowchart LR
 
 | Componente | Responsabilità | Tecnologia | Complessità | Affidabilità | Costo | Scalabilità | Edge case |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Trigger | quando raccogliere | `FreshnessCoordinator` (`PoliVerse/Services/FreshnessCoordinator.swift`), `BackgroundRefresh` (`PoliVerse/Services/BackgroundRefresh.swift:20-68`) | bassa (esiste) | **bassa in background**: "the system decides" ([data-freshness.md](data-freshness.md)) | 0 | per-device | app mai aperta per giorni → nessun evento; Low Power Mode |
+| Trigger | quando raccogliere | `FreshnessCoordinator` (`PoliVerse/Model/Sync/FreshnessCoordinator.swift`), `BackgroundRefresh` (`PoliVerse/Model/Platform/BackgroundRefresh.swift:20-68`) | bassa (esiste) | **bassa in background**: "the system decides" ([data-freshness.md](data-freshness.md)) | 0 | per-device | app mai aperta per giorni → nessun evento; Low Power Mode |
 | Collector IAE | snapshot appelli+libretto | `CareerService.load` (esiste) | bassa | media (API privata, Code 6/33) | 0 | — | risposta vuota ≠ appelli spariti |
 | Collector WeBeep | prefiltro + contenuti | `WeBeepAPI.call` + 2 nuove funzioni | media | alta (API Moodle) | 0 | N corsi × 1–2 richieste | token scaduto (`WeBeepService.handle`, `:251-259`); corso nascosto; `forcedurlscheme` |
 | SnapshotStore | stato precedente | `OfflineStore` JSON | bassa | alta | spazio disco | ~100 KB/anno [DEDOTTO] | cambio carriera: per-matricola già gestito (`Shared/OfflineStore.swift:99-105`) |
@@ -954,7 +954,7 @@ flowchart LR
 | Criterio | On-device | Ibrido (server che interroga per conto dello studente) |
 | --- | --- | --- |
 | Tempestività | best-effort: foreground immediato, background a discrezione di iOS, 30 s ([BGAppRefreshTask](https://developer.apple.com/documentation/backgroundtasks/bgapprefreshtask)) | polling server regolare → push; ma anche i background push sono "not guaranteed" e limitati a "two or three per hour" ([Apple](https://developer.apple.com/documentation/usernotifications/pushing-background-updates-to-your-app), citato in [data-freshness.md](data-freshness.md)); le push *alert* invece arrivano |
-| Credenziali | restano nel Keychain `AfterFirstUnlockThisDeviceOnly` (`PoliVerse/Services/KeychainStore.swift:24`) | il server deve conservare refresh token JAF (ruotati, nel path URL, [polimi-auth.md](polimi-auth.md)) e `wstoken` Moodle (lunga durata, dà accesso a tutti i corsi) |
+| Credenziali | restano nel Keychain `AfterFirstUnlockThisDeviceOnly` (`PoliVerse/Model/Support/KeychainStore.swift:24`) | il server deve conservare refresh token JAF (ruotati, nel path URL, [polimi-auth.md](polimi-auth.md)) e `wstoken` Moodle (lunga durata, dà accesso a tutti i corsi) |
 | Regolamento PoliMi | nel perimetro attuale dell'app | art. 19 c.6: le credenziali "non possono essere raccolte da erogatori di servizi e ne è assolutamente vietata la memorizzazione"; art. 21 c.2: il titolare "non deve comunicare o rendere accessibile a terzi le proprie credenziali". I token non sono elencati tra le "credenziali" dell'art. 2 lett. a (codice persona, password, OTP), ma un server terzo che li detiene rende l'accesso disponibile a un terzo → **conflitto sostanziale** [DEDOTTO] |
 | GDPR | l'app non è titolare di nulla lato server (nessun server) | il gestore del server diventa titolare/responsabile di voti, carriere, matricole → informativa, DPIA probabile, sicurezza art. 32, data breach |
 | Costo | 0 | VPS + Apple Developer + manutenzione; costo reale = responsabilità |
@@ -1004,7 +1004,7 @@ porterebbero vantaggi a questa scala. Da non costruire ora.
 - **Assegnazioni storiche**: `EditionEntity.teachers` è per AA; un docente che
   cambia tra 2024/25 e 2025/26 genera due Edition, non una modifica.
 - **Sessioni d'esame storiche**: gli appelli spariscono da `insegn` dopo che non
-  c'è più nulla da iscrivere (`PoliVerse/Services/CareerService.swift:96-98`) →
+  c'è più nulla da iscrivere (`PoliVerse/Model/Career/CareerService.swift:96-98`) →
   l'`ExamEntity` resta nel nostro store con `validTo` = ultima osservazione;
   l'esito finale è confermato dal libretto.
 - **Versioni degli item WeBeep**: si conserva solo la catena di
@@ -1094,23 +1094,23 @@ Nessuno di questi fa un collector server-side con credenziali degli studenti
 | Dati propri dello studente (voti, carriera) trattati sul suo dispositivo | lo studente accede ai propri dati; senza server lo sviluppatore non riceve nulla. Il trattamento da parte di una persona fisica per attività "a carattere esclusivamente personale o domestico" è fuori dal GDPR (art. 2.2.c, cons. 18) [DEDOTTO: applicabilità da confermare] | [Reg. UE 2016/679](https://eur-lex.europa.eu/eli/reg/2016/679/oj) |
 | Dati di **altri** studenti nei file esiti | l'Ateneo li pubblica ai soli iscritti del corso; ri-elaborarli, indicizzarli o conservarli oltre il necessario va contro minimizzazione e limitazione della conservazione (art. 5.1.c, 5.1.e). Il Garante: diffusione solo se "realmente necessaria e proporzionata" | art. 5 GDPR; [Garante, linee guida 2014](https://www.garanteprivacy.it/home/docweb/-/docweb-display/docweb/3134436); sulla pubblicazione online dei voti come "diffusione particolarmente invasiva" (ambito scuola) [Garante doc. web 9367295](https://www.garanteprivacy.it/home/docweb/-/docweb-display/docweb/9367295) |
 | Categorie particolari (art. 9) | i voti non lo sono; possono comparire note ("DSA", "prova differenziata") nei file → altro motivo per scartare le righe di terzi | art. 9 GDPR |
-| Crash report / log | già regola del repo: forme, mai valori ([endpoint-status.md](endpoint-status.md), `PoliVerse/Services/NoticeService.swift:13-17`) | — |
+| Crash report / log | già regola del repo: forme, mai valori ([endpoint-status.md](endpoint-status.md), `PoliVerse/Model/Updates/NoticeService.swift:13-17`) | — |
 | Server (se mai) | titolare/responsabile, informativa art. 13, sicurezza art. 32, possibile DPIA art. 35 | GDPR |
 
 ### 18.3 Misure tecniche [PROPOSTA, parzialmente già presenti]
 
-- Token solo in Keychain `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` (`PoliVerse/Services/KeychainStore.swift:24`) — "AfterFirstUnlock" è necessario perché il refresh in background giri.
-- `wstoken` mai nei log (URL `pluginfile.php?token=`, `PoliVerse/Services/WeBeepAPI.swift:143-155`).
+- Token solo in Keychain `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` (`PoliVerse/Model/Support/KeychainStore.swift:24`) — "AfterFirstUnlock" è necessario perché il refresh in background giri.
+- `wstoken` mai nei log (URL `pluginfile.php?token=`, `PoliVerse/Model/Materials/WeBeepAPI.swift:143-155`).
 - Event log e snapshot: *Data Protection* `completeUntilFirstUserAuthentication` (default iOS) nell'app group; esclusione dal backup iCloud per file di analisi temporanei.
 - Nessun contenuto di esiti nelle notifiche: "Pubblicato l'esito di Analisi 1" sì, "Hai preso 24" **solo** se l'utente lo abilita (le notifiche compaiono sulla lock screen).
-- Rate limit: ≤ 1 passata IAE ogni 15 min (già `LoadWindow(interval: 900)`, `PoliVerse/Services/CareerService.swift:52`); WeBeep prefiltro per corso ≤ 1 ogni 30 min in background.
-- Mai azioni di scrittura automatiche (iscrizione, rifiuto voto): solo l'utente, come già per `saveTarget` (`PoliVerse/Services/CareerService.swift:281-286`).
+- Rate limit: ≤ 1 passata IAE ogni 15 min (già `LoadWindow(interval: 900)`, `PoliVerse/Model/Career/CareerService.swift:52`); WeBeep prefiltro per corso ≤ 1 ogni 30 min in background.
+- Mai azioni di scrittura automatiche (iscrizione, rifiuto voto): solo l'utente, come già per `saveTarget` (`PoliVerse/Model/Career/CareerService.swift:281-286`).
 
 ---
 
 ## 19. Edge case
 
-1. Stesso codice insegnamento su più istanze WeBeep nello stesso AA (lezione/lab, sezioni) — `PoliVerse/Models/Course.swift:18-24`.
+1. Stesso codice insegnamento su più istanze WeBeep nello stesso AA (lezione/lab, sezioni) — `PoliVerse/Model/Courses/Course.swift:18-24`.
 2. Corso WeBeep senza codice nel titolo (seminari, corsi trasversali, "Tutorato").
 3. Corso mutuato: codice diverso nel piano rispetto al titolo WeBeep.
 4. Istanza WeBeep di un AA precedente ancora aperta e aggiornata (docente che pubblica le soluzioni del vecchio appello nella vecchia pagina).
@@ -1139,13 +1139,13 @@ Nessuno di questi fa un collector server-side con credenziali degli studenti
 
 | Fase | Obiettivo | Moduli / file | Test |
 | --- | --- | --- | --- |
-| **0. Verifiche (1–2 giorni)** | confermare su account reale: `core_course_get_updates_since` abilitata; `idnumber`/`categoryid` WeBeep; shape `/v1/prove/{c_appello}` e campi scadenza rifiuto; formato titoli con sezioni | log di shape come `JSONShape.describe` (`PoliVerse/Services/CareerService.swift:253`) | — |
-| **1. Snapshot + diff IAE** | eventi d'esame da dati ufficiali | nuovo `PoliVerse/Services/Academic/ExamDiffer.swift` (puro), `EventLog.swift` su `OfflineStore`; hook in `CareerService.load` dopo `loadSessions` (`PoliVerse/Services/CareerService.swift:186-193`); estendere `ExamDTO` con `hasCorrezioni` | `PoliVerseTests/ExamDifferTests.swift` (baseline silenziosa, Code 6, dedup) |
-| **2. Policy + notifiche** | notifiche di evento con anti-fatica | estendere `NotificationPlan` (`PoliVerse/Models/NotificationPlan.swift`) con `EventPolicy` pura; `NotificationService` (`threadIdentifier` per esame, `relevanceScore`); preferenze in `NotificationSettingsView` | `NotificationPlanTests` esteso |
-| **3. UI timeline** | `ExamTimelineView` | da `PoliVerse/TestUI/ExamUI.swift` → `PoliVerse/Features/Career/ExamTimelineView.swift`; link da `CourseDetailView` e `CareerView` | preview con `MockData` (`PoliVerse/Services/Mock/MockData.swift`) |
-| **4. WeBeep change detection** | "novità nei materiali" | `WeBeepAPI` + `updatesSince`, DTO `MoodleContent` completo (`PoliVerse/Models/Moodle.swift`); `WeBeepService` non scarta più moduli non-file (`PoliVerse/Services/WeBeepService.swift:163-167`); `MaterialDiffer.swift`; `BackgroundRefresh` closure (`PoliVerse/App/PoliVerseApp.swift:94-101`) con budget per corso | fixture JSON reali di `get_contents` |
+| **0. Verifiche (1–2 giorni)** | confermare su account reale: `core_course_get_updates_since` abilitata; `idnumber`/`categoryid` WeBeep; shape `/v1/prove/{c_appello}` e campi scadenza rifiuto; formato titoli con sezioni | log di shape come `JSONShape.describe` (`PoliVerse/Model/Career/CareerService.swift:253`) | — |
+| **1. Snapshot + diff IAE** | eventi d'esame da dati ufficiali | nuovo `PoliVerse/Model/Career/ExamDiffer.swift` (puro), `EventLog.swift` su `OfflineStore`; hook in `CareerService.load` dopo `loadSessions` (`PoliVerse/Model/Career/CareerService.swift:186-193`); estendere `ExamDTO` con `hasCorrezioni` | `PoliVerseTests/ExamDifferTests.swift` (baseline silenziosa, Code 6, dedup) |
+| **2. Policy + notifiche** | notifiche di evento con anti-fatica | estendere `NotificationPlan` (`PoliVerse/Model/Updates/NotificationPlan.swift`) con `EventPolicy` pura; `NotificationService` (`threadIdentifier` per esame, `relevanceScore`); preferenze in `NotificationSettingsView` | `NotificationPlanTests` esteso |
+| **3. UI timeline** | `ExamTimelineView` | da `PoliVerse/TestUI/ExamUI.swift` → `PoliVerse/Features/Career/ExamTimelineView.swift`; link da `CourseDetailView` e `CareerView` | preview con `MockData` (`PoliVerse/Model/Mock/MockData.swift`) |
+| **4. WeBeep change detection** | "novità nei materiali" | `WeBeepAPI` + `updatesSince`, DTO `MoodleContent` completo (`PoliVerse/Model/Materials/Moodle.swift`); `WeBeepService` non scarta più moduli non-file (`PoliVerse/Model/Materials/WeBeepService.swift:163-167`); `MaterialDiffer.swift`; `BackgroundRefresh` closure (`PoliVerse/App/PoliVerseApp.swift:94-101`) con budget per corso | fixture JSON reali di `get_contents` |
 | **5. Classificazione a regole + link documento→esame** | tag, date italiane | `DocumentClassifier.swift`, `ItalianDateExtractor.swift`, `Resolver.swift` | tabella di nomi file reali anonimizzati |
-| **6. Course identity + review link** | Course/Edition/LMSInstance | sostituisce `moodleCourseID(for:)` (`PoliVerse/Services/WeBeepService.swift:224-249`); `LinkReviewSheet`; eventuale migrazione a SwiftData | test degli esempi §7.4 |
+| **6. Course identity + review link** | Course/Edition/LMSInstance | sostituisce `moodleCourseID(for:)` (`PoliVerse/Model/Materials/WeBeepService.swift:224-249`); `LinkReviewSheet`; eventuale migrazione a SwiftData | test degli esempi §7.4 |
 | **7. (Opt-in) Analisi file esiti** | ricerca propria matricola | PDFKit/Vision; `BGProcessingTask` per i file grandi | test su PDF sintetici, verifica che nulla di terzi finisca su disco |
 | **8. (Opz.) Foundation Models** | fallback tag, riassunti | `FMClassifier.swift` con check `availability` | test con modello non disponibile |
 
@@ -1190,8 +1190,8 @@ l'app si aggiorna — aprendola o in background quando iOS lo consente".
 
 ### Repo PoliVerse
 - `docs/polimi-api-research.md`, `docs/endpoint-status.md`, `docs/polimi-auth.md`, `docs/webeep.md`, `docs/data-freshness.md`, `docs/manifesti.md`, `docs/lazy-loading.md`, `docs/cie-login.md`, `README.md`
-- `PoliVerse/Models/Career.swift`, `Course.swift`, `Moodle.swift`, `WeBeepFile.swift`, `Libretto.swift`, `Manifesto.swift`, `NotificationPlan.swift`
-- `PoliVerse/Services/CareerService.swift`, `CourseService.swift`, `WeBeepService.swift`, `WeBeepAPI.swift`, `NotificationService.swift`, `BackgroundRefresh.swift`, `KeychainStore.swift`, `FileDownloadService.swift`, `NoticeService.swift`, `PoliMiAPI.swift`
+- `PoliVerse/Model/Career/Career.swift`, `Course.swift`, `Moodle.swift`, `WeBeepFile.swift`, `Libretto.swift`, `Manifesto.swift`, `NotificationPlan.swift`
+- `PoliVerse/Model/Career/CareerService.swift`, `CourseService.swift`, `WeBeepService.swift`, `WeBeepAPI.swift`, `NotificationService.swift`, `BackgroundRefresh.swift`, `KeychainStore.swift`, `FileDownloadService.swift`, `NoticeService.swift`, `PoliMiAPI.swift`
 - `Shared/OfflineStore.swift`, `PoliVerse/App/PoliVerseApp.swift`, `PoliVerse/Features/Home/CourseDetailView.swift`, `PoliVerse/TestUI/ExamUI.swift`
 - `PoliVerse.xcodeproj/project.pbxproj` (`IPHONEOS_DEPLOYMENT_TARGET = 26.0`, `SWIFT_VERSION = 6.0`); `Config/Info.plist` (`UIBackgroundModes = fetch`)
 

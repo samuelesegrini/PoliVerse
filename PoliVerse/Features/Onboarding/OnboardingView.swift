@@ -23,9 +23,9 @@ import SwiftUI
 struct OnboardingView: View {
     @Environment(OnboardingState.self) private var onboarding
     @Environment(Session.self) private var session
-    @Environment(CareersService.self) private var careers
-    @Environment(WeBeepService.self) private var weBeep
-    @Environment(NotificationService.self) private var notifications
+    @Environment(CareersModel.self) private var careers
+    @Environment(WeBeepModel.self) private var weBeep
+    @Environment(NotificationModel.self) private var notifications
 
     /// What the flow knows right now. Rebuilt on every render rather than
     /// stored, because signing in changes most of it.
