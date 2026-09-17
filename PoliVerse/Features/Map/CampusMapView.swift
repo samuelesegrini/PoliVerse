@@ -66,18 +66,25 @@ struct CampusMapView: View {
         }
     }
 
+    /// The campus and the availability toggle as glass floating over the map.
     private var controls: some View {
-        VStack(spacing: 8) {
+        GlassEffectContainer(spacing: 10) {
+        HStack(spacing: 10) {
             if map.campuses.count > 1 {
-                Picker("Sede", selection: $campus) {
-                    Text("Tutte").tag(String?.none)
-                    ForEach(map.campuses, id: \.self) { name in
-                        Text(name).tag(String?.some(name))
+                Menu {
+                    Picker("Sede", selection: $campus) {
+                        Text("Tutte").tag(String?.none)
+                        ForEach(map.campuses, id: \.self) { name in
+                            Text(name).tag(String?.some(name))
+                        }
                     }
+                } label: {
+                    Label(campus ?? String(localized: "Tutte le sedi"), systemImage: "building.2")
+                        .lineLimit(1)
                 }
-                .pickerStyle(.menu)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .buttonStyle(.glass)
             }
+            Spacer(minLength: 0)
 
             Button {
                 Task {
@@ -90,11 +97,13 @@ struct CampusMapView: View {
                     map.showsAvailability ? "Aggiorna disponibilità" : "Mostra libere ora",
                     systemImage: loadingAvailability ? "clock" : "checkmark.circle")
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
             .disabled(loadingAvailability || map.placed.isEmpty)
         }
-        .padding(12)
-        .background(.bar)
+        }
+        .controlSize(.large)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
         .onChange(of: campus) { _, _ in
             // The new campus's city at once; its pins frame it when placed.
             withAnimation { position = .region(CampusRegions.region(for: campus)) }
@@ -113,13 +122,13 @@ struct CampusMapView: View {
             .font(.caption2)
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
-            .background(.bar, in: .capsule)
+            .glassEffect(.regular, in: .capsule)
             .padding(.bottom, 12)
         } else if map.isPlacing || (map.isLoading && map.pins.isEmpty) {
             Label("Carico gli edifici…", systemImage: "mappin.and.ellipse")
                 .font(.caption)
                 .padding(.horizontal, 12).padding(.vertical, 7)
-                .background(.bar, in: .capsule)
+                .glassEffect(.regular, in: .capsule)
                 .padding(.bottom, 12)
                 .transition(.opacity)
         } else if loadingAvailability {
@@ -128,7 +137,7 @@ struct CampusMapView: View {
             Label("Controllo aula per aula…", systemImage: "clock")
                 .font(.caption)
                 .padding(.horizontal, 12).padding(.vertical, 7)
-                .background(.bar, in: .capsule)
+                .glassEffect(.regular, in: .capsule)
                 .padding(.bottom, 12)
         }
     }
@@ -166,6 +175,10 @@ private struct BuildingSheet: View {
     var body: some View {
         List {
             Section {
+                PageHero(symbol: "building.2", title: Text(verbatim: pin.name), summary: Text("\(rooms.count) aule"))
+                    .listHeader()
+            }
+            Section {
                 LabeledContent("Aule", value: String(rooms.count))
                 LabeledContent("Posti", value: String(rooms.reduce(0) { $0 + $1.capacity }))
                 if let address = rooms.first?.address {
@@ -174,6 +187,7 @@ private struct BuildingSheet: View {
             } footer: {
                 if pin.freeRooms != nil { Text(pin.label) }
             }
+            .glassRow()
 
             ForEach(byFloor, id: \.floor) { group in
                 Section(group.floor) {
@@ -190,8 +204,10 @@ private struct BuildingSheet: View {
                         }
                     }
                 }
+                .glassRow()
             }
         }
+        .glassList()
         .navigationTitle(pin.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
