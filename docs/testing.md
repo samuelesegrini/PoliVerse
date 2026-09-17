@@ -40,10 +40,15 @@ POLIVERSE_UI_SHOTS=/tmp/poliverse-shots xcodebuild test -scheme PoliVerseUI …
 | `ShellNavigationUITests` | UI | The four tabs, every place in Cerca, the profile and Impostazioni, the single page's panel |
 | `SearchUITests` | UI | Cerca: field, results, empty state, cleared query |
 | `ContentScreensUITests` | UI | A course opened from Corsi, Carriera's three sections, Oggi scrolled |
+| `CalendarAndRoomsUITests` | UI | The week strip paged and brought back, Aule libere's filters |
+| `LayoutSwitchUITests` | UI | Tabs ↔ pagina unica from Impostazioni, and the sheet closing on the change |
+| `OnboardingUITests` | UI | The first run on the sample-data route, and that it is not shown twice |
+| `SignedOutUITests` | UI | No account and no sample data: the login screen and its disclaimer |
 | `LifecycleUITests` | UI | Rotation, return from the background, a second launch, a fresh install |
 | `AccessibilityAuditUITests` | UI | Xcode's audit per screen, and at AX5 |
+| `ScreenshotSweepUITests` | UI | A picture of every screen, in both layouts and at AX5 — for checking by eye |
 | `CustomizeAnimationTests` | UI | Personalizza from start to finish, with a screenshot per step |
-| `PerformanceTests` | UI | Launch, agenda load, hitches |
+| `PerformanceTests` | UI | Launch, agenda load, hitches, CPU and memory |
 
 ## How the UI tests launch the app
 
@@ -90,6 +95,8 @@ stable. The ones the shell relies on:
 | `search-list`, `search-empty` | Cerca's list, and its "nothing found" state |
 | `settings-list`, `settings-close` | Impostazioni, and the button that closes it |
 | `bar-profile`, `bar-settings`, `today-customize` | The buttons in Oggi's bar |
+| `settings-layout` | The tabs ↔ pagina unica picker |
+| `onboarding-primary`, `onboarding-skip`, `onboarding-demo`, `onboarding-back` | The first run's controls |
 
 Adding a screen means adding an identifier to its root and a row to
 `ShellNavigationUITests`, so no route can go unwalked.

@@ -25,9 +25,15 @@
             </BuildableReference>
             <SkippedTests>
                <Test Identifier = "AccessibilityAuditUITests"></Test>
+               <Test Identifier = "CalendarAndRoomsUITests"></Test>
+               <Test Identifier = "ContentScreensUITests"></Test>
+               <Test Identifier = "LayoutSwitchUITests"></Test>
                <Test Identifier = "LifecycleUITests"></Test>
+               <Test Identifier = "OnboardingUITests"></Test>
+               <Test Identifier = "ScreenshotSweepUITests"></Test>
                <Test Identifier = "SearchUITests"></Test>
                <Test Identifier = "ShellNavigationUITests"></Test>
+               <Test Identifier = "SignedOutUITests"></Test>
             </SkippedTests>
          </TestableReference>
       </Testables>
