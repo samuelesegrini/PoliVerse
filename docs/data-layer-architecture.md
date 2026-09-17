@@ -127,16 +127,20 @@ PoliVerse/
                           StudyPlan.swift · StudyProgramme.swift
     Updates/              ExamUpdate.swift · UpdatesModel.swift · FeedItem.swift
                           Notice.swift · NewsItem.swift · NotificationPlan.swift
-    Identity/             User.swift · IdentityModel.swift · AuthModel.swift
-                          Tokens.swift · PoliMiOAuth.swift · LoginWebKit.swift · CieID.swift
+    Identity/             User.swift · Session.swift · PoliMiOAuth.swift
+                          LoginWebKit.swift · CieID · SPIDCatalogue · Onboarding
+    Sync/                 what was changed offline, and when to refresh
+                          PendingChanges · ActionQueue · OptimisticFlags
+                          FreshnessCoordinator · LoadWindow · DataStatus
     Platform/             SpotlightIndex · LiveActivityController · WidgetReloader
                           NotificationService · CalendarExporter · BackgroundRefresh
     Diagnostics/          DiagnosticsLog · DiagnosticsReport · ConnectionProbe
                           StorageAudit · PerformanceMonitor · PerfSignpost
-    Support/              shared by every area, depends on none of them
-                          PoliMiAPI · ServiceDirectory · DiskCache · OfflineStore
-                          KeychainStore · ActionQueue · HTMLText · HTMLScraper
-                          RegexCache · JSONValue · SearchMatch
+    Support/              shared by every area, names none of them
+                          PoliMiAPI · ServiceDirectory · PoliMiProfile
+                          Tokens · TokenStore · KeychainStore · DiskCache
+                          HTMLText · HTMLScraper · RegexCache · JSONValue
+                          SearchMatch · ResourceLoader · BackgroundJSON · NetworkMonitor
   Shared/                 app + widget extension                 (unchanged)
 ```
 
@@ -158,15 +162,27 @@ it is pure. A folder should not need a glossary to be read correctly.
 ## 4. Three rules, in place of a matrix
 
 1. **`Support/` names no area.** If something in `Support/` needs to know about
-   Carriera, it belongs in `Model/Career/`.
-2. **An area names no other area.** Where two must meet — a course and its
-   sittings — the view that shows both does the meeting, or a pure type in
-   `Support/` takes both as arguments.
-3. **Nothing under `Model/` imports SwiftUI.** True today except for one
-   misplaced file; a grep keeps it true.
+   Carriera, it belongs in `Model/Career/`. **Enforced.**
+2. **The areas do not get more tangled.** Not "an area names no other area":
+   that was this document's first draft, and measuring it killed it — **every
+   area names between two and seven others, 52 edges in all.** Reaching zero
+   is a rewrite, not a move, and a rule nobody can satisfy is decoration. So
+   the edge count is recorded and the check fails only if it **grows**. The
+   direction of travel is enforced; today's state is not pretended away.
+3. **Nothing under `Model/` imports SwiftUI.** **Enforced**, and true as of the
+   move: the one file that broke it, `AuthWebView`, was a view and now lives
+   with the views.
 
-All three are greppable. A five-line script in CI is enough, and can be added
-before anything moves, so the rules are in force while the moving happens.
+`scripts/check-model-layer.sh` is all three, in bash and grep. It needs no
+Xcode and no Swift toolchain, which makes it the one check in this repository
+that can run on any machine, and in whatever CI it eventually gets.
+
+Two rules earned their keep the moment they were first run. Rule 1 caught
+`PoliMiAPI` reaching for `TokenStore` and `DataStatus` reaching for `Session`.
+So the credential store (`Tokens`, `TokenStore`, `KeychainStore`) and the
+transport's header values (`PoliMiProfile`) went to `Support/`, where
+infrastructure belongs, and `DataStatus` went to `Sync/`, whose subject is
+freshness. None of that was visible from reading the folders.
 
 ---
 
@@ -183,7 +199,8 @@ Then three steps, three pull requests:
 | Step | What | Touches logic | Effort |
 | --- | --- | :-: | --- |
 | **1** | Split the six files that hold both a DTO and a domain type; the DTOs become `Wire.swift` in their area, `internal`. | no | half a day |
-| **2** | `git mv` the 110 files into `Model/<Area>/`, and rename `…Service` to `…Model` / `…API` where the name lies. `AuthWebView` goes to the views. | no | a day, one PR |
+| **2** | `git mv` the 110 files into `Model/<Area>/`. `AuthWebView` goes to the views. **Done** — see below. | no | done |
+| **2b** | Rename `…Service` to `…Model` / `…API` where the name lies. Split from step 2 deliberately: a move cannot break the build, a rename touches call sites and wants a compiler to confirm it. | no | half a day |
 | **3** | Split `Session` into two: **who the student is** and **how they got in**. The sample-data flag goes with the first. | **yes** | a day |
 
 Nothing else. `Session` is split into two rather than four because a type for
@@ -200,6 +217,24 @@ flowchart LR
 
 Every step is a `git mv` plus renames, so a step is abandoned with
 `git revert` and nothing is left behind.
+
+### What step 2 actually did
+
+110 files, `git mv` only — git recorded all 110 as renames and nothing else
+changed. `project.pbxproj` was not touched and did not need to be: the
+synchronized root group picks the new tree up by path, exactly as predicted.
+71 path references in `docs/` were updated to match.
+
+Areas as they came out, largest first: Support 15, Identity 12, Materials 12,
+Diagnostics 12, Updates 10, Places 9, Career 8, Study 8, Courses 6, Platform 6,
+Sync 6, Timetable 4, Mock 1 — 109 files, plus `AuthWebView` to the views.
+
+`Sync/` was not in the plan. It exists because rule 1 found two files —
+`PendingChanges` and `FreshnessCoordinator` — that name four to six area
+models each and so could not be shared infrastructure. Their subject is
+"what was changed offline, and when to refresh", which is an area like any
+other. A rule that produces a folder nobody thought of is a rule doing its
+job.
 
 ---
 
