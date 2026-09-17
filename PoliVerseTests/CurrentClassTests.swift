@@ -29,4 +29,17 @@ struct CurrentClassTests {
         #expect(!current.isOngoing)
         #expect(CurrentClass.pick(from: [event(1, -3, -2)], now: now, calendar: calendar) == nil)
     }
+
+    @Test("The accessory wakes at the next start or end of a lesson today, at most an hour away")
+    func nextChange() {
+        // An ongoing lesson ends in 30 minutes, before the next one starts.
+        let events = [event(1, -0.5, 0.5), event(2, 2, 3), event(3, 1, 1.2, .deadline)]
+        #expect(CurrentClass.nextChange(in: events, after: now, calendar: calendar) == now.addingTimeInterval(1800))
+        // Nothing within the hour: the hour cap.
+        #expect(CurrentClass.nextChange(in: [event(2, 2, 3)], after: now, calendar: calendar) == now.addingTimeInterval(3600))
+        // Nothing left today and it is late: tomorrow's start, sooner than the cap.
+        let late = calendar.date(from: DateComponents(year: 2026, month: 9, day: 15, hour: 23, minute: 30))!
+        let midnight = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16))!
+        #expect(CurrentClass.nextChange(in: events, after: late, calendar: calendar) == midnight)
+    }
 }

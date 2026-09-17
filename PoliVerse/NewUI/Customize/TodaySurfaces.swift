@@ -47,9 +47,12 @@ private struct StickerOutline: ViewModifier {
 struct FlavorFlowView: View {
     let flavor: Flavor
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// iOS 27: the system asks apps to do less — Low Power Mode, a hot device.
+    /// A shader redrawn thirty times a second is the first thing to stop.
+    @Environment(\.systemPrefersReducedResourceUsage) private var reducedResources
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { timeline in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || reducedResources)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3600)
             // Resolved here, on the main actor: the effect closure is Sendable.
             let main = flavor.main.color, accent = flavor.accentColour.color, extra = flavor.extraColour.color

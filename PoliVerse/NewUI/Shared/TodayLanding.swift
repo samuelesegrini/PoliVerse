@@ -152,12 +152,11 @@ struct TodayLanding: View {
 
     // MARK: - Sections
 
-    /// Arranging on iOS 27, the system reorders: a lifted section leaves a
-    /// placeholder that follows the finger, and the drop reports where the
-    /// sections went. Earlier, each section is a drag source and drop target.
+    /// Arranging, the system reorders: a lifted section leaves a placeholder
+    /// that follows the finger, and the drop reports where the sections went.
     @ViewBuilder
     private var sections: some View {
-        if arranging, #available(iOS 27, *) {
+        if arranging {
             // Built only while arranging: a container made disabled and
             // enabled later no longer lifts anything.
             VStack(alignment: .leading, spacing: 28) {
@@ -210,9 +209,6 @@ struct TodayLanding: View {
                 }
                 .padding(-10)
                 .modifier(Wiggle())
-                .modifier(DragToReorder(kind: section.kind) { kind, target in
-                    withAnimation(.snappy) { draft?.wrappedValue.moveSection(kind, onto: target) }
-                })
                 // A container, so the remove button stays its own element.
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("section-\(section.kind.rawValue)")
@@ -332,38 +328,14 @@ private struct ZoneBadge: View {
     }
 }
 
-/// Before iOS 27's reordering: a section is dragged as its kind and dropped
-/// onto another to take its place. On iOS 27 the container does this.
-private struct DragToReorder: ViewModifier {
-    let kind: TodaySection.Kind
-    let move: (_ kind: TodaySection.Kind, _ target: TodaySection.Kind) -> Void
-
-    func body(content: Content) -> some View {
-        if #available(iOS 27, *) {
-            content
-        } else {
-            content
-                .draggable(kind.rawValue) {
-                    Label(kind.title, systemImage: kind.systemImage)
-                        .padding(12)
-                        .glassEffect(.regular, in: .capsule)
-                }
-                .dropDestination(for: String.self) { items, _ in
-                    guard let dropped = items.first.flatMap(TodaySection.Kind.init(rawValue:)) else { return false }
-                    move(dropped, kind)
-                    return true
-                }
-        }
-    }
-}
-
 /// The Home Screen's jiggle, a little slower so a page of cards stays calm.
 private struct Wiggle: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.systemPrefersReducedResourceUsage) private var reducedResources
     @State private var phase = Double.random(in: 0...1)
 
     func body(content: Content) -> some View {
-        if reduceMotion {
+        if reduceMotion || reducedResources {
             content
         } else {
             content.phaseAnimator([-0.6, 0.6]) { view, angle in

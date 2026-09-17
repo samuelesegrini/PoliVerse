@@ -43,12 +43,13 @@ final class BackgroundRefresh {
     func schedule(after interval: TimeInterval = 3600) {
         let request = BGAppRefreshTaskRequest(identifier: Self.taskIdentifier)
         request.earliestBeginDate = Date(timeIntervalSinceNow: interval)
-        do {
-            try BGTaskScheduler.shared.submit(request)
-        } catch {
+        let log = log
+        BGTaskScheduler.shared.submitTaskRequest(request) { error in
             // Fails in the simulator and whenever one is already queued.
             // Neither is worth surfacing.
-            log.debug("Could not schedule background refresh: \(error.localizedDescription)")
+            if let error {
+                log.debug("Could not schedule background refresh: \(error.localizedDescription)")
+            }
         }
     }
 

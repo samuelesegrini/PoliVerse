@@ -18,7 +18,8 @@ struct NewRootView: View {
     @State private var layoutChangePending = false
     @Environment(AgendaService.self) private var agenda
     @Environment(UpdateFeed.self) private var feed
-    /// Re-read every minute so the accessory moves on when a lesson ends.
+    /// Moved on when a lesson starts or ends, so the accessory follows the
+    /// timetable without redrawing the whole tab tree every minute.
     @State private var now = Date.now
 
     /// The class now, except on Oggi when the page already shows it.
@@ -106,18 +107,29 @@ struct NewRootView: View {
         .currentClassAccessory(shell.singlePage ? nil : current)
         // Around the day shown, so a day picked two months out is not empty.
         .task(id: shell.day) { await agenda.ensureLoaded(covering: shell.day) }
-        .task {
+        // Wakes at the next start or end of a lesson today rather than every
+        // minute: between lessons nothing on the accessory can change.
+        .task(id: agenda.events.count) {
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(60))
+                let wait = CurrentClass.nextChange(in: agenda.events, after: .now).timeIntervalSinceNow
+                try? await Task.sleep(for: .seconds(max(wait, 1)))
                 now = .now
             }
         }
+        // Hangs and hitches in the field arrive split by tab.
+        .onChange(of: shell.selection, initial: true) { _, tab in
+            PerformanceStates.tabSelected(shell.singlePage ? "single" : tab.rawValue)
+        }
+        .onChange(of: shell.singlePage) { _, single in
+            PerformanceStates.tabSelected(single ? "single" : shell.selection.rawValue)
+        }
+        .onDisappear { PerformanceStates.tabSelected(nil) }
         .tint(todayStyle.controlTint(scheme))
         .preferredColorScheme(todayStyle.appearance.colorScheme)
         // Selecting the search tab opens its field straight away, unless the
         // student turned that off in Impostazioni.
         .tabViewSearchActivation(searchOpensKeyboard ? .searchTabSelection : .automatic)
-        .tabBarMinimizeBehavior(.onScrollDown)
+        .toolbarMinimizationBehavior(.onScrollDown, for: .tabBar)
     }
 }
 
