@@ -9,12 +9,12 @@ import Testing
 /// unbounded set is what the state limit punishes — and never an empty label,
 /// which is a fatal error.
 ///
-/// One this app learned: the set has to cover the tabs actually on screen. It
-/// was once the five of the previous interface alone, so everything the new
-/// one reported was filtered out and the field numbers came back split by
-/// nothing. Both interfaces ship — Impostazioni switches between them — so
-/// both are in the set, and so is `single`, because the single page is a state
-/// a student can sit in for a whole session.
+/// One this app learned: the set has to cover the tabs actually on screen, and
+/// only those. It was once the five of an interface that no longer exists, so
+/// everything the shipping one reported was filtered out and the field numbers
+/// came back split by nothing; then, while both shipped, it was both sets. Now
+/// there is one interface, so the set is its four tabs plus `single`, because
+/// the single page is a state a student can sit in for a whole session.
 @MainActor
 @Suite("Stati per le prestazioni")
 struct PerformanceStatesTests {
@@ -37,13 +37,15 @@ struct PerformanceStatesTests {
         #expect(PerformanceStates.tabs.contains("single"))
     }
 
-    /// The previous interface is still reachable from Impostazioni, so its
-    /// tabs still report. Dropping them would blind the numbers for whoever
-    /// switched back.
-    @Test("Le schede della vecchia interfaccia riportano ancora, perché esiste ancora")
-    func theOldInterfaceStillReports() {
+    /// The previous interface is gone, and so are its labels. They were kept
+    /// while both shipped and Impostazioni switched between them; now that
+    /// there is one interface, a label nothing can report is a state that
+    /// never arrives, spending part of a limited budget to say nothing.
+    @Test("Le etichette della vecchia interfaccia sono sparite con lei")
+    func theOldInterfaceIsGone() {
         for old in ["home", "webeep", "calendar"] {
-            #expect(PerformanceStates.tabs.contains(old))
+            #expect(!PerformanceStates.tabs.contains(old),
+                    "«\(old)» non è più una scheda di nessuna interfaccia")
         }
     }
 
