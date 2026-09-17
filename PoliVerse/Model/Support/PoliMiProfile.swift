@@ -26,22 +26,3 @@ nonisolated enum PoliMiProfile {
     /// in the official bundle.
     static let emptyDProfile = "JAF_D_PROFILE_VUOTO"
 }
-
-/// Wire shape of `/jaf/internal/profiles`.
-///
-/// Shape confirmed against a real account:
-///
-/// ```json
-/// [{"profile":1,"description":"Student","dprofile":null,
-///   "profileDescription":"Student","dprofileDescription":null,
-///   "dprofileValue":null}]
-/// ```
-nonisolated struct PoliMiProfileDTO: Decodable, Sendable {
-    let profile: Int?
-    let description: String?
-    /// Secondary profile, sent as `poliAuthD_profile`. Null for a plain
-    /// student account.
-    let dprofile: String?
-
-    var identifier: Int? { profile }
-}

@@ -251,7 +251,7 @@ struct OccupancyTimeline: View {
 /// is keyed by campus and day, not by room.
 struct RoomDayView: View {
     let room: Classroom
-    @Environment(FreeRoomsService.self) private var aule
+    @Environment(FreeRoomsModel.self) private var aule
 
     @State private var bookings: [RoomBooking]?
     @State private var failed = false

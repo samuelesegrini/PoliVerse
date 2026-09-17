@@ -10,7 +10,7 @@ import OSLog
 /// for them, and the rows either side of the one on screen can be warmed while
 /// the user is still reading.
 @Observable
-final class RoomFacilitiesService {
+final class RoomFacilitiesModel {
     /// Published for the views; the loader behind it is the source of truth.
     private(set) var equipment: [String: [RoomFacility]] = [:]
     private(set) var software: [String: [RoomFacility]] = [:]

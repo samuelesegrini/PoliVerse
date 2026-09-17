@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The full news list.
 struct NewsView: View {
-    @Environment(NewsService.self) private var news
+    @Environment(NewsModel.self) private var news
 
     var body: some View {
         Group {
@@ -131,7 +131,7 @@ struct NewsDetailView: View {
 
 /// The Home section: a few headlines, with a way through to the rest.
 struct NewsHighlights: View {
-    @Environment(NewsService.self) private var news
+    @Environment(NewsModel.self) private var news
 
     var body: some View {
         // Silent when there is nothing: an error banner for news would push

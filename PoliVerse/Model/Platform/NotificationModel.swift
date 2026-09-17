@@ -9,7 +9,7 @@ import UserNotifications
 /// its own, which is a feature here: reminders keep working offline, and no
 /// timetable leaves the device to make them happen.
 @Observable
-final class NotificationService {
+final class NotificationModel {
     private(set) var authorization: UNAuthorizationStatus = .notDetermined
     private(set) var scheduled: [PlannedNotification] = []
 
@@ -138,7 +138,7 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
         didReceive response: UNNotificationResponse
     ) async {
         let kind = response.notification.request.content.userInfo["kind"] as? String ?? ""
-        await MainActor.run { NotificationService.destination(for: kind).send() }
+        await MainActor.run { NotificationModel.destination(for: kind).send() }
     }
 
     /// Shown even with the app open: a lecture starting in fifteen minutes is

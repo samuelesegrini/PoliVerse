@@ -9,7 +9,7 @@ struct CourseForumsView: View {
     let kind: CourseForum.Kind
 
     @Environment(Session.self) private var session
-    @Environment(WeBeepService.self) private var weBeep
+    @Environment(WeBeepModel.self) private var weBeep
     @State private var forums: [CourseForum]?
     @State private var loaded = false
     @State private var showingLogin = false
@@ -95,7 +95,7 @@ private struct DiscussionsList: View {
     let forum: CourseForum
     let tint: Color
 
-    @Environment(WeBeepService.self) private var weBeep
+    @Environment(WeBeepModel.self) private var weBeep
     @Environment(\.locale) private var locale
     @State private var discussions: [MoodleDiscussion]?
     @State private var failed = false
@@ -192,7 +192,7 @@ private struct DiscussionView: View {
     let discussion: MoodleDiscussion
     let tint: Color
 
-    @Environment(WeBeepService.self) private var weBeep
+    @Environment(WeBeepModel.self) private var weBeep
     @Environment(\.locale) private var locale
     @State private var posts: [MoodlePosts.Post]?
 

@@ -15,7 +15,7 @@ import OSLog
 /// PoliFemo's `/rest/me/polimi/{matricola}` 404s; `/v1/io-e-polimi/…` is what
 /// replaced it, with the field names intact.
 @Observable
-final class CareerService {
+final class CareerModel {
     private(set) var gradeBook: GradeBook = .empty
     private(set) var sessions: [ExamSession] = []
     /// The libretto: every teaching in the plan, with its result.

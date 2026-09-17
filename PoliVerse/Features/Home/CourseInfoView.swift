@@ -5,11 +5,11 @@ import SwiftUI
 struct CourseInfoView: View {
     let course: Course
 
-    @Environment(ManifestiService.self) private var manifesti
-    @Environment(StudyProgrammeService.self) private var programmes
+    @Environment(ManifestiModel.self) private var manifesti
+    @Environment(StudyProgrammeModel.self) private var programmes
     @Environment(Session.self) private var session
-    @Environment(CareerService.self) private var career
-    @Environment(AgendaService.self) private var agenda
+    @Environment(CareerModel.self) private var career
+    @Environment(AgendaModel.self) private var agenda
     @Environment(UpdateFeed.self) private var feed
     @Environment(\.locale) private var locale
     @Environment(\.openURL) private var openURL

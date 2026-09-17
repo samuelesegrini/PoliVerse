@@ -8,7 +8,7 @@ import OSLog
 /// adds each teaching, reads the "orario testuale" back, and from then on the
 /// timetable is a local file. The student never sees the manifesto's pages.
 @Observable
-final class PersonalTimetableService {
+final class PersonalTimetableModel {
     enum Progress: Equatable {
         case idle
         case settingName
@@ -50,11 +50,11 @@ final class PersonalTimetableService {
     static let capacity = 15
     private static let cacheName = "personal-timetable"
 
-    private let manifesti: ManifestiService
-    private let agenda: AgendaService?
+    private let manifesti: ManifestiModel
+    private let agenda: AgendaModel?
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "manifesti")
 
-    init(manifesti: ManifestiService, agenda: AgendaService? = nil, preview: PersonalTimetable? = nil) {
+    init(manifesti: ManifestiModel, agenda: AgendaModel? = nil, preview: PersonalTimetable? = nil) {
         self.manifesti = manifesti
         self.agenda = agenda
         timetable = preview ?? DiskCache.load(PersonalTimetable.self, as: Self.cacheName)?.value

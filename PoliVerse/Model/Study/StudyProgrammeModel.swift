@@ -9,17 +9,17 @@ import OSLog
 /// degree course by name and level, with each of its plans scored against the
 /// libretto — and set outright when they pick it in the manifesto.
 @Observable
-final class StudyProgrammeService {
+final class StudyProgrammeModel {
     private(set) var programme: StudyProgramme?
     /// Teaching codes of every plan page read so far, for telling WeBeep
     /// courses of the plan apart from the rest.
     private(set) var planCodes: Set<String> = []
     private(set) var isLocating = false
 
-    private let manifesti: ManifestiService
+    private let manifesti: ManifestiModel
     private let session: Session
-    private let career: CareerService
-    private let careers: CareersService?
+    private let career: CareerModel
+    private let careers: CareersModel?
     private let store: StudyProgrammeStore
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "manifesti")
 
@@ -38,7 +38,7 @@ final class StudyProgrammeService {
     /// Plans of one degree course scored against the libretto, at most.
     static let plansScored = 6
 
-    init(manifesti: ManifestiService, session: Session, career: CareerService, careers: CareersService? = nil,
+    init(manifesti: ManifestiModel, session: Session, career: CareerModel, careers: CareersModel? = nil,
          store: StudyProgrammeStore = StudyProgrammeStore()) {
         self.manifesti = manifesti
         self.session = session

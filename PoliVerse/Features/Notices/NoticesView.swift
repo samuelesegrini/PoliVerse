@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The notification inbox, reached from the bell on the Home screen.
 struct NoticesView: View {
-    @Environment(NoticeService.self) private var notices
+    @Environment(NoticeModel.self) private var notices
     @Environment(\.dismiss) private var dismiss
 
     /// Shown inside a navigation stack that is not its own.
@@ -120,7 +120,7 @@ private struct NoticeRow: View {
 /// than the view going blank.
 struct NoticeDetailView: View {
     let notice: Notice
-    @Environment(NoticeService.self) private var notices
+    @Environment(NoticeModel.self) private var notices
     @Environment(\.openURL) private var openURL
 
     /// The detail endpoint's body, markup intact.
@@ -179,7 +179,7 @@ struct NoticeDetailView: View {
 
 /// The bell, with its unread count, for the Home toolbar.
 struct NoticesToolbarButton: View {
-    @Environment(NoticeService.self) private var notices
+    @Environment(NoticeModel.self) private var notices
     @Binding var isPresented: Bool
 
     var body: some View {

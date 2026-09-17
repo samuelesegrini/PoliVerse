@@ -4,7 +4,7 @@ import OSLog
 
 /// Loads the student's enrolled teachings.
 @Observable
-final class CourseService {
+final class CourseModel {
     private(set) var courses: [Course] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?
@@ -18,7 +18,7 @@ final class CourseService {
     /// because the queue needs the session and this service is built first.
     var pending: PendingChanges?
     /// Fills in teaching codes from the student's plan. Assigned by the app.
-    var programme: StudyProgrammeService?
+    var programme: StudyProgrammeModel?
     /// Changes the user made that have not reached WeBeep yet.
     ///
     /// A third state between the cache and the server: newer than both,
@@ -33,7 +33,7 @@ final class CourseService {
     }
 
     private let session: Session
-    private let weBeep: WeBeepService
+    private let weBeep: WeBeepModel
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "courses")
     /// Fifteen minutes: the enrolled-course list changes at most once a
     /// semester.
@@ -72,7 +72,7 @@ final class CourseService {
         return visibleCourses.filter { $0.academicYear == year }
     }
 
-    init(session: Session, weBeep: WeBeepService) {
+    init(session: Session, weBeep: WeBeepModel) {
         self.session = session
         self.weBeep = weBeep
         // Show last known courses immediately; `load()` refreshes behind them.

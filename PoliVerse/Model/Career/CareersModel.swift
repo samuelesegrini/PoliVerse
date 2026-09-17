@@ -9,7 +9,7 @@ import OSLog
 /// the app at a closed career and `iae` answers "Utente non abilitato Code: 6"
 /// for everything — which is exactly how this was found.
 @Observable
-final class CareersService {
+final class CareersModel {
     private(set) var careers: [Career] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?

@@ -6,13 +6,13 @@ import OSLog
 ///
 /// `GET {agenda}/v1/persona/news?start_date=…&end_date=…` — path and query
 /// parameters verified from the official bundle, response body not. As with
-/// ``NoticeService``, the payload is read leniently and its *shape* is logged
+/// ``NoticeModel``, the payload is read leniently and its *shape* is logged
 /// so one run on a real account settles the field names.
 ///
 /// Unlike the agenda's other calls this one is not scoped to a matricola: it
 /// is `persona`, not `matricola/{m}`, so the token alone identifies the reader.
 @Observable
-final class NewsService {
+final class NewsModel {
     private(set) var items: [NewsItem] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?

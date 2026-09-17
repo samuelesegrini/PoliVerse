@@ -18,7 +18,7 @@ import OSLog
 /// need, against a page that sets a session cookie.
 ///
 /// This is the `maps_rest` WADL lesson again, written down in
-/// `FreeRoomsService`: ask the service to describe itself instead of guessing.
+/// `FreeRoomsModel`: ask the service to describe itself instead of guessing.
 @MainActor
 @Observable
 final class SPIDCatalogue {

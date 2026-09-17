@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Which rooms are free, and for how long.
 struct FreeRoomsView: View {
-    @Environment(FreeRoomsService.self) private var aule
+    @Environment(FreeRoomsModel.self) private var aule
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var minimumMinutes = 30

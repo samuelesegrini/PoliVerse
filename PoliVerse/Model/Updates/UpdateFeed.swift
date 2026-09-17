@@ -4,8 +4,8 @@ import OSLog
 
 /// Everything the app has noticed changing, for the signed-in student.
 ///
-/// Two services feed it — ``CareerService`` with exam sittings and the
-/// libretto, ``WeBeepService`` with course pages — and both go through here
+/// Two services feed it — ``CareerModel`` with exam sittings and the
+/// libretto, ``WeBeepModel`` with course pages — and both go through here
 /// because they share one log: one file per matricola, one daily budget, one
 /// evening summary. Written separately, each would overwrite the other's
 /// snapshot and the budget would count half the pushes.
@@ -23,7 +23,7 @@ final class UpdateFeed {
     /// Wired to the notification service at launch.
     @ObservationIgnored var onNewUpdates: (@MainActor ([ExamUpdate]) async -> Void)?
     /// The sittings currently known, so a WeBeep file can be weighed against
-    /// the student's own exams. Wired to ``CareerService`` at launch.
+    /// the student's own exams. Wired to ``CareerModel`` at launch.
     @ObservationIgnored var sittings: @MainActor () -> [ExamSession] = { [] }
 
     private let offline: OfflineStore

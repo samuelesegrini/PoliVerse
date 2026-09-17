@@ -72,7 +72,7 @@ struct MainThreadWorkTests {
             AgendaEvent(id: 3, title: "C", start: lateUTC, end: lateUTC.addingTimeInterval(3600), kind: .deadline),
         ]
 
-        let index = AgendaService.index(events)
+        let index = AgendaModel.index(events)
         #expect(index[calendar.startOfDay(for: morning)]?.map(\.id) == [1, 2])
         #expect(index[calendar.startOfDay(for: lateUTC)]?.map(\.id) == [3])
         #expect(index.count == 2)

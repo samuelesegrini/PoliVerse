@@ -10,7 +10,7 @@ import UIKit
 /// without handing over a libretto.
 struct CareerDiagnosticsView: View {
     @Environment(Session.self) private var session
-    @Environment(ManifestiService.self) private var manifesti
+    @Environment(ManifestiModel.self) private var manifesti
 
     private struct Payload: Identifiable {
         let id: String

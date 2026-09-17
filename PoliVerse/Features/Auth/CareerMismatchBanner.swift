@@ -10,7 +10,7 @@ import SwiftUI
 /// Advisory, never automatic: switching re-runs authorisation through a web
 /// view, which is not something to do to someone without asking.
 struct CareerMismatchBanner: View {
-    @Environment(CareersService.self) private var careers
+    @Environment(CareersModel.self) private var careers
     @Environment(Session.self) private var session
 
     var body: some View {

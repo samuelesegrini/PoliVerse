@@ -14,7 +14,9 @@ final class Session {
         case failed(String)
     }
 
-    private(set) var state: State = .loading
+    /// Set by ``Session`` itself and by ``LoginFlow``, which is the only
+    /// other thing allowed to move a session between states.
+    internal private(set) var state: State = .loading
 
     /// Set when the app is built without a live backend, so every screen renders
     /// with representative data.
@@ -44,7 +46,11 @@ final class Session {
     /// the session is fine, a subset of services is not.
     var serviceAuthorizationFailed = false
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "session")
-    private var profileBox: ProfileBox!
+    var profileBox: ProfileBox!
+
+    /// How the student got in. Owned here, so that the order in which the
+    /// session and the login are built cannot come apart.
+    private(set) var login: LoginFlow!
 
     init() {
         self.useMockData = UserDefaults.standard.object(forKey: "useMockData") as? Bool ?? false
@@ -98,160 +104,9 @@ final class Session {
                 await MainActor.run { self?.serviceAuthorizationFailed = true }
             }
         )
-    }
 
-    /// Decides the opening screen: a stored token means we can go straight in.
-    func restore() async {
-        // Learn where the services live before calling any of them.
-        await directory.load()
-
-        if useMockData {
-            await signIn(MockData.student)
-            return
-        }
-        guard await tokens.hasToken else {
-            state = .signedOut
-            return
-        }
-
-        // A token only carries the scopes it was granted at creation; refreshing
-        // never widens them. If the Politecnico has added a scope since this
-        // token was minted, it will 401 on the new service indefinitely, so
-        // re-authenticate rather than leave the user on a half-broken session.
-        //
-        // A nil recorded scope counts as a mismatch, not as "fine": every token
-        // minted before the app started recording it is precisely the token
-        // that predates the scope change, so `if let` would skip exactly the
-        // case this check exists for.
-        let currentScope = directory.oauth.scope
-        let granted = await tokens.grantedScope
-        if granted != currentScope {
-            log.notice("Stored token scope differs from current (had scope: \(granted != nil, privacy: .public)); re-authenticating")
-            await tokens.clear()
-            state = .signedOut
-            return
-        }
-        do {
-            let dto = try await api.send(
-                APIRequest(host: .app, path: "/jaf/internal/user"),
-                as: PoliMiUserDTO.self
-            )
-            await signIn(dto.toStudent())
-            await loadProfile()
-        } catch {
-            log.error("Restore failed: \(error.localizedDescription)")
-            state = .signedOut
-        }
-    }
-
-    /// Prepares for a genuinely fresh login.
-    ///
-    /// Does two things the user cannot do from inside the app:
-    ///
-    /// 1. Deletes any stored token. A token's scopes are fixed at creation and
-    ///    refreshing never widens them, so carrying one across a scope change
-    ///    keeps the old grant alive forever.
-    /// 2. Resolves the `aunicalogin` logout URL, so the login can end the SSO
-    ///    session before authorizing. With that session live the IdP may
-    ///    re-issue a code against the existing grant and ignore the wider scope
-    ///    we ask for — which is how "log in again" can return the same narrow
-    ///    token.
-    ///
-    /// - Returns: the logout URL, or nil to authorize directly.
-    func prepareForLogin() async -> URL? {
-        await directory.load()
-        await tokens.clear()
-
-        do {
-            let link = try await api.send(
-                PoliMiOAuth.logoutLinkRequest(serviceID: directory.oauth.serviceID),
-                as: PoliMiOAuth.LogoutLink.self
-            )
-            guard let target = link.targetURL, let url = URL(string: target) else {
-                log.notice("No SSO logout URL returned; authorizing directly")
-                return nil
-            }
-            log.info("Ending SSO session before authorizing")
-            return url
-        } catch {
-            // Not fatal: without it the login may reuse the old grant, but it
-            // is still better to try than to block the user entirely.
-            log.error("Could not resolve the SSO logout URL: \(error.localizedDescription)")
-            return nil
-        }
-    }
-
-    /// Adopts a credential minted by the official web app.
-    ///
-    /// No code exchange: the app already did it, and the token it produced is
-    /// one the data services accept — which the one we minted ourselves was
-    /// not. See ``PoliMiAppLoginWebView`` for what was ruled out first.
-    func completeLogin(token: PoliMiToken) async {
-        state = .exchangingCode
-        await directory.load()
-        await tokens.set(token)
-        await tokens.setGrantedScope(directory.oauth.scope)
-
-        do {
-            let dto = try await api.send(
-                APIRequest(host: .app, path: "/jaf/internal/user"),
-                as: PoliMiUserDTO.self
-            )
-            await signIn(dto.toStudent())
-            serviceAuthorizationFailed = false
-            await loadProfile()
-        } catch {
-            log.error("Could not read the user after login: \(error.localizedDescription)")
-            state = .failed(error.localizedDescription)
-        }
-    }
-
-    /// The enrolment the next login should land on.
-    ///
-    /// Persisted, because the login it applies to happens after the app has
-    /// signed out and the in-memory state is gone. Cleared once used.
-    var pendingMatricola: String? {
-        get { UserDefaults.standard.string(forKey: "pendingMatricola") }
-        set { UserDefaults.standard.set(newValue, forKey: "pendingMatricola") }
-    }
-
-    /// Signs out so the user can sign back in on another enrolment.
-    ///
-    /// The Politecnico's own `/careerChange` errors for this account — in the
-    /// official app too — so the working route is a full re-login. The lever
-    /// that actually decides which enrolment the new token binds to is the
-    /// favourite, set through `PUT /v1/careers/favorite/{matricola}` while
-    /// the current token still works; the matricola on the authorize request
-    /// is only a hint on top of that.
-    func beginCareerRelogin(matricola: String) async {
-        pendingMatricola = matricola
-        log.notice("Signing out to re-authenticate on matricola \(matricola, privacy: .public)")
-        await signOut()
-    }
-
-    /// Adopts a token minted for a different enrolment.
-    ///
-    /// Deliberately not ``completeLogin(token:)``: that moves the state to
-    /// `.exchangingCode`, which drops the whole UI back to the login screen.
-    /// A career change is not a login — the person stays signed in, and only
-    /// the matricola their grant is bound to moves. If reading the user back
-    /// fails, the previous career is still signed in and working, so the old
-    /// state is kept rather than replaced with an error screen.
-    func adopt(_ token: PoliMiToken) async {
-        await tokens.set(token)
-        await tokens.setGrantedScope(directory.oauth.scope)
-        do {
-            let dto = try await api.send(
-                APIRequest(host: .app, path: "/jaf/internal/user"),
-                as: PoliMiUserDTO.self
-            )
-            await signIn(dto.toStudent())
-            serviceAuthorizationFailed = false
-            await loadProfile()
-            log.notice("Now on matricola \(dto.matricola, privacy: .public)")
-        } catch {
-            log.error("Career switch could not read the user: \(error.localizedDescription)")
-        }
+        // Last, because it takes `self`: everything it reaches for is built.
+        self.login = LoginFlow(session: self)
     }
 
     /// The OAuth configuration, for views that drive their own flow.
@@ -263,70 +118,12 @@ final class Session {
         get async { try? await tokens.validToken() }
     }
 
-    /// Exchanges the authcode from the web flow for a token pair.
-    func completeLogin(authCode: String) async {
-        state = .exchangingCode
-        // The login web view may have been opened before the directory landed.
-        await directory.load()
-        do {
-            let token = try await api.send(
-                PoliMiOAuth.tokenExchangeRequest(authCode: authCode),
-                as: PoliMiToken.self
-            )
-            await tokens.set(token)
-            await tokens.setGrantedScope(directory.oauth.scope)
-
-            let dto = try await api.send(
-                APIRequest(host: .app, path: "/jaf/internal/user"),
-                as: PoliMiUserDTO.self
-            )
-            await signIn(dto.toStudent())
-            serviceAuthorizationFailed = false
-            await loadProfile()
-        } catch {
-            log.error("Code exchange failed: \(error.localizedDescription)")
-            state = .failed(error.localizedDescription)
-        }
-    }
-
-    func signOut() async {
-        serviceAuthorizationFailed = false
-        // Server-side invalidation, as the official app does. Best effort: the
-        // local token is dropped either way.
-        if await tokens.hasToken {
-            _ = try? await api.send(PoliMiOAuth.revokeRequest)
-        }
-        await tokens.clear()
-        // Otherwise the next person to sign in on this device finds the
-        // previous student's courses in Spotlight.
-        SpotlightIndex().clear()
-        // Same reason: reminders naming someone else's lectures would keep
-        // arriving after they signed out.
-        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-        // Cookies only: the login page's 13.7 MB of JavaScript and CSS stays
-        // cached, so signing back in is fast. Nothing identifying remains.
-        await LoginWebKit.endSession()
-        // The offline copies are this student's record. Someone else signing
-        // in on the same device must not find them.
-        if let matricola = student?.matricola {
-            OfflineStore.shared.clear(account: matricola)
-        }
-        if useMockData {
-            await signIn(MockData.student)
-        } else {
-            state = .signedOut
-            await profileBox.set(matricola: nil)
-            // A widget must show "sign in", not "no lectures".
-            SharedAccount.update(matricola: nil, firstName: nil)
-        }
-    }
-
     /// Reads `/jaf/internal/profiles` to learn which profile to present.
     ///
     /// The response shape is unverified, so the raw body is logged once: that
     /// log line is what turns the guesswork in ``PoliMiProfileDTO`` into a
     /// definite answer.
-    private func loadProfile() async {
+    func loadProfile() async {
         do {
             let data = try await api.send(APIRequest(host: .app, path: "/jaf/internal/profiles"))
             let raw = String(data: data.prefix(500), encoding: .utf8) ?? "<binary>"
@@ -355,7 +152,7 @@ final class Session {
     /// Centralised because there are four ways in — restore, two exchange
     /// paths and mock data — and a matricola set at three of them would fail
     /// only on the fourth.
-    private func signIn(_ student: Student) async {
+    func signIn(_ student: Student) async {
         state = .signedIn(student)
         await profileBox.set(matricola: student.matricola)
         // Widgets read the offline files, which are keyed by matricola, and
@@ -363,12 +160,15 @@ final class Session {
         SharedAccount.update(matricola: student.matricola, firstName: student.firstName)
     }
 
+    /// The only way to move a session between states from outside this file,
+    /// which is ``LoginFlow`` and nothing else.
+    func enter(_ newState: State) { state = newState }
+
     var student: Student? {
         if case .signedIn(let student) = state { return student }
         return nil
     }
 }
-
 
 /// Carries the profile id across actor boundaries so ``PoliMiAPI`` — which is
 /// not main-actor bound — can read the current value without capturing

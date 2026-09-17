@@ -9,7 +9,7 @@ import OSLog
 /// independent credentials with independent lifetimes: the PoliMi session can
 /// be alive while the WeBeep one is dead, and vice versa.
 @Observable
-final class WeBeepService {
+final class WeBeepModel {
     enum State: Equatable {
         case needsLogin
         case loading

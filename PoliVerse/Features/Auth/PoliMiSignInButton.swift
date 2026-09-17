@@ -181,7 +181,7 @@ struct PoliMiSignInButton: View {
             // to mint a new grant rather than replay the old one. The returned
             // logout URL is not needed: the call has already ended the session,
             // and the web view starts from the authorize endpoint.
-            _ = await session.prepareForLogin()
+            _ = await session.login.prepareForLogin()
             isPreparing = false
             showingWeb = true
         }
@@ -195,10 +195,10 @@ struct PoliMiSignInButton: View {
                 onCredentials: { token in
                     showingWeb = false
                     Task {
-                        await session.completeLogin(token: token)
+                        await session.login.completeLogin(token: token)
                         // Consumed either way: a hint that did not take is not
                         // worth re-applying to every future login.
-                        session.pendingMatricola = nil
+                        session.login.pendingMatricola = nil
                     }
                 },
                 onError: { error in
@@ -208,7 +208,7 @@ struct PoliMiSignInButton: View {
                 onCieIDMissing: { showingCieIDMissing = true },
                 // Carries the enrolment the user asked to switch to, if they
                 // got here from the career switcher.
-                flow: .login(hintMatricola: session.pendingMatricola),
+                flow: .login(hintMatricola: session.login.pendingMatricola),
                 method: method,
                 // Read off the page while we are there, so the list the app
                 // offers next time is the one the Politecnico is actually

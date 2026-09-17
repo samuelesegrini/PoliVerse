@@ -11,10 +11,10 @@ import UserNotifications
 @MainActor
 struct DiagnosticsCollector {
     let session: Session
-    let weBeep: WeBeepService
+    let weBeep: WeBeepModel
     let network: NetworkMonitor
     let pending: PendingChanges
-    let notifications: NotificationService
+    let notifications: NotificationModel
     let liveActivity: LiveActivityController
     let cieID: CieIDRouter
     let loginMemory: LoginMethodMemory

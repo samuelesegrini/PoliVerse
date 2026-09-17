@@ -20,7 +20,7 @@ import SwiftUI
 /// Said plainly on screen rather than hidden behind a spinner, because being
 /// signed out is not what anyone expects from a picker.
 struct CareerSwitchView: View {
-    @Environment(CareersService.self) private var careers
+    @Environment(CareersModel.self) private var careers
     @Environment(Session.self) private var session
     @Environment(\.dismiss) private var dismiss
 
@@ -94,7 +94,7 @@ struct CareerSwitchView: View {
             // authenticate the request with.
             careers.remember(career)
             await careers.markFavourite(career)
-            await session.beginCareerRelogin(matricola: career.matricola)
+            await session.login.beginCareerRelogin(matricola: career.matricola)
             working = false
             dismiss()
         }

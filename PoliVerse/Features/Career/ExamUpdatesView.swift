@@ -5,7 +5,7 @@ import SwiftUI
 /// The feed replaces the habit of opening each sitting to see whether anything
 /// moved. It says only what official data said, and where it said it.
 struct ExamUpdatesView: View {
-    @Environment(CareerService.self) private var career
+    @Environment(CareerModel.self) private var career
     @Environment(UpdateFeed.self) private var feed
     @Environment(\.locale) private var locale
     @State private var selectedExam: ExamSession?
@@ -85,7 +85,7 @@ struct ExamUpdateRow: View {
     var showsClockTime = false
     var isUnread = false
     @Environment(\.locale) private var locale
-    @Environment(NotificationService.self) private var notifications
+    @Environment(NotificationModel.self) private var notifications
 
     private var update: ExamUpdate { item.update }
 
@@ -157,7 +157,7 @@ struct ExamUpdateRow: View {
 /// A sitting's timeline, for the detail sheet.
 struct ExamTimelineSection: View {
     let exam: ExamSession
-    @Environment(CareerService.self) private var career
+    @Environment(CareerModel.self) private var career
     @Environment(UpdateFeed.self) private var feed
     @Environment(\.locale) private var locale
 

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct CareerView: View {
-    @Environment(CareerService.self) private var career
+    @Environment(CareerModel.self) private var career
     @Environment(UpdateFeed.self) private var feed
     @State private var scope: Scope = .overview
     @State private var selectedExam: ExamSession?
@@ -34,7 +34,7 @@ struct CareerView: View {
     }
 
     @ViewBuilder
-    private func content(_ career: CareerService) -> some View {
+    private func content(_ career: CareerModel) -> some View {
         ScrollView {
             VStack(spacing: 18) {
                 Picker("Sezione", selection: $scope) {
@@ -106,7 +106,7 @@ struct CareerView: View {
 
     // MARK: - Overview
 
-    private func overview(_ career: CareerService) -> some View {
+    private func overview(_ career: CareerModel) -> some View {
         let book = career.gradeBook
         return VStack(spacing: 16) {
             recentUpdates(career)
@@ -178,7 +178,7 @@ struct CareerView: View {
     /// The last fortnight's updates, at the top: this is what changed since
     /// the student last looked, which is the reason most visits happen.
     @ViewBuilder
-    private func recentUpdates(_ career: CareerService) -> some View {
+    private func recentUpdates(_ career: CareerModel) -> some View {
         let items = FeedItem.items(from: feed.recent)
         let unread = FeedItem.unreadCount(items, seenAt: feed.seenAt)
         if !items.isEmpty {
@@ -217,7 +217,7 @@ struct CareerView: View {
     // MARK: - Upcoming
 
     @ViewBuilder
-    private func upcoming(_ career: CareerService) -> some View {
+    private func upcoming(_ career: CareerModel) -> some View {
         if career.upcoming.isEmpty {
             ContentUnavailableView("Nessun appello", systemImage: "calendar.badge.clock",
                                    description: Text("Non ci sono appelli in programma."))
@@ -235,7 +235,7 @@ struct CareerView: View {
     // MARK: - Results
 
     @ViewBuilder
-    private func results(_ career: CareerService) -> some View {
+    private func results(_ career: CareerModel) -> some View {
         if career.libretto.isEmpty {
             ContentUnavailableView("Nessun esito", systemImage: "checkmark.seal",
                                    description: Text("Il libretto non ha restituito insegnamenti."))

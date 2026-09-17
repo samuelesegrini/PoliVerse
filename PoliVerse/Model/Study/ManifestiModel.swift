@@ -23,7 +23,7 @@ import OSLog
 /// should be able to disturb the authenticated session, and the catalogue
 /// never needs to know who the student is.
 @Observable
-final class ManifestiService {
+final class ManifestiModel {
     private(set) var results: [ManifestoTeaching] = []
     private(set) var isSearching = false
     private(set) var errorMessage: String?

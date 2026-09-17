@@ -15,7 +15,7 @@ struct NewRootView: View {
     @AppStorage(TodayStyle.storageKey) private var todayStyle = TodayStyle()
     @Environment(\.colorScheme) private var scheme
     @State private var layoutChangePending = false
-    @Environment(AgendaService.self) private var agenda
+    @Environment(AgendaModel.self) private var agenda
     @Environment(UpdateFeed.self) private var feed
     /// Re-read every minute so the accessory moves on when a lesson ends.
     @State private var now = Date.now

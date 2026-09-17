@@ -17,7 +17,7 @@ import OSLog
 /// asks for `start_date = today, end_date = today + 1 month`, so that is what
 /// this does — no more fetching 200 events and discarding most of them.
 @Observable
-final class AgendaService {
+final class AgendaModel {
     private(set) var events: [AgendaEvent] = [] {
         didSet { eventsByDay = Self.index(events) }
     }

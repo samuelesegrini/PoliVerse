@@ -11,7 +11,7 @@ struct SyllabusView: View {
     let classID: String
     let title: String
 
-    @Environment(ManifestiService.self) private var manifesti
+    @Environment(ManifestiModel.self) private var manifesti
     @State private var syllabus: Syllabus?
     @State private var loading = true
 
@@ -266,8 +266,8 @@ private struct ProseCard: View {
 struct CourseSyllabusView: View {
     let course: Course
 
-    @Environment(ManifestiService.self) private var manifesti
-    @Environment(StudyProgrammeService.self) private var programmes
+    @Environment(ManifestiModel.self) private var manifesti
+    @Environment(StudyProgrammeModel.self) private var programmes
     @Environment(Session.self) private var session
     @State private var pick: SyllabusPicker.Pick?
     @State private var syllabus: Syllabus?
@@ -487,7 +487,7 @@ private struct CareerChoice: Identifiable {
 /// and name cannot place.
 private struct PlanLinkSheet: View {
     let course: Course
-    @Environment(StudyProgrammeService.self) private var programmes
+    @Environment(StudyProgrammeModel.self) private var programmes
     @Environment(\.dismiss) private var dismiss
     @State private var plan: [PlanTeaching]?
 

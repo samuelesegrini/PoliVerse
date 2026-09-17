@@ -24,10 +24,10 @@ final class PendingChanges {
 
     /// Set by the app once WeBeep exists — the queue is built before it, and
     /// two of the four actions are WeBeep's.
-    var weBeep: WeBeepService?
-    var careers: CareersService?
-    var career: CareerService?
-    var courses: CourseService?
+    var weBeep: WeBeepModel?
+    var careers: CareersModel?
+    var career: CareerModel?
+    var courses: CourseModel?
 
     init(session: Session, network: NetworkMonitor) {
         self.session = session

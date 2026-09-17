@@ -2,12 +2,12 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(Session.self) private var session
-    @Environment(CourseService.self) private var courses
-    @Environment(AgendaService.self) private var agenda
-    @Environment(CareerService.self) private var career
-    @Environment(NoticeService.self) private var notices
-    @Environment(NewsService.self) private var news
-    @Environment(CareersService.self) private var careers
+    @Environment(CourseModel.self) private var courses
+    @Environment(AgendaModel.self) private var agenda
+    @Environment(CareerModel.self) private var career
+    @Environment(NoticeModel.self) private var notices
+    @Environment(NewsModel.self) private var news
+    @Environment(CareersModel.self) private var careers
     @Environment(NetworkMonitor.self) private var network
     @Environment(FreshnessCoordinator.self) private var freshness
     @Environment(\.locale) private var locale
@@ -302,7 +302,7 @@ struct ServiceAuthBanner: View {
                 .foregroundStyle(.secondary)
             Button("Accedi di nuovo") {
                 isSigningOut = true
-                Task { await session.signOut() }
+                Task { await session.login.signOut() }
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.small)

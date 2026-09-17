@@ -6,7 +6,7 @@ import SwiftUI
 /// `/elencoinsegnamenti/{matricola}` returns both halves already split — with
 /// the header from `/testatapiano/{matricola}` on top.
 struct StudyPlanView: View {
-    @Environment(CareerService.self) private var career
+    @Environment(CareerModel.self) private var career
 
     @State private var showPassed = true
     @State private var showPending = true

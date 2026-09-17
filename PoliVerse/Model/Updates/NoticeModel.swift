@@ -16,7 +16,7 @@ import OSLog
 /// - the payload's *shape* is logged — keys and types, never values — so one
 ///   run on a real account replaces the guesses with fact.
 @Observable
-final class NoticeService {
+final class NoticeModel {
     private(set) var notices: [Notice] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?

@@ -6,7 +6,7 @@ import OSLog
 ///
 /// ## On "aule libere"
 ///
-/// Occupancy **is** available, and lives in ``FreeRoomsService``. This type
+/// Occupancy **is** available, and lives in ``FreeRoomsModel``. This type
 /// stays the catalogue: every room on campus with its building, floor and
 /// capacity, public and needing no token.
 ///
@@ -24,7 +24,7 @@ import OSLog
 ///
 /// The catalogue itself is public and needs no token.
 @Observable
-final class RoomsService {
+final class RoomsModel {
     private(set) var rooms: [Classroom] = []
     /// Campuses present in the catalogue, for filtering.
     ///

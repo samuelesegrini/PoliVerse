@@ -11,7 +11,7 @@ import Foundation
 /// - Important: the response body has **never been captured from a real
 ///   account**. Everything except that one parameter name is a guess, so this
 ///   reads fields by trying a list of plausible names rather than binding to
-///   one, and ``NoticeService`` logs the payload's shape so the guess can be
+///   one, and ``NoticeModel`` logs the payload's shape so the guess can be
 ///   replaced with fact after a single run.
 nonisolated struct Notice: Identifiable, Sendable, Hashable, Codable {
     let id: String
@@ -27,7 +27,7 @@ nonisolated struct Notice: Identifiable, Sendable, Hashable, Codable {
     /// Upstream's own read flag, when it sends one. Nil means it does not,
     /// and read state is tracked on the device instead.
     let serverRead: Bool?
-    /// Resolved by ``NoticeService``: the server's flag when there is one,
+    /// Resolved by ``NoticeModel``: the server's flag when there is one,
     /// otherwise what this device remembers.
     var isRead: Bool = false
     /// Whether a link out to the web exists for this notice.

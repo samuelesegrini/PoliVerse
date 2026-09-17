@@ -39,7 +39,7 @@ import OSLog
 /// Leonardo, the largest. They run concurrently with a bounded pool and are
 /// cached per room and day, so a day already looked at costs nothing.
 @Observable
-final class FreeRoomsService {
+final class FreeRoomsModel {
     private(set) var rooms: [RoomSchedule] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?
@@ -58,7 +58,7 @@ final class FreeRoomsService {
     var day: Date = .now
     var campus: String?
 
-    private let catalogue: RoomsService
+    private let catalogue: RoomsModel
     private let session: URLSession
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "aule")
 
@@ -88,7 +88,7 @@ final class FreeRoomsService {
     /// not faster.
     private let concurrency = 8
 
-    convenience init(catalogue: RoomsService, preview rooms: [RoomSchedule]) {
+    convenience init(catalogue: RoomsModel, preview rooms: [RoomSchedule]) {
         self.init(catalogue: catalogue)
         self.rooms = rooms
         self.skipsLoading = true
@@ -99,7 +99,7 @@ final class FreeRoomsService {
     /// otherwise rewrite a file per campus.
     private var publishedCatalogue = false
 
-    init(catalogue: RoomsService, session: URLSession = .shared) {
+    init(catalogue: RoomsModel, session: URLSession = .shared) {
         self.catalogue = catalogue
         self.session = session
         loader = ResourceLoader(

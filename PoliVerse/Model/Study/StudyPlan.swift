@@ -5,7 +5,7 @@ import Foundation
 ///
 /// The Politecnico has endpoints for this — `/sequenzamedia/{matricola}`,
 /// `/mediaobiettivo/{matricola}`, `/simulazionemedia/insegnsenzavoto/{matricola}`
-/// — and ``CareerService`` reads the official target from them. The
+/// — and ``CareerModel`` reads the official target from them. The
 /// arithmetic below is still done on the device: answering "what if I get 28
 /// in the rest?" has to be instant while a slider moves, and it is a weighted
 /// mean over data already here.

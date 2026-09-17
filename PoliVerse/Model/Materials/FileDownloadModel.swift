@@ -12,7 +12,7 @@ import OSLog
 /// and any open tab list — somewhere the user cannot easily clear and did not
 /// ask for it to go. Fetching it here keeps the token inside the app.
 @Observable
-final class FileDownloadService {
+final class FileDownloadModel {
     enum Status: Equatable {
         case idle
         case downloading(progress: Double)

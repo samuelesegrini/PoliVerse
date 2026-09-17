@@ -63,12 +63,12 @@ final class FreshnessCoordinator {
     /// the app and the preview environment both need the same list, and a list
     /// written twice is a list that drifts.
     static func standard(
-        courses: CourseService,
-        agenda: AgendaService,
-        career: CareerService,
-        notices: NoticeService,
-        news: NewsService,
-        weBeep: WeBeepService
+        courses: CourseModel,
+        agenda: AgendaModel,
+        career: CareerModel,
+        notices: NoticeModel,
+        news: NewsModel,
+        weBeep: WeBeepModel
     ) -> FreshnessCoordinator {
         let coordinator = FreshnessCoordinator()
         coordinator.register("courses", title: "Corsi", failure: { courses.errorMessage }, age: { courses.age }) {

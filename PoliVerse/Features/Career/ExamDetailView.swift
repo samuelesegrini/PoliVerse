@@ -12,8 +12,8 @@ struct ExamDetailView: View {
 
     @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
-    @Environment(CareerService.self) private var career
-    @Environment(CourseService.self) private var courses
+    @Environment(CareerModel.self) private var career
+    @Environment(CourseModel.self) private var courses
     /// Captured when the button is tapped, so the sheet keeps its event even
     /// if the sitting's start passes while it is open.
     @State private var calendarDraft: ExamCalendarEvent?

@@ -6,14 +6,14 @@ import OSLog
 /// Buildings placed on the map, with how busy each one is.
 ///
 /// Coordinates come from the public geojson; room counts from the catalogue;
-/// free counts, when asked for, from ``FreeRoomsService``. Nothing here needs
+/// free counts, when asked for, from ``FreeRoomsModel``. Nothing here needs
 /// a token.
 ///
 /// The map deliberately shows **buildings, not rooms**. There are 353 rooms and
 /// no geometry finer than a building's bounding box, so a room pin would be a
 /// building pin wearing a room's name.
 @Observable
-final class CampusMapService {
+final class CampusMapModel {
     /// The pins the map is drawing. Grows a few at a time while a placement
     /// is being revealed, so buildings land on the map instead of the whole
     /// campus blinking into place at once.
@@ -29,8 +29,8 @@ final class CampusMapService {
     /// fetched, since a grey map is honest and a green one would not be.
     private(set) var showsAvailability = false
 
-    private let catalogue: RoomsService
-    private let freeRooms: FreeRoomsService
+    private let catalogue: RoomsModel
+    private let freeRooms: FreeRoomsModel
     private let session: URLSession
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "map")
     private let url = URL(string:
@@ -39,7 +39,7 @@ final class CampusMapService {
     /// Fetched once: buildings do not move.
     private var locations: [String: BuildingLocation] = [:]
 
-    convenience init(catalogue: RoomsService, freeRooms: FreeRoomsService, preview pins: [MapPin]) {
+    convenience init(catalogue: RoomsModel, freeRooms: FreeRoomsModel, preview pins: [MapPin]) {
         self.init(catalogue: catalogue, freeRooms: freeRooms)
         self.pins = pins
         self.placed = pins
@@ -48,7 +48,7 @@ final class CampusMapService {
 
     private var skipsLoading = false
 
-    init(catalogue: RoomsService, freeRooms: FreeRoomsService, session: URLSession = .shared) {
+    init(catalogue: RoomsModel, freeRooms: FreeRoomsModel, session: URLSession = .shared) {
         self.catalogue = catalogue
         self.freeRooms = freeRooms
         self.session = session

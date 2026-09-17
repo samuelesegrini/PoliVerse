@@ -12,8 +12,8 @@ struct CourseCard: View {
     let onMaterials: () -> Void
     var onHide: () -> Void = {}
 
-    @Environment(AgendaService.self) private var agenda
-    @Environment(CareerService.self) private var career
+    @Environment(AgendaModel.self) private var agenda
+    @Environment(CareerModel.self) private var career
     @Environment(UpdateFeed.self) private var feed
     @Environment(\.locale) private var locale
 

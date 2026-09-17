@@ -5,7 +5,7 @@ import Testing
 /// What survives losing signal.
 ///
 /// Before this, only courses and rooms persisted. The agenda and the libretto
-/// vanished — worse, `CareerService` actively wiped itself on a failed load,
+/// vanished — worse, `CareerModel` actively wiped itself on a failed load,
 /// so going into a basement replaced a student's exam record with an empty
 /// screen.
 @Suite("Offline store")

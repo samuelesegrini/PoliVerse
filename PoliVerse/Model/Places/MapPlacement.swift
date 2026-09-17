@@ -11,7 +11,7 @@ extension MapPin {
 
 /// Where the map's pins go, worked out away from the main thread.
 ///
-/// Pure, so ``CampusMapService`` can call it every time something arrives —
+/// Pure, so ``CampusMapModel`` can call it every time something arrives —
 /// cached coordinates, the catalogue, fresh coordinates — and the map fills
 /// in as data lands instead of waiting for all of it.
 nonisolated enum MapPlacement {

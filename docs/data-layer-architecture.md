@@ -198,10 +198,10 @@ Then three steps, three pull requests:
 
 | Step | What | Touches logic | Effort |
 | --- | --- | :-: | --- |
-| **1** | Split the six files that hold both a DTO and a domain type; the DTOs become `Wire.swift` in their area, `internal`. | no | half a day |
+| **1** | Split the six files that hold both a DTO and a domain type; the DTOs become `Wire.swift` in their area. **Done.** | no | done |
 | **2** | `git mv` the 110 files into `Model/<Area>/`. `AuthWebView` goes to the views. **Done** — see below. | no | done |
-| **2b** | Rename `…Service` to `…Model` / `…API` where the name lies. Split from step 2 deliberately: a move cannot break the build, a rename touches call sites and wants a compiler to confirm it. | no | half a day |
-| **3** | Split `Session` into two: **who the student is** and **how they got in**. The sample-data flag goes with the first. | **yes** | a day |
+| **2b** | Rename `…Service` to `…Model` where the name lies. **Done** — all sixteen were `@Observable`, so all sixteen are models; `…API` stayed for the two that already said so. | no | done |
+| **3** | Split `Session` into two: **who the student is** and **how they got in**. **Done, partly** — see below. | **yes** | done, with a remainder |
 
 Nothing else. `Session` is split into two rather than four because a type for
 one boolean is not a type. The two interfaces converge when it is decided which
@@ -228,6 +228,26 @@ synchronized root group picks the new tree up by path, exactly as predicted.
 Areas as they came out, largest first: Support 15, Identity 12, Materials 12,
 Diagnostics 12, Updates 10, Places 9, Career 8, Study 8, Courses 6, Platform 6,
 Sync 6, Timetable 4, Mock 1 — 109 files, plus `AuthWebView` to the views.
+
+### What step 3 did, and did not do
+
+`Session` was 387 lines. It is now 185, and `LoginFlow` is 241: the restore at
+launch, the login, the logout and the career re-login moved out whole, bodies
+unchanged.
+
+The usage data decided the cut. Of roughly 150 uses of a `Session` across the
+app, **140 are `student` and `useMockData`** — who the student is, and which
+mode the app is in. The OAuth machinery is reached from thirteen places. So
+the identity half kept the name and the call sites, and the login half became
+its own type.
+
+`LoginFlow` is reached as `session.login`, not injected on its own. That is
+the part that is deliberately unfinished, and it matters: **`Session`'s fan-in
+is still 49.** Separating the code is done; separating the dependencies means
+injecting `LoginFlow` into the six views that drive a login, which is a
+one-line change per view — and it is the one change that wants a compiler,
+because the login path is the only path in this app that no test can
+exercise. It needs a real Politecnico account.
 
 `Sync/` was not in the plan. It exists because rule 1 found two files —
 `PendingChanges` and `FreshnessCoordinator` — that name four to six area
