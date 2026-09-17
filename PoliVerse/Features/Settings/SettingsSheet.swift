@@ -2,9 +2,6 @@ import SwiftUI
 
 /// Settings, opened as a sheet from Oggi: the profile first, then data,
 /// appearance, the parts of the university the app reads, and help.
-///
-/// Areas not rebuilt yet open the current settings screen, so nothing is
-/// lost while the new structure is tried out.
 struct SettingsSheet: View {
     @Environment(Session.self) private var session
     @Environment(DataStatus.self) private var status
@@ -12,18 +9,9 @@ struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.shell) private var shell
 
-    @AppStorage(NewInterface.storageKey) private var usesNewInterface = true
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
     @AppStorage(SearchTabKeyboard.storageKey) private var searchOpensKeyboard = true
     @State private var confirmingSignOut = false
-
-    #if DEBUG
-    /// `-NewUI` shows this interface whatever the setting says, so switching
-    /// back would do nothing.
-    private let canSwitchBack = !CommandLine.arguments.contains("-NewUI")
-    #else
-    private let canSwitchBack = true
-    #endif
 
     var body: some View {
         NavigationStack(path: Binding(get: { shell.settingsPath }, set: { shell.settingsPath = $0 })) {
@@ -105,19 +93,6 @@ struct SettingsSheet: View {
                         } label: {
                             Label("WeBeep e diagnostica", systemImage: "books.vertical")
                         }
-                    }
-                }
-
-                if canSwitchBack {
-                    Section {
-                        Button {
-                            dismiss()
-                            usesNewInterface = false
-                        } label: {
-                            Label("Torna all’interfaccia attuale", systemImage: "arrow.uturn.backward")
-                        }
-                    } footer: {
-                        Text("La nuova interfaccia è in prova. Puoi riattivarla dalle impostazioni.")
                     }
                 }
 

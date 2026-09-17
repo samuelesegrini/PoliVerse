@@ -157,7 +157,8 @@ struct PoliVerseApp: App {
         WindowGroup {
             Group {
                 #if DEBUG
-                // `-NewUI` launches the restructured shell being tried out.
+                // `-NewUI` launches straight into the shell, skipping sign-in
+                // and onboarding — for UI tests and screenshots.
                 if CommandLine.arguments.contains("-NewUI") { NewRootView() } else { RootView() }
                 #else
                 RootView()

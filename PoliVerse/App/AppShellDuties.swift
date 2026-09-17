@@ -1,10 +1,7 @@
 import SwiftUI
 
-/// What the app does whichever interface is on screen: land every way in
-/// from outside, and keep Spotlight and the reminders in step with the data.
-///
-/// Shared by ``MainTabView`` and ``NewRootView``, so switching interface in
-/// Impostazioni never switches any of this off.
+/// What the app does around ``NewRootView``: land every way in from outside,
+/// and keep Spotlight and the reminders in step with the data.
 struct AppShellDuties: ViewModifier {
     /// Opens a destination in the interface on screen.
     let route: (AppDestination) -> Void

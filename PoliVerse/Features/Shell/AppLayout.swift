@@ -32,9 +32,3 @@ enum AppLayout: String, CaseIterable, Identifiable {
 
     static let storageKey = "appLayout"
 }
-
-/// Whether the signed-in app opens the restructured interface or the current
-/// tabs. A test switch while the new structure settles.
-enum NewInterface {
-    static let storageKey = "usesNewInterface"
-}

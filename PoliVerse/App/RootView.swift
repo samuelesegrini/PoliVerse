@@ -4,9 +4,6 @@ import SwiftUI
 struct RootView: View {
     @Environment(Session.self) private var session
     @Environment(OnboardingState.self) private var onboarding
-    /// The restructured interface being tried out, on by default on this
-    /// branch; Impostazioni switches back to the current one.
-    @AppStorage(NewInterface.storageKey) private var usesNewInterface = true
 
     var body: some View {
         Group {
@@ -23,10 +20,8 @@ struct RootView: View {
             case .signedIn:
                 if !onboarding.isComplete {
                     OnboardingView()
-                } else if usesNewInterface {
-                    NewRootView()
                 } else {
-                    MainTabView()
+                    NewRootView()
                 }
             }
         }
@@ -46,47 +41,5 @@ struct RootView: View {
             // says this install predates the onboarding.
             if session.student != nil { onboarding.adoptExistingInstall() }
         }
-    }
-}
-
-struct MainTabView: View {
-    /// One place every way in from outside lands: Siri, Shortcuts, Spotlight's
-    /// action row, and Control Center.
-    private func route(to destination: AppDestination) {
-        switch destination {
-        case .calendar: selection = "calendar"
-        case .career, .plan, .simulator: selection = "career"
-        case .weBeep: selection = "webeep"
-        case .search, .freeRooms, .map: selection = "search"
-        case .home: selection = "home"
-        }
-    }
-
-    @Environment(UpdateFeed.self) private var feed
-
-    @State private var selection = "home"
-
-    var body: some View {
-        TabView(selection: $selection) {
-            Tab("Home", systemImage: "graduationcap", value: "home") { HomeView() }
-            Tab("WeBeep", systemImage: "books.vertical", value: "webeep") { WeBeepView() }
-            Tab("Calendario", systemImage: "calendar", value: "calendar") { CalendarView() }
-            Tab("Carriera", systemImage: "chart.bar", value: "career") { CareerView() }
-                // What changed since the feed was last opened, one per fact.
-                .badge(feed.unreadCount)
-            Tab("Cerca", systemImage: "magnifyingglass", value: "search", role: .search) {
-                SearchView()
-            }
-        }
-        // Hangs and hitches in the field arrive split by tab.
-        .onChange(of: selection, initial: true) { _, tab in
-            PerformanceStates.tabSelected(tab)
-        }
-        .onDisappear { PerformanceStates.tabSelected(nil) }
-        // Above the tabs rather than on one screen: sample data replaces
-        // every one of them, so saying it once on the Home would leave the
-        // libretto looking like a real libretto.
-        .dataStatusLine(opensSettings: false)
-        .appShellDuties(route: route(to:))
     }
 }

@@ -158,3 +158,11 @@ struct DiagnosticsCollector {
         }
     }
 }
+
+extension Bundle {
+    var appVersion: String {
+        let short = infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
+        let build = infoDictionary?["CFBundleVersion"] as? String ?? "—"
+        return "\(short) (\(build))"
+    }
+}

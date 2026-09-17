@@ -4,8 +4,9 @@ import OSLog
 /// The one place that knows what "refresh everything" means.
 ///
 /// The app used to spell that list out three times — the pull-to-refresh
-/// handler and the `.task` on `HomeView`, and the background task's closure in
-/// `PoliVerseApp` — and each copy drifted a little from the others. Worse, two
+/// handler and the `.task` on the home screen, and the background task's
+/// closure in `PoliVerseApp` — and each copy drifted a little from the
+/// others. Worse, two
 /// moments that obviously deserve fresh data triggered nothing at all: coming
 /// back to the app after lunch showed the lectures from before lunch, and
 /// walking out of a basement left the screen as stale as it was underground.
@@ -56,7 +57,7 @@ final class FreshnessCoordinator {
     private var inFlight: Task<Void, Never>?
     private let log = Logger(subsystem: "one.wape.PoliVerse", category: "freshness")
 
-    /// Everything the app shows, in the order `HomeView` wants it.
+    /// Everything the app shows, in the order the home screen wants it.
     ///
     /// A factory rather than five `register` calls at each site, because the
     /// duplication this class exists to remove would otherwise simply move:
