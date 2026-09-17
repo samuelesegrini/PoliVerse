@@ -37,7 +37,16 @@ struct NewRootView: View {
             .overlay {
                 if shell.isCustomizing { CustomizeOggi() }
             }
-            .onAppear { shell.singlePage = layout == .singlePage }
+            .onAppear {
+                shell.singlePage = layout == .singlePage
+                #if DEBUG
+                // `-OpenPlace calendar` opens a place at launch, for trying it out.
+                if let raw = UserDefaults.standard.string(forKey: "OpenPlace"),
+                   let place = NewDestination(rawValue: raw) {
+                    shell.route(to: .destination(place))
+                }
+                #endif
+            }
             .onChange(of: layout) { _, new in
                 if shell.showingSettings {
                     layoutChangePending = true

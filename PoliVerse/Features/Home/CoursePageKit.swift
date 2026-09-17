@@ -213,3 +213,64 @@ struct GlanceStrip: View {
         .lookCard()
     }
 }
+
+// MARK: - Glass lists
+
+extension View {
+    /// A `List` drawn as the glass pages are: grouped sections floating on the
+    /// look's sheet, each row on glass. For the pages whose content is a list
+    /// already — Cerca's places — so they join the section without being
+    /// rebuilt by hand.
+    func glassList() -> some View {
+        listStyle(.insetGrouped)
+            .listRowBackground(GlassRowBackground())
+            .listSectionSpacing(18)
+            .courseScreen()
+    }
+
+    /// Glass behind a row, for the rows a list builds in its own sections.
+    func glassRow() -> some View {
+        listRowBackground(GlassRowBackground())
+    }
+}
+
+/// The surface of a glass list row: glass where the system allows it inside a
+/// cell, over a faint fill so rows read as one card rather than as seams.
+struct GlassRowBackground: View {
+    var body: some View {
+        Rectangle()
+            .fill(.background.opacity(0.35))
+            .glassEffect(.regular, in: .rect)
+    }
+}
+
+/// A page's opening, as the exam page and the course pages have it: one glass
+/// tile in the middle with the page's symbol, a title, and one line saying
+/// where things are. Coloured from the look's own ramp, stable per symbol.
+struct PageHero: View {
+    let symbol: String
+    let title: Text
+    var summary: Text?
+    var badge: HeroBadge?
+
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        let ramp = FlavorRamp(style: style, scheme: scheme)
+        CoursePageHero(
+            tiles: [HeroTile(id: symbol, symbol: symbol,
+                             colour: ramp.colour(at: 0.15 + Double(TodayDigest.colourIndex(for: symbol)) / 10))],
+            placeholder: HeroTile(id: "empty", symbol: symbol, colour: ramp.neutral),
+            title: title, summary: summary, badge: badge, mode: ramp.mode)
+    }
+
+    /// The hero as the first row of a list: no card, no separator, edge to edge.
+    func listHeader() -> some View {
+        self
+            .frame(maxWidth: .infinity)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 8, trailing: 0))
+    }
+}
