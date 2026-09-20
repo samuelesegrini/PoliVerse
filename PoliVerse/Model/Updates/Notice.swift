@@ -232,4 +232,14 @@ nonisolated extension String {
         let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
+
+    /// The first letter capitalised and the rest left alone.
+    ///
+    /// `capitalized` capitalises every word, which is right for a title and
+    /// wrong for a phrase: an exam of kind "Scritto e orale" came back from
+    /// it as "Scritto E Orale".
+    var sentenceCased: String {
+        guard let first else { return self }
+        return first.uppercased() + dropFirst()
+    }
 }

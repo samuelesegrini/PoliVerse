@@ -91,7 +91,6 @@ struct ExamUpdatesView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 40)
         }
-        .courseScreen()
         .navigationTitle("Novità esami")
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await career.load(force: true) }
@@ -159,7 +158,7 @@ struct ExamUpdateRow: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(card ? Color(.secondarySystemGroupedBackground) : .clear, in: .rect(cornerRadius: Theme.cardCorner))
+        .modifier(UpdateRowSurface(card: card))
         .opacity(item.isSuperseded ? 0.6 : 1)
         .accessibilityElement(children: .combine)
         .contextMenu { muteButton }
@@ -260,10 +259,12 @@ extension ExamUpdate.Kind {
     var tint: Color {
         switch self {
         case .gradePublished, .gradeRecorded: .green
-        case .refusalOpened, .roomChanged, .dateChanged: .orange
+        case .refusalOpened: CareerState.refusable.tint
+        case .roomChanged, .dateChanged: .orange
         case .withdrawn, .unenrolled: .red
         case .roomPublished, .enrolled, .correctionsAvailable: Theme.brand
-        case .discovered, .enrolmentOpened: .indigo
+        case .enrolmentOpened: CareerState.enrolmentOpen.tint
+        case .discovered: .indigo
         case .resultsPosted: .green
         case .solutionsPosted, .examNoticePosted: .teal
         case .materialAdded: .secondary
@@ -284,6 +285,20 @@ extension ExamUpdate.Kind {
     ScrollView {
         ExamTimelineSection(exam: ExamSession.samples()[0]).padding()
     }
-    .lookPage()
     .previewEnvironment()
+}
+
+/// A row of the feed is a card on its own page and a plain row inside a
+/// section that is already one. Either way the card is the look's material,
+/// not a fixed system grey.
+private struct UpdateRowSurface: ViewModifier {
+    let card: Bool
+
+    func body(content: Content) -> some View {
+        if card {
+            content.lookCard(cornerRadius: Theme.cardCorner)
+        } else {
+            content
+        }
+    }
 }

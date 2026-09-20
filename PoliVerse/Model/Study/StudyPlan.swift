@@ -81,11 +81,69 @@ nonisolated struct StudyPlan: Sendable, Equatable {
             / Double(gradedCFU + remainingCFU)
     }
 
-    /// The plan grouped for display, newest year first.
+    /// Each graded exam in the order it was sat, with the weighted mean as it
+    /// stood once that mark was recorded.
+    ///
+    /// This is what a student means by "how am I doing": not the marks, which
+    /// bounce, but the line they add up to. Each step recomputes the mean over
+    /// everything up to that point rather than accumulating a running total,
+    /// so every value on it is the same arithmetic as ``weightedMean`` and the
+    /// last one is that figure exactly.
+    ///
+    /// Only dated marks take part: an exam with no date has no place on a time
+    /// axis, and putting it at one would be inventing when it happened.
+    var progression: [(exam: LibrettoExam, mean: Double)] {
+        let dated = graded
+            .filter { $0.date != nil }
+            .sorted { ($0.date ?? .distantPast) < ($1.date ?? .distantPast) }
+        return dated.indices.compactMap { index in
+            guard let mean = StudyPlan(exams: Array(dated[...index])).weightedMean else { return nil }
+            return (exam: dated[index], mean: mean)
+        }
+    }
+
+    /// Everything still to sit, which has no year to be grouped under.
+    static let pendingGroup = String(localized: "Da sostenere")
+
+    /// The plan grouped for display: what is left first, then the academic
+    /// years the rest was sat in, newest first.
+    ///
+    /// Every group used to be called "Altro", because it grouped by
+    /// ``LibrettoExam/year`` and nothing has ever set that field. It now goes
+    /// through ``LibrettoExam/academicYear(calendar:)``, which reads the year
+    /// off the date of the sitting.
+    ///
+    /// What is left leads rather than trailing: it is the only group with
+    /// anything to do in it.
     var byYear: [(year: String, exams: [LibrettoExam])] {
-        Dictionary(grouping: exams) { $0.year ?? "Altro" }
-            .map { (year: $0.key, exams: $0.value.sorted { $0.name < $1.name }) }
-            .sorted { $0.year > $1.year }
+        Dictionary(grouping: exams) { $0.academicYear() ?? Self.pendingGroup }
+            .map { group in
+                (year: group.key,
+                 exams: group.value.sorted { left, right in
+                     // Within a year, newest sitting first; undated by name.
+                     switch (left.date, right.date) {
+                     case let (l?, r?): return l > r
+                     case (nil, nil): return left.name < right.name
+                     case (nil, _?): return false
+                     case (_?, nil): return true
+                     }
+                 })
+            }
+            .sorted { left, right in
+                if left.year == Self.pendingGroup { return true }
+                if right.year == Self.pendingGroup { return false }
+                return left.year > right.year
+            }
+    }
+
+    /// The weighted mean of one slice of the plan, for a year's own line.
+    static func mean(of exams: [LibrettoExam]) -> Double? {
+        StudyPlan(exams: exams).weightedMean
+    }
+
+    /// Credits earned in one slice.
+    static func earnedCFU(of exams: [LibrettoExam]) -> Int {
+        exams.filter(\.isPassed).reduce(0) { $0 + ($1.cfu ?? 0) }
     }
 }
 

@@ -1,15 +1,48 @@
 import SwiftUI
 
+/// Carriera: what expires, where you are, and then the lists.
+///
+/// The page used to open on a segmented control, then two tinted navigation
+/// buttons, then a news feed, then six figures, then two truncated lists.
+/// Nothing on it was an action, and the two things that actually cost a
+/// student something — an enrolment window closing, a mark that can still be
+/// refused — were spelled as a colour on a row and as the third item of a
+/// feed. Meanwhile "Riepilogo" ended with three of the Esiti and one of the
+/// Appelli, so the first tab was a smaller copy of the other two.
+///
+/// The order now answers three questions, in the order they are asked:
+///
+/// 1. **What expires** — ``CareerNowCard``, absent when nothing does.
+/// 2. **Where am I** — ``CareerStandingCard``: one figure with its direction,
+///    the marks behind it, the credits and what is left.
+/// 3. **The detail** — the libretto by year, or the sittings by deadline.
+///
+/// Riepilogo is gone because 1 and 2 sit permanently above the picker: they
+/// *are* the summary, and they no longer repeat the lists. Novità, the study
+/// plan and the simulator moved to the toolbar — they are destinations, and
+/// they were taking the top of the page from the content.
 struct CareerView: View {
     @Environment(CareerModel.self) private var career
     @Environment(UpdateFeed.self) private var feed
-    @State private var scope: Scope = .overview
+
+    @State private var scope: Scope = .libretto
     @State private var selectedExam: ExamSession?
+    @State private var showingPlan = false
+    @State private var showingSimulator = false
+    @State private var showingUpdates = false
+    /// Which years are open. Nil until the student touches one, so the
+    /// defaults below can depend on the data rather than on a first render.
+    @State private var openYears: Set<String>?
+
+    /// The page is the look's now, so its own colour is too. A fixed
+    /// Politecnico navy on a page the student had coloured read as a screen
+    /// borrowed from another app.
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.colorScheme) private var scheme
 
     enum Scope: String, CaseIterable, Identifiable {
-        case overview = "Riepilogo"
+        case libretto = "Libretto"
         case upcoming = "Appelli"
-        case results = "Esiti"
         var id: String { rawValue }
     }
 
@@ -23,434 +56,180 @@ struct CareerView: View {
     var body: some View {
         RootStack(embedded: embedded) {
             content(career)
-            .background(Color(.systemGroupedBackground))
-            .safeAreaInset(edge: .top, spacing: 0) { FreshnessBar(age: career.age) }
-            .navigationTitle("Carriera")
-            .toolbarTitleDisplayMode(.inlineLarge)
-            .task { await career.load() }
-            .refreshable { await career.load(force: true) }
-            .sheet(item: $selectedExam) { ExamDetailView(exam: $0) }
+                .safeAreaInset(edge: .top, spacing: 0) { FreshnessBar(age: career.age) }
+                .toolbar { ToolbarItem(placement: .topBarTrailing) { menu } }
+                .navigationDestination(isPresented: $showingPlan) { StudyPlanView() }
+                .navigationDestination(isPresented: $showingSimulator) { GradeSimulatorView() }
+                .navigationDestination(isPresented: $showingUpdates) { ExamUpdatesView() }
+                .task { await career.load() }
+                .refreshable { await career.load(force: true) }
+                .sheet(item: $selectedExam) { ExamDetailView(exam: $0) }
         }
     }
+
+    // MARK: - The page
 
     @ViewBuilder
     private func content(_ career: CareerModel) -> some View {
         ScrollView {
-            VStack(spacing: 18) {
-                Picker("Sezione", selection: $scope) {
-                    ForEach(Scope.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .pickerStyle(.segmented)
+            VStack(alignment: .leading, spacing: 18) {
+                LookTitle("Carriera", subtitle: planLine(career))
 
-                if let message = career.errorMessage {
-                    Label(message, systemImage: "exclamationmark.triangle.fill")
-                        .font(.footnote)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.orange.opacity(0.15), in: .rect(cornerRadius: 14))
-                        .foregroundStyle(.orange)
-                }
+                if let message = career.errorMessage { errorBanner(message) }
 
-                HStack(spacing: 10) {
-                    NavigationLink {
-                        StudyPlanView()
-                    } label: {
-                        Label("Piano di studi", systemImage: "list.bullet.rectangle")
-                            .font(.subheadline)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(Theme.brand.opacity(0.12), in: .rect(cornerRadius: 12))
-                    }
-                    NavigationLink {
-                        GradeSimulatorView()
-                    } label: {
-                        Label("Simulazione", systemImage: "function")
-                            .font(.subheadline)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(Theme.brand.opacity(0.12), in: .rect(cornerRadius: 12))
-                    }
+                CareerNowCard(deadlines: CareerDeadline.all(in: career.sessions)) { selectedExam = $0 }
+
+                if career.gradeBook != .empty || !career.libretto.isEmpty {
+                    CareerStandingCard(book: career.gradeBook, exams: career.libretto,
+                                       delta: career.meanDelta) { showingSimulator = true }
                 }
-                .buttonStyle(.plain)
 
                 if career.gradeBook == .empty && career.sessions.isEmpty && !career.isLoading {
-                    if career.examServicesRefused {
-                        // What the server actually said, rather than a generic
-                        // failure. Signing in again returns the same answer, so
-                        // offering that would waste the user's time.
-                        ContentUnavailableView(
-                            "Servizi esami non abilitati",
-                            systemImage: "lock",
-                            description: Text("Il Politecnico risponde «Utente non abilitato» per il tuo profilo su iscrizione appelli e libretto. Di solito accade tra una sessione e l'altra o prima del rinnovo dell'iscrizione. Rifare l'accesso non cambia la risposta."))
-                            .padding(.top, 30)
-                    } else {
-                        ContentUnavailableView("Nessun dato di carriera", systemImage: "chart.bar",
-                                               description: Text("I servizi del Politecnico non hanno restituito dati."))
-                            .padding(.top, 30)
+                    unavailable(career)
+                } else {
+                    Picker("Sezione", selection: $scope) {
+                        ForEach(Scope.allCases) { Text($0.rawValue).tag($0) }
                     }
-                }
+                    .pickerStyle(.segmented)
 
-                switch scope {
-                case .overview: overview(career)
-                case .upcoming: upcoming(career)
-                case .results: results(career)
+                    switch scope {
+                    case .libretto: libretto(career)
+                    case .upcoming: upcoming(career)
+                    }
                 }
             }
             .padding()
             .padding(.bottom, 20)
+            .frame(maxWidth: 700)
+            .frame(maxWidth: .infinity)
         }
         .overlay {
-            if career.isLoading && career.sessions.isEmpty { ProgressView() }
-        }
-    }
-
-    // MARK: - Overview
-
-    private func overview(_ career: CareerModel) -> some View {
-        let book = career.gradeBook
-        return VStack(spacing: 16) {
-            recentUpdates(career)
-
-            HStack(spacing: 12) {
-                StatTile(
-                    value: book.mean > 0 ? String(format: "%.2f", book.mean) : "—",
-                    label: "Media ponderata",
-                    accent: Theme.brand
-                )
-                StatTile(
-                    value: book.mean > 0 ? String(format: "%.0f", book.baseGraduationMark) : "—",
-                    label: "Base su 110",
-                    accent: .indigo
-                )
-            }
-
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text("Crediti")
-                        .font(.subheadline.weight(.semibold))
-                    Spacer()
-                    Text("\(book.earnedCFU) / \(book.plannedCFU) CFU")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-                ProgressView(value: book.progress)
-                    .tint(Theme.brand)
-                Text("\(book.progress.formatted(.percent.precision(.fractionLength(0)))) del piano di studi")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity)
-            .cardBackground()
-
-            // Labels follow what the fields actually mean upstream:
-            // num_esiti is published results, num_iscriz is active enrolments.
-            HStack(spacing: 12) {
-                StatTile(value: "\(book.examsGiven)", label: "Esiti", accent: .green, compact: true)
-                StatTile(value: "\(book.examsSubscribed)", label: "Iscrizioni", accent: .orange, compact: true)
-                StatTile(value: "\(book.examsPlanned)", label: "Insegnamenti", accent: .secondary, compact: true)
-            }
-
-            if !career.passedExams.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Ultimi esiti")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    ForEach(career.passedExams.prefix(3)) { LibrettoRow(exam: $0) }
-                }
-                .padding(.top, 4)
-            }
-
-            if let next = career.upcoming.first {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Prossimo appello")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    Button { selectedExam = next } label: { ExamRow(exam: next) }
-                        .buttonStyle(.plain)
-                }
-                .padding(.top, 4)
+            if career.isLoading && career.sessions.isEmpty && career.libretto.isEmpty {
+                ProgressView()
             }
         }
+        .collapsingTitle("Carriera")
+        .animation(.snappy(duration: 0.25), value: scope)
     }
 
-    /// The last fortnight's updates, at the top: this is what changed since
-    /// the student last looked, which is the reason most visits happen.
+    /// What the career is *of*, on the line above the title: the course, and
+    /// the year of the plan where the header gives one.
+    private func planLine(_ career: CareerModel) -> Text? {
+        guard let header = career.planHeader else { return nil }
+        let parts = [header.course?.capitalized, header.year].compactMap { $0 }
+        guard !parts.isEmpty else { return nil }
+        return Text(verbatim: parts.joined(separator: " · "))
+    }
+
+    // MARK: - Toolbar
+
+    private var menu: some View {
+        Menu {
+            Button("Novità", systemImage: "bell.badge") { showingUpdates = true }
+            Section {
+                Button("Piano di studi", systemImage: "list.bullet.rectangle") { showingPlan = true }
+                Button("Simulazione media", systemImage: "function") { showingSimulator = true }
+            }
+        } label: {
+            // The badge is on the tab already; here it is only the hint that
+            // the menu is worth opening.
+            Label("Altro", systemImage: feed.unreadCount > 0 ? "ellipsis.circle.fill" : "ellipsis.circle")
+        }
+        .accessibilityIdentifier("career-menu")
+    }
+
+    // MARK: - Libretto
+
     @ViewBuilder
-    private func recentUpdates(_ career: CareerModel) -> some View {
-        let items = FeedItem.items(from: feed.recent)
-        let unread = FeedItem.unreadCount(items, seenAt: feed.seenAt)
-        if !items.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 6) {
-                    Text("Novità")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    if unread > 0 {
-                        Text("\(unread)")
-                            .font(.caption2.weight(.bold))
-                            .monospacedDigit()
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 1)
-                            .background(Theme.brand, in: .capsule)
-                            .foregroundStyle(.white)
-                            .accessibilityLabel("\(unread) non lette")
+    private func libretto(_ career: CareerModel) -> some View {
+        let groups = career.studyPlan.byYear
+        if groups.isEmpty {
+            ContentUnavailableView("Nessun esito", systemImage: "checkmark.seal",
+                                   description: Text("Il libretto non ha restituito insegnamenti."))
+                .padding(.top, 30)
+        } else {
+            VStack(spacing: 10) {
+                ForEach(groups, id: \.year) { group in
+                    LibrettoYearCard(title: group.year, exams: group.exams,
+                                     isExpanded: isOpen(group.year, in: groups)) {
+                        withAnimation(.snappy(duration: 0.28)) { toggle(group.year, in: groups) }
                     }
-                    Spacer()
-                    NavigationLink("Tutte") { ExamUpdatesView() }
-                        .font(.caption.weight(.semibold))
-                }
-                ForEach(items.prefix(3)) { item in
-                    let sitting = career.sitting(for: item.update)
-                    Button { selectedExam = sitting } label: {
-                        ExamUpdateRow(item: item,
-                                      isUnread: item.isUnread(since: feed.seenAt))
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(sitting == nil)
                 }
             }
         }
     }
 
-    // MARK: - Upcoming
+    /// Open by default: what is left to sit, and the year in progress. The
+    /// rest is history, and history is what a disclosure is for.
+    private func isOpen(_ year: String, in groups: [(year: String, exams: [LibrettoExam])]) -> Bool {
+        if let openYears { return openYears.contains(year) }
+        return year == StudyPlan.pendingGroup
+            || year == groups.first(where: { $0.year != StudyPlan.pendingGroup })?.year
+    }
+
+    private func toggle(_ year: String, in groups: [(year: String, exams: [LibrettoExam])]) {
+        var open = openYears ?? Set(groups.map(\.year).filter { isOpen($0, in: groups) })
+        if open.contains(year) { open.remove(year) } else { open.insert(year) }
+        openYears = open
+    }
+
+    // MARK: - Appelli
 
     @ViewBuilder
     private func upcoming(_ career: CareerModel) -> some View {
-        if career.upcoming.isEmpty {
+        let sections = ExamAgenda.sections(from: career.sessions)
+        if sections.isEmpty {
             ContentUnavailableView("Nessun appello", systemImage: "calendar.badge.clock",
                                    description: Text("Non ci sono appelli in programma."))
-                .padding(.top, 40)
+                .padding(.top, 30)
         } else {
-            VStack(spacing: 10) {
-                ForEach(career.upcoming) { exam in
-                    Button { selectedExam = exam } label: { ExamRow(exam: exam) }
-                        .buttonStyle(.plain)
+            VStack(alignment: .leading, spacing: 18) {
+                ForEach(sections) { section in
+                    VStack(alignment: .leading, spacing: 8) {
+                        LookHeading(verbatim: section.title)
+                        ForEach(section.exams) { exam in
+                            Button { selectedExam = exam } label: { ExamRow(exam: exam) }
+                                .buttonStyle(.plain)
+                        }
+                        if let footnote = section.footnote {
+                            Text(footnote)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 4)
+                        }
+                    }
                 }
             }
         }
     }
 
-    // MARK: - Results
+    // MARK: - Nothing to show
 
     @ViewBuilder
-    private func results(_ career: CareerModel) -> some View {
-        if career.libretto.isEmpty {
-            ContentUnavailableView("Nessun esito", systemImage: "checkmark.seal",
-                                   description: Text("Il libretto non ha restituito insegnamenti."))
-                .padding(.top, 40)
+    private func unavailable(_ career: CareerModel) -> some View {
+        if career.examServicesRefused {
+            // What the server actually said, rather than a generic failure.
+            // Signing in again returns the same answer, so offering that
+            // would waste the user's time.
+            ContentUnavailableView(
+                "Servizi esami non abilitati",
+                systemImage: "lock",
+                description: Text("Il Politecnico risponde «Utente non abilitato» per il tuo profilo su iscrizione appelli e libretto. Di solito accade tra una sessione e l'altra o prima del rinnovo dell'iscrizione. Rifare l'accesso non cambia la risposta."))
+                .padding(.top, 30)
         } else {
-            VStack(spacing: 16) {
-                if !career.passedExams.isEmpty {
-                    VStack(spacing: 10) {
-                        sectionHeader("Superati", count: career.passedExams.count)
-                        ForEach(career.passedExams) { LibrettoRow(exam: $0) }
-                    }
-                }
-
-                if !career.pendingExams.isEmpty {
-                    VStack(spacing: 10) {
-                        sectionHeader("Da sostenere", count: career.pendingExams.count)
-                        ForEach(career.pendingExams) { LibrettoRow(exam: $0) }
-                    }
-                }
-            }
+            ContentUnavailableView("Nessun dato di carriera", systemImage: "chart.bar",
+                                   description: Text("I servizi del Politecnico non hanno restituito dati."))
+                .padding(.top, 30)
         }
     }
 
-    private func sectionHeader(_ title: String, count: Int) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-            Text("\(count)")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-            Spacer()
-        }
-    }
-}
-
-// MARK: - Components
-
-private struct StatTile: View {
-    let value: String
-    let label: String
-    let accent: Color
-    var compact: Bool = false
-
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(compact ? .title3.weight(.bold) : .largeTitle.weight(.bold))
-                .fontDesign(.rounded)
-                .foregroundStyle(accent)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, compact ? 12 : 18)
-        .cardBackground()
-    }
-}
-
-/// One teaching from the libretto: the mark if it has been sat, the CFU, and
-/// when.
-private struct LibrettoRow: View {
-    let exam: LibrettoExam
-    @Environment(\.locale) private var locale
-
-    private var accent: Color { exam.isPassed ? .green : .secondary }
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            // The mark is the thing being looked for, so it leads.
-            Text(exam.displayGrade)
-                .font(.title3.weight(.bold))
-                .fontDesign(.rounded)
-                .monospacedDigit()
-                .foregroundStyle(accent)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .frame(width: 52)
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(exam.name)
-                    .font(.subheadline.weight(.medium))
-                    .fixedSize(horizontal: false, vertical: true)
-
-                HStack(spacing: 8) {
-                    if let cfu = exam.cfu, cfu > 0 {
-                        Text("\(cfu) CFU")
-                            .font(.caption2.weight(.medium))
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 2)
-                            .background(accent.opacity(0.15), in: .capsule)
-                            .foregroundStyle(accent)
-                    }
-                    if let date = exam.date {
-                        Text(date.formatted(.dateTime.month(.abbreviated).year().locale(locale)).capitalized)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    } else if let status = exam.statusText, !status.isEmpty {
-                        Text(status).font(.caption2).foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .cardBackground()
-    }
-}
-
-private struct ExamRow: View {
-    let exam: ExamSession
-    @Environment(\.locale) private var locale
-
-    private var accent: Color {
-        switch exam.status {
-        case .graded(let grade): grade.passed ? .green : .red
-        case .enrolled: Theme.brand
-        case .open: .orange
-        case .notYetOpen, .closed: .secondary
-        }
-    }
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(spacing: 2) {
-                if let grade = exam.grade {
-                    Text(grade.display)
-                        .font(.title3.weight(.bold))
-                        .fontDesign(.rounded)
-                        .foregroundStyle(accent)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                } else if let date = exam.date {
-                    Text(date.formatted(.dateTime.day().locale(locale)))
-                        .font(.title3.weight(.bold))
-                        .monospacedDigit()
-                    Text(date.formatted(.dateTime.month(.abbreviated).locale(locale)).uppercased())
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Image(systemName: "questionmark")
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .frame(width: 48)
-
-            VStack(alignment: .leading, spacing: 5) {
-                Text(exam.courseName)
-                    .font(.subheadline.weight(.medium))
-                    .fixedSize(horizontal: false, vertical: true)
-
-                HStack(spacing: 8) {
-                    // With the mark already shown in the gutter, repeating
-                    // "Esito disponibile" on every row says nothing. Graded
-                    // sittings show when they happened instead.
-                    if let grade = exam.grade {
-                        Text(grade.passed ? "Superato" : "Non superato")
-                            .font(.caption2.weight(.medium))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(accent.opacity(0.15), in: .capsule)
-                            .foregroundStyle(accent)
-
-                        if let date = exam.date {
-                            Text(date.formatted(.dateTime.month(.wide).year().locale(locale)).capitalized)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    } else {
-                        Text(exam.status.label)
-                            .font(.caption2.weight(.medium))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(accent.opacity(0.15), in: .capsule)
-                            .foregroundStyle(accent)
-
-                        if let room = exam.room {
-                            Label(room, systemImage: "mappin.and.ellipse")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-
-                if let closes = exam.enrolmentCloses, exam.status == .open {
-                    Text("Iscrizioni entro il \(closes.formatted(.dateTime.day().month(.wide).locale(locale)))")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                }
-
-                if let grade = exam.grade, grade.refusable {
-                    Label("Rifiutabile", systemImage: "arrow.uturn.backward")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-
-                if let count = exam.enrolledCount, count > 0, exam.grade == nil {
-                    Text("\(count) iscritti")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .cardBackground()
+    private func errorBanner(_ message: String) -> some View {
+        Label(message, systemImage: "exclamationmark.triangle.fill")
+            .font(.footnote)
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.orange.opacity(0.15), in: .rect(cornerRadius: 14))
+            .foregroundStyle(.orange)
     }
 }
 
@@ -458,28 +237,4 @@ private struct ExamRow: View {
 
 #Preview("Carriera") {
     CareerView().previewEnvironment()
-}
-
-#Preview("Componente · Statistica") {
-    HStack {
-        StatTile(value: "27,4", label: "Media", accent: Theme.brand)
-        StatTile(value: "138", label: "CFU", accent: .green)
-        StatTile(value: "25", label: "Esami", accent: .orange, compact: true)
-    }
-    .padding()
-    .previewEnvironment()
-}
-
-#Preview("Componente · Riga libretto") {
-    List {
-        ForEach(LibrettoExam.samples().prefix(4)) { LibrettoRow(exam: $0) }
-    }
-    .previewEnvironment()
-}
-
-#Preview("Componente · Riga appello") {
-    List {
-        ForEach(ExamSession.samples().prefix(3)) { ExamRow(exam: $0) }
-    }
-    .previewEnvironment()
 }

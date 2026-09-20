@@ -131,6 +131,30 @@ final class CareerModel {
         return graded.reduce(0.0) { $0 + Double($1.0 * $1.1) } / Double(totalCFU)
     }
 
+    /// The most recently sat exam carrying a numeric mark.
+    var lastGraded: LibrettoExam? {
+        libretto
+            .filter { ($0.grade ?? 0) > 0 && $0.date != nil }
+            .max { ($0.date ?? .distantPast) < ($1.date ?? .distantPast) }
+    }
+
+    /// How the weighted mean moved when ``lastGraded`` was recorded.
+    ///
+    /// The single most interesting thing about an average is which way it is
+    /// going, and a student cannot get that from a number on its own — they
+    /// would have to remember what it said last month. Both sides are
+    /// computed from the libretto by the same arithmetic, so the difference
+    /// is honest even where it is a tenth off the official mean.
+    ///
+    /// Nil until there are two marks to have moved between.
+    var meanDelta: Double? {
+        guard let last = lastGraded else { return nil }
+        let before = libretto.filter { $0.id != last.id }
+        guard let previous = StudyPlan(exams: before).weightedMean,
+              let current = StudyPlan(exams: libretto).weightedMean else { return nil }
+        return current - previous
+    }
+
     /// Sittings still ahead, soonest first.
     var upcoming: [ExamSession] {
         sessions

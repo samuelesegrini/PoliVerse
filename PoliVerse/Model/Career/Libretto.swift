@@ -32,4 +32,23 @@ nonisolated struct LibrettoExam: Identifiable, Sendable, Hashable, Codable {
         guard let grade, grade > 0 else { return "—" }
         return hasLode ? "\(grade)L" : String(grade)
     }
+
+    /// The academic year this exam was sat in, as "2024/25".
+    ///
+    /// Derived, because ``year`` is never filled: the libretto payload
+    /// (``LibrettoEntryDTO``) carries no academic year at all, only the date
+    /// of the sitting. The field stays as an override for the day a service
+    /// does send one.
+    ///
+    /// The boundary is 1 October, so the autumn session — an exam sat in
+    /// September — counts under the year whose teaching it belongs to rather
+    /// than opening the next one.
+    func academicYear(calendar: Calendar = PoliMiDate.romeCalendar) -> String? {
+        if let year, !year.isEmpty { return year }
+        guard let date else { return nil }
+        let parts = calendar.dateComponents([.year, .month], from: date)
+        guard let year = parts.year, let month = parts.month else { return nil }
+        let start = month >= 10 ? year : year - 1
+        return "\(start)/\(String(format: "%02d", (start + 1) % 100))"
+    }
 }

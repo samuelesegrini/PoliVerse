@@ -42,12 +42,15 @@ struct ExamDetailView: View {
         courses.courses.first { exam.isOf(courseCode: $0.code ?? $0.id, courseName: $0.name) }
     }
 
+    /// One table for the whole area: see ``CareerState``.
     static func accent(for status: ExamStatus) -> Color {
         switch status {
-        case .graded(let grade): grade.passed ? .green : .red
-        case .enrolled: Theme.brand
-        case .open: .orange
-        case .notYetOpen, .closed: .secondary
+        case .graded(let grade):
+            (grade.refusable ? CareerState.refusable
+                : grade.passed ? .passed : .failed).tint
+        case .enrolled: CareerState.booked.tint
+        case .open: CareerState.enrolmentOpen.tint
+        case .notYetOpen, .closed: CareerState.dormant.tint
         }
     }
 
@@ -82,7 +85,6 @@ struct ExamDetailView: View {
                 .frame(maxWidth: .infinity)
                 .animation(.snappy, value: exam.id)
             }
-            .courseScreen()
             .sheet(item: $calendarDraft) { AddToCalendarSheet(event: $0).ignoresSafeArea() }
             .navigationTitle(exam.courseName)
             .navigationBarTitleDisplayMode(.inline)
@@ -207,7 +209,7 @@ struct ExamDetailView: View {
                 if grade.refusable {
                     Label("Puoi ancora rifiutare questo voto dai Servizi Online.", systemImage: "arrow.uturn.backward.circle")
                         .font(.subheadline)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(CareerState.refusable.tint)
                 }
                 if exam.hasCorrections {
                     Label("Elaborato corretto consultabile sui Servizi Online.", systemImage: "doc.text.magnifyingglass")
@@ -308,7 +310,7 @@ struct ExamDetailView: View {
                     .font(style.dateFont.font(size: 26, weight: style.dateWeight))
                 Text(impact.delta, format: format.sign(strategy: .always()))
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(impact.delta >= 0 ? .green : .orange)
+                    .foregroundStyle(impact.delta >= 0 ? AnyShapeStyle(CareerState.passed.tint) : AnyShapeStyle(.secondary))
             }
             .monospacedDigit()
             Text("Stima sui voti del libretto pesati per CFU (\(impact.cfu) CFU per questo esame).")

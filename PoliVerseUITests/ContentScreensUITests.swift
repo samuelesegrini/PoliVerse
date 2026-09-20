@@ -3,7 +3,7 @@ import XCTest
 /// The two screens with the student's own data in them: Corsi and Carriera.
 ///
 /// Navigation is covered elsewhere; what these walk is the content — a course
-/// opened from the list, the three sections of Carriera — on each area's own
+/// opened from the list, the two sections of Carriera — on each area's own
 /// `Samples.swift`, so the names looked for here are fixed.
 nonisolated final class ContentScreensUITests: PoliVerseUITestCase {
     /// Corsi lists the courses and each one opens. The list is the way into
@@ -25,7 +25,11 @@ nonisolated final class ContentScreensUITests: PoliVerseUITestCase {
         require(app.staticTexts["Ingegneria del Software"].firstMatch, "Going back did not return to the list")
     }
 
-    /// Carriera's three sections each come up with something in them.
+    /// Carriera's two sections each come up with something in them.
+    ///
+    /// There were three: Riepilogo led, and ended with three of the Esiti and
+    /// one of the Appelli. It is gone — what it summarised now sits above the
+    /// picker, on every section.
     @MainActor func testCareerSectionsEachShowSomething() {
         let app = launchOnToday()
         switchTab(app, to: "Carriera", expecting: "tab-career")
@@ -33,7 +37,7 @@ nonisolated final class ContentScreensUITests: PoliVerseUITestCase {
         let sections = app.segmentedControls["Sezione"].firstMatch
         require(sections, "Carriera has no section picker", timeout: 15)
 
-        for section in ["Riepilogo", "Appelli", "Esiti"] {
+        for section in ["Libretto", "Appelli"] {
             let button = sections.buttons[section]
             require(button, "Carriera has no \(section) section")
             button.tap()
