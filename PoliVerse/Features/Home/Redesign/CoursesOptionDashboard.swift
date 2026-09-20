@@ -3,15 +3,20 @@ import SwiftUI
 /// **Opzione E — Cruscotto.** I corsi come avanzamento del semestre.
 ///
 /// Le altre quattro rispondono a "dove vado adesso". Questa risponde a "come
-/// sto andando": in cima una barra con il semestre consumato, poi ogni corso
-/// con l'anello delle lezioni svolte, i CFU e le novità. È la più ricca di
-/// informazione e la più a rischio: l'anello vale solo se le lezioni in agenda
-/// sono complete, altrimenti mostra numeri falsi con l'aria di essere precisi.
+/// sto andando": in cima i numeri su ``FactTiles`` e la ripartizione dei CFU
+/// su ``ShareBar`` — gli stessi pezzi con cui sono disegnate le pagine del
+/// corso — poi ogni corso con l'anello delle lezioni svolte.
+///
+/// È la più ricca di informazione e la più a rischio: l'anello vale solo se le
+/// lezioni in agenda sono complete, altrimenti mostra numeri falsi con l'aria
+/// di essere precisi.
 struct CoursesOptionDashboard: View {
     let courses: [CourseBrief]
     var open: (Course) -> Void = { _ in }
 
     @Environment(\.locale) private var locale
+    @Environment(\.colorScheme) private var scheme
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
 
     private var overall: Double {
         guard !courses.isEmpty else { return 0 }
@@ -21,66 +26,48 @@ struct CoursesOptionDashboard: View {
 
     private var credits: Int { courses.reduce(0) { $0 + $1.course.cfu } }
 
+    private var segments: [ShareBar.Segment] {
+        courses.map {
+            ShareBar.Segment(id: $0.id, title: $0.course.monogram, colour: $0.accent,
+                             value: Double(max($0.course.cfu, 1)))
+        }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            summary
-            LookHeading("Corso per corso")
-            VStack(spacing: 10) {
-                ForEach(courses) { brief in
-                    Button { open(brief.course) } label: { card(brief) }
-                        .buttonStyle(.plain)
+        VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 10) {
+                LookHeading("Il semestre")
+                summary
+            }
+            VStack(alignment: .leading, spacing: 10) {
+                LookHeading("Corso per corso")
+                VStack(spacing: 10) {
+                    ForEach(courses) { brief in
+                        Button { open(brief.course) } label: { card(brief) }
+                            .buttonStyle(.plain)
+                    }
                 }
             }
         }
     }
 
     private var summary: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .lastTextBaseline, spacing: 6) {
-                Text(overall, format: .percent.precision(.fractionLength(0)))
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                Text("del semestre")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer(minLength: 0)
-            }
+        VStack(alignment: .leading, spacing: 16) {
+            FactTiles(facts: [
+                (overall.formatted(.percent.precision(.fractionLength(0))), String(localized: "svolto")),
+                ("\(courses.count)", String(localized: "corsi")),
+                ("\(credits)", String(localized: "CFU")),
+                ("\(courses.count { $0.unread > 0 })", String(localized: "con novità")),
+            ], tint: style.accent(scheme))
 
-            // Una barra per corso, larga in proporzione ai suoi CFU: si vede
-            // subito quale materia pesa e quale è rimasta indietro.
-            GeometryReader { geometry in
-                HStack(spacing: 3) {
-                    ForEach(courses) { brief in
-                        let share = Double(max(brief.course.cfu, 1)) / Double(max(credits, 1))
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(brief.accent.opacity(0.18))
-                            Capsule().fill(brief.accent)
-                                .frame(width: max(3, (geometry.size.width * share - 3) * brief.progress))
-                        }
-                        .frame(width: max(6, geometry.size.width * share - 3))
-                    }
-                }
+            // La ripartizione dei crediti, con la stessa barra e la stessa
+            // legenda delle pagine del corso.
+            VStack(alignment: .leading, spacing: 10) {
+                LookHeading("Peso in crediti")
+                ShareBar(segments: segments)
+                    .padding(14)
+                    .lookCard(cornerRadius: 20)
             }
-            .frame(height: 12)
-
-            HStack(spacing: 18) {
-                stat("\(courses.count)", "corsi")
-                stat("\(credits)", "CFU")
-                stat("\(courses.count { $0.unread > 0 })", "con novità")
-                Spacer(minLength: 0)
-            }
-        }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .lookCard()
-        .accessibilityElement(children: .combine)
-    }
-
-    private func stat(_ value: String, _ label: LocalizedStringKey) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(value).font(.headline).monospacedDigit()
-            Text(label).font(.caption2).foregroundStyle(.secondary)
         }
     }
 
@@ -100,25 +87,14 @@ struct CoursesOptionDashboard: View {
                     .foregroundStyle(.primary)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
-                HStack(spacing: 6) {
-                    Text("\(brief.course.cfu) CFU")
-                    if let when = brief.whenText(locale: locale) {
-                        Text("·")
-                        Text(when)
-                    }
-                    if let sitting = brief.nextSitting {
-                        Text("·")
-                        Text("appello \(sitting.formatted(.dateTime.day().month(.abbreviated).locale(locale)))")
-                            .foregroundStyle(.orange)
-                    }
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+                Text(detail(brief))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
 
             Spacer(minLength: 4)
-            UnreadDot(count: brief.unread)
+            CourseBadge(count: brief.unread)
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
@@ -128,12 +104,17 @@ struct CoursesOptionDashboard: View {
         .lookCard(cornerRadius: 20)
         .accessibilityElement(children: .combine)
     }
+
+    private func detail(_ brief: CourseBrief) -> String {
+        var parts = ["\(brief.course.cfu) CFU"]
+        if let when = brief.whenText(locale: locale) { parts.append(when) }
+        if let sitting = brief.nextSitting {
+            parts.append(String(localized: "appello \(sitting.formatted(.dateTime.day().month(.abbreviated).locale(locale)))"))
+        }
+        return parts.joined(separator: " · ")
+    }
 }
 
 #Preview("E · Cruscotto") {
-    ScrollView {
-        CoursesOptionDashboard(courses: CourseBrief.samples)
-            .padding(20)
-    }
-    .previewEnvironment()
+    CoursesOptionPreview { CoursesOptionDashboard(courses: CourseBrief.samples) }
 }

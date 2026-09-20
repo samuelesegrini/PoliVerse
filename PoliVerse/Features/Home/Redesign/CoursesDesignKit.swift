@@ -7,6 +7,13 @@ import SwiftUI
 // preview a costo zero, confrontarle davvero, e adottarne una senza portarsi
 // dietro il resto. Il collegamento a `CourseModel`, `AgendaModel` e al feed
 // avviene una volta sola in ``CoursesRedesignPage``, quando la scelta è fatta.
+//
+// Quello che le cinque **non** cambiano è la casa in cui stanno: il titolo
+// nella grafia di Oggi con la banda della settimana sotto, le intestazioni di
+// ``LookHeading``, le carte nel materiale scelto in Personalizza, il colore
+// del corso preso da ``Theme`` e quello delle novità preso dal look. Cambia il
+// disegno dell'elenco, non l'app intorno — altrimenti il confronto misura
+// quanto una prova somiglia a PoliVerse invece di quale elenco funziona.
 
 /// Tutto ciò che una riga di Corsi deve sapere, in un tipo solo.
 ///
@@ -54,6 +61,17 @@ struct CourseBrief: Identifiable, Hashable {
         return "\(day) \(time)"
     }
 
+    /// "Oggi", "Domani", "Mercoledì": il giorno senza l'ora, per i disegni in
+    /// cui l'ora sta già in una colonna sua.
+    func dayText(locale: Locale) -> String? {
+        guard let start = nextLecture else { return nil }
+        let calendar = PoliMiDate.romeCalendar
+        if calendar.isDateInToday(start) { return String(localized: "Oggi") }
+        if calendar.isDateInTomorrow(start) { return String(localized: "Domani") }
+        return start.formatted(.dateTime.weekday(.wide).locale(locale)).capitalized
+    }
+
+    /// Docente e crediti, come li scrive il resto dell'app.
     var subtitle: String {
         var parts: [String] = []
         if !course.teacher.isEmpty, course.teacher != "—" { parts.append(course.teacher) }
@@ -64,15 +82,13 @@ struct CourseBrief: Identifiable, Hashable {
 
 extension CourseBrief {
     /// I brief veri: i corsi, con l'agenda e il feed già interrogati.
+    ///
+    /// L'abbinamento lezione–corso passa da ``Course/matches(_:)``, la copia
+    /// buona del confronto per nome che le pagine vecchie si riscrivono a mano.
     @MainActor
     static func make(courses: [Course], agenda: AgendaModel, career: CareerModel, feed: UpdateFeed) -> [CourseBrief] {
         courses.map { course in
-            let target = course.name.lowercased()
-            let matches: (AgendaEvent) -> Bool = { event in
-                let title = event.title.lowercased()
-                return title.contains(target) || target.contains(title)
-            }
-            let lessons = agenda.events.filter { $0.kind == .lecture && matches($0) }
+            let lessons = agenda.events.filter { $0.kind == .lecture && course.matches($0) }
             let next = lessons.filter { $0.end > .now }.min { $0.start < $1.start }
             let past = lessons.count { $0.end <= .now }
             let badges = CourseHubBadges(items: FeedItem.items(from: feed.recent, for: course), seenAt: feed.seenAt)
@@ -114,33 +130,65 @@ extension CourseBrief {
                         exams: 1, progress: 1.0),
         ]
     }
-
-    /// Solo le lezioni di oggi ancora da finire, nell'ordine in cui accadono.
-    static func today(in list: [CourseBrief]) -> [CourseBrief] {
-        list.filter { $0.isToday && ($0.nextLectureEnd ?? .distantPast) > .now }
-            .sorted { ($0.nextLecture ?? .distantFuture) < ($1.nextLecture ?? .distantFuture) }
-    }
 }
 
 // MARK: - Pezzi condivisi fra le opzioni
 
-/// Il pallino delle novità: un numero solo, perché tre badge diversi accanto
-/// al titolo si leggono come rumore e nessuno impara cosa distinguono.
-struct UnreadDot: View {
+/// Il contatore delle novità accanto a un corso, nel colore del look.
+///
+/// Uno solo, non tre: avvisi, materiali e appelli distinti in tre pastiglie
+/// accanto al titolo si leggono come rumore e nessuno impara cosa distinguono
+/// — la pagina del corso li separa, dove c'è lo spazio per dirlo a parole.
+/// Il colore è quello che lo studente ha scelto in Personalizza, come già fa
+/// la riga di ``CoursesPage``, non un rosso di sistema.
+struct CourseBadge: View {
     let count: Int
-    var tint: Color = .red
+    /// Su una superficie già colorata — la carta della lezione in corso — il
+    /// contatore non può essere del colore del look: si perderebbe dentro.
+    var onColour = false
+
+    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         if count > 0 {
+            let palette = style.palette(scheme)
             Text(count, format: .number)
-                .font(.caption2.weight(.bold))
+                .font(.caption.weight(.bold))
                 .monospacedDigit()
-                .foregroundStyle(.white)
-                .padding(.horizontal, 6)
-                .frame(minWidth: 20, minHeight: 20)
-                .background(tint, in: .capsule)
+                .foregroundStyle(onColour ? Theme.onAccent : palette.onAccent)
+                .padding(.horizontal, 7)
+                .frame(minWidth: 22, minHeight: 22)
+                .background(onColour ? AnyShapeStyle(.thinMaterial) : AnyShapeStyle(palette.accent), in: .capsule)
                 .accessibilityLabel(Text("\(count) novità"))
         }
+    }
+}
+
+/// La carta piena del colore di un corso, come Oggi disegna la lezione in
+/// corso: angoli a 22, la lucentezza del look, l'ombra del suo stesso colore.
+///
+/// Sta qui perché tre delle cinque opzioni ne hanno una, e se ognuna se la
+/// disegnasse da sé il confronto misurerebbe l'ombra invece dell'elenco.
+struct CourseAccentCard<Content: View>: View {
+    let colour: Color
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
+        content
+            .foregroundStyle(Theme.onAccent)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                shape.fill(colour)
+                    .visualEffect { content, proxy in
+                        content.colorEffect(ShaderLibrary.glossSheen(.float2(proxy.size), .float(0.5)))
+                    }
+            }
+            .shadow(color: colour.opacity(0.3), radius: 8, y: 4)
+            .contentShape(shape)
     }
 }
 
@@ -167,27 +215,10 @@ struct ProgressRing<Content: View>: View {
     }
 }
 
-/// Le iniziali del corso sul suo colore, in quadrato o in tondo.
-struct CourseGlyph: View {
-    let course: Course
-    var size: CGFloat = 40
-    var circular = false
-    var filled = true
-
-    var body: some View {
-        let accent = Theme.accent(for: course)
-        Text(course.monogram)
-            .font(.system(size: size * 0.38, weight: .bold, design: .rounded))
-            .foregroundStyle(filled ? Theme.onAccent : accent)
-            .frame(width: size, height: size)
-            .background {
-                if circular {
-                    Circle().fill(filled ? AnyShapeStyle(accent.gradient) : AnyShapeStyle(accent.opacity(0.15)))
-                } else {
-                    RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
-                        .fill(filled ? AnyShapeStyle(accent.gradient) : AnyShapeStyle(accent.opacity(0.15)))
-                }
-            }
-            .accessibilityHidden(true)
+extension View {
+    /// Una riga dentro una carta, come le disegna ``CardRow``: stessa
+    /// spaziatura, stesso filo sotto, stesso rientro del filo.
+    func courseRowPadding() -> some View {
+        padding(.horizontal, 14).padding(.vertical, 11)
     }
 }

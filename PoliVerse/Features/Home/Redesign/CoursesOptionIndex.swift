@@ -1,18 +1,22 @@
 import SwiftUI
 
-/// **Opzione D — Indice.** Una lista densa, con la ricerca in cima.
+/// **Opzione D — Indice.** Una lista densa, con la ricerca della barra.
 ///
 /// L'opposto della griglia: niente colore per riempire, niente carte grandi.
-/// Righe alte 44 punti, un filo di colore a sinistra, il nome, e a destra la
-/// sola cosa che cambia. Con venti corsi (fuori corso, altra matricola, corsi
-/// singoli) è l'unica delle cinque che non costringe a scorrere per minuti, e
-/// la ricerca fa il lavoro che nelle altre fanno i filtri.
+/// Righe basse, un filo di colore a sinistra, il nome, e a destra la sola cosa
+/// che cambia. Con venti corsi (fuori corso, altra matricola, corsi singoli) è
+/// l'unica delle cinque che non costringe a scorrere per minuti.
+///
+/// La ricerca non è un campo disegnato qui dentro: è la `searchable` della
+/// pagina, come in Manifesto e in Aule, così si comporta come ovunque nell'app
+/// — la tastiera, l'annulla e lo scorrimento li dà il sistema.
 struct CoursesOptionIndex: View {
     let courses: [CourseBrief]
+    /// Quello che lo studente ha scritto nella barra di ricerca della pagina.
+    var query: String = ""
     var open: (Course) -> Void = { _ in }
 
     @Environment(\.locale) private var locale
-    @State private var query = ""
 
     private var matching: [CourseBrief] {
         guard !query.isEmpty else { return courses }
@@ -34,10 +38,9 @@ struct CoursesOptionIndex: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            search
+        VStack(alignment: .leading, spacing: 24) {
             ForEach(Array(groups.enumerated()), id: \.offset) { _, group in
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 10) {
                     LookHeading(group.title)
                     VStack(spacing: 0) {
                         ForEach(group.items) { brief in
@@ -52,37 +55,19 @@ struct CoursesOptionIndex: View {
             }
             if matching.isEmpty {
                 ContentUnavailableView.search(text: query)
+                    .padding(.vertical, 20)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 24)
+                    .lookCard()
             }
         }
         .animation(.snappy, value: matching.map(\.id))
-    }
-
-    private var search: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-            TextField("Cerca un corso o un docente", text: $query)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-            if !query.isEmpty {
-                Button("Annulla", systemImage: "xmark.circle.fill") { query = "" }
-                    .labelStyle(.iconOnly)
-                    .foregroundStyle(.secondary)
-                    .buttonStyle(.plain)
-            }
-        }
-        .font(.subheadline)
-        .padding(.horizontal, 14)
-        .frame(height: 40)
-        .lookCard(cornerRadius: 14)
     }
 
     private func row(_ brief: CourseBrief, last: Bool) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
                 // Il colore c'è, ma come filo verticale: identifica senza
-                // prendersi spazio, e sopravvive a righe alte 44 punti.
+                // prendersi spazio, e sopravvive a una riga bassa.
                 Capsule().fill(brief.accent).frame(width: 3, height: 26)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(brief.course.name)
@@ -99,14 +84,14 @@ struct CoursesOptionIndex: View {
                     Text(when)
                         .font(.caption.weight(.medium))
                         .monospacedDigit()
-                        .foregroundStyle(brief.isOngoing ? brief.accent : .secondary)
+                        .foregroundStyle(brief.isOngoing ? AnyShapeStyle(brief.accent) : AnyShapeStyle(.secondary))
                         .lineLimit(1)
                 }
-                UnreadDot(count: brief.unread)
+                CourseBadge(count: brief.unread)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
-            if !last { Divider().padding(.leading, 29) }
+            if !last { CardDivider(inset: 29) }
         }
         .contentShape(.rect)
         .accessibilityElement(children: .combine)
@@ -114,9 +99,5 @@ struct CoursesOptionIndex: View {
 }
 
 #Preview("D · Indice") {
-    ScrollView {
-        CoursesOptionIndex(courses: CourseBrief.samples)
-            .padding(20)
-    }
-    .previewEnvironment()
+    CoursesOptionPreview { CoursesOptionIndex(courses: CourseBrief.samples) }
 }

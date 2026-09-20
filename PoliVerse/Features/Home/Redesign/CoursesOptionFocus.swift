@@ -1,13 +1,14 @@
 import SwiftUI
 
-/// **Opzione C — Focus.** Una carta grande alla volta, il resto in una riga.
+/// **Opzione C — Focus.** Un corso alla volta, raccontato per intero.
 ///
 /// Prende sul serio l'idea che di solito un corso solo è quello "attivo": la
-/// carta in evidenza lo racconta per intero — lezione, aula, appello, novità —
-/// e le altre scorrono orizzontalmente accanto. Sotto, un elenco minimo per
-/// arrivare comunque a tutto. È la pagina che fa più bella figura con pochi
-/// corsi e che regge peggio la crescita: a dodici corsi la riga orizzontale
-/// diventa un nastro da scorrere alla cieca.
+/// carta in evidenza lo racconta — lezione, aula, appello, novità — con le
+/// righe di ``CardRow``, e i monogrammi sotto servono a cambiarlo senza
+/// lasciare la pagina. Sotto, un elenco minimo per arrivare comunque a tutto.
+/// È la pagina che fa più bella figura con pochi corsi e che regge peggio la
+/// crescita: a dodici corsi la fila dei monogrammi è un nastro da scorrere
+/// alla cieca.
 struct CoursesOptionFocus: View {
     let courses: [CourseBrief]
     var open: (Course) -> Void = { _ in }
@@ -24,82 +25,69 @@ struct CoursesOptionFocus: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 24) {
             if let focused {
-                card(focused)
-                    .id(focused.id)
-                    .transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: 8)), removal: .opacity))
+                VStack(alignment: .leading, spacing: 10) {
+                    card(focused)
+                        .id(focused.id)
+                    selector
+                }
             }
 
-            // Il selettore: i corsi in fila, quello scelto acceso.
-            ScrollView(.horizontal) {
-                HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 10) {
+                LookHeading("Tutti i corsi")
+                VStack(spacing: 0) {
                     ForEach(ordered) { brief in
-                        Button {
-                            withAnimation(.snappy(duration: 0.25)) { selection = brief.id }
-                        } label: {
-                            chip(brief, chosen: brief.id == focused?.id)
-                        }
-                        .buttonStyle(.plain)
+                        Button { open(brief.course) } label: { row(brief, last: brief.id == ordered.last?.id) }
+                            .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 4)
+                .lookCard()
             }
-            .scrollIndicators(.hidden)
-            .padding(.horizontal, -20)
-
-            LookHeading("Tutti i corsi")
-            VStack(spacing: 0) {
-                ForEach(ordered) { brief in
-                    Button { open(brief.course) } label: { row(brief, last: brief.id == ordered.last?.id) }
-                        .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 14)
-            .lookCard()
         }
     }
 
     private func card(_ brief: CourseBrief) -> some View {
         Button { open(brief.course) } label: {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top, spacing: 12) {
-                    CourseGlyph(course: brief.course, size: 52)
-                    VStack(alignment: .leading, spacing: 4) {
+                    CourseMonogram(course: brief.course, size: 46)
+                    VStack(alignment: .leading, spacing: 3) {
                         Text(brief.course.name)
-                            .font(.title3.weight(.bold))
+                            .font(.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(3)
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)
                         Text(brief.subtitle)
-                            .font(.footnote)
+                            .font(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
                     Spacer(minLength: 0)
+                    CourseBadge(count: brief.unread)
                 }
+                .padding(.horizontal, 14)
+                .padding(.top, 14)
+                .padding(.bottom, 12)
 
-                VStack(spacing: 10) {
-                    fact(icon: "clock.fill", tint: brief.accent,
-                         text: brief.whenText(locale: locale) ?? String(localized: "Nessuna lezione in vista"),
-                         trailing: brief.room)
-                    if let sitting = brief.nextSitting {
-                        fact(icon: "pencil.and.list.clipboard.fill", tint: .orange,
-                             text: String(localized: "Appello \(sitting.formatted(.dateTime.day().month(.abbreviated).locale(locale)))"),
-                             trailing: nil)
-                    }
-                    if brief.unread > 0 {
-                        fact(icon: "sparkles", tint: .red,
-                             text: String(localized: "\(brief.unread) novità da vedere"), trailing: nil)
+                CardDivider()
+
+                CardRow(label: String(localized: "Lezione"), icon: "clock.fill", tint: brief.accent) {
+                    Text(brief.whenText(locale: locale) ?? String(localized: "Nessuna in vista"))
+                }
+                if let room = brief.room {
+                    CardDivider()
+                    CardRow(String(localized: "Aula"), value: room, icon: "mappin.and.ellipse", tint: brief.accent)
+                }
+                if let sitting = brief.nextSitting {
+                    CardDivider()
+                    CardRow(label: String(localized: "Appello"), icon: "pencil.and.list.clipboard.fill",
+                            tint: .orange) {
+                        Text(sitting.formatted(.dateTime.day().month(.abbreviated).locale(locale)))
                     }
                 }
-                .padding(14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(brief.accent.opacity(0.09), in: .rect(cornerRadius: 18, style: .continuous))
             }
-            .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
             .lookCard()
         }
@@ -107,54 +95,51 @@ struct CoursesOptionFocus: View {
         .accessibilityElement(children: .contain)
     }
 
-    private func fact(icon: String, tint: Color, text: String, trailing: String?) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.caption)
-                .foregroundStyle(tint)
-                .frame(width: 20)
-            Text(text)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-            Spacer(minLength: 6)
-            if let trailing {
-                Text(trailing).font(.caption).foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private func chip(_ brief: CourseBrief, chosen: Bool) -> some View {
-        VStack(spacing: 6) {
-            CourseGlyph(course: brief.course, size: 40, circular: true, filled: chosen)
-                .overlay(alignment: .topTrailing) {
-                    UnreadDot(count: brief.unread).scaleEffect(0.8).offset(x: 6, y: -4)
+    /// I corsi in fila, quello scelto acceso — nello stesso posto e con la
+    /// stessa spaziatura della riga di filtri della pagina.
+    private var selector: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 10) {
+                ForEach(ordered) { brief in
+                    Button {
+                        withAnimation(.snappy(duration: 0.25)) { selection = brief.id }
+                    } label: {
+                        CourseMonogram(course: brief.course, size: 40)
+                            .opacity(brief.id == focused?.id ? 1 : 0.4)
+                            .overlay(alignment: .topTrailing) {
+                                CourseBadge(count: brief.unread)
+                                    .scaleEffect(0.75)
+                                    .offset(x: 8, y: -6)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text(brief.course.name))
+                    .accessibilityAddTraits(brief.id == focused?.id ? .isSelected : [])
                 }
-            Text(brief.course.monogram)
-                .font(.caption2.weight(chosen ? .bold : .regular))
-                .foregroundStyle(chosen ? .primary : .secondary)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 4)
         }
-        .frame(width: 56)
-        .accessibilityLabel(Text(brief.course.name))
-        .accessibilityAddTraits(chosen ? .isSelected : [])
+        .scrollIndicators(.hidden)
+        .padding(.horizontal, -20)
     }
 
     private func row(_ brief: CourseBrief, last: Bool) -> some View {
         VStack(spacing: 0) {
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
                 Circle().fill(brief.accent).frame(width: 8, height: 8)
                 Text(brief.course.name)
                     .font(.subheadline)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 Spacer(minLength: 6)
-                UnreadDot(count: brief.unread)
+                CourseBadge(count: brief.unread)
                 Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)
             }
-            .padding(.vertical, 11)
-            if !last { Divider().padding(.leading, 18) }
+            .courseRowPadding()
+            if !last { CardDivider(inset: 34) }
         }
         .contentShape(.rect)
         .accessibilityElement(children: .combine)
@@ -162,9 +147,5 @@ struct CoursesOptionFocus: View {
 }
 
 #Preview("C · Focus") {
-    ScrollView {
-        CoursesOptionFocus(courses: CourseBrief.samples)
-            .padding(20)
-    }
-    .previewEnvironment()
+    CoursesOptionPreview { CoursesOptionFocus(courses: CourseBrief.samples) }
 }
