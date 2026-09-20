@@ -182,3 +182,20 @@ extension Course {
         return String(fullname[open.upperBound..<close.lowerBound])
     }
 }
+
+nonisolated extension Course {
+    /// Whether an agenda entry is a lesson of this course.
+    ///
+    /// By name, because the agenda carries no teaching code — either name
+    /// containing the other, since the agenda titles a lab and its lecture
+    /// differently from WeBeep but never unrecognisably.
+    ///
+    /// The same comparison is written out by hand in ``CoursesPage``,
+    /// ``CourseDetailView``, ``CalendarView`` and ``CourseCard``; this is the
+    /// copy new code should call.
+    func matches(_ event: AgendaEvent) -> Bool {
+        let title = event.title.lowercased(), target = name.lowercased()
+        guard !title.isEmpty, !target.isEmpty else { return false }
+        return title.contains(target) || target.contains(title)
+    }
+}

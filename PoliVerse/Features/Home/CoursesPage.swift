@@ -25,8 +25,6 @@ struct CoursesPage: View {
     @State private var otherPlans: [EnrolmentOrigin.Plan] = []
     @State private var showingLogin = false
     @State private var showingHidden = false
-    /// The big title has scrolled under the bar, so the bar names the page.
-    @State private var titleInBar = false
     #if DEBUG
     @State private var debugCourse: Course?
     @State private var openedDebugCourse = false
@@ -51,7 +49,9 @@ struct CoursesPage: View {
 
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                LookTitle("Corsi", subtitle: subtitle(count: shown.count))
+                LookHeader("Corsi", subtitle: subtitle(count: shown.count)) {
+                    WeekLoadFigure(events: agenda.events, courses: shown)
+                }
 
                 if courses.academicYears.count > 1 || originFilter != .all {
                     filters
@@ -104,24 +104,23 @@ struct CoursesPage: View {
             .frame(maxWidth: 700)
             .frame(maxWidth: .infinity)
         }
-        .onScrollGeometryChange(for: Bool.self) { geometry in
-            geometry.contentOffset.y + geometry.contentInsets.top > 70
-        } action: { _, past in
-            withAnimation(.snappy(duration: 0.2)) { titleInBar = past }
-        }
-        .lookPage()
-        .navigationTitle("Corsi")
-        .navigationBarTitleDisplayMode(.inline)
+        .collapsingTitle("Corsi")
         .toolbar {
-            // The page's own title says "Corsi" until it scrolls away.
-            ToolbarItem(placement: .principal) {
-                Text("Corsi")
-                    .font(.headline)
-                    .opacity(titleInBar ? 1 : 0)
-                    .accessibilityHidden(!titleInBar)
-            }
             ToolbarItem(placement: .topBarTrailing) { menu }
+            #if DEBUG
+            // Le cinque prove di riscrittura di questa pagina, finché non se
+            // ne sceglie una. Solo in debug: non è roba da studenti.
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink(value: CoursesRedesignRoute()) {
+                    Label("Prove di disegno", systemImage: "flask")
+                }
+                .accessibilityIdentifier("courses-redesign")
+            }
+            #endif
         }
+        #if DEBUG
+        .navigationDestination(for: CoursesRedesignRoute.self) { _ in CoursesRedesignPage() }
+        #endif
         // The course's own page, with its lessons, sittings, and every part
         // of it — notices, materials, forum, programme — one tap away.
         .navigationDestination(for: Course.self) { CourseDetailView(course: $0) }
@@ -502,7 +501,6 @@ private struct HiddenCoursesSheet: View {
                         .buttonStyle(.borderless)
                 }
             }
-            .courseScreen()
             .navigationTitle("Corsi nascosti")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
