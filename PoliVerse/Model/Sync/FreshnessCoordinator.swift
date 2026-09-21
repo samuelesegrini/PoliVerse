@@ -49,13 +49,17 @@ final class FreshnessCoordinator {
     }
 
     private var loads: [Registration] = []
-    /// What the app tells the student about its data. Assigned by the app;
-    /// nil in tests and in the few previews that build a bare coordinator.
+    /// What the app tells the student about its data.
+    ///
+    /// Set by ``standard(courses:agenda:career:notices:news:weBeep:status:)``
+    /// along with the rest of the set. Still settable, and still optional, for
+    /// the tests and previews that build a bare coordinator with no status
+    /// line to feed.
     var status: DataStatus?
     /// The revalidation currently in flight, if any. New runs chain behind it
     /// rather than racing it.
     private var inFlight: Task<Void, Never>?
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "freshness")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "freshness")
 
     /// Everything the app shows, in the order the home screen wants it.
     ///
@@ -69,9 +73,11 @@ final class FreshnessCoordinator {
         career: CareerModel,
         notices: NoticeModel,
         news: NewsModel,
-        weBeep: WeBeepModel
+        weBeep: WeBeepModel,
+        status: DataStatus? = nil
     ) -> FreshnessCoordinator {
         let coordinator = FreshnessCoordinator()
+        coordinator.status = status
         coordinator.register("courses", title: "Corsi", failure: { courses.errorMessage }, age: { courses.age }) {
             await courses.load(force: $0)
         }

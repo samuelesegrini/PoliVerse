@@ -20,21 +20,28 @@ final class UpdateFeed {
     /// WeBeep assignment deadlines still ahead, soonest first.
     private(set) var deadlines: [AssignmentDeadline] = []
     /// Handed what a record found for the first time, already decided.
-    /// Wired to the notification service at launch.
-    @ObservationIgnored var onNewUpdates: (@MainActor ([ExamUpdate]) async -> Void)?
+    @ObservationIgnored private let onNewUpdates: (@MainActor ([ExamUpdate]) async -> Void)?
     /// The sittings currently known, so a WeBeep file can be weighed against
-    /// the student's own exams. Wired to ``CareerModel`` at launch.
+    /// the student's own exams.
+    ///
+    /// Assigned after construction, unlike everything else here, because this
+    /// one is a real cycle: ``CareerModel`` is built *with* the feed, so the
+    /// feed cannot be built with the career. A closure resolved when it is
+    /// read is the honest way to say "whoever holds the sittings, ask them
+    /// now" — see `PoliVerseApp.init`.
     @ObservationIgnored var sittings: @MainActor () -> [ExamSession] = { [] }
 
     private let offline: OfflineStore
     private var account: String?
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "updates")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "updates")
 
     /// The time decisions are taken at. Quiet hours and the daily budget
     /// depend on it, so tests fix it rather than depend on when they run.
     private let clock: @Sendable () -> Date
 
-    init(offline: OfflineStore = .shared, clock: @escaping @Sendable () -> Date = { .now }) {
+    init(offline: OfflineStore = .shared, clock: @escaping @Sendable () -> Date = { .now },
+         onNewUpdates: (@MainActor ([ExamUpdate]) async -> Void)? = nil) {
+        self.onNewUpdates = onNewUpdates
         self.offline = offline
         self.clock = clock
     }
@@ -72,10 +79,10 @@ final class UpdateFeed {
     }
 
     /// Sample data, never written anywhere.
-    func showSample(_ sample: [ExamUpdate]) {
+    func showSample(_ sample: [ExamUpdate], deadlines upcoming: [AssignmentDeadline] = []) {
         account = nil
         updates = sample
-        deadlines = []
+        deadlines = upcoming
         seenAt = nil
     }
 

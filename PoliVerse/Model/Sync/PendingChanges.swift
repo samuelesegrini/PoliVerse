@@ -18,21 +18,57 @@ final class PendingChanges {
     private(set) var failed: [PendingAction] = []
     private(set) var isFlushing = false
 
-    private let session: Session
-    private let network: NetworkMonitor
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "queue")
+    /// Only the matricola is wanted, to key the queue and to know whether
+    /// there is anyone to send on behalf of — see ``Account``.
+    private let account: any Account
+    private let network: any Reachability
+    /// Where the queue itself is kept. Injectable so a test cannot enqueue
+    /// into the student's real one.
+    private let store: OfflineStore
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "queue")
 
-    /// Set by the app once WeBeep exists — the queue is built before it, and
-    /// two of the four actions are WeBeep's.
-    var weBeep: WeBeepModel?
-    var careers: CareersModel?
-    var career: CareerModel?
-    var courses: CourseModel?
+    /// How a queued change is actually sent. False means it could not be
+    /// delivered, so the queue keeps it and tries again later.
+    typealias Send = @MainActor (PendingAction) async -> Bool
+    /// Called once a change has been accepted, so whoever was showing it
+    /// optimistically can hand ownership back to the server.
+    typealias Confirm = @MainActor (PendingAction) -> Void
 
-    init(session: Session, network: NetworkMonitor) {
-        self.session = session
+    /// Refusing everything until the composition root says otherwise is the
+    /// safe default: an unregistered queue holds its changes rather than
+    /// dropping them.
+    private var send: Send = { _ in false }
+    private var confirm: Confirm = { _ in }
+
+    init(account: any Account, network: any Reachability,
+         store: OfflineStore = .shared) {
+        self.account = account
         self.network = network
+        self.store = store
         refresh()
+    }
+
+    /// Says how to deliver a change, and what to tell afterwards.
+    ///
+    /// ## Why this is a function and not four properties
+    ///
+    /// The queue used to hold `weBeep`, `careers`, `career` and `courses` as
+    /// optionals, assigned by the app after everything was built. That made a
+    /// type-level cycle — the services need the queue to record a change, the
+    /// queue needed the services to send it — and it made this class
+    /// impossible to construct in a test without constructing all four.
+    ///
+    /// Worse, it failed silently. `careers` was never assigned at all, so a
+    /// queued `.favouriteCareer` could never have been delivered; nobody
+    /// noticed because nothing enqueues one yet. A slot that is nil by
+    /// accident looks exactly like a slot that is nil on purpose.
+    ///
+    /// The cycle is real and cannot be removed — it is broken here instead, at
+    /// one named place, where forgetting to call it is one mistake rather than
+    /// four.
+    func deliver(by send: @escaping Send, confirmedBy confirm: @escaping Confirm = { _ in }) {
+        self.send = send
+        self.confirm = confirm
     }
 
     /// Reads what is waiting and what was lost.
@@ -47,7 +83,7 @@ final class PendingChanges {
     }
 
     private func queue() -> ActionQueue {
-        ActionQueue(account: session.student?.matricola)
+        ActionQueue(store: store, account: account.matricola)
     }
 
     /// Records a change to be sent. Call *after* applying it locally.
@@ -64,7 +100,7 @@ final class PendingChanges {
     /// two of them can target the same course — sending them at once would
     /// leave the final state up to whichever request the server handled last.
     func flush() async {
-        guard !isFlushing, network.isOnline, session.student != nil else { return }
+        guard !isFlushing, network.isOnline, account.matricola != nil else { return }
         var queue = queue()
         guard !queue.isEmpty else { return }
 
@@ -76,7 +112,7 @@ final class PendingChanges {
             if sent {
                 queue.remove(action)
                 // The override exists only while the change is unsent.
-                courses?.confirmDelivered(action)
+                confirm(action)
             } else {
                 queue.recordFailure(action)
                 // Stop at the first failure: if the network went away again,
@@ -118,23 +154,4 @@ final class PendingChanges {
         count = queue.pending.count
     }
 
-    private func send(_ action: PendingAction) async -> Bool {
-        switch action {
-        case .courseFavourite(let moodleID, let value):
-            guard let weBeep else { return false }
-            return await weBeep.setFavourite(value, moodleID: moodleID)
-        case .courseHidden(let moodleID, let value):
-            guard let weBeep else { return false }
-            return await weBeep.setHidden(value, moodleID: moodleID)
-        case .targetAverage(let media):
-            guard let career else { return false }
-            return await career.saveTarget(media)
-        case .favouriteCareer(let matricola):
-            guard let careers,
-                  let match = careers.careers.first(where: { $0.matricola == matricola })
-            else { return false }
-            await careers.markFavourite(match)
-            return true
-        }
-    }
 }

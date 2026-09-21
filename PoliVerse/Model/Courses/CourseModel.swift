@@ -25,11 +25,10 @@ final class CourseModel {
     private let store: Store<CourseSource>
     private let enrolments: any CourseEnrolments
 
-    /// Where a change goes when it cannot be sent now. Assigned by the app,
-    /// because the queue needs the session and this service is built first.
-    var pending: PendingChanges?
-    /// Fills in teaching codes from the student's plan. Assigned by the app.
-    var programme: StudyProgrammeModel?
+    /// Where a change goes when it cannot be sent now.
+    private let pending: PendingChanges?
+    /// Fills in teaching codes from the student's plan.
+    private let programme: StudyProgrammeModel?
 
     /// Local flags, used only for courses with no WeBeep counterpart — WeBeep
     /// itself is the source of truth for everything it knows about.
@@ -56,8 +55,11 @@ final class CourseModel {
     private var planCodes: [String: String] = [:]
 
     init(account: any Account, enrolments: any CourseEnrolments,
+         pending: PendingChanges? = nil, programme: StudyProgrammeModel? = nil,
          defaults: UserDefaults = .standard) {
         self.enrolments = enrolments
+        self.pending = pending
+        self.programme = programme
         self.defaults = defaults
         self.favourites = Set(defaults.stringArray(forKey: "favouriteCourses") ?? [])
         self.hiddenCourses = Set(defaults.stringArray(forKey: "hiddenCourses") ?? [])

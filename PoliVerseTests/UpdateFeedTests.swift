@@ -9,6 +9,14 @@ struct UpdateFeedTests {
     /// 10:00 in Rome: outside quiet hours whenever the suite runs.
     private let now = PoliMiDate.time(10, on: Date(timeIntervalSince1970: 1_772_000_000))
 
+    /// Collects what the feed hands on. A reference rather than a captured
+    /// `var`, because the closure now goes in through the initialiser and so
+    /// has to exist before the feed does.
+    private final class Delivered {
+        var kinds: [ExamUpdate.Kind] = []
+        var count: Int { kinds.count }
+    }
+
     private func store() -> OfflineStore {
         OfflineStore(directory: FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString))
@@ -36,16 +44,16 @@ struct UpdateFeedTests {
     @Test("A change is recorded, persisted and handed on once")
     func recordsExams() async {
         let offline = store()
-        let feed = UpdateFeed(offline: offline, clock: { [now] in now })
+        let delivered = Delivered()
+        let feed = UpdateFeed(offline: offline, clock: { [now] in now },
+                              onNewUpdates: { delivered.kinds += $0.map(\.kind) })
         feed.show(account: "10123456")
-        var delivered: [ExamUpdate.Kind] = []
-        feed.onNewUpdates = { delivered += $0.map(\.kind) }
 
         await feed.recordExams(sessions: [sitting()], libretto: nil, account: "10123456")
         await feed.recordExams(sessions: [sitting(room: "B.3.2")], libretto: nil, account: "10123456")
         await feed.recordExams(sessions: [sitting(room: "B.3.2")], libretto: nil, account: "10123456")
 
-        #expect(delivered == [.roomPublished])
+        #expect(delivered.kinds == [.roomPublished])
         #expect(feed.updates.map(\.kind) == [.roomPublished])
         let reopened = UpdateFeed(offline: offline, clock: { [now] in now })
         reopened.show(account: "10123456")
@@ -88,14 +96,14 @@ struct UpdateFeedTests {
     /// A pass that outlived a sign-out must not put the old account back.
     @Test("A record for an account not on screen is kept but not shown or delivered")
     func notShown() async {
-        let feed = UpdateFeed(offline: store(), clock: { [now] in now })
-        var delivered = 0
-        feed.onNewUpdates = { delivered += $0.count }
+        let delivered = Delivered()
+        let feed = UpdateFeed(offline: store(), clock: { [now] in now },
+                              onNewUpdates: { delivered.kinds += $0.map(\.kind) })
         feed.show(account: nil)
         await feed.recordExams(sessions: [sitting()], libretto: nil, account: "A")
         await feed.recordExams(sessions: [sitting(room: "B.3.2")], libretto: nil, account: "A")
         #expect(feed.updates.isEmpty)
-        #expect(delivered == 0)
+        #expect(delivered.count == 0)
         feed.show(account: "A")
         #expect(feed.updates.map(\.kind) == [.roomPublished])
     }

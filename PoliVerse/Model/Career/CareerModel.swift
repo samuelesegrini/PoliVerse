@@ -19,15 +19,17 @@ final class CareerModel {
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "career")
 
     /// Where a change goes when it cannot be sent now.
-    var pending: PendingChanges?
+    private let pending: PendingChanges?
 
     /// A target the student set here but that has not reached Servizi Online
     /// yet. Newer than the fetched value, so it wins until the queue delivers.
     private var localTarget: Double?
 
-    init(account: any Account, feed: UpdateFeed, offline: OfflineStore = .shared) {
+    init(account: any Account, feed: UpdateFeed, pending: PendingChanges? = nil,
+         offline: OfflineStore = .shared) {
         self.account = account
         self.feed = feed
+        self.pending = pending
         self.offline = offline
         self.store = Store(CareerSource(), account: account, offline: offline)
     }

@@ -3,6 +3,15 @@ import Network
 import Observation
 import OSLog
 
+/// The one thing most callers want to know about the network.
+///
+/// A protocol so that a test can say "offline" without an `NWPathMonitor`,
+/// which reports asynchronously and cannot be told what to think.
+@MainActor
+protocol Reachability: AnyObject, Sendable {
+    var isOnline: Bool { get }
+}
+
 /// Whether the phone has a usable connection.
 ///
 /// Exists so the app can say "offline" instead of "Impossibile raggiungere i
@@ -17,7 +26,7 @@ final class NetworkMonitor {
     private(set) var isExpensive = false
 
     private let monitor = NWPathMonitor()
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "network")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "network")
 
     init() {
         monitor.pathUpdateHandler = { [weak self] path in
@@ -34,8 +43,20 @@ final class NetworkMonitor {
         // Starts optimistic: `NWPathMonitor` reports asynchronously, and a
         // first frame claiming "offline" before the first callback would be
         // a lie more often than not.
-        monitor.start(queue: DispatchQueue(label: "one.wape.PoliVerse.network"))
+        monitor.start(queue: DispatchQueue(label: "segrini.samuele.PoliVerse.network"))
     }
 
     deinit { monitor.cancel() }
+}
+
+extension NetworkMonitor: Reachability {}
+
+/// A connection that is whatever a test says it is.
+@MainActor
+final class StubReachability: Reachability {
+    var isOnline: Bool
+
+    init(isOnline: Bool = true) {
+        self.isOnline = isOnline
+    }
 }

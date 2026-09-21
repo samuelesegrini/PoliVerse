@@ -56,6 +56,15 @@ struct PoliVerseApp: App {
         let session = Session()
         _session = State(initialValue: session)
 
+        // Early, and before every service that records into it: a change the
+        // student makes offline has to have somewhere to go from the first
+        // frame, and taking the queue from an initialiser is what stops a
+        // service being built without one by accident.
+        let network = NetworkMonitor()
+        _network = State(initialValue: network)
+        let pending = PendingChanges(account: session, network: network)
+        _pending = State(initialValue: pending)
+
         // Through locals, like the rest: the `@State` wrappers are not
         // readable until the struct is fully initialised, and the freshness
         // registrations below need the instances themselves.
@@ -74,60 +83,67 @@ struct PoliVerseApp: App {
         let freeRooms = FreeRoomsModel(catalogue: rooms)
         _freeRooms = State(initialValue: freeRooms)
         _campusMap = State(initialValue: CampusMapModel(catalogue: rooms, freeRooms: freeRooms))
+        // Before the feed, which delivers through it: a change a load notices
+        // is news, from the foreground or from a background refresh alike.
+        let notifications = NotificationModel()
+        _notifications = State(initialValue: notifications)
         // Before the two services that write to it.
-        let updates = UpdateFeed()
+        let updates = UpdateFeed(onNewUpdates: { await notifications.deliver($0) })
         _updates = State(initialValue: updates)
         let weBeep = WeBeepModel(session: session, feed: updates)
         _weBeep = State(initialValue: weBeep)
-        let courses = CourseModel(account: session, enrolments: weBeep)
-        _courses = State(initialValue: courses)
 
-        // Registered here, at the end of init: it has to happen before the
-        // app finishes launching — registering later throws — and it captures
-        // the services directly rather than through the State wrappers, which
-        // are not readable until the struct is fully initialised.
         let agenda = AgendaModel(session: session)
         _agenda = State(initialValue: agenda)
         _personalTimetable = State(initialValue: PersonalTimetableModel(manifesti: manifesti, agenda: agenda))
-        let career = CareerModel(account: session, feed: updates)
+        let career = CareerModel(account: session, feed: updates, pending: pending)
         _career = State(initialValue: career)
+        // Before the course list, which reads teaching codes out of it.
         let programmes = StudyProgrammeModel(manifesti: manifesti, session: session, career: career,
                                                careers: careers)
         _programmes = State(initialValue: programmes)
-        courses.programme = programmes
-        let notifications = NotificationModel()
-        _notifications = State(initialValue: notifications)
-        // A change a load notices is news: delivered as it is found, from the
-        // foreground or from a background refresh alike.
-        updates.onNewUpdates = { await notifications.deliver($0) }
-        // A WeBeep file is weighed against the student's own sittings.
+        let courses = CourseModel(account: session, enrolments: weBeep,
+                                  pending: pending, programme: programmes)
+        _courses = State(initialValue: courses)
+
+        // The one dependency in this file that genuinely cannot be an
+        // argument: the career is built *with* the feed, so the feed cannot be
+        // built with the career. A WeBeep file is weighed against the
+        // student's own sittings, and this is how the feed asks for them.
         updates.sittings = { career.sessions }
 
-        // Built last: it needs the session, and the services it sends
-        // through are wired to it afterwards.
-        let network = NetworkMonitor()
-        _network = State(initialValue: network)
-        let pending = PendingChanges(session: session, network: network)
-        pending.weBeep = weBeep
-        pending.career = career
-        pending.courses = courses
-        _pending = State(initialValue: pending)
-        // Through the locals, not the `@State` wrappers: those are only
-        // readable once the struct is fully initialised, and reading one too
-        // early is a compile error that moves as the file is edited.
-        courses.pending = pending
-        career.pending = pending
+        // The one place the queue's cycle is broken. Everything it sends
+        // through exists by now, and registering it here — rather than filling
+        // four optional slots on the queue — means forgetting it is one
+        // mistake rather than four silent ones. See ``PendingChanges/deliver``.
+        pending.deliver { action in
+            switch action {
+            case .courseFavourite(let moodleID, let value):
+                return await weBeep.setFavourite(value, moodleID: moodleID)
+            case .courseHidden(let moodleID, let value):
+                return await weBeep.setHidden(value, moodleID: moodleID)
+            case .targetAverage(let media):
+                return await career.saveTarget(media)
+            case .favouriteCareer(let matricola):
+                guard let match = careers.careers.first(where: { $0.matricola == matricola })
+                else { return false }
+                await careers.markFavourite(match)
+                return true
+            }
+        } confirmedBy: { action in
+            // The optimistic override exists only while the change is unsent.
+            courses.confirmDelivered(action)
+        }
 
+        // One sentence about the data, told by the passes the coordinator runs
+        // and read by the status line and Impostazioni.
+        let status = DataStatus(session: session, network: network)
+        _status = State(initialValue: status)
         // Built here because this is the only place that holds every
         // service; the order lives in the factory, next to the class.
         let freshness = FreshnessCoordinator.standard(
             courses: courses, agenda: agenda, career: career,
-            notices: notices, news: news, weBeep: weBeep)
-        // One sentence about the data, told by the passes the coordinator
-        // runs and read by the status line and Impostazioni.
-        let status = DataStatus(session: session, network: network)
-        freshness.status = status
-        _status = State(initialValue: status)
+            notices: notices, news: news, weBeep: weBeep, status: status)
         _freshness = State(initialValue: freshness)
 
         // Deliberately narrower than the coordinator's list: a background

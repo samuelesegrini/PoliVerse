@@ -35,7 +35,7 @@ enum PreviewEnvironment {
     static let downloads = FileDownloadModel()
     static let cieID = CieIDRouter()
     static let network = NetworkMonitor()
-    static let pending = PendingChanges(session: session, network: network)
+    static let pending = PendingChanges(account: session, network: network)
     static let manifesti = ManifestiModel()
     static let programmes = StudyProgrammeModel(manifesti: manifesti, session: session, career: career)
     static let personalTimetable = PersonalTimetableModel(manifesti: manifesti, agenda: agenda, preview: PersonalTimetable.sample)
