@@ -25,7 +25,7 @@ import OSLog
 /// survives.
 @MainActor
 enum LoginWebKit {
-    private static let log = Logger(subsystem: "one.wape.PoliVerse", category: "loginweb")
+    private static let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "loginweb")
 
     /// A store of this app's own, separate from anything else WebKit holds.
     ///
@@ -71,7 +71,7 @@ enum LoginWebKit {
     ]
     """
 
-    private static let ruleIdentifier = "one.wape.PoliVerse.login-rules"
+    private static let ruleIdentifier = "segrini.samuele.PoliVerse.login-rules"
 
     /// Compiled once and kept by WebKit between launches.
     static func contentRules() async -> WKContentRuleList? {

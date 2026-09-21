@@ -2,37 +2,37 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Schemes other apps use to hand control back to PoliVerse.
-	     "one.wape.PoliVerse" is the CieID return (the CieID SDK asks
-	     integrators to use the bundle identifier); "poliverse" is the Moodle
-	     tool_mobile token redirect. -->
-	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>PoliVerse tiene le lezioni del tuo orario personalizzato in un calendario apposito e lo aggiorna quando l'orario cambia.</string>
+	<!-- Must match ``BackgroundRefresh/taskIdentifier`` exactly: registering
+	     an identifier that is not listed here throws at launch. -->
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>one.wape.PoliVerse.refresh</string>
+		<string>segrini.samuele.PoliVerse</string>
 	</array>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>fetch</string>
-	</array>
+	<!-- Required by EventKit before ``CalendarExporter`` may ask for access.
+	     Without it the request is not a refusal, it is a crash. -->
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>PoliVerse tiene le lezioni del tuo orario personalizzato in un calendario apposito e lo aggiorna quando l'orario cambia.</string>
+	<!-- Schemes other apps use to hand control back to PoliVerse.
+	     "segrini.samuele.PoliVerse" is the CieID return (the CieID SDK asks
+	     integrators to use the bundle identifier); "poliverse" is the Moodle
+	     tool_mobile token redirect. -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>None</string>
 			<key>CFBundleURLName</key>
-			<string>one.wape.PoliVerse.cieid</string>
+			<string>segrini.samuele.PoliVerse.cieid</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>one.wape.PoliVerse</string>
+				<string>segrini.samuele.PoliVerse</string>
 			</array>
 		</dict>
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>None</string>
 			<key>CFBundleURLName</key>
-			<string>one.wape.PoliVerse.moodle</string>
+			<string>segrini.samuele.PoliVerse.moodle</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>poliverse</string>
@@ -46,6 +46,10 @@
 	<array>
 		<string>CIEID</string>
 		<string>cieid</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
 	</array>
 </dict>
 </plist>

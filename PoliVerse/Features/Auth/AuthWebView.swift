@@ -125,7 +125,7 @@ struct AuthWebView: UIViewRepresentable {
         private let onError: (any Error) -> Void
         private let onCieIDMissing: () -> Void
         private let onFinished: (WKWebView, URL?) -> Void
-        let log = Logger(subsystem: "one.wape.PoliVerse", category: "authweb")
+        let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "authweb")
 
         weak var webView: WKWebView?
         var resuming = false
@@ -268,7 +268,7 @@ struct AuthWebView: UIViewRepresentable {
             for cookie in relevant {
                 HTTPCookieStorage.shared.setCookie(cookie)
             }
-            Logger(subsystem: "one.wape.PoliVerse", category: "authweb")
+            Logger(subsystem: "segrini.samuele.PoliVerse", category: "authweb")
                 .info("Adopted \(relevant.count, privacy: .public) polimi.it cookies for the token exchange")
         }
 

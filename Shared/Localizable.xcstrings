@@ -17,6 +17,9 @@
         }
       }
     },
+    " — stima, senza i punti di tesi" : {
+
+    },
     "—" : {
       "localizations" : {
         "en" : {
@@ -75,6 +78,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %@ · %@" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@ · %3$@"
           }
         }
       }
@@ -164,6 +177,7 @@
       }
     },
     "%@ del piano di studi" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -185,6 +199,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ of files. They stay on WeBeep."
+          }
+        }
+      }
+    },
+    "%@ in %@" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ in %2$@"
           }
         }
       }
@@ -280,6 +304,7 @@
       }
     },
     "%lld / %lld CFU" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -398,6 +423,19 @@
     "%lld elementi" : {
 
     },
+    "%lld esami" : {
+
+    },
+    "%lld esami · %lld CFU" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld esami · %2$lld CFU"
+          }
+        }
+      }
+    },
     "%lld esami da sostenere, %lld CFU." : {
       "localizations" : {
         "en" : {
@@ -410,6 +448,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$lld esami da sostenere, %2$lld CFU."
+          }
+        }
+      }
+    },
+    "%lld esami, media %@, %@ dal primo esame." : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld esami, media %2$@, %3$@ dal primo esame."
           }
         }
       }
@@ -623,6 +671,7 @@
       }
     },
     "%lld non lette" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -799,6 +848,9 @@
         }
       }
     },
+    "%lld su 110" : {
+
+    },
     "%lld sulle prestazioni, %lld su blocchi e chiusure" : {
       "localizations" : {
         "it" : {
@@ -962,6 +1014,9 @@
           }
         }
       }
+    },
+    "21" : {
+
     },
     "30 min" : {
       "localizations" : {
@@ -1283,6 +1338,9 @@
           }
         }
       }
+    },
+    "ADESSO" : {
+
     },
     "Adesso e più tardi" : {
       "localizations" : {
@@ -1737,6 +1795,9 @@
         }
       }
     },
+    "Andamento della media" : {
+
+    },
     "Anno" : {
       "localizations" : {
         "en" : {
@@ -1925,8 +1986,10 @@
         }
       }
     },
+    "appello del %@" : {
+
+    },
     "Appello del %@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1994,6 +2057,9 @@
           }
         }
       }
+    },
+    "Apre la simulazione della media" : {
+
     },
     "Apre le aule libere adesso." : {
       "localizations" : {
@@ -3143,6 +3209,22 @@
         }
       }
     },
+    "Chiudono domani · %@" : {
+
+    },
+    "Chiudono fra %lld giorni · %@" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chiudono fra %1$lld giorni · %2$@"
+          }
+        }
+      }
+    },
+    "Chiudono oggi · %@" : {
+
+    },
     "Chiusura" : {
       "localizations" : {
         "en" : {
@@ -3685,6 +3767,9 @@
         }
       }
     },
+    "Con questa media ti laurei intorno a " : {
+
+    },
     "Con un accessorio la data occupa metà della larghezza." : {
       "localizations" : {
         "en" : {
@@ -3808,6 +3893,7 @@
       }
     },
     "Continua a modificare" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3889,6 +3975,9 @@
 
     },
     "Copia indirizzo" : {
+
+    },
+    "Copia questo stile" : {
 
     },
     "Copia rapporto" : {
@@ -4270,6 +4359,9 @@
         }
       }
     },
+    "Da decidere" : {
+
+    },
     "Da disegno" : {
       "localizations" : {
         "en" : {
@@ -4348,6 +4440,9 @@
         }
       }
     },
+    "dall'ultimo esame" : {
+
+    },
     "Dalla scheda del tuo piano di studi" : {
 
     },
@@ -4406,6 +4501,9 @@
           }
         }
       }
+    },
+    "Data dell'esame" : {
+
     },
     "Dati" : {
       "extractionState" : "stale",
@@ -4850,6 +4948,9 @@
           }
         }
       }
+    },
+    "Duplica" : {
+
     },
     "Durata" : {
 
@@ -5738,6 +5839,16 @@
         }
       }
     },
+    "Fra %lld giorni alle %@" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Fra %1$lld giorni alle %2$@"
+          }
+        }
+      }
+    },
     "Frase del giorno" : {
       "localizations" : {
         "en" : {
@@ -6543,6 +6654,9 @@
         }
       }
     },
+    "Il rifiuto si fa dai Servizi Online, finché la finestra resta aperta." : {
+
+    },
     "Il server ha risposto %lld." : {
       "localizations" : {
         "en" : {
@@ -6752,6 +6866,7 @@
       }
     },
     "Impossibile caricare i dati di carriera." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6919,6 +7034,9 @@
         }
       }
     },
+    "in discesa" : {
+
+    },
     "In evidenza" : {
       "localizations" : {
         "en" : {
@@ -6960,6 +7078,9 @@
           }
         }
       }
+    },
+    "in salita" : {
+
     },
     "In tutto %@ su questo dispositivo." : {
       "localizations" : {
@@ -7316,6 +7437,9 @@
     "Iscrizioni" : {
 
     },
+    "Iscrizioni a %@" : {
+
+    },
     "Iscrizioni agli appelli" : {
       "localizations" : {
         "en" : {
@@ -7355,6 +7479,9 @@
           }
         }
       }
+    },
+    "Iscrizioni dal %@" : {
+
     },
     "Iscrizioni entro il %@" : {
       "localizations" : {
@@ -7739,7 +7866,19 @@
         }
       }
     },
+    "Le iscrizioni chiudono domani" : {
+
+    },
+    "Le iscrizioni chiudono fra %lld giorni" : {
+
+    },
+    "Le iscrizioni chiudono oggi" : {
+
+    },
     "Le iscrizioni si gestiscono dai Servizi Online del Politecnico." : {
+
+    },
+    "Le iscrizioni si gestiscono dai Servizi Online." : {
 
     },
     "Le lezioni del giorno appena apri l'app, con l'aula e quanto manca. Sulla schermata di blocco e in Centro di Controllo, se vuoi." : {
@@ -8405,6 +8544,9 @@
     "Media" : {
 
     },
+    "media %@" : {
+
+    },
     "Media %@" : {
       "localizations" : {
         "en" : {
@@ -8430,6 +8572,9 @@
           }
         }
       }
+    },
+    "Media dopo" : {
+
     },
     "Media dopo la registrazione" : {
       "extractionState" : "stale",
@@ -8457,6 +8602,9 @@
           }
         }
       }
+    },
+    "Media ponderata" : {
+
     },
     "Media, CFU e prossimo appello." : {
       "localizations" : {
@@ -9381,6 +9529,9 @@
         }
       }
     },
+    "Niente da fare" : {
+
+    },
     "Niente in arrivo" : {
       "localizations" : {
         "en" : {
@@ -9422,6 +9573,9 @@
           }
         }
       }
+    },
+    "Nome dello stile" : {
+
     },
     "Non aggiunti" : {
       "localizations" : {
@@ -9474,6 +9628,9 @@
           }
         }
       }
+    },
+    "Non ancora aperti" : {
+
     },
     "Non autorizzati" : {
       "extractionState" : "stale",
@@ -9561,6 +9718,9 @@
       }
     },
     "Non concessa" : {
+
+    },
+    "Non è stato possibile salvare l'obiettivo. Riprova, o impostalo dai Servizi Online." : {
 
     },
     "Non hai effettuato l'accesso." : {
@@ -10452,6 +10612,12 @@
         }
       }
     },
+    "Pagina vuota" : {
+
+    },
+    "Parti da com'è adesso e cambia quello che vuoi." : {
+
+    },
     "Passare a %@?" : {
       "localizations" : {
         "en" : {
@@ -10886,6 +11052,9 @@
           }
         }
       }
+    },
+    "PoliVerse ti avvisa l'ultimo giorno utile per iscriverti, se i promemoria sugli appelli sono attivi." : {
+
     },
     "Posta" : {
       "localizations" : {
@@ -11348,6 +11517,7 @@
       }
     },
     "Prossimo appello" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11467,6 +11637,9 @@
           }
         }
       }
+    },
+    "Puoi ancora rifiutarlo" : {
+
     },
     "Puoi rifiutare il voto" : {
       "localizations" : {
@@ -11726,6 +11899,12 @@
         }
       }
     },
+    "restano %lld CFU" : {
+
+    },
+    "restano %lld esami" : {
+
+    },
     "Restano visibili nell’app" : {
       "localizations" : {
         "en" : {
@@ -11899,6 +12078,12 @@
           }
         }
       }
+    },
+    "Rinomina" : {
+
+    },
+    "Ripristina" : {
+
     },
     "Riprova" : {
       "localizations" : {
@@ -12195,6 +12380,7 @@
       }
     },
     "Scarta modifiche" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -12205,6 +12391,7 @@
       }
     },
     "Scartare le modifiche?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -12595,6 +12782,9 @@
           }
         }
       }
+    },
+    "Selezionato" : {
+
     },
     "Sem. %@" : {
       "localizations" : {
@@ -12991,6 +13181,7 @@
       }
     },
     "Simulazione" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -13210,6 +13401,9 @@
     "Spotlight" : {
 
     },
+    "stabile" : {
+
+    },
     "Stai guardando dati di esempio" : {
       "localizations" : {
         "en" : {
@@ -13268,6 +13462,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Style %lld"
+          }
+        }
+      }
+    },
+    "Stile %lld di %lld" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Stile %1$lld di %2$lld"
           }
         }
       }
@@ -13454,6 +13658,9 @@
     "Tabelle" : {
 
     },
+    "Temi" : {
+
+    },
     "Temporanee" : {
 
     },
@@ -13512,6 +13719,9 @@
           }
         }
       }
+    },
+    "tieni premuto per esplorare" : {
+
     },
     "Tieni premuto sulla pagina per spostarli, ingrandirli e ruotarli." : {
       "localizations" : {
@@ -13572,6 +13782,18 @@
           }
         }
       }
+    },
+    "tocca di nuovo per chiudere" : {
+
+    },
+    "Tocca per aprire" : {
+
+    },
+    "Tocca per chiudere" : {
+
+    },
+    "Tocca per personalizzare" : {
+
     },
     "Tocca un codice per copiarlo. Arrivano dal tuo account del Politecnico." : {
       "localizations" : {
@@ -13647,6 +13869,9 @@
           }
         }
       }
+    },
+    "Torna alla media attuale" : {
+
     },
     "Tra %lld giorni" : {
       "localizations" : {
@@ -13970,6 +14195,7 @@
 
     },
     "Usa" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -14054,6 +14280,12 @@
           }
         }
       }
+    },
+    "Vedi l'appello" : {
+
+    },
+    "Vedi l'esito" : {
+
     },
     "Vengono rimossi i token dal portachiavi e i dati salvati sul dispositivo." : {
       "localizations" : {
@@ -14166,6 +14398,12 @@
         }
       }
     },
+    "voti" : {
+
+    },
+    "Voti" : {
+
+    },
     "Voti, media e crediti, con la simulazione di cosa succede alla media se il prossimo esame va in un certo modo." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -14182,6 +14420,9 @@
           }
         }
       }
+    },
+    "Voto" : {
+
     },
     "Voto %@" : {
       "localizations" : {

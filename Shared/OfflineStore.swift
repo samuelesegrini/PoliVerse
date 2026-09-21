@@ -17,7 +17,7 @@ import OSLog
 /// switcher makes it a single tap away.
 nonisolated final class OfflineStore: Sendable {
     private let directory: URL
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "offline")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "offline")
 
     /// Where encoding and writing happen: off the main thread, one at a time.
     ///
@@ -32,7 +32,7 @@ nonisolated final class OfflineStore: Sendable {
     /// One queue for the process, not one per store: two stores can name the
     /// same directory — the migration does — and each must see the other's
     /// writes as finished.
-    private static let writes = DispatchQueue(label: "one.wape.PoliVerse.offline-writes", qos: .utility)
+    private static let writes = DispatchQueue(label: "segrini.samuele.PoliVerse.offline-writes", qos: .utility)
 
     /// What came back, and how old it is.
     struct Entry<Value: Codable & Sendable>: Sendable {

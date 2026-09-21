@@ -61,9 +61,9 @@ struct PerformanceStatesTests {
     @Test("I domini sono due, con il prefisso dell’app")
     func domains() {
         #expect(PerformanceStates.Domain.allCases.count == 2)
-        #expect(PerformanceStates.Domain.allCases.allSatisfy { $0.rawValue.hasPrefix("one.wape.PoliVerse.") })
-        #expect(PerformanceStates.Domain.tab.rawValue == "one.wape.PoliVerse.tab")
-        #expect(PerformanceStates.Domain.data.rawValue == "one.wape.PoliVerse.data")
+        #expect(PerformanceStates.Domain.allCases.allSatisfy { $0.rawValue.hasPrefix("segrini.samuele.PoliVerse.") })
+        #expect(PerformanceStates.Domain.tab.rawValue == "segrini.samuele.PoliVerse.tab")
+        #expect(PerformanceStates.Domain.data.rawValue == "segrini.samuele.PoliVerse.data")
     }
 
     /// Reporting the same state twice spends a rate-limited budget for

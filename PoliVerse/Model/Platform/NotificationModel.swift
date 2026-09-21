@@ -21,11 +21,11 @@ final class NotificationModel {
     }
 
     private let centre = UNUserNotificationCenter.current()
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "notifications")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "notifications")
 
     /// Tapping a reminder should land on the right screen, not just open the
     /// app, so each kind carries the tab it belongs to.
-    static let categoryIdentifier = "one.wape.PoliVerse.reminder"
+    static let categoryIdentifier = "segrini.samuele.PoliVerse.reminder"
 
     func refreshAuthorization() async {
         authorization = await centre.notificationSettings().authorizationStatus

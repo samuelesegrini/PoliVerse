@@ -69,7 +69,7 @@ struct CieIDBridgeTests {
     @Test("The https URL is recovered from the return")
     func parsesReturn() throws {
         let url = try #require(URL(string:
-            "one.wape.PoliVerse://https://idserver.servizicie.interno.gov.it/idp/x?codice=1"))
+            "segrini.samuele.PoliVerse://https://idserver.servizicie.interno.gov.it/idp/x?codice=1"))
         let recovered = try #require(CieIDBridge.returnURL(from: url))
 
         #expect(recovered.scheme == "https")
@@ -83,7 +83,7 @@ struct CieIDBridgeTests {
     @Test("A mangled https// return is repaired")
     func repairsMangledScheme() throws {
         let url = try #require(URL(string:
-            "one.wape.PoliVerse://https//idserver.servizicie.interno.gov.it/idp/x"))
+            "segrini.samuele.PoliVerse://https//idserver.servizicie.interno.gov.it/idp/x"))
         let recovered = try #require(CieIDBridge.returnURL(from: url))
 
         #expect(recovered.scheme == "https")
@@ -102,14 +102,14 @@ struct CieIDBridgeTests {
 
     @Test("A return with no embedded https URL yields nil")
     func rejectsPayloadWithoutURL() throws {
-        let url = try #require(URL(string: "one.wape.PoliVerse://something-else"))
+        let url = try #require(URL(string: "segrini.samuele.PoliVerse://something-else"))
         #expect(CieIDBridge.returnURL(from: url) == nil)
     }
 
     @Test("An error reported by CieID is surfaced")
     func extractsErrorMessage() throws {
         let url = try #require(URL(string:
-            "one.wape.PoliVerse://https://idserver.servizicie.interno.gov.it/x?cieid_error_message=Operazione%20annullata"))
+            "segrini.samuele.PoliVerse://https://idserver.servizicie.interno.gov.it/x?cieid_error_message=Operazione%20annullata"))
         let recovered = try #require(CieIDBridge.returnURL(from: url))
         #expect(CieIDBridge.errorMessage(in: recovered) == "Operazione annullata")
     }
@@ -117,7 +117,7 @@ struct CieIDBridgeTests {
     @Test("A clean return reports no error")
     func noErrorOnSuccess() throws {
         let url = try #require(URL(string:
-            "one.wape.PoliVerse://https://idserver.servizicie.interno.gov.it/x?codice=1"))
+            "segrini.samuele.PoliVerse://https://idserver.servizicie.interno.gov.it/x?codice=1"))
         let recovered = try #require(CieIDBridge.returnURL(from: url))
         #expect(CieIDBridge.errorMessage(in: recovered) == nil)
     }
@@ -132,7 +132,7 @@ struct CieIDBridgeTests {
         #expect(router.pendingURL == nil)
 
         let ok = router.handle(try #require(URL(string:
-            "one.wape.PoliVerse://https://idserver.servizicie.interno.gov.it/idp/x")))
+            "segrini.samuele.PoliVerse://https://idserver.servizicie.interno.gov.it/idp/x")))
         #expect(ok)
         #expect(router.pendingURL != nil)
 
@@ -172,7 +172,7 @@ struct CieIDBridgeTests {
     func routerSurfacesError() throws {
         let router = CieIDRouter()
         let handled = router.handle(try #require(URL(string:
-            "one.wape.PoliVerse://https://idserver.servizicie.interno.gov.it/x?cieid_error_message=Annullato")))
+            "segrini.samuele.PoliVerse://https://idserver.servizicie.interno.gov.it/x?cieid_error_message=Annullato")))
 
         #expect(handled)
         #expect(router.errorMessage == "Annullato")

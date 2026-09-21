@@ -20,8 +20,8 @@ import StateReporting
 @MainActor
 enum PerformanceStates {
     nonisolated enum Domain: String, CaseIterable {
-        case tab = "one.wape.PoliVerse.tab"
-        case data = "one.wape.PoliVerse.data"
+        case tab = "segrini.samuele.PoliVerse.tab"
+        case data = "segrini.samuele.PoliVerse.data"
     }
 
     /// The tab values the app uses: ``NewDestination/Tab``, and `single` for

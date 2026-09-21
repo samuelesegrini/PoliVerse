@@ -16,13 +16,13 @@ import UniformTypeIdentifiers
 /// call.
 @MainActor
 final class SpotlightIndex {
-    static let domain = "one.wape.PoliVerse.items"
+    static let domain = "segrini.samuele.PoliVerse.items"
     /// Opening a Spotlight hit arrives as this activity type, carrying the
     /// identifier below.
-    static let activityType = "one.wape.PoliVerse.open"
+    static let activityType = "segrini.samuele.PoliVerse.open"
 
     private let index = CSSearchableIndex.default()
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "spotlight")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "spotlight")
 
     /// A stable identifier that also says which screen to open.
     ///

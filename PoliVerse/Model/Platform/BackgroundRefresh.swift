@@ -18,9 +18,9 @@ import OSLog
 /// it always did.
 @MainActor
 final class BackgroundRefresh {
-    static let taskIdentifier = "one.wape.PoliVerse.refresh"
+    static let taskIdentifier = "segrini.samuele.PoliVerse"
 
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "background")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "background")
 
     /// Registered once, at launch, before the app finishes launching —
     /// registering later throws.
