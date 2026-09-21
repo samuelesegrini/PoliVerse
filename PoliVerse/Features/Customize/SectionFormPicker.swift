@@ -125,19 +125,8 @@ struct SectionFormPicker: View {
         .frame(height: 340)
         .overlay(alignment: .bottom) {
             if forms.count > 1 {
-                VStack(spacing: 9) {
-                    Text(page.title)
-                        .font(.subheadline.weight(.semibold))
-                    HStack(spacing: 7) {
-                        ForEach(forms) { form in
-                            Circle()
-                                .fill(form == page ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
-                                .frame(width: 7, height: 7)
-                        }
-                    }
-                    .animation(.snappy, value: page)
-                }
-                .padding(.bottom, -44)
+                FormStepper(forms: forms, page: page, style: style)
+                    .padding(.bottom, -44)
             }
         }
         .padding(.bottom, forms.count > 1 ? 44 : 0)
@@ -150,6 +139,49 @@ struct SectionFormPicker: View {
                                 close()
                             })
             .frame(height: 340)
+    }
+}
+
+// MARK: - The forms as a control
+
+/// The forms under the card: which one is on screen, and how many there are.
+///
+/// The name over its dots, as it was — the card above is the thing to look at
+/// and this only has to be read. What it gained: the name is in the look's own
+/// typeface and changes with the card instead of snapping, and the dot for the
+/// form on screen stretches into the Flavor's accent, so the colour says which
+/// one it is as much as the position does.
+private struct FormStepper: View {
+    let forms: [TodaySection.Form]
+    let page: TodaySection.Form
+    let style: TodayStyle
+
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        let accent = style.accent(scheme)
+        VStack(spacing: 9) {
+            Text(page.title)
+                .font(.subheadline.weight(.semibold))
+                .fontDesign(style.textDesign.design)
+                .lineLimit(1)
+                // Keyed by form, so one name leaves as the next arrives rather
+                // than the glyphs changing under the reader.
+                .id(page)
+                .transition(.blurReplace)
+            HStack(spacing: 6) {
+                ForEach(forms) { form in
+                    Capsule()
+                        .fill(form == page ? AnyShapeStyle(accent) : AnyShapeStyle(.tertiary))
+                        .frame(width: form == page ? 16 : 6, height: 6)
+                }
+            }
+        }
+        // The card is swiped, not this: it follows whichever one comes to rest.
+        .animation(.snappy(duration: 0.3), value: page)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("Forma"))
+        .accessibilityValue(Text(page.title))
     }
 }
 
@@ -189,19 +221,28 @@ private struct SectionPageCard: View {
 
     var body: some View {
         let preview = preview
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
+            // The section is what the card is for: it takes the space left
+            // over and sits in the middle of it. Stacked from the top it was
+            // pushed up by whatever followed, and half of each showed.
             TodaySectionView(section: shownSection, style: preview, day: day)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             if let following {
+                // A strip of the next section, cut off at a fixed height: it
+                // says this is a page rather than a floating card, and cannot
+                // grow enough to take the middle back.
                 TodaySectionView(section: following, style: preview, day: day)
-                    .opacity(0.55)
-                    .mask(LinearGradient(colors: [.black, .black.opacity(0.15), .clear],
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .frame(height: 62, alignment: .top)
+                    .clipped()
+                    .opacity(0.5)
+                    .mask(LinearGradient(colors: [.black, .black.opacity(0.12), .clear],
                                          startPoint: .top, endPoint: .bottom))
                     .allowsHitTesting(false)
             }
-            Spacer(minLength: 0)
         }
         .padding(16)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background { TodayBackgroundView(style: preview, cornerRadius: 28) }
         .clipShape(.rect(cornerRadius: 28, style: .continuous))
         .overlay {

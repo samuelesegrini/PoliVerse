@@ -33,6 +33,30 @@ struct LookLibraryTests {
         #expect(library.selection == 2)
     }
 
+    @Test("A look added beside another keeps the one in use in use")
+    func insert() {
+        var library = library(3, selection: 1)
+        let inUse = library.active
+        let place = library.insert(TodayStyle(), after: 0)
+        #expect(place == 1)
+        #expect(library.looks.count == 4)
+        #expect(library.active == inUse, "Inserting before the look in use moved the page onto another look")
+        // And after it, which leaves the selection where it was.
+        let last = library.insert(TodayStyle(), after: 3)
+        #expect(last == 4)
+        #expect(library.active == inUse)
+    }
+
+    @Test("Renaming touches only that look")
+    func rename() {
+        var library = library(3, selection: 0)
+        library.rename("Notte", at: 2)
+        #expect(library.looks[2].name == "Notte")
+        #expect(library.looks[0].name.isEmpty)
+        #expect(library.looks[2].displayName(at: 2) == "Notte")
+        #expect(library.looks[0].displayName(at: 0) == "Stile 1")
+    }
+
     @Test("Deleting a look before the one in use keeps the same look in use")
     func deleteBefore() {
         var library = library(4, selection: 2)

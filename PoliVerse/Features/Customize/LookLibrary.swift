@@ -32,6 +32,21 @@ nonisolated struct LookLibrary: Equatable, Sendable {
         looks.append(look)
     }
 
+    /// Puts a look straight after another and returns where it landed: how
+    /// `+` adds one, so the copy sits beside what it was copied from.
+    @discardableResult
+    mutating func insert(_ look: TodayStyle, after index: Int) -> Int {
+        let place = min(max(index + 1, 0), looks.count)
+        looks.insert(look, at: place)
+        if place <= selection { selection += 1 }
+        return place
+    }
+
+    mutating func rename(_ name: String, at index: Int) {
+        guard looks.indices.contains(index) else { return }
+        looks[index].name = name
+    }
+
     /// Removes a look, keeping the one in use where it can; if that is the
     /// one removed, its neighbour takes over.
     @discardableResult

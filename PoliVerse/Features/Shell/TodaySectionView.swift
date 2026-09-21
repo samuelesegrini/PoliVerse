@@ -67,19 +67,26 @@ struct TodaySectionView: View {
         let shape = RoundedRectangle(cornerRadius: compact ? 16 : 22, style: .continuous)
         return opening(.event(lesson)) {
             HStack(spacing: 12) {
-                Image(systemName: lesson.kind == .exam ? "pencil.and.list.clipboard" : "book.closed")
+                Image(systemName: lesson.kind == .exam ? "pencil.and.list.clipboard"
+                                                      : SubjectSymbol.symbol(for: lesson.title))
                     .font(compact ? .subheadline : .title3)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(lesson.title)
                         .font(.subheadline.weight(.semibold))
-                        .lineLimit(1)
+                        // Politecnico names run long and share prefixes:
+                        // "Analisi e geometria 1" and "…2" truncate to the
+                        // same string on one line.
+                        .lineLimit(compact ? 1 : 2)
                     if !compact {
                         Text([lesson.start.formatted(.dateTime.hour().minute().locale(locale)) + " – "
                               + lesson.end.formatted(.dateTime.hour().minute().locale(locale)),
                               lesson.room ?? lesson.roomAcronym].compactMap { $0 }.joined(separator: " · "))
-                            .font(.caption)
-                            .opacity(0.8)
+                            // Not dimmed: at .caption over the light accents
+                            // 80% white falls under AA, and this line carries
+                            // the aula — the string read at a glance while
+                            // walking. Weight separates it instead.
+                            .font(.caption.weight(.medium))
                             .lineLimit(1)
                     }
                 }
@@ -185,7 +192,12 @@ struct TodaySectionView: View {
                 }
         case .timetable:
             return TodayDigest.timetable(events: agenda.events, day: day).map { event in
-                TodayEntry(id: "event-\(event.id)", symbol: event.kind == .exam ? "pencil.and.list.clipboard" : "clock",
+                // The subject's own symbol, as the exam pages and the course
+                // tiles draw it: on a day of five rows, one clock five times
+                // over tells the reader nothing the hour beside it does not.
+                TodayEntry(id: "event-\(event.id)",
+                           symbol: event.kind == .exam ? "pencil.and.list.clipboard"
+                                                       : SubjectSymbol.symbol(for: event.title),
                            title: event.title, detail: event.room ?? event.roomAcronym,
                            when: event.start.formatted(.dateTime.hour().minute().locale(locale)),
                            date: event.start, opens: .event(event))

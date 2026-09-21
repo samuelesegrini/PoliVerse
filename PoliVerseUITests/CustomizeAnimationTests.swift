@@ -3,8 +3,8 @@ import XCTest
 /// Walks Personalizza from start to finish and keeps a screenshot of every
 /// step, so the whole process can be checked by eye after a change.
 ///
-/// Opens the gallery from Oggi, swipes to another look, edits it and saves,
-/// uses it, then cancels an edit, adds a look and cancels, taps a side card,
+/// Opens the gallery from Oggi, swipes to another look — which is what puts it
+/// in use — edits it, restores it, adds a look from a theme, taps a side card,
 /// and closes.
 /// Every screenshot is attached to the test report; with
 /// `TEST_RUNNER_CUSTOMIZE_SHOTS` set to a folder on the Mac they are also
@@ -37,27 +37,26 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         let app = makeApp()
         app.launch()
 
-        // Choose the second look, so the one in use is not the first card.
+        // Swiping is choosing: the look that comes to rest in the middle is
+        // the one the app wears, with nothing to confirm.
         let gallery = open(app)
         XCTAssertTrue(isCentred(card(app, 0), in: app))
+        shot(app, "01-gallery")
         card(app, 0).swipeLeft()
         settle()
-        app.buttons["customize-use"].tap()
+        shot(app, "02-swiped")
+        XCTAssertTrue(isCentred(card(app, 1), in: app), "Swiping did not bring the next look to the middle")
+        gallery.tap()
         settle()
-        XCTAssertFalse(gallery.exists, "Usa did not close Personalizza")
+        XCTAssertFalse(gallery.exists, "Chiudi did not close Personalizza")
 
         _ = open(app)
-        shot(app, "01-gallery")
-        XCTAssertTrue(isCentred(card(app, 1), in: app), "The gallery did not open on the look in use")
+        XCTAssertTrue(isCentred(card(app, 1), in: app), "The gallery did not open on the look swiped to")
 
-        // Swipe to the third look and edit it.
-        card(app, 1).swipeLeft()
-        settle()
-        shot(app, "02-swiped")
-        XCTAssertTrue(isCentred(card(app, 2), in: app), "Swiping did not bring the next look to the middle")
-        card(app, 2).tap()
-        let done = app.buttons["customize-editor-done"]
-        XCTAssertTrue(done.waitForExistence(timeout: 5), "Tapping the middle card did not open the editor")
+        // Tapping the middle card edits it in place: same surface, no cover.
+        card(app, 1).tap()
+        let done = app.buttons["customize-edit-done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5), "Tapping the middle card did not start editing")
         settle()
         shot(app, "03-editor")
 
@@ -71,7 +70,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         back(app)
         settle()
         shot(app, "06-zone-closed")
-        XCTAssertTrue(done.exists, "Closing a page closed the editor")
+        XCTAssertTrue(done.exists, "Closing a page stopped editing")
 
         // Papers and decorations are one choice: a decoration from the same grid.
         app.buttons["bento-paper"].tap()
@@ -82,59 +81,45 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         back(app)
         settle()
 
+        // Changes are live and already in use: Ripristina is the one step back.
+        let restore = app.buttons["customize-restore"]
+        XCTAssertTrue(restore.exists, "Editing offered no way back to how the look was")
+        shot(app, "07-changed")
+        restore.tap()
+        settle()
+        XCTAssertFalse(restore.exists, "Ripristina did not put the look back")
+        shot(app, "07b-restored")
+
         done.tap()
         settle()
-        XCTAssertTrue(gallery.waitForExistence(timeout: 5), "Fine did not return to the gallery")
-        shot(app, "07-saved")
+        XCTAssertTrue(app.buttons["customize-edit"].waitForExistence(timeout: 5), "Fine did not return to the gallery")
+        shot(app, "08-gallery")
 
-        app.buttons["customize-use"].tap()
-        settle()
-        XCTAssertFalse(gallery.exists, "Usa did not close Personalizza")
-        shot(app, "08-used")
-
-        // Reopened, it starts on the look just used.
-        _ = open(app)
-        shot(app, "09-reopened")
-
-        // Cancelling a changed look asks before throwing the change away.
-        card(app, 2).tap()
-        XCTAssertTrue(done.waitForExistence(timeout: 5))
-        settle()
-        zone(app, "date").tap()
-        settle()
-        reveal(app.buttons["date-font-serif"].firstMatch, in: app).tap()
-        back(app)
-        settle()
-        app.buttons["customize-editor-cancel"].tap()
-        let discard = app.buttons["customize-editor-discard"].firstMatch
-        XCTAssertTrue(discard.waitForExistence(timeout: 3), "Annulla threw away changes without asking")
-        shot(app, "09b-discard")
-        discard.tap()
-        settle()
-        XCTAssertTrue(gallery.waitForExistence(timeout: 5), "Discarding did not return to the gallery")
-
-        // A new look, cancelled, is not kept.
+        // A new look starts from something: here a theme, which lands beside
+        // the one in the middle and opens for editing.
         app.buttons["customize-add"].tap()
-        XCTAssertTrue(app.buttons["customize-editor-cancel"].waitForExistence(timeout: 5), "+ did not open the editor")
+        let preset = app.buttons["customize-new-preset-4"].firstMatch
+        XCTAssertTrue(preset.waitForExistence(timeout: 5), "+ did not offer anything to start from")
+        shot(app, "09-new")
+        preset.tap()
+        XCTAssertTrue(done.waitForExistence(timeout: 5), "A new look did not open for editing")
         settle()
-        shot(app, "10-new")
-        app.buttons["customize-editor-cancel"].tap()
+        shot(app, "10-new-editing")
+        done.tap()
         settle()
-        shot(app, "11-new-cancelled")
-        XCTAssertTrue(card(app, todayPresetCount).waitForNonExistence(timeout: 3), "A cancelled new look was kept")
+        XCTAssertTrue(card(app, todayPresetCount).waitForExistence(timeout: 3), "The new look was not kept")
 
         // A side card scrolls to the middle instead of opening.
-        XCTAssertTrue(isCentred(card(app, 2), in: app), "Reopened, the gallery was not on the look just used")
-        card(app, 3).tap()
+        card(app, 1).tap()
         settle()
-        shot(app, "12-side-tapped")
-        XCTAssertTrue(isCentred(card(app, 3), in: app), "Tapping a side card did not bring it to the middle")
-        XCTAssertFalse(app.buttons["customize-editor-done"].exists, "Tapping a side card opened the editor")
+        shot(app, "11-side-tapped")
+        XCTAssertTrue(isCentred(card(app, 1), in: app), "Tapping a side card did not bring it to the middle")
+        XCTAssertFalse(app.buttons["customize-edit-done"].exists, "Tapping a side card started editing")
 
         gallery.tap()
         settle()
         XCTAssertFalse(gallery.exists, "Chiudi did not close Personalizza")
-        shot(app, "13-closed")
+        shot(app, "12-closed")
     }
 
     /// Every starter look, one screenshot each, to check them by eye.
@@ -159,7 +144,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
 
         let gallery = open(app)
         card(app, 0).tap()
-        let done = app.buttons["customize-editor-done"]
+        let done = app.buttons["customize-edit-done"]
         XCTAssertTrue(done.waitForExistence(timeout: 5))
         settle()
         shot(app, "30-editor")
@@ -292,7 +277,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         XCTAssertTrue(gallery.waitForExistence(timeout: 5))
         shot(app, "39-gallery")
-        app.buttons["customize-use"].tap()
+        gallery.tap()
         settle()
         shot(app, "40-app")
         XCTAssertFalse(app.buttons["bar-profile"].exists, "The bar still shows the profile button")
@@ -330,10 +315,13 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
 
         let cancel = open(app)
         shot(app, "20-single-gallery")
-        app.buttons["customize-use"].tap()
+        card(app, 0).swipeLeft()
         settle()
-        XCTAssertFalse(cancel.exists, "Usa did not close Personalizza")
-        shot(app, "21-single-closed")
+        XCTAssertTrue(isCentred(card(app, 1), in: app), "Swiping did not choose the next look")
+        shot(app, "21-single-swiped")
+        cancel.tap()
+        settle()
+        XCTAssertFalse(cancel.exists, "Chiudi did not close Personalizza")
 
         _ = open(app)
         cancel.tap()

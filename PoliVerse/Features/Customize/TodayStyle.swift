@@ -148,10 +148,21 @@ nonisolated struct TodayStyle: Equatable, Sendable {
     var appearance = TodayAppearance.system
     var sections: [TodaySection] = TodaySection.defaultKinds.map(TodaySection.init(kind:))
     var bar = TodayBarStyle()
+    /// What the student calls this look. Empty while it has no name, and the
+    /// gallery calls it by its place instead.
+    var name = "" {
+        didSet { if name.count > Self.nameLimit { name = String(name.prefix(Self.nameLimit)) } }
+    }
 
     static let dateSizes = 0.6...1.3
     static let customGreetingLimit = 40
     static let accessoryTextLimit = 24
+    static let nameLimit = 24
+
+    /// The look's name, or its place in the gallery when it has none.
+    func displayName(at index: Int) -> String {
+        name.isEmpty ? String(localized: "Stile \(index + 1)") : name
+    }
 
     /// The material a section draws in: its own, or the page's.
     func material(for section: TodaySection) -> TodayMaterial {
@@ -204,6 +215,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         // Tramonto: Futura in mandarin on a soft gradient, the lesson now in
         // front, all glass.
         var sunset = TodayStyle()
+        sunset.name = "Tramonto"
         sunset.flavor = Flavor(hex: "#E8751A")!
         sunset.dateColour = .flavor
         sunset.dateFont = .futura
@@ -219,6 +231,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         // Politecnico: Didot in the school's blue, the date in words, frosted
         // cards on a quiet mesh of ovals.
         var polimi = TodayStyle()
+        polimi.name = "Politecnico"
         polimi.flavor = Flavor(hex: "#1B4F8F")!
         polimi.dateColour = .flavor
         polimi.dateFont = .didot
@@ -234,6 +247,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         // Minimale: Avenir Next at its lightest, the day's lessons alone,
         // nothing around them.
         var minimal = TodayStyle()
+        minimal.name = "Minimale"
         minimal.flavor = Flavor(hex: "#5B6472")!
         minimal.dateFont = .avenir
         minimal.dateWeight = 0.1
@@ -247,6 +261,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         // Studio: bold rounded ink on lavender, tinted glass, books and a
         // pencil beside the date, deadlines first.
         var study = TodayStyle()
+        study.name = "Studio"
         study.flavor = Flavor(hex: "#7A6FE0")!
         study.dateFont = .rounded
         study.textDesign = .rounded
@@ -266,6 +281,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         // Notte: the weekday tall and centred among the stars, cards that
         // glow in indigo on screens that can.
         var night = TodayStyle()
+        night.name = "Notte"
         night.flavor = Flavor(hex: "#3B4BC8")!
         night.dateColour = .flavor
         night.dateFont = .condensed
@@ -281,6 +297,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
 
         // Serra: Bodoni in sage, a leaf beside it, solid compact cards.
         var greenhouse = TodayStyle()
+        greenhouse.name = "Serra"
         greenhouse.flavor = Flavor(hex: "#5E8C61")!
         greenhouse.dateColour = .flavor
         greenhouse.dateFont = .bodoni
@@ -299,6 +316,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         // Pausa caffè: typewriter in coffee, the date on one line, a cup and
         // a croissant.
         var coffee = TodayStyle()
+        coffee.name = "Pausa caffè"
         coffee.flavor = Flavor(hex: "#8A5A3C")!
         coffee.dateColour = .flavor
         coffee.dateFont = .typewriter
@@ -322,6 +340,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         // Codice: mono in mint on code symbols, clear glass, compact, and
         // only the date and the menu in the bar.
         var code = TodayStyle()
+        code.name = "Codice"
         code.flavor = Flavor(hex: "#2FA88A")!
         code.dateColour = .flavor
         code.dateFont = .mono
@@ -338,7 +357,10 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         }
         code.bar.showsProfile = false
 
-        return [TodayStyle(), sunset, polimi, minimal, study, night, greenhouse, coffee, code]
+        var plain = TodayStyle()
+        plain.name = "Base"
+
+        return [plain, sunset, polimi, minimal, study, night, greenhouse, coffee, code]
     }
 
     /// A fixed id for a preset's sticker, so the presets are the same looks
@@ -413,6 +435,7 @@ nonisolated private struct StoredTodayStyle: Codable {
     var appearance: TodayAppearance?
     var sections: Lenient<TodaySection>?
     var bar: TodayBarStyle?
+    var name: String?
 }
 
 /// What older versions stored and this one only reads, to carry a look over.
@@ -469,6 +492,7 @@ nonisolated extension TodayStyle: RawRepresentable {
         grain = (stored.grain ?? grain).clamped(to: 0...1)
         appearance = stored.appearance ?? appearance
         bar = stored.bar ?? bar
+        name = String((stored.name ?? name).prefix(Self.nameLimit))
 
         // Before Flavor a look had up to three colours: the date's wins, then
         // the background's, then the controls'; an ink date stays ink.
@@ -497,7 +521,7 @@ nonisolated extension TodayStyle: RawRepresentable {
                                       dateLayout: dateLayout, dateAlignment: dateAlignment, accessory: accessory,
                                       stickers: Lenient(stickers), stickerOutline: stickerOutline, accessoryText: accessoryText,
                                       photoIDs: photoIDs, paper: paper, grain: grain, appearance: appearance,
-                                      sections: Lenient(sections), bar: bar)
+                                      sections: Lenient(sections), bar: bar, name: name)
         // Sorted keys: the standard library's `==` for RawRepresentable types
         // compares `rawValue`, and unsorted JSON keys would make equal styles
         // unequal.
