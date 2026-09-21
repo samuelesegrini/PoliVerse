@@ -58,14 +58,17 @@ struct CareerSwitchView: View {
             } footer: {
                 Text("Il codice persona è uno solo; ogni immatricolazione ha la sua matricola. I servizi del Politecnico rispondono solo per quella su cui è stato fatto l'accesso.")
             }
+            .lookRow()
 
             if careers.careers.isEmpty && !careers.isLoading {
                 Section {
                     Text(careers.errorMessage ?? "Nessuna carriera restituita dal Politecnico.")
                         .foregroundStyle(.secondary)
                 }
+                .lookRow()
             }
         }
+        .lookList()
         .navigationTitle("Matricola")
         .navigationBarTitleDisplayMode(.inline)
         .task { await careers.load() }

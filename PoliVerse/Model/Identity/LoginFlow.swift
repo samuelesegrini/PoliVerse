@@ -30,18 +30,42 @@ final class LoginFlow {
     }
 
     /// Decides the opening screen: a stored token means we can go straight in.
+    ///
+    /// ## Why the directory is not loaded first any more
+    ///
+    /// It used to be, on the reasoning that you should learn where the services
+    /// live before calling any of them. But the two routes that call nothing —
+    /// a fresh install with no token, and the sample data — were paying for it
+    /// anyway: ``ServiceDirectory/load()`` is two network round-trips with a
+    /// fifteen-second timeout each, and they sat in front of the very first
+    /// frame. A first run showed a blank screen with a spinner for four to
+    /// seven seconds before the welcome appeared, which is the worst possible
+    /// place in the app to spend that: it is the only screen every student
+    /// sees, and it is the one that has nothing to wait for.
+    ///
+    /// Nothing is skipped, only reordered. The token check is local; the
+    /// directory is loaded before the paths that actually need it — the scope
+    /// check and the API call below, ``prepareForLogin()`` before the IdP
+    /// opens, ``completeLogin(token:)`` before the token is stored — and it
+    /// has fallbacks for all of them if the network is down. On the routes
+    /// that do not need it, it is warmed in the background instead, so it is
+    /// there by the time a finger reaches the sign-in button.
     func restore() async {
-        // Learn where the services live before calling any of them.
-        await session.directory.load()
-
         if session.useMockData {
+            warmDirectory()
             await session.signIn(Student.sample)
             return
         }
         guard await session.tokens.hasToken else {
+            // Straight to the welcome — then fetch, with the screen already up.
             session.enter(.signedOut)
+            warmDirectory()
             return
         }
+
+        // Restoring a real session does need it: the scope comparison below
+        // reads the current scopes, and the request after it needs the host.
+        await session.directory.load()
 
         // A token only carries the scopes it was granted at creation; refreshing
         // never widens them. If the Politecnico has added a scope since this
@@ -71,6 +95,17 @@ final class LoginFlow {
             log.error("Restore failed: \(error.localizedDescription)")
             session.enter(.signedOut)
         }
+    }
+
+    /// Loads the service directory without holding anything up.
+    ///
+    /// Unstructured on purpose: the caller has just put a screen on, and this
+    /// must not be part of what the caller is awaited for. It is safe to run
+    /// twice — ``ServiceDirectory/load()`` returns immediately once it has
+    /// loaded — so the login paths that load it themselves stay correct even
+    /// if this is still in flight.
+    private func warmDirectory() {
+        Task { await session.directory.load() }
     }
 
     /// Prepares for a genuinely fresh login.

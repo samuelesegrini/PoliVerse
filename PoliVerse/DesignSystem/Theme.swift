@@ -1,17 +1,29 @@
 import SwiftUI
 
 enum Theme {
-    /// Politecnico blue as the anchor, with a deterministic accent per course.
+    /// The app's own colour: whatever the look in use puts on its controls.
     ///
-    /// This must be adaptive. The light-mode navy is `rgb(0, 51, 82)`, which
-    /// scores about 1.3:1 against the dark-mode background — far under the
-    /// 4.5:1 minimum, and effectively invisible as a tint on the tab bar. The
-    /// dark variant is the same hue lifted into a readable range.
-    static let brand = Color(UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.35, green: 0.65, blue: 0.88, alpha: 1)
-            : UIColor(red: 0.00, green: 0.20, blue: 0.32, alpha: 1)
-    })
+    /// It used to be a fixed Politecnico navy, and that was the single largest
+    /// way a screen could ignore Personalizza — fifty-odd icons, bars and
+    /// badges staying blue while the student had coloured the app green. It
+    /// now resolves through the environment's tint, which ``lookControls()``
+    /// sets from the Flavor once for the whole app, so every one of those
+    /// sites follows the look without naming it.
+    ///
+    /// Where no tint is set — the login and onboarding screens, which run
+    /// before there is a look to speak of — it falls back to the `AccentColor`
+    /// asset, which is that same Politecnico navy, adaptive for dark mode:
+    /// the light-mode `rgb(0, 51, 82)` scores about 1.3:1 on a dark
+    /// background, far under the 4.5:1 minimum, so the asset carries a lifted
+    /// twin of the same hue.
+    static let brand = Color.accentColor
+
+    /// ``brand``, as a ``Flavor.RGB`` — the components a ``GlassTile`` needs,
+    /// rather than the adaptive `Color` above.
+    static func brandRGB(dark: Bool) -> Flavor.RGB {
+        dark ? Flavor.RGB(red: 0.35, green: 0.65, blue: 0.88)
+             : Flavor.RGB(red: 0.00, green: 0.20, blue: 0.32)
+    }
 
     /// Eight accents chosen to stay distinguishable in both light and dark and
     /// to remain distinct for the common forms of colour blindness — they vary
@@ -71,9 +83,7 @@ enum Theme {
     static let cardCorner: CGFloat = 26
 }
 
-extension View {
-    /// Standard card treatment, so radius and shadow are defined once.
-    func cardBackground(_ tint: Color = Color(.secondarySystemGroupedBackground)) -> some View {
-        background(tint, in: .rect(cornerRadius: Theme.cardCorner))
-    }
-}
+// A card is drawn one way in this app: `lookCard()`, which is the material
+// the student chose in Personalizza. The fixed system-grey `cardBackground`
+// that used to live here was the last way to opt out of that, and Carriera —
+// the one page still using it — read as a screen from another app.

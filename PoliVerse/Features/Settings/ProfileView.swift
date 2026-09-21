@@ -53,7 +53,6 @@ struct ProfileView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 32)
         }
-        .background(Color(.systemGroupedBackground))
         .navigationTitle("Profilo")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -247,7 +246,7 @@ struct ProfileGroup<Content: View>: View {
                 .accessibilityAddTraits(.isHeader)
             content
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: Theme.cardCorner))
+                .lookCard(cornerRadius: Theme.cardCorner)
             if let footer {
                 Text(footer)
                     .font(.footnote)
@@ -274,7 +273,7 @@ private struct QuickAction: View {
             }
             .foregroundStyle(.tint)
             .frame(maxWidth: .infinity, minHeight: 64)
-            .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 22))
+            .lookCard(cornerRadius: 22)
             .contentShape(.rect(cornerRadius: 22))
         }
         .buttonStyle(.plain)

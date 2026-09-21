@@ -77,8 +77,32 @@ final class StudyProgrammeModel {
         if programme == nil {
             await locate(for: matricola)
         } else {
+            await settlePlan()
             await review()
         }
+    }
+
+    /// A plan stored as "***" is not a choice the student made.
+    ///
+    /// It is what a page answers when its plan could not be read, and it
+    /// left the degree course right and the plan wrong — the teachings that
+    /// followed were another plan's, or none. The service settles "***" onto
+    /// the real plan of that degree course, so take what it says.
+    private func settlePlan() async {
+        guard let current = programme, current.selection.plan == "***",
+              let page = await manifesti.cataloguePage(current.selection),
+              let settled = page.selection, settled.plan != "***",
+              settled.degree == current.selection.degree,
+              var updated = Self.programme(from: page, confirmed: current.isConfirmed) else { return }
+        // Only the plan moves: what was decided about its teachings stands.
+        updated.brackets = current.brackets
+        updated.inferredBrackets = current.inferredBrackets
+        updated.links = current.links
+        updated.needsReview = current.needsReview
+        save(updated)
+        plans = [:]
+        planCodes = []
+        log.notice("study programme plan settled from *** to \(settled.plan, privacy: .public)")
     }
 
     private func locate(for matricola: String) async {

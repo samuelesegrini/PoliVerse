@@ -237,3 +237,56 @@ struct OnboardingAdoptionTests {
         #expect(relaunched.isComplete)
     }
 }
+
+/// The screens slide, and the slide has to agree with the button that caused
+/// it. Coming back from a step while the animation says "forward" is the kind
+/// of thing nobody can name and everybody feels.
+@Suite("Onboarding direction")
+@MainActor
+struct OnboardingDirectionTests {
+    private func state() -> OnboardingState {
+        OnboardingState(defaults: UserDefaults(suiteName: "onboarding-dir-\(UUID().uuidString)")!)
+    }
+
+    @Test("Advancing is a forward move")
+    func advanceIsForward() {
+        let state = state()
+        state.advance(in: .init())
+        #expect(!state.isMovingBack)
+    }
+
+    @Test("Going back is a backward move")
+    func backIsBackward() {
+        let state = state()
+        let context = OnboardingFlow.Context()
+        state.advance(in: context)
+        state.goBack(in: context)
+        #expect(state.step == .welcome)
+        #expect(state.isMovingBack)
+    }
+
+    /// A back the flow refuses — here the one into a sign-in that has already
+    /// happened — must not leave the direction flipped, or the next advance
+    /// plays backwards.
+    @Test("A back the flow refuses leaves the direction alone")
+    func refusedBackKeepsDirection() {
+        let state = state()
+        let context = OnboardingFlow.Context(isSignedIn: true)
+        state.advance(in: context)
+        state.advance(in: context)
+        #expect(state.step == .reminders)
+        state.goBack(in: context)
+        #expect(state.step == .reminders)
+        #expect(!state.isMovingBack)
+    }
+
+    @Test("Replaying the flow from Settings starts forward")
+    func replayIsForward() {
+        let state = state()
+        let context = OnboardingFlow.Context()
+        state.advance(in: context)
+        state.goBack(in: context)
+        state.replay()
+        #expect(!state.isMovingBack)
+    }
+}

@@ -101,6 +101,7 @@ struct ConnectionsView: View {
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
             }
+            .lookRow()
 
             weBeepSection(colour: colours[.weBeep] ?? ramp.neutral)
             accountSection
@@ -116,7 +117,9 @@ struct ConnectionsView: View {
             } footer: {
                 Text("Con i dati di esempio l’app funziona senza collegarsi ai server del Politecnico. Disattivalo per usare il tuo account.")
             }
+            .lookRow()
         }
+        .lookList()
         .navigationTitle("WeBeep e diagnostica")
         .navigationBarTitleDisplayMode(.inline)
         .task {
@@ -179,6 +182,7 @@ struct ConnectionsView: View {
         } footer: {
             Text("Un accesso separato da quello del Politecnico, che può scadere per conto suo. Serve per i materiali dei corsi e per gli avvisi dei docenti.")
         }
+        .lookRow()
     }
 
     @ViewBuilder
@@ -225,6 +229,7 @@ struct ConnectionsView: View {
             } footer: {
                 Text("Il token dura poco e si rinnova da solo, ma porta con sé solo gli ambiti chiesti quando è nato: se il Politecnico ne aggiunge uno, serve uscire e rientrare.")
             }
+            .lookRow()
         }
     }
 
@@ -267,6 +272,7 @@ struct ConnectionsView: View {
         } footer: {
             Text("La verifica chiede a ogni servizio, WeBeep compreso, se c’è, senza credenziali. Conta che risponda, anche con un errore come 404: dice se la rete arriva al Politecnico e quanto in fretta, non se i tuoi dati sono corretti.")
         }
+        .lookRow()
     }
 
     @ViewBuilder
@@ -305,6 +311,7 @@ struct ConnectionsView: View {
         } footer: {
             Text("Le modifiche fatte senza rete, come un corso tra i preferiti, restano in coda e partono appena torna la connessione. Dopo \(ActionQueue.maxAttempts) tentativi rifiutati si fermano qui.")
         }
+        .lookRow()
     }
 
     @ViewBuilder
@@ -374,6 +381,7 @@ struct ConnectionsView: View {
             } footer: {
                 Text("Circa una volta all’ora, quando iOS lo concede, l’app aggiorna orario, carriera e novità di WeBeep in circa trenta secondi, poi riprogramma i promemoria e aggiorna i widget. iOS decide quando: con Risparmio energetico o l’aggiornamento disattivato, non succede.")
             }
+            .lookRow()
         }
     }
 
@@ -400,6 +408,7 @@ struct ConnectionsView: View {
             } footer: {
                 Text("Lo spazio condiviso è dove l’app lascia orario e carriera per i widget: senza, l’app funziona ma i widget restano vuoti.")
             }
+            .lookRow()
         }
     }
 
@@ -435,6 +444,7 @@ struct ConnectionsView: View {
             } footer: {
                 Text("Una volta al giorno iOS consegna all’app un riassunto di avvio, memoria e batteria, e un rapporto per ogni blocco o chiusura. Restano sul dispositivo.")
             }
+            .lookRow()
         }
     }
 
@@ -457,6 +467,7 @@ struct ConnectionsView: View {
             } footer: {
                 Text("Tutto quello che c’è in questa pagina, in testo, da allegare a una segnalazione. Non contiene password né token: se un messaggio d’errore ne cita uno, viene tolto.")
             }
+            .lookRow()
         }
     }
 

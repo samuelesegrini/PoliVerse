@@ -113,7 +113,7 @@ struct CourseCard: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: Theme.cardCorner))
+            .lookCard(cornerRadius: Theme.cardCorner)
             .overlay {
                 RoundedRectangle(cornerRadius: Theme.cardCorner)
                     .strokeBorder(accent.opacity(course.isFavourite ? 0.45 : 0), lineWidth: 1.5)

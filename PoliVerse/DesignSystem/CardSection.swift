@@ -159,12 +159,3 @@ struct InitialsAvatar: View {
             .accessibilityHidden(true)
     }
 }
-
-extension View {
-    /// The ground every course subpage sits on: the look's sheet, as Oggi's,
-    /// with its cards in glass — the course section's own surface.
-    func courseScreen() -> some View {
-        lookPage()
-            .environment(\.lookSurface, .glass)
-    }
-}

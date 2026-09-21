@@ -5,36 +5,24 @@ import SwiftUI
 ///
 /// The first run is ``OnboardingView`` instead: it says what the app is before
 /// asking for an account. This one does not, because by the time anyone sees
-/// it they have used the app.
+/// it they have used the app — but it still reuses ``OnboardingStepLayout``,
+/// the same shape as onboarding's own sign-in step (``SignInStepView``), which
+/// shows this identical ``PoliMiSignInButton``. Two screens presenting the
+/// same choice looked like two different apps when this one had its own
+/// centred, spacer-driven layout instead.
 struct LoginView: View {
     var body: some View {
-        VStack(spacing: 24) {
-            Spacer()
-
-            Image(systemName: "graduationcap.fill")
-                .font(.system(size: 64))
-                .foregroundStyle(Theme.brand.gradient)
-
-            VStack(spacing: 8) {
-                Text("PoliVerse")
-                    .font(.largeTitle.weight(.bold))
-                    .fontDesign(.rounded)
-                Text("Corsi, materiali e carriera in un posto solo.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-
-            Spacer()
-
+        OnboardingStepLayout(
+            symbol: "graduationcap.fill",
+            title: "Bentornato su PoliVerse",
+            detail: "Corsi, materiali e carriera in un posto solo."
+        ) {
+            OnboardingPoint(
+                symbol: "lock.shield",
+                text: "PoliVerse non è un'app ufficiale del Politecnico di Milano: le credenziali si inseriscono solo sulla pagina del Politecnico o del tuo gestore.")
+        } actions: {
             PoliMiSignInButton()
-
-            Text("PoliVerse non è un'app ufficiale del Politecnico di Milano. Le credenziali vengono inserite solo nella pagina di ateneo.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
         }
-        .padding(28)
     }
 }
 

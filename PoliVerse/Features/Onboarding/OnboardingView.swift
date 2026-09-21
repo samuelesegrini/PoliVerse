@@ -26,6 +26,8 @@ struct OnboardingView: View {
     @Environment(CareersModel.self) private var careers
     @Environment(WeBeepModel.self) private var weBeep
     @Environment(NotificationModel.self) private var notifications
+    @Environment(WhatsNewState.self) private var whatsNew
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// What the flow knows right now. Rebuilt on every render rather than
     /// stored, because signing in changes most of it.
@@ -43,13 +45,17 @@ struct OnboardingView: View {
     var body: some View {
         VStack(spacing: 0) {
             if onboarding.step != .welcome {
-                HStack(spacing: 12) {
+                HStack(spacing: 8) {
                     if OnboardingFlow.canGoBack(from: onboarding.step, in: context) {
                         Button {
                             onboarding.goBack(in: context)
                         } label: {
                             Image(systemName: "chevron.left")
                                 .font(.footnote.weight(.semibold))
+                                // The chevron is small on purpose; what has to
+                                // be 44 points is the area a thumb can miss by.
+                                .frame(width: 44, height: 44)
+                                .contentShape(.rect)
                         }
                         .buttonStyle(.plain)
                         .foregroundStyle(.secondary)
@@ -57,9 +63,13 @@ struct OnboardingView: View {
                         .accessibilityIdentifier("onboarding-back")
                     }
                     OnboardingProgress(steps: steps, current: onboarding.step)
+                        .padding(.trailing, 4)
                 }
-                .padding(.horizontal, 28)
-                .padding(.top, 12)
+                // Fixed, so the steps that have no back button do not draw
+                // their progress bar four points higher than the ones that do.
+                .frame(height: 44)
+                .padding(.horizontal, 24)
+                .padding(.top, 4)
             }
 
             Group {
@@ -69,16 +79,19 @@ struct OnboardingView: View {
                 case .reminders: RemindersStepView(advance: advance)
                 case .career: CareerStepView(advance: advance)
                 case .weBeep: WeBeepStepView(advance: advance)
-                case .ready: ReadyStepView(finish: onboarding.complete)
+                case .ready: ReadyStepView(finish: finish)
                 }
             }
             // Each step is its own screen rather than a page in a scroll
-            // view, so the transition has to say which way the flow is going.
-            .transition(.asymmetric(
-                insertion: .move(edge: .trailing).combined(with: .opacity),
-                removal: .move(edge: .leading).combined(with: .opacity)))
+            // view, so the transition has to say which way the flow is going —
+            // and going *back* has to look like going back, or the animation
+            // contradicts the button that caused it.
+            .transition(stepTransition)
         }
-        .animation(.snappy, value: onboarding.step)
+        .animation(reduceMotion ? .easeOut(duration: 0.2) : .snappy, value: onboarding.step)
+        // One tick per move, forwards or back: the step changing is the whole
+        // of what the student just did.
+        .sensoryFeedback(.selection, trigger: onboarding.step)
         // The careers are needed before the career step can know whether to
         // exist, and they are only readable once there is a token.
         .task(id: session.student?.matricola) {
@@ -87,8 +100,29 @@ struct OnboardingView: View {
         }
     }
 
+    /// Sliding, in the direction the flow is actually moving — and a plain
+    /// cross-fade when the student has asked the system for less movement,
+    /// since the direction is carried by the progress bar as well.
+    private var stepTransition: AnyTransition {
+        if reduceMotion { return .opacity }
+        let entering: Edge = onboarding.isMovingBack ? .leading : .trailing
+        let leaving: Edge = onboarding.isMovingBack ? .trailing : .leading
+        return .asymmetric(
+            insertion: .move(edge: entering).combined(with: .opacity),
+            removal: .move(edge: leaving).combined(with: .opacity))
+    }
+
     private func advance() {
         onboarding.advance(in: context)
+    }
+
+    /// Ends the first run, and stamps the version it ended on.
+    ///
+    /// Without the stamp the app would follow the tour with "what's new in
+    /// 2.0" for someone who has never run anything but 2.0.
+    private func finish() {
+        whatsNew.adoptFirstRun()
+        onboarding.complete()
     }
 }
 
@@ -101,21 +135,37 @@ private struct OnboardingProgress: View {
     let steps: [OnboardingFlow.Step]
     let current: OnboardingFlow.Step
 
+    private var tint = OnboardingTint()
+
+    init(steps: [OnboardingFlow.Step], current: OnboardingFlow.Step) {
+        self.steps = steps
+        self.current = current
+    }
+
+    /// Where in the list the current step is, or the start if it has just
+    /// stopped applying and the flow is about to fall forward off it.
+    private var reached: Int { steps.firstIndex(of: current) ?? 0 }
+
     var body: some View {
         HStack(spacing: 6) {
-            ForEach(steps) { step in
+            ForEach(Array(steps.enumerated()), id: \.element) { index, _ in
                 Capsule()
-                    .fill(step == current ? Theme.brand : Color.secondary.opacity(0.25))
+                    // Passed steps stay filled. Lighting only the current one
+                    // made the bar a position indicator without a scale: five
+                    // identical dots and one lit tells nobody whether they are
+                    // near the end, which is the single thing the bar is for.
+                    .fill(index <= reached ? tint.color : Color.secondary.opacity(0.25))
+                    .opacity(index < reached ? 0.45 : 1)
                     .frame(height: 4)
             }
         }
+        .animation(.snappy, value: reached)
         .accessibilityElement()
         .accessibilityLabel(label)
     }
 
     private var label: String {
-        guard let index = steps.firstIndex(of: current) else { return "" }
-        return String(localized: "Passo \(index + 1) di \(steps.count)")
+        String(localized: "Passo \(reached + 1) di \(steps.count)")
     }
 }
 

@@ -32,10 +32,10 @@ struct GradeSimulatorView: View {
                     Text("Non ci sono esami rimasti nel piano: la media è quella finale.")
                         .foregroundStyle(.secondary)
                 }
-                .glassRow()
+                .lookRow()
             }
         }
-        .glassList()
+        .lookList()
         .navigationTitle("Simulazione media")
         .navigationBarTitleDisplayMode(.inline)
         .task {
@@ -66,7 +66,7 @@ struct GradeSimulatorView: View {
         } footer: {
             Text("Il voto di laurea è una stima da media e CFU: punti di tesi ed eventuale lode non sono ricavabili dal libretto.")
         }
-        .glassRow()
+        .lookRow()
     }
 
     private var targetSection: some View {
@@ -115,7 +115,7 @@ struct GradeSimulatorView: View {
                 "Obiettivo attuale sui Servizi Online: \(String(format: "%.1f", $0))."
             } ?? "Salvando, l'obiettivo viene registrato anche sui Servizi Online del Politecnico.")
         }
-        .glassRow()
+        .lookRow()
     }
 
     private var projectionSection: some View {
@@ -134,7 +134,7 @@ struct GradeSimulatorView: View {
         } footer: {
             Text("\(plan.pending.count) esami da sostenere, \(plan.remainingCFU) CFU.")
         }
-        .glassRow()
+        .lookRow()
     }
 }
 

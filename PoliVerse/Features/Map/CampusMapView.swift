@@ -187,7 +187,7 @@ private struct BuildingSheet: View {
             } footer: {
                 if pin.freeRooms != nil { Text(pin.label) }
             }
-            .glassRow()
+            .lookRow()
 
             ForEach(byFloor, id: \.floor) { group in
                 Section(group.floor) {
@@ -204,10 +204,10 @@ private struct BuildingSheet: View {
                         }
                     }
                 }
-                .glassRow()
+                .lookRow()
             }
         }
-        .glassList()
+        .lookList()
         .navigationTitle(pin.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

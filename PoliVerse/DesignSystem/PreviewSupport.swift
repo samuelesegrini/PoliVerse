@@ -48,6 +48,8 @@ enum PreviewEnvironment {
         defaults: UserDefaults(suiteName: "preview-login") ?? .standard)
     static let onboarding = OnboardingState(
         defaults: UserDefaults(suiteName: "preview-onboarding") ?? .standard)
+    static let whatsNew = WhatsNewState(
+        current: "2.0", defaults: UserDefaults(suiteName: "preview-whats-new") ?? .standard)
     static let status = DataStatus(session: session, network: network)
     /// Wired to the same sample services, so a preview's `.task` refreshes
     /// mock data instead of finding an empty list.
@@ -88,6 +90,7 @@ extension View {
             .environment(PreviewEnvironment.freshness)
             .environment(PreviewEnvironment.status)
             .environment(PreviewEnvironment.onboarding)
+            .environment(PreviewEnvironment.whatsNew)
             .environment(PreviewEnvironment.spid)
             .environment(PreviewEnvironment.loginMemory)
             .tint(Theme.brand)

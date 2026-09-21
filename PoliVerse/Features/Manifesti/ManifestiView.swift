@@ -27,7 +27,7 @@ struct ManifestiView: View {
             } footer: {
                 Text("Il manifesto è il catalogo ufficiale: programmi, docenti, scaglioni e bibliografia di tutti gli insegnamenti, anche quelli che non segui.")
             }
-            .glassRow()
+            .lookRow()
 
             if manifesti.isSearching && manifesti.results.isEmpty {
                 Section { ProgressView().frame(maxWidth: .infinity) }
@@ -38,7 +38,7 @@ struct ManifestiView: View {
                     Label(message, systemImage: "exclamationmark.triangle")
                         .foregroundStyle(.orange)
                 }
-                .glassRow()
+                .lookRow()
             }
 
             if !manifesti.results.isEmpty {
@@ -51,7 +51,7 @@ struct ManifestiView: View {
                         }
                     }
                 }
-                .glassRow()
+                .lookRow()
             }
             // Under the page's header rather than over it.
             if manifesti.results.isEmpty && !manifesti.isSearching {
@@ -64,10 +64,10 @@ struct ManifestiView: View {
                         ContentUnavailableView.search(text: submitted)
                     }
                 }
-                .glassRow()
+                .lookRow()
             }
         }
-        .glassList()
+        .lookList()
         .navigationTitle("Manifesto")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $query, prompt: "Cerca un insegnamento")

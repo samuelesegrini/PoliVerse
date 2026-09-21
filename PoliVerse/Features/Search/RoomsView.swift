@@ -60,7 +60,7 @@ struct RoomsView: View {
                     }
                 }
             }
-            .glassRow()
+            .lookRow()
 
             if rooms.campuses.count > 1 {
                 Section {
@@ -71,7 +71,7 @@ struct RoomsView: View {
                         }
                     }
                 }
-                .glassRow()
+                .lookRow()
             }
 
             ForEach(grouped, id: \.building) { group in
@@ -90,7 +90,7 @@ struct RoomsView: View {
                         Text(address)
                     }
                 }
-                .glassRow()
+                .lookRow()
             }
         }
         // Warms the equipment and occupancy of rows just off screen, so
@@ -100,7 +100,7 @@ struct RoomsView: View {
             facilities.prefetch(wanted)
             freeRooms.prefetch(wanted)
         }
-        .glassList()
+        .lookList()
         .navigationTitle("Aule")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $query, prompt: "Sigla aula, edificio o sede")

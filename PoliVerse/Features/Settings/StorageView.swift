@@ -52,6 +52,7 @@ struct DataStorageView: View {
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
             }
+            .lookRow()
 
             if !materials.isEmpty {
                 Section {
@@ -71,6 +72,7 @@ struct DataStorageView: View {
                 } footer: {
                     Text("File aperti da WeBeep e tenuti per leggerli offline. Restano su WeBeep: si riscaricano quando li riapri.")
                 }
+                .lookRow()
             }
 
             Section {
@@ -91,6 +93,7 @@ struct DataStorageView: View {
             } footer: {
                 Text("Orari, corsi e carriera, per aprire l’app senza rete. Si ricostruisce da sola al prossimo aggiornamento: niente di tuo viene perso.")
             }
+            .lookRow()
 
             // The account of what the line at the bottom of the screen
             // summarises: which service, how old, and what failed.
@@ -131,7 +134,9 @@ struct DataStorageView: View {
             } footer: {
                 Text("L’app aggiorna da sola quando la apri e quando torna la connessione.")
             }
+            .lookRow()
         }
+        .lookList()
         .navigationTitle("Dati e archiviazione")
         // Inline, as on the profile page: the picture is the headline here,
         // and a large title above it pushes the tiles off the first screen.

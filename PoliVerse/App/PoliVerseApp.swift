@@ -26,6 +26,7 @@ struct PoliVerseApp: App {
     @State private var pending: PendingChanges
     @State private var liveActivity = LiveActivityController()
     @State private var onboarding = OnboardingState()
+    @State private var whatsNew = WhatsNewState()
     @State private var spid = SPIDCatalogue()
     @State private var loginMemory = LoginMethodMemory()
     @State private var freshness: FreshnessCoordinator
@@ -155,15 +156,7 @@ struct PoliVerseApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                #if DEBUG
-                // `-NewUI` launches straight into the shell, skipping sign-in
-                // and onboarding — for UI tests and screenshots.
-                if CommandLine.arguments.contains("-NewUI") { NewRootView() } else { RootView() }
-                #else
-                RootView()
-                #endif
-            }
+            RootView()
                 .environment(session)
                 .environment(courses)
                 .environment(agenda)
@@ -189,9 +182,9 @@ struct PoliVerseApp: App {
                 .environment(freshness)
                 .environment(status)
                 .environment(onboarding)
+                .environment(whatsNew)
                 .environment(spid)
                 .environment(loginMemory)
-                .tint(Theme.brand)
                 // The locale used to be pinned to it_IT, because every string
                 // was hardcoded Italian and `.formatted(.relative(…))` would
                 // otherwise render "4 weeks ago" beside "Lezioni". The String
@@ -224,7 +217,22 @@ struct PoliVerseApp: App {
                             // app switcher free and a return after lunch one
                             // round trip. Forcing here would turn every glance
                             // at the multitasking view into five requests.
-                            await freshness.revalidate()
+                            //
+                            // Skipped mid-login: CieID (and the SPID/eIDAS
+                            // providers) hand control back by backgrounding
+                            // this app and then foregrounding it, which lands
+                            // right here *before* `completeLogin` has finished
+                            // exchanging the code. Revalidating now would race
+                            // it — every service needing the OAuth token fails
+                            // with no account yet to blame it on, and the
+                            // resulting "Aggiornamento non riuscito per 4
+                            // servizi" stuck around until the next foreground
+                            // even once sign-in actually succeeded. The
+                            // `session.state` watcher below covers the real
+                            // post-login revalidate instead.
+                            if session.state != .exchangingCode {
+                                await freshness.revalidate()
+                            }
                             await personalTimetable.refreshIfStale()
                             await freeRooms.refreshForWidgetIfNeeded()
                         }
@@ -247,6 +255,18 @@ struct PoliVerseApp: App {
                 // that career's waiting changes rather than the last one's.
                 .onChange(of: session.student?.matricola) { _, _ in
                     pending.refresh()
+                }
+                // The one guaranteed moment a login (or career switch) has
+                // just finished: token in hand, the account confirmed by
+                // `/jaf/internal/user`. Forced, because this is the pass that
+                // is supposed to fill an empty screen with Orario, Carriera,
+                // Avvisi and Notizie right after signing in — a gentle run
+                // here could still be joined to whatever the scene-phase
+                // handler skipped above, and end up doing nothing.
+                .onChange(of: session.state) { _, newValue in
+                    if case .signedIn = newValue {
+                        Task { await freshness.revalidate(force: true) }
+                    }
                 }
         }
     }

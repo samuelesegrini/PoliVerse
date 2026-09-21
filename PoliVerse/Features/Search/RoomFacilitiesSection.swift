@@ -54,7 +54,7 @@ struct RoomFacilitiesSection: View {
                         attempted = true
                     }
                 }
-                .glassRow()
+                .lookRow()
             }
 
             if !equipment.isEmpty {
@@ -64,7 +64,7 @@ struct RoomFacilitiesSection: View {
                             .font(.subheadline)
                     }
                 }
-                .glassRow()
+                .lookRow()
             }
 
             if !software.isEmpty {
@@ -78,7 +78,7 @@ struct RoomFacilitiesSection: View {
                 } footer: {
                     Text("Installato sulle postazioni dell'aula.")
                 }
-                .glassRow()
+                .lookRow()
             }
         }
     }
@@ -110,7 +110,7 @@ struct ClassroomDetailView: View {
                     LabeledContent("Sede", value: campus)
                 }
             }
-            .glassRow()
+            .lookRow()
 
             RoomDayView(room: room)
 
@@ -130,10 +130,10 @@ struct ClassroomDetailView: View {
                     // be in the wrong place.
                     Text("Il catalogo indica l'indirizzo dell'edificio, non la posizione esatta dell'aula.")
                 }
-                .glassRow()
+                .lookRow()
             }
         }
-        .glassList()
+        .lookList()
         .navigationTitle(room.id)
         .navigationBarTitleDisplayMode(.inline)
     }

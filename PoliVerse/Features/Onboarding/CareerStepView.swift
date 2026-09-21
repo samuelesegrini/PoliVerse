@@ -11,6 +11,7 @@ import SwiftUI
 struct CareerStepView: View {
     @Environment(CareersModel.self) private var careers
     @Environment(Session.self) private var session
+    private var tint = OnboardingTint()
     let advance: () -> Void
 
     var body: some View {
@@ -34,28 +35,44 @@ struct CareerStepView: View {
                     .padding(.vertical, 8)
                 }
                 ForEach(careers.careers) { career in
+                    let inUse = career.matricola == session.student?.matricola
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(career.matricola)
                                 .font(.subheadline.weight(.semibold))
+                                // Digit-for-digit alignment between the rows:
+                                // two matricole differ in one place and that
+                                // place has to land under itself.
                                 .monospaced()
                             Text(career.label)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
-                        if career.matricola == session.student?.matricola {
+                        if inUse {
                             Text("In uso")
                                 .font(.caption2.weight(.semibold))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
-                                .background(Theme.brand.opacity(0.15), in: .capsule)
-                                .foregroundStyle(Theme.brand)
+                                .background(tint.color.opacity(0.15), in: .capsule)
+                                .foregroundStyle(tint.color)
                         }
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity)
-                    .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 12))
+                    .lookCard(cornerRadius: 12)
+                    // Nothing here is a choice — the token decides — so the
+                    // rows must not all look equally live. The one in use is
+                    // ringed, the others recede: a card that looks pressable
+                    // and does nothing is worse than a card that looks read-only.
+                    .overlay {
+                        if inUse {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .strokeBorder(tint.color.opacity(0.55), lineWidth: 1.5)
+                        }
+                    }
+                    .opacity(inUse ? 1 : 0.55)
+                    .accessibilityElement(children: .combine)
                 }
 
                 Text("Per cambiare serve un nuovo accesso: lo trovi in Impostazioni · Matricola. Da lì l'app te lo spiega prima di farlo.")

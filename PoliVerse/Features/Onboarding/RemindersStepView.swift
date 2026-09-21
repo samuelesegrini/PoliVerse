@@ -13,6 +13,7 @@ struct RemindersStepView: View {
     @Environment(UpdateFeed.self) private var feed
     let advance: () -> Void
 
+    private var tint = OnboardingTint()
     @State private var isAsking = false
 
     var body: some View {
@@ -33,25 +34,38 @@ struct RemindersStepView: View {
                         text: "Scadenze, appelli e chiusura iscrizioni alle 18:00 del giorno prima.")
                 } else {
                     // Granted: the permission is spent, so this becomes the
-                    // preferences it exists to serve.
-                    Toggle("Lezioni", isOn: $notifications.preferences.lectures)
-                    Toggle("Scadenze", isOn: $notifications.preferences.deadlines)
-                    Toggle("Esami", isOn: $notifications.preferences.exams)
-                    Picker("Anticipo lezioni", selection: $notifications.preferences.leadMinutes) {
-                        Text("5 minuti").tag(5)
-                        Text("10 minuti").tag(10)
-                        Text("15 minuti").tag(15)
-                        Text("30 minuti").tag(30)
-                        Text("1 ora").tag(60)
+                    // preferences it exists to serve. In a card, because bare
+                    // controls stacked on the page background are the one
+                    // place in the app where a switch has no row under it.
+                    VStack(spacing: 10) {
+                        Toggle("Lezioni", isOn: $notifications.preferences.lectures)
+                        Divider()
+                        Toggle("Scadenze", isOn: $notifications.preferences.deadlines)
+                        Divider()
+                        Toggle("Esami", isOn: $notifications.preferences.exams)
+                        Divider()
+                        Picker("Anticipo lezioni", selection: $notifications.preferences.leadMinutes) {
+                            Text("5 minuti").tag(5)
+                            Text("10 minuti").tag(10)
+                            Text("15 minuti").tag(15)
+                            Text("30 minuti").tag(30)
+                            Text("1 ora").tag(60)
+                        }
                     }
+                    .font(.subheadline)
+                    .tint(tint.color)
+                    .padding(14)
+                    .lookCard(cornerRadius: 16)
+
                     Text("Si cambia quando vuoi da Impostazioni · Promemoria.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         } actions: {
             if notifications.authorization == .notDetermined {
-                OnboardingPrimaryButton(title: "Attiva i promemoria") {
+                OnboardingPrimaryButton(title: "Attiva i promemoria", isBusy: isAsking) {
                     isAsking = true
                     Task {
                         await notifications.requestAuthorization()
@@ -64,11 +78,17 @@ struct RemindersStepView: View {
                         if notifications.authorization == .denied { advance() }
                     }
                 }
-                .disabled(isAsking)
                 OnboardingSkipButton(title: "Non ora", action: advance)
             } else {
                 OnboardingPrimaryButton(title: "Continua", action: advance)
             }
+        }
+        // iOS's own prompt gives no feedback of its own once it closes, and on
+        // a refusal the screen simply moves on — so the outcome is said in the
+        // one channel that is not competing with the animation.
+        .sensoryFeedback(trigger: notifications.authorization) { previous, current in
+            guard previous == .notDetermined else { return nil }
+            return current == .authorized ? .success : .error
         }
     }
 }

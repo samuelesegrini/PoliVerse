@@ -34,11 +34,11 @@ struct FreeRoomsView: View {
                 }
                 .pickerStyle(.segmented)
             }
-            .glassRow()
+            .lookRow()
 
             content
         }
-        .glassList()
+        .lookList()
         .safeAreaInset(edge: .top, spacing: 0) { FreshnessBar(age: aule.age) }
         .navigationTitle("Aule libere")
         .navigationBarTitleDisplayMode(.inline)
@@ -85,7 +85,7 @@ struct FreeRoomsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .glassRow()
+            .lookRow()
         } else if onlyNow && isToday {
             freeNowSection
         } else {
@@ -113,7 +113,7 @@ struct FreeRoomsView: View {
         } footer: {
             Text("Libere per almeno la prossima mezz'ora.")
         }
-        .glassRow()
+        .lookRow()
     }
 
     private var daySection: some View {
@@ -144,7 +144,7 @@ struct FreeRoomsView: View {
                 }
             }
         }
-        .glassRow()
+        .lookRow()
     }
 }
 
@@ -198,7 +198,7 @@ struct RoomScheduleView: View {
                     }
                 }
             }
-            .glassRow()
+            .lookRow()
 
             RoomFacilitiesSection(roomID: room.occupancyID)
 
@@ -217,9 +217,9 @@ struct RoomScheduleView: View {
                     }
                 }
             }
-            .glassRow()
+            .lookRow()
         }
-        .glassList()
+        .lookList()
         .navigationTitle(room.name)
         .navigationBarTitleDisplayMode(.inline)
     }

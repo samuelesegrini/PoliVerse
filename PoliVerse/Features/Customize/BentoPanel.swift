@@ -12,7 +12,7 @@ struct BentoPanel: View {
     @Environment(\.colorScheme) private var scheme
     /// The bento's width, split into thirds.
     @State private var width: CGFloat = 360
-    private let gap: CGFloat = 8
+    private let gap: CGFloat = 6
 
     /// The width of a tile spanning some of the three columns.
     private func span(_ columns: Int) -> CGFloat {
@@ -193,4 +193,39 @@ private struct BentoTileStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.96 : 1)
             .animation(.snappy(duration: 0.18), value: configuration.isPressed)
     }
+}
+
+// MARK: - Previews
+
+/// Rendered on its own rather than inside the sheet it lives in: the panel is
+/// what this file is for, and a preview that has to be dragged up from a
+/// detent before anything shows is a preview nobody opens.
+#Preview("Bento") {
+    @Previewable @State var style = TodayStyle.presets.count > 1 ? TodayStyle.presets[1] : TodayStyle()
+    @Previewable @State var path: [CustomizePage] = []
+    @Previewable @State var arranging = false
+    @Previewable @State var detent: PresentationDetent = .medium
+
+    BentoPanel(style: $style, path: $path, arranging: $arranging, detent: $detent)
+        .previewEnvironment()
+}
+
+/// The same panel over a look with a decorated page, which is where the tiles
+/// that preview the background have anything to show.
+#Preview("Bento · con sfondo") {
+    @Previewable @State var style: TodayStyle = {
+        var look = TodayStyle()
+        look.flavor = Flavor(hex: "#7A6FE0") ?? .polimi
+        look.background = .study
+        look.paper = .dots
+        look.material = .tintedGlass
+        look.dateFont = .rounded
+        return look
+    }()
+    @Previewable @State var path: [CustomizePage] = []
+    @Previewable @State var arranging = false
+    @Previewable @State var detent: PresentationDetent = .large
+
+    BentoPanel(style: $style, path: $path, arranging: $arranging, detent: $detent)
+        .previewEnvironment()
 }

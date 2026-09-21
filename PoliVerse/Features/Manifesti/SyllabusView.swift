@@ -31,7 +31,6 @@ struct SyllabusView: View {
             }
             .padding()
         }
-        .courseScreen()
         .navigationTitle("Programma")
         .navigationBarTitleDisplayMode(.inline)
         .task {
@@ -336,7 +335,6 @@ struct CourseSyllabusView: View {
             .padding(.horizontal, 20).padding(.vertical)
             .padding(.bottom, 20)
         }
-        .courseScreen()
         .navigationTitle("Programma")
         .navigationBarTitleDisplayMode(.inline)
         .task(id: programmes.programme) { await load() }
@@ -560,7 +558,6 @@ private struct PlanLinkSheet: View {
                     ProgressView().frame(maxWidth: .infinity)
                 }
             }
-            .courseScreen()
             .navigationTitle(course.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Chiudi", systemImage: "xmark") { dismiss() } } }

@@ -35,9 +35,9 @@ struct NewsView: View {
                             }
                         }
                     }
-                    .glassRow()
+                    .lookRow()
                 }
-                .glassList()
+                .lookList()
             }
         }
         .navigationTitle("Notizie")
@@ -135,7 +135,6 @@ struct NewsDetailView: View {
             .padding(.top, 8)
             .padding(.bottom, 40)
         }
-        .courseScreen()
         .navigationTitle("Notizia")
         .navigationBarTitleDisplayMode(.inline)
     }

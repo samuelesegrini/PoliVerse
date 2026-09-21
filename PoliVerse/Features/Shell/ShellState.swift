@@ -3,7 +3,7 @@ import SwiftUI
 /// State that must outlive a change of layout: the day being shown, where
 /// each layout is, and the sheets open over the app.
 ///
-/// Owned by ``NewRootView`` above both layouts. Presented from a layout
+/// Owned by ``RootView`` above both layouts. Presented from a layout
 /// instead, switching tabs ↔ pagina unica from Impostazioni tore down the
 /// view that owned the sheet, closing it mid-change.
 @MainActor @Observable

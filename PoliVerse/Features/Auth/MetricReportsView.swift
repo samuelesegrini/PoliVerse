@@ -30,6 +30,7 @@ struct MetricReportsView: View {
             } footer: {
                 Text(verbatim: "Kept on this device only, newest first, capped at 60 files.")
             }
+            .lookRow()
 
             if !entries.isEmpty {
                 Button(role: .destructive) {
@@ -42,6 +43,7 @@ struct MetricReportsView: View {
                 }
             }
         }
+        .lookList()
         .navigationTitle(Text(verbatim: "MetricKit"))
         .navigationBarTitleDisplayMode(.inline)
         .task { await reload() }

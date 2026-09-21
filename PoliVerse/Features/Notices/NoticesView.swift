@@ -68,9 +68,9 @@ struct NoticesView: View {
                     }
                 }
             }
-            .glassRow()
+            .lookRow()
         }
-        .glassList()
+        .lookList()
     }
 }
 
@@ -174,7 +174,6 @@ struct NoticeDetailView: View {
             .padding(.top, 8)
             .padding(.bottom, 40)
         }
-        .courseScreen()
         .navigationTitle("Notifica")
         .navigationBarTitleDisplayMode(.inline)
         .task {

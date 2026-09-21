@@ -75,7 +75,6 @@ struct CourseForumsView: View {
                 }
             }
         }
-        .courseScreen()
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .task(id: weBeep.isAuthenticated) { await load() }
@@ -154,7 +153,6 @@ private struct DiscussionsList: View {
             }
             .padding(.horizontal, 20).padding(.vertical)
         }
-        .courseScreen()
         .refreshable { await load() }
         .task { if discussions == nil { await load() } }
     }
@@ -266,7 +264,6 @@ private struct DiscussionView: View {
             }
             .padding(.horizontal, 20).padding(.vertical)
         }
-        .courseScreen()
         .navigationTitle(discussion.subject ?? discussion.name ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .task { posts = try? await weBeep.posts(in: discussion) }

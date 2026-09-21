@@ -20,7 +20,7 @@ struct StudyPlanView: View {
                          summary: Text("\(plan.earnedCFU) di \(plan.totalCFU) CFU"))
                     .listHeader()
             }
-            .glassRow()
+            .lookRow()
             if let header = career.planHeader {
                 Section {
                     if let course = header.course {
@@ -33,7 +33,7 @@ struct StudyPlanView: View {
                         LabeledContent("Anno", value: year)
                     }
                 }
-                .glassRow()
+                .lookRow()
             }
 
             Section {
@@ -50,13 +50,13 @@ struct StudyPlanView: View {
                     Label("Simulazione media", systemImage: "function")
                 }
             }
-            .glassRow()
+            .lookRow()
 
             Section {
                 Toggle("Superati", isOn: $showPassed)
                 Toggle("Da sostenere", isOn: $showPending)
             }
-            .glassRow()
+            .lookRow()
 
             ForEach(shownByYear, id: \.year) { group in
                 Section(group.year) {
@@ -64,7 +64,7 @@ struct StudyPlanView: View {
                         PlanRow(exam: exam)
                     }
                 }
-                .glassRow()
+                .lookRow()
             }
 
             if shown.isEmpty && !career.isLoading {
@@ -74,10 +74,10 @@ struct StudyPlanView: View {
                          : "Nessun insegnamento nel piano.")
                         .foregroundStyle(.secondary)
                 }
-                .glassRow()
+                .lookRow()
             }
         }
-        .glassList()
+        .lookList()
         .navigationTitle("Piano di studi")
         .navigationBarTitleDisplayMode(.inline)
         .task { await career.load() }

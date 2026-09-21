@@ -3,6 +3,11 @@ import SwiftUI
 /// Settings, opened as a sheet from Oggi: the profile first, then data,
 /// appearance, the parts of the university the app reads, and help.
 struct SettingsSheet: View {
+    @Environment(WhatsNewState.self) private var whatsNew
+    @Environment(OnboardingState.self) private var onboarding
+    /// Opened from the row below, rather than by the shell: a sheet raised
+    /// over this one from outside it never comes up.
+    @State private var readingNotes: [ReleaseNote] = []
     @Environment(Session.self) private var session
     @Environment(DataStatus.self) private var status
     @Environment(WeBeepModel.self) private var weBeep
@@ -52,6 +57,7 @@ struct SettingsSheet: View {
                         }
                     }
                 }
+                .lookRow()
 
                 Section {
                     Picker(selection: $layout) {
@@ -66,6 +72,7 @@ struct SettingsSheet: View {
                 } footer: {
                     Text(layout.detail)
                 }
+                .lookRow()
 
                 if layout == .tabs {
                     Section {
@@ -77,6 +84,7 @@ struct SettingsSheet: View {
                              ? "Toccando Cerca il campo si attiva subito."
                              : "Toccando Cerca vedi prima le ricerche recenti e i luoghi; la tastiera si apre quando tocchi il campo.")
                     }
+                    .lookRow()
                 }
 
                 Section {
@@ -95,16 +103,42 @@ struct SettingsSheet: View {
                         }
                     }
                 }
+                .lookRow()
 
                 Section {
                     LabeledContent("Versione", value: Bundle.main.appVersion)
+                    // The update's notes are shown once, over an app someone
+                    // opened to do something else: this is where they are read
+                    // properly, afterwards.
+                    if whatsNew.hasCurrentNote {
+                        Button { readingNotes = whatsNew.currentNotes } label: {
+                            Label("Novità di questa versione", systemImage: "sparkles")
+                        }
+                        .accessibilityIdentifier("settings-whats-new")
+                    }
+                    // The first run, again: the tour and the settings it asks
+                    // for once. The sheet closes first, because the flow takes
+                    // the place of the app underneath it.
+                    Button {
+                        dismiss()
+                        onboarding.replay()
+                    } label: {
+                        Label("Rivedi il benvenuto", systemImage: "hand.wave")
+                    }
+                    .accessibilityIdentifier("settings-replay-onboarding")
                     Button("Esci", role: .destructive) { confirmingSignOut = true }
                 } footer: {
                     Text("PoliVerse non è affiliata al Politecnico di Milano.")
                 }
+                .lookRow()
             }
             .accessibilityIdentifier("settings-list")
+            .lookList()
             .navigationTitle("Impostazioni")
+            .sheet(isPresented: Binding(get: { !readingNotes.isEmpty },
+                                        set: { if !$0 { readingNotes = [] } })) {
+                WhatsNewView(notes: readingNotes, saysWhereToFindItAgain: false) { readingNotes = [] }
+            }
             .navigationDestination(for: ShellState.SettingsPage.self) { page in
                 switch page {
                 case .profile: ProfileView()

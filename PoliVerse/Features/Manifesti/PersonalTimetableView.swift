@@ -36,10 +36,9 @@ struct PersonalTimetableView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
                 }
-                .courseScreen()
             }
         }
-        .glassList()
+        .lookList()
         .navigationTitle("Orario personalizzato")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -122,7 +121,7 @@ struct PersonalTimetableView: View {
                     Label("Archiviato: ora fa fede l'agenda ufficiale.", systemImage: "archivebox")
                     Button("Torna a usarlo") { personal.retire(false) }
                 }
-                .glassRow()
+                .lookRow()
             } else if TimetableHandover.suggestsRetiring(confirmed: confirmed, of: visible.count) {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
@@ -136,7 +135,7 @@ struct PersonalTimetableView: View {
                             .buttonStyle(.bordered)
                     }
                 }
-                .glassRow()
+                .lookRow()
             }
 
             let semesters = Set(timetable.entries.compactMap(\.semester)).sorted()
@@ -147,7 +146,7 @@ struct PersonalTimetableView: View {
                     }
                     .pickerStyle(.segmented)
                 }
-                .glassRow()
+                .lookRow()
             }
 
             if !clashes.isEmpty {
@@ -161,7 +160,7 @@ struct PersonalTimetableView: View {
                 } header: {
                     Text("Sovrapposizioni")
                 }
-                .glassRow()
+                .lookRow()
             }
 
             ForEach(2...7, id: \.self) { weekday in
@@ -175,7 +174,7 @@ struct PersonalTimetableView: View {
                             SlotRow(entry: entry, slot: slot, status: statuses[entry.code] ?? .personalOnly)
                         }
                     }
-                    .glassRow()
+                    .lookRow()
                 }
             }
 
@@ -200,7 +199,7 @@ struct PersonalTimetableView: View {
             } footer: {
                 Text("Nascondi un insegnamento quando l'agenda ufficiale lo mostra già, o se lo hai aggiunto solo per curiosità. Calcolato il \(timetable.builtAt.formatted(.dateTime.day().month(.wide).hour().minute().locale(locale))) per \(timetable.name). Le aule possono cambiare nelle prime settimane: ricalcolalo da Modifica.")
             }
-            .glassRow()
+            .lookRow()
         }
     }
 
@@ -322,7 +321,7 @@ private struct PersonalTimetableBuilder: View {
             } footer: {
                 Text("Il Politecnico usa cognome **e** nome per scegliere il tuo scaglione, cioè docente e orario. Con il solo cognome può sbagliare.")
             }
-            .glassRow()
+            .lookRow()
         }
         .navigationTitle("Orario personalizzato")
         .navigationBarTitleDisplayMode(.inline)
@@ -390,7 +389,7 @@ private struct PersonalTimetableBuilder: View {
                     }
                     .pickerStyle(.segmented)
                 }
-                .glassRow()
+                .lookRow()
             }
 
             ForEach(Array(Set(rows.map { $0.yearOfCourse ?? "" })).sorted(), id: \.self) { year in
@@ -401,7 +400,7 @@ private struct PersonalTimetableBuilder: View {
                 } header: {
                     Text(year.isEmpty ? String(localized: "Insegnamenti") : String(localized: "\(year)° anno"))
                 }
-                .glassRow()
+                .lookRow()
             }
 
             if !elsewhere.isEmpty {
@@ -419,7 +418,7 @@ private struct PersonalTimetableBuilder: View {
                 } header: {
                     Text("Da altri piani")
                 }
-                .glassRow()
+                .lookRow()
             }
         }
         .sheet(item: $bracketTeaching) { teaching in
@@ -533,7 +532,7 @@ private struct PersonalTimetableBuilder: View {
                     Button("Riprova") { Task { await personal.build(name: name, surname: lastName) } }
                 }
             }
-            .glassRow()
+            .lookRow()
 
             if !personal.refused.isEmpty {
                 Section {
@@ -548,7 +547,7 @@ private struct PersonalTimetableBuilder: View {
                 } header: {
                     Text("Non aggiunti")
                 }
-                .glassRow()
+                .lookRow()
             }
         }
         .navigationTitle("Calcolo dell'orario")
@@ -595,7 +594,7 @@ private struct SectionPicker: View {
                 } footer: {
                     Text("Questo insegnamento è diviso in sezioni: scegli quella che frequenti. Se non scegli, il Politecnico usa quella del tuo scaglione.")
                 }
-                .glassRow()
+                .lookRow()
             }
             .navigationTitle(teaching.name)
             .navigationBarTitleDisplayMode(.inline)

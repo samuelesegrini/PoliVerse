@@ -41,7 +41,11 @@ struct CatalogueCascade: View {
                     if page == nil { Button("Riprova") { Task { await open() } } }
                 }
             }
-            if loading {
+            // Always a row here until there is a page or something to say:
+            // a `Group` that renders nothing inside a `Form` is no row at
+            // all, and a task attached to no row never runs — which left the
+            // cascade blank for good, with no pickers and no error.
+            if loading || (page == nil && message == nil) {
                 Section { ProgressView().frame(maxWidth: .infinity) }
             }
         }
@@ -162,7 +166,6 @@ struct BracketPicker: View {
                 }
                 .padding(20)
             }
-            .courseScreen()
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .task { brackets = await load() }
@@ -235,7 +238,6 @@ struct StudyProgrammeSheet: View {
                 CatalogueCascade(page: $page, initial: target.flatMap(programmes.initialSelection(for:)),
                                  locatesFromCareer: career == nil || career == session.student?.matricola)
             }
-            .courseScreen()
             .navigationTitle("Corso di studi")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

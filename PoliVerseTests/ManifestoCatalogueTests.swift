@@ -46,6 +46,32 @@ struct ManifestoCatalogueTests {
         #expect(only.selected == "1014")
     }
 
+    /// Live, Ingegneria Aerospaziale 514 on 2026-09-17: a degree course with
+    /// one plan writes it as text, a `<br/>`, and only then the hidden input.
+    /// Missing it left the page with no plan at all, and a page with no plan
+    /// answers "***" — a plan the student is not in.
+    @Test("A single plan is read even with markup between its label and its input")
+    func hiddenPlanAcrossMarkup() throws {
+        let html = #"""
+        <TD class='ElementInfoCard1 left' width='15%'>Piano di Studio preventivamente approvato</TD><TD class='ElementInfoCard2 left' colspan='1'width='55%'>AER - Ingegneria aerospaziale<br/><input type="hidden" name="k_indir" value="AER">Sede: Milano Bovisa<br>Lingua Offerta: Italiano</TD>
+        """#
+        let only = try #require(CatalogueParser.level(.plan, in: html))
+        #expect(only.options.map(\.value) == ["AER"])
+        #expect(only.options.first?.label == "AER - Ingegneria aerospaziale")
+        #expect(only.selected == "AER")
+    }
+
+    /// The whole point of reading it: the selection carries the student's own
+    /// plan rather than the non-differentiated "***".
+    @Test("A page whose only plan is written as text still knows which plan it is")
+    func selectionKeepsTheSinglePlan() throws {
+        let single = form.replacingOccurrences(
+            of: #"<select name="k_indir" style="width: 100%;" style="width:100%" onchange="changeOnClick()"><option value="IT1" SELECTED>IT1 - Ingegneria Informatica e Comunicazioni</option><option value="IOL" >IOL - Ingegneria Informatica Online</option></SELECT>"#,
+            with: #"AER - Ingegneria aerospaziale<br/><input type="hidden" name="k_indir" value="AER">"#)
+        let page = try #require(CatalogueParser.page(single))
+        #expect(page.selection?.plan == "AER")
+    }
+
     /// Live, Architecture school 2026: "*** - Non diversificato" can be chosen
     /// and lists nothing; the real plans sit beside it.
     @Test("The empty non-differentiated plan is not offered when real plans exist")

@@ -61,7 +61,6 @@ struct EventDetailView: View {
                 .frame(maxWidth: 640)
                 .frame(maxWidth: .infinity)
             }
-            .courseScreen()
             .navigationTitle(event.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -16,6 +16,15 @@ final class OnboardingState {
     private(set) var step: OnboardingFlow.Step = .welcome
     private(set) var isComplete: Bool
 
+    /// Which way the last move went.
+    ///
+    /// The screens slide, and a slide that comes from the right means "you
+    /// have gone forward". Playing that for a back button says the opposite of
+    /// what just happened, so the direction has to be known at the moment the
+    /// step changes — and it is known here, where the move is made, rather
+    /// than guessed in the view by comparing two step values.
+    private(set) var isMovingBack = false
+
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -33,6 +42,7 @@ final class OnboardingState {
             complete()
             return
         }
+        isMovingBack = false
         step = next
     }
 
@@ -41,19 +51,33 @@ final class OnboardingState {
         guard OnboardingFlow.canGoBack(from: step, in: context),
               let previous = OnboardingFlow.previous(before: step, in: context)
         else { return }
+        isMovingBack = true
         step = previous
     }
 
     /// Ends the flow, from wherever it is, for good.
     ///
-    /// There is no way back in. The intro runs once per install and what
-    /// follows is the login screen — someone signing out to switch career is
-    /// not asking to be told what the app is again. Every setting it collects
-    /// is reachable from Settings afterwards, which is what its last screen
-    /// spends itself saying.
+    /// Nothing sends anyone back through it on their own. The intro runs once
+    /// per install and what follows is the login screen — someone signing out
+    /// to switch career is not asking to be told what the app is again. Every
+    /// setting it collects is reachable from Settings afterwards, which is
+    /// what its last screen spends itself saying. The one way back in is
+    /// asking for it, with ``replay()``.
     func complete() {
         isComplete = true
         defaults.set(true, forKey: Self.completedKey)
+    }
+
+    /// Runs the flow again from the welcome, because the student asked to from
+    /// Settings.
+    ///
+    /// Only in memory: the stored flag stays set, so quitting halfway through
+    /// the replay opens the app as usual next time instead of stranding the
+    /// student on an intro they have already been through once.
+    func replay() {
+        isMovingBack = false
+        step = .welcome
+        isComplete = false
     }
 }
 

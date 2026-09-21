@@ -62,7 +62,6 @@ struct CalendarView: View {
                 .animation(.snappy(duration: 0.25), value: selectedDay)
                 .animation(.snappy(duration: 0.25), value: filter)
             }
-            .courseScreen()
             .safeAreaInset(edge: .top, spacing: 0) { FreshnessBar(age: agenda.age) }
             .navigationTitle("Calendario")
             .navigationBarTitleDisplayMode(.inline)

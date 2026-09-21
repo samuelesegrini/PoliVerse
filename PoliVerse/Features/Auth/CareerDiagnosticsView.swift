@@ -48,9 +48,11 @@ struct CareerDiagnosticsView: View {
             } footer: {
                 Text(verbatim: "Cerca i campi con ★: codice del corso di studi (k_corso_la), del piano (k_indir), della classe (c_classe). Ripeti con ogni matricola.")
             }
+            .lookRow()
 
             if loading {
                 Section { ProgressView().frame(maxWidth: .infinity) }
+                .lookRow()
             }
 
             if !checks.isEmpty {
@@ -69,6 +71,7 @@ struct CareerDiagnosticsView: View {
                 } footer: {
                     Text(verbatim: "Per ogni insegnamento con appelli apre SchedaPublic.do?c_classe=c_classe_m e confronta i docenti con docente_esame.")
                 }
+                .lookRow()
             }
 
             ForEach(payloads) { payload in
@@ -91,8 +94,10 @@ struct CareerDiagnosticsView: View {
                 } header: {
                     Text(verbatim: payload.title)
                 }
+                .lookRow()
             }
         }
+        .lookList()
         .navigationTitle(String("Diagnostica carriera"))
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await load() }

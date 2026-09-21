@@ -19,9 +19,6 @@ struct RichText: View {
             Text(HTMLText.attributed(html))
                 .font(.body)
                 .textSelection(.enabled)
-                // Links inherit the accent otherwise, which on this screen is
-                // the same navy as the body text and reads as plain text.
-                .tint(Theme.brand)
         } else if let plain {
             Text(plain)
                 .font(.body)

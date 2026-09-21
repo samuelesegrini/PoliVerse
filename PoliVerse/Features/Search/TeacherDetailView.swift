@@ -48,7 +48,7 @@ struct TeacherDetailView: View {
                         Label(email, systemImage: "envelope")
                     }
                 }
-                .glassRow()
+                .lookRow()
             }
 
             if !teacher.courses.isEmpty {
@@ -65,7 +65,7 @@ struct TeacherDetailView: View {
                         }
                     }
                 }
-                .glassRow()
+                .lookRow()
             }
 
             Section {
@@ -92,7 +92,7 @@ struct TeacherDetailView: View {
                 // course taught by two people shows both their lectures.
                 Text("Le lezioni sono ricavate dai suoi insegnamenti nel tuo orario.")
             }
-            .glassRow()
+            .lookRow()
 
             if !exams.isEmpty {
                 Section("Appelli") {
@@ -104,10 +104,10 @@ struct TeacherDetailView: View {
                         }
                     }
                 }
-                .glassRow()
+                .lookRow()
             }
         }
-        .glassList()
+        .lookList()
         .navigationTitle(teacher.name)
         .navigationBarTitleDisplayMode(.inline)
     }

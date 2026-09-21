@@ -50,18 +50,16 @@ struct PoliMiSignInButton: View {
                 Button { start(remembered) } label: {
                     Group {
                         if isPreparing {
-                            ProgressView().tint(Theme.onAccent)
+                            ProgressView()
                         } else {
                             Text(primaryTitle).font(.headline)
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
                 }
                 .disabled(isPreparing)
-                .background(Theme.brand, in: .capsule)
-                .foregroundStyle(Theme.onAccent)
-                .buttonStyle(.plain)
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
 
                 // Offered alongside whenever the remembered method is
                 // something else: it is the route every account has.
@@ -70,35 +68,29 @@ struct PoliMiSignInButton: View {
                         Label("Codice persona e password", systemImage: "key")
                             .font(.subheadline.weight(.medium))
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
                     }
                     .disabled(isPreparing)
-                    .background(Color(.secondarySystemGroupedBackground), in: .capsule)
-                    .foregroundStyle(.primary)
-                    .buttonStyle(.plain)
+                    .buttonStyle(.glass)
+                    .controlSize(.large)
                 }
 
                 Button { showingSPID = true } label: {
                     Label("Entra con SPID", systemImage: "person.badge.shield.checkmark")
                         .font(.subheadline.weight(.medium))
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
                 }
                 .disabled(isPreparing)
-                .background(Color(.secondarySystemGroupedBackground), in: .capsule)
-                .foregroundStyle(.primary)
-                .buttonStyle(.plain)
+                .buttonStyle(.glass)
+                .controlSize(.large)
 
                 Button { start(.cie) } label: {
                     Label("Entra con CIE", systemImage: "creditcard")
                         .font(.subheadline.weight(.medium))
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
                 }
                 .disabled(isPreparing)
-                .background(Color(.secondarySystemGroupedBackground), in: .capsule)
-                .foregroundStyle(.primary)
-                .buttonStyle(.plain)
+                .buttonStyle(.glass)
+                .controlSize(.large)
 
                 // The Politecnico's own warning, said before the tap rather
                 // than in a paragraph on the page the student is about to be

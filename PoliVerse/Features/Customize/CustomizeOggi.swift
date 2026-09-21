@@ -10,7 +10,7 @@ import SwiftUI
 /// saves the style, ✓ makes it the page's. Saving the style in use shows at
 /// once, since it is the page's already.
 ///
-/// Laid over the app by ``NewRootView``. Like the Lock Screen, the look in use
+/// Laid over the app by ``RootView``. Like the Lock Screen, the look in use
 /// starts covering the screen, exactly where the app is, and shrinks into the
 /// middle card while the rest of the gallery fades in; closing grows the
 /// middle card back over the app before the gallery goes.

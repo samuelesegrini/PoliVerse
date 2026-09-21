@@ -145,11 +145,18 @@ nonisolated enum CatalogueParser {
             }
             return CatalogueLevel(field: field, options: options, selected: selected ?? options.first?.value)
         }
-        // One choice only: the page writes its label and a hidden input.
-        guard let match = HTMLScraper.matches(
-            #"<TD[^>]*>([^<]*)<input type="hidden" name="\#(name)" value="([^"]*)""#, in: html).first,
-              match.count == 2 else { return nil }
-        let option = CatalogueOption(value: match[1], label: clean(match[0]), group: nil)
+        // One choice only: the page writes its label and a hidden input in the
+        // same cell — but not always next to each other. The plan's cell puts
+        // a `<br/>` between them, which a pattern demanding the input right
+        // after the text missed: the level then went unread, and the page's
+        // selection fell back to "***", so the app followed a plan the
+        // student is not in and its teachings were not theirs. So the cell is
+        // read whole and everything before the input is the label.
+        let cell = #"<td[^>]*>((?:(?!</td>).)*?)<input([^>]*\bname="\#(name)"[^>]*)>"#
+        guard let match = HTMLScraper.matches(cell, in: html).first, match.count == 2,
+              let value = HTMLScraper.firstMatch(#"value="([^"]*)""#, in: match[1], group: 1)
+        else { return nil }
+        let option = CatalogueOption(value: value, label: clean(match[0]), group: nil)
         return CatalogueLevel(field: field, options: [option], selected: option.value)
     }
 

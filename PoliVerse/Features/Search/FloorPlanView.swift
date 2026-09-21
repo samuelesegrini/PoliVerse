@@ -44,7 +44,7 @@ struct FloorPlanView: View {
                      ? "Pianta del piano. Tocca per ingrandire."
                      : "L'aula è evidenziata sulla pianta. Tocca per ingrandire.")
             }
-            .glassRow()
+            .lookRow()
         }
     }
 
@@ -300,7 +300,7 @@ struct RoomDayView: View {
                 Text("Fasce ricavate dalle lezioni prenotate. Un'aula libera può comunque essere chiusa.")
             }
         }
-        .glassRow()
+        .lookRow()
         .task {
             guard bookings == nil, !failed else { return }
             if let loaded = await aule.bookings(for: room) {

@@ -90,6 +90,7 @@ struct NotificationSettingsView: View {
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
             }
+            .lookRow()
 
             if isAuthorised {
                 remindersSection(colours: colours, neutral: ramp.neutral)
@@ -100,6 +101,7 @@ struct NotificationSettingsView: View {
                 scheduledSection(colours: colours, neutral: ramp.neutral)
             }
         }
+        .lookList()
         .navigationTitle("Promemoria")
         .navigationBarTitleDisplayMode(.inline)
         .animation(.snappy(duration: 0.3), value: notifications.preferences)
@@ -216,6 +218,7 @@ struct NotificationSettingsView: View {
             } footer: {
                 Text("Nessuna notifica, promemoria o riepilogo; le novità restano nell’app. Scorri per riattivarli.")
             }
+            .lookRow()
         }
     }
 
@@ -233,6 +236,7 @@ struct NotificationSettingsView: View {
                 // Said plainly: the file lists other students.
                 Text("Quando un docente pubblica un file di esiti su WeBeep, l’app lo apre sul telefono e cerca solo la tua matricola. Tiene soltanto il tuo voto, che non appare nelle notifiche; i dati degli altri non vengono salvati né inviati. Funziona con PDF testuali e CSV.")
             }
+            .lookRow()
         }
     }
 

@@ -64,7 +64,7 @@ struct LocalisationTests {
     @Test("The onboarding screens are in the catalogue, not falling back to the keys")
     func onboardingIsTranslated() {
         let keys = [
-            "L'orario, senza cercarlo",
+            "Sai già dove andare",
             "Accedi con l'account del Politecnico",
             "Promemoria per lezioni ed esami",
             "Hai più di una carriera",

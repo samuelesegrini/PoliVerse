@@ -1,58 +1,55 @@
 import SwiftUI
 
-// Oggi's look carried to the pages past it: the sheet the page is printed
-// on, the cards in the look's material, the headings as Oggi's sections have
-// them. A page that reads the look through these never falls out of step
-// with Personalizza.
+// Oggi's look carried to the pages past it — with one thing deliberately left
+// behind.
+//
+// **Oggi keeps the page.** Its paper, its decoration and its colour are drawn
+// by ``TodayTab`` alone. Oggi is a poster: one huge date, a few cards, most of
+// the page empty, and a pattern of coriandoli or stars reads as design there.
+// The rest of the app is dense — a settings list, a libretto, a plan of forty
+// teachings — and the same pattern behind small secondary text is noise.
+//
+// **Everything else travels.** The Flavor's colours, the typeface, the
+// material the cards are made of and the light or dark the look asks for go on
+// every screen, so the app is recognisably the student's wherever they are
+// without any page having to fight its own background.
 
 extension View {
-    /// A page printed on the look in use: its paper or decoration behind the
-    /// scrolling content, and the look's text design.
-    func lookPage() -> some View {
-        modifier(LookPage())
-    }
-
-    /// A card in the look's material, as Oggi's sections draw theirs — or in
-    /// Liquid Glass, on the pages that ask for it with ``lookSurface``.
+    /// A card in the look's material, as Oggi's sections draw theirs.
     func lookCard(cornerRadius: CGFloat = 26) -> some View {
         modifier(LookCard(cornerRadius: cornerRadius))
     }
+
+    /// The look's colour on the app's controls, and the lighting it asks for.
+    ///
+    /// Belongs outside anything that presents a sheet. A sheet's content takes
+    /// the environment of the view the presentation is attached to, so a tint
+    /// applied under one stops at the sheet's edge and the sheet reverts to
+    /// the system's blue.
+    func lookControls() -> some View {
+        modifier(LookControls())
+    }
 }
 
-/// What a page's cards are made of: the look's material, or glass.
-enum LookSurface: Sendable {
-    case material, glass
-}
-
-extension EnvironmentValues {
-    @Entry var lookSurface: LookSurface = .material
-}
-
-private struct LookPage: ViewModifier {
+private struct LookControls: ViewModifier {
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.colorScheme) private var scheme
 
     func body(content: Content) -> some View {
         content
-            // A List draws its own grey ground over the sheet otherwise.
-            .scrollContentBackground(.hidden)
-            .background(TodayBackgroundView(style: style).ignoresSafeArea())
+            .tint(style.controlTint(scheme))
             .fontDesign(style.textDesign.design)
+            .preferredColorScheme(style.appearance.colorScheme)
     }
 }
 
 private struct LookCard: ViewModifier {
     let cornerRadius: CGFloat
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
-    @Environment(\.lookSurface) private var surface
 
     func body(content: Content) -> some View {
-        switch surface {
-        case .material:
-            content.todayMaterial(style.material, flavor: style.flavor, mode: style.appearance.flavorMode,
-                                  cornerRadius: cornerRadius)
-        case .glass:
-            content.glassEffect(.regular, in: .rect(cornerRadius: cornerRadius + 4))
-        }
+        content.todayMaterial(style.material, flavor: style.flavor, mode: style.appearance.flavorMode,
+                              cornerRadius: cornerRadius)
     }
 }
 

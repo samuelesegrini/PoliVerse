@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// What the app does around ``NewRootView``: land every way in from outside,
+/// What the app does around ``RootView``: land every way in from outside,
 /// and keep Spotlight and the reminders in step with the data.
 struct AppShellDuties: ViewModifier {
     /// Opens a destination in the interface on screen.

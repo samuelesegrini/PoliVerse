@@ -33,6 +33,10 @@ struct SearchView: View {
     @AppStorage("searchRecents") private var storedRecents = ""
 
     @State private var query = ""
+    /// `query`, settled ~180 ms after typing pauses. Matching and the
+    /// browse/results swap key off this, not `query` directly, so a fast
+    /// typist doesn't re-run eight ranking passes per keystroke.
+    @State private var debouncedQuery = ""
     @State private var tokens: [Kind] = []
     @State private var expanded: Set<Kind> = []
     @State private var selectedEvent: AgendaEvent?
@@ -74,7 +78,7 @@ struct SearchView: View {
     }
 
     private var trimmed: String {
-        query.trimmingCharacters(in: .whitespacesAndNewlines)
+        debouncedQuery.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private var isSearching: Bool { !trimmed.isEmpty }
@@ -155,7 +159,14 @@ struct SearchView: View {
     }
 
     /// Every result as one shape, grouped by kind in the order they are shown.
-    private var results: [(kind: Kind, items: [Result])] {
+    ///
+    /// Cached in `results` rather than computed inline: `resultsContent` is
+    /// now always in the view tree (see `body`), so a plain computed property
+    /// here would re-run all eight ranking passes on every keystroke, not
+    /// just when the settled query changes.
+    @State private var results: [(kind: Kind, items: [Result])] = []
+
+    private func computeResults() -> [(kind: Kind, items: [Result])] {
         let groups: [(Kind, [Result])] = [
             (.courses, matchedCourses.map(Result.course)),
             (.teachers, matchedTeachers.map(Result.teacher)),
@@ -168,6 +179,8 @@ struct SearchView: View {
         ]
         return groups.filter { !$0.1.isEmpty }.map { (kind: $0.0, items: $0.1) }
     }
+
+    private func refreshResults() { results = computeResults() }
 
     /// The single match most likely to be what was meant: a name that starts
     /// with the query beats one that only contains it, and people, places and
@@ -197,12 +210,23 @@ struct SearchView: View {
     var body: some View {
         RootStack(embedded: embedded) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 26) {
-                    if isSearching {
-                        resultsContent
-                    } else {
-                        browseContent
-                    }
+                // Both branches stay mounted and only trade opacity: an
+                // if/else here swaps two structurally different subtrees,
+                // which Instruments caught as a main-thread hang (allocating
+                // and tearing down the whole browse or results tree) the
+                // moment a search starts.
+                ZStack(alignment: .top) {
+                    // Each branch wrapped in its own VStack: `browseContent`
+                    // and `resultsContent` are `@ViewBuilder`s returning
+                    // several sibling sections, and a bare ZStack overlays
+                    // sibling views instead of stacking them — every section
+                    // rendered on top of the others at the same position.
+                    VStack(alignment: .leading, spacing: 26) { browseContent }
+                        .opacity(isSearching ? 0 : 1)
+                        .allowsHitTesting(!isSearching)
+                    VStack(alignment: .leading, spacing: 26) { resultsContent }
+                        .opacity(isSearching ? 1 : 0)
+                        .allowsHitTesting(isSearching)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
@@ -213,7 +237,6 @@ struct SearchView: View {
                 .animation(.snappy, value: tokens)
             }
             .scrollDismissesKeyboard(.immediately)
-            .courseScreen()
             .accessibilityIdentifier("search-list")
             .navigationTitle("Cerca")
             // The page's own title says "Cerca": the bar keeps it only as the
@@ -254,6 +277,14 @@ struct SearchView: View {
                 open(item)
             }
             .navigationDestination(item: $spotlightCourse) { CourseDetailView(course: $0) }
+            .task(id: query) {
+                let settled = query
+                try? await Task.sleep(for: .milliseconds(180))
+                guard !Task.isCancelled else { return }
+                debouncedQuery = settled
+                refreshResults()
+            }
+            .onChange(of: tokens) { refreshResults() }
             .task {
                 await rooms.load()
                 await courses.load()
@@ -263,6 +294,10 @@ struct SearchView: View {
                 // at the keystroke.
                 await news.load()
                 await notices.load()
+                // The searches above can finish after a query already
+                // settled (e.g. typing while cold), which would otherwise
+                // leave `results` stuck on a stale, thinner answer.
+                refreshResults()
             }
         }
     }
@@ -611,7 +646,8 @@ private func highlighted(_ text: String, query: String) -> AttributedString {
 
 /// A place as a glass tile: its symbol in the look's colour, a name and what
 /// is there.
-private struct PlaceTile: View {
+/// Also drawn by the onboarding tour's Cerca card.
+struct PlaceTile: View {
     let title: Text
     let detail: Text
     let symbol: String

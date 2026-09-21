@@ -93,7 +93,6 @@ struct CourseMaterialsView: View {
             .frame(maxWidth: 700)
             .frame(maxWidth: .infinity)
         }
-        .courseScreen()
         .searchable(text: $query, prompt: "Cerca nei materiali")
         .navigationTitle(course.name)
         .navigationBarTitleDisplayMode(.inline)

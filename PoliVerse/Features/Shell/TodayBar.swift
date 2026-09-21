@@ -6,7 +6,7 @@ import SwiftUI
 ///
 /// Settings and Personalizza stay whatever the look hides: without them
 /// there would be no way back to either. The sheets its buttons open are
-/// presented by ``NewRootView``, through ``ShellState``, so they survive a
+/// presented by ``RootView``, through ``ShellState``, so they survive a
 /// change of layout.
 struct TodayBar: ViewModifier {
 
