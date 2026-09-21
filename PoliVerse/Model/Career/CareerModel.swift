@@ -100,7 +100,12 @@ final class CareerModel {
         // Before the load, not after: signing out must clear the feed whether
         // or not anything is fetched.
         if account.isSample {
-            feed.showSample(ExamUpdate.samples(), deadlines: AssignmentDeadline.samples())
+            // Deliberately without `deadlines:`, which defaults to empty.
+            // `AssignmentDeadline.samples()` is part of the sample-data rework
+            // in flight beside this branch and does not exist yet on `main`;
+            // passing it here made these commits unbuildable on their own.
+            // Restore the argument once that work lands.
+            feed.showSample(ExamUpdate.samples())
         } else {
             feed.show(account: account.matricola)
         }
