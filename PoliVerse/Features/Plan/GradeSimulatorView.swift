@@ -12,7 +12,14 @@ struct GradeSimulatorView: View {
     @State private var target: Double = 27
     @State private var assumed: Double = 27
     @State private var saving = false
-    @State private var saved = false
+    /// The value that actually reached the Politecnico, not merely "a save
+    /// happened": stepping the target past a saved one must stop the button
+    /// claiming the new figure is stored.
+    @State private var savedTarget: Double?
+    /// A refused write, said out loud — this is the one thing the app sends
+    /// to Servizi Online, and a silent failure here is indistinguishable
+    /// from a button that was never pressed.
+    @State private var saveFailed = false
 
     private var plan: StudyPlan { career.studyPlan }
 
@@ -93,21 +100,35 @@ struct GradeSimulatorView: View {
                 }
             }
 
+            let isSaved = savedTarget == target
             Button {
                 Task {
                     saving = true
-                    saved = await career.saveTarget(target)
+                    saveFailed = false
+                    if await career.saveTarget(target) {
+                        savedTarget = target
+                    } else {
+                        savedTarget = nil
+                        saveFailed = true
+                    }
                     saving = false
                 }
             } label: {
                 if saving {
                     ProgressView()
                 } else {
-                    Label(saved ? "Obiettivo salvato" : "Salva su Servizi Online",
-                          systemImage: saved ? "checkmark.circle" : "square.and.arrow.up")
+                    Label(isSaved ? "Obiettivo salvato" : "Salva su Servizi Online",
+                          systemImage: isSaved ? "checkmark.circle" : "square.and.arrow.up")
                 }
             }
-            .disabled(saving)
+            .disabled(saving || isSaved)
+
+            if saveFailed {
+                Label("Non è stato possibile salvare l'obiettivo. Riprova, o impostalo dai Servizi Online.",
+                      systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
         } header: {
             Text("Obiettivo")
         } footer: {
@@ -116,6 +137,7 @@ struct GradeSimulatorView: View {
             } ?? "Salvando, l'obiettivo viene registrato anche sui Servizi Online del Politecnico.")
         }
         .lookRow()
+        .onChange(of: target) { saveFailed = false }
     }
 
     private var projectionSection: some View {

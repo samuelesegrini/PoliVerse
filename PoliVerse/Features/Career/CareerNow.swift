@@ -123,9 +123,11 @@ struct CareerNowCard: View {
                     compact(second)
                 }
             }
-            .padding(18)
+            .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .lookCard()
+            // The same glass the sitting's own page is made of: Adesso is the
+            // way into it, and reading as the same material says so.
+            .glassEffect(.regular, in: .rect(cornerRadius: 30))
         }
     }
 
@@ -148,6 +150,10 @@ struct CareerNowCard: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            // Combined here and not around the whole block: flattening the
+            // button into the text would cost Carriera's primary action its
+            // button trait and its activation point.
+            .accessibilityElement(children: .combine)
 
             // Not "Iscriviti": enrolment is a write against the university's
             // own system and this app deliberately does not make it
@@ -160,7 +166,6 @@ struct CareerNowCard: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
         }
-        .accessibilityElement(children: .combine)
     }
 
     // MARK: - The next one, on one line
@@ -240,8 +245,14 @@ struct CareerNowCard: View {
         case .sitting:
             guard let at = deadline.at, let days = deadline.days(from: .now) else { return nil }
             let time = at.formatted(.dateTime.hour().minute().locale(locale))
-            return days <= 0 ? String(localized: "Oggi alle \(time)")
-                             : String(localized: "Domani alle \(time)")
+            // Counted in days, not in hours: 48 hours before a Wednesday
+            // nine o'clock is Monday evening, and calling that "domani" is
+            // wrong on the card the student trusts most.
+            return switch days {
+            case ...0: String(localized: "Oggi alle \(time)")
+            case 1: String(localized: "Domani alle \(time)")
+            default: String(localized: "Fra \(days) giorni alle \(time)")
+            }
         case .refusableGrade:
             return String(localized: "Puoi ancora rifiutarlo")
         }

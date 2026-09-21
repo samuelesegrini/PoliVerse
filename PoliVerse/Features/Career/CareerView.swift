@@ -84,7 +84,11 @@ struct CareerView: View {
                                        delta: career.meanDelta) { showingSimulator = true }
                 }
 
-                if career.gradeBook == .empty && career.sessions.isEmpty && !career.isLoading {
+                // The libretto counts too: the three calls fail separately,
+                // and a libretto that arrived must not be hidden behind
+                // "nessun dato" because the other two did not.
+                if career.gradeBook == .empty && career.sessions.isEmpty
+                    && career.libretto.isEmpty && !career.isLoading {
                     unavailable(career)
                 } else {
                     Picker("Sezione", selection: $scope) {

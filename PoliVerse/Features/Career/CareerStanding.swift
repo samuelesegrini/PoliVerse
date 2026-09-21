@@ -28,11 +28,16 @@ struct CareerStandingCard: View {
 
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
     @Environment(\.colorScheme) private var scheme
-    /// The exam being read on the chart. While there is one, the headline is
-    /// that exam rather than the career: the big number is where the eye
+    /// The day being read on the chart. While there is one, the headline is
+    /// that day rather than the career: the big number is where the eye
     /// already is, so it is where the reading belongs — a callout floating
     /// over a 150-point chart would cover the line it is describing.
-    @State private var inspected: MeanPoint?
+    ///
+    /// A day and not an exam, because two marks recorded on one date cannot be
+    /// told apart on a time axis: see ``MeanDay``.
+    @State private var inspected: MeanDay?
+    /// The headline figure's size, scaled with the reader's text.
+    @ScaledMetric(relativeTo: .largeTitle) private var headlineSize: CGFloat = 52
 
     private var plan: StudyPlan { StudyPlan(exams: exams) }
 
@@ -60,18 +65,56 @@ struct CareerStandingCard: View {
     // MARK: - The number
 
     private var average: some View {
-        HStack(alignment: .lastTextBaseline, spacing: 10) {
-            Text(headlineNumber)
-                .font(.system(size: 52, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .contentTransition(.numericText())
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-            caption
-            Spacer(minLength: 0)
+        // Two rows in one, on purpose. The figure and its caption are set
+        // against a shared baseline; the close button is not text and has no
+        // baseline of its own, so inside that group it was aligned by its
+        // bottom edge and dragged the row's height around with it. It sits in
+        // an outer row aligned to the top instead, which is where it should
+        // appear anyway — beside the number, not hanging off the caption.
+        HStack(alignment: .top, spacing: 10) {
+            HStack(alignment: .lastTextBaseline, spacing: 10) {
+                headline
+                caption
+                Spacer(minLength: 0)
+            }
+            // The way out of a selection, in the same place every time and
+            // sized to be hit. The chart's own hint is a caption nobody
+            // reading with VoiceOver or at large text will ever meet.
+            if inspected != nil {
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) { inspected = nil }
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, height: 44)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Torna alla media attuale")
+            }
         }
         .animation(.snappy(duration: 0.2), value: inspected?.id)
-        .accessibilityElement(children: .combine)
+    }
+
+    private var headline: some View {
+        Text(headlineNumber)
+            // Scaled, so the page's biggest number stays the page's biggest
+            // number when the reader's text grows: at a fixed 52 the section
+            // rows under it eventually overtake it.
+            .font(.system(size: headlineSize, weight: .bold, design: .rounded))
+            .monospacedDigit()
+            .contentTransition(.numericText())
+            .lineLimit(1)
+            // Never scaled down to fit. It had `minimumScaleFactor`, and
+            // selecting an exam puts a long name and a close button in the
+            // same row: the figure was offered less width and quietly shrank,
+            // so the page's headline changed size depending on which exam the
+            // finger was on. It keeps its own width now and the caption beside
+            // it truncates instead, which is the right way round — the number
+            // is the reading, the name is the label.
+            .fixedSize(horizontal: true, vertical: false)
+            .layoutPriority(1)
     }
 
     /// The career's average, or — while an exam is being read on the chart —
@@ -83,14 +126,34 @@ struct CareerStandingCard: View {
         return mean > 0 ? mean.formatted(.number.precision(.fractionLength(1))) : "—"
     }
 
+    // The caption is aligned by its last baseline against a 52-point figure,
+    // so it cannot be padded out to a height common to all three states: a
+    // hidden view holding that space still publishes its own text baselines,
+    // and the headline ended up sitting on a line that was not drawn. What
+    // each state can do is hold its own height, which is what the fixed line
+    // limits below are for. The one jump left is entering and leaving a
+    // selection — a change of subject on a tap, not jitter under the finger.
     @ViewBuilder
     private var caption: some View {
         if let inspected {
             VStack(alignment: .leading, spacing: 0) {
-                Text(verbatim: inspected.name)
+                // Says outright that the big number is no longer today's
+                // average. Without it the headline silently changes meaning.
+                //
+                // Set exactly as "Media ponderata" is: the two label the same
+                // number and swap places under it, so a different size or case
+                // would read as the figure itself having changed.
+                Text("Media dopo")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                // Every teaching recorded that day, joined. One line, cut
+                // where it runs out: wrapping made the block one or two lines
+                // deep depending on the exam, so the card changed height as
+                // the finger moved along the chart.
+                Text(verbatim: inspected.title)
                     .font(.footnote.weight(.semibold))
-                    .lineLimit(2)
-                Text("\(inspected.displayGrade) · \(inspected.credits) · \(inspected.date, format: .dateTime.month(.wide).year())")
+                    .lineLimit(1)
+                Text("\(inspected.marks) · \(inspected.credits) · \(inspected.date, format: .dateTime.month(.wide).year())")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
