@@ -18,29 +18,22 @@ import OSLog
 ///
 /// ## Session
 ///
-/// The personalised timetable is server-side state keyed to a cookie, so this
-/// keeps its own cookie jar rather than borrowing the app's: nothing here
-/// should be able to disturb the authenticated session, and the catalogue
-/// never needs to know who the student is.
+/// Reads only, and cookie-free: the catalogue never needs to know who the
+/// student is. The personalised timetable — which *is* keyed to a cookie —
+/// lives in ``TimetableCart``, on a session of its own.
 @Observable
 final class ManifestiModel {
     private(set) var results: [ManifestoTeaching] = []
     private(set) var isSearching = false
     private(set) var errorMessage: String?
-    /// Teachings in the personalised timetable, as the service reports them.
-    private(set) var cartCount = 0
-    /// The surname the catalogue is using to pick brackets, once set.
-    private(set) var surname: String?
-
     var year: AcademicYear = AcademicYear.recent().first ?? AcademicYear(code: "2026")
 
-    /// The cart's session: its cookie is the personalised timetable.
-    private let session: URLSession
-    /// Catalogue reads: no cookies at all. The service serialises requests
-    /// that share a `JSESSIONID`, so eight "parallel" detail pages on the
-    /// cart's session took eight times as long as one.
+    /// No cookies at all. The service serialises requests that share a
+    /// `JSESSIONID`, so eight "parallel" detail pages on a cookie-bearing
+    /// session took eight times as long as one — which is half of why the
+    /// cart lives in ``TimetableCart`` and not here.
     private let catalogue: URLSession
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "manifesti")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "manifesti")
     private let base = URL(string: "https://onlineservices.polimi.it/manifesti/manifesti/controller")!
     private let syllabusBase = URL(string:
         "https://onlineservices.polimi.it/schedaincarico/schedaincarico/controller/scheda_pubblica/SchedaPublic.do")!
@@ -49,19 +42,6 @@ final class ManifestiModel {
     private let syllabusLoader: ResourceLoader<String, Syllabus>
 
     init() {
-        // Its own cookie jar: the cart is server-side state on a cookie, and
-        // it must not be able to touch the authenticated session.
-        let configuration = URLSessionConfiguration.default
-        configuration.httpCookieStorage = HTTPCookieStorage.sharedCookieStorage(
-            forGroupContainerIdentifier: "manifesti")
-        configuration.httpShouldSetCookies = true
-        // Never from a cache: every page on this session is the cart's state
-        // at this moment. A cached GET turned "empty the cart" into a no-op
-        // and returned an old timetable in place of the one just built.
-        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        configuration.urlCache = nil
-        self.session = URLSession(configuration: configuration)
-
         let reads = URLSessionConfiguration.default
         reads.httpCookieStorage = nil
         reads.httpShouldSetCookies = false
@@ -133,7 +113,7 @@ final class ManifestiModel {
         form["jaf_currentWFID"] = "main"
 
         guard let html = await post(
-            "ricerche/RicercaPerInsegnamentoPublic.do", form: form, session: catalogue)
+            "ricerche/RicercaPerInsegnamentoPublic.do", form: form)
         else {
             errorMessage = String(localized: "Il catalogo del Politecnico non ha risposto.")
             return
@@ -223,8 +203,7 @@ final class ManifestiModel {
             "tipoInsegnamento": "ALL_TIPO_INSEGNAMENTO", "insegn_ricerca": teachingCode,
             "lang": PoliMiLanguage.current.rawValue, "jaf_currentWFID": "main",
         ]
-        guard let html = await post("ricerche/RicercaPerInsegnamentoPublic.do", form: form,
-                                    session: catalogue) else { return nil }
+        guard let html = await post("ricerche/RicercaPerInsegnamentoPublic.do", form: form) else { return nil }
         var seen: Set<String> = []
         var rows: [ManifestoTeaching] = []
         // The student's degree course first, so it is never cut by the cap.
@@ -326,7 +305,7 @@ final class ManifestiModel {
             "tipoInsegnamento": "ALL_TIPO_INSEGNAMENTO", "insegn_ricerca": teachingCode,
             "lang": PoliMiLanguage.current.rawValue, "jaf_currentWFID": "main",
         ]
-        guard let html = await post("ricerche/RicercaPerInsegnamentoPublic.do", form: form, session: catalogue)
+        guard let html = await post("ricerche/RicercaPerInsegnamentoPublic.do", form: form)
         else { return stored?.value }
         let rows = PlanCandidates.distinct(ManifestoParser.searchResults(html).filter { $0.code == teachingCode })
         offerings[name] = rows
@@ -357,11 +336,11 @@ final class ManifestiModel {
     // MARK: - Detail and syllabus
 
     func detail(for teaching: ManifestoTeaching) async -> ManifestoDetail? {
-        await detailLoader.value(for: detailQuery(teaching))
+        await detailLoader.value(for: teaching.detailQuery(defaultYear: year.code))
     }
 
     func prefetchDetails(_ teachings: some Sequence<ManifestoTeaching>) {
-        let keys = teachings.map(detailQuery)
+        let keys = teachings.map { $0.detailQuery(defaultYear: year.code) }
         Task.detached(priority: .background) { [detailLoader] in
             await detailLoader.prefetch(keys)
         }
@@ -371,122 +350,11 @@ final class ManifestiModel {
         await syllabusLoader.value(for: classID)
     }
 
-    private func detailQuery(_ teaching: ManifestoTeaching) -> String {
-        var items = [
-            URLQueryItem(name: "EVN_DETTAGLIO_RIGA_MANIFESTO", value: "evento"),
-            URLQueryItem(name: "k_corso_la", value: teaching.courseCode),
-            URLQueryItem(name: "codDescr", value: teaching.code),
-            URLQueryItem(name: "aa", value: teaching.year ?? year.code),
-            URLQueryItem(name: "lang", value: PoliMiLanguage.current.rawValue),
-            URLQueryItem(name: "jaf_currentWFID", value: "main"),
-        ]
-        if let plan = teaching.planCode { items.append(.init(name: "k_indir", value: plan)) }
-        if let item = teaching.idItemOfferta { items.append(.init(name: "idItemOfferta", value: item)) }
-        if let riga = teaching.idRiga { items.append(.init(name: "idRiga", value: riga)) }
-        if let semester = teaching.semester { items.append(.init(name: "semestre", value: semester)) }
-
-        var components = URLComponents()
-        components.queryItems = items
-        return components.percentEncodedQuery ?? ""
-    }
-
-    // MARK: - Personalised timetable
-
-    /// Tells the catalogue the surname, which is how it picks the bracket.
-    ///
-    /// The service asks for "cognome nome" in one field and warns that a
-    /// surname alone may resolve the bracket wrongly, so both are sent.
-    /// - Parameter yearCode: the timetable's year, when it is not the one the
-    ///   catalogue is browsing.
-    func setName(_ fullName: String, yearCode: String? = nil) async {
-        let trimmed = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        let aa = yearCode ?? year.code
-        _ = await page("ManifestoPublic.do?evn_gointrocarrello=evento&aa=\(aa)&lang=\(PoliMiLanguage.current.rawValue)&jaf_currentWFID=main")
-        _ = await post("ManifestoPublic.do", form: [
-            "evn_setcognome": "Imposta cognome e nome",
-            "cognome": trimmed,
-            "aa": aa,
-            "lang": PoliMiLanguage.current.rawValue,
-            "c_accordo": "",
-        ])
-        surname = trimmed
-        log.notice("manifesti: scaglione impostato")
-    }
-
-    /// Where a teaching's page offers to add it to the cart, read on the
-    /// cart's session: the page shows the add link only once a name is set,
-    /// and only for that name's bracket.
-    func cartLink(for teaching: ManifestoTeaching) async -> PersonalTimetableParser.CartLink? {
-        guard let html = await page("ManifestoPublic.do?\(detailQuery(teaching))") else { return nil }
-        return PersonalTimetableParser.cartLink(in: html, code: teaching.code)
-    }
-
-    /// The sections a teaching asks the student to choose between, if any.
-    ///
-    /// Read on the cart's session, like the add link: the page offers the
-    /// choice only once a name is set.
-    func sections(for teaching: ManifestoTeaching)
-        async -> (link: PersonalTimetableParser.SectionsLink, options: [PersonalTimetableParser.SectionOption])? {
-        guard let html = await page("ManifestoPublic.do?\(detailQuery(teaching))"),
-              let link = PersonalTimetableParser.sectionsLink(in: html, code: teaching.code) else { return nil }
-        // The dialog's school, which the page writes into its own script.
-        let school = HTMLScraper.firstMatch(#"k_cf:\s*([0-9]+)"#, in: html, group: 1) ?? "-1"
-        var components = URLComponents()
-        components.queryItems = [
-            .init(name: "evn_showsezioni", value: "evento"), .init(name: "aa", value: teaching.year ?? year.code),
-            .init(name: "k_cf", value: school), .init(name: "k_corso_la", value: link.courseCode),
-            .init(name: "k_indir", value: link.planCode), .init(name: "codDescr", value: teaching.code),
-            .init(name: "ac_ins", value: link.yearOfCourse), .init(name: "idItemOfferta", value: link.idItemOfferta),
-            .init(name: "idGruppo", value: link.idGruppo), .init(name: "idRiga", value: link.idRiga),
-            .init(name: "lang", value: PoliMiLanguage.current.rawValue),
-        ]
-        guard let fragment = await page("ManifestoPublic.do?\(components.percentEncodedQuery ?? "")") else { return nil }
-        let options = PersonalTimetableParser.sections(fragment)
-        return options.isEmpty ? nil : (link, options)
-    }
-
-    /// Adds a teaching to the personalised timetable.
-    ///
-    /// Answers a small XML document rather than a page: `<success>` with the
-    /// new count, or `<error>` with the reason — a full cart, a teaching not
-    /// offered to this bracket.
-    func addToTimetable(
-        _ teaching: ManifestoTeaching, link: PersonalTimetableParser.CartLink?, section: String = ""
-    ) async -> PersonalTimetableParser.CartReply {
-        guard let xml = await post("ManifestoPublic.do?EVN_ADDCART=EVENTO", form: [
-            "aa": teaching.year ?? year.code,
-            "k_corso_la": link?.courseCode ?? teaching.courseCode,
-            "k_indir": link?.planCode ?? teaching.planCode ?? "",
-            "codDescr": teaching.code,
-            // The year of course, as the page's own script sends it.
-            "ac_ins": link?.yearOfCourse ?? "0",
-            "semestre": link?.semester ?? teaching.semester ?? "",
-            "sezione": section,
-            "lang": PoliMiLanguage.current.rawValue,
-        ]) else { return .refused(nil) }
-        let reply = PersonalTimetableParser.cartReply(xml)
-        if case .added(let count) = reply { cartCount = count }
-        return reply
-    }
-
-    /// Empties the personalised timetable.
-    func clearTimetable(yearCode: String? = nil) async {
-        _ = await page("ManifestoPublic.do?evn_eliminacarrello=evento&aa=\(yearCode ?? year.code)&lang=\(PoliMiLanguage.current.rawValue)&jaf_currentWFID=main")
-        cartCount = 0
-    }
-
-    /// The "orario testuale" of one semester: the cart as sentences, which
-    /// ``PersonalTimetableParser`` reads into slots.
-    func textTimetable(semester: Int, yearCode: String? = nil) async -> String? {
-        await page("GestioneCarrelloPublic.do?evn_default=EVENTO&tab_selected=2&sel_semestre=\(semester)&sel_aa=\(yearCode ?? year.code)&lang=\(PoliMiLanguage.current.rawValue)&jaf_currentWFID=main")
-    }
-
     // MARK: - Transport
 
     private func page(_ path: String) async -> String? {
         guard let url = URL(string: "\(base.absoluteString)/\(path)") else { return nil }
-        return await Self.page(url, session: session)
+        return await Self.page(url, session: catalogue)
     }
 
     private static func page(_ url: URL, session: URLSession) async -> String? {
@@ -506,8 +374,8 @@ final class ManifestiModel {
         }
     }
 
-    private func post(_ path: String, form: [String: String], session: URLSession? = nil) async -> String? {
-        let session = session ?? self.session
+    private func post(_ path: String, form: [String: String]) async -> String? {
+        let session = catalogue
         guard let url = URL(string: "\(base.absoluteString)/\(path)") else { return nil }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"

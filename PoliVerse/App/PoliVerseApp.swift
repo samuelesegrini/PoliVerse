@@ -20,6 +20,7 @@ struct PoliVerseApp: App {
     @State private var careers: CareersModel
     @State private var notifications: NotificationModel
     @State private var manifesti: ManifestiModel
+    @State private var cart: TimetableCart
     @State private var personalTimetable: PersonalTimetableModel
     @State private var programmes: StudyProgrammeModel
     @State private var network: NetworkMonitor
@@ -80,6 +81,11 @@ struct PoliVerseApp: App {
         _rooms = State(initialValue: rooms)
         let manifesti = ManifestiModel()
         _manifesti = State(initialValue: manifesti)
+        // The other half of what used to be one type: the catalogue reads
+        // above, the cookie-bound cart here. Nothing but the personal
+        // timetable talks to it.
+        let cart = TimetableCart()
+        _cart = State(initialValue: cart)
         let freeRooms = FreeRoomsModel(catalogue: rooms)
         _freeRooms = State(initialValue: freeRooms)
         _campusMap = State(initialValue: CampusMapModel(catalogue: rooms, freeRooms: freeRooms))
@@ -95,11 +101,11 @@ struct PoliVerseApp: App {
 
         let agenda = AgendaModel(account: session)
         _agenda = State(initialValue: agenda)
-        _personalTimetable = State(initialValue: PersonalTimetableModel(manifesti: manifesti, agenda: agenda))
+        _personalTimetable = State(initialValue: PersonalTimetableModel(cart: cart, agenda: agenda))
         let career = CareerModel(account: session, feed: updates, pending: pending)
         _career = State(initialValue: career)
         // Before the course list, which reads teaching codes out of it.
-        let programmes = StudyProgrammeModel(manifesti: manifesti, session: session, career: career,
+        let programmes = StudyProgrammeModel(manifesti: manifesti, account: session, career: career,
                                                careers: careers)
         _programmes = State(initialValue: programmes)
         let courses = CourseModel(account: session, enrolments: weBeep,

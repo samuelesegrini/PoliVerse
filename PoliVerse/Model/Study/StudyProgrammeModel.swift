@@ -16,10 +16,13 @@ final class StudyProgrammeModel {
     private(set) var planCodes: Set<String> = []
     private(set) var isLocating = false
 
-    private let manifesti: ManifestiModel
-    private let session: Session
-    private let career: CareerModel
-    private let careers: CareersModel?
+    private let manifesti: any ManifestoReading
+    /// Narrow seams rather than the models behind them — see ``Account``,
+    /// ``StudentRecord`` and ``Enrolments``. This module reads four members
+    /// across the two records; naming them is what lets it be built in a test.
+    private let account: any Account
+    private let career: any StudentRecord
+    private let careers: (any Enrolments)?
     private let store: StudyProgrammeStore
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "manifesti")
 
@@ -38,17 +41,18 @@ final class StudyProgrammeModel {
     /// Plans of one degree course scored against the libretto, at most.
     static let plansScored = 6
 
-    init(manifesti: ManifestiModel, session: Session, career: CareerModel, careers: CareersModel? = nil,
+    init(manifesti: any ManifestoReading, account: any Account, career: any StudentRecord,
+         careers: (any Enrolments)? = nil,
          store: StudyProgrammeStore = StudyProgrammeStore()) {
         self.manifesti = manifesti
-        self.session = session
+        self.account = account
         self.career = career
         self.careers = careers
         self.store = store
     }
 
     private var matricola: String? {
-        session.useMockData ? nil : session.student?.matricola
+        account.isSample ? nil : account.matricola
     }
 
     /// The libretto by teaching name: it carries no teaching codes.
@@ -60,7 +64,7 @@ final class StudyProgrammeModel {
     /// there is none and checking the one there is. Cheap once done.
     func prepare() async {
         guard let matricola else { return }
-        if let person = session.student?.personCode, !store.seenMatricole(person: person).contains(matricola) {
+        if let person = account.personCode, !store.seenMatricole(person: person).contains(matricola) {
             store.remember(matricola, person: person)
             revision += 1
         }
@@ -73,7 +77,7 @@ final class StudyProgrammeModel {
             planCodes = []
         }
         guard locateAttempted.insert(matricola).inserted else { return }
-        await career.load()
+        await career.load(force: false)
         if programme == nil {
             await locate(for: matricola)
         } else {
@@ -224,8 +228,8 @@ final class StudyProgrammeModel {
 
     /// The careers listed, and every matricola the app has been signed in with.
     private var careerMatricole: [String] {
-        let seen = session.student.map { store.seenMatricole(person: $0.personCode) } ?? []
-        return seen + (careers?.careers.map(\.matricola) ?? []).filter { !seen.contains($0) }
+        let seen = account.personCode.map { store.seenMatricole(person: $0) } ?? []
+        return seen + (careers?.matricole ?? []).filter { !seen.contains($0) }
     }
 
     /// Every career with its programme, the one in use first.
@@ -397,7 +401,7 @@ final class StudyProgrammeModel {
         }
         var tied = SearchInference.tiedRows(for: code, offerings: offerings)
         if tied.count > 1 {
-            let surname = session.student?.lastName
+            let surname = account.lastName
             let lecturers = await withTaskGroup(of: [String].self) { group in
                 for row in tied {
                     group.addTask {
@@ -434,7 +438,7 @@ final class StudyProgrammeModel {
     /// surname's. Falls back to the catalogue-wide search when there is no
     /// programme or the plan does not list the teaching.
     func pick(_ ref: TeachingRef) async -> SyllabusPicker.Pick? {
-        let surname = session.student?.lastName
+        let surname = account.lastName
         if let row = await planTeaching(codes: ref.codes, name: ref.name, year: ref.yearCode,
                                         courseID: ref.courseID),
            let detail = await manifesti.detail(for: row.teaching),

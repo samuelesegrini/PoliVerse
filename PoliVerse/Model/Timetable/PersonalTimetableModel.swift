@@ -50,12 +50,14 @@ final class PersonalTimetableModel {
     static let capacity = 15
     private static let cacheName = "personal-timetable"
 
-    private let manifesti: ManifestiModel
+    /// The cart, not the catalogue: this model only ever spoke to that half —
+    /// which is what made the split obvious. See ``TimetableCart``.
+    private let cart: TimetableCart
     private let agenda: AgendaModel?
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "manifesti")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "manifesti")
 
-    init(manifesti: ManifestiModel, agenda: AgendaModel? = nil, preview: PersonalTimetable? = nil) {
-        self.manifesti = manifesti
+    init(cart: TimetableCart, agenda: AgendaModel? = nil, preview: PersonalTimetable? = nil) {
+        self.cart = cart
         self.agenda = agenda
         timetable = preview ?? DiskCache.load(PersonalTimetable.self, as: Self.cacheName)?.value
         selection = timetable?.sources.map(\.teaching) ?? []
@@ -100,7 +102,7 @@ final class PersonalTimetableModel {
             // Most teachings are bracketed by name; the few offered in
             // sections ask which, and only a named session can see that —
             // before the name is set, `prepare` asks instead.
-            if manifesti.surname != nil {
+            if cart.surname != nil {
                 Task { await askForSections(teaching) }
             }
         }
@@ -108,7 +110,7 @@ final class PersonalTimetableModel {
 
     private func askForSections(_ teaching: ManifestoTeaching) async {
         guard sectionChoices[teaching.code] == nil, !sectionQuestions.contains(where: { $0.teaching.code == teaching.code }),
-              let found = await manifesti.sections(for: teaching), isSelected(teaching) else { return }
+              let found = await cart.sections(for: teaching), isSelected(teaching) else { return }
         sectionQuestions.append(SectionQuestion(teaching: teaching, link: found.link, options: found.options))
     }
 
@@ -121,7 +123,7 @@ final class PersonalTimetableModel {
     /// Sets the name on the service ahead of the build, so choosing teachings
     /// can find those offered in sections.
     func prepare(name: String) async {
-        await manifesti.setName(name)
+        await cart.setName(name)
         // Teachings kept from the last build were picked before the name was
         // set: ask about their sections now.
         for teaching in selection { await askForSections(teaching) }
@@ -132,7 +134,7 @@ final class PersonalTimetableModel {
     /// Recreates the cart from the selection and reads the timetable back.
     func build(name: String, surname: String) async {
         await build(name: name, surname: surname, teachings: selection,
-                    yearCode: catalogue?.year ?? manifesti.year.code)
+                    yearCode: catalogue?.year ?? cart.year.code)
     }
 
     /// A week: rooms move in the first weeks of term, and nothing announces it.
@@ -170,7 +172,7 @@ final class PersonalTimetableModel {
         progress = .settingName
         // Cleared first: the cart outlives the app on the server's session,
         // and a leftover teaching would reappear in the result.
-        await manifesti.clearTimetable(yearCode: yearCode)
+        await cart.clearTimetable(yearCode: yearCode)
 
         let batches = CartBatches.batches(name: trimmed, surname: surname, teachings: teachings, brackets: bracketChoices)
         var added = 0
@@ -180,7 +182,7 @@ final class PersonalTimetableModel {
         for batch in batches {
             guard !Task.isCancelled else { break }
             // Setting the name empties the cart: each bracket is its own run.
-            await manifesti.setName(batch.cartName, yearCode: yearCode)
+            await cart.setName(batch.cartName, yearCode: yearCode)
             var addedHere = 0
             // One at a time: the service serialises a session's requests
             // anyway, and the cart's count is only meaningful in order.
@@ -200,7 +202,7 @@ final class PersonalTimetableModel {
 
             progress = .reading
             for semester in [1, 2] {
-                guard let html = await manifesti.textTimetable(semester: semester, yearCode: yearCode) else { continue }
+                guard let html = await cart.textTimetable(semester: semester, yearCode: yearCode) else { continue }
                 readAny = true
                 for entry in PersonalTimetableParser.entries(html) where !entries.contains(where: { $0.code == entry.code }) {
                     entries.append(entry)
@@ -221,7 +223,7 @@ final class PersonalTimetableModel {
             return
         }
         // The name the student gave, whatever the carts were named.
-        if batches.first?.cartName != trimmed { await manifesti.setName(trimmed, yearCode: yearCode) }
+        if batches.first?.cartName != trimmed { await cart.setName(trimmed, yearCode: yearCode) }
 
         var built = PersonalTimetable(name: trimmed, yearCode: yearCode, entries: entries, builtAt: .now)
         built.sources = teachings.map { PersonalTimetable.Source($0, yearOfCourse: yearsOfCourse[$0.code]) }
@@ -243,14 +245,14 @@ final class PersonalTimetableModel {
             let link = PersonalTimetableParser.CartLink(
                 courseCode: choice.link.courseCode, planCode: choice.link.planCode,
                 semester: choice.option.semester, yearOfCourse: choice.link.yearOfCourse)
-            return await manifesti.addToTimetable(teaching, link: link, section: choice.option.name)
+            return await cart.addToTimetable(teaching, link: link, section: choice.option.name)
         }
         if let year = yearsOfCourse[teaching.code] {
             let link = PersonalTimetableParser.CartLink(courseCode: teaching.courseCode, planCode: teaching.planCode ?? "",
                                                         semester: teaching.semester ?? "", yearOfCourse: year)
-            return await manifesti.addToTimetable(teaching, link: link)
+            return await cart.addToTimetable(teaching, link: link)
         }
-        return await manifesti.addToTimetable(teaching, link: await manifesti.cartLink(for: teaching))
+        return await cart.addToTimetable(teaching, link: await cart.cartLink(for: teaching))
     }
 
     func resetProgress() {

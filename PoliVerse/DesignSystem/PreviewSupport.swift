@@ -37,8 +37,9 @@ enum PreviewEnvironment {
     static let network = NetworkMonitor()
     static let pending = PendingChanges(account: session, network: network)
     static let manifesti = ManifestiModel()
-    static let programmes = StudyProgrammeModel(manifesti: manifesti, session: session, career: career)
-    static let personalTimetable = PersonalTimetableModel(manifesti: manifesti, agenda: agenda, preview: PersonalTimetable.sample)
+    static let cart = TimetableCart()
+    static let programmes = StudyProgrammeModel(manifesti: manifesti, account: session, career: career)
+    static let personalTimetable = PersonalTimetableModel(cart: cart, agenda: agenda, preview: PersonalTimetable.sample)
     static let liveActivity = LiveActivityController()
     /// Its own defaults suite, so opening a preview cannot mark the real
     /// install's onboarding as done.

@@ -17,6 +17,10 @@ protocol Account: AnyObject {
     /// person has a matricola per career, and anything remembered *per person*
     /// — which career they chose — has to be keyed by this instead.
     var personCode: String? { get }
+    /// The student's surname. Not decoration: the Manifesti service picks a
+    /// teaching's alphabetical bracket — the *scaglione*, which decides their
+    /// lecturer — from it, so the study plan has to know it.
+    var lastName: String? { get }
     /// True when the app is showing representative data rather than this
     /// student's. See ``Session/useMockData``.
     var isSample: Bool { get }
@@ -28,6 +32,7 @@ extension Session: Account {
     var isSample: Bool { useMockData }
     var matricola: String? { student?.matricola }
     var personCode: String? { student?.personCode }
+    var lastName: String? { student?.lastName }
     var http: any HTTP { api }
 }
 
@@ -37,13 +42,16 @@ extension Session: Account {
 final class StubAccount: Account {
     var matricola: String?
     var personCode: String?
+    var lastName: String?
     var isSample: Bool
     var http: any HTTP
 
     init(matricola: String? = "123456", personCode: String? = "p1",
-         isSample: Bool = false, http: any HTTP = FixtureHTTP()) {
+         lastName: String? = "Rossi", isSample: Bool = false,
+         http: any HTTP = FixtureHTTP()) {
         self.matricola = matricola
         self.personCode = personCode
+        self.lastName = lastName
         self.isSample = isSample
         self.http = http
     }

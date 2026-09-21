@@ -28,6 +28,33 @@ nonisolated struct ManifestoTeaching: Identifiable, Sendable, Hashable, Codable 
     let credits: Double?
     let school: String?
     let degreeCourse: String?
+    /// The query that names this teaching's page on the Manifesti site.
+    ///
+    /// On the value rather than on a model because both of them build it — the
+    /// catalogue to read the scheda, the cart to find the add link on the same
+    /// page — and it is derivation from these fields and nothing else.
+    ///
+    /// - Parameter defaultYear: used where the row does not carry its own,
+    ///   which the search results sometimes do not.
+    func detailQuery(defaultYear: String) -> String {
+        var items = [
+            URLQueryItem(name: "EVN_DETTAGLIO_RIGA_MANIFESTO", value: "evento"),
+            URLQueryItem(name: "k_corso_la", value: courseCode),
+            URLQueryItem(name: "codDescr", value: code),
+            URLQueryItem(name: "aa", value: year ?? defaultYear),
+            URLQueryItem(name: "lang", value: PoliMiLanguage.current.rawValue),
+            URLQueryItem(name: "jaf_currentWFID", value: "main"),
+        ]
+        if let planCode { items.append(.init(name: "k_indir", value: planCode)) }
+        if let idItemOfferta { items.append(.init(name: "idItemOfferta", value: idItemOfferta)) }
+        if let idRiga { items.append(.init(name: "idRiga", value: idRiga)) }
+        if let semester { items.append(.init(name: "semestre", value: semester)) }
+
+        var components = URLComponents()
+        components.queryItems = items
+        return components.percentEncodedQuery ?? ""
+    }
+
 }
 
 /// The language a teaching is delivered in, as the manifesto flags it.
