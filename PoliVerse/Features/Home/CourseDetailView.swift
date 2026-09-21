@@ -133,7 +133,6 @@ struct CourseDetailView: View {
             .frame(maxWidth: 700)
             .frame(maxWidth: .infinity)
         }
-        .courseScreen()
         .navigationTitle(course.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

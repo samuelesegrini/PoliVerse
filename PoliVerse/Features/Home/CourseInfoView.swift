@@ -45,7 +45,6 @@ struct CourseInfoView: View {
             .frame(maxWidth: 700)
             .frame(maxWidth: .infinity)
         }
-        .courseScreen()
         .navigationTitle("Informazioni")
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(.success, trigger: copied)

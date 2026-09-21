@@ -214,33 +214,41 @@ struct GlanceStrip: View {
     }
 }
 
-// MARK: - Glass lists
+// MARK: - Look lists
 
 extension View {
-    /// A `List` drawn as the glass pages are: grouped sections floating on the
-    /// look's sheet, each row on glass. For the pages whose content is a list
-    /// already — Cerca's places — so they join the section without being
-    /// rebuilt by hand.
-    func glassList() -> some View {
+    /// A `List` in the look in use: grouped sections, spaced as the look's
+    /// pages are. Each `Section` asks for its own surface with ``lookRow()``
+    /// — a `listRowBackground` set here, on the `List`, does not reach the
+    /// rows, which is why lists across the app quietly stayed system-white
+    /// whichever material the student had chosen.
+    func lookList() -> some View {
         listStyle(.insetGrouped)
-            .listRowBackground(GlassRowBackground())
             .listSectionSpacing(18)
-            .courseScreen()
     }
 
-    /// Glass behind a row, for the rows a list builds in its own sections.
-    func glassRow() -> some View {
-        listRowBackground(GlassRowBackground())
+    /// The look's material behind a row, for the rows a list builds in its own
+    /// sections.
+    func lookRow() -> some View {
+        listRowBackground(LookRowBackground())
     }
 }
 
-/// The surface of a glass list row: glass where the system allows it inside a
-/// cell, over a faint fill so rows read as one card rather than as seams.
-struct GlassRowBackground: View {
+/// The surface of a list row: the look's material, squared off to the cell.
+///
+/// A cell has no corners of its own to round — the list rounds the group — so
+/// the material is drawn at radius zero and the section's shape does the rest.
+///
+/// The rectangle is clear on purpose. It used to be filled, faintly, to keep
+/// rows reading as one card; against a material that fill sat *in front* of
+/// the surface and hid it, so every list in the app stayed system-white
+/// whichever material the student had chosen. The material draws behind, and
+/// the rectangle is only there to give it the cell's full size.
+struct LookRowBackground: View {
     var body: some View {
         Rectangle()
-            .fill(.background.opacity(0.35))
-            .glassEffect(.regular, in: .rect)
+            .fill(.clear)
+            .lookCard(cornerRadius: 0)
     }
 }
 

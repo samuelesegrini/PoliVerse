@@ -49,9 +49,7 @@ struct CoursesPage: View {
 
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                LookHeader("Corsi", subtitle: subtitle(count: shown.count)) {
-                    WeekLoadFigure(events: agenda.events, courses: shown)
-                }
+                LookTitle("Corsi", subtitle: subtitle(count: shown.count))
 
                 if courses.academicYears.count > 1 || originFilter != .all {
                     filters
@@ -107,20 +105,7 @@ struct CoursesPage: View {
         .collapsingTitle("Corsi")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { menu }
-            #if DEBUG
-            // Le cinque prove di riscrittura di questa pagina, finché non se
-            // ne sceglie una. Solo in debug: non è roba da studenti.
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(value: CoursesRedesignRoute()) {
-                    Label("Prove di disegno", systemImage: "flask")
-                }
-                .accessibilityIdentifier("courses-redesign")
-            }
-            #endif
         }
-        #if DEBUG
-        .navigationDestination(for: CoursesRedesignRoute.self) { _ in CoursesRedesignPage() }
-        #endif
         // The course's own page, with its lessons, sittings, and every part
         // of it — notices, materials, forum, programme — one tap away.
         .navigationDestination(for: Course.self) { CourseDetailView(course: $0) }
