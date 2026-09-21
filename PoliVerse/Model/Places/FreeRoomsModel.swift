@@ -58,9 +58,9 @@ final class FreeRoomsModel {
     var day: Date = .now
     var campus: String?
 
-    private let catalogue: RoomsModel
+    private let catalogue: any RoomCatalogue
     private let session: URLSession
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "aule")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "aule")
 
     /// Sixty seconds, not the usual five minutes, and keyed on the day and
     /// campus being shown. Occupancy turns over on the lecture boundary, and
@@ -88,7 +88,7 @@ final class FreeRoomsModel {
     /// not faster.
     private let concurrency = 8
 
-    convenience init(catalogue: RoomsModel, preview rooms: [RoomSchedule]) {
+    convenience init(catalogue: any RoomCatalogue, preview rooms: [RoomSchedule]) {
         self.init(catalogue: catalogue)
         self.rooms = rooms
         self.skipsLoading = true
@@ -99,7 +99,7 @@ final class FreeRoomsModel {
     /// otherwise rewrite a file per campus.
     private var publishedCatalogue = false
 
-    init(catalogue: RoomsModel, session: URLSession = .shared) {
+    init(catalogue: any RoomCatalogue, session: URLSession = .shared) {
         self.catalogue = catalogue
         self.session = session
         loader = ResourceLoader(

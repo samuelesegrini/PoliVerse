@@ -74,16 +74,6 @@ final class RoomsModel {
         self.campuses = campuses
     }
 
-    func rooms(matching query: String, campus: String?) -> [Classroom] {
-        rooms.filter { room in
-            if let campus, room.campusName != campus { return false }
-            guard !query.isEmpty else { return true }
-            return room.id.localizedCaseInsensitiveContains(query)
-                || (room.buildingName ?? "").localizedCaseInsensitiveContains(query)
-                || (room.campusName ?? "").localizedCaseInsensitiveContains(query)
-        }
-    }
-
     /// The catalogue changes rarely, so a cached copy is served immediately and
     /// only refreshed when it is missing or a refresh is asked for.
     func load(force: Bool = false) async {

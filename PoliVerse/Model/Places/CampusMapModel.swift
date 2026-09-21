@@ -29,15 +29,15 @@ final class CampusMapModel {
     /// fetched, since a grey map is honest and a green one would not be.
     private(set) var showsAvailability = false
 
-    private let catalogue: RoomsModel
-    private let freeRooms: FreeRoomsModel
+    private let catalogue: any RoomCatalogue
+    private let freeRooms: any RoomAvailability
     private let http: any HTTP
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "map")
 
     /// Fetched once: buildings do not move.
     private var locations: [String: BuildingLocation] = [:]
 
-    convenience init(catalogue: RoomsModel, freeRooms: FreeRoomsModel, preview pins: [MapPin]) {
+    convenience init(catalogue: any RoomCatalogue, freeRooms: any RoomAvailability, preview pins: [MapPin]) {
         self.init(catalogue: catalogue, freeRooms: freeRooms)
         self.pins = pins
         self.placed = pins
@@ -46,7 +46,7 @@ final class CampusMapModel {
 
     private var skipsLoading = false
 
-    init(catalogue: RoomsModel, freeRooms: FreeRoomsModel, http: any HTTP = PublicHTTP()) {
+    init(catalogue: any RoomCatalogue, freeRooms: any RoomAvailability, http: any HTTP = PublicHTTP()) {
         self.catalogue = catalogue
         self.freeRooms = freeRooms
         self.http = http

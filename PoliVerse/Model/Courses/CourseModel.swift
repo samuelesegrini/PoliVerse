@@ -28,7 +28,7 @@ final class CourseModel {
     /// Where a change goes when it cannot be sent now.
     private let pending: PendingChanges?
     /// Fills in teaching codes from the student's plan.
-    private let programme: StudyProgrammeModel?
+    private let programme: (any TeachingCodes)?
 
     /// Local flags, used only for courses with no WeBeep counterpart — WeBeep
     /// itself is the source of truth for everything it knows about.
@@ -55,7 +55,7 @@ final class CourseModel {
     private var planCodes: [String: String] = [:]
 
     init(account: any Account, enrolments: any CourseEnrolments,
-         pending: PendingChanges? = nil, programme: StudyProgrammeModel? = nil,
+         pending: PendingChanges? = nil, programme: (any TeachingCodes)? = nil,
          defaults: UserDefaults = .standard) {
         self.enrolments = enrolments
         self.pending = pending

@@ -53,10 +53,10 @@ final class PersonalTimetableModel {
     /// The cart, not the catalogue: this model only ever spoke to that half —
     /// which is what made the split obvious. See ``TimetableCart``.
     private let cart: TimetableCart
-    private let agenda: AgendaModel?
+    private let agenda: (any TimetablePublishing)?
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "manifesti")
 
-    init(cart: TimetableCart, agenda: AgendaModel? = nil, preview: PersonalTimetable? = nil) {
+    init(cart: TimetableCart, agenda: (any TimetablePublishing)? = nil, preview: PersonalTimetable? = nil) {
         self.cart = cart
         self.agenda = agenda
         timetable = preview ?? DiskCache.load(PersonalTimetable.self, as: Self.cacheName)?.value
