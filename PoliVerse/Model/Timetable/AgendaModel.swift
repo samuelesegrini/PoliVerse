@@ -46,8 +46,11 @@ final class AgendaModel {
     /// The span currently held, so navigating past its edge can fetch more.
     private(set) var loadedRange: ClosedRange<Date>?
 
-    private let session: Session
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "agenda")
+    /// Only the matricola, the sample flag and the transport are wanted — see
+    /// ``Account``. Taking the whole ``Session`` meant this model could not be
+    /// built without the Keychain, which is why its load had no tests.
+    private let account: any Account
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "agenda")
     private var window = LoadWindow()
     private var slot = CachedSlot<[AgendaEvent]>(name: "agenda")
     /// How old the events on screen are.
@@ -56,7 +59,7 @@ final class AgendaModel {
     /// Identifies the data currently held, so a change of account — or of the
     /// sample-data toggle — always reloads instead of waiting out the window.
     private var source: String {
-        session.useMockData ? "mock" : (session.student?.matricola ?? "anonymous")
+        account.isSample ? "mock" : (account.matricola ?? "anonymous")
     }
 
 
@@ -70,14 +73,14 @@ final class AgendaModel {
     private let lookBehind = DateComponents(day: -7)
     private let lookAhead = DateComponents(month: 1)
 
-    init(session: Session) {
-        self.session = session
+    init(account: any Account) {
+        self.account = account
     }
 
     /// Last known timetable, shown before any request. Restored here rather
     /// than in `init()`, where the matricola is not known yet.
     private func restoreCache() {
-        guard let cached = slot.restore(for: session.student?.matricola) else { return }
+        guard let cached = slot.restore(for: account.matricola) else { return }
         officialEvents = TimetableMerge.officialOnly(cached)
         rebuild()
         age = slot.age
@@ -104,7 +107,7 @@ final class AgendaModel {
 
         restoreCache()
 
-        if session.useMockData {
+        if account.isSample {
             loadedRange = from...to
             officialEvents = AgendaEvent.samples(around: date)
             rebuild()
@@ -112,7 +115,7 @@ final class AgendaModel {
             return
         }
 
-        guard let matricola = session.student?.matricola else {
+        guard let matricola = account.matricola else {
             errorMessage = AuthError.notAuthenticated.localizedDescription
             return
         }
@@ -158,7 +161,7 @@ final class AgendaModel {
 
     /// Saved merged: the widgets show personal lessons too.
     private func saveForWidgets() {
-        guard !session.useMockData, let matricola = session.student?.matricola, loadedRange != nil else { return }
+        guard !account.isSample, let matricola = account.matricola, loadedRange != nil else { return }
         slot.save(events, for: matricola)
         // The widgets read this file; nothing else tells them it changed.
         // Without this the Lock Screen keeps last night's lecture until the
@@ -186,18 +189,17 @@ final class AgendaModel {
 
     private func fetchEvents(matricola: String, from: Date, to: Date) async -> [AgendaEvent]? {
         do {
-            let dtos = try await session.api.send(
-                APIRequest(
-                    host: .agenda,
-                    path: "/v1/matricola/\(matricola)/events",
-                    query: [
-                        .init(name: "start_date", value: PoliMiDate.queryString(from)),
-                        .init(name: "end_date", value: PoliMiDate.queryString(to)),
-                        .init(name: "n_events", value: String(pageSize)),
-                    ]
-                ),
-                as: [AgendaEventDTO].self
-            )
+            let data = try await account.http.data(for: APIRequest(
+                host: .agenda,
+                path: "/v1/matricola/\(matricola)/events",
+                query: [
+                    .init(name: "start_date", value: PoliMiDate.queryString(from)),
+                    .init(name: "end_date", value: PoliMiDate.queryString(to)),
+                    .init(name: "n_events", value: String(pageSize)),
+                ]
+            ))
+            let dtos = try await BackgroundJSON.decode([AgendaEventDTO].self, from: data,
+                                                       iso8601Dates: true)
             // Drop entries with unparseable timestamps rather than guessing at
             // a date and showing a lecture on the wrong day.
             let parsed = dtos.compactMap { $0.toEvent() }
@@ -217,17 +219,16 @@ final class AgendaModel {
     private func fetchDeadlines(matricola: String, from: Date) async -> [AgendaEvent]? {
         let to = PoliMiDate.romeCalendar.date(byAdding: .year, value: 1, to: from) ?? from
         do {
-            let dtos = try await session.api.send(
-                APIRequest(
-                    host: .agenda,
-                    path: "/v1/matricola/\(matricola)/events/deadlines",
-                    query: [
-                        .init(name: "start_date", value: PoliMiDate.queryString(from)),
-                        .init(name: "end_date", value: PoliMiDate.queryString(to)),
-                    ]
-                ),
-                as: [AgendaEventDTO].self
-            )
+            let data = try await account.http.data(for: APIRequest(
+                host: .agenda,
+                path: "/v1/matricola/\(matricola)/events/deadlines",
+                query: [
+                    .init(name: "start_date", value: PoliMiDate.queryString(from)),
+                    .init(name: "end_date", value: PoliMiDate.queryString(to)),
+                ]
+            ))
+            let dtos = try await BackgroundJSON.decode([AgendaEventDTO].self, from: data,
+                                                       iso8601Dates: true)
             let parsed = dtos.compactMap { $0.toEvent() }
             log.notice("agenda \(PoliMiDate.queryString(from), privacy: .public)…\(PoliMiDate.queryString(to), privacy: .public): \(dtos.count, privacy: .public) deadlines, \(parsed.count, privacy: .public) usable")
             return parsed

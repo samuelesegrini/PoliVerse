@@ -14,28 +14,33 @@ final class CareersModel {
     private(set) var isLoading = false
     private(set) var errorMessage: String?
 
-    private let session: Session
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "careers")
+    /// Only who is signed in and the transport — see ``Account``.
+    private let account: any Account
+    /// Where the per-person choice is kept. Injectable so a test cannot see
+    /// another's, which `UserDefaults.standard` made unavoidable.
+    private let defaults: UserDefaults
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "careers")
 
     /// The matricola the user last chose, per person. Keyed by `codicePersona`
     /// so two accounts on one device cannot inherit each other's choice.
     private func storedChoice(for personCode: String) -> String? {
-        UserDefaults.standard.string(forKey: "career-\(personCode)")
+        defaults.string(forKey: "career-\(personCode)")
     }
 
     private func store(_ matricola: String, for personCode: String) {
-        UserDefaults.standard.set(matricola, forKey: "career-\(personCode)")
+        defaults.set(matricola, forKey: "career-\(personCode)")
     }
 
     var current: Career? {
-        careers.first { $0.matricola == session.student?.matricola }
+        careers.first { $0.matricola == account.matricola }
     }
 
     /// Whether a switcher is worth showing at all.
     var hasChoice: Bool { careers.count > 1 }
 
-    init(session: Session) {
-        self.session = session
+    init(account: any Account, defaults: UserDefaults = .standard) {
+        self.account = account
+        self.defaults = defaults
     }
 
     func load() async {
@@ -44,14 +49,14 @@ final class CareersModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        if session.useMockData {
+        if account.isSample {
             careers = Career.samples()
             return
         }
 
         do {
-            let data = try await session.api.send(
-                APIRequest(host: .app, path: "/v1/careers/list"))
+            let data = try await account.http.data(
+                for: APIRequest(host: .app, path: "/v1/careers/list"))
             // Parses the payload a second time, on the main actor: a question
             // for a debugger, not a cost every student should pay.
             #if DEBUG
@@ -71,17 +76,17 @@ final class CareersModel {
     /// switching re-runs OAuth and takes the user through a web view, so it is
     /// offered rather than done behind their back.
     func suggestedSwitch() -> Career? {
-        guard let personCode = session.student?.personCode, careers.count > 1 else { return nil }
+        guard let personCode = account.personCode, careers.count > 1 else { return nil }
         let wanted = storedChoice(for: personCode).flatMap { stored in
             careers.first { $0.matricola == stored }
         } ?? Career.preferred(in: careers)
-        guard let wanted, wanted.matricola != session.student?.matricola else { return nil }
+        guard let wanted, wanted.matricola != account.matricola else { return nil }
         return wanted
     }
 
     /// Remembers the choice, so the app does not offer the same switch again.
     func remember(_ career: Career) {
-        guard let personCode = session.student?.personCode else { return }
+        guard let personCode = account.personCode else { return }
         store(career.matricola, for: personCode)
     }
 
@@ -92,7 +97,7 @@ final class CareersModel {
     /// acts on, and a failure here changes nothing the user can see.
     func markFavourite(_ career: Career) async {
         do {
-            _ = try await session.api.send(APIRequest(
+            _ = try await account.http.data(for: APIRequest(
                 host: .app,
                 path: "/v1/careers/favorite/\(career.matricola)",
                 method: "PUT"))

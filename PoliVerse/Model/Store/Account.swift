@@ -13,6 +13,10 @@ protocol Account: AnyObject {
     /// The signed-in matricola, or nil when signed out. Offline records are
     /// keyed by it, so nil means "cache nothing, restore nothing".
     var matricola: String? { get }
+    /// The person behind the enrolments, which is not the matricola: one
+    /// person has a matricola per career, and anything remembered *per person*
+    /// — which career they chose — has to be keyed by this instead.
+    var personCode: String? { get }
     /// True when the app is showing representative data rather than this
     /// student's. See ``Session/useMockData``.
     var isSample: Bool { get }
@@ -23,6 +27,7 @@ protocol Account: AnyObject {
 extension Session: Account {
     var isSample: Bool { useMockData }
     var matricola: String? { student?.matricola }
+    var personCode: String? { student?.personCode }
     var http: any HTTP { api }
 }
 
@@ -31,11 +36,14 @@ extension Session: Account {
 @MainActor
 final class StubAccount: Account {
     var matricola: String?
+    var personCode: String?
     var isSample: Bool
     var http: any HTTP
 
-    init(matricola: String? = "123456", isSample: Bool = false, http: any HTTP = FixtureHTTP()) {
+    init(matricola: String? = "123456", personCode: String? = "p1",
+         isSample: Bool = false, http: any HTTP = FixtureHTTP()) {
         self.matricola = matricola
+        self.personCode = personCode
         self.isSample = isSample
         self.http = http
     }

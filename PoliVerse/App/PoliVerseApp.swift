@@ -70,7 +70,7 @@ struct PoliVerseApp: App {
         // registrations below need the instances themselves.
         let notices = NoticeModel(account: session)
         _notices = State(initialValue: notices)
-        let careers = CareersModel(session: session)
+        let careers = CareersModel(account: session)
         _careers = State(initialValue: careers)
         let news = NewsModel(account: session)
         _news = State(initialValue: news)
@@ -93,7 +93,7 @@ struct PoliVerseApp: App {
         let weBeep = WeBeepModel(session: session, feed: updates)
         _weBeep = State(initialValue: weBeep)
 
-        let agenda = AgendaModel(session: session)
+        let agenda = AgendaModel(account: session)
         _agenda = State(initialValue: agenda)
         _personalTimetable = State(initialValue: PersonalTimetableModel(manifesti: manifesti, agenda: agenda))
         let career = CareerModel(account: session, feed: updates, pending: pending)
