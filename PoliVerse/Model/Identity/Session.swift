@@ -45,7 +45,7 @@ final class Session {
     /// Kept separate from ``state`` because the two are genuinely different:
     /// the session is fine, a subset of services is not.
     var serviceAuthorizationFailed = false
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "session")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "session")
     var profileBox: ProfileBox!
 
     /// How the student got in. Owned here, so that the order in which the

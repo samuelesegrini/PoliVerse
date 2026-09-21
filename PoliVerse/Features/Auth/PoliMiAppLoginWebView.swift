@@ -61,7 +61,7 @@ struct PoliMiAppLoginWebView: View {
     /// chooser loads. See ``SPIDCatalogue``.
     var onProvidersRead: (String) -> Void = { _ in }
 
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "oauth")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "oauth")
 
     private let appURL = URL(string: "https://polimiapp.polimi.it/polimi_app/app/")!
     private let credentialsKey = "24344_oauthCredentials"

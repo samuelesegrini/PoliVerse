@@ -19,7 +19,7 @@ import OSLog
 /// subscriber. Research and sources: `docs/metrickit-performance.md`.
 @MainActor
 enum PerformanceMonitor {
-    private static let log = Logger(subsystem: "one.wape.PoliVerse", category: "metrics")
+    private static let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "metrics")
     private static var started = false
 
     /// Whether iOS started the process ahead of the user opening the app.

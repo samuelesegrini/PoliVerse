@@ -40,7 +40,7 @@ nonisolated enum CieIDBridge {
     /// scheme, so this deliberately differs from the plain `poliverse` scheme
     /// used for the Moodle token — the two return payloads are unrelated and
     /// keeping them apart means neither handler can mis-parse the other.
-    static let returnScheme = "one.wape.PoliVerse"
+    static let returnScheme = "segrini.samuele.PoliVerse"
 
     /// CieID's own scheme. Upper case as the SDK writes it; schemes are
     /// case-insensitive, but matching the SDK avoids surprises.

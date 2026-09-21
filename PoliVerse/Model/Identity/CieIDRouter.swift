@@ -17,7 +17,7 @@ final class CieIDRouter {
     /// True while the user is over in the CieID app.
     private(set) var isAwaitingCieID = false
 
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "cieid")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "cieid")
 
     /// Called from `onOpenURL`. Returns true if this URL was ours.
     @discardableResult

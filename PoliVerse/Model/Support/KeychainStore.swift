@@ -11,7 +11,7 @@ import Security
 nonisolated enum KeychainStore {
     enum Failure: Error { case status(OSStatus) }
 
-    private static let service = "one.wape.PoliVerse.tokens"
+    private static let service = "segrini.samuele.PoliVerse.tokens"
 
     static func save(_ data: Data, account: String) throws {
         let query: [String: Any] = [

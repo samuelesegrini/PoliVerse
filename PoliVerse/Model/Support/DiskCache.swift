@@ -8,7 +8,7 @@ import OSLog
 /// bulk, non-secret, disposable data. Anything sensitive (tokens) belongs in
 /// ``KeychainStore``; anything tiny and scalar (a toggle) belongs in defaults.
 nonisolated enum DiskCache {
-    private static let log = Logger(subsystem: "one.wape.PoliVerse", category: "cache")
+    private static let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "cache")
 
     private static var directory: URL? {
         guard let base = FileManager.default.urls(

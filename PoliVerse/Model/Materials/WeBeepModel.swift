@@ -43,7 +43,7 @@ final class WeBeepModel {
         get { UserDefaults.standard.integer(forKey: "webeepWatchPass") }
         set { UserDefaults.standard.set(newValue, forKey: "webeepWatchPass") }
     }
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "webeep")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "webeep")
     private let keychainAccount = "webeep"
 
     private var api: WeBeepAPI?

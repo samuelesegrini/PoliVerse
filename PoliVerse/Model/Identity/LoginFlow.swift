@@ -23,7 +23,7 @@ final class LoginFlow {
     /// Unowned because ``Session`` owns this, and an object cannot keep its
     /// owner alive.
     private unowned let session: Session
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "login")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "login")
 
     init(session: Session) {
         self.session = session

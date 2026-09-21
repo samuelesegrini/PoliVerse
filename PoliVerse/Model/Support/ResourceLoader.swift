@@ -48,7 +48,7 @@ actor ResourceLoader<Key: Hashable & Sendable, Value: Sendable> {
     private let lifetime: Duration
     private let capacity: Int
     private let clock = ContinuousClock()
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "loader")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "loader")
 
     private var cache: [Key: Entry] = [:]
     private var inFlight: [Key: Task<Value?, Never>] = [:]

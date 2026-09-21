@@ -26,7 +26,7 @@ struct CareerSwitchView: View {
 
     @State private var pending: Career?
     @State private var working = false
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "careers")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "careers")
 
     var body: some View {
         List {

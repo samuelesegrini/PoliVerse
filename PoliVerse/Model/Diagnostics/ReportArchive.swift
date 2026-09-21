@@ -42,7 +42,7 @@ actor ReportArchive {
     private let directory: URL
     private let maxFiles: Int
     private let maxBytes: Int
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "metrics")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "metrics")
 
     init(directory: URL? = nil, maxFiles: Int = 60, maxBytes: Int = 5_000_000) {
         self.directory = directory ?? URL.applicationSupportDirectory

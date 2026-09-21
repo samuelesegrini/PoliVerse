@@ -25,7 +25,7 @@ final class SPIDCatalogue {
     private static let key = "spidProviders"
 
     private let defaults: UserDefaults
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "oauth")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "oauth")
     private var stored: [SPIDProvider]?
 
     init(defaults: UserDefaults = .standard) {

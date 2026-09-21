@@ -16,7 +16,7 @@ import UniformTypeIdentifiers
 /// and a format nobody thought of lands in the right group without an edit
 /// here.
 nonisolated enum StorageAudit {
-    private static let log = Logger(subsystem: "one.wape.PoliVerse", category: "storage")
+    private static let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "storage")
 
     /// A group of files, as one row and one segment of the bar.
     struct Category: Identifiable, Sendable, Equatable {

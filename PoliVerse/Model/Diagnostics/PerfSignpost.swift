@@ -40,7 +40,7 @@ nonisolated enum PerfSignpost {
     }
 
     private static let signposter = OSSignposter(
-        subsystem: "one.wape.PoliVerse", category: .pointsOfInterest)
+        subsystem: "segrini.samuele.PoliVerse", category: .pointsOfInterest)
 
     private static let metricLog = MetricManager.logHandle(category: "PoliVerse")
 

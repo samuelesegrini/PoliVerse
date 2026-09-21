@@ -42,7 +42,7 @@ nonisolated final class PerformanceTests: PoliVerseUITestCase {
     /// The agenda load, as the `agenda.load` signpost brackets it.
     @MainActor func testAgendaLoad() {
         let metric = XCTOSSignpostMetric(
-            subsystem: "one.wape.PoliVerse", category: "PointsOfInterest", name: "agenda.load")
+            subsystem: "segrini.samuele.PoliVerse", category: "PointsOfInterest", name: "agenda.load")
         let options = XCTMeasureOptions()
         options.iterationCount = 5
         measure(metrics: [metric], options: options) {

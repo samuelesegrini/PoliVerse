@@ -81,7 +81,7 @@ nonisolated struct ActionQueue: Sendable {
     /// rather than letting it vanish.
     private(set) var abandoned: [PendingAction] = []
 
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "queue")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "queue")
 
     var pending: [PendingAction] { entries.map(\.action) }
     var isEmpty: Bool { entries.isEmpty }

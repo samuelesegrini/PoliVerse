@@ -171,7 +171,7 @@ struct CareerPage: View {
 
     @State private var chosen: String?
     @State private var working = false
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "careers")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "careers")
 
     private var current: String? { session.student?.matricola }
     private var selection: Career? {

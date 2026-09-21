@@ -22,7 +22,7 @@ final class FileDownloadModel {
 
     private(set) var statuses: [String: Status] = [:]
 
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "download")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "download")
     private let session: URLSession
 
     init(session: URLSession = .shared) {

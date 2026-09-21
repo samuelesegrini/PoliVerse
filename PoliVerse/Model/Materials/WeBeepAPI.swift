@@ -38,7 +38,7 @@ nonisolated final class WeBeepAPI: Sendable {
 
     private let token: String
     private let session: URLSession
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "webeep")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "webeep")
 
     init(token: String, session: URLSession = .shared) {
         self.token = token

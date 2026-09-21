@@ -15,7 +15,7 @@ nonisolated enum AppDestination: String, Sendable {
 
     /// Deep links arrive here from every direction — intents, Spotlight,
     /// Handoff — so the routing lives in one place.
-    static let notification = Notification.Name("one.wape.PoliVerse.navigate")
+    static let notification = Notification.Name("segrini.samuele.PoliVerse.navigate")
 
     func send() {
         // Two channels, because the same intent can run in two processes.

@@ -29,7 +29,7 @@ final class LiveActivityController {
             .first { $0.id == activityID }
     }
     private var advance: Task<Void, Never>?
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "liveactivity")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "liveactivity")
 
     /// Whether the system will accept one at all. False when the student has
     /// switched Live Activities off for this app, which is a setting, not an
