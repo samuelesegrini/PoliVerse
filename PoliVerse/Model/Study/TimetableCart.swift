@@ -41,23 +41,14 @@ final class TimetableCart {
     /// different questions that happened to share a property.
     var year: AcademicYear = AcademicYear.recent().first ?? AcademicYear(code: "2026")
 
-    private let session: URLSession
+    private let pages: any PageFetching
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "carrello")
     private let base = URL(string: "https://onlineservices.polimi.it/manifesti/manifesti/controller")!
 
-    init() {
-        // Its own cookie jar: the cart is server-side state on a cookie, and
-        // it must not be able to touch the authenticated session.
-        let configuration = URLSessionConfiguration.default
-        configuration.httpCookieStorage = HTTPCookieStorage.sharedCookieStorage(
-            forGroupContainerIdentifier: "manifesti")
-        configuration.httpShouldSetCookies = true
-        // Never from a cache: every page on this session is the cart's state
-        // at this moment. A cached GET turned "empty the cart" into a no-op
-        // and returned an old timetable in place of the one just built.
-        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        configuration.urlCache = nil
-        self.session = URLSession(configuration: configuration)
+    /// - Parameter pages: the site this cart lives on. Stateful by default —
+    ///   the cart *is* the cookie — and swapped for a fixture in tests.
+    init(pages: any PageFetching = ScrapedSite.stateful(cookieGroup: "manifesti")) {
+        self.pages = pages
     }
 
     /// Tells the catalogue the surname, which is how it picks the bracket.
@@ -154,54 +145,11 @@ final class TimetableCart {
 
     private func page(_ path: String) async -> String? {
         guard let url = URL(string: "\(base.absoluteString)/\(path)") else { return nil }
-        var request = URLRequest(url: url)
-        request.timeoutInterval = 30
-        // The service varies its output by language, and asks in Italian by
-        // default only when told to.
-        request.setValue(PoliMiLanguage.current.acceptLanguage, forHTTPHeaderField: "Accept-Language")
-        do {
-            let (data, response) = try await session.data(for: request)
-            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-                return nil
-            }
-            return Self.decode(data)
-        } catch {
-            return nil
-        }
+        return await pages.page(url)
     }
 
     private func post(_ path: String, form: [String: String]) async -> String? {
         guard let url = URL(string: "\(base.absoluteString)/\(path)") else { return nil }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.timeoutInterval = 30
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request.setValue(PoliMiLanguage.current.acceptLanguage, forHTTPHeaderField: "Accept-Language")
-
-        var components = URLComponents()
-        components.queryItems = form.map { URLQueryItem(name: $0.key, value: $0.value) }
-        request.httpBody = components.percentEncodedQuery?.data(using: .utf8)
-
-        do {
-            let (data, response) = try await session.data(for: request)
-            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-                return nil
-            }
-            return Self.decode(data)
-        } catch {
-            guard !PoliMiAPI.isCancellation(error) else { return nil }
-            log.error("carrello: \(path, privacy: .public) fallito: \(error.localizedDescription)")
-            return nil
-        }
-    }
-
-    /// The pages declare UTF-8 and mostly mean it, but some are ISO-8859-1 —
-    /// a wrong guess turns every accented letter into a replacement character
-    /// across a page that is almost entirely prose.
-    private static func decode(_ data: Data) -> String? {
-        if let utf8 = String(data: data, encoding: .utf8), !utf8.contains("\u{FFFD}") {
-            return utf8
-        }
-        return String(data: data, encoding: .isoLatin1)
+        return await pages.post(url, form: form)
     }
 }

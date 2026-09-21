@@ -28,11 +28,9 @@ final class ManifestiModel {
     private(set) var errorMessage: String?
     var year: AcademicYear = AcademicYear.recent().first ?? AcademicYear(code: "2026")
 
-    /// No cookies at all. The service serialises requests that share a
-    /// `JSESSIONID`, so eight "parallel" detail pages on a cookie-bearing
-    /// session took eight times as long as one — which is half of why the
-    /// cart lives in ``TimetableCart`` and not here.
-    private let catalogue: URLSession
+    /// Stateless reads — see ``ScrapedSite/stateless()`` for why that matters
+    /// here, and ``TimetableCart`` for the half that is not stateless.
+    private let pages: any PageFetching
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "manifesti")
     private let base = URL(string: "https://onlineservices.polimi.it/manifesti/manifesti/controller")!
     private let syllabusBase = URL(string:
@@ -41,19 +39,15 @@ final class ManifestiModel {
     private let detailLoader: ResourceLoader<String, ManifestoDetail>
     private let syllabusLoader: ResourceLoader<String, Syllabus>
 
-    init() {
-        let reads = URLSessionConfiguration.default
-        reads.httpCookieStorage = nil
-        reads.httpShouldSetCookies = false
-        reads.httpCookieAcceptPolicy = .never
-        reads.requestCachePolicy = .returnCacheDataElseLoad
-        let session = URLSession(configuration: reads)
-        self.catalogue = session
+    /// - Parameter pages: the site the catalogue is read from. Swapped for a
+    ///   fixture in tests, which is the only way to exercise a scraper.
+    init(pages: any PageFetching = ScrapedSite.stateless()) {
+        self.pages = pages
 
         let base = self.base
         detailLoader = ResourceLoader(lifetime: .seconds(3600), capacity: 64) { key in
             guard let url = URL(string: "\(base.absoluteString)/ManifestoPublic.do?\(key)"),
-                  let html = await Self.page(url, session: session)
+                  let html = await pages.page(url)
             else { return nil }
             let code = HTMLScraper.queryValue("codDescr", in: key) ?? ""
             return ManifestoParser.detail(html, code: code)
@@ -73,7 +67,7 @@ final class ManifestiModel {
                 .init(name: "lang", value: PoliMiLanguage.current.rawValue),
             ]
             guard let url = components.url,
-                  let html = await Self.page(url, session: session)
+                  let html = await pages.page(url)
             else { return cached?.value }   // offline: last week's scheda beats none
             let parsed = ManifestoParser.syllabus(html)
             // An empty parse is a failure, not an answer: the service returns
@@ -257,7 +251,7 @@ final class ManifestiModel {
         var components = URLComponents()
         components.queryItems = selection?.queryItems(language: language) ?? [.init(name: "lang", value: language.rawValue)]
         guard let url = URL(string: "\(base.absoluteString)/ManifestoPublic.do?\(components.percentEncodedQuery ?? "")"),
-              let html = await Self.page(url, session: catalogue) else { return nil }
+              let html = await pages.page(url) else { return nil }
         return CatalogueParser.page(html)
     }
 
@@ -354,59 +348,11 @@ final class ManifestiModel {
 
     private func page(_ path: String) async -> String? {
         guard let url = URL(string: "\(base.absoluteString)/\(path)") else { return nil }
-        return await Self.page(url, session: catalogue)
-    }
-
-    private static func page(_ url: URL, session: URLSession) async -> String? {
-        var request = URLRequest(url: url)
-        request.timeoutInterval = 30
-        // The service varies its output by language, and asks in Italian by
-        // default only when told to.
-        request.setValue(PoliMiLanguage.current.acceptLanguage, forHTTPHeaderField: "Accept-Language")
-        do {
-            let (data, response) = try await session.data(for: request)
-            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-                return nil
-            }
-            return Self.decode(data)
-        } catch {
-            return nil
-        }
+        return await pages.page(url)
     }
 
     private func post(_ path: String, form: [String: String]) async -> String? {
-        let session = catalogue
         guard let url = URL(string: "\(base.absoluteString)/\(path)") else { return nil }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.timeoutInterval = 30
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request.setValue(PoliMiLanguage.current.acceptLanguage, forHTTPHeaderField: "Accept-Language")
-
-        var components = URLComponents()
-        components.queryItems = form.map { URLQueryItem(name: $0.key, value: $0.value) }
-        request.httpBody = components.percentEncodedQuery?.data(using: .utf8)
-
-        do {
-            let (data, response) = try await session.data(for: request)
-            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-                return nil
-            }
-            return Self.decode(data)
-        } catch {
-            guard !PoliMiAPI.isCancellation(error) else { return nil }
-            log.error("manifesti: \(path, privacy: .public) fallito: \(error.localizedDescription)")
-            return nil
-        }
-    }
-
-    /// The pages declare UTF-8 and mostly mean it, but some are ISO-8859-1 —
-    /// a wrong guess turns every accented letter into a replacement character
-    /// across a page that is almost entirely prose.
-    private static func decode(_ data: Data) -> String? {
-        if let utf8 = String(data: data, encoding: .utf8), !utf8.contains("\u{FFFD}") {
-            return utf8
-        }
-        return String(data: data, encoding: .isoLatin1)
+        return await pages.post(url, form: form)
     }
 }
