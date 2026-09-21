@@ -102,6 +102,32 @@ nonisolated struct StudyPlan: Sendable, Equatable {
         }
     }
 
+    /// The most recently sat exam carrying a numeric mark.
+    ///
+    /// Undated marks are excluded: "most recent" is a question about time, and
+    /// an exam with no date cannot answer it.
+    var lastGraded: LibrettoExam? {
+        graded
+            .filter { $0.date != nil }
+            .max { ($0.date ?? .distantPast) < ($1.date ?? .distantPast) }
+    }
+
+    /// How the weighted mean moved when ``lastGraded`` was recorded.
+    ///
+    /// The single most interesting thing about an average is which way it is
+    /// going, and a student cannot get that from a number on its own — they
+    /// would have to remember what it said last month. Both sides are computed
+    /// by the same arithmetic as ``weightedMean``, so the difference is honest
+    /// even where it is a tenth off the official mean.
+    ///
+    /// Nil until there are two marks to have moved between.
+    var meanDelta: Double? {
+        guard let last = lastGraded else { return nil }
+        let before = StudyPlan(exams: exams.filter { $0.id != last.id })
+        guard let previous = before.weightedMean, let current = weightedMean else { return nil }
+        return current - previous
+    }
+
     /// Everything still to sit, which has no year to be grouped under.
     static let pendingGroup = String(localized: "Da sostenere")
 

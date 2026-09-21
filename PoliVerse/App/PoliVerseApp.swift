@@ -59,11 +59,11 @@ struct PoliVerseApp: App {
         // Through locals, like the rest: the `@State` wrappers are not
         // readable until the struct is fully initialised, and the freshness
         // registrations below need the instances themselves.
-        let notices = NoticeModel(session: session)
+        let notices = NoticeModel(account: session)
         _notices = State(initialValue: notices)
         let careers = CareersModel(session: session)
         _careers = State(initialValue: careers)
-        let news = NewsModel(session: session)
+        let news = NewsModel(account: session)
         _news = State(initialValue: news)
         // Reads the public catalogue rather than the API client: occupancy
         // comes from maps_rest, which needs no token.
@@ -79,7 +79,7 @@ struct PoliVerseApp: App {
         _updates = State(initialValue: updates)
         let weBeep = WeBeepModel(session: session, feed: updates)
         _weBeep = State(initialValue: weBeep)
-        let courses = CourseModel(session: session, weBeep: weBeep)
+        let courses = CourseModel(account: session, enrolments: weBeep)
         _courses = State(initialValue: courses)
 
         // Registered here, at the end of init: it has to happen before the
@@ -89,7 +89,7 @@ struct PoliVerseApp: App {
         let agenda = AgendaModel(session: session)
         _agenda = State(initialValue: agenda)
         _personalTimetable = State(initialValue: PersonalTimetableModel(manifesti: manifesti, agenda: agenda))
-        let career = CareerModel(session: session, feed: updates)
+        let career = CareerModel(account: session, feed: updates)
         _career = State(initialValue: career)
         let programmes = StudyProgrammeModel(manifesti: manifesti, session: session, career: career,
                                                careers: careers)

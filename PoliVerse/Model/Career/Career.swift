@@ -40,7 +40,7 @@ nonisolated struct GradeBook: Sendable, Equatable, Codable {
 // MARK: - Exam sessions
 
 /// How an exam sitting relates to the student right now.
-nonisolated enum ExamStatus: Sendable, Equatable {
+nonisolated enum ExamStatus: Sendable, Equatable, Codable {
     /// Enrolment window open, not enrolled.
     case open
     /// Enrolled, sitting still to come.
@@ -64,7 +64,7 @@ nonisolated enum ExamStatus: Sendable, Equatable {
 }
 
 /// A published exam result.
-nonisolated struct ExamGrade: Sendable, Equatable {
+nonisolated struct ExamGrade: Sendable, Equatable, Codable {
     /// Numeric mark where one exists. Pass/fail and "idoneo" outcomes have none.
     let value: Int?
     /// The upstream text, e.g. "28", "30 e lode", "SUPERATO", "RESPINTO".
@@ -80,7 +80,9 @@ nonisolated struct ExamGrade: Sendable, Equatable {
 }
 
 /// One sitting of one exam.
-nonisolated struct ExamSession: Identifiable, Sendable, Equatable {
+/// `Codable` so that sittings survive a launch offline, like the libretto
+/// beside them: a student on a train should still see when their next exam is.
+nonisolated struct ExamSession: Identifiable, Sendable, Equatable, Codable {
     let id: Int
     let courseName: String
     let courseCode: String
