@@ -3,42 +3,54 @@ import Foundation
 /// Sample data for this area: what its screens show when the student chose
 /// "Esplora con dati di esempio", and what the previews render.
 ///
-/// Real names from an Ingegneria Informatica plan, so layout is tested against
-/// realistic string lengths rather than "Lorem ipsum". This ships — an
-/// incoherent demo is something a student sees.
+/// Built from ``SampleDegree``, so a course's credits, teacher and code are
+/// the plan's — the course page and the libretto cannot disagree about Basi
+/// di Dati being worth 10 CFU. This ships: an incoherent demo is something a
+/// student sees.
 
 nonisolated extension Course {
-    static let samples: [Course] = [
-        Course(id: "086655", name: "Architetture dei Sistemi di Elaborazione", teacher: "Marco Santambrogio",
-               cfu: 10, semester: "1", academicYear: "2024/25"),
-        Course(id: "095946", name: "Ingegneria del Software 2", teacher: "Carlo Ghezzi",
-               cfu: 10, semester: "1", academicYear: "2024/25"),
-        Course(id: "052470", name: "Geometria e Algebra Lineare", teacher: "Federico Bambozzi",
-               cfu: 10, semester: "1", academicYear: "2024/25"),
-        Course(id: "095951", name: "Basi di Dati", teacher: "Stefano Ceri",
-               cfu: 10, semester: "2", academicYear: "2024/25"),
-        Course(id: "086944", name: "Reti Logiche", teacher: "Fabrizio Ferrandi",
-               cfu: 10, semester: "1", academicYear: "2024/25"),
-        Course(id: "095857", name: "Automatica", teacher: "Sergio Matteo Savaresi",
-               cfu: 10, semester: "2", academicYear: "2024/25"),
-    ]
+    /// One WeBeep course per teaching with material worth showing: the
+    /// semester now running, plus the two of last year still to be sat and
+    /// the one whose mark just arrived.
+    static var samples: [Course] { samples(now: .now) }
+
+    static func samples(now: Date = .now) -> [Course] {
+        let shown = SampleDegree.currentTeachings
+            + ["089156", "091250", "095946"].map(SampleDegree.teaching)
+        return shown.enumerated().map { index, teaching in
+            var course = Course(
+                id: teaching.code,
+                name: teaching.name,
+                teacher: teaching.teacher,
+                cfu: teaching.cfu,
+                semester: String(teaching.semester),
+                academicYear: SampleDegree.academicYear(for: teaching, now: now)
+            )
+            course.code = teaching.code
+            course.moodleID = 1000 + index
+            return course
+        }
+    }
 
     /// Named so that the other areas' samples can point at the same course
     /// instead of retyping its name and its code. Six copies of "Basi di Dati"
     /// written out by hand is how a demo drifts out of step with itself.
-    static var architectures: Course { samples[0] }
-    static var softwareEngineering: Course { samples[1] }
-    static var geometry: Course { samples[2] }
-    static var databases: Course { samples[3] }
-    static var logicNetworks: Course { samples[4] }
-    static var control: Course { samples[5] }
+    static var softwareEngineering: Course { sample("095948") }
+    static var networks: Course { sample("086657") }
+    static var control: Course { sample("095857") }
+    static var databases: Course { sample("095946") }
+    static var economics: Course { sample("089156") }
+    static var operationsResearch: Course { sample("091250") }
+
+    private static func sample(_ code: String) -> Course {
+        samples.first { $0.id == code }!
+    }
 }
 
 nonisolated extension Career {
     static func samples() -> [Career] {
         [
-            Career(matricola: "986617", kind: "Laurea Triennale", status: "Chiusa"),
-            Career(matricola: "332218", kind: "Laurea Magistrale", status: "Attiva"),
+            Career(matricola: "986617", kind: "Laurea Triennale", status: "Attiva"),
         ]
     }
 }

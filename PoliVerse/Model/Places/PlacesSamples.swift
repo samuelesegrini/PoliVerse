@@ -18,26 +18,52 @@ nonisolated extension AuleSite {
 }
 
 nonisolated extension RoomSchedule {
+    /// The rooms the sample week's lessons are in, booked with those same
+    /// lessons — so a room opened from Oggi shows the lesson that sent the
+    /// student there, plus what comes after it.
     static func samples(on day: Date) -> [RoomSchedule] {
         let calendar = PoliMiDate.romeCalendar
         func at(_ hour: Int, _ minute: Int = 0) -> Date {
             calendar.date(bySettingHour: hour, minute: minute, second: 0, of: day) ?? day
         }
+        func named(_ code: String) -> String { SampleDegree.teaching(code).name }
+        var id = 0
+        func booking(_ from: (Int, Int), _ to: (Int, Int), _ title: String) -> RoomBooking {
+            id += 1
+            return RoomBooking(id: "b\(id)", start: at(from.0, from.1), end: at(to.0, to.1), title: title)
+        }
+
         return [
-            RoomSchedule(id: "3.0.1", name: "Aula 3.0.1", building: "Edificio 3",
-                         seats: 120, bookings: [
-                             RoomBooking(id: "a", start: at(8, 15), end: at(10, 15),
-                                         title: "Analisi Matematica 2"),
-                             RoomBooking(id: "b", start: at(14), end: at(16),
-                                         title: "Fisica Tecnica"),
+            RoomSchedule(id: "R.0.1", name: "Aula Rogers", building: "Edificio 3",
+                         seats: 320, bookings: [
+                             booking((8, 15), (10, 0), named("095948")),
+                             booking((10, 15), (13, 0), named("086657")),
+                             booking((14, 30), (16, 30), "Seminario — sistemi distribuiti"),
                          ]),
-            RoomSchedule(id: "2.1.4", name: "Aula 2.1.4", building: "Edificio 2",
-                         seats: 80, bookings: [
-                             RoomBooking(id: "c", start: at(10, 15), end: at(13, 15),
-                                         title: "Reti Logiche"),
+            RoomSchedule(id: "D.0.2", name: "Aula De Donato", building: "Edificio 3",
+                         seats: 240, bookings: [
+                             booking((10, 15), (13, 0), named("086657")),
+                             booking((14, 30), (17, 0), named("089156")),
                          ]),
-            RoomSchedule(id: "B.2.2", name: "Aula B.2.2", building: "Edificio B",
-                         seats: 60, bookings: []),
+            RoomSchedule(id: "C.1.1", name: "Aula Castigliano", building: "Edificio 5",
+                         seats: 180, bookings: [
+                             booking((9, 15), (12, 0), named("095857")),
+                         ]),
+            RoomSchedule(id: "L.0.5", name: "Lab Informatico", building: "Edificio 21",
+                         seats: 60, bookings: [
+                             booking((14, 15), (16, 0), named("095948") + " — esercitazione"),
+                         ]),
+            RoomSchedule(id: "L.1.2", name: "Lab Reti", building: "Edificio 21",
+                         seats: 48, bookings: [
+                             booking((9, 15), (12, 0), named("086657") + " — laboratorio"),
+                         ]),
+            RoomSchedule(id: "B.1.4", name: "Aula Beta", building: "Edificio 24",
+                         seats: 90, bookings: [
+                             booking((14, 15), (17, 0), named("095857")),
+                         ]),
+            // Free all day: the app has to be able to say so.
+            RoomSchedule(id: "A.2.3", name: "Aula Alfa", building: "Edificio 24",
+                         seats: 120, bookings: []),
         ]
     }
 }
