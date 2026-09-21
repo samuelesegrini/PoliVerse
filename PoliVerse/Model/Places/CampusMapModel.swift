@@ -31,10 +31,8 @@ final class CampusMapModel {
 
     private let catalogue: RoomsModel
     private let freeRooms: FreeRoomsModel
-    private let session: URLSession
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "map")
-    private let url = URL(string:
-        "https://onlineservices.polimi.it/maps_rest/rest/spazi/edificio/geojson?filter=")!
+    private let http: any HTTP
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "map")
 
     /// Fetched once: buildings do not move.
     private var locations: [String: BuildingLocation] = [:]
@@ -48,10 +46,10 @@ final class CampusMapModel {
 
     private var skipsLoading = false
 
-    init(catalogue: RoomsModel, freeRooms: FreeRoomsModel, session: URLSession = .shared) {
+    init(catalogue: RoomsModel, freeRooms: FreeRoomsModel, http: any HTTP = PublicHTTP()) {
         self.catalogue = catalogue
         self.freeRooms = freeRooms
-        self.session = session
+        self.http = http
     }
 
     var campuses: [String] { catalogue.campuses }
@@ -184,13 +182,11 @@ final class CampusMapModel {
 
     private func loadLocations() async {
         do {
-            var request = URLRequest(url: url)
-            request.setValue("application/json", forHTTPHeaderField: "Accept")
-            request.timeoutInterval = 30
-            let (data, response) = try await session.data(for: request)
-            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-                throw URLError(.badServerResponse)
-            }
+            // The empty `filter` is required: without the parameter the
+            // service answers 400 rather than "everything".
+            let data = try await http.data(for: APIRequest(
+                host: .maps, path: "/spazi/edificio/geojson",
+                query: [.init(name: "filter", value: "")], authenticated: false))
             let decoded = try await BackgroundJSON.decode(BuildingGeoJSON.self, from: data)
             locations = Dictionary(
                 decoded.locations.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
