@@ -16,8 +16,14 @@ struct TodayPresetsTests {
     }
 
     @Test("The first is the plain default, so a new student starts where the app always did")
-    func firstIsDefault() {
-        #expect(presets.first == TodayStyle())
+    func firstIsDefault() throws {
+        var first = try #require(presets.first)
+        // Apart from its name. The gallery needs something to call it, and a
+        // name is not a change to how the screen looks — which is what this
+        // test is actually about.
+        #expect(first.name.isEmpty == false)
+        first.name = ""
+        #expect(first == TodayStyle())
     }
 
     @Test("Each survives storage unchanged")

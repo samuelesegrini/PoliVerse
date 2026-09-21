@@ -3,8 +3,8 @@ import Foundation
 /// Sample data for this area: what its screens show when the student chose
 /// "Esplora con dati di esempio", and what the previews render.
 ///
-/// Real names from an Ingegneria Informatica plan, so layout is tested against
-/// realistic string lengths rather than "Lorem ipsum". This ships — an
+/// The week is built from ``SampleDegree``'s third-year teachings, so every
+/// lesson on Oggi has a course page and a sitting behind it. This ships — an
 /// incoherent demo is something a student sees.
 
 nonisolated extension AgendaEvent {
@@ -46,37 +46,74 @@ nonisolated extension AgendaEvent {
             )
         }
 
+        // The week is the third year's first semester — the same teachings
+        // the course pages and the plan carry, so a lesson on Oggi always has
+        // a course behind it to open.
+        func named(_ code: String) -> String { SampleDegree.teaching(code).name }
+
         return [
-            event(Course.geometry.name, 0, 8, 10, room: "Aula Rogers", acronym: "R.0.1"),
-            event("Architetture dei Calcolatori", 0, 10, 13, room: "Aula De Donato", acronym: "D.0.2"),
-            event(Course.databases.name, 1, 9, 12, room: "Aula Castigliano", acronym: "C.1.1"),
-            event(Course.logicNetworks.name, 1, 14, 16, room: "Aula Alfa", acronym: "A.2.3"),
-            event(Course.control.name, 2, 8, 11, room: "Aula Rogers", acronym: "R.0.1"),
-            event(Course.softwareEngineering.name, 2, 14, 17, room: "Aula Beta", acronym: "B.1.4"),
-            deadline("Consegna progetto IS", 2, 23, 59),
-            event("Basi di Dati — esercitazione", 3, 10, 13, room: "Lab Informatico", acronym: "L.0.5"),
-            event("Architetture dei Calcolatori", 4, 9, 12, room: "Aula De Donato", acronym: "D.0.2"),
-            event("Prova in itinere — Analisi 2", 4, 14, 16, .exam, room: "Aula Magna", acronym: "M.0.1"),
+            // Monday
+            event(named("095948"), 0, 8, 10, room: "Aula Rogers", acronym: "R.0.1"),
+            event(named("086657"), 0, 10, 13, room: "Aula De Donato", acronym: "D.0.2"),
+            // Not a lesson: office hours belong to the lecturer, not to a
+            // teaching's timetable, and anything asking for the day's lessons
+            // must not count them.
+            event("Ricevimento — " + SampleDegree.teaching("095948").teacher, 0, 15, 16, .custom,
+                  room: "Studio 3.2.7", acronym: "S.3.2"),
+            // Tuesday
+            event(named("095857"), 1, 9, 12, room: "Aula Castigliano", acronym: "C.1.1"),
+            event(named("095948") + " — esercitazione", 1, 14, 16,
+                  room: "Lab Informatico", acronym: "L.0.5"),
+            // Wednesday
+            event(named("086657"), 2, 8, 11, room: "Aula Rogers", acronym: "R.0.1"),
+            event(named("095857"), 2, 14, 17, room: "Aula Beta", acronym: "B.1.4"),
+            deadline("Consegna — " + SampleDegree.teaching("095948").assignments.first!.name, 2, 23, 59),
+            // Thursday
+            event(named("095948"), 3, 10, 13, room: "Aula Alfa", acronym: "A.2.3"),
+            // A seminar is open to the school, not a lesson of a teaching the
+            // student is enrolled in.
+            event("Seminario — sistemi distribuiti in produzione", 3, 17, 19, .custom,
+                  room: "Aula Rogers", acronym: "R.0.1"),
+            // Friday: the lab, a mid-term, and the sitting the student is
+            // enrolled in — three kinds of day in one column.
+            event(named("086657") + " — laboratorio", 4, 9, 12, room: "Lab Reti", acronym: "L.1.2"),
+            event("Prova in itinere — " + named("095857"), 4, 14, 16, .exam,
+                  room: "Aula Magna", acronym: "M.0.1"),
+            deadline("Consegna — " + SampleDegree.teaching("086657").assignments.first!.name, 4, 23, 59),
         ]
     }
 }
 
 nonisolated extension PersonalTimetable {
-    static var sample: PersonalTimetable {
+    /// The Manifesto's own view of the same semester: the third year's
+    /// teachings, at the hours the week's lessons run.
+    static var sample: PersonalTimetable { sample(now: .now) }
+
+    static func sample(now: Date = .now) -> PersonalTimetable {
         let calendar = PoliMiDate.romeCalendar
-        let start = calendar.date(from: DateComponents(year: 2026, month: 9, day: 14))
-        let end = calendar.date(from: DateComponents(year: 2026, month: 12, day: 23))
+        // The semester the student is in, not a year typed into the source.
+        let year = calendar.component(.year, from: now)
+            - (calendar.component(.month, from: now) >= 9 ? 0 : 1)
+        let start = calendar.date(from: DateComponents(year: year, month: 9, day: 14))
+        let end = calendar.date(from: DateComponents(year: year, month: 12, day: 23))
         let address = "Milano Città Studi - Piazza Leonardo da Vinci 32 - Edificio 3 - Piano Primo"
-        return PersonalTimetable(name: "Rossi Mario", yearCode: "2026", entries: [
-            .init(code: "052496", title: "ALGORITHMS AND PARALLEL COMPUTING", teacher: "Rossi Matteo Giovanni",
-                  semester: 1, lessonsStart: start, lessonsEnd: end, slots: [
-                    .init(weekday: 2, startMinutes: 495, endMinutes: 615, room: "3.1.4", roomID: "46", address: address),
-                    .init(weekday: 4, startMinutes: 615, endMinutes: 735, room: "3.1.1", roomID: "63", address: address),
-                  ]),
-            .init(code: "059156", title: "ANALISI MATEMATICA 1 E GEOMETRIA", teacher: "Notari Roberto",
-                  semester: 1, lessonsStart: start, lessonsEnd: end, slots: [
-                    .init(weekday: 2, startMinutes: 495, endMinutes: 615, room: "5.02", roomID: "4738", address: address),
-                  ]),
-        ], builtAt: .now)
+        let rooms = [("3.1.4", "46"), ("3.1.1", "63"), ("5.02", "4738")]
+
+        let entries = SampleDegree.currentTeachings.enumerated().map { index, teaching in
+            let room = rooms[index % rooms.count]
+            return PersonalTimetable.Entry(
+                code: teaching.code,
+                title: teaching.name.uppercased(),
+                teacher: teaching.teacher,
+                semester: teaching.semester,
+                lessonsStart: start, lessonsEnd: end,
+                slots: [
+                    .init(weekday: 2 + index % 4, startMinutes: 495 + index * 120,
+                          endMinutes: 615 + index * 120,
+                          room: room.0, roomID: room.1, address: address),
+                ])
+        }
+        return PersonalTimetable(name: "Segrini Samuele", yearCode: String(year), entries: entries,
+                                 builtAt: now)
     }
 }
