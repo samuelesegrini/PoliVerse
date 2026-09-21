@@ -254,6 +254,32 @@ nonisolated enum PoliMiDate {
         )
     }
 
+    /// The academic year an **exam sitting** belongs to, as "2025/26".
+    ///
+    /// ## Why this is not ``Course/academicYearLabel(for:)``
+    ///
+    /// They answer different questions and draw the boundary in different
+    /// months, and the difference is load bearing for two weeks a year.
+    ///
+    /// A *teaching* starts in September, so September opens its year — that is
+    /// `academicYearLabel`, and it is right for "which year is this course in".
+    /// A *sitting* is the other end of the same year: the autumn session in
+    /// September closes the year whose teaching it examines rather than opening
+    /// the next one. Filing a September sitting under the new year points it at
+    /// a different edition of the manifesto — different lecturers, different
+    /// scheda — and marks it under the wrong year in the libretto.
+    ///
+    /// ``LibrettoExam/academicYear(calendar:)`` had this rule written out
+    /// inline and correct; the exam-scheda screen had the other one and was
+    /// wrong. One named rule, used by both.
+    static func academicYear(ofSitting date: Date,
+                             calendar: Calendar = PoliMiDate.romeCalendar) -> String? {
+        let parts = calendar.dateComponents([.year, .month], from: date)
+        guard let year = parts.year, let month = parts.month else { return nil }
+        let start = month >= 10 ? year : year - 1
+        return "\(start)/\(String(format: "%02d", (start + 1) % 100))"
+    }
+
     /// The `start_date` query parameter wants a bare `yyyy-MM-dd`.
     static func queryString(_ date: Date) -> String { dateOnly.string(from: date) }
 

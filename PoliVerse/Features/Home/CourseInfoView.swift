@@ -50,8 +50,7 @@ struct CourseInfoView: View {
         .sensoryFeedback(.success, trigger: copied)
         .task {
             await agenda.load(around: .now)
-            let pick = await programmes.pick(teachingCode: course.teachingCode, name: course.name,
-                                             yearCode: course.academicYearStart, courseID: course.id)
+            let pick = await programmes.pick(TeachingRef(course))
             // Only from the student's own plan: the catalogue-wide fallback
             // may be another degree course, with other lecturers.
             if let pick, pick.matchesDegree {

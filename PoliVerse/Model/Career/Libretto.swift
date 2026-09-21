@@ -46,9 +46,6 @@ nonisolated struct LibrettoExam: Identifiable, Sendable, Hashable, Codable {
     func academicYear(calendar: Calendar = PoliMiDate.romeCalendar) -> String? {
         if let year, !year.isEmpty { return year }
         guard let date else { return nil }
-        let parts = calendar.dateComponents([.year, .month], from: date)
-        guard let year = parts.year, let month = parts.month else { return nil }
-        let start = month >= 10 ? year : year - 1
-        return "\(start)/\(String(format: "%02d", (start + 1) % 100))"
+        return PoliMiDate.academicYear(ofSitting: date, calendar: calendar)
     }
 }

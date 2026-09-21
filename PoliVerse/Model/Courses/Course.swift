@@ -166,7 +166,9 @@ extension Course {
         [code, id].compactMap { $0 }.first { $0.range(of: "^[0-9]{6}$", options: .regularExpression) != nil }
     }
 
-    static func academicYearLabel(for date: Date) -> String {
+    /// `nonisolated` like its neighbours above: it is arithmetic over a date
+    /// and has no business requiring the main actor to answer.
+    nonisolated static func academicYearLabel(for date: Date) -> String {
         let calendar = PoliMiDate.romeCalendar
         let year = calendar.component(.year, from: date)
         let start = calendar.component(.month, from: date) >= 9 ? year : year - 1

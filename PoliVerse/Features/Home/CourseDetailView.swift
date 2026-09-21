@@ -155,8 +155,7 @@ struct CourseDetailView: View {
             // opens on an answer rather than a spinner. After the career, so
             // the degree course is known and the tap asks the same question.
             if !session.useMockData,
-               let pick = await programmes.pick(teachingCode: course.teachingCode, name: course.name,
-                                                yearCode: course.academicYearStart, courseID: course.id) {
+               let pick = await programmes.pick(TeachingRef(course)) {
                 // Only from the student's own plan: the catalogue-wide fallback
                 // may be another degree course, with other lecturers.
                 let names = pick.teachers

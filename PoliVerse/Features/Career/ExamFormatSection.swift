@@ -90,9 +90,8 @@ struct ExamFormatSection: View {
             // Sample data has invented codes: no catalogue lookups for it.
             guard !session.useMockData else { return }
             // The scheda of the sitting's own academic year: a September
-            // sitting belongs to the year that is ending.
-            let year = exam.date.map { String(Course.academicYearLabel(for: $0).prefix(4)) }
-            let pick = await programmes.pick(teachingCode: exam.courseCode, name: exam.courseName, yearCode: year)
+            // sitting belongs to the year that is ending — see ``TeachingRef``.
+            let pick = await programmes.pick(TeachingRef(exam))
             guard let id = pick?.module.syllabusID else { return }
             classID = id
             syllabus = await manifesti.syllabus(for: id)

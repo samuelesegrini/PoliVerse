@@ -344,8 +344,7 @@ struct CourseSyllabusView: View {
         .sheet(isPresented: $choosingBracket) {
             BracketPicker(title: course.name, surname: session.student?.lastName ?? "",
                           chosen: bracketCode.flatMap { programmes.programme?.bracket(for: $0) },
-                          load: { await programmes.brackets(teachingCode: course.teachingCode, name: course.name,
-                                                            yearCode: course.academicYearStart, courseID: course.id)?.1 ?? [] },
+                          load: { await programmes.brackets(TeachingRef(course))?.1 ?? [] },
                           onChoose: { bracket in
                               if let code = bracketCode { programmes.choose(bracket: bracket, forTeaching: code) }
                           })
@@ -497,8 +496,7 @@ struct CourseSyllabusView: View {
     private func load() async {
         loading = true
         defer { loading = false }
-        pick = await programmes.pick(teachingCode: course.teachingCode, name: course.name,
-                                     yearCode: course.academicYearStart, courseID: course.id)
+        pick = await programmes.pick(TeachingRef(course))
         syllabus = nil
         if let id = pick?.module.syllabusID { syllabus = await manifesti.syllabus(for: id) }
     }

@@ -21,7 +21,7 @@ final class StudyProgrammeModel {
     private let career: CareerModel
     private let careers: CareersModel?
     private let store: StudyProgrammeStore
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "manifesti")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "manifesti")
 
     /// The student's course codes per academic year, from the course list —
     /// what tells which plan a course outside the programme belongs to.
@@ -340,7 +340,7 @@ final class StudyProgrammeModel {
     /// Which plan teaching a course is, in its own academic year: a link made
     /// by hand, else code, else name — in the app's language, then in the
     /// other one, since WeBeep titles and the manifesto do not always agree.
-    func planTeaching(codes: [String], name: String, year: String?, courseID: String? = nil) async -> PlanTeaching? {
+    private func planTeaching(codes: [String], name: String, year: String?, courseID: String? = nil) async -> PlanTeaching? {
         await prepare()
         let plan = await plan(forYear: year)
         if let courseID, let linked = programme?.links[courseID], let row = plan.first(where: { $0.teaching.code == linked }) {
@@ -433,9 +433,10 @@ final class StudyProgrammeModel {
     /// in the bracket they chose, the one their WeBeep page shows, or their
     /// surname's. Falls back to the catalogue-wide search when there is no
     /// programme or the plan does not list the teaching.
-    func pick(teachingCode: String?, name: String, yearCode: String?, courseID: String? = nil) async -> SyllabusPicker.Pick? {
+    func pick(_ ref: TeachingRef) async -> SyllabusPicker.Pick? {
         let surname = session.student?.lastName
-        if let row = await planTeaching(codes: [teachingCode].compactMap { $0 }, name: name, year: yearCode, courseID: courseID),
+        if let row = await planTeaching(codes: ref.codes, name: ref.name, year: ref.yearCode,
+                                        courseID: ref.courseID),
            let detail = await manifesti.detail(for: row.teaching),
            let module = SyllabusPicker.module(in: detail.modules, bracket: programme?.bracket(for: row.teaching.code),
                                               surname: surname) {
@@ -445,25 +446,16 @@ final class StudyProgrammeModel {
                                        module: module, matchesDegree: true,
                                        parts: SyllabusPicker.parts(of: module, in: detail.modules))
         }
-        guard let teachingCode else { return nil }
-        return await manifesti.syllabusPick(teachingCode: teachingCode, surname: surname,
-                                            degreeName: career.planHeader?.course, yearCode: yearCode)
-    }
-
-    func prefetch(teachingCode: String?, name: String, yearCode: String?, courseID: String? = nil) {
-        Task(priority: .utility) {
-            if let id = await pick(teachingCode: teachingCode, name: name, yearCode: yearCode, courseID: courseID)?
-                .module.syllabusID {
-                _ = await manifesti.syllabus(for: id)
-            }
-        }
+        guard let code = ref.code else { return nil }
+        return await manifesti.syllabusPick(teachingCode: code, surname: surname,
+                                            degreeName: career.planHeader?.course,
+                                            yearCode: ref.yearCode)
     }
 
     /// The brackets of the plan teaching a course is, for choosing one.
-    func brackets(teachingCode: String?, name: String, yearCode: String?, courseID: String? = nil)
-        async -> (PlanTeaching, [BracketChoice])? {
-        guard let row = await planTeaching(codes: [teachingCode].compactMap { $0 }, name: name, year: yearCode,
-                                           courseID: courseID) else { return nil }
+    func brackets(_ ref: TeachingRef) async -> (PlanTeaching, [BracketChoice])? {
+        guard let row = await planTeaching(codes: ref.codes, name: ref.name, year: ref.yearCode,
+                                           courseID: ref.courseID) else { return nil }
         return (row, await manifesti.brackets(for: row.teaching))
     }
 
