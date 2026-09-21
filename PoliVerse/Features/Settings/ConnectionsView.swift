@@ -645,6 +645,7 @@ extension ServiceDirectory.Service {
         case .libretto: "Piano di studi"
         case .weBeep: "WeBeep"
         case .wsAule: "Aule"
+        case .maps: "Mappa del campus"
         }
     }
 
@@ -656,6 +657,7 @@ extension ServiceDirectory.Service {
         case .libretto: "list.bullet.clipboard"
         case .weBeep: "books.vertical"
         case .wsAule: "building.2"
+        case .maps: "map"
         }
     }
 }

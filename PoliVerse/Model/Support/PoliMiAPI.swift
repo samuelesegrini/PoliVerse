@@ -111,7 +111,7 @@ nonisolated final class PoliMiAPI: Sendable {
     private let session: URLSession
     private let tokens: TokenStore
     private let directory: ServiceDirectory
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "api")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "api")
 
     private let maxRetries = 3
 
@@ -308,7 +308,9 @@ nonisolated final class PoliMiAPI: Sendable {
         switch request.host {
         case .iae, .libretto, .wsAule: true
         case .app: request.path.hasPrefix("/jaf/")
-        case .agenda, .weBeep: false
+        // `maps` never reaches this client — it is unauthenticated and goes
+        // through ``PublicHTTP`` — but the answer is the same as the agenda's.
+        case .agenda, .weBeep, .maps: false
         }
     }
 

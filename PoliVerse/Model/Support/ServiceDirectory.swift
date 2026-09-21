@@ -42,6 +42,14 @@ final class ServiceDirectory {
         case weBeep
         /// The room catalogue with its bookings — what is busy and when.
         case wsAule
+        /// The campus map service: which rooms exist, in which building, on
+        /// which floor. Public and needing no token, unlike ``wsAule``, which
+        /// answers what is *happening* in them.
+        ///
+        /// Listed here rather than hardcoded because four models were each
+        /// carrying their own copy of the URL, which is precisely the drift
+        /// this directory exists to prevent.
+        case maps
 
         /// Key in the `props` payload, where one exists.
         var propsKey: String? {
@@ -49,7 +57,7 @@ final class ServiceDirectory {
             case .iae: "iae.base_url"
             case .libretto: "libretto.base_url"
             case .wsAule: "ws_aule.base_url"
-            case .app, .agenda, .weBeep: nil
+            case .app, .agenda, .weBeep, .maps: nil
             }
         }
 
@@ -65,7 +73,7 @@ final class ServiceDirectory {
             case .iae: "iae.profile"
             case .libretto: "libretto.profile"
             case .wsAule: "ws_aule.profile"
-            case .app, .agenda, .weBeep: nil
+            case .app, .agenda, .weBeep, .maps: nil
             }
         }
 
@@ -79,7 +87,9 @@ final class ServiceDirectory {
         /// was working perfectly.
         var refusalMeansBrokenSession: Bool {
             switch self {
-            case .wsAule: false
+            // Unauthenticated, so a refusal from it says nothing about the
+            // session either.
+            case .wsAule, .maps: false
             case .app, .iae, .agenda, .libretto, .weBeep: true
             }
         }
@@ -93,7 +103,7 @@ final class ServiceDirectory {
             // bearing: a non-zero service profile is exactly the condition
             // under which the official client appends `matricola`.
             case .wsAule: 3
-            case .app, .agenda, .weBeep: nil
+            case .app, .agenda, .weBeep, .maps: nil
             }
         }
 
@@ -107,6 +117,7 @@ final class ServiceDirectory {
             case .libretto: URL(string: "https://api.polimi.it/piano_studente")!
             case .weBeep: URL(string: "https://webeep.polimi.it")!
             case .wsAule: URL(string: "https://api.polimi.it/ws_aule")!
+            case .maps: URL(string: "https://onlineservices.polimi.it/maps_rest/rest")!
             }
         }
     }
@@ -177,7 +188,7 @@ final class ServiceDirectory {
     private(set) var oauth: OAuthParams = .fallback
     private(set) var didLoad = false
 
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "directory")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "directory")
     private let session: URLSession
 
     init(session: URLSession = .shared) {

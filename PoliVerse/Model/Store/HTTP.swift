@@ -24,6 +24,54 @@ extension PoliMiAPI: HTTP {
     }
 }
 
+/// The unauthenticated adapter, for the services that take no token.
+///
+/// The campus map is public, and routing it through ``PoliMiAPI`` would make a
+/// catalogue anyone can read wait on a login it does not need. It still comes
+/// through `HTTP` so that it is substitutable in tests and previews like
+/// everything else — which is the whole point, since the four models that used
+/// to build their own `URLSession` for it had no way to be tested at all.
+nonisolated struct PublicHTTP: HTTP {
+    private let session: URLSession
+    private let directory: ServiceDirectory?
+
+    init(session: URLSession = .shared, directory: ServiceDirectory? = nil) {
+        self.session = session
+        self.directory = directory
+    }
+
+    func data(for request: APIRequest) async throws -> Data {
+        let base = await directory?.baseURL(for: request.host) ?? request.host.fallback
+        guard var components = URLComponents(
+            url: base.appendingPathComponent(request.path), resolvingAgainstBaseURL: false)
+        else { throw APIError.endpointGone(request.path) }
+        components.queryItems = request.query.isEmpty ? nil : request.query
+        guard let url = components.url else { throw APIError.endpointGone(request.path) }
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = request.method
+        urlRequest.httpBody = request.body
+        urlRequest.timeoutInterval = 30
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        do {
+            let (data, response) = try await session.data(for: urlRequest)
+            guard let http = response as? HTTPURLResponse else { return data }
+            guard (200..<300).contains(http.statusCode) else {
+                if http.statusCode == 404 { throw APIError.endpointGone(request.path) }
+                let body = String(data: data.prefix(1200), encoding: .utf8) ?? "<binary>"
+                throw APIError.badStatus(http.statusCode, body: body)
+            }
+            return data
+        } catch let error as APIError {
+            throw error
+        } catch {
+            if PoliMiAPI.isCancellation(error) { throw APIError.cancelled }
+            throw APIError.transport(error)
+        }
+    }
+}
+
 /// The adapter tests and previews swap in: canned bytes, no network.
 ///
 /// An actor so that it can record what was asked of it without a lock; the

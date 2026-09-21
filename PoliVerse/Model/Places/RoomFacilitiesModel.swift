@@ -15,7 +15,7 @@ final class RoomFacilitiesModel {
     private(set) var equipment: [String: [RoomFacility]] = [:]
     private(set) var software: [String: [RoomFacility]] = [:]
 
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "aule")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "aule")
     private let loader: ResourceLoader<String, RoomDetails>
 
     /// Equipment and software together: they are always wanted together, and
@@ -26,15 +26,14 @@ final class RoomFacilitiesModel {
         let software: [RoomFacility]
     }
 
-    init(session: URLSession = .shared) {
-        let base = URL(string: "https://onlineservices.polimi.it/maps_rest/rest/ricerca/aula")!
+    init(http: any HTTP = PublicHTTP()) {
         loader = ResourceLoader(
             // A room's projector does not move; an hour is conservative.
             lifetime: .seconds(3600),
             capacity: 256
         ) { id in
-            async let kit = Self.fetch(path: "dotazioni", id: id, base: base, session: session)
-            async let apps = Self.fetch(path: "software", id: id, base: base, session: session)
+            async let kit = Self.fetch(path: "dotazioni", id: id, http: http)
+            async let apps = Self.fetch(path: "software", id: id, http: http)
             let (loadedKit, loadedApps) = await (kit, apps)
             // Both failing is a failure; one failing is a room with no
             // software, which is the normal case.
@@ -92,17 +91,14 @@ final class RoomFacilitiesModel {
         Task { [loader] in await loader.clear() }
     }
 
+    /// Nil rather than throwing: one of the two endpoints failing is a room
+    /// with no software listed, which is the normal case.
     private static func fetch(
-        path: String, id: String, base: URL, session: URLSession
+        path: String, id: String, http: any HTTP
     ) async -> [RoomFacility]? {
-        var request = URLRequest(url: base.appendingPathComponent("\(path)/\(id)"))
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.timeoutInterval = 20
         do {
-            let (data, response) = try await session.data(for: request)
-            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-                return nil
-            }
+            let data = try await http.data(for: APIRequest(
+                host: .maps, path: "/ricerca/aula/\(path)/\(id)", authenticated: false))
             return try await BackgroundJSON.decode([RoomFacility].self, from: data)
                 .filter { !$0.name.isEmpty }
         } catch {

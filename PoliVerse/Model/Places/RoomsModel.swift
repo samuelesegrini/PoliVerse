@@ -35,9 +35,18 @@ final class RoomsModel {
     private(set) var isLoading = false
     private(set) var errorMessage: String?
 
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "rooms")
-    private let session: URLSession
-    private let base = URL(string: "https://onlineservices.polimi.it/maps_rest/rest")!
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "rooms")
+    /// The transport, through the one seam — see ``HTTP``. The base URL lives
+    /// in ``ServiceDirectory`` as ``ServiceDirectory/Service/maps`` rather than
+    /// here, so the four models that read this service cannot drift apart.
+    private let http: any HTTP
+    /// Which ``DiskCache`` file holds the catalogue.
+    ///
+    /// Injectable only so a test cannot overwrite the real one: this cache is
+    /// deliberately *not* keyed by account — a campus is the same campus for
+    /// everyone — so there is no matricola to keep two runs apart the way
+    /// ``OfflineStore`` does.
+    private let cacheName: String
 
     /// Seeds the catalogue and stops it fetching. For previews only — the
     /// maps service is unauthenticated and has no mock path of its own, so
@@ -51,8 +60,9 @@ final class RoomsModel {
 
     private var skipsLoading = false
 
-    init(session: URLSession = .shared) {
-        self.session = session
+    init(http: any HTTP = PublicHTTP(), cacheName: String = "rooms") {
+        self.http = http
+        self.cacheName = cacheName
         // The cached catalogue is *not* read here: this runs while the app is
         // launching, and decoding 350 rooms from disk on the main thread is a
         // stall before anything is on screen. ``load(force:)`` reads it in the
@@ -85,7 +95,7 @@ final class RoomsModel {
 
         // Disk first, so callers have a catalogue to draw within a frame or
         // two rather than after four network round-trips.
-        if rooms.isEmpty, let cached = await Self.cachedCatalogue() {
+        if rooms.isEmpty, let cached = await Self.cachedCatalogue(cacheName) {
             adopt(cached.rooms, campuses: cached.campuses)
         }
 
@@ -104,7 +114,7 @@ final class RoomsModel {
 
             log.notice("rooms: \(rawRooms.count, privacy: .public) in catalogue, \(joined.rooms.count, privacy: .public) usable")
             adopt(joined.rooms, campuses: joined.campuses)
-            await Self.cache(joined.rooms)
+            await Self.cache(joined.rooms, as: cacheName)
         } catch {
             log.error("Room catalogue failed: \(error.localizedDescription)")
             errorMessage = userFacingMessage(error)
@@ -166,8 +176,8 @@ final class RoomsModel {
     }
 
     @concurrent
-    private static func cachedCatalogue() async -> Catalogue? {
-        guard let cached = DiskCache.load([Classroom].self, as: "rooms"), !cached.value.isEmpty
+    private static func cachedCatalogue(_ name: String) async -> Catalogue? {
+        guard let cached = DiskCache.load([Classroom].self, as: name), !cached.value.isEmpty
         else { return nil }
         return Catalogue(cached.value)
     }
@@ -175,19 +185,13 @@ final class RoomsModel {
     /// Encoding 350 rooms and writing them is a file write; it belongs off the
     /// main thread just as much as the decode does.
     @concurrent
-    private static func cache(_ rooms: [Classroom]) async {
-        DiskCache.save(rooms, as: "rooms")
+    private static func cache(_ rooms: [Classroom], as name: String) async {
+        DiskCache.save(rooms, as: name)
     }
 
     private func fetch<T: Decodable & Sendable>(_ path: String, as type: T.Type) async throws -> T {
-        var request = URLRequest(url: base.appendingPathComponent(path))
-        request.timeoutInterval = 30
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw APIError.badStatus((response as? HTTPURLResponse)?.statusCode ?? -1, body: "")
-        }
+        let data = try await http.data(for: APIRequest(host: .maps, path: path,
+                                                       authenticated: false))
         return try await BackgroundJSON.decode(T.self, from: data)
     }
 }
