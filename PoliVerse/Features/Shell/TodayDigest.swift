@@ -5,12 +5,18 @@ import Foundation
 nonisolated enum TodayDigest {
     /// One line of In arrivo, whichever source it came from.
     nonisolated struct Item: Identifiable, Equatable, Sendable {
+        /// Where the line came from.
         nonisolated enum Source: Sendable { case exam, deadline }
 
+        /// The line's identity, which carries its source.
         let id: String
+        /// What is happening.
         let title: String
+        /// One more line, such as the course or the room.
         let detail: String?
+        /// When it happens.
         let date: Date
+        /// Where the line came from.
         let source: Source
         /// The detail a tap opens, when there is one.
         var opens: TodayDetail?
@@ -45,6 +51,12 @@ nonisolated enum TodayDigest {
         return Array(ahead.sorted { ($0.date ?? now) < ($1.date ?? now) }.prefix(limit))
     }
 
+    /// Whether a sitting is still to come and still ungraded.
+    ///
+    /// - Parameters:
+    ///   - session: The sitting.
+    ///   - start: The start of today.
+    /// - Returns: True when the sitting has a date at or after `start` and no mark yet.
     private static func isAhead(_ session: ExamSession, from start: Date) -> Bool {
         guard let date = session.date, date >= start else { return false }
         if case .graded = session.status { return false }
@@ -59,11 +71,12 @@ nonisolated enum TodayDigest {
         let agendaExams = events.filter { $0.kind == .exam }
         let fromAgenda = events
             .filter { ($0.kind == .exam || $0.kind == .deadline) && $0.start >= now }
-            .map { Item(id: "event-\($0.id)", title: $0.title, detail: $0.room ?? $0.roomAcronym, date: $0.start,
+            .map { Item(id: "event-\($0.id)", title: $0.title, detail: $0.roomLabel, date: $0.start,
                         source: $0.kind == .exam ? .exam : .deadline, opens: .event($0)) }
         let fromWeBeep = deadlines
             .filter { $0.due >= now }
-            .map { Item(id: "deadline-\($0.id)", title: $0.name, detail: $0.courseName, date: $0.due, source: .deadline) }
+            .map { Item(id: "deadline-\($0.id)", title: $0.name, detail: $0.courseName, date: $0.due,
+                        source: .deadline, opens: .deadline($0)) }
         let fromCareer = exams
             .filter { isAhead($0, from: now) }
             .filter { session in
@@ -81,9 +94,13 @@ nonisolated enum TodayDigest {
 /// One entry of a section, whatever the section lists and whatever form it
 /// is drawn in.
 nonisolated struct TodayEntry: Identifiable, Equatable, Sendable {
+    /// The entry's identity.
     let id: String
+    /// The entry's SF Symbol.
     let symbol: String
+    /// What the entry is.
     let title: String
+    /// One more line, such as the room or the course.
     let detail: String?
     /// When it happens, written as the rows write it: "domani", "09:15".
     let when: String
@@ -96,13 +113,19 @@ nonisolated struct TodayEntry: Identifiable, Equatable, Sendable {
 /// A detail an Oggi row opens: the same screens the calendar and the career
 /// open, presented over the page.
 nonisolated enum TodayDetail: Identifiable, Equatable, Sendable {
+    /// A lesson, exam or deadline from the agenda.
     case event(AgendaEvent)
+    /// A sitting from the career.
     case exam(ExamSession)
+    /// A WeBeep assignment deadline.
+    case deadline(AssignmentDeadline)
 
+    /// The detail's identity, which names its kind.
     var id: String {
         switch self {
         case .event(let event): "event-\(event.id)"
         case .exam(let exam): "exam-\(exam.id)"
+        case .deadline(let deadline): "deadline-\(deadline.id)"
         }
     }
 }

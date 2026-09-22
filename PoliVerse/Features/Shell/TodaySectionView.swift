@@ -3,8 +3,11 @@ import SwiftUI
 /// One ``TodaySection`` of the Oggi page, drawn in its material, density and
 /// colour, filled from the agenda, WeBeep and the career.
 struct TodaySectionView: View {
+    /// The section to draw, with its kind, form, density and colours.
     let section: TodaySection
+    /// The look the section is drawn in.
     let style: TodayStyle
+    /// The day the section is about.
     let day: Date
     /// While arranging, one short row in place of the list: a page of compact
     /// tiles fits on screen, so a section can be carried past all the others.
@@ -13,13 +16,20 @@ struct TodaySectionView: View {
     /// where a tap edits the section.
     var opensDetails = false
 
+    /// The environment's `shell`.
     @Environment(\.shell) private var shell
+    /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
+    /// The shared ``UpdateFeed``, from the environment.
     @Environment(UpdateFeed.self) private var updates
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// True when the section is drawn small, which every measurement here reads.
     private var compact: Bool { section.density == .compact }
 
     /// The Flavor's accent for a tinted section's symbols, grey otherwise.
@@ -27,6 +37,7 @@ struct TodaySectionView: View {
         section.tinted ? style.accent(scheme) : .secondary
     }
 
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 6 : 10) {
             Label(section.kind.title, systemImage: section.kind.systemImage)
@@ -42,6 +53,7 @@ struct TodaySectionView: View {
 
     // MARK: - Card
 
+    /// The section's body in whichever form it asks for: a card per lesson in its course's colour, tiles, or one card of rows.
     @ViewBuilder
     private var card: some View {
         let entries = entries(now: .now)
@@ -62,6 +74,10 @@ struct TodaySectionView: View {
         }
     }
 
+    /// One lesson as its own card in its course's colour.
+    ///
+    /// - Parameter lesson: The lesson.
+    /// - Returns: The card.
     private func lessonCard(_ lesson: AgendaEvent) -> some View {
         let colour = Theme.courseAccents[TodayDigest.colourIndex(for: lesson.title)]
         let shape = RoundedRectangle(cornerRadius: compact ? 16 : 22, style: .continuous)
@@ -81,7 +97,7 @@ struct TodaySectionView: View {
                     if !compact {
                         Text([lesson.start.formatted(.dateTime.hour().minute().locale(locale)) + " – "
                               + lesson.end.formatted(.dateTime.hour().minute().locale(locale)),
-                              lesson.room ?? lesson.roomAcronym].compactMap { $0 }.joined(separator: " · "))
+                              lesson.roomLabel].compactMap { $0 }.joined(separator: " · "))
                             // Not dimmed: at .caption over the light accents
                             // 80% white falls under AA, and this line carries
                             // the aula — the string read at a glance while
@@ -125,6 +141,7 @@ struct TodaySectionView: View {
         }
     }
 
+    /// The section's rows on one card of the look's material.
     private var materialCard: some View {
         let material = style.material(for: section)
         let padding: CGFloat = material.hasCard ? (compact ? 10 : 14) : 0
@@ -137,6 +154,7 @@ struct TodaySectionView: View {
 
     // MARK: - Content
 
+    /// What the section lists: one short row while arranging, the entries otherwise, or a line saying there is nothing.
     @ViewBuilder
     private var content: some View {
         // Read once: two passes either side of a lesson's end would disagree.
@@ -179,7 +197,7 @@ struct TodaySectionView: View {
                                symbol: current.event.kind == .exam ? "pencil.and.list.clipboard" : "person.bubble",
                                title: current.event.title,
                                detail: [current.isOngoing ? String(localized: "Adesso") : String(localized: "Prossima"),
-                                        current.event.room ?? current.event.roomAcronym].compactMap { $0 }.joined(separator: " · "),
+                                        current.event.roomLabel].compactMap { $0 }.joined(separator: " · "),
                                when: when, date: current.event.start, opens: .event(current.event))]
         case .upcoming:
             return TodayDigest.upcoming(events: agenda.events, deadlines: updates.deadlines, exams: career.sessions,
@@ -198,7 +216,7 @@ struct TodaySectionView: View {
                 TodayEntry(id: "event-\(event.id)",
                            symbol: event.kind == .exam ? "pencil.and.list.clipboard"
                                                        : SubjectSymbol.symbol(for: event.title),
-                           title: event.title, detail: event.room ?? event.roomAcronym,
+                           title: event.title, detail: event.roomLabel,
                            when: event.start.formatted(.dateTime.hour().minute().locale(locale)),
                            date: event.start, opens: .event(event))
             }
@@ -207,7 +225,7 @@ struct TodaySectionView: View {
                 TodayEntry(id: "deadline-\(deadline.id)", symbol: "pencil.and.list.clipboard",
                            title: deadline.name, detail: deadline.courseName,
                            when: deadline.due.formatted(.dateTime.day().month(.abbreviated).locale(locale)),
-                           date: deadline.due, opens: nil)
+                           date: deadline.due, opens: .deadline(deadline))
             }
         case .exams:
             return TodayDigest.exams(career.sessions, now: now, limit: section.itemLimit).map { session in
@@ -219,6 +237,7 @@ struct TodaySectionView: View {
         }
     }
 
+    /// What an empty section says, in the words its kind calls for.
     private var emptyText: LocalizedStringKey {
         switch section.kind {
         case .currentClass: "Nessuna lezione oggi"
@@ -397,6 +416,16 @@ struct TodaySectionView: View {
         .padding(.vertical, compact ? 4 : 6)
     }
 
+    /// One row, opening its detail when there is one.
+    ///
+    /// - Parameters:
+    ///   - symbol: The row's SF Symbol.
+    ///   - title: What it is.
+    ///   - detail: One more line, if any.
+    ///   - trailing: When it is.
+    ///   - last: True for the last row, which draws no divider.
+    ///   - opens: The screen a tap opens, if any.
+    /// - Returns: The row.
     private func row(symbol: String, title: String, detail: String?, trailing: String, last: Bool,
                      opens: TodayDetail? = nil) -> some View {
         opening(opens) {
@@ -404,6 +433,15 @@ struct TodaySectionView: View {
         }
     }
 
+    /// A row's own layout, without the tap.
+    ///
+    /// - Parameters:
+    ///   - symbol: The row's SF Symbol.
+    ///   - title: What it is.
+    ///   - detail: One more line, dropped in the compact density.
+    ///   - trailing: When it is.
+    ///   - last: True for the last row, which draws no divider.
+    /// - Returns: The row's content.
     private func rowContent(symbol: String, title: String, detail: String?, trailing: String, last: Bool) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
@@ -436,6 +474,10 @@ struct TodaySectionView: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// The line a section shows in place of its list when there is nothing.
+    ///
+    /// - Parameter text: What to say.
+    /// - Returns: The line.
     private func empty(_ text: LocalizedStringKey) -> some View {
         Text(text)
             .font(.subheadline)
@@ -446,8 +488,13 @@ struct TodaySectionView: View {
 
 /// The section title is plain text; a tinted section shows its symbol too.
 private struct TitleOnlyUnlessTinted: LabelStyle {
+    /// True when the section is tinted, and so shows its symbol.
     let tinted: Bool
 
+    /// Lays the title out.
+    ///
+    /// - Parameter configuration: The label's icon and title.
+    /// - Returns: The styled label.
     func makeBody(configuration: Configuration) -> some View {
         if tinted {
             HStack(spacing: 6) { configuration.icon; configuration.title }

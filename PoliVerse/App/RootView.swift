@@ -1,33 +1,36 @@
 import SwiftUI
 
-/// Routes between login and the tab bar, and is the tab bar: the restructured
-/// app shell, in the layout the student chose, four tabs instead of five, or
-/// a single page with a bottom panel.
+/// Routes between the first run, sign-in and the app shell, and is the shell: the tab
+/// layout, or a single page with a bottom panel.
 ///
-/// Used to be two types — this router and a separate `NewRootView` for the
-/// shell — split apart when the shell was a rewrite sitting next to the
-/// interface it was replacing. That older interface is gone, so the "New"
-/// was already misleading, and the split stopped earning its keep: routing
-/// and shell had nothing left to keep apart from each other.
+/// Both layouts reach the same places, listed once in ``NewDestination``, and share one
+/// view tree — only the bottom changes when the layout does, so switching does not
+/// cross-fade two navigation bars and two pages at once.
 ///
-/// Oggi merges the old Home and Calendario's day, since both show the same
-/// lessons and exams filtered differently; the full calendar lives in Cerca.
-/// Corsi replaces the WeBeep tab and the Home course grid. Both layouts reach
-/// the same places, listed once in ``NewDestination``. See
+/// Oggi shows the day's lessons, exams and deadlines; the full calendar lives under
+/// search. Corsi holds the enrolled teachings and their materials. See
 /// `docs/information-architecture.md`.
 struct RootView: View {
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The shared ``OnboardingState``, from the environment.
     @Environment(OnboardingState.self) private var onboarding
+    /// The shared ``WhatsNewState``, from the environment.
     @Environment(WhatsNewState.self) private var whatsNew
 
+    /// Which tab or panel row is showing, and the panel's own state.
+    /// Which layout the student chose: the tab bar, or the single page.
     @State private var shell = ShellState()
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
     /// The look in use sets the colour of the app's controls.
     @AppStorage(TodayStyle.storageKey) private var todayStyle = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
     @AppStorage(SearchTabKeyboard.storageKey) private var searchOpensKeyboard = true
     @State private var layoutChangePending = false
+    /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
+    /// The shared ``UpdateFeed``, from the environment.
     @Environment(UpdateFeed.self) private var feed
     /// Moved on when a lesson starts or ends, so the accessory follows the
     /// timetable without redrawing the whole tab tree every minute.
@@ -39,6 +42,7 @@ struct RootView: View {
         return CurrentClass.forAccessory(from: agenda.events, now: now)
     }
 
+    /// The view's content.
     var body: some View {
         Group {
 
@@ -93,6 +97,8 @@ struct RootView: View {
 
     // MARK: - Tab shell
 
+    /// The shell in either layout: one tree, with the page and its bar kept in place and only
+    /// the bottom — tab bar or panel — changing.
     private var shellContent: some View {
         // One tree for both layouts. Swapping two whole screens cross-faded
         // two navigation bars, two pages and a tab bar at once; here the page
@@ -132,6 +138,7 @@ struct RootView: View {
                 switch detail {
                 case .event(let event): EventDetailView(event: event)
                 case .exam(let exam): ExamDetailView(exam: exam)
+                case .deadline(let deadline): DeadlineDetailView(deadline: deadline)
                 }
             }
             // What changed in this update, once. Only past the first run:
@@ -149,8 +156,10 @@ struct RootView: View {
             .environment(\.shell, shell)
     }
 
-    /// The layout on screen trails the stored setting, so a change made in
-    /// Impostazioni first closes the sheet, then animates.
+    /// Moves to a layout, selecting Oggi first when moving to the single page so the panel
+    /// opens onto something.
+    ///
+    /// - Parameter layout: The layout to show.
     private func show(_ layout: AppLayout) {
         if layout == .singlePage { shell.selection = .today }
         withAnimation(.spring(duration: 0.5, bounce: 0.12)) {
@@ -158,6 +167,7 @@ struct RootView: View {
         }
     }
 
+    /// The four tabs: Oggi, Corsi, Carriera and Cerca.
     private var tabs: some View {
         TabView(selection: $shell.selection) {
             Tab("Oggi", systemImage: "calendar.day.timeline.left", value: .today) {
@@ -211,19 +221,17 @@ struct RootView: View {
 
 /// The gap between the launch screen and the first real screen.
 ///
-/// Holds the launch screen's own background rather than drawing over it, so
-/// there is nothing to see across the handover — no white page with a spinner
-/// parachuted into the middle of it, which is what this was.
+/// Holds the launch screen's own background rather than drawing over it, so there is
+/// nothing to see across the handover.
 ///
-/// The spinner is kept, but only for the wait that deserves one. What happens
-/// here is a Keychain read; ``LoginFlow/restore()`` no longer puts the service
-/// directory's two network round-trips in front of it. So the usual case is a
-/// frame or two, and a spinner that appears and vanishes inside a tenth of a
-/// second is a flash rather than information. If the wait does run long — a
-/// device under load, a slow unlock — it fades in and says so.
+/// The wait is normally a Keychain read — a frame or two — and a spinner that appears and
+/// vanishes inside a tenth of a second is a flash rather than information, so one fades
+/// in only if the wait runs long.
 private struct LaunchGate: View {
+    /// Set once the wait has run long enough to be worth a spinner.
     @State private var isTakingAWhile = false
 
+    /// The view's content.
     var body: some View {
         Color(.systemBackground)
             .ignoresSafeArea()
