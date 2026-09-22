@@ -4,6 +4,8 @@ import AppIntents
 /// so they read as "… in PoliVerse" rather than competing with every other
 /// app's "apri l'orario".
 struct PoliVerseShortcuts: AppShortcutsProvider {
+    /// The shortcuts Siri and the Shortcuts app offer without the student building anything,
+    /// each with the phrases it answers to.
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: OpenTimetableIntent(),
@@ -35,6 +37,24 @@ struct PoliVerseShortcuts: AppShortcutsProvider {
                       "Prossimo esame in \(.applicationName)"],
             shortTitle: "Prossimo esame",
             systemImageName: "calendar.badge.clock")
+        AppShortcut(
+            intent: ExamDateIntent(),
+            phrases: ["Quando è l'esame di \(\.$exam) in \(.applicationName)",
+                      "Data dell'appello \(\.$exam) in \(.applicationName)"],
+            shortTitle: "Data di un appello",
+            systemImageName: "calendar.badge.clock")
+        AppShortcut(
+            intent: NextLectureIntent(),
+            phrases: ["Quando ho lezione di \(\.$course) in \(.applicationName)",
+                      "Prossima lezione di \(\.$course) in \(.applicationName)"],
+            shortTitle: "Prossima lezione",
+            systemImageName: "person.bubble")
+        AppShortcut(
+            intent: RoomFreeIntent(),
+            phrases: ["\(\.$room) è libera in \(.applicationName)",
+                      "Controlla \(\.$room) in \(.applicationName)"],
+            shortTitle: "Aula libera",
+            systemImageName: "door.left.hand.open")
         AppShortcut(
             intent: OpenMaterialsIntent(),
             phrases: ["Apri WeBeep in \(.applicationName)",

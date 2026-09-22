@@ -6,16 +6,28 @@ struct AppShellDuties: ViewModifier {
     /// Opens a destination in the interface on screen.
     let route: (AppDestination) -> Void
 
+    /// Whether the app is on screen, in the foreground or in the background.
     @Environment(\.scenePhase) private var scenePhase
+    /// The shared ``CourseModel``, from the environment.
     @Environment(CourseModel.self) private var courses
+    /// The shared ``RoomsModel``, from the environment.
     @Environment(RoomsModel.self) private var rooms
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
+    /// The shared ``UpdateFeed``, from the environment.
     @Environment(UpdateFeed.self) private var feed
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The shared ``NotificationModel``, from the environment.
     @Environment(NotificationModel.self) private var notifications
+    /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
     @State private var spotlight = SpotlightIndex()
 
+    /// Applies the modifier to `content`.
+    ///
+    /// - Parameter content: The view being modified.
+    /// - Returns: The modified view.
     func body(content: Content) -> some View {
         content
             // Remote pictures load through a session with a cache of their own.
@@ -51,6 +63,11 @@ struct AppShellDuties: ViewModifier {
                     rooms: rooms.rooms,
                     teachers: Teacher.roster(courses: courses.courses, sessions: career.sessions),
                     exams: career.sessions)
+                // The same material, in the narrow shape an App Intent can read
+                // from a process where none of these services exist.
+                EntityIndexWriter.write(courses: courses.courses, rooms: rooms.rooms,
+                                        exams: career.sessions,
+                                        account: session.student?.matricola)
             }
             // Reminders follow the timetable: lectures move and exams are
             // withdrawn, and a reminder for a lecture that no longer exists is
@@ -74,7 +91,12 @@ struct AppShellDuties: ViewModifier {
     }
 }
 
+/// Attaching the shell's duties to a view.
 extension View {
+    /// Applies ``AppShellDuties``.
+    ///
+    /// - Parameter route: Opens a destination in the interface on screen.
+    /// - Returns: The view with the shell's duties attached.
     func appShellDuties(route: @escaping (AppDestination) -> Void) -> some View {
         modifier(AppShellDuties(route: route))
     }
