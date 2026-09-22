@@ -9,16 +9,26 @@ import SwiftUI
 /// Turning it over keeps it one object: the controls belong to that card, not
 /// to a screen somewhere else.
 struct SectionFormPicker: View {
+    /// Which section is being set up.
     let kind: TodaySection.Kind
+    /// The look being edited.
     @Binding var style: TodayStyle
     /// Back to the bento, once the section is off the page.
     var close: () -> Void = {}
 
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
+    /// The environment's `shell`.
     @Environment(\.shell) private var shell
     @State private var page: TodaySection.Form
     @State private var flipped = false
 
+    /// Opens the picker on the form the section already has.
+    ///
+    /// - Parameters:
+    ///   - kind: Which section.
+    ///   - style: The look being edited.
+    ///   - close: Called once the section has been taken off the page.
     init(kind: TodaySection.Kind, style: Binding<TodayStyle>, close: @escaping () -> Void = {}) {
         self.kind = kind
         _style = style
@@ -28,14 +38,18 @@ struct SectionFormPicker: View {
         _page = State(initialValue: style.wrappedValue.section(kind)?.form ?? .list)
     }
 
+    /// The curve the card turns over on.
     private static let turn = Animation.spring(duration: 0.45, bounce: 0.12)
 
+    /// The forms this kind of section can take.
     private var forms: [TodaySection.Form] { kind.forms }
 
+    /// The section as the look has it, or a default one when it is not on the page.
     private var section: TodaySection {
         style.section(kind) ?? TodaySection(kind: kind)
     }
 
+    /// The view's content.
     var body: some View {
         VStack(spacing: 0) {
             if !flipped, forms.count > 1 {
@@ -70,6 +84,7 @@ struct SectionFormPicker: View {
 
     // MARK: - Front
 
+    /// The title over the card, on the front only.
     private var header: some View {
         VStack(spacing: 5) {
             Text("Forma")
@@ -83,6 +98,7 @@ struct SectionFormPicker: View {
         .padding(.top, 6)
     }
 
+    /// The button under the card that turns it over to the surface controls.
     private var footer: some View {
         VStack(spacing: 14) {
             Button {
@@ -99,6 +115,7 @@ struct SectionFormPicker: View {
 
     // MARK: - The card, and its back
 
+    /// The card itself, front and back, turning on one axis.
     private var card: some View {
         ZStack {
             front
@@ -112,6 +129,7 @@ struct SectionFormPicker: View {
         .rotation3DEffect(.degrees(flipped ? 180 : 0), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
     }
 
+    /// The forms as pages to swipe through, with the stepper under them.
     private var front: some View {
         TabView(selection: $page) {
             ForEach(forms) { form in
@@ -132,6 +150,7 @@ struct SectionFormPicker: View {
         .padding(.bottom, forms.count > 1 ? 44 : 0)
     }
 
+    /// The surface and content controls, and the way to take the section off the page.
     private var back: some View {
         SectionControlsCard(kind: kind, style: $style, onFlip: { withAnimation(Self.turn) { flipped = false } },
                             onHide: {
@@ -152,12 +171,17 @@ struct SectionFormPicker: View {
 /// form on screen stretches into the Flavor's accent, so the colour says which
 /// one it is as much as the position does.
 private struct FormStepper: View {
+    /// Every form the section can take.
     let forms: [TodaySection.Form]
+    /// The form on screen.
     let page: TodaySection.Form
+    /// The look, whose typeface the name is set in and whose accent marks the dot.
     let style: TodayStyle
 
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// The view's content.
     var body: some View {
         let accent = style.accent(scheme)
         VStack(spacing: 9) {
@@ -190,11 +214,16 @@ private struct FormStepper: View {
 /// One form drawn as a slice of the page: the background, the section, and the
 /// top of whatever comes next fading out at the card's edge.
 private struct SectionPageCard: View {
+    /// Which section the card draws.
     let kind: TodaySection.Kind
+    /// The form it draws the section in.
     let form: TodaySection.Form
+    /// The look the slice of page is drawn in.
     let style: TodayStyle
+    /// The day the section is filled from.
     let day: Date
 
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
     /// The look this card shows: the same one, with this form on the section.
@@ -205,6 +234,7 @@ private struct SectionPageCard: View {
         return preview
     }
 
+    /// The section as this card shows it: the look's own, in this form.
     private var shownSection: TodaySection {
         var section = style.section(kind) ?? TodaySection(kind: kind)
         section.form = form
@@ -219,6 +249,7 @@ private struct SectionPageCard: View {
         return visible[index + 1]
     }
 
+    /// The view's content.
     var body: some View {
         let preview = preview
         VStack(alignment: .leading, spacing: 12) {
@@ -261,11 +292,16 @@ private struct SectionPageCard: View {
 
 /// The card's back: what the section is made of and how much it shows.
 private struct SectionControlsCard: View {
+    /// Which section the controls belong to.
     let kind: TodaySection.Kind
+    /// The look being edited.
     @Binding var style: TodayStyle
+    /// Turns the card back to the forms.
     var onFlip: () -> Void
+    /// Takes the section off the page.
     var onHide: () -> Void
 
+    /// The section, read from the look and written back to it.
     private var section: Binding<TodaySection> {
         Binding {
             style.section(kind) ?? TodaySection(kind: kind)
@@ -274,6 +310,7 @@ private struct SectionControlsCard: View {
         }
     }
 
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             materials
@@ -344,6 +381,12 @@ private struct SectionControlsCard: View {
         }
     }
 
+    /// One material as a small preview, ringed when chosen.
+    ///
+    /// - Parameters:
+    ///   - material: The material, or `nil` to follow the page's.
+    ///   - title: What it is called.
+    /// - Returns: The swatch.
     private func swatch(_ material: TodayMaterial?, title: LocalizedStringKey) -> some View {
         let chosen = section.wrappedValue.material == material
         return Button {

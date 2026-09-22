@@ -2,31 +2,51 @@ import Foundation
 
 /// Decides which exam updates interrupt the student, and how.
 ///
-/// Importance comes from the kind of change, urgency from how soon the exam
-/// is, and context from whether the student is even signed up. On top sit
-/// three guards against notification fatigue: quiet hours, a daily budget for
-/// anything short of urgent, and folding a burst into one summary.
+/// Importance comes from the kind of change, urgency from how soon the sitting is, and
+/// context from whether the student is even enrolled. Three guards against notification
+/// fatigue sit on top: quiet hours, a daily budget for anything short of urgent, and
+/// folding a burst into one summary.
 ///
-/// Pure, like ``NotificationPlan``; the service around it only hands the
-/// result to `UNUserNotificationCenter`. Table and rationale in
+/// Pure, like ``NotificationPlan``: ``NotificationModel`` only hands the result to the
+/// system. The table and its rationale are in
 /// `docs/academic-intelligence-layer.md` §11.
 nonisolated enum ExamUpdatePolicy {
-    /// Ordinary pushes per day. Urgent ones do not count and are not capped:
-    /// a published mark should never wait for tomorrow's allowance.
+    /// How many ordinary pushes a day. Urgent ones neither count nor are capped: a
+    /// published mark should not wait for tomorrow's allowance.
     static let dailyBudget = 3
-    /// One ordinary push per course in this interval.
+    /// How long one course must wait between ordinary pushes.
     static let courseInterval: TimeInterval = 3600
-    /// More than this in one refresh becomes a single summary.
+    /// More immediate notifications than this in one pass become a single summary. Also how
+    /// many lines a summary lists before counting the rest.
     static let burstLimit = 3
-    /// A room is news for a sitting within this…
+    /// How soon a sitting must be for its room to be news. Also the window in which a
+    /// deadline brought forward is pushed.
     static let roomHorizon: TimeInterval = 7 * 86400
-    /// …and urgent within this.
+    /// How soon a sitting must be for its room to be allowed through Focus.
     static let imminent: TimeInterval = 2 * 86400
-    /// A results file concerns a sitting held at most this long ago.
+    /// How long after a sitting a results file can still be taken to concern it. Also how
+    /// far apart an official mark and one read from a file may be and still be the same
+    /// fact.
     static let resultsWindow: TimeInterval = 60 * 86400
-    /// An exam notice concerns a sitting at most this far ahead.
+    /// How far ahead a sitting can be for an exam notice to be taken to concern it.
     static let noticeHorizon: TimeInterval = 14 * 86400
 
+    /// Decides the delivery of each update in a pass.
+    ///
+    /// An update is left at ``ExamUpdate/Delivery/inApp`` when exam updates are off, when
+    /// it came from WeBeep and WeBeep updates are off, when its category is switched off, or
+    /// when its course is muted. Otherwise a baseline is chosen from the kind, demoted to
+    /// ``ExamUpdate/Delivery/morning`` during quiet hours, and then rationed.
+    ///
+    /// Updates decided earlier in the same pass count towards the budget of those after
+    /// them.
+    ///
+    /// - Parameters:
+    ///   - updates: The pass's updates, in the order they were found.
+    ///   - history: What has already been delivered, from the log.
+    ///   - preferences: What the student has asked for.
+    ///   - now: The moment of this pass.
+    /// - Returns: The same updates with their delivery set.
     static func decide(
         _ updates: [ExamUpdate],
         history: [ExamUpdate],
@@ -59,8 +79,16 @@ nonisolated enum ExamUpdatePolicy {
         }
     }
 
-    /// Rations ordinary pushes: a few a day, one per course an hour. Anything
-    /// above ordinary passes untouched.
+    /// Rations ordinary pushes: ``dailyBudget`` a day, and one per course per
+    /// ``courseInterval``. Anything above ordinary passes through untouched.
+    ///
+    /// - Parameters:
+    ///   - delivery: The delivery chosen so far.
+    ///   - course: The teaching code, for the per-course limit.
+    ///   - history: What has already been delivered.
+    ///   - now: The moment of this pass.
+    /// - Returns: The delivery, demoted to ``ExamUpdate/Delivery/digest`` when a limit is
+    ///   reached.
     static func budgeted(
         _ delivery: ExamUpdate.Delivery, course: String, history: [ExamUpdate], now: Date
     ) -> ExamUpdate.Delivery {
@@ -74,7 +102,27 @@ nonisolated enum ExamUpdatePolicy {
         return today >= dailyBudget || sameCourse ? .digest : .push
     }
 
-    /// What an update deserves before quiet hours and budget have their say.
+    /// What an update deserves before quiet hours and the budget have their say.
+    ///
+    /// A published mark is urgent. A refusal window is urgent unless the mark arrives with
+    /// it, in which case they are one notification. A room is news only for a sitting the
+    /// student is enrolled in within ``roomHorizon``, and pierces Focus within
+    /// ``imminent``. A moved or withdrawn sitting is urgent only for someone enrolled.
+    ///
+    /// Everything read from WeBeep stays low: a results file is pushed only just after a
+    /// sitting the student sat and only when its name says results plainly, an announcement
+    /// only when it names a sitting in play, and a deadline only when it was brought
+    /// forward into the coming week.
+    ///
+    /// A mark read out of a file is not pushed when the exam services have already said it,
+    /// nor when the file turned out not to be a table of results.
+    ///
+    /// - Parameters:
+    ///   - update: The update to judge.
+    ///   - batch: The rest of this pass, for updates that pair up.
+    ///   - history: What has already been delivered.
+    ///   - now: The moment of this pass.
+    /// - Returns: The baseline delivery.
     private static func baseline(
         for update: ExamUpdate, among batch: [ExamUpdate], history: [ExamUpdate], now: Date
     ) -> ExamUpdate.Delivery {
@@ -168,9 +216,15 @@ nonisolated enum ExamUpdatePolicy {
         }
     }
 
-    /// Whether an official mark is the same fact as a mark read from a file:
-    /// same course, the same sitting where both know one, and seen within the
-    /// results window of each other — in either order.
+    /// Whether an official mark is the same fact as a mark read out of a file.
+    ///
+    /// Same teaching, the same sitting where both know one, and seen within
+    /// ``resultsWindow`` of each other in either order.
+    ///
+    /// - Parameters:
+    ///   - official: A published or recorded mark.
+    ///   - file: A results file the app read.
+    /// - Returns: `true` when the two describe one fact.
     static func confirms(_ official: ExamUpdate, fileGrade file: ExamUpdate) -> Bool {
         guard official.kind == .gradePublished || official.kind == .gradeRecorded,
               official.courseCode == file.courseCode || official.courseName == file.courseName,
@@ -180,9 +234,15 @@ nonisolated enum ExamUpdatePolicy {
         return sitting == officialSitting
     }
 
-    /// Delivered notifications an official mark makes obsolete: the "you are
-    /// in the results" ones for the same course. Removed rather than left
-    /// beside the new one — one notification per fact (§11.4).
+    /// Delivered notifications an official mark makes obsolete: the results-file ones for
+    /// the same teaching.
+    ///
+    /// Withdrawn rather than left beside the new one — one notification per fact.
+    ///
+    /// - Parameters:
+    ///   - decided: This pass's updates, with their deliveries set.
+    ///   - delivered: The identifiers currently in Notification Centre.
+    /// - Returns: The identifiers to withdraw.
     static func obsoleteNotificationIDs(for decided: [ExamUpdate], delivered: [String]) -> [String] {
         let courses = Set(decided.filter { $0.kind == .gradePublished || $0.kind == .gradeRecorded }.map(\.courseCode))
         return delivered.filter { id in
@@ -190,7 +250,16 @@ nonisolated enum ExamUpdatePolicy {
         }
     }
 
-    /// Notifications to deliver right away.
+    /// The notifications to deliver right away.
+    ///
+    /// More than ``burstLimit`` of them become a single summary. A mark read out of a file
+    /// is not put on the Lock Screen — it is unconfirmed, and a Lock Screen is not private —
+    /// so the notification says to open the app instead.
+    ///
+    /// - Parameters:
+    ///   - decided: This pass's updates, with their deliveries set.
+    ///   - now: The moment to deliver at.
+    /// - Returns: The notifications.
     static func notifications(for decided: [ExamUpdate], now: Date) -> [PlannedNotification] {
         let outgoing = decided.filter { $0.delivery.isImmediate }
         let urgent = outgoing.contains { $0.delivery == .urgent }
@@ -231,12 +300,18 @@ nonisolated enum ExamUpdatePolicy {
         }
     }
 
-    /// Summaries still to come: one each evening for what could wait, one
-    /// each morning for what was held back overnight.
+    /// The summaries still to come: one each evening for what could wait, one each morning
+    /// for what quiet hours held back.
     ///
-    /// Derived from the log rather than remembered: an update's slot follows
-    /// from when it was seen. Rebuilding the plan therefore never loses or
-    /// duplicates a summary.
+    /// Derived from the log rather than remembered, since an update's slot follows from when
+    /// it was seen — so rebuilding the plan never loses or duplicates a summary. An evening
+    /// summary whose hour falls inside quiet hours waits them out too.
+    ///
+    /// - Parameters:
+    ///   - log: Every update the app has recorded.
+    ///   - now: The moment to plan from. Slots already past are dropped.
+    ///   - preferences: The student's chosen summary hour and quiet hours.
+    /// - Returns: One notification per slot, soonest first.
     static func digests(from log: [ExamUpdate], now: Date, preferences: NotificationPreferences) -> [PlannedNotification] {
         let held = log.compactMap { update -> (Date, ExamUpdate)? in
             switch update.delivery {
@@ -273,7 +348,12 @@ nonisolated enum ExamUpdatePolicy {
             }
     }
 
-    /// The next `hour`:00 in Rome strictly after `date`.
+    /// The next occurrence of a given hour in Rome, strictly after a date.
+    ///
+    /// - Parameters:
+    ///   - hour: The hour of day.
+    ///   - date: The moment to search from.
+    /// - Returns: That hour today when it is still ahead, and tomorrow otherwise.
     private static func next(_ hour: Int, after date: Date) -> Date {
         let today = PoliMiDate.time(hour, on: date)
         if date < today { return today }
@@ -281,47 +361,69 @@ nonisolated enum ExamUpdatePolicy {
         return PoliMiDate.time(hour, on: tomorrow)
     }
 
+    /// Joins lines into a summary body, listing at most ``burstLimit`` and counting the
+    /// rest.
+    ///
+    /// - Parameter lines: The lines to show.
+    /// - Returns: The body.
     private static func summary(_ lines: [String]) -> String {
         let shown = lines.prefix(burstLimit).joined(separator: "\n")
         let rest = lines.count - burstLimit
         return rest > 0 ? shown + "\n" + String(localized: "e altre \(rest)") : shown
     }
 
+    /// Removes duplicates while keeping the first occurrence's position.
+    ///
+    /// - Parameter values: The values to filter.
+    /// - Returns: The distinct values, in order.
     private static func orderedUnique(_ values: [String]) -> [String] {
         var seen: Set<String> = []
         return values.filter { seen.insert($0).inserted }
     }
 }
 
-/// The updates the app has seen for one account, and the snapshot they were
-/// computed against.
+/// The updates the app has recorded for one account, and the readings they were computed
+/// against.
 ///
-/// Stored through ``OfflineStore`` under the matricola, so a career switch
-/// neither mixes two students' histories nor announces the other career's
-/// sittings as new.
+/// Stored through ``OfflineStore`` under the matricola, so a career switch neither mixes
+/// two students' histories nor announces the other career's sittings as new.
+///
+/// ``record(_:state:now:)`` is what advances it: it rejects duplicates, trims to
+/// ``retention`` and ``cap``, and drops the readings and deadlines of course pages no
+/// longer followed.
 nonisolated struct ExamUpdateLog: Sendable, Equatable, Codable {
+    /// The offline record name the log is stored under.
     static let name = "exam-updates"
-    /// Long enough to cover a session and its results; short enough that the
-    /// file never grows into something worth thinking about.
+    /// How long an update is kept: long enough to cover a session and its results, short
+    /// enough that the file stays small.
     static let retention: TimeInterval = 180 * 86400
+    /// How many updates are kept at most, newest first.
     static let cap = 300
-    /// The same change seen again within this is the same sighting — a
-    /// foreground load and a background refresh racing. Later, it is news:
-    /// a room can go A→B→A→B.
+    /// Within this, the same change seen again is the same sighting — a foreground load and
+    /// a background refresh racing. Beyond it, it is news: a room can move back and forth.
     static let dedupWindow: TimeInterval = 3600
 
+    /// The last reading of the exam services and the libretto.
     var state: ExamWatchState?
     /// Each WeBeep course's last listing, by Moodle course id.
     var materials: [String: MaterialSnapshot]?
-    /// When the student last opened the full feed. Kept with the log, so it
-    /// belongs to the account and goes when the account's data does.
+    /// When the student last opened the full feed.
+    ///
+    /// Kept with the log, so it belongs to the account and goes when the account's data
+    /// does.
     var seenAt: Date?
-    /// Deadlines ahead, per Moodle course id, for the reminders.
+    /// The deadlines still ahead, per Moodle course id, for the reminders.
     var deadlines: [String: [AssignmentDeadline]]?
-    /// Newest first.
+    /// The recorded updates, newest first.
     var updates: [ExamUpdate] = []
 
-    /// Updates not already in the log, in the order given.
+    /// The candidates not already in the log, in the order given.
+    ///
+    /// A candidate matching a recorded update within ``dedupWindow`` is rejected, as is a
+    /// second copy within the same call.
+    ///
+    /// - Parameter candidates: The updates a pass found.
+    /// - Returns: The ones worth recording.
     func unseen(_ candidates: [ExamUpdate]) -> [ExamUpdate] {
         var accepted: [ExamUpdate] = []
         for candidate in candidates {
@@ -334,9 +436,18 @@ nonisolated struct ExamUpdateLog: Sendable, Equatable, Codable {
         return accepted
     }
 
-    /// Adds what is new, advances the snapshot, and trims.
+    /// Adds what is new, advances the reading, and trims.
     ///
-    /// - Returns: the updates actually added.
+    /// Listings not read within ``MaterialChangeDetector/staleAfter`` are dropped, as are
+    /// their deadlines: a course page not read for a fortnight is one no longer followed —
+    /// hidden, rotated out, or last year's — and reminding about its work would be reminding
+    /// about work that may no longer exist. Deadlines already past are dropped too.
+    ///
+    /// - Parameters:
+    ///   - candidates: The updates a pass found.
+    ///   - state: The reading they were computed against.
+    ///   - now: The moment of this pass.
+    /// - Returns: The updates actually added.
     @discardableResult
     mutating func record(_ candidates: [ExamUpdate], state: ExamWatchState, now: Date) -> [ExamUpdate] {
         let added = unseen(candidates)

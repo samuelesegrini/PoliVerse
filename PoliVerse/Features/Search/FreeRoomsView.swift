@@ -2,12 +2,17 @@ import SwiftUI
 
 /// Which rooms are free, and for how long.
 struct FreeRoomsView: View {
+    /// The shared ``FreeRoomsModel``, from the environment.
     @Environment(FreeRoomsModel.self) private var aule
+    /// Whether the app is on screen, in the foreground or in the background.
     @Environment(\.scenePhase) private var scenePhase
 
+    /// The shortest gap worth listing.
+    /// Whether to list only the rooms free now, rather than every room with a gap today.
     @State private var minimumMinutes = 30
     @State private var onlyNow = true
 
+    /// The view's content.
     var body: some View {
         @Bindable var aule = aule
 
@@ -64,10 +69,13 @@ struct FreeRoomsView: View {
         }
     }
 
+    /// Whether the day being shown is today, since “free now” is only a question about today.
     private var isToday: Bool {
         PoliMiDate.romeCalendar.isDateInToday(aule.day)
     }
 
+    /// The rooms, or what is happening instead: a pass in flight, a failure, or a campus with
+    /// nothing to show.
     @ViewBuilder
     private var content: some View {
         if let message = aule.errorMessage {
@@ -93,6 +101,7 @@ struct FreeRoomsView: View {
         }
     }
 
+    /// The rooms free for the next half hour, by name.
     private var freeNowSection: some View {
         let free = aule.freeNow()
         return Section {
@@ -116,6 +125,7 @@ struct FreeRoomsView: View {
         .lookRow()
     }
 
+    /// Every room with a gap today, most free time first, each with its gaps.
     private var daySection: some View {
         let results = aule.freeRooms(minimumMinutes: minimumMinutes)
         return Section {
@@ -148,10 +158,14 @@ struct FreeRoomsView: View {
     }
 }
 
+/// One room and the times it is free.
 private struct RoomFreeRow: View {
+    /// The room this row shows.
     let room: RoomSchedule
+    /// When it is free.
     let slots: [DateInterval]
 
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack {
@@ -178,9 +192,12 @@ private struct RoomFreeRow: View {
 
 /// One room's day: what is booked and what is not.
 struct RoomScheduleView: View {
+    /// The room whose day is shown.
     let room: RoomSchedule
+    /// The teaching day the timeline covers.
     let day: DateInterval
 
+    /// The view's content.
     var body: some View {
         List {
             Section {
@@ -224,6 +241,10 @@ struct RoomScheduleView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    /// A span as `HH:mm–HH:mm` in Rome.
+    ///
+    /// - Parameter interval: The span to format.
+    /// - Returns: The text.
     static func format(_ interval: DateInterval) -> String {
         let clock = RoomBooking.clock
         return "\(clock.string(from: interval.start))–\(clock.string(from: interval.end))"

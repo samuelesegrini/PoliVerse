@@ -1,0 +1,18 @@
+<html><body style="margin:0;background:#fff;font:13px -apple-system;color:#555">
+<p style="padding:12px 20px 0">Simulating DocC's content column. Images styled as DocC styles them: <code>max-width:100%; height:auto</code>.</p>
+<div id="out"></div>
+<script>
+const widths = [680, 820, 1000, 1180];
+const imgs = ["layers", "oauth-flow", "flavor-ramp"];
+let html = "";
+for (const w of widths) {
+  html += `<div style="padding:14px 20px 4px;font-weight:600">column ${w}px</div>`;
+  html += `<div style="width:${w}px;margin:0 20px 18px;outline:1px dashed #d0d0d8;padding:10px 0">`;
+  for (const n of imgs) {
+    html += `<img src="../../PoliVerse/PoliVerse.docc/Resources/${n}.svg" style="max-width:100%;height:auto;display:block;margin:0 auto 10px">`;
+  }
+  html += `</div>`;
+}
+document.getElementById("out").innerHTML = html;
+</script>
+</body></html>

@@ -20,15 +20,21 @@ import SwiftUI
 /// middle card while the rest of the gallery fades in; closing grows the
 /// middle card back over the app before the gallery goes.
 struct CustomizeOggi: View {
+    /// The environment's `shell`.
     @Environment(\.shell) private var shell
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
     @AppStorage(TodayStyle.storageKey) private var active = TodayStyle()
     @AppStorage(TodayStyle.libraryKey) private var storedLibrary = ""
     @AppStorage(TodayStyle.selectionKey) private var storedSelection = 0
 
+    /// The saved looks and which one the page uses.
     @State private var library: LookLibrary
+    /// The card in the middle of the carousel, or `nil` to follow the library's selection.
     @State private var page: Int?
     /// The card whose deletion is being confirmed.
     @State private var deleting: Int?
@@ -50,8 +56,10 @@ struct CustomizeOggi: View {
 
     /// How much smaller than the screen a card is.
     static let cardScale: CGFloat = 0.68
+    /// The curve a card grows to cover the screen on, and shrinks back.
     private static let expand = Animation.spring(duration: 0.45, bounce: 0.1)
 
+    /// Reads the saved looks before the first layout, so the carousel opens on the one in use.
     init() {
         // Read before the first layout, so the carousel starts on the look in
         // use instead of scrolling to it while it shrinks.
@@ -76,6 +84,7 @@ struct CustomizeOggi: View {
         }
     }
 
+    /// Which card is in the middle: the one scrolled to, else the one in use.
     private var middle: Int { page ?? library.selection }
 
     /// Editing has changed the look since it started.
@@ -87,6 +96,7 @@ struct CustomizeOggi: View {
     /// Full size: covering the screen on the way in and out, and while editing.
     private var filled: Bool { expanded || editing }
 
+    /// The view's content.
     var body: some View {
         GeometryReader { proxy in
             // The cards stand for the whole screen, status bar and home
@@ -150,6 +160,12 @@ struct CustomizeOggi: View {
 
     // MARK: - Gallery
 
+    /// The looks as cards to scroll through, the middle one snapping into place.
+    ///
+    /// - Parameters:
+    ///   - screen: The screen's size, which a card is a share of.
+    ///   - insets: The safe area, so a card sits clear of the bars.
+    /// - Returns: The carousel.
     private func carousel(screen: CGSize, insets: EdgeInsets) -> some View {
         let cardSize = CGSize(width: screen.width * Self.cardScale, height: screen.height * Self.cardScale)
         return ScrollViewReader { reader in
@@ -211,6 +227,10 @@ struct CustomizeOggi: View {
         }
     }
 
+    /// A card's menu: rename, duplicate, and delete when more than one look is saved.
+    ///
+    /// - Parameter index: Which card.
+    /// - Returns: The menu's items.
     @ViewBuilder
     private func cardMenu(_ index: Int) -> some View {
         Button("Rinomina", systemImage: "pencil") {
@@ -230,6 +250,10 @@ struct CustomizeOggi: View {
 
     // MARK: - Controls
 
+    /// The glass controls over the carousel: the bar at the top, and the browsing or editing controls at the bottom.
+    ///
+    /// - Parameter insets: The safe area.
+    /// - Returns: The controls.
     private func controls(insets: EdgeInsets) -> some View {
         VStack(spacing: 0) {
             topBar
@@ -247,6 +271,7 @@ struct CustomizeOggi: View {
         .animation(.snappy, value: editing)
     }
 
+    /// The bar at the top: closing while browsing, and saving or restoring while editing.
     @ViewBuilder
     private var topBar: some View {
         if editing {
@@ -288,6 +313,7 @@ struct CustomizeOggi: View {
         }
     }
 
+    /// The controls under the carousel while browsing: the page dots, and the ways to use or add a look.
     private var browseControls: some View {
         VStack(spacing: 14) {
             HStack(spacing: 7) {
@@ -410,6 +436,7 @@ struct CustomizeOggi: View {
         }
     }
 
+    /// Opens the middle card for editing, remembering the look as it was for Ripristina.
     private func beginEditing() {
         guard library.looks.indices.contains(middle) else { return }
         restorePoint = library.looks[middle]
@@ -418,6 +445,7 @@ struct CustomizeOggi: View {
         withAnimation(Self.expand) { editing = true }
     }
 
+    /// Leaves editing and writes the library out.
     private func endEditing() {
         arranging = false
         panelPath = []
@@ -454,6 +482,9 @@ struct CustomizeOggi: View {
         }
     }
 
+    /// Makes one look the page's.
+    ///
+    /// - Parameter index: Which look.
     private func use(_ index: Int) {
         guard index != library.selection, library.looks.indices.contains(index) else { return }
         library.use(index)
@@ -471,6 +502,7 @@ struct CustomizeOggi: View {
         persist()
     }
 
+    /// Writes the library and the selection out, and drops sticker images no saved look draws.
     private func persist() {
         storedLibrary = TodayStyle.encodeLibrary(library.looks)
         storedSelection = library.selection
@@ -491,18 +523,24 @@ struct CustomizeOggi: View {
     }
 }
 
-/// Where a new look comes from. A blank page is the rarest thing a student
-/// wants and the only thing + used to offer; a copy of what they are looking
-/// at is the commonest.
+/// Where a new look comes from: a copy of the one on screen, one of the
+/// themes, or a blank page. The copy leads, because it is what a student
+/// reaches for most often.
 private struct NewLookSheet: View {
+    /// The look a copy would be made from.
     let copying: TodayStyle
+    /// Adds the chosen look to the library.
     let add: (TodayStyle) -> Void
 
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// The themes as a grid that fits as many per row as the sheet is wide.
     private let columns = [GridItem(.adaptive(minimum: 104), spacing: 14)]
 
+    /// The view's content.
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -592,6 +630,7 @@ private struct NewLookSheet: View {
     }
 }
 
+/// How far the panel rests open.
 extension BentoPanel {
     /// The panel's resting height: the page above stays visible and live.
     static let small = PresentationDetent.fraction(0.46)
@@ -602,13 +641,19 @@ extension BentoPanel {
 private struct FillScreen: GeometryEffect {
     /// 0 at card size, 1 covering the screen.
     var progress: CGFloat
+    /// The screen the card grows to cover.
     let screen: CGSize
 
+    /// ``progress``, which the animation drives.
     var animatableData: CGFloat {
         get { progress }
         set { progress = newValue }
     }
 
+    /// The transform that scales the card about its centre.
+    ///
+    /// - Parameter size: The card's own size.
+    /// - Returns: The transform.
     func effectValue(size: CGSize) -> ProjectionTransform {
         guard size.width > 0, size.height > 0 else { return ProjectionTransform() }
         let full = max(screen.width / size.width, screen.height / size.height)

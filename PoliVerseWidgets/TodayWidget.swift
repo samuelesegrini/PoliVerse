@@ -8,9 +8,14 @@ import WidgetKit
 /// like*, which is the question you ask in the morning and while deciding
 /// whether it is worth going in.
 struct TodayEntry: TimelineEntry {
+    /// The moment this entry describes, which is also the day it shows.
     let date: Date
+    /// Everything on that day, in time order.
     let events: [AgendaEvent]
+    /// Seconds since the app last wrote the agenda, or `nil` when signed out.
     let age: TimeInterval?
+    /// Whether anyone is signed in. Distinct from an empty day: an invitation to sign in and
+    /// “nothing scheduled” are different answers.
     let signedIn: Bool
 
     /// Worth surfacing in the morning, when the day is still ahead.
@@ -20,15 +25,33 @@ struct TodayEntry: TimelineEntry {
     }
 }
 
+/// Builds the day's timeline from the cached agenda.
+///
+/// An entry is produced at every moment a row changes state — each event's start and end
+/// — and once at midnight, when the day this widget is about becomes a different day.
 struct TodayProvider: TimelineProvider {
+    /// A representative day, for the widget gallery and for redaction.
+    ///
+    /// - Parameter context: WidgetKit's context.
+    /// - Returns: The placeholder entry.
     func placeholder(in context: Context) -> TodayEntry {
         TodayEntry(date: .now, events: TodayEntry.previewEvents, age: 0, signedIn: true)
     }
 
+    /// Today as it stands now.
+    ///
+    /// - Parameters:
+    ///   - context: WidgetKit's context.
+    ///   - completion: Handed the entry.
     func getSnapshot(in context: Context, completion: @escaping (TodayEntry) -> Void) {
         completion(entry(at: .now))
     }
 
+    /// The day's timeline, capped at twenty entries and reloaded after the last.
+    ///
+    /// - Parameters:
+    ///   - context: WidgetKit's context.
+    ///   - completion: Handed the timeline.
     func getTimeline(in context: Context, completion: @escaping (Timeline<TodayEntry>) -> Void) {
         let now = Date.now
         let cached = WidgetAgenda.load()
@@ -57,6 +80,10 @@ struct TodayProvider: TimelineProvider {
         completion(Timeline(entries: entries, policy: .after(dates.last ?? midnight)))
     }
 
+    /// One entry for a moment, read from the cached agenda.
+    ///
+    /// - Parameter date: The moment to describe.
+    /// - Returns: The entry.
     private func entry(at date: Date) -> TodayEntry {
         let cached = WidgetAgenda.load()
         return TodayEntry(date: date,
@@ -66,7 +93,10 @@ struct TodayProvider: TimelineProvider {
     }
 }
 
+/// The Oggi widget: the whole day at a glance, in the medium and large families. Tapping
+/// it opens the calendar.
 struct TodayWidget: Widget {
+    /// The declaration's content.
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: WidgetKind.today.rawValue, provider: TodayProvider()) { entry in
             TodayView(entry: entry)
@@ -79,14 +109,18 @@ struct TodayWidget: Widget {
     }
 }
 
+/// Draws one ``TodayEntry``.
 struct TodayView: View {
+    /// The day to draw.
     let entry: TodayEntry
+    /// The widget family being drawn.
     @Environment(\.widgetFamily) private var family
 
     /// The large family has room for more rows; the medium one has four lines
     /// before the text starts fighting for space.
     private var limit: Int { family == .systemLarge ? 8 : 4 }
 
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             header
@@ -109,9 +143,13 @@ struct TodayView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
+    /// The rows that fit this family.
     private var shown: [AgendaEvent] { Array(entry.events.prefix(limit)) }
+    /// How many rows did not fit, counted below them.
     private var overflow: Int { max(0, entry.events.count - limit) }
 
+    /// The day's date, with the age of the cache beside it once it is more than half a day
+    /// old.
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             Text(entry.date, format: .dateTime.weekday(.wide).day().month())
@@ -126,6 +164,10 @@ struct TodayView: View {
         .foregroundStyle(.secondary)
     }
 
+    /// One centred line, for a day with nothing on it or an account not signed in.
+    ///
+    /// - Parameter text: What to say.
+    /// - Returns: The filler.
     private func filler(_ text: LocalizedStringKey) -> some View {
         VStack {
             Spacer(minLength: 0)
@@ -142,12 +184,17 @@ struct TodayView: View {
 /// that has to survive a four-word title and a twenty-word one is this, not
 /// the widget around it.
 struct TodayRow: View {
+    /// The entry this row shows.
     let event: AgendaEvent
+    /// The moment the row is drawn for, which decides whether it reads as now or as over.
     let now: Date
 
+    /// Whether the entry has finished.
     private var isOver: Bool { event.end < now }
+    /// Whether the entry is under way.
     private var isNow: Bool { event.start <= now && event.end >= now }
 
+    /// The view's content.
     var body: some View {
         HStack(alignment: .top, spacing: 7) {
             Text(event.start, style: .time)
@@ -166,7 +213,7 @@ struct TodayRow: View {
                 Text(event.title)
                     .font(.caption.weight(isNow ? .semibold : .regular))
                     .lineLimit(1)
-                if let room = event.roomAcronym ?? event.room {
+                if let room = event.roomLabel {
                     Text(room)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
@@ -182,6 +229,7 @@ struct TodayRow: View {
     }
 }
 
+/// A representative day, for the gallery and for previews.
 extension TodayEntry {
     /// Only for the placeholder the system renders before real data exists.
     static var previewEvents: [AgendaEvent] {

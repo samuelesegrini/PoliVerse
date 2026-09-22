@@ -7,11 +7,16 @@ import SwiftUI
 /// round. Lectures are matched to the teacher through their courses, since the
 /// agenda names the teaching, not the person.
 struct TeacherDetailView: View {
+    /// The lecturer being shown.
     let teacher: Teacher
 
+    /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
+    /// Opens a link outside the app.
     @Environment(\.openURL) private var openURL
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
 
     /// Upcoming lectures for any of this teacher's courses.
@@ -28,12 +33,14 @@ struct TeacherDetailView: View {
             .map { $0 }
     }
 
+    /// Their sittings still ahead, soonest first.
     private var exams: [ExamSession] {
         career.upcoming.filter { session in
             teacher.courses.contains { $0.name.lowercased() == session.courseName.lowercased() }
         }
     }
 
+    /// The view's content.
     var body: some View {
         List {
             Section {
@@ -79,7 +86,7 @@ struct TeacherDetailView: View {
                         } label: {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(event.title).font(.subheadline).lineLimit(2)
-                                Text("\(event.start.formatted(.dateTime.weekday(.wide).day().month(.abbreviated).locale(locale))) · \(event.start.formatted(.dateTime.hour().minute().locale(locale)))\(event.room.map { " · \($0)" } ?? "")")
+                                Text("\(event.start.formatted(.dateTime.weekday(.wide).day().month(.abbreviated).locale(locale))) · \(event.start.formatted(.dateTime.hour().minute().locale(locale)))\(event.roomLabel.map { " · \($0)" } ?? "")")
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                         }

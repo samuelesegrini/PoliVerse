@@ -5,30 +5,46 @@ import UIKit
 /// look's typeface, who teaches it and how to reach them, how the exam works,
 /// the prove in itinere with their dates on a rail, and the codes to copy.
 struct CourseInfoView: View {
+    /// The course this page is about.
     let course: Course
 
+    /// The shared ``ManifestiModel``, from the environment.
     @Environment(ManifestiModel.self) private var manifesti
+    /// The shared ``StudyProgrammeModel``, from the environment.
     @Environment(StudyProgrammeModel.self) private var programmes
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
+    /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
+    /// The shared ``UpdateFeed``, from the environment.
     @Environment(UpdateFeed.self) private var feed
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// Colours around the course's own, checked against the look's page.
     private var ramp: CourseRamp { CourseRamp(course: course, style: style, scheme: scheme) }
 
+    /// The programme once the Manifesti service has answered.
     @State private var syllabus: Syllabus?
+    /// The lecturers of the bracket in use, when a bracket has been chosen.
     @State private var pickTeachers: String?
+    /// The teaching whose bracket picker is open, by name.
     @State private var pickBracket: String?
+    /// True until the programme has been asked for and answered.
     @State private var loading = true
+    /// The code just copied, which its row confirms for two seconds.
     @State private var copied: String?
 
+    /// The course's own colour.
     private var accent: Color { Theme.accent(for: course) }
 
     /// Inside a card, rows keep off its edge; on a bare page they meet it.
     private var cardPadding: CGFloat { style.material.hasCard ? 14 : 0 }
 
+    /// The view's content.
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
@@ -90,6 +106,7 @@ struct CourseInfoView: View {
 
     // MARK: - Teacher
 
+    /// Who teaches the course, and how to reach them: an avatar, the name, and the address where there is one.
     private var teacher: some View {
         let name = pickTeachers ?? course.teacher
         let email = course.teacherEmail?.nonEmpty
@@ -140,6 +157,7 @@ struct CourseInfoView: View {
 
     // MARK: - Exam
 
+    /// How the exam works, as the programme numbers its parts, and the language it is taught in.
     @ViewBuilder
     private var exam: some View {
         let assessment = syllabus?.assessment ?? []
@@ -171,6 +189,7 @@ struct CourseInfoView: View {
 
     // MARK: - Prove in itinere
 
+    /// Whether prove in itinere are offered, the teacher's own words about how they count, and their dates on a rail.
     private var partialExams: some View {
         let policy = syllabus.map { PartialExams.policy(assessment: $0.assessment, notes: $0.assessmentNotes) } ?? .unknown
         let quotes = PartialExams.sentences(in: syllabus?.assessmentNotes)
@@ -206,6 +225,10 @@ struct CourseInfoView: View {
         }
     }
 
+    /// The answer to "are there prove in itinere", as a mark and a sentence.
+    ///
+    /// - Parameter policy: What the programme says.
+    /// - Returns: The header.
     private func policyHeader(_ policy: PartialExams.Policy) -> some View {
         let (title, detail, symbol, tint): (LocalizedStringKey, LocalizedStringKey, String, Color) = switch policy {
         case .offered: ("Previste", "La scheda prevede prove durante il semestre.", "checkmark", .green)
@@ -231,13 +254,19 @@ struct CourseInfoView: View {
     /// One dated thing about the prove in itinere: a sitting, an exam on the
     /// agenda, or a results file.
     private struct Dated: Identifiable {
+        /// The entry's identity.
         let id: String
+        /// When it happens, or `nil` when nothing has said yet.
         let date: Date?
+        /// The entry's SF Symbol.
         let symbol: String
+        /// What the entry is.
         let title: String
+        /// One more line, such as a mark or a file's name.
         let detail: String?
     }
 
+    /// Everything dated about the prove in itinere — sittings, agenda entries and results files — in one list, earliest first.
     private var timeline: [Dated] {
         let sittings = PartialExams.sittings(career.sessions.filter { $0.isOf(courseCode: course.id, courseName: course.name) })
             .map { sitting in
@@ -251,7 +280,7 @@ struct CourseInfoView: View {
         let events = PartialExams.agendaEvents(agenda.officialEvents.filter { $0.title.lowercased().contains(target) })
             .map { event in
                 Dated(id: "event-\(event.id)", date: event.start, symbol: "calendar", title: event.title,
-                      detail: [event.start.formatted(.dateTime.hour().minute().locale(locale)), event.room]
+                      detail: [event.start.formatted(.dateTime.hour().minute().locale(locale)), event.roomLabel]
                         .compactMap { $0 }.joined(separator: " · "))
             }
         let results = PartialExams.resultsFiles(FeedItem.items(from: feed.recent, for: course).map(\.update))
@@ -309,6 +338,7 @@ struct CourseInfoView: View {
 
     // MARK: - Identifiers
 
+    /// The codes worth copying: the teaching's and the WeBeep course's.
     @ViewBuilder
     private var identifiers: some View {
         let codes: [(label: String, value: String)] = [
@@ -349,6 +379,9 @@ struct CourseInfoView: View {
 
     // MARK: - Building blocks
 
+    /// Puts a code on the pasteboard and confirms it for two seconds.
+    ///
+    /// - Parameter text: The code to copy.
     private func copy(_ text: String) {
         UIPasteboard.general.string = text
         withAnimation(.snappy) { copied = text }
@@ -358,6 +391,12 @@ struct CourseInfoView: View {
         }
     }
 
+    /// A heading and what belongs under it, spaced as Oggi's sections are.
+    ///
+    /// - Parameters:
+    ///   - title: The heading.
+    ///   - content: What goes under it.
+    /// - Returns: The section.
     private func block<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             LookHeading(title)
@@ -365,6 +404,13 @@ struct CourseInfoView: View {
         }
     }
 
+    /// One row of a card: an icon, its content, and a divider unless it is the last.
+    ///
+    /// - Parameters:
+    ///   - last: True for the last row, which draws no divider.
+    ///   - icon: The leading icon.
+    ///   - content: The row's content.
+    /// - Returns: The row.
     private func row<Icon: View, Content: View>(last: Bool, @ViewBuilder icon: () -> Icon,
                                                 @ViewBuilder content: () -> Content) -> some View {
         VStack(spacing: 0) {
@@ -382,10 +428,14 @@ struct CourseInfoView: View {
 
 /// A step's number in a thin ring, in the course's colour.
 private struct NumberTile: View {
+    /// The step's number.
     let number: Int
+    /// The ring and digit's colour.
     let colour: Flavor.RGB
+    /// The `side`, scaled with the reader's text size.
     @ScaledMetric(relativeTo: .body) private var side: CGFloat = 30
 
+    /// The view's content.
     var body: some View {
         Text("\(number)")
             .font(.system(size: side * 0.46, weight: .semibold, design: .rounded))
@@ -399,8 +449,13 @@ private struct NumberTile: View {
 
 /// The rail's title with its symbol small in the course's colour.
 private struct RailLabelStyle: LabelStyle {
+    /// The symbol's colour.
     let tint: Color
 
+    /// Lays the label out.
+    ///
+    /// - Parameter configuration: The label's icon and title.
+    /// - Returns: The styled label.
     func makeBody(configuration: Configuration) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             configuration.icon.font(.caption).foregroundStyle(tint)

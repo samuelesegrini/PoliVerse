@@ -2,14 +2,14 @@ import SwiftUI
 
 /// Something on the student's career that stops being possible on a date.
 ///
-/// Carriera used to show none of these. The libretto, the average and the
-/// list of sittings are all *states* — they are true today and will still be
-/// true next week — while the two things that actually cost a student
-/// something are deadlines: an enrolment window that closes, and a mark that
-/// can only be refused until it cannot. Missing the first costs a session,
-/// which is months. Both were on the page already, spelled as a colour on a
-/// row and as the third item of a news feed.
+/// The libretto, the average and the list of sittings are all *states* — they
+/// are true today and will still be true next week — while the two things
+/// that actually cost a student something are deadlines: an enrolment window
+/// that closes, and a mark that can only be refused until it cannot. Missing
+/// the first costs a session, which is months. These are drawn apart from the
+/// states, at the top of the page, rather than left as a colour on a row.
 nonisolated struct CareerDeadline: Identifiable, Sendable {
+    /// Which kind of deadline this is.
     enum Kind: Sendable {
         /// Enrolment is open and the student is not enrolled.
         case enrolmentClosing
@@ -19,7 +19,9 @@ nonisolated struct CareerDeadline: Identifiable, Sendable {
         case sitting
     }
 
+    /// Which kind of deadline this is.
     let kind: Kind
+    /// The sitting it belongs to.
     let exam: ExamSession
 
     /// The colour and the words this deadline is shown in.
@@ -35,6 +37,7 @@ nonisolated struct CareerDeadline: Identifiable, Sendable {
     /// inventing one would be worse than not having it.
     let at: Date?
 
+    /// The deadline's identity, which pairs the sitting with the kind.
     var id: String { "\(exam.id)-\(kind)" }
 
     /// Days from `now`, for the sort and for the wording.
@@ -96,13 +99,19 @@ nonisolated struct CareerDeadline: Identifiable, Sendable {
 /// always there stops being read on the day it says something. When nothing
 /// expires the page simply begins with the average.
 struct CareerNowCard: View {
+    /// The deadlines to show, most urgent first.
     let deadlines: [CareerDeadline]
+    /// Opens a sitting's own screen.
     let open: (ExamSession) -> Void
 
+    /// The look in use, which supplies the card's material.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
 
+    /// The view's content.
     var body: some View {
         if let first = deadlines.first {
             let second = deadlines.dropFirst().first
@@ -133,6 +142,10 @@ struct CareerNowCard: View {
 
     // MARK: - The first one, in full
 
+    /// The first deadline in full: what it is, how long is left, what to do about it, and the way through.
+    ///
+    /// - Parameter deadline: The deadline to show.
+    /// - Returns: The headline.
     @ViewBuilder
     private func headline(_ deadline: CareerDeadline) -> some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -170,6 +183,10 @@ struct CareerNowCard: View {
 
     // MARK: - The next one, on one line
 
+    /// A further deadline on one line under the first.
+    ///
+    /// - Parameter deadline: The deadline to show.
+    /// - Returns: The row.
     private func compact(_ deadline: CareerDeadline) -> some View {
         Button { open(deadline.exam) } label: {
             HStack(spacing: 12) {
@@ -193,6 +210,10 @@ struct CareerNowCard: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// The tile at a row's leading edge: the mark itself for a refusable grade, the state's symbol otherwise.
+    ///
+    /// - Parameter deadline: The deadline.
+    /// - Returns: The tile.
     @ViewBuilder
     private func marker(_ deadline: CareerDeadline) -> some View {
         let tint = deadline.state.tint
@@ -218,6 +239,10 @@ struct CareerNowCard: View {
 
     // MARK: - Words
 
+    /// What the deadline is, in the words its kind calls for.
+    ///
+    /// - Parameter deadline: The deadline.
+    /// - Returns: The title.
     private func title(_ deadline: CareerDeadline) -> String {
         switch deadline.kind {
         case .enrolmentClosing:
@@ -258,6 +283,10 @@ struct CareerNowCard: View {
         }
     }
 
+    /// The second line: the sitting's date and kind, its room, or where the action is actually taken.
+    ///
+    /// - Parameter deadline: The deadline.
+    /// - Returns: The line.
     private func detail(_ deadline: CareerDeadline) -> String {
         let day = Date.FormatStyle.dateTime.day().month(.wide).locale(locale)
         switch deadline.kind {
@@ -276,6 +305,10 @@ struct CareerNowCard: View {
         }
     }
 
+    /// What the button under the headline says.
+    ///
+    /// - Parameter deadline: The deadline.
+    /// - Returns: The wording.
     private func action(_ deadline: CareerDeadline) -> String {
         switch deadline.kind {
         case .enrolmentClosing: String(localized: "Vedi l'appello")

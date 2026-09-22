@@ -21,8 +21,10 @@ nonisolated enum TodayMaterial: String, Codable, CaseIterable, Identifiable, Sen
     /// optional material would read as nil.
     case bare
 
+    /// The material's identity, which is its raw value.
     var id: String { rawValue }
 
+    /// What the material is called in Personalizza.
     var title: LocalizedStringKey {
         switch self {
         case .soft: "Morbido"
@@ -40,6 +42,7 @@ nonisolated enum TodayMaterial: String, Codable, CaseIterable, Identifiable, Sen
     var hasCard: Bool { self != .bare }
 }
 
+/// Drawing a view on a card of a material.
 extension View {
     /// Draws the view on a card of a material, in a Flavor.
     func todayMaterial(_ material: TodayMaterial, flavor: Flavor, mode: Flavor.Mode = .standard, cornerRadius: CGFloat) -> some View {
@@ -47,14 +50,24 @@ extension View {
     }
 }
 
+/// One material drawn behind a view, in a Flavor's colours.
 private struct MaterialSurface: ViewModifier {
+    /// The material to draw.
     let material: TodayMaterial
+    /// The colours it takes.
     let flavor: Flavor
+    /// How strongly the Flavor colours it.
     let mode: Flavor.Mode
+    /// How far the card's corners are rounded.
     let cornerRadius: CGFloat
 
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// Applies the modifier to `content`.
+    ///
+    /// - Parameter content: The view being modified.
+    /// - Returns: The modified view.
     func body(content: Content) -> some View {
         let palette = flavor.palette(scheme, mode: mode)
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -97,6 +110,7 @@ private struct MaterialSurface: ViewModifier {
     }
 }
 
+/// Pushing a colour past white on screens that can show it.
 extension Color {
     /// The colour pushed up by exposure stops, with the headroom it needs, so
     /// HDR screens show it brighter than white and others tone-map it back.

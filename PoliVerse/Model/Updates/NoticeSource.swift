@@ -1,33 +1,46 @@
 import Foundation
 import OSLog
 
-/// Notifications from the Politecnico.
+/// The ``Source`` for the Politecnico's notifications.
 ///
-/// `GET {app}/v1/notifications` is present in the official bundle's own client
-/// and answers 401 unauthenticated, so it exists — but its body was never
-/// captured, and every field name in ``Notice`` is a guess apart from
-/// `id_notice`. So the payload is parsed leniently, and its *shape* is logged —
-/// keys and types, never values — so one run on a real account replaces the
-/// guesses with fact.
+/// `GET {app}/v1/notifications` exists — it appears in the official client and answers
+/// 401 unauthenticated — but its body has not been captured, so every field name in
+/// ``Notice`` but `id_notice` is a guess. The payload is therefore parsed leniently and
+/// its shape is logged in debug builds — keys and types, never values — so that one run
+/// on a real account replaces the guesses with fact.
+///
+/// Read state is layered on in ``adjust(_:)``, which runs on every path.
 nonisolated struct NoticeSource: Source {
+    /// Names the offline record and the log category.
     static let id = "notices"
 
+    /// Diagnostic log for this type, under the `notices` category.
     private static let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "notices")
 
-    /// See ``NewsSource/Payload`` for why `unreadable` travels with the items.
+    /// What one notifications load produces.
     struct Payload: Codable, Sendable, Equatable {
+        /// The notices, newest first.
         var notices: [Notice] = []
+        /// Whether the endpoint answered with something the decoder could not read.
+        ///
+        /// Travels with the items rather than being reported as an error, because it is a
+        /// different thing from an empty inbox and must not be shown as one.
         var unreadable = false
     }
 
-    /// Read state this device remembers, used when the payload carries no read
-    /// flag of its own.
+    /// Where “read in PoliVerse” is kept, used when the payload carries no read flag of its
+    /// own.
     ///
-    /// Marking read is a write to the real university system, which this app
-    /// does not do — so "read" here means "read in PoliVerse". Injected so a
-    /// test does not have to reach into `UserDefaults`.
+    /// Marking read is a write to the university's own system, which this app does not
+    /// perform. Injected so a test need not reach into `UserDefaults`.
     var readLocally: ReadState = .userDefaults
 
+    /// Fetches the notifications, newest first.
+    ///
+    /// - Parameter env: The transport.
+    /// - Returns: The notices, flagged unreadable when the payload carried rows the decoder
+    ///   could not read.
+    /// - Throws: ``APIError``.
     func fetch(_ env: Env) async throws -> Payload {
         let data = try await env.http.data(for: APIRequest(host: .app, path: "/v1/notifications"))
         #if DEBUG
@@ -43,16 +56,18 @@ nonisolated struct NoticeSource: Source {
         return Payload(notices: sorted, unreadable: unreadable)
     }
 
+    /// The sample notices.
     func sample() -> Payload {
         Payload(notices: Notice.samples())
     }
 
-    /// The server's own flag wins where it sends one; otherwise this device
-    /// remembers. Local marks are kept as a floor either way, so a notice read
-    /// here never reverts to unread on the next fetch.
+    /// Resolves each notice's read state.
     ///
-    /// Applied on every path — fetched, cached and sample alike — which is the
-    /// whole reason ``Source/adjust(_:)`` exists.
+    /// The server's own flag wins where it sends one, and a local mark is kept as a floor
+    /// either way, so a notice read in the app never reverts to unread on the next fetch.
+    ///
+    /// - Parameter value: The notices as they arrived, from any of the three origins.
+    /// - Returns: The notices with ``Notice/isRead`` set.
     func adjust(_ value: Payload) -> Payload {
         let remembered = readLocally.identifiers()
         var adjusted = value
@@ -64,11 +79,14 @@ nonisolated struct NoticeSource: Source {
         return adjusted
     }
 
-    /// Where "read in PoliVerse" is kept.
+    /// Where “read in PoliVerse” is kept.
     struct ReadState: Sendable {
+        /// The notices marked read on this device.
         var identifiers: @Sendable () -> Set<String>
+        /// Records more notices as read.
         var insert: @Sendable (Set<String>) -> Void
 
+        /// Read state kept in `UserDefaults`.
         static let userDefaults = ReadState(
             identifiers: { Set(UserDefaults.standard.stringArray(forKey: "readNotices") ?? []) },
             insert: { added in
@@ -77,7 +95,7 @@ nonisolated struct NoticeSource: Source {
             }
         )
 
-        /// Remembers nothing, for tests about the server's own flag.
+        /// Read state that remembers nothing, for tests about the server's own flag.
         static let none = ReadState(identifiers: { [] }, insert: { _ in })
     }
 }

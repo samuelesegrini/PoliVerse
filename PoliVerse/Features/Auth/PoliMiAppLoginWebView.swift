@@ -44,10 +44,15 @@ import OSLog
 ///
 /// Keys are `REACT_APP_C_APP + "_" + name`, per `Px.calculateKey`.
 struct PoliMiAppLoginWebView: View {
+    /// The OAuth configuration the authorisation is built from.
     let oauthParams: ServiceDirectory.OAuthParams
+    /// Carries a CieID return back into the web view.
     let router: CieIDRouter
+    /// Called with the token pair once the web app has stored it.
     let onCredentials: (PoliMiToken) -> Void
+    /// Called when the sign-in fails.
     let onError: (any Error) -> Void
+    /// Called when CIE was chosen and CieID is not installed.
     var onCieIDMissing: () -> Void = {}
     /// Which authorisation this web view is driving. A login by default;
     /// `.login(hintMatricola:)` to land on a particular enrolment, or
@@ -61,12 +66,19 @@ struct PoliMiAppLoginWebView: View {
     /// chooser loads. See ``SPIDCatalogue``.
     var onProvidersRead: (String) -> Void = { _ in }
 
+    /// Diagnostic log for this type, under the `oauth` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "oauth")
 
+    /// The Servizi Online web app, which is loaded first so it can bootstrap itself.
     private let appURL = URL(string: "https://polimiapp.polimi.it/polimi_app/app/")!
+    /// The session-storage key the web app writes its token pair to.
     private let credentialsKey = "24344_oauthCredentials"
+    /// The session-storage key the web app checks its own `state` against, which is what lets
+    /// an authorisation started from outside pass that check.
     private let stateKey = "24344_oauthCheck"
 
+    /// The `state` this authorisation is started with.
+    /// `true` once the authorisation has been started.
     @State private var state = UUID().uuidString
     @State private var didStartAuthorize = false
     @State private var didFinish = false
@@ -84,11 +96,15 @@ struct PoliMiAppLoginWebView: View {
     /// not happen.
     @State private var selectionFailed = false
 
+    /// Which stage of the sign-in the page on screen belongs to. See ``LoginStage``.
     private var stage: LoginStage {
         LoginStage(url: currentURL, method: method, hasPressed: didSelectMethod)
     }
+    /// Whether the web view is on screen rather than the app's own waiting screen. Always
+    /// `true` once the chooser's button could not be pressed.
     private var showsWebView: Bool { selectionFailed || stage.showsWebView }
 
+    /// The view's content.
     var body: some View {
         AuthWebView(
             startURL: appURL,
@@ -130,9 +146,9 @@ struct PoliMiAppLoginWebView: View {
             credentialKey: credentialsKey
         )
         // Hidden until the student is somewhere that has to be theirs. What
-        // is covered is the bootstrap, the chooser our own buttons replaced,
-        // and the redirect chain that exchanges the code — none of which
-        // anyone can act on, and all of which used to be the login.
+        // is covered is the bootstrap, the chooser the app's own buttons stand
+        // in for, and the redirect chain that exchanges the code — none of
+        // which anyone can act on.
         .opacity(showsWebView ? 1 : 0)
         .accessibilityHidden(!showsWebView)
         .overlay {
@@ -202,6 +218,13 @@ struct PoliMiAppLoginWebView: View {
         }
     }
 
+    /// Moves the sign-in on after each navigation settles: bootstraps the web app, presses the
+    /// chosen method's button on the chooser, starts the authorisation, and reads the token
+    /// pair once it has been stored.
+    ///
+    /// - Parameters:
+    ///   - webView: The web view to drive.
+    ///   - url: The page it has just settled on.
     @MainActor
     private func advance(_ webView: WKWebView, url: URL?) async {
         log.debug("Settled on \(url?.path ?? "?", privacy: .public) (authorizing: \(didStartAuthorize, privacy: .public))")
@@ -287,10 +310,16 @@ struct PoliMiAppLoginWebView: View {
     /// in milliseconds (`expiresIn * 1000 + Date.now()`), converted back into
     /// the relative lifetime the rest of the app expects.
     private struct StoredCredentials: Decodable {
+        /// The bearer token.
         let accessToken: String
+        /// The refresh token.
         let refreshToken: String
+        /// When the access token expires, as an absolute epoch in milliseconds.
         let accessTokenExpiration: Double?
 
+        /// The stored pair as a ``PoliMiToken``, with the absolute expiry converted back into the
+        /// relative lifetime the rest of the app uses. A lifetime already past is floored at a
+        /// minute rather than left negative.
         var token: PoliMiToken {
             let remaining = accessTokenExpiration
                 .map { ($0 / 1000) - Date.now.timeIntervalSince1970 }

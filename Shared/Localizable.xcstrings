@@ -17,7 +17,7 @@
         }
       }
     },
-    " — stima, senza i punti di tesi" : {
+    " in %@" : {
 
     },
     "—" : {
@@ -35,6 +35,9 @@
           }
         }
       }
+    },
+    "· %@" : {
+
     },
     "/30" : {
       "extractionState" : "stale",
@@ -199,6 +202,49 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ of files. They stay on WeBeep."
+          }
+        }
+      }
+    },
+    "%@ è il %@." : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ è il %2$@."
+          }
+        }
+      }
+    },
+    "%@ è il %@%@." : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ è il %2$@%3$@."
+          }
+        }
+      }
+    },
+    "%@ è libera fino alle %@." : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ è libera fino alle %2$@."
+          }
+        }
+      }
+    },
+    "%@ è libera per il resto della giornata." : {
+
+    },
+    "%@ è occupata fino alle %@." : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ è occupata fino alle %2$@."
           }
         }
       }
@@ -848,9 +894,6 @@
         }
       }
     },
-    "%lld su 110" : {
-
-    },
     "%lld sulle prestazioni, %lld su blocchi e chiusure" : {
       "localizations" : {
         "it" : {
@@ -889,6 +932,9 @@
           }
         }
       }
+    },
+    "${room} è libera" : {
+
     },
     "1 discussione" : {
 
@@ -1111,6 +1157,9 @@
           }
         }
       }
+    },
+    "Accedi a PoliVerse per vedere il tuo orario." : {
+
     },
     "Accedi a PoliVerse per vedere le novità sui tuoi esami." : {
       "localizations" : {
@@ -1340,6 +1389,9 @@
       }
     },
     "ADESSO" : {
+
+    },
+    "Adesso · fino alle %@" : {
 
     },
     "Adesso e più tardi" : {
@@ -2207,6 +2259,12 @@
         }
       }
     },
+    "Apri PoliVerse sull'iPhone: l'orario arriva da lì." : {
+
+    },
+    "Apri su WeBeep" : {
+
+    },
     "Apri sul sito" : {
       "localizations" : {
         "en" : {
@@ -2445,6 +2503,7 @@
       }
     },
     "Aula %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2453,6 +2512,9 @@
           }
         }
       }
+    },
+    "Aula %@." : {
+
     },
     "Aula cambiata" : {
       "localizations" : {
@@ -2473,6 +2535,9 @@
           }
         }
       }
+    },
+    "Aula libera" : {
+
     },
     "Aula pubblicata" : {
       "localizations" : {
@@ -3135,6 +3200,9 @@
         }
       }
     },
+    "Cerco l'elaborato…" : {
+
+    },
     "CFU" : {
       "localizations" : {
         "en" : {
@@ -3767,7 +3835,7 @@
         }
       }
     },
-    "Con questa media ti laurei intorno a " : {
+    "Con questa media ti laurei intorno a %@ — stima, senza i punti di tesi" : {
 
     },
     "Con un accessorio la data occupa metà della larghezza." : {
@@ -3825,6 +3893,9 @@
     "Connessa, a consumo" : {
 
     },
+    "Consegna" : {
+
+    },
     "Consegna domani" : {
       "localizations" : {
         "en" : {
@@ -3858,6 +3929,9 @@
 
     },
     "Consentito" : {
+
+    },
+    "Consultabile sui Servizi Online." : {
 
     },
     "Contesto" : {
@@ -3919,6 +3993,9 @@
         }
       }
     },
+    "Conto alla rovescia e aula sulla schermata di blocco, fino a fine esame." : {
+
+    },
     "Conto alla rovescia e aula sulla schermata di blocco, fino a fine lezione." : {
       "localizations" : {
         "en" : {
@@ -3928,6 +4005,9 @@
           }
         }
       }
+    },
+    "Conto alla rovescia e aula sulla schermata di blocco. La durata è stimata in tre ore." : {
+
     },
     "Contrasto" : {
       "localizations" : {
@@ -4275,6 +4355,9 @@
     "Corso WeBeep" : {
 
     },
+    "Corso: %@" : {
+
+    },
     "Crea l'orario" : {
       "localizations" : {
         "en" : {
@@ -4398,6 +4481,9 @@
         }
       }
     },
+    "Da WeBeep · la consegna si fa su WeBeep." : {
+
+    },
     "Dai Servizi Online e da WeBeep" : {
 
     },
@@ -4492,6 +4578,9 @@
         }
       }
     },
+    "data da definire" : {
+
+    },
     "Data da definire" : {
       "localizations" : {
         "en" : {
@@ -4503,6 +4592,12 @@
       }
     },
     "Data dell'esame" : {
+
+    },
+    "Data di un appello" : {
+
+    },
+    "Data, aula e scadenza d'iscrizione di un appello, secondo l'ultimo aggiornamento dell'app." : {
 
     },
     "Dati" : {
@@ -5075,7 +5170,11 @@
         }
       }
     },
+    "Elaborato corretto" : {
+
+    },
     "Elaborato corretto consultabile sui Servizi Online." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5374,6 +5473,9 @@
           }
         }
       }
+    },
+    "Esame tra" : {
+
     },
     "Esami" : {
       "localizations" : {
@@ -5687,6 +5789,9 @@
         }
       }
     },
+    "Finito" : {
+
+    },
     "Fino a tre, impilate come stampe." : {
       "localizations" : {
         "en" : {
@@ -5839,6 +5944,9 @@
         }
       }
     },
+    "fra %lld giorni" : {
+
+    },
     "Fra %lld giorni alle %@" : {
       "localizations" : {
         "it" : {
@@ -5848,6 +5956,12 @@
           }
         }
       }
+    },
+    "fra %lld h" : {
+
+    },
+    "fra %lld min" : {
+
     },
     "Frase del giorno" : {
       "localizations" : {
@@ -7014,6 +7128,9 @@
         }
       }
     },
+    "In corso · circa" : {
+
+    },
     "In corso · finisce tra" : {
       "localizations" : {
         "en" : {
@@ -7470,6 +7587,9 @@
         }
       }
     },
+    "Iscrizioni aperte fino al %@." : {
+
+    },
     "Iscrizioni chiuse" : {
       "localizations" : {
         "en" : {
@@ -7564,6 +7684,9 @@
         }
       }
     },
+    "L'appello di %@ non ha ancora una data." : {
+
+    },
     "L'aula è evidenziata sulla pianta. Tocca per ingrandire." : {
       "localizations" : {
         "en" : {
@@ -7615,6 +7738,9 @@
         }
       }
     },
+    "La consegna si fa su WeBeep. Qui non si vede se hai già consegnato." : {
+
+    },
     "La media, prima del voto" : {
       "localizations" : {
         "en" : {
@@ -7657,6 +7783,9 @@
           }
         }
       }
+    },
+    "La prossima lezione di un corso, secondo l'orario che l'app ha già scaricato." : {
+
     },
     "La prossima lezione, l'aula e quanto manca: appena apri l'app, nel widget e sulla schermata di blocco." : {
       "localizations" : {
@@ -9099,6 +9228,9 @@
     "Nessun corso qui" : {
 
     },
+    "Nessun dato ancora." : {
+
+    },
     "Nessun dato di carriera" : {
       "localizations" : {
         "en" : {
@@ -9558,6 +9690,9 @@
         }
       }
     },
+    "Niente in programma." : {
+
+    },
     "Nome" : {
       "localizations" : {
         "en" : {
@@ -9739,6 +9874,9 @@
         }
       }
     },
+    "Non ho le prenotazioni di oggi per %@. Aprile in PoliVerse per aggiornarle." : {
+
+    },
     "Non ho trovato la tua riga nel file" : {
       "localizations" : {
         "en" : {
@@ -9901,6 +10039,9 @@
 
     },
     "Non superato: non entra nella media" : {
+
+    },
+    "Non trovo altre lezioni di %@ nell'orario scaricato." : {
 
     },
     "Non trovo la scheda di questo insegnamento nel Manifesto degli studi." : {
@@ -10982,7 +11123,6 @@
       }
     },
     "PoliVerse" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11489,6 +11629,12 @@
         }
       }
     },
+    "Prossima lezione di ${course}" : {
+
+    },
+    "Prossima lezione di un corso" : {
+
+    },
     "Prossime lezioni" : {
       "localizations" : {
         "en" : {
@@ -11698,6 +11844,9 @@
         }
       }
     },
+    "Quando è ${exam}" : {
+
+    },
     "Quando e dove inizia la prossima lezione." : {
       "localizations" : {
         "en" : {
@@ -11709,6 +11858,9 @@
       }
     },
     "Quando è libera e quando no" : {
+
+    },
+    "Quando è un esame" : {
 
     },
     "Quando torna la rete l’app si ricollega da sola." : {
@@ -11933,6 +12085,12 @@
           }
         }
       }
+    },
+    "Riassumi" : {
+
+    },
+    "Riassunto sul dispositivo. L'avviso originale è qui sotto." : {
+
     },
     "Riattiva le notifiche di %@" : {
       "localizations" : {
@@ -12278,6 +12436,9 @@
           }
         }
       }
+    },
+    "Scadenza" : {
+
     },
     "Scadenza della consegna cambiata" : {
       "localizations" : {
@@ -12685,6 +12846,12 @@
         }
       }
     },
+    "Se un'aula è libera" : {
+
+    },
+    "Se un'aula è libera adesso, e fino a quando, secondo le prenotazioni del giorno." : {
+
+    },
     "Secondo l’ora" : {
       "localizations" : {
         "en" : {
@@ -12726,6 +12893,9 @@
           }
         }
       }
+    },
+    "Segui l'esame" : {
+
     },
     "Sei iscritto" : {
 
@@ -13495,6 +13665,9 @@
           }
         }
       }
+    },
+    "Sto riassumendo…" : {
+
     },
     "Stretto" : {
       "localizations" : {

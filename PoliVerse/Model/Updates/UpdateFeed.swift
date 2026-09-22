@@ -4,41 +4,53 @@ import OSLog
 
 /// Everything the app has noticed changing, for the signed-in student.
 ///
-/// Two services feed it — ``CareerModel`` with exam sittings and the
-/// libretto, ``WeBeepModel`` with course pages — and both go through here
-/// because they share one log: one file per matricola, one daily budget, one
-/// evening summary. Written separately, each would overwrite the other's
-/// snapshot and the budget would count half the pushes.
+/// Two services feed it — ``CareerModel`` with the sittings and the libretto,
+/// ``WeBeepModel`` with the course pages — and both go through here because they share
+/// one ``ExamUpdateLog``: one file per matricola, one daily budget, one evening summary.
+/// Written separately, each would overwrite the other's readings and the budget would
+/// count half the pushes.
 ///
-/// Every record is the same four steps: read the log, compare, decide with
-/// ``ExamUpdatePolicy``, write back. None of them awaits, so two records can
-/// never interleave on the main actor.
+/// Every `record` method performs the same four steps — read the log, compare, decide
+/// with ``ExamUpdatePolicy``, write back — and none of them awaits between reading and
+/// writing, so two records cannot interleave on the main actor.
 @Observable
 final class UpdateFeed {
-    /// Newest first.
+    /// The recorded updates for the account on screen, newest first.
     private(set) var updates: [ExamUpdate] = []
     /// WeBeep assignment deadlines still ahead, soonest first.
     private(set) var deadlines: [AssignmentDeadline] = []
-    /// Handed what a record found for the first time, already decided.
+    /// Handed whatever a record found for the first time, with its delivery already decided.
+    /// ``NotificationModel/deliver(_:)`` is what the app passes.
     @ObservationIgnored private let onNewUpdates: (@MainActor ([ExamUpdate]) async -> Void)?
-    /// The sittings currently known, so a WeBeep file can be weighed against
-    /// the student's own exams.
+    /// The sittings currently known, so a WeBeep file can be weighed against the student's
+    /// own exams.
     ///
-    /// Assigned after construction, unlike everything else here, because this
-    /// one is a real cycle: ``CareerModel`` is built *with* the feed, so the
-    /// feed cannot be built with the career. A closure resolved when it is
-    /// read is the honest way to say "whoever holds the sittings, ask them
-    /// now" — see `PoliVerseApp.init`.
+    /// Assigned after construction rather than injected, because the dependency is a real
+    /// cycle: ``CareerModel`` is built with the feed, so the feed cannot be built with the
+    /// career. A closure resolved when it is read asks whoever holds the sittings at the
+    /// moment the question arises.
     @ObservationIgnored var sittings: @MainActor () -> [ExamSession] = { [] }
 
+    /// Where the per-account log is stored.
     private let offline: OfflineStore
+    /// The matricola whose feed is on screen, from ``show(account:)``. `nil` under sample
+    /// data and when signed out.
     private var account: String?
+    /// Diagnostic log for this type, under the `updates` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "updates")
 
-    /// The time decisions are taken at. Quiet hours and the daily budget
-    /// depend on it, so tests fix it rather than depend on when they run.
+    /// The moment decisions are taken at.
+    ///
+    /// Quiet hours and the daily budget depend on it, so tests fix it rather than depending
+    /// on when they run.
     private let clock: @Sendable () -> Date
 
+    /// Creates the feed. Nothing is read until ``show(account:)``.
+    ///
+    /// - Parameters:
+    ///   - offline: Where the per-account log is stored.
+    ///   - clock: The moment decisions are taken at.
+    ///   - onNewUpdates: Handed whatever a record found for the first time.
     init(offline: OfflineStore = .shared, clock: @escaping @Sendable () -> Date = { .now },
          onNewUpdates: (@MainActor ([ExamUpdate]) async -> Void)? = nil) {
         self.onNewUpdates = onNewUpdates
@@ -46,19 +58,21 @@ final class UpdateFeed {
         self.clock = clock
     }
 
-    /// The last fortnight: what changed since the student last looked, which
-    /// is the reason most visits happen.
+    /// The last fortnight's updates: what changed since the student last looked, which is
+    /// the reason most visits happen.
     var recent: [ExamUpdate] {
         updates.filter { $0.detectedAt > clock().addingTimeInterval(-14 * 86400) }
     }
 
-    /// When the student last opened the full feed, for this account.
+    /// When the student last opened the full feed, for this account. `nil` when they never
+    /// have.
     private(set) var seenAt: Date?
 
-    /// Facts in the last fortnight the student has not seen yet.
+    /// How many facts in the last fortnight the student has not seen — counted as facts
+    /// rather than sightings, so a mark and its refusal window count once.
     var unreadCount: Int { FeedItem.unreadCount(FeedItem.items(from: recent), seenAt: seenAt) }
 
-    /// Called when the full feed opens.
+    /// Records that the student has opened the full feed, in memory and in the log.
     func markSeen() {
         seenAt = clock()
         guard let account else { return }
@@ -67,8 +81,12 @@ final class UpdateFeed {
         offline.save(log, as: ExamUpdateLog.name, account: account)
     }
 
-    /// Shows this account's feed. Signing out, or switching career, must not
-    /// leave the previous student's on screen.
+    /// Puts one account's feed on screen, reading it from the log.
+    ///
+    /// Signing out or switching career must not leave the previous student's feed on screen.
+    /// Returns immediately when the account is already the one shown.
+    ///
+    /// - Parameter account: The matricola to show, or `nil` for signed out.
     func show(account: String?) {
         guard account != self.account else { return }
         self.account = account
@@ -78,7 +96,11 @@ final class UpdateFeed {
         deadlines = Self.upcoming(log, now: clock())
     }
 
-    /// Sample data, never written anywhere.
+    /// Puts sample data on screen. Nothing is read or written.
+    ///
+    /// - Parameters:
+    ///   - sample: The updates to show.
+    ///   - upcoming: The deadlines to show.
     func showSample(_ sample: [ExamUpdate], deadlines upcoming: [AssignmentDeadline] = []) {
         account = nil
         updates = sample
@@ -86,8 +108,15 @@ final class UpdateFeed {
         seenAt = nil
     }
 
-    /// - Parameter account: whose data this is. Callers show it first; a
-    ///   record for anyone else is kept but not surfaced.
+    /// Compares a career load against the previous reading and records what changed.
+    ///
+    /// Does nothing when both requests failed.
+    ///
+    /// - Parameters:
+    ///   - sessions: The sittings, or `nil` when that request failed.
+    ///   - libretto: The libretto, or `nil` when that request failed.
+    ///   - account: Whose data this is. A record for anyone but the account on screen is
+    ///     stored but not surfaced.
     func recordExams(sessions: [ExamSession]?, libretto: [LibrettoExam]?, account: String) async {
         guard sessions != nil || libretto != nil else { return }
         await record(account: account) { log, now in
@@ -98,10 +127,21 @@ final class UpdateFeed {
         }
     }
 
-    /// - Parameter inspect: reads a new results file for the student's own
-    ///   line, when they allowed it. Runs before the log is touched: it
-    ///   awaits a download, and a record must never await between reading
-    ///   and writing the log.
+    /// Compares a WeBeep course listing against the previous reading and records what
+    /// changed.
+    ///
+    /// When an inspector is supplied, a dry run against the log as it stands identifies the
+    /// new results files, and each is read before the log is touched — a record must not
+    /// await between reading and writing the log. What the file turns out to hold can then
+    /// reclassify the update: a solutions file holding a table of marks becomes results, and
+    /// a results file with no table becomes a notice.
+    ///
+    /// - Parameters:
+    ///   - course: The course being read.
+    ///   - sections: The course page's contents.
+    ///   - account: Whose data this is.
+    ///   - inspect: Reads a new results file for the student's own line, when they allowed
+    ///     it. `nil` downloads nothing.
     func recordMaterials(
         course: MaterialCourse, sections: [MoodleSection], account: String,
         inspect: (@MainActor (ResultsFileRef) async -> ResultsLookup?)? = nil
@@ -145,7 +185,15 @@ final class UpdateFeed {
         }
     }
 
-    /// New posts in a course's announcements forum.
+    /// Compares a course's announcements forum against the previous reading and records the
+    /// new posts.
+    ///
+    /// Kept under its own key beside the course's files.
+    ///
+    /// - Parameters:
+    ///   - course: The course being read.
+    ///   - posts: The forum's discussions.
+    ///   - account: Whose data this is.
     func recordAnnouncements(course: MaterialCourse, posts: [MoodleDiscussion], account: String) async {
         let context = Self.context(for: course, among: sittings(), now: clock())
         await record(account: account) { log, now in
@@ -158,9 +206,16 @@ final class UpdateFeed {
         }
     }
 
-    /// A course's assignments: new ones and moved deadlines as updates, and
-    /// the deadlines ahead kept for the reminders — replaced per course, so an
-    /// assignment the teacher removed stops being reminded.
+    /// Records a course's new assignments and moved deadlines, and the deadlines still
+    /// ahead.
+    ///
+    /// The deadlines are replaced per course, so an assignment the lecturer removed stops
+    /// being reminded about.
+    ///
+    /// - Parameters:
+    ///   - course: The course being read.
+    ///   - assignments: The course's assignments.
+    ///   - account: Whose data this is.
     func recordAssignments(course: MaterialCourse, assignments: [MoodleAssignment], account: String) async {
         await record(account: account) { log, now in
             let key = AssignmentDetector.courseKey(course)
@@ -172,10 +227,26 @@ final class UpdateFeed {
         }
     }
 
+    /// Every deadline in the log that is still ahead, soonest first.
+    ///
+    /// - Parameters:
+    ///   - log: The account's log, or `nil`.
+    ///   - now: The moment to measure against.
+    /// - Returns: The deadlines.
     private static func upcoming(_ log: ExamUpdateLog?, now: Date) -> [AssignmentDeadline] {
         (log?.deadlines ?? [:]).values.flatMap { $0 }.filter { $0.due > now }.sorted { $0.due < $1.due }
     }
 
+    /// The four steps every record performs: read the log, compare, decide, write back.
+    ///
+    /// A pass that outlived a sign-out or a career switch still writes to its own account's
+    /// log, but surfaces nothing and notifies nobody — another student's news must not
+    /// reach the screen.
+    ///
+    /// - Parameters:
+    ///   - account: Whose data this is.
+    ///   - detect: Compares against the log, updating its readings in place, and returns
+    ///     what it found.
     private func record(
         account: String, detect: (inout ExamUpdateLog, Date) -> [ExamUpdate]
     ) async {
@@ -201,12 +272,25 @@ final class UpdateFeed {
         await onNewUpdates?(added)
     }
 
+    /// Reads one account's log.
+    ///
+    /// - Parameter account: The matricola, or `nil`.
+    /// - Returns: The log, or `nil` when there is none.
     private func load(_ account: String?) -> ExamUpdateLog? {
         offline.load(ExamUpdateLog.self, as: ExamUpdateLog.name, account: account)?.value
     }
 
-    /// The student's sittings of a course around now: the last one taken
-    /// within two months, and the next one enrolled in within a fortnight.
+    /// The student's sittings of a course around now: the last one taken within
+    /// ``ExamUpdatePolicy/resultsWindow``, and the next one enrolled in within
+    /// ``ExamUpdatePolicy/noticeHorizon``.
+    ///
+    /// Only sittings the student enrolled in or has a mark for are considered.
+    ///
+    /// - Parameters:
+    ///   - course: The course being read.
+    ///   - sittings: Every sitting known.
+    ///   - now: The moment to measure from.
+    /// - Returns: The context a WeBeep finding is weighed against.
     static func context(for course: MaterialCourse, among sittings: [ExamSession], now: Date) -> MaterialContext {
         let dates = sittings.compactMap { sitting -> Date? in
             guard sitting.status == .enrolled || sitting.grade != nil,

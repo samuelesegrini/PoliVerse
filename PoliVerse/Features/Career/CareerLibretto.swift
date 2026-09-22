@@ -2,28 +2,37 @@ import SwiftUI
 
 /// One academic year of the libretto, or everything still to sit.
 ///
-/// The libretto used to be two flat lists — Superati and Da sostenere — of up
-/// to forty rows between them, sorted by date and by name. That is a
-/// spreadsheet: nothing in it says that the first year went well and the
-/// second was the hard one, which is the shape a student actually carries in
-/// their head.
+/// Grouped by year rather than as two flat lists of passed and pending: a
+/// list of forty rows sorted by date is a spreadsheet, and says nothing about
+/// the first year having gone well and the second having been the hard one,
+/// which is the shape a student carries in their head.
 ///
-/// Grouped, each year states its own credits and its own average, and a
+/// Each year states its own credits and its own average, and a
 /// collapsed year still shows its marks as a row of ticks — so the years read
 /// against each other at a glance without any of them being opened.
 struct LibrettoYearCard: View {
+    /// The year's name, or ``StudyPlan/pendingGroup`` for what is still to sit.
     let title: String
+    /// The year's entries.
     let exams: [LibrettoExam]
+    /// True when the card is open and showing its rows.
     let isExpanded: Bool
+    /// Opens or closes the card.
     let toggle: () -> Void
 
+    /// The look in use, which supplies the card's material and colour.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// True for the group of exams still to sit, which has no average of its own.
     private var isPending: Bool { title == StudyPlan.pendingGroup }
+    /// The credits passed in this year.
     private var earned: Int { StudyPlan.earnedCFU(of: exams) }
+    /// The year's own weighted average, or `nil` when nothing in it is graded.
     private var mean: Double? { StudyPlan.mean(of: exams) }
 
+    /// The view's content.
     var body: some View {
         VStack(spacing: 0) {
             Button(action: toggle) { header }
@@ -40,6 +49,7 @@ struct LibrettoYearCard: View {
         .lookCard()
     }
 
+    /// The card's title row: the year, its credits and average, its marks as ticks while closed, and the chevron.
     private var header: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
@@ -72,6 +82,7 @@ struct LibrettoYearCard: View {
         .accessibilityHint(isExpanded ? "Tocca per chiudere" : "Tocca per aprire")
     }
 
+    /// The line under the year: its credits and average, or how many exams are left to sit.
     private var subtitle: String {
         if isPending {
             let cfu = exams.reduce(0) { $0 + ($1.cfu ?? 0) }
@@ -87,9 +98,12 @@ struct LibrettoYearCard: View {
 
 /// A year's marks, small enough to sit at the end of its own title row.
 private struct YearSpark: View {
+    /// The year's entries, whose marks are drawn as ticks.
     let exams: [LibrettoExam]
 
+    /// The look in use, which supplies the ticks' colour.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
     /// Up to six, oldest first: past that they stop being legible at this
@@ -102,6 +116,7 @@ private struct YearSpark: View {
             .map { (id: $0.id, grade: $0.grade ?? 0) }
     }
 
+    /// The view's content.
     var body: some View {
         let grades = grades
         if !grades.isEmpty {
@@ -130,15 +145,19 @@ private struct YearSpark: View {
 /// One teaching: the mark if it has been sat, the credits, and when.
 ///
 /// Flat rather than on a card of its own — it lives inside its year's card,
-/// separated by rules. A card per row inside a card was two elevations
+/// separated by rules, because a card per row inside a card is two elevations
 /// saying the same thing.
 struct LibrettoRow: View {
+    /// The entry this row is about.
     let exam: LibrettoExam
 
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// The view's content.
     var body: some View {
         let accent = style.palette(scheme).accent
         HStack(alignment: .center, spacing: 12) {
@@ -170,6 +189,7 @@ struct LibrettoRow: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// The line under the name: the credits, and when it was sat or where it stands.
     private var detail: String {
         let credits = (exam.cfu ?? 0) > 0 ? String(localized: "\(exam.cfu ?? 0) CFU") : nil
         let when = exam.date.map {

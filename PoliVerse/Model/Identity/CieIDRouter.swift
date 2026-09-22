@@ -3,23 +3,37 @@ import Observation
 import OSLog
 import UIKit
 
-/// Carries the URL CieID hands back to whichever login web view is on screen.
+/// Carries the URL the CieID app hands back to whichever sign-in web view started
+/// the flow.
 ///
-/// The return arrives at the app level (`onOpenURL`), but it has to be loaded
-/// into the *specific* `WKWebView` that started the flow — that view holds the
-/// session cookies the IdP set. This is the wire between the two.
+/// The return arrives at app level through `onOpenURL`, but it has to be loaded
+/// into the specific `WKWebView` that began the flow, since that view holds the
+/// cookies the identity provider set. This type is the wire between the two:
+/// ``handle(_:)`` receives the return and ``consume()`` hands it to the view.
+///
+/// ``openCieID(for:)`` makes the outbound leg, and ``openAppStore()`` covers the
+/// case where CieID is not installed.
 @Observable
 final class CieIDRouter {
-    /// Set when CieID returns; the active login view consumes it.
+    /// The return URL waiting to be loaded, consumed by the active sign-in view.
     private(set) var pendingURL: URL?
-    /// Set when CieID reports a failure instead.
+    /// What CieID reported instead of a return, or `nil`. Cleared by ``clearError()``.
     private(set) var errorMessage: String?
-    /// True while the user is over in the CieID app.
+    /// `true` while the student is over in the CieID app.
     private(set) var isAwaitingCieID = false
 
+    /// Diagnostic log for this type, under the `cieid` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "cieid")
 
-    /// Called from `onOpenURL`. Returns true if this URL was ours.
+    /// Receives an incoming URL from `onOpenURL`.
+    ///
+    /// A recognised return either sets ``errorMessage``, when CieID reported a failure,
+    /// or ``pendingURL``, for the sign-in view to load. Either way it clears
+    /// ``isAwaitingCieID``.
+    ///
+    /// - Parameter url: The incoming URL.
+    /// - Returns: `true` when the URL was a CieID return and has been handled, `false`
+    ///   when it belongs to something else.
     @discardableResult
     func handle(_ url: URL) -> Bool {
         // Logged at info so it survives in the device log: if CieID ever
@@ -46,19 +60,23 @@ final class CieIDRouter {
         return true
     }
 
-    /// The login view calls this once it has loaded the URL.
+    /// Takes the pending return URL, clearing it.
+    ///
+    /// - Returns: The URL to load, or `nil` when there is none.
     func consume() -> URL? {
         defer { pendingURL = nil }
         return pendingURL
     }
 
+    /// Discards the reported error, once it has been shown.
     func clearError() { errorMessage = nil }
 
-    /// Hands an IdP navigation to the CieID app with `sourceApp` attached, so
-    /// it comes back here instead of opening the default browser.
+    /// Hands an identity-provider navigation to the CieID app, with `sourceApp`
+    /// attached so that it returns here rather than opening the default browser.
     ///
-    /// - Returns: false when CieID is not installed, so the caller can offer
-    ///   the App Store instead of silently doing nothing.
+    /// - Parameter url: The navigation CieID should take over.
+    /// - Returns: `false` when the hand-off URL cannot be built or CieID is not
+    ///   installed, so the caller can offer the App Store instead of doing nothing.
     @MainActor
     func openCieID(for url: URL) async -> Bool {
         guard let handoff = CieIDBridge.handoffURL(for: url) else {
@@ -75,6 +93,7 @@ final class CieIDRouter {
         return opened
     }
 
+    /// Opens CieID's App Store page.
     @MainActor
     func openAppStore() {
         UIApplication.shared.open(CieIDBridge.appStoreURL)

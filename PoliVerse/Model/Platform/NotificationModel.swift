@@ -3,16 +3,23 @@ import Observation
 import OSLog
 import UserNotifications
 
-/// Schedules the reminders ``NotificationPlan`` decides on.
+/// Schedules and delivers the reminders ``NotificationPlan`` decides on.
 ///
-/// Everything is local. The app has no push infrastructure and no server of
-/// its own, which is a feature here: reminders keep working offline, and no
-/// timetable leaves the device to make them happen.
+/// Everything is local. The app has no push infrastructure and no server, which means
+/// reminders keep working offline and no timetable leaves the device to make them
+/// happen.
+///
+/// ``reschedule(events:exams:assignments:updates:)`` replaces the whole pending plan,
+/// and ``deliver(_:)`` pushes exam news immediately, outside that plan.
 @Observable
 final class NotificationModel {
+    /// What the system says about permission, refreshed by ``refreshAuthorization()``.
     private(set) var authorization: UNAuthorizationStatus = .notDetermined
+    /// The plan currently pending, as last scheduled.
     private(set) var scheduled: [PlannedNotification] = []
 
+    /// Which reminders the student wants and how far ahead. Persisted whenever it
+    /// changes.
     var preferences: NotificationPreferences = .stored {
         didSet {
             guard preferences != oldValue else { return }
@@ -20,19 +27,25 @@ final class NotificationModel {
         }
     }
 
+    /// The system notification centre.
     private let centre = UNUserNotificationCenter.current()
+    /// Diagnostic log for this type, under the `notifications` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "notifications")
 
-    /// Tapping a reminder should land on the right screen, not just open the
-    /// app, so each kind carries the tab it belongs to.
+    /// The category every reminder carries.
     static let categoryIdentifier = "segrini.samuele.PoliVerse.reminder"
 
+    /// Re-reads ``authorization`` from the system.
     func refreshAuthorization() async {
         authorization = await centre.notificationSettings().authorizationStatus
     }
 
-    /// Asks, once. A refusal is remembered by the system, so asking again is
-    /// pointless — the UI sends the user to Settings instead.
+    /// Asks for permission to show alerts, play sounds and badge the icon.
+    ///
+    /// Asks once: the system remembers a refusal, so the interface sends the student to
+    /// Settings instead of asking again.
+    ///
+    /// - Returns: `true` when permission was granted.
     @discardableResult
     func requestAuthorization() async -> Bool {
         do {
@@ -49,9 +62,18 @@ final class NotificationModel {
 
     /// Replaces every pending reminder with the current plan.
     ///
-    /// Replace rather than add: the timetable changes, lectures move, exams
-    /// are withdrawn. Adding would leave a reminder for a lecture that no
-    /// longer exists, and there is no way to notice that from inside the app.
+    /// Replaced rather than added to: lectures move and sittings are withdrawn, and a
+    /// reminder for something that no longer exists cannot be noticed from inside the app.
+    /// Each reminder fires on Rome wall-clock components, so a plan made in one time zone
+    /// still fires at the right local moment.
+    ///
+    /// Does nothing without permission.
+    ///
+    /// - Parameters:
+    ///   - events: The agenda entries to remind about.
+    ///   - exams: The exam sittings.
+    ///   - assignments: The assignment deadlines.
+    ///   - updates: The exam updates worth a planned reminder.
     func reschedule(events: [AgendaEvent], exams: [ExamSession], assignments: [AssignmentDeadline] = [],
                     updates: [ExamUpdate] = []) async {
         await refreshAuthorization()
@@ -75,11 +97,16 @@ final class NotificationModel {
         log.notice("Scheduled \(plan.count, privacy: .public) reminders (\(byKind, privacy: .public))")
     }
 
-    /// Delivers exam updates the policy chose to push, right away.
+    /// Delivers the exam updates the policy chose to push, at once.
     ///
-    /// Not part of ``reschedule``: these are not planned for a moment, they
-    /// are news, and a nil trigger delivers them at once — so rebuilding the
-    /// pending plan afterwards cannot cancel them.
+    /// Kept out of ``reschedule(events:exams:assignments:updates:)`` because these are
+    /// news rather than reminders for a moment: they are added with no trigger, so
+    /// rebuilding the pending plan afterwards cannot cancel them. Notifications the policy
+    /// has since superseded are withdrawn first.
+    ///
+    /// Does nothing without permission.
+    ///
+    /// - Parameter decided: The updates to push.
     func deliver(_ decided: [ExamUpdate]) async {
         await refreshAuthorization()
         guard authorization == .authorized || authorization == .provisional else { return }
@@ -93,6 +120,15 @@ final class NotificationModel {
         }
     }
 
+    /// Adds one notification request.
+    ///
+    /// Only genuinely imminent reminders are marked time-sensitive, since marking
+    /// everything urgent is how an app gets silenced altogether. A failure is logged and
+    /// otherwise ignored.
+    ///
+    /// - Parameters:
+    ///   - item: What to show.
+    ///   - trigger: When to show it, or `nil` to deliver immediately.
     private func add(_ item: PlannedNotification, trigger: UNNotificationTrigger?) async {
         let content = UNMutableNotificationContent()
         content.title = item.title
@@ -114,14 +150,19 @@ final class NotificationModel {
         }
     }
 
-    /// Drops everything — on sign-out, or when the user turns reminders off.
+    /// Cancels every pending reminder, on sign-out or when the student turns reminders
+    /// off.
     func cancelAll() {
         centre.removeAllPendingNotificationRequests()
         scheduled = []
         log.notice("Cancelled all reminders")
     }
 
-    /// The tab a reminder should open.
+    /// The screen a tapped reminder should open.
+    ///
+    /// - Parameter kind: The raw ``PlannedNotification/Kind`` carried on the notification.
+    /// - Returns: The calendar for lectures and deadlines, the career for exams,
+    ///   enrolment windows and updates, and Oggi for anything unrecognised.
     static func destination(for kind: String) -> AppDestination {
         switch PlannedNotification.Kind(rawValue: kind) {
         case .lecture, .deadline: .calendar
@@ -131,8 +172,14 @@ final class NotificationModel {
     }
 }
 
-/// Routes a tapped reminder to the right tab.
+/// Routes a tapped reminder to the right screen, and decides how one arriving while
+/// the app is open is presented.
 final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
+    /// Sends the tapped reminder's destination through ``AppDestination/send()``.
+    ///
+    /// - Parameters:
+    ///   - center: The notification centre.
+    ///   - response: What the student tapped.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
@@ -141,8 +188,13 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
         await MainActor.run { NotificationModel.destination(for: kind).send() }
     }
 
-    /// Shown even with the app open: a lecture starting in fifteen minutes is
-    /// worth interrupting whatever screen is in front of the user.
+    /// Shows a reminder as a banner even with the app open: a lecture starting in fifteen
+    /// minutes is worth interrupting whatever screen is in front of the student.
+    ///
+    /// - Parameters:
+    ///   - center: The notification centre.
+    ///   - notification: The reminder about to be presented.
+    /// - Returns: Banner, sound and notification-centre listing.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification

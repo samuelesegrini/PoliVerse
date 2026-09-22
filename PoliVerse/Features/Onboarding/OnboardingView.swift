@@ -21,12 +21,19 @@ import SwiftUI
 /// The sequence itself is ``OnboardingFlow``; this view renders whatever that
 /// says applies, and ``OnboardingState`` remembers where it got to.
 struct OnboardingView: View {
+    /// The shared ``OnboardingState``, from the environment.
     @Environment(OnboardingState.self) private var onboarding
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The shared ``CareersModel``, from the environment.
     @Environment(CareersModel.self) private var careers
+    /// The shared ``WeBeepModel``, from the environment.
     @Environment(WeBeepModel.self) private var weBeep
+    /// The shared ``NotificationModel``, from the environment.
     @Environment(NotificationModel.self) private var notifications
+    /// The shared ``WhatsNewState``, from the environment.
     @Environment(WhatsNewState.self) private var whatsNew
+    /// Whether the reader has asked for reduced motion.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// What the flow knows right now. Rebuilt on every render rather than
@@ -40,8 +47,10 @@ struct OnboardingView: View {
             notificationsDenied: notifications.authorization == .denied)
     }
 
+    /// The steps that apply right now, which the progress bar counts.
     private var steps: [OnboardingFlow.Step] { OnboardingFlow.steps(in: context) }
 
+    /// The view's content.
     var body: some View {
         VStack(spacing: 0) {
             if onboarding.step != .welcome {
@@ -112,6 +121,7 @@ struct OnboardingView: View {
             removal: .move(edge: leaving).combined(with: .opacity))
     }
 
+    /// Moves to the next step that applies.
     private func advance() {
         onboarding.advance(in: context)
     }
@@ -132,11 +142,19 @@ struct OnboardingView: View {
 /// career step or remove a WeBeep one, and "passo 3 di 5" that becomes 3 of 4
 /// reads as a bug.
 private struct OnboardingProgress: View {
+    /// Every step the flow will go through, in order.
     let steps: [OnboardingFlow.Step]
+    /// The step on screen.
     let current: OnboardingFlow.Step
 
+    /// The onboarding flow's accent, taken from the look in use.
     private var tint = OnboardingTint()
 
+    /// Creates the bar.
+    ///
+    /// - Parameters:
+    ///   - steps: Every step the flow will go through.
+    ///   - current: The step on screen.
     init(steps: [OnboardingFlow.Step], current: OnboardingFlow.Step) {
         self.steps = steps
         self.current = current
@@ -146,6 +164,7 @@ private struct OnboardingProgress: View {
     /// stopped applying and the flow is about to fall forward off it.
     private var reached: Int { steps.firstIndex(of: current) ?? 0 }
 
+    /// The view's content.
     var body: some View {
         HStack(spacing: 6) {
             ForEach(Array(steps.enumerated()), id: \.element) { index, _ in
@@ -164,6 +183,7 @@ private struct OnboardingProgress: View {
         .accessibilityLabel(label)
     }
 
+    /// The position spoken to assistive technologies, where the dots carry no meaning.
     private var label: String {
         String(localized: "Passo \(reached + 1) di \(steps.count)")
     }

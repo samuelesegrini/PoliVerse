@@ -3,7 +3,9 @@ import Foundation
 /// The lesson to show above the tab bar: the one in progress, or else the
 /// next one still to start today.
 nonisolated struct CurrentClass: Equatable, Sendable {
+    /// The lesson itself.
     let event: AgendaEvent
+    /// True when the lesson has already started.
     let isOngoing: Bool
 
     /// Share of the lesson already gone, 0…1; 0 before it starts.

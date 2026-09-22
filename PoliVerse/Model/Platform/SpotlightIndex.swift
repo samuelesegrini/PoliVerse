@@ -5,32 +5,35 @@ import UniformTypeIdentifiers
 
 /// Publishes the student's own data to system search.
 ///
-/// What gets indexed is deliberately narrow: courses, rooms, teachers and
-/// exams — things with a stable identity and a screen to open. News and
-/// notifications are not indexed, because they are the university's content
-/// rather than the student's, they churn, and leaving somebody's private
-/// notifications in the system index long after they stop using the app is
-/// not a trade worth making.
+/// What is indexed is deliberately narrow: courses, rooms, lecturers and exam
+/// sittings — things with a stable identity and a screen to open. News and
+/// notifications are not indexed: they are the university's content rather than the
+/// student's, they churn, and leaving someone's notifications in the system index
+/// after they stop using the app is not a worthwhile trade.
 ///
-/// Everything lives in one domain so a sign-out can delete the lot in a single
-/// call.
+/// Everything is filed under ``domain``, so ``clear()`` removes the lot in one call.
 @MainActor
 final class SpotlightIndex {
+    /// The domain every indexed item is filed under.
     static let domain = "segrini.samuele.PoliVerse.items"
-    /// Opening a Spotlight hit arrives as this activity type, carrying the
-    /// identifier below.
+    /// The activity type a Spotlight hit arrives as, carrying an ``Item`` identifier.
     static let activityType = "segrini.samuele.PoliVerse.open"
 
+    /// The system index items are written to.
     private let index = CSSearchableIndex.default()
+    /// Diagnostic log for this type, under the `spotlight` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "spotlight")
 
-    /// A stable identifier that also says which screen to open.
+    /// An indexed thing, and which screen opening it should reach.
     ///
-    /// Encoded in the id itself rather than kept in a side table: Spotlight
-    /// hands back only this string, possibly long after the app was last run.
+    /// The kind is encoded in the identifier rather than kept in a side table, because
+    /// Spotlight hands back only that string — possibly long after the app last ran.
     nonisolated enum Item: Sendable, Equatable {
+        /// A course by ``Course/id``, a room by ``Classroom/id``, a lecturer by
+        /// ``Teacher/id``, or an exam sitting by ``ExamSession/id``.
         case course(String), room(String), teacher(String), exam(String)
 
+        /// The `kind:value` string Spotlight stores and hands back.
         var identifier: String {
             switch self {
             case .course(let id): "course:\(id)"
@@ -40,6 +43,10 @@ final class SpotlightIndex {
             }
         }
 
+        /// Parses an identifier Spotlight handed back.
+        ///
+        /// - Parameter identifier: The stored string.
+        /// - Returns: `nil` when it is not `kind:value` with a known kind.
         init?(identifier: String) {
             let parts = identifier.split(separator: ":", maxSplits: 1)
             guard parts.count == 2 else { return nil }
@@ -54,6 +61,16 @@ final class SpotlightIndex {
         }
     }
 
+    /// Replaces the index with the student's current data.
+    ///
+    /// Hidden courses are omitted. Lecturers are indexed as contacts and everything else
+    /// as content. Does nothing when there is nothing to index.
+    ///
+    /// - Parameters:
+    ///   - courses: The enrolled teachings.
+    ///   - rooms: The room catalogue.
+    ///   - teachers: The lecturer roster.
+    ///   - exams: The exam sittings.
     func index(courses: [Course], rooms: [Classroom],
                teachers: [Teacher], exams: [ExamSession]) {
         var items: [CSSearchableItem] = []
@@ -69,7 +86,7 @@ final class SpotlightIndex {
 
         for room in rooms {
             items.append(item(
-                Item.room(room.id), title: "Aula \(room.id)",
+                Item.room(room.id), title: RoomNaming.sentence(room.id),
                 description: [room.locationLabel, "\(room.capacity) posti"]
                     .filter { !$0.isEmpty }.joined(separator: " · "),
                 keywords: [room.buildingName, room.campusName].compactMap { $0 },
@@ -104,10 +121,10 @@ final class SpotlightIndex {
         }
     }
 
-    /// Removes everything on sign-out.
+    /// Removes everything this app indexed.
     ///
-    /// Not optional politeness: without it another person signing in on the
-    /// same device would find the previous student's courses in Spotlight.
+    /// Called on sign-out: without it, another person signing in on the same device would
+    /// find the previous student's courses in Spotlight.
     func clear() {
         index.deleteSearchableItems(withDomainIdentifiers: [Self.domain]) { [log] error in
             if let error {
@@ -116,6 +133,19 @@ final class SpotlightIndex {
         }
     }
 
+    /// Builds one searchable item.
+    ///
+    /// Ranked slightly above the default, since these are things the student looks up,
+    /// and set to expire after thirty days — long enough to survive a holiday, short
+    /// enough that a stale list ages out on its own.
+    ///
+    /// - Parameters:
+    ///   - item: What is being indexed.
+    ///   - title: The item's title in search results.
+    ///   - description: The second line.
+    ///   - keywords: Extra terms to match on. Empty ones are dropped.
+    ///   - type: The content type, which decides how the result is presented.
+    /// - Returns: The item, ready to index.
     private func item(_ item: Item, title: String, description: String,
                       keywords: [String], type: UTType) -> CSSearchableItem {
         let attributes = CSSearchableItemAttributeSet(contentType: type)

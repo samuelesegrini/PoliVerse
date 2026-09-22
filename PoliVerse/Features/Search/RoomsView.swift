@@ -2,13 +2,19 @@ import SwiftUI
 
 /// Browse and search the room catalogue.
 struct RoomsView: View {
+    /// The shared ``RoomsModel``, from the environment.
     @Environment(RoomsModel.self) private var rooms
+    /// The shared ``RoomFacilitiesModel``, from the environment.
     @Environment(RoomFacilitiesModel.self) private var facilities
+    /// The shared ``FreeRoomsModel``, from the environment.
     @Environment(FreeRoomsModel.self) private var freeRooms
 
+    /// What the student typed into the search field.
+    /// The campus to restrict to, or `nil` for every campus.
     @State private var query = ""
     @State private var campus: String?
 
+    /// The rooms matching the query and the campus filter.
     private var results: [Classroom] {
         rooms.rooms(matching: query, campus: campus)
     }
@@ -20,6 +26,7 @@ struct RoomsView: View {
             .sorted { $0.building < $1.building }
     }
 
+    /// The view's content.
     var body: some View {
         List {
             Section {
@@ -121,9 +128,12 @@ struct RoomsView: View {
 
 }
 
+/// One room: its code, its building and its capacity.
 private struct RoomRow: View {
+    /// The room this row shows.
     let room: Classroom
 
+    /// The view's content.
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {

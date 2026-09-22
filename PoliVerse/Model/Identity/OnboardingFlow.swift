@@ -2,44 +2,55 @@ import Foundation
 
 /// Which steps the first run is made of, and in what order.
 ///
-/// Kept apart from the views because the sequence is not fixed: it depends on
-/// the account behind it, and the account is not known until halfway through.
-/// A student with one enrolment must not be asked which career to use; one who
-/// has already refused notifications must not be shown a button that asks iOS
-/// for a permission it will never prompt for again; someone exploring the
-/// sample data has no account at all and nothing that reads one applies.
+/// The sequence depends on the account behind it, and the account is not known
+/// until halfway through, so it is derived from a ``Context`` on every query rather
+/// than built once at the start — the sign-in step is precisely what changes the
+/// context.
 ///
-/// So the sequence is **derived, never stored**. `next(after:)` asks what the
-/// context is now rather than walking a list built at the start, because the
-/// sign-in step is precisely what changes that context.
+/// ``OnboardingState`` holds the cursor over this.
 nonisolated enum OnboardingFlow {
+    /// One screen of the first run. The declaration order is the canonical order
+    /// ``next(after:in:)`` falls forward through.
     enum Step: String, CaseIterable, Identifiable, Sendable {
         /// What the app is, before asking for anything.
         case welcome
-        /// The Politecnico's own login page.
+        /// The Politecnico's own sign-in.
         case signIn
-        /// Permission, and how far ahead to be told.
+        /// Notification permission, and how far ahead to be reminded.
         case reminders
-        /// Which enrolment, when there is more than one.
+        /// Which enrolment to use, when there is more than one.
         case career
-        /// The course materials, which sign in separately.
+        /// Course materials, which sign in separately.
         case weBeep
         /// What was set up, and where to change it later.
         case ready
 
+        /// The raw value.
         var id: String { rawValue }
     }
 
-    /// What the flow knows about the account at this moment.
+    /// What the flow knows about the account at the moment it is asked.
     struct Context: Equatable, Sendable {
+        /// Whether there is a live session.
         var isSignedIn = false
-        /// The student chose to explore the sample data instead of signing in.
+        /// Whether the student chose to explore the sample data instead of signing in.
         var isDemo = false
+        /// Whether the account has more than one enrolment to choose between.
         var hasCareerChoice = false
+        /// Whether course materials are already connected.
         var isWeBeepConnected = false
-        /// iOS has been asked once and told no. Asking again does nothing.
+        /// Whether iOS has been asked once and refused. Asking again prompts for nothing,
+        /// so the step is skipped.
         var notificationsDenied = false
 
+        /// Creates a context.
+        ///
+        /// - Parameters:
+        ///   - isSignedIn: Whether there is a live session.
+        ///   - isDemo: Whether the student chose the sample data.
+        ///   - hasCareerChoice: Whether there is more than one enrolment.
+        ///   - isWeBeepConnected: Whether course materials are connected.
+        ///   - notificationsDenied: Whether notification permission was already refused.
         init(
             isSignedIn: Bool = false,
             isDemo: Bool = false,
@@ -56,6 +67,15 @@ nonisolated enum OnboardingFlow {
     }
 
     /// The steps that apply, in order.
+    ///
+    /// Sample data yields ``Step/welcome`` and ``Step/ready`` alone: it needs no
+    /// account, no career and no WeBeep, and nothing is scheduled from it. Otherwise
+    /// ``Step/reminders`` is dropped once permission has been refused,
+    /// ``Step/career`` appears only with more than one enrolment, and ``Step/weBeep``
+    /// is dropped once materials are connected.
+    ///
+    /// - Parameter context: What the flow should take into account.
+    /// - Returns: The applicable steps.
     static func steps(in context: Context) -> [Step] {
         // Sample data needs no account, no career and no WeBeep, and the app
         // deliberately schedules nothing from it — every other step would be
@@ -70,33 +90,46 @@ nonisolated enum OnboardingFlow {
         return steps
     }
 
-    /// The step before this one, or nil at the start.
+    /// The step before a given one.
+    ///
+    /// - Parameters:
+    ///   - step: The step on screen.
+    ///   - context: What the flow should take into account.
+    /// - Returns: The preceding step, or `nil` at the start or when `step` no longer
+    ///   applies.
     static func previous(before step: Step, in context: Context) -> Step? {
         let steps = steps(in: context)
         guard let index = steps.firstIndex(of: step), index > 0 else { return nil }
         return steps[index - 1]
     }
 
-    /// Whether a back button belongs on this step.
+    /// Whether a back button belongs on a step.
     ///
-    /// Not simply "is there a step behind it". Once there is a session, the
-    /// step behind is the sign-in, and offering to sign in again over a live
-    /// session ends with the IdP replaying the existing grant and the student
-    /// wondering what they just did. Everything else is re-readable, which is
-    /// the point: the notifications step spends a permission iOS grants once,
-    /// and someone who wants to re-read the page before spending it should be
-    /// able to.
+    /// `false` when the step behind is ``Step/signIn`` and a session already exists:
+    /// signing in again over a live session has the identity provider replay the
+    /// existing grant. Every other step is re-readable, which matters for
+    /// ``Step/reminders``, since it spends a permission iOS grants once.
+    ///
+    /// - Parameters:
+    ///   - step: The step on screen.
+    ///   - context: What the flow should take into account.
+    /// - Returns: `true` when the student may step back.
     static func canGoBack(from step: Step, in context: Context) -> Bool {
         guard let previous = previous(before: step, in: context) else { return false }
         if context.isSignedIn, previous == .signIn { return false }
         return true
     }
 
-    /// The step to show after this one, or nil at the end.
+    /// The step to show after a given one.
     ///
-    /// Tolerates a `step` that is no longer in the sequence — signing in can
-    /// remove one, and the flow must move forward rather than stall on a step
-    /// that stopped applying while it was on screen.
+    /// Tolerates a step that no longer applies — signing in can remove one while it is
+    /// on screen — by falling forward to the first applicable step that comes later in
+    /// the canonical order.
+    ///
+    /// - Parameters:
+    ///   - step: The step on screen.
+    ///   - context: What the flow should take into account.
+    /// - Returns: The next step, or `nil` when the flow is finished.
     static func next(after step: Step, in context: Context) -> Step? {
         let steps = steps(in: context)
         if let index = steps.firstIndex(of: step) {

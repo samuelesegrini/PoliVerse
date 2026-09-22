@@ -10,6 +10,7 @@ import SwiftUI
 /// signed-out screen for that stretch, which read as the login having quietly
 /// failed rather than still being in progress.
 struct SigningInView: View {
+    /// The view's content.
     var body: some View {
         VStack(spacing: 18) {
             ProgressView()

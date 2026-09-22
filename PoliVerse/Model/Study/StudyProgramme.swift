@@ -8,8 +8,12 @@ import Foundation
 /// scheda and every WeBeep page is read against that plan rather than guessed
 /// from a name shared by dozens of degree courses.
 nonisolated struct StudyProgramme: Sendable, Equatable, Codable {
+    /// Where in the manifesto the programme sits: year, campus, school, degree course and
+    /// plan.
     var selection: CatalogueSelection
+    /// The degree course's name, as the catalogue spells it.
     var degreeLabel: String
+    /// The plan's name, as the catalogue spells it.
     var planLabel: String
     /// False while it is the app's guess from the career's degree name.
     var isConfirmed: Bool
@@ -42,17 +46,30 @@ nonisolated struct StudyProgramme: Sendable, Equatable, Codable {
 /// Programmes in the defaults, one per matricola: a bachelor's and a master's
 /// career are two programmes, and one must never stand in for the other.
 nonisolated struct StudyProgrammeStore: @unchecked Sendable {
+    /// Where the programmes are stored.
     let defaults: UserDefaults
 
+    /// Creates a store.
+    ///
+    /// - Parameter defaults: Where the programmes are stored.
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
     }
 
+    /// The programme stored for one enrolment.
+    ///
+    /// - Parameter matricola: The enrolment.
+    /// - Returns: The programme, or `nil` when none is stored or it will not decode.
     func programme(for matricola: String) -> StudyProgramme? {
         guard let data = defaults.data(forKey: key(matricola)) else { return nil }
         return try? JSONDecoder().decode(StudyProgramme.self, from: data)
     }
 
+    /// Stores a programme for one enrolment, or removes it.
+    ///
+    /// - Parameters:
+    ///   - programme: The programme to store, or `nil` to remove.
+    ///   - matricola: The enrolment.
     func save(_ programme: StudyProgramme?, for matricola: String) {
         write(programme, key(matricola))
     }
@@ -64,6 +81,12 @@ nonisolated struct StudyProgrammeStore: @unchecked Sendable {
         return try? JSONDecoder().decode(StudyProgramme.self, from: data)
     }
 
+    /// Stores another plan the student follows in one academic year, or removes it.
+    ///
+    /// - Parameters:
+    ///   - programme: The programme to store, or `nil` to remove.
+    ///   - matricola: The enrolment the app is signed in with.
+    ///   - year: The academic year the other plan applies to.
     func saveOther(_ programme: StudyProgramme?, for matricola: String, year: String) {
         write(programme, key(matricola) + "-other-" + year)
     }
@@ -75,6 +98,11 @@ nonisolated struct StudyProgrammeStore: @unchecked Sendable {
         defaults.stringArray(forKey: "seenMatricole-\(person)") ?? []
     }
 
+    /// Records that the app has been signed in with an enrolment.
+    ///
+    /// - Parameters:
+    ///   - matricola: The enrolment.
+    ///   - person: The person code it belongs to.
     func remember(_ matricola: String, person: String) {
         var seen = seenMatricole(person: person)
         guard !seen.contains(matricola) else { return }
@@ -82,6 +110,11 @@ nonisolated struct StudyProgrammeStore: @unchecked Sendable {
         defaults.set(seen, forKey: "seenMatricole-\(person)")
     }
 
+    /// Encodes and stores a programme, or removes the key when there is none.
+    ///
+    /// - Parameters:
+    ///   - programme: The programme to store, or `nil`.
+    ///   - key: The defaults key.
     private func write(_ programme: StudyProgramme?, _ key: String) {
         guard let programme, let data = try? JSONEncoder().encode(programme) else {
             defaults.removeObject(forKey: key)
@@ -90,6 +123,10 @@ nonisolated struct StudyProgrammeStore: @unchecked Sendable {
         defaults.set(data, forKey: key)
     }
 
+    /// The defaults key one enrolment's programme is stored under.
+    ///
+    /// - Parameter matricola: The enrolment.
+    /// - Returns: The key.
     private func key(_ matricola: String) -> String { "studyProgramme-\(matricola)" }
 }
 
@@ -99,6 +136,17 @@ nonisolated struct StudyProgrammeStore: @unchecked Sendable {
 /// but only when exactly one teaching of the plan has it: "Analisi Matematica"
 /// alone is two teachings, and a wrong scheda is worse than none.
 nonisolated enum PlanCourseMatch {
+    /// Which teaching of a plan a course is.
+    ///
+    /// By code first, since WeBeep titles and external ids often carry one. Then by name, but
+    /// only when exactly one teaching of the plan matches: “Analisi Matematica” alone is two
+    /// teachings, and a wrong scheda is worse than none.
+    ///
+    /// - Parameters:
+    ///   - codes: Teaching codes found on the course.
+    ///   - name: The course's name.
+    ///   - plan: The plan's teachings.
+    /// - Returns: The teaching, or `nil` when nothing matches unambiguously.
     static func match(codes: [String], name: String, in plan: [PlanTeaching]) -> PlanTeaching? {
         if let byCode = plan.first(where: { codes.contains($0.teaching.code) }) { return byCode }
         let wanted = key(name)
@@ -124,8 +172,11 @@ nonisolated enum PlanCourseMatch {
 /// plan sharing most of them is the student's, however the degree course is
 /// named — which is what makes this better than any match by name.
 nonisolated enum ProgrammeInference {
+    /// Which plan the student's own records point to, and how strongly.
     struct Result: Sendable, Equatable {
+        /// The plan that shares most of the libretto.
         let selection: CatalogueSelection
+        /// How many teachings it shares.
         let overlap: Int
         /// Enough shared teachings to take it as the answer without asking.
         let isConfident: Bool
@@ -133,6 +184,18 @@ nonisolated enum ProgrammeInference {
         var tied: [CatalogueSelection] = []
     }
 
+    /// The plan sharing most of the libretto.
+    ///
+    /// Confidence needs a clear lead rather than merely the most: plans are cut by year — one
+    /// holding the first two years, another the third — while an online or another campus's
+    /// plan lists all three and would win by a teaching or so. So at least three shared, at
+    /// least half of what was compared, and at least two ahead of the runner-up.
+    ///
+    /// - Parameters:
+    ///   - libretto: The libretto's comparable keys, from ``keys(of:)-(_)``.
+    ///   - candidates: Each plan and its own keys.
+    /// - Returns: The best plan with the ties beside it, or `nil` when the libretto is empty
+    ///   or nothing is shared.
     static func best(libretto: Set<String>, candidates: [(CatalogueSelection, [String])]) -> Result? {
         guard !libretto.isEmpty else { return nil }
         let scored = candidates.map { selection, codes in (selection, libretto.intersection(codes).count) }
@@ -167,6 +230,14 @@ nonisolated enum ProgrammeInference {
 
 /// The bracket a WeBeep page belongs to, from its lecturers.
 nonisolated enum BracketInference {
+    /// Which bracket a WeBeep page belongs to, from the lecturers listed on it.
+    ///
+    /// Names are compared as sets of words, so ordering and initials do not decide it.
+    ///
+    /// - Parameters:
+    ///   - contacts: The lecturers listed on the WeBeep page.
+    ///   - brackets: The teaching's brackets.
+    /// - Returns: The bracket, or `nil` when none or more than one matches.
     static func bracket(contacts: [String], brackets: [BracketChoice]) -> BracketChoice? {
         let people = contacts.map(tokens)
         let matching = brackets.filter { bracket in
@@ -187,6 +258,10 @@ nonisolated enum BracketInference {
 
 /// The degree courses and plans that offer a teaching.
 nonisolated enum PlanCandidates {
+    /// One row per degree course and plan offering a teaching.
+    ///
+    /// - Parameter rows: The rows a teaching-code search returned.
+    /// - Returns: The rows, one per course-and-plan pair, in the search's order.
     static func distinct(_ rows: [ManifestoTeaching]) -> [ManifestoTeaching] {
         var seen: Set<String> = []
         return rows.filter { seen.insert("\($0.courseCode)/\($0.planCode ?? "")").inserted }
@@ -248,12 +323,23 @@ nonisolated enum SearchInference {
 /// choice. Once chosen, its courses are read from that plan whichever
 /// matricola the app is signed in with.
 nonisolated enum CareerProgrammes {
+    /// One career and the programme chosen for it.
     struct Row: Sendable, Equatable, Identifiable {
+        /// ``matricola``.
         var id: String { matricola }
+        /// The enrolment.
         let matricola: String
+        /// The programme stored for it, or `nil` when none has been chosen.
         let programme: StudyProgramme?
     }
 
+    /// The student's careers side by side, the one in use first.
+    ///
+    /// - Parameters:
+    ///   - current: The enrolment in use, or `nil`.
+    ///   - careers: Every known enrolment.
+    ///   - store: Where the programmes are stored.
+    /// - Returns: One row per distinct enrolment.
     static func rows(current: String?, careers: [String], store: StudyProgrammeStore) -> [Row] {
         var matricole: [String] = []
         for matricola in [current].compactMap({ $0 }) + careers where !matricole.contains(matricola) {

@@ -2,45 +2,53 @@ import Foundation
 import Observation
 import OSLog
 
-/// The SPID providers the Politecnico currently federates with, kept from the
-/// page rather than from a measurement.
+/// The SPID providers the Politecnico federates with, kept from the login page
+/// itself.
 ///
-/// ``SPIDProvider/all`` is twelve providers read off the live page on
-/// 2026-09-12, and that is the right starting point and the wrong long-term
-/// answer: the federation changes, and a provider whose `id_idp` moves becomes
-/// a button that presses nothing. The login page lists them every single time
-/// it loads, so the app reads them while it is there and keeps what it read.
+/// ``SPIDProvider/all`` is the shipped list, read off the live page on 2026-09-12.
+/// The federation changes, and a provider whose identifier moves becomes a button
+/// that presses nothing, so the app runs ``extractionScript`` while the page is
+/// loaded and ``adopt(_:)`` keeps what it read in `UserDefaults`.
 ///
-/// The list is therefore always **one login behind** — the first login uses the
-/// shipped list, refreshes it, and every login after that uses what the page
-/// last said. That is the cheapest honest design available: the alternative is
-/// a full authorize round trip at launch to fetch a list the student may never
-/// need, against a page that sets a session cookie.
-///
-/// This is the `maps_rest` WADL lesson again, written down in
-/// `FreeRoomsModel`: ask the service to describe itself instead of guessing.
+/// The list is therefore one sign-in behind: the first sign-in uses the shipped
+/// list and refreshes it, and every sign-in after that uses what the page last
+/// said. The alternative would be a full authorisation round trip at launch, for a
+/// list the student may never need, against a page that sets a session cookie.
 @MainActor
 @Observable
 final class SPIDCatalogue {
+    /// Defaults key the adopted list is stored under, as raw JSON.
     private static let key = "spidProviders"
 
+    /// Where the remembered method is persisted.
+    /// Where the adopted list is persisted.
     private let defaults: UserDefaults
+    /// Diagnostic log for this type, under the `oauth` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "oauth")
+    /// The list last read from the page, or `nil` before one has been adopted.
     private var stored: [SPIDProvider]?
 
+    /// Creates the memory.
+    ///
+    /// - Parameter defaults: Where the remembered method is persisted.
+    /// Reads any previously adopted list.
+    ///
+    /// - Parameter defaults: Where the list is persisted.
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         stored = Self.decode(defaults.string(forKey: Self.key))
     }
 
-    /// What to offer, newest reading first.
+    /// The providers to offer: the last list read from the page, or the shipped list.
     var providers: [SPIDProvider] { stored ?? SPIDProvider.all }
 
-    /// Takes the list the page just reported.
+    /// Takes the list ``extractionScript`` just reported.
     ///
-    /// Anything unreadable is ignored rather than adopted: the page is not ours
-    /// and can change shape without warning, and an empty SPID list is a login
-    /// method silently disappearing.
+    /// An unreadable or empty result is ignored rather than adopted: the page is not
+    /// the app's, and an empty list would be a sign-in method silently disappearing.
+    /// An unchanged list is not rewritten.
+    ///
+    /// - Parameter json: The script's result.
     func adopt(_ json: String) {
         guard let parsed = Self.decode(json), !parsed.isEmpty else {
             log.notice("Could not read the SPID list from the page; keeping \(self.providers.count, privacy: .public)")
@@ -52,6 +60,13 @@ final class SPIDCatalogue {
         log.notice("SPID list refreshed from the page: \(parsed.count, privacy: .public) providers")
     }
 
+    /// Decodes the script's result into providers.
+    ///
+    /// An entry with no slug cannot be pressed and one with no identifier has no
+    /// fallback, so either is dropped.
+    ///
+    /// - Parameter json: The script's result.
+    /// - Returns: The providers, or `nil` when nothing usable decodes.
     private static func decode(_ json: String?) -> [SPIDProvider]? {
         guard let data = json?.data(using: .utf8),
               let entries = try? JSONDecoder().decode([Entry].self, from: data)
@@ -62,11 +77,19 @@ final class SPIDCatalogue {
         return providers.isEmpty ? nil : providers
     }
 
+    /// One provider as ``SPIDCatalogue/extractionScript`` reports it.
     private struct Entry: Decodable {
+        /// The `data-idp` value.
         let slug: String
+        /// The `id_idp` value from the button's `formaction`.
         let identifier: String
+        /// The page's accessible label for the provider.
         let name: String?
 
+        /// The entry as a ``SPIDProvider``, or `nil` when the slug or identifier is empty.
+        ///
+        /// A missing label falls back to the slug, which is ugly on a button and still
+        /// usable.
         var provider: SPIDProvider? {
             guard !slug.isEmpty, !identifier.isEmpty else { return nil }
             return SPIDProvider(
@@ -80,10 +103,13 @@ final class SPIDCatalogue {
 
     /// JavaScript that reads the provider list out of the loaded login page.
     ///
-    /// Each provider is an `li` carrying `data-idp`, wrapping a submit button
-    /// whose `formaction` holds `id_idp`, and a `.spid-sr-only` span holding
-    /// the name screen readers get — which is also the only plain-text name on
-    /// the page, the visible one being part of a logo image.
+    /// Each provider is an `li` carrying `data-idp`, wrapping a submit button whose
+    /// `formaction` holds `id_idp`, and a `.spid-sr-only` span holding the accessible
+    /// name — the only plain-text name on the page, the visible one being part of a
+    /// logo image.
+    ///
+    /// Evaluates to a JSON array of `{slug, identifier, name}`, which ``adopt(_:)``
+    /// takes.
     static let extractionScript = """
     (function () {
       var items = document.querySelectorAll('[data-idp]');
@@ -106,30 +132,36 @@ final class SPIDCatalogue {
     """
 }
 
-/// Which way in the student used last time.
+/// Which way in the student used last time, so it can be offered first.
 ///
-/// A student signs in with the same thing every time — their password, or the
-/// one SPID provider they actually have — and before this the app made them
-/// find it again on every login, SPID behind a button and a list. The
-/// remembered method becomes the primary button; the others stay exactly where
-/// they were.
+/// A student signs in with the same thing every time — their password, or the one
+/// SPID provider they hold. The remembered method becomes the primary button and
+/// the others stay where they were.
 @MainActor
 @Observable
 final class LoginMethodMemory {
+    /// Defaults key the method's ``PoliMiLoginMethod/id`` is stored under.
     private static let key = "lastLoginMethod"
 
+    /// Where the remembered method is persisted.
     private let defaults: UserDefaults
 
+    /// Creates the memory.
+    ///
+    /// - Parameter defaults: Where the remembered method is persisted.
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
     }
 
-    /// The method to offer first. The password when there is nothing to go on,
-    /// which is also the right answer for most accounts.
+    /// The method to offer first, falling back to ``PoliMiLoginMethod/password``.
     ///
-    /// Resolved against the providers currently on offer rather than the
-    /// shipped list, so a provider the page has stopped listing does not come
-    /// back as a button that presses nothing.
+    /// A remembered SPID provider is resolved against the providers currently on offer,
+    /// so one that has left the federation does not return as a button that presses
+    /// nothing.
+    ///
+    /// - Parameter providers: The providers currently on offer, from
+    ///   ``SPIDCatalogue/providers``.
+    /// - Returns: The method to make primary.
     func last(in providers: [SPIDProvider] = SPIDProvider.all) -> PoliMiLoginMethod {
         guard let id = defaults.string(forKey: Self.key) else { return .password }
         switch id {
@@ -147,13 +179,20 @@ final class LoginMethodMemory {
         }
     }
 
-    /// The method used last time, or nil when nothing was recorded: unlike
-    /// ``last(in:)``, which falls back to the password, this does not claim a
-    /// way in the student may never have used.
+    /// The method used last time, or `nil` when nothing has been recorded.
+    ///
+    /// Unlike ``last(in:)``, this does not claim a way in the student may never have
+    /// used.
+    ///
+    /// - Parameter providers: The providers currently on offer.
+    /// - Returns: The remembered method, or `nil`.
     func remembered(in providers: [SPIDProvider] = SPIDProvider.all) -> PoliMiLoginMethod? {
         defaults.string(forKey: Self.key) == nil ? nil : last(in: providers)
     }
 
+    /// Records the method the student just used.
+    ///
+    /// - Parameter method: What they chose.
     func remember(_ method: PoliMiLoginMethod) {
         defaults.set(method.id, forKey: Self.key)
     }

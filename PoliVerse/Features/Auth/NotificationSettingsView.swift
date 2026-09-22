@@ -15,17 +15,26 @@ import UserNotifications
 ///    *not when* — each kind with its icon and a line saying when it arrives,
 ///    so a toggle is never a bare word the reader has to interpret.
 struct NotificationSettingsView: View {
+    /// The shared ``NotificationModel``, from the environment.
     @Environment(NotificationModel.self) private var notifications
+    /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
+    /// The shared ``UpdateFeed``, from the environment.
     @Environment(UpdateFeed.self) private var feed
+    /// Opens a link outside the app.
     @Environment(\.openURL) private var openURL
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
 
+    /// Whether every pending reminder is listed, rather than the first few.
     @State private var showsAllScheduled = false
 
+    /// The view's content.
     var body: some View {
         @Bindable var notifications = notifications
         let ramp = FlavorRamp(style: style, scheme: scheme)
@@ -115,6 +124,7 @@ struct NotificationSettingsView: View {
         }
     }
 
+    /// Whether iOS will deliver anything, which decides whether the toggles do anything.
     private var isAuthorised: Bool {
         switch notifications.authorization {
         case .notDetermined, .denied: false
@@ -124,6 +134,12 @@ struct NotificationSettingsView: View {
 
     // MARK: - Sections
 
+    /// The four reminder kinds as toggles, with how far ahead a lecture is announced.
+    ///
+    /// - Parameters:
+    ///   - colours: The colour for each kind.
+    ///   - neutral: The colour for a kind that is switched off.
+    /// - Returns: The section.
     private func remindersSection(colours: [ReminderKind: Flavor.RGB], neutral: Flavor.RGB) -> some View {
         @Bindable var notifications = notifications
         let preferences = notifications.preferences
@@ -156,6 +172,11 @@ struct NotificationSettingsView: View {
         }
     }
 
+    /// Exam news: whether it is pushed at all, which categories are on, whether WeBeep's
+    /// findings count, and when the evening summary goes out.
+    ///
+    /// - Parameter colour: The look's colour.
+    /// - Returns: The section.
     private func updatesSection(colour: Flavor.RGB) -> some View {
         @Bindable var notifications = notifications
         let enabled = notifications.preferences.examUpdates
@@ -190,6 +211,7 @@ struct NotificationSettingsView: View {
         }
     }
 
+    /// The hours between which only urgent news goes out.
     private var quietSection: some View {
         @Bindable var notifications = notifications
         let preferences = notifications.preferences
@@ -205,6 +227,7 @@ struct NotificationSettingsView: View {
         }
     }
 
+    /// The courses the student has silenced, with a way to unsilence them.
     @ViewBuilder
     private var mutedSection: some View {
         if !notifications.preferences.mutedCourses.isEmpty {
@@ -222,6 +245,8 @@ struct NotificationSettingsView: View {
         }
     }
 
+    /// Whether the app may open a newly posted results file to look for the student's own
+    /// matricola, and what that means.
     @ViewBuilder
     private var resultsFileSection: some View {
         @Bindable var notifications = notifications
@@ -240,6 +265,12 @@ struct NotificationSettingsView: View {
         }
     }
 
+    /// The reminders currently pending, soonest first.
+    ///
+    /// - Parameters:
+    ///   - colours: The colour for each kind.
+    ///   - neutral: The colour for a kind that is switched off.
+    /// - Returns: The section.
     private func scheduledSection(colours: [ReminderKind: Flavor.RGB], neutral: Flavor.RGB) -> some View {
         let scheduled = notifications.scheduled
         let shown = showsAllScheduled ? scheduled : Array(scheduled.prefix(5))
@@ -285,14 +316,28 @@ struct NotificationSettingsView: View {
 
     // MARK: - Helpers
 
+    /// When a whole-day reminder arrives, or that it does not.
+    ///
+    /// - Parameter isOn: Whether the reminder is switched on.
+    /// - Returns: The line.
     private func dayBeforeDetail(_ isOn: Bool) -> String {
         isOn ? String(localized: "Il giorno prima alle 18:00") : String(localized: "Spento")
     }
 
+    /// How far before a lecture the reminder arrives.
+    ///
+    /// - Parameter minutes: The lead time.
+    /// - Returns: The line.
     private func leadDescription(_ minutes: Int) -> String {
         Duration.seconds(minutes * 60).formatted(.units(allowed: [.hours, .minutes], width: .wide))
     }
 
+    /// A picker over the twenty-four hours of the day.
+    ///
+    /// - Parameters:
+    ///   - title: The picker's label.
+    ///   - selection: The hour it binds to.
+    /// - Returns: The picker.
     private func hourPicker(_ title: LocalizedStringKey, selection: Binding<Int>) -> some View {
         Picker(title, selection: selection) {
             ForEach(0..<24, id: \.self) { hour in
@@ -303,6 +348,7 @@ struct NotificationSettingsView: View {
         }
     }
 
+    /// Rebuilds the whole pending plan, which every change on this screen has to do.
     private func reschedule() async {
         await notifications.reschedule(
             events: agenda.events, exams: career.sessions, assignments: feed.deadlines, updates: feed.updates)
@@ -310,9 +356,17 @@ struct NotificationSettingsView: View {
 
     // MARK: - The one piece of news
 
+    /// The one thing the screen says about itself: whether reminders will arrive, and what is
+    /// next.
     private enum Health: Equatable {
+        /// Permission never asked for; refused; every kind switched off; nothing due; or the next
+        /// reminder and when it fires.
         case notAsked, denied, allOff, nothingScheduled, next(title: String, date: Date)
 
+        /// The mark on the picture above the screen.
+        ///
+        /// - Parameter accent: The look's colour.
+        /// - Returns: The badge.
         func badge(accent: Color) -> HeroBadge {
             switch self {
             // A plus, as on ConnectionsView: the fix is to add something.
@@ -323,6 +377,7 @@ struct NotificationSettingsView: View {
             }
         }
 
+        /// The state's headline.
         var title: LocalizedStringResource {
             switch self {
             case .notAsked: "Promemoria spenti"
@@ -332,6 +387,7 @@ struct NotificationSettingsView: View {
             }
         }
 
+        /// The line below it, which says what to do about it where there is something.
         var detail: LocalizedStringResource {
             switch self {
             case .notAsked: "Lezioni, scadenze ed esami, un attimo prima che servano. Tutto resta sul dispositivo."
@@ -344,6 +400,8 @@ struct NotificationSettingsView: View {
         }
     }
 
+    /// Which state the screen is in: permission first, then whether anything is switched on,
+    /// then what is next.
     private var health: Health {
         switch notifications.authorization {
         case .notDetermined: return .notAsked
@@ -367,8 +425,12 @@ struct NotificationSettingsView: View {
 /// The kinds of reminder, each with the icon it wears in the picture, its
 /// toggle and the scheduled list.
 private enum ReminderKind: String, CaseIterable {
+    /// Lectures, deadlines, exams, closing enrolment windows, and exam news.
     case lecture, deadline, exam, enrolment, update
 
+    /// The kind a pending reminder belongs to.
+    ///
+    /// - Parameter kind: The notification's own kind.
     init(_ kind: PlannedNotification.Kind) {
         switch kind {
         case .lecture: self = .lecture
@@ -379,6 +441,7 @@ private enum ReminderKind: String, CaseIterable {
         }
     }
 
+    /// The kind's name on screen.
     var title: LocalizedStringResource {
         switch self {
         case .lecture: "Lezioni"
@@ -389,6 +452,7 @@ private enum ReminderKind: String, CaseIterable {
         }
     }
 
+    /// The SF Symbol for the kind.
     var symbol: String {
         switch self {
         case .lecture: "calendar"
@@ -402,11 +466,16 @@ private enum ReminderKind: String, CaseIterable {
 
 /// A kind as a toggle: its tile, its name, and when it arrives.
 private struct KindToggle: View {
+    /// The kind this toggle governs.
     let kind: ReminderKind
+    /// The colour its tile is drawn in.
     let colour: Flavor.RGB
+    /// When reminders of this kind arrive.
     let detail: String
+    /// Whether the kind is switched on.
     @Binding var isOn: Bool
 
+    /// The view's content.
     var body: some View {
         Toggle(isOn: $isOn) {
             HStack(spacing: 12) {

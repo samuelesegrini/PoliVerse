@@ -4,9 +4,13 @@ import WidgetKit
 /// Media, CFU and the next exam — the three numbers a student checks without
 /// wanting to open anything.
 struct CareerEntry: TimelineEntry {
+    /// The moment this entry describes.
     let date: Date
+    /// The career figures the app last wrote, or `nil` when none have been written.
     let snapshot: CareerSnapshot?
+    /// Seconds since they were written.
     let age: TimeInterval?
+    /// Whether anyone is signed in.
     let signedIn: Bool
 
     /// Raised on the day before an exam and the day of it.
@@ -17,11 +21,25 @@ struct CareerEntry: TimelineEntry {
     }
 }
 
+/// Builds the timeline from the career snapshot.
+///
+/// A career changes when a result is published, which is neither frequent nor
+/// predictable, so there is nothing to anticipate: one entry, an occasional refresh, and
+/// the app reloads the timeline the moment it learns something new.
 struct CareerProvider: TimelineProvider {
+    /// Representative figures, for the widget gallery and for redaction.
+    ///
+    /// - Parameter context: WidgetKit's context.
+    /// - Returns: The placeholder entry.
     func placeholder(in context: Context) -> CareerEntry {
         CareerEntry(date: .now, snapshot: .preview, age: 0, signedIn: true)
     }
 
+    /// The career as it stands now.
+    ///
+    /// - Parameters:
+    ///   - context: WidgetKit's context.
+    ///   - completion: Handed the entry.
     func getSnapshot(in context: Context, completion: @escaping (CareerEntry) -> Void) {
         completion(entry())
     }
@@ -35,6 +53,9 @@ struct CareerProvider: TimelineProvider {
                             policy: .after(.now.addingTimeInterval(6 * 3600))))
     }
 
+    /// One entry, read from the career snapshot.
+    ///
+    /// - Returns: The entry.
     private func entry() -> CareerEntry {
         let cached = WidgetCareer.load()
         return CareerEntry(date: .now, snapshot: cached?.value, age: cached?.age,
@@ -42,7 +63,11 @@ struct CareerProvider: TimelineProvider {
     }
 }
 
+/// The one place the widgets read the cached career figures.
 enum WidgetCareer {
+    /// The cached figures and the age of the cache.
+    ///
+    /// - Returns: The snapshot, or `nil` when signed out or nothing has been written.
     static func load() -> (value: CareerSnapshot, age: TimeInterval)? {
         guard let matricola = SharedAccount.matricola,
               let slot = OfflineStore(groupIdentifier: OfflineStore.groupIdentifier)
@@ -52,7 +77,10 @@ enum WidgetCareer {
     }
 }
 
+/// The career widget, on the Home Screen and the Lock Screen. Tapping it opens the
+/// career.
 struct CareerWidget: Widget {
+    /// The declaration's content.
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: WidgetKind.career.rawValue, provider: CareerProvider()) { entry in
             CareerView(entry: entry)
@@ -65,10 +93,14 @@ struct CareerWidget: Widget {
     }
 }
 
+/// Draws one ``CareerEntry``, in whichever family is asked for.
 struct CareerView: View {
+    /// The figures to draw.
     let entry: CareerEntry
+    /// The widget family being drawn.
     @Environment(\.widgetFamily) private var family
 
+    /// The view's content.
     var body: some View {
         switch family {
         case .accessoryCircular: circular
@@ -77,6 +109,7 @@ struct CareerView: View {
         }
     }
 
+    /// The circular Lock Screen accessory: the average in a progress ring.
     private var circular: some View {
         Gauge(value: entry.snapshot?.progress ?? 0) {
             Image(systemName: "graduationcap")
@@ -86,6 +119,7 @@ struct CareerView: View {
         .gaugeStyle(.accessoryCircular)
     }
 
+    /// The rectangular Lock Screen accessory: average, credits and the next sitting.
     private var rectangular: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text("Media \(mean)").font(.headline)
@@ -98,6 +132,7 @@ struct CareerView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// The small Home Screen family: the average, the credits and the next sitting.
     private var small: some View {
         VStack(alignment: .leading, spacing: 3) {
             Label("Carriera", systemImage: "graduationcap")
@@ -141,12 +176,14 @@ struct CareerView: View {
         return snapshot.mean.formatted(.number.precision(.fractionLength(2)))
     }
 
+    /// Credits earned out of credits planned.
     private var creditsLine: String {
         guard let snapshot = entry.snapshot else { return "—" }
         return "\(snapshot.earnedCFU) / \(snapshot.plannedCFU) CFU"
     }
 }
 
+/// Representative figures, for the gallery and for previews.
 extension CareerSnapshot {
     /// Only for the placeholder the system renders before real data exists.
     static var preview: CareerSnapshot {

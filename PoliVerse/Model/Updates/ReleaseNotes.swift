@@ -1,37 +1,36 @@
 import Foundation
 
-/// What changed in a version of PoliVerse, in the student's words.
-///
-/// ## Editing this before a release
-///
-/// ``ReleaseNotes/all`` is the list, newest first. Before shipping, add one
-/// `ReleaseNote` whose `version` is exactly the `CFBundleShortVersionString`
-/// of the build going out — the two are matched by string, so "2.1" here and
-/// "2.1" in the target's settings, not "2.1.0".
-///
-/// Keep it to three or four items. This screen is shown once per update, in
-/// front of someone who opened the app to check a room, and a list of fifteen
-/// bullet points is a list nobody reads. Say what the student can now *do*,
-/// not what was refactored.
-///
-/// Nothing else needs touching: the app works out who has seen what, and a
-/// version with no note here simply shows nothing.
+/// What changed in one version of PoliVerse, in the student's words.
 nonisolated struct ReleaseNote: Identifiable, Equatable, Sendable {
-    /// Matched against `CFBundleShortVersionString`, exactly.
+    /// Matched against `CFBundleShortVersionString`, exactly — `"2.1"` rather than
+    /// `"2.1.0"`.
     let version: String
     /// One line above the items, saying what the release is about.
     let headline: LocalizedStringResource
+    /// What the student can now do. Three or four; see ``ReleaseNotes/all``.
     let items: [Item]
 
+    /// ``version``.
     var id: String { version }
 
+    /// One thing a release brought.
     nonisolated struct Item: Identifiable, Equatable, Sendable {
+        /// The SF Symbol shown beside it.
         let symbol: String
+        /// What it is, in a few words.
         let title: LocalizedStringResource
+        /// What the student can do with it.
         let detail: LocalizedStringResource
 
+        /// The symbol and the title together.
         var id: String { symbol + String(localized: title) }
 
+        /// Creates an item.
+        ///
+        /// - Parameters:
+        ///   - symbol: The SF Symbol to show.
+        ///   - title: What it is.
+        ///   - detail: What the student can do with it.
         init(symbol: String, title: LocalizedStringResource, detail: LocalizedStringResource) {
             self.symbol = symbol
             self.title = title
@@ -39,6 +38,12 @@ nonisolated struct ReleaseNote: Identifiable, Equatable, Sendable {
         }
     }
 
+    /// Creates a release note.
+    ///
+    /// - Parameters:
+    ///   - version: The build's `CFBundleShortVersionString`, exactly.
+    ///   - headline: What the release is about.
+    ///   - items: What it brought.
     init(version: String, headline: LocalizedStringResource, items: [Item]) {
         self.version = version
         self.headline = headline
@@ -46,8 +51,22 @@ nonisolated struct ReleaseNote: Identifiable, Equatable, Sendable {
     }
 }
 
+/// The release notes, and the rules for deciding which the student has not seen.
+///
+/// ## Adding a note
+///
+/// ``all`` is the list, newest first. Add one ``ReleaseNote`` whose ``ReleaseNote/version``
+/// is exactly the `CFBundleShortVersionString` of the build going out; the two are
+/// matched by string.
+///
+/// Three or four items. The screen is shown once per update, in front of someone who
+/// opened the app to check a room, so it says what the student can now do rather than
+/// what changed internally.
+///
+/// Nothing else needs touching: ``WhatsNewState`` works out who has seen what, and a
+/// version with no note here shows nothing.
 nonisolated enum ReleaseNotes {
-    /// The notes, newest first. **This is the list to edit before a release.**
+    /// The notes, newest first. This is the list to edit before a release.
     static let all: [ReleaseNote] = [
         ReleaseNote(
             version: "2.0",
@@ -65,26 +84,36 @@ nonisolated enum ReleaseNotes {
             ]),
     ]
 
-    /// The note for one version, if there is one.
+    /// The note for one version.
+    ///
+    /// - Parameter version: The `CFBundleShortVersionString` to look for.
+    /// - Returns: The note, or `nil` when that version has none.
     static func note(for version: String) -> ReleaseNote? {
         all.first { $0.version == version }
     }
 
-    /// What to show someone opening `current` who last saw `lastSeen`.
+    /// The notes to show someone opening `current` who last saw `lastSeen`.
     ///
-    /// - `lastSeen` nil means the app has been used before this screen existed:
-    ///   there is no history to replay, so it shows the release they have just
-    ///   landed on and nothing older.
-    /// - Otherwise every note between the two, newest first — a student who
-    ///   skipped two updates is told about both.
-    /// - A version with no note shows nothing, which is how a bug-fix release
-    ///   ships without a screen.
+    /// - Parameters:
+    ///   - lastSeen: The version whose notes were last read, or `nil` when the app has been
+    ///     used before this screen existed — in which case only the release just landed on is
+    ///     shown, since there is no history to replay.
+    ///   - current: The version now running.
+    /// - Returns: Every note between the two, newest first, so a student who skipped two
+    ///   updates is told about both. Empty when the version has no note, which is how a
+    ///   bug-fix release ships without a screen.
     static func unseen(since lastSeen: String?, upTo current: String) -> [ReleaseNote] {
         unseen(in: all, since: lastSeen, upTo: current)
     }
 
-    /// The same, over a given list — how the rule is tested without the tests
-    /// depending on what happens to be written for the next release.
+    /// The same rule over a given list, so it can be tested without depending on what
+    /// happens to be written for the next release.
+    ///
+    /// - Parameters:
+    ///   - notes: The notes to choose from, newest first.
+    ///   - lastSeen: The version whose notes were last read, or `nil`.
+    ///   - current: The version now running.
+    /// - Returns: The notes to show.
     static func unseen(in notes: [ReleaseNote], since lastSeen: String?, upTo current: String) -> [ReleaseNote] {
         guard let lastSeen else {
             return notes.filter { $0.version == current }
@@ -93,10 +122,15 @@ nonisolated enum ReleaseNotes {
         return notes.filter { isOlder(lastSeen, than: $0.version) && !isOlder(current, than: $0.version) }
     }
 
-    /// Version strings compared component by component, numerically.
+    /// Compares two version strings component by component, numerically.
     ///
-    /// "2.10" is after "2.9", which a string comparison gets backwards, and a
-    /// missing component counts as zero so "2" and "2.0" are the same release.
+    /// `"2.10"` comes after `"2.9"`, which a string comparison gets backwards, and a missing
+    /// component counts as zero so `"2"` and `"2.0"` are the same release.
+    ///
+    /// - Parameters:
+    ///   - lhs: The first version.
+    ///   - rhs: The second.
+    /// - Returns: `true` when the first precedes the second.
     static func isOlder(_ lhs: String, than rhs: String) -> Bool {
         let left = components(lhs), right = components(rhs)
         for index in 0..<max(left.count, right.count) {
@@ -107,6 +141,11 @@ nonisolated enum ReleaseNotes {
         return false
     }
 
+    /// A version string as its numeric components. Non-digits within a component are
+    /// ignored.
+    ///
+    /// - Parameter version: The version string.
+    /// - Returns: The components, in order.
     private static func components(_ version: String) -> [Int] {
         version.split(separator: ".").map { Int($0.filter(\.isNumber)) ?? 0 }
     }

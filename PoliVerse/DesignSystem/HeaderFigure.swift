@@ -38,6 +38,7 @@ enum FigureMetrics {
     /// Between the title and the band.
     static let titleGap: CGFloat = 18
 
+    /// The shape every mark is drawn with: a capsule-ended rectangle of ``stroke`` width.
     static var markShape: RoundedRectangle { RoundedRectangle(cornerRadius: stroke / 2, style: .continuous) }
 }
 
@@ -52,9 +53,12 @@ struct HeaderFigure<Content: View, Caption: View>: View {
     /// element: a student using VoiceOver wants "ventidue ore questa
     /// settimana", not twenty-two anonymous shapes.
     let summary: Text
+    /// The content this view wraps.
     @ViewBuilder var content: Content
+    /// The `caption` this view draws.
     @ViewBuilder var caption: Caption
 
+    /// The view's content.
     var body: some View {
         // No spacing above the rule: the marks stand *on* the baseline. A gap
         // there, however small, left every figure floating a few points over
@@ -79,6 +83,7 @@ struct HeaderFigure<Content: View, Caption: View>: View {
     }
 }
 
+/// The entrance every figure arrives with.
 extension View {
     /// The one way a figure arrives: growing out of its own baseline, once.
     ///
@@ -90,12 +95,22 @@ extension View {
     }
 }
 
+/// Grows a figure out of its own baseline, once, on first appearance.
+///
+/// Scaled rather than resized, since animating the height would relayout the page on
+/// every frame. Under Reduce Motion the fade is kept and the growth dropped: the
+/// information is in the marks, never in the way they arrive.
 private struct FigureEntrance: ViewModifier {
+    /// Whether the reader has asked for reduced motion.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Once, on first appearance — the page's one piece of delight, at the
     /// frequency delight is allowed.
     @State private var drawn = false
 
+    /// Applies the modifier to `content`.
+    ///
+    /// - Parameter content: The view being modified.
+    /// - Returns: The modified view.
     func body(content: Content) -> some View {
         content
             // Scaled, not resized: animating the height would relayout the
@@ -114,7 +129,13 @@ private struct FigureEntrance: ViewModifier {
     }
 }
 
+/// A figure with no row of labels beneath it.
 extension HeaderFigure where Caption == EmptyView {
+    /// Creates a figure with no caption row.
+    ///
+    /// - Parameters:
+    ///   - summary: The one sentence VoiceOver reads instead of the marks.
+    ///   - content: The marks.
     init(summary: Text, @ViewBuilder content: () -> Content) {
         self.summary = summary
         self.content = content()
@@ -124,6 +145,10 @@ extension HeaderFigure where Caption == EmptyView {
 
 /// A horizontal rule the width of whatever it is put in.
 nonisolated struct FigureRule: Shape {
+    /// A line across the middle of the rectangle.
+    ///
+    /// - Parameter rect: The rectangle to draw in.
+    /// - Returns: The path.
     func path(in rect: CGRect) -> Path {
         Path { path in
             path.move(to: CGPoint(x: rect.minX, y: rect.midY))
@@ -138,16 +163,26 @@ nonisolated struct FigureRule: Shape {
 /// gap between them, and the decision that the figure comes *after* the title
 /// rather than behind it, are made once for the whole app.
 struct LookHeader<Figure: View>: View {
+    /// The page's name, drawn in the look's typeface.
     private let title: LocalizedStringKey
+    /// A line below the title, or `nil` for none.
     private let subtitle: Text?
+    /// The page's figure, drawn below the title.
     private let figure: Figure
 
+    /// Creates a page's opening.
+    ///
+    /// - Parameters:
+    ///   - title: The page's name.
+    ///   - subtitle: A line below it.
+    ///   - figure: The page's figure.
     init(_ title: LocalizedStringKey, subtitle: Text? = nil, @ViewBuilder figure: () -> Figure) {
         self.title = title
         self.subtitle = subtitle
         self.figure = figure()
     }
 
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: FigureMetrics.titleGap) {
             LookTitle(title, subtitle: subtitle)
@@ -156,6 +191,7 @@ struct LookHeader<Figure: View>: View {
     }
 }
 
+/// Moving a page's name into the navigation bar as it scrolls.
 extension View {
     /// The page's name moves into the bar once the big title has scrolled
     /// under it — the same threshold and the same curve on every page, so that
@@ -168,10 +204,20 @@ extension View {
     }
 }
 
+/// Fades the page's name into the navigation bar once the large title has scrolled under
+/// it, at the same threshold and with the same curve on every page.
+///
+/// Belongs on the `ScrollView` itself, because it reads that scroll view's geometry.
 private struct CollapsingTitle: ViewModifier {
+    /// The name to show in the bar.
     let title: LocalizedStringKey
+    /// Whether the page's name has moved into the navigation bar.
     @State private var inBar = false
 
+    /// Applies the modifier to `content`.
+    ///
+    /// - Parameter content: The view being modified.
+    /// - Returns: The modified view.
     func body(content: Content) -> some View {
         content
             .onScrollGeometryChange(for: Bool.self) { geometry in

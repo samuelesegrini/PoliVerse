@@ -2,11 +2,10 @@ import SwiftUI
 
 /// What a colour means on Carriera.
 ///
-/// There were three systems before this, and they disagreed: the exam sheet
-/// painted an open enrolment orange while the updates feed painted the same
-/// event indigo, and orange was doing duty for four unrelated things at once —
-/// a closing window, a refusable mark, a stale cache and a falling average.
-/// A colour that means four things means none.
+/// One table for the whole area, so the exam sheet, the updates feed and the
+/// sittings list cannot disagree about what a colour means, and no colour ends
+/// up doing duty for several unrelated things at once — a colour that means
+/// four things means none.
 ///
 /// One axis decides all of them: **what the state asks of the student.**
 ///
@@ -29,11 +28,17 @@ import SwiftUI
 /// carried by hue alone — which is what keeps the green/red pair legible to
 /// the third of people who would otherwise read them as the same colour.
 nonisolated enum CareerState: Sendable, Hashable {
+    /// Enrolment is open and the student has not decided yet.
     case enrolmentOpen
+    /// A mark is in and can still be refused.
     case refusable
+    /// The exam is passed and recorded.
     case passed
+    /// The sitting was failed.
     case failed
+    /// The student is enrolled and nothing is left to decide.
     case booked
+    /// Nothing is being asked: enrolment has not opened, or has closed.
     case dormant
 
     /// The state of one sitting.

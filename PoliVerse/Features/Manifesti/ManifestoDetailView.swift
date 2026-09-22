@@ -7,15 +7,21 @@ import SwiftUI
 /// other Politecnico service exposes that. Enter a surname and the bracket
 /// that applies is marked.
 struct ManifestoDetailView: View {
+    /// The catalogue row being shown.
     let teaching: ManifestoTeaching
 
+    /// The shared ``ManifestiModel``, from the environment.
     @Environment(ManifestiModel.self) private var manifesti
     @AppStorage("manifestoSurname") private var surname = ""
 
+    /// The detail page, or `nil` before it has been read.
+    /// `true` while the detail page is being read.
     @State private var detail: ManifestoDetail?
     @State private var loading = true
+    /// The shared ``PersonalTimetableModel``, from the environment.
     @Environment(PersonalTimetableModel.self) private var personal
 
+    /// The view's content.
     var body: some View {
         List {
             Section {
@@ -110,6 +116,10 @@ struct ManifestoDetailView: View {
         }
     }
 
+    /// The teaching's modules, with their brackets and lecturers, and the student's own marked.
+    ///
+    /// - Parameter detail: The detail page.
+    /// - Returns: The section.
     @ViewBuilder
     private func modulesSection(_ detail: ManifestoDetail) -> some View {
         if !detail.modules.isEmpty {
@@ -138,14 +148,19 @@ struct ManifestoDetailView: View {
     }
 }
 
+/// One module: its bracket, its lecturers, its credits and its language.
 private struct ModuleRow: View {
+    /// The module this row shows.
     let module: ManifestoModule
+    /// The student's surname, which decides whether this bracket is theirs.
     let surname: String
 
+    /// Whether the student's surname falls in this module's bracket.
     private var isMine: Bool {
         !surname.isEmpty && module.covers(surname: surname)
     }
 
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline) {

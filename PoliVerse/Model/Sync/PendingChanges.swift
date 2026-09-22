@@ -2,44 +2,59 @@ import Foundation
 import Observation
 import OSLog
 
-/// Sends the changes made while offline, once there is signal again.
+/// Delivers the changes made while offline, once there is signal again.
 ///
-/// Optimistic by design: the UI applies a change immediately and this makes it
-/// true later. That is the right order for a phone — waiting on a round trip
-/// to move a star makes the app feel broken on a train — but it means the
-/// change has to be *remembered* rather than hoped for, which is what the
-/// queue is.
+/// The UI applies a change immediately and this type makes it true afterwards, so
+/// a tap never waits on a round trip. ``record(_:)`` stores the change in an
+/// ``ActionQueue``, ``flush()`` sends what is waiting, and ``failed`` carries
+/// whatever the Politecnico refused for good.
+///
+/// How a change is actually sent is supplied by the composition root through
+/// ``deliver(by:confirmedBy:)``. Until that is called, every delivery reports
+/// failure, so an unregistered instance holds its changes rather than dropping
+/// them.
 @Observable
 final class PendingChanges {
+    /// How many changes are waiting to be sent.
     private(set) var count = 0
-    /// Changes the Politecnico kept refusing. Surfaced rather than dropped
-    /// silently: a star that quietly un-stars itself three launches later is
-    /// worse than being told.
+    /// Changes the Politecnico refused until their retry budget ran out.
+    ///
+    /// Surfaced rather than dropped silently, and read at init as well as after a
+    /// flush so that a loss from the previous session is still reported.
     private(set) var failed: [PendingAction] = []
+    /// `true` while ``flush()`` is sending. A second flush returns immediately.
     private(set) var isFlushing = false
 
-    /// Only the matricola is wanted, to key the queue and to know whether
-    /// there is anyone to send on behalf of — see ``Account``.
+    /// Supplies the matricola, which keys the queue and says whether there is anyone
+    /// to send on behalf of.
     private let account: any Account
+    /// Consulted before a flush; offline, nothing is attempted.
     private let network: any Reachability
-    /// Where the queue itself is kept. Injectable so a test cannot enqueue
-    /// into the student's real one.
+    /// Where the queue is kept. Injectable so that a test cannot enqueue into the
+    /// student's own queue.
     private let store: OfflineStore
+    /// Diagnostic log for this type, under the `queue` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "queue")
 
-    /// How a queued change is actually sent. False means it could not be
-    /// delivered, so the queue keeps it and tries again later.
+    /// Delivers one queued change. `false` means it could not be delivered, so the
+    /// queue keeps it and charges it one attempt.
     typealias Send = @MainActor (PendingAction) async -> Bool
-    /// Called once a change has been accepted, so whoever was showing it
+    /// Called once a change has been accepted, so that whoever was showing it
     /// optimistically can hand ownership back to the server.
     typealias Confirm = @MainActor (PendingAction) -> Void
 
-    /// Refusing everything until the composition root says otherwise is the
-    /// safe default: an unregistered queue holds its changes rather than
-    /// dropping them.
+    /// How changes are delivered. Refuses everything until
+    /// ``deliver(by:confirmedBy:)`` supplies the real implementation.
     private var send: Send = { _ in false }
+    /// What to tell after a change is accepted. Does nothing by default.
     private var confirm: Confirm = { _ in }
 
+    /// Creates the queue's owner and reads what is already waiting.
+    ///
+    /// - Parameters:
+    ///   - account: Supplies the matricola the queue is keyed by.
+    ///   - network: Consulted before each flush.
+    ///   - store: Where the queue is kept.
     init(account: any Account, network: any Reachability,
          store: OfflineStore = .shared) {
         self.account = account
@@ -48,45 +63,38 @@ final class PendingChanges {
         refresh()
     }
 
-    /// Says how to deliver a change, and what to tell afterwards.
+    /// Supplies how a queued change is delivered, and what to tell afterwards.
     ///
-    /// ## Why this is a function and not four properties
+    /// The services that perform these writes also record changes into this queue, so
+    /// the dependency runs both ways. It is closed here, at one named call in the
+    /// composition root, rather than by holding each service as a mutable optional.
     ///
-    /// The queue used to hold `weBeep`, `careers`, `career` and `courses` as
-    /// optionals, assigned by the app after everything was built. That made a
-    /// type-level cycle — the services need the queue to record a change, the
-    /// queue needed the services to send it — and it made this class
-    /// impossible to construct in a test without constructing all four.
-    ///
-    /// Worse, it failed silently. `careers` was never assigned at all, so a
-    /// queued `.favouriteCareer` could never have been delivered; nobody
-    /// noticed because nothing enqueues one yet. A slot that is nil by
-    /// accident looks exactly like a slot that is nil on purpose.
-    ///
-    /// The cycle is real and cannot be removed — it is broken here instead, at
-    /// one named place, where forgetting to call it is one mistake rather than
-    /// four.
+    /// - Parameters:
+    ///   - send: Delivers one change; `false` keeps it queued.
+    ///   - confirm: Called after a change is accepted.
     func deliver(by send: @escaping Send, confirmedBy confirm: @escaping Confirm = { _ in }) {
         self.send = send
         self.confirm = confirm
     }
 
-    /// Reads what is waiting and what was lost.
+    /// Re-reads how many changes are waiting and which were abandoned.
     ///
-    /// Losses are surfaced at launch, not only after a flush: a change
-    /// abandoned during the last session would otherwise stay unreported
-    /// until the next time the queue happened to run.
+    /// Called at init as well as after a flush, so a change abandoned in a previous
+    /// session is reported at launch rather than waiting for the next flush.
     func refresh() {
         let queue = queue()
         count = queue.pending.count
         failed = queue.abandoned
     }
 
+    /// Opens the queue file for the current account. Each call re-reads from disk.
     private func queue() -> ActionQueue {
         ActionQueue(store: store, account: account.matricola)
     }
 
-    /// Records a change to be sent. Call *after* applying it locally.
+    /// Queues a change for delivery. Call it after applying the change locally.
+    ///
+    /// - Parameter action: The change to deliver.
     func record(_ action: PendingAction) {
         var queue = queue()
         queue.enqueue(action)
@@ -96,9 +104,14 @@ final class PendingChanges {
 
     /// Sends everything waiting, oldest first.
     ///
-    /// Sequential on purpose. These are small writes against one service, and
-    /// two of them can target the same course — sending them at once would
-    /// leave the final state up to whichever request the server handled last.
+    /// Returns immediately when a flush is already running, when there is no
+    /// connection, when nobody is signed in, or when the queue is empty.
+    ///
+    /// Deliveries are sequential: two queued changes can target the same course, and
+    /// sending them together would leave the final state to whichever request the
+    /// server happened to handle last. The first failure stops the pass, so a
+    /// connection that drops again does not spend the retry budget of everything
+    /// behind it.
     func flush() async {
         guard !isFlushing, network.isOnline, account.matricola != nil else { return }
         var queue = queue()
@@ -129,13 +142,11 @@ final class PendingChanges {
         }
     }
 
-    /// Puts abandoned changes back in the queue with a fresh budget and tries
-    /// again: for the student who has fixed whatever made the Politecnico
-    /// refuse them — usually by signing in again.
+    /// Re-queues the abandoned changes with a fresh budget and flushes.
     ///
-    /// A change whose target has something newer waiting is dropped, not
-    /// retried: `enqueue` replaces by target, so retrying it would put the
-    /// old value back over the student's later decision.
+    /// An abandoned change whose target already has something waiting is dropped
+    /// rather than re-queued, since re-queueing would replace the student's later
+    /// decision with the older value.
     func retryFailures() async {
         var queue = queue()
         let waiting = Set(queue.pending.map(\.targetKey))
@@ -147,6 +158,8 @@ final class PendingChanges {
         await flush()
     }
 
+    /// Discards the abandoned changes without retrying them, and stops reporting
+    /// them.
     func acknowledgeFailures() {
         var queue = queue()
         queue.clearAbandoned()

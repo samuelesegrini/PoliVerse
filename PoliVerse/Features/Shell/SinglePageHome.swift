@@ -4,10 +4,13 @@ import SwiftUI
 /// one in Maps: it rests small, grows as the student scrolls in it, scrolls
 /// its list only once it is full height, and lets the page behind stay live.
 struct SinglePagePanel: View {
+    /// The environment's `shell`.
     @Environment(\.shell) private var shell
+    /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
     @State private var now = Date.now
 
+    /// The look in use, which says whether Oggi already shows the current class.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
 
     /// The class now, unless Oggi already shows it as a section.
@@ -16,8 +19,10 @@ struct SinglePagePanel: View {
         return CurrentClass.forAccessory(from: agenda.events, now: now)
     }
 
+    /// The height the panel rests at: enough for the search row and nothing more.
     private static let peek = PresentationDetent.height(92)
 
+    /// The view's content.
     var body: some View {
         PanelContent(current: current, isFull: shell.panelDetent == .full) {
             withAnimation(.snappy) { shell.panelDetent = .full }
@@ -37,6 +42,7 @@ struct SinglePagePanel: View {
         }
     }
 
+    /// The sheet's detent, read and written as the shell's own ``ShellState/PanelDetent``.
     private var detent: Binding<PresentationDetent> {
         Binding {
             switch shell.panelDetent {
@@ -53,11 +59,16 @@ struct SinglePagePanel: View {
 /// Everything that is not the day: search first, then the places a student
 /// goes to — the same places the tab layout reaches.
 struct PanelContent: View {
+    /// The class now, shown above the list when there is one.
     var current: CurrentClass?
+    /// True once the panel is at full height, where its list scrolls.
     var isFull = false
+    /// Takes the panel to full height, for a row that needs the whole screen.
     var expand: () -> Void = {}
+    /// The environment's `shell`.
     @Environment(\.shell) private var shell
 
+    /// The view's content.
     var body: some View {
         NavigationStack(path: Binding(get: { shell.panelPath }, set: { shell.panelPath = $0 })) {
             List {
@@ -114,6 +125,10 @@ struct PanelContent: View {
         }
     }
 
+    /// One place as a row of the panel's list.
+    ///
+    /// - Parameter place: The place to offer.
+    /// - Returns: The row.
     private func destination(_ place: NewDestination) -> some View {
         NavigationLink(value: NewRoute.destination(place)) {
             Label {

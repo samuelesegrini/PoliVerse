@@ -1,68 +1,53 @@
 import Foundation
 import UIKit
 
-/// Keeps "Entra con CIE" inside PoliVerse instead of losing it to Safari.
+/// Keeps “Entra con CIE” inside PoliVerse rather than losing the session to Safari.
 ///
-/// ## The problem
+/// When the identity provider navigates to the CIE server, iOS hands the
+/// navigation to the CieID app. CieID does not know who called it, so after the
+/// NFC read and the PIN it returns the authenticated URL to the default browser —
+/// and the session cookie lands in Safari rather than in the app's `WKWebView`.
 ///
-/// When the ateneo login page offers CIE, the page itself navigates to the
-/// CIE identity provider. Left alone, iOS hands that off to the CieID app —
-/// but CieID has no idea who called it, so when the user finishes with NFC and
-/// PIN it returns the authenticated URL to the **default browser**. The session
-/// cookie lands in Safari's jar, our `WKWebView` never sees it, and the login
-/// is gone.
+/// CieID accepts a `sourceApp` query parameter naming the scheme to return to, so
+/// the flow is: recognise the outbound navigation with ``isHandoffToCieID(_:)``,
+/// cancel it, re-open it with ``handoffURL(for:sourceApp:)``, and recover the
+/// returned https URL with ``returnURL(from:)`` to load into the same web view.
+/// ``CieIDRouter`` drives that sequence.
 ///
-/// ## The fix
-///
-/// The CieID app takes a `sourceApp` query parameter naming the URL scheme to
-/// come back to. The official SDK (`italia/cieid-ios-sdk`,
-/// `CieIDWKWebViewController.redirectFlow`) does this:
-///
-/// ```swift
-/// let string = urlCaught.absoluteString + "&sourceApp=\(urlSchemeString)"
-/// let finalURL = URL(string: "CIEID://" + string)
-/// UIApplication.shared.open(finalURL)
-/// ```
-///
-/// So we must intercept the IdP navigation **before** the web view follows it,
-/// cancel it, and re-open it ourselves with `sourceApp` attached. CieID then
-/// returns to `<scheme>://https://idserver.servizicie.interno.gov.it/…`, which
-/// we strip back to a plain https URL and load into the *same* web view — the
-/// one holding the session.
-///
-/// Getting the interception right is the whole trick: if the navigation is
-/// allowed to proceed even once, the hand-off happens without `sourceApp` and
-/// the return goes to Safari.
+/// - Important: the outbound navigation must be cancelled before the web view
+///   follows it. Allowing it through even once hands off without `sourceApp`, and
+///   the return goes to the browser.
 nonisolated enum CieIDBridge {
-    /// The scheme CieID is told to return to.
+    /// The URL scheme CieID is told to return to.
     ///
-    /// The SDK's README asks integrators to use the bundle identifier as the
-    /// scheme, so this deliberately differs from the plain `poliverse` scheme
-    /// used for the Moodle token — the two return payloads are unrelated and
-    /// keeping them apart means neither handler can mis-parse the other.
+    /// The bundle identifier, as the CieID SDK asks integrators to use, and distinct
+    /// from the `poliverse` scheme used for the WeBeep token — so neither handler can
+    /// misread the other's payload.
     static let returnScheme = "segrini.samuele.PoliVerse"
 
     /// CieID's own scheme. Upper case as the SDK writes it; schemes are
-    /// case-insensitive, but matching the SDK avoids surprises.
+    /// case-insensitive.
     static let cieIDScheme = "CIEID"
 
+    /// CieID's App Store page, offered when the app is not installed.
     static let appStoreURL = URL(string: "https://apps.apple.com/it/app/cieid/id1504644677")!
 
-    /// Host fragment identifying the CIE identity provider.
-    ///
-    /// Truncated exactly as the SDK's `IDP_URL_COMPONENT` is — it matches
-    /// `ios.idserver.servizicie.interno.gov.it` as a prefix.
+    /// Host fragment identifying the CIE identity provider on the way out, truncated
+    /// exactly as the SDK's own constant is.
     private static let idpOutboundHost = "ios.idserver.servizicie.interno.go"
 
-    /// Host the IdP sends the user back through once authenticated.
+    /// Host the identity provider sends the student back through once authenticated.
     private static let idpReturnHost = "idserver.servizicie.interno.gov.it"
 
     // MARK: - Outbound
 
-    /// True when this navigation is the hand-off to the CieID app.
+    /// Whether a navigation is the hand-off to the CieID app.
     ///
-    /// Mirrors the SDK's condition: an IdP URL carrying `nextUrl`, or a path
-    /// containing `livello1` / `livello2` (CIE assurance levels).
+    /// Matches an identity-provider URL carrying `nextUrl`, or any path containing
+    /// `livello1` or `livello2`, which are the CIE assurance levels.
+    ///
+    /// - Parameter url: The navigation the web view is about to follow.
+    /// - Returns: `true` when the navigation must be cancelled and handed off.
     static func isHandoffToCieID(_ url: URL) -> Bool {
         let string = url.absoluteString
         if string.contains(idpOutboundHost) && string.contains("nextUrl") { return true }
@@ -70,13 +55,16 @@ nonisolated enum CieIDBridge {
         return path.contains("livello1") || path.contains("livello2")
     }
 
-    /// Rewrites an IdP URL into the `CIEID://…&sourceApp=…` form.
+    /// Rewrites an identity-provider URL into the `CIEID://…&sourceApp=…` form.
     ///
-    /// - Note: built by string concatenation rather than `URLComponents`.
-    ///   `CIEID://https://host/...` is not a legal URL in the eyes of
-    ///   `URLComponents` — the whole https URL sits where the host should be —
-    ///   so composing it "properly" percent-escapes the payload and CieID
-    ///   rejects it. The SDK concatenates for the same reason.
+    /// Built by concatenation rather than with `URLComponents`: the whole https URL
+    /// sits where the host would go, so composing it through `URLComponents`
+    /// percent-escapes the payload and CieID rejects it.
+    ///
+    /// - Parameters:
+    ///   - url: The navigation to hand off.
+    ///   - sourceApp: The scheme CieID should return to.
+    /// - Returns: The hand-off URL, or `nil` when it cannot be formed.
     static func handoffURL(for url: URL, sourceApp: String = returnScheme) -> URL? {
         let separator = url.query == nil ? "?" : "&"
         let withSource = url.absoluteString + separator + "sourceApp=" + sourceApp
@@ -85,11 +73,14 @@ nonisolated enum CieIDBridge {
 
     // MARK: - Inbound
 
-    /// Extracts the https URL CieID handed back.
+    /// Recovers the https URL CieID handed back.
     ///
-    /// The payload arrives as `<scheme>://https://idserver…`. CieID sometimes
-    /// mangles it to `https//` with a single slash — the official SDK patches
-    /// exactly that before parsing, so we do too.
+    /// The payload arrives as `<scheme>://https://idserver…`, and CieID sometimes
+    /// writes `https//` with a single slash, which is repaired before parsing.
+    ///
+    /// - Parameter url: The incoming URL.
+    /// - Returns: The https URL to load, or `nil` when the scheme is not
+    ///   ``returnScheme`` or no usable URL can be recovered.
     static func returnURL(from url: URL) -> URL? {
         guard url.scheme?.caseInsensitiveCompare(returnScheme) == .orderedSame else { return nil }
 
@@ -101,13 +92,20 @@ nonisolated enum CieIDBridge {
         return recovered
     }
 
-    /// Whether a returned URL looks like it came back through the CIE IdP.
-    /// Used only for logging — the flow does not depend on it.
+    /// Whether a recovered URL came back through the CIE identity provider. Used for
+    /// logging only; the flow does not depend on it.
+    ///
+    /// - Parameter url: The recovered URL.
+    /// - Returns: `true` when it names the identity provider's host.
     static func isIdPReturn(_ url: URL) -> Bool {
         url.absoluteString.contains(idpReturnHost)
     }
 
-    /// Error message CieID reports back on the URL, if any.
+    /// The failure CieID reported on the return URL, if any.
+    ///
+    /// - Parameter url: The recovered URL.
+    /// - Returns: The value of `cieid_error_message`, or `nil` when the return
+    ///   succeeded.
     static func errorMessage(in url: URL) -> String? {
         URLComponents(url: url, resolvingAgainstBaseURL: false)?
             .queryItems?

@@ -13,11 +13,16 @@ import SwiftUI
 nonisolated struct Flavor: Equatable, Hashable, Sendable {
     /// A colour in sRGB, components from 0 to 1.
     nonisolated struct RGB: Equatable, Hashable, Sendable {
+        /// The red channel, 0 to 1.
         var red: Double
+        /// The green channel, 0 to 1.
         var green: Double
+        /// The blue channel, 0 to 1.
         var blue: Double
 
+        /// Pure white.
         static let white = RGB(red: 1, green: 1, blue: 1)
+        /// Pure black.
         static let black = RGB(red: 0, green: 0, blue: 0)
 
         /// WCAG 2.1 relative luminance.
@@ -28,12 +33,24 @@ nonisolated struct Flavor: Equatable, Hashable, Sendable {
             return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
         }
 
+        /// A colour from its channels, each clamped to 0…1.
+        ///
+        /// - Parameters:
+        ///   - red: The red channel.
+        ///   - green: The green channel.
+        ///   - blue: The blue channel.
         init(red: Double, green: Double, blue: Double) {
             self.red = red.clamped(to: 0...1)
             self.green = green.clamped(to: 0...1)
             self.blue = blue.clamped(to: 0...1)
         }
 
+        /// A colour from hue, saturation and brightness.
+        ///
+        /// - Parameters:
+        ///   - hue: The hue, 0 to 1, wrapping around the wheel.
+        ///   - saturation: How much colour, 0 to 1.
+        ///   - brightness: How light, 0 to 1.
         init(hue: Double, saturation: Double, brightness: Double) {
             let h = (hue.truncatingRemainder(dividingBy: 1) + 1).truncatingRemainder(dividingBy: 1) * 6
             let s = saturation.clamped(to: 0...1), v = brightness.clamped(to: 0...1)
@@ -49,6 +66,10 @@ nonisolated struct Flavor: Equatable, Hashable, Sendable {
             }
         }
 
+        /// A colour from a six-digit hex string, with or without the leading hash.
+        ///
+        /// - Parameter hex: The string.
+        /// - Returns: `nil` when it is not six hex digits.
         init?(hex: String) {
             let digits = hex.hasPrefix("#") ? String(hex.dropFirst()) : hex
             guard digits.count == 6, digits.allSatisfy(\.isHexDigit), let value = UInt32(digits, radix: 16) else { return nil }
@@ -56,10 +77,12 @@ nonisolated struct Flavor: Equatable, Hashable, Sendable {
                       blue: Double(value & 0xFF) / 255)
         }
 
+        /// The colour as `#RRGGBB`.
         var hex: String {
             String(format: "#%02X%02X%02X", Int((red * 255).rounded()), Int((green * 255).rounded()), Int((blue * 255).rounded()))
         }
 
+        /// The colour as hue, saturation and brightness.
         var hsb: (hue: Double, saturation: Double, brightness: Double) {
             let high = max(red, green, blue), low = min(red, green, blue), delta = high - low
             var hue = 0.0
@@ -72,41 +95,64 @@ nonisolated struct Flavor: Equatable, Hashable, Sendable {
             return (hue, high == 0 ? 0 : delta / high, high)
         }
 
+        /// The colour as SwiftUI draws it.
         @MainActor var color: Color { Color(.sRGB, red: red, green: green, blue: blue) }
     }
 
     /// The three colours a Flavor is made of.
     nonisolated enum Role: String, CaseIterable, Sendable {
+        /// Main is the look's colour; Accent and Extra follow from it unless set by hand.
         case main, accent, extra
     }
 
     /// How strongly the Flavor colours the page: the standard whisper, pure
     /// white or black for contrast, or a clearly tinted page.
     nonisolated enum Mode: String, CaseIterable, Sendable {
+        /// A standard whisper of colour on the page, pure white or black for contrast, or a clearly tinted page.
         case standard, contrast, tinted
     }
 
     /// Main, the look's colour.
     var base: RGB
+    /// Accent as the student set it, or `nil` to derive it from Main.
     private var accentOverride: RGB?
+    /// Extra as the student set it, or `nil` to derive it from Main.
     private var extraOverride: RGB?
 
+    /// A Flavor from Main's channels, with Accent and Extra derived.
+    ///
+    /// - Parameters:
+    ///   - red: Main's red channel.
+    ///   - green: Main's green channel.
+    ///   - blue: Main's blue channel.
     init(red: Double, green: Double, blue: Double) {
         base = RGB(red: red, green: green, blue: blue)
     }
 
+    /// A Flavor from its colours.
+    ///
+    /// - Parameters:
+    ///   - main: The look's colour.
+    ///   - accent: Accent, or `nil` to derive it.
+    ///   - extra: Extra, or `nil` to derive it.
     init(main: RGB, accent: RGB? = nil, extra: RGB? = nil) {
         base = main
         accentOverride = accent
         extraOverride = extra
     }
 
+    /// A Flavor from Main as a hex string, with Accent and Extra derived.
+    ///
+    /// - Parameter hex: The string.
+    /// - Returns: `nil` when it is not a hex colour.
     init?(hex: String) {
         guard let main = RGB(hex: hex) else { return nil }
         self.init(main: main)
     }
 
+    /// The look's colour.
     var main: RGB { base }
+    /// Main as `#RRGGBB`.
     var hex: String { base.hex }
 
     /// A neighbouring, deeper hue, unless set by hand.
@@ -127,6 +173,13 @@ nonisolated struct Flavor: Equatable, Hashable, Sendable {
         extraOverride = nil
     }
 
+    /// A colour a step around the wheel from Main.
+    ///
+    /// - Parameters:
+    ///   - hueShift: How far to turn, in fractions of the wheel.
+    ///   - saturation: What to multiply Main's saturation by.
+    ///   - brightness: What to multiply Main's brightness by.
+    /// - Returns: The colour, deepened only when Main is a grey with no hue to move along.
     private func derived(hueShift: Double, saturation: Double, brightness: Double) -> RGB {
         let (hue, s, b) = base.hsb
         // A grey has no hue to move along: it only deepens.
@@ -134,6 +187,10 @@ nonisolated struct Flavor: Equatable, Hashable, Sendable {
         return RGB(hue: hue + hueShift, saturation: s * saturation, brightness: max(b * brightness, 0.25))
     }
 
+    /// One of the Flavor's three colours.
+    ///
+    /// - Parameter role: Which one.
+    /// - Returns: The colour.
     func colour(_ role: Role) -> RGB {
         switch role {
         case .main: main
@@ -228,6 +285,7 @@ nonisolated struct Flavor: Equatable, Hashable, Sendable {
 
     // MARK: Sharing
 
+    /// The scheme a share code begins with, so a pasted string can be recognised.
     private static let sharePrefix = "poliverse-flavor:"
 
     /// A short code carrying the three colours, to send to a friend.
@@ -276,6 +334,10 @@ nonisolated struct Flavor: Equatable, Hashable, Sendable {
         return Flavor(main: chosen[0], accent: chosen.count > 1 ? chosen[1] : nil, extra: chosen.count > 2 ? chosen[2] : nil)
     }
 
+    /// The mean of some colours, channel by channel.
+    ///
+    /// - Parameter colours: The colours, at least one.
+    /// - Returns: Their average.
     private static func average(_ colours: [RGB]) -> RGB {
         let count = Double(colours.count)
         return RGB(red: colours.map(\.red).reduce(0, +) / count, green: colours.map(\.green).reduce(0, +) / count,
@@ -284,12 +346,17 @@ nonisolated struct Flavor: Equatable, Hashable, Sendable {
 
     // MARK: Swatches
 
+    /// A named Flavor offered in the picker.
     struct Swatch: Identifiable, Sendable {
+        /// What the swatch is called.
         let name: LocalizedStringResource
+        /// The Flavor it stands for.
         let flavor: Flavor
+        /// The swatch's identity, which is Main's hex.
         var id: String { flavor.hex }
     }
 
+    /// The Politecnico's own navy, which the app opens on.
     static let polimi = Flavor(hex: "#0F3D6E")!
 
     /// A starting set; any other colour comes from the picker or a photo.
@@ -311,10 +378,15 @@ nonisolated struct Flavor: Equatable, Hashable, Sendable {
 
 /// Stored as its three colours; a plain hex string from before is Main alone.
 nonisolated extension Flavor: Codable {
+    /// The three colours as they are stored.
     private enum CodingKeys: String, CodingKey {
         case main, accent, extra
     }
 
+    /// Reads a Flavor, accepting a bare hex string as Main alone.
+    ///
+    /// - Parameter decoder: The decoder.
+    /// - Throws: ``DecodingError`` when a colour is not a hex string.
     init(from decoder: any Decoder) throws {
         if let hex = try? decoder.singleValueContainer().decode(String.self) {
             guard let main = RGB(hex: hex) else {
@@ -332,6 +404,10 @@ nonisolated extension Flavor: Codable {
                   extra: try container.decodeIfPresent(String.self, forKey: .extra).flatMap(RGB.init(hex:)))
     }
 
+    /// Writes Main, and Accent and Extra only where they were set by hand.
+    ///
+    /// - Parameter encoder: The encoder.
+    /// - Throws: Whatever the encoder throws.
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(main.hex, forKey: .main)
@@ -340,21 +416,36 @@ nonisolated extension Flavor: Codable {
     }
 }
 
+/// The Flavor resolved for a colour scheme, as SwiftUI colours.
 extension Flavor {
     /// The palette in a colour scheme and mode, as SwiftUI colours.
     struct Palette {
+        /// The page behind everything.
         let ground: Color
+        /// A card on that page.
         let surface: Color
+        /// The colour for controls and marks.
         let accent: Color
+        /// Accent made readable as text on the page.
         let accentSecondary: Color
+        /// Extra made readable as text on the page.
         let extra: Color
+        /// Black or white, whichever reads on ``accent``.
         let onAccent: Color
         /// The raw colours, for gradients and tiles where legibility is not at stake.
         let mainRaw: Color
+        /// Accent as it was chosen.
         let accentRaw: Color
+        /// Extra as it was chosen.
         let extraRaw: Color
     }
 
+    /// The Flavor resolved for one appearance.
+    ///
+    /// - Parameters:
+    ///   - scheme: Light or dark.
+    ///   - mode: How strongly the Flavor colours the page.
+    /// - Returns: The palette.
     func palette(_ scheme: ColorScheme, mode: Mode = .standard) -> Palette {
         let dark = scheme == .dark
         return Palette(ground: ground(dark: dark, mode: mode).color, surface: surface(dark: dark, mode: mode).color,

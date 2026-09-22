@@ -11,8 +11,8 @@ nonisolated enum AuthWebViewDecision {
     /// exchange kicked off here inherits the session the login established.
     ///
     /// The action is carried rather than performed inside `decide` so that
-    /// deciding stays free of side effects; an earlier version fired it twice
-    /// simply by asking the same question twice.
+    /// deciding stays free of side effects: asking the same question twice must
+    /// not fire the action twice.
     case finish(@MainActor () -> Void)
     /// Stop, and load this URL instead.
     case load(URL)
@@ -26,10 +26,14 @@ nonisolated enum AuthWebViewDecision {
 /// See ``CieIDBridge`` for why the hand-off has to be intercepted rather than
 /// simply allowed.
 struct AuthWebView: UIViewRepresentable {
+    /// The page the sign-in begins on.
     let startURL: URL
+    /// Carries a CieID return back into this web view, so the session continues where it left
+    /// off.
     let router: CieIDRouter
     /// Called for every navigation so the host can spot its own completion URL.
     let decide: (URL) -> AuthWebViewDecision
+    /// Called when a navigation genuinely fails — never for a cancel the view asked for.
     let onError: (any Error) -> Void
     /// Called when the IdP hand-off fails because CieID is not installed.
     var onCieIDMissing: () -> Void = {}
@@ -43,11 +47,19 @@ struct AuthWebView: UIViewRepresentable {
     /// The `sessionStorage` key to watch.
     var credentialKey: String = ""
 
+    /// Creates the navigation delegate and credential observer.
+    ///
+    /// - Returns: The coordinator.
     func makeCoordinator() -> Coordinator {
         Coordinator(router: router, decide: decide, onError: onError,
                     onCieIDMissing: onCieIDMissing, onFinished: onFinished)
     }
 
+    /// Creates the web view on ``LoginWebKit``'s persistent store, with the content rules and,
+    /// when ``onCredential`` is supplied, the credential observer.
+    ///
+    /// - Parameter context: The representable's context.
+    /// - Returns: The web view, loading ``startURL``.
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         // A persistent store of this app's own, so the 13.7 MB of JavaScript
@@ -92,6 +104,11 @@ struct AuthWebView: UIViewRepresentable {
         return webView
     }
 
+    /// Loads whatever CieID handed back, once the router has something to consume.
+    ///
+    /// - Parameters:
+    ///   - webView: The web view to update.
+    ///   - context: The representable's context.
     func updateUIView(_ webView: WKWebView, context: Context) {
         // A pending URL means CieID just handed control back. Loading it into
         // *this* web view is the whole point — it already holds the session the
@@ -109,9 +126,17 @@ struct AuthWebView: UIViewRepresentable {
         }
     }
 
+    /// Decides each navigation, intercepts the CieID hand-off, and receives the credential the
+    /// page stores.
     final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+        /// Called with the raw credential the page stored.
         var onCredential: ((String) -> Void)?
 
+        /// Receives the credential the observer script posts.
+        ///
+        /// - Parameters:
+        ///   - controller: The content controller.
+        ///   - message: The posted message, whose body is the stored value.
         func userContentController(
             _ controller: WKUserContentController, didReceive message: WKScriptMessage
         ) {
@@ -120,15 +145,24 @@ struct AuthWebView: UIViewRepresentable {
             onCredential?(raw)
         }
 
+        /// Carries a CieID return back into the web view.
         private let router: CieIDRouter
+        /// Asks the host what to do with each navigation.
         private let decide: (URL) -> AuthWebViewDecision
+        /// Reports a genuine navigation failure.
         private let onError: (any Error) -> Void
+        /// Reports that CieID is not installed.
         private let onCieIDMissing: () -> Void
+        /// Reports that a navigation has settled.
         private let onFinished: (WKWebView, URL?) -> Void
+        /// Diagnostic log for this type, under the `authweb` category.
         let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "authweb")
 
+        /// The web view being driven, held weakly.
         weak var webView: WKWebView?
+        /// `true` while the page CieID handed back is being loaded.
         var resuming = false
+        /// `true` once the host has said the flow is over, after which navigations are left alone.
         private var finished = false
         /// Set whenever we cancel a navigation on purpose.
         ///
@@ -141,6 +175,14 @@ struct AuthWebView: UIViewRepresentable {
         /// allowed through rather than bouncing forever.
         private var reissued: Set<String> = []
 
+        /// Creates the delegate.
+        ///
+        /// - Parameters:
+        ///   - router: Carries a CieID return back into the web view.
+        ///   - decide: Asks the host what to do with each navigation.
+        ///   - onError: Reports a genuine failure.
+        ///   - onCieIDMissing: Reports that CieID is not installed.
+        ///   - onFinished: Reports that a navigation has settled.
         init(
             router: CieIDRouter,
             decide: @escaping (URL) -> AuthWebViewDecision,
@@ -155,11 +197,27 @@ struct AuthWebView: UIViewRepresentable {
             self.onFinished = onFinished
         }
 
+        /// Tells the host a navigation has settled, unless the flow is already over.
+        ///
+        /// - Parameters:
+        ///   - webView: The web view.
+        ///   - navigation: The navigation that finished.
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             guard !finished else { return }
             onFinished(webView, webView.url)
         }
 
+        /// Decides what to do with a navigation.
+        ///
+        /// A CieID hand-off is cancelled and re-issued with `sourceApp` attached. A
+        /// `polimi.it` navigation is kept inside this web view, because a device with the
+        /// official app installed treats it as a universal link and would take the flow away
+        /// mid-sign-in. Everything else is passed to the host's own decision.
+        ///
+        /// - Parameters:
+        ///   - webView: The web view.
+        ///   - navigationAction: What it is about to do.
+        /// - Returns: Whether to allow it.
         func webView(
             _ webView: WKWebView,
             decidePolicyFor navigationAction: WKNavigationAction
@@ -216,6 +274,16 @@ struct AuthWebView: UIViewRepresentable {
             }
         }
 
+        /// Reports a navigation failure, ignoring the cancels this view asked for.
+        ///
+        /// That guard is what makes the CIE flow work: a deliberate cancel surfaces here as a
+        /// WebKit error rather than a cancellation, and reporting it would tear the web view down
+        /// before CieID could hand anything back.
+        ///
+        /// - Parameters:
+        ///   - webView: The web view.
+        ///   - navigation: The navigation that failed.
+        ///   - error: Why it failed.
         func webView(
             _ webView: WKWebView,
             didFailProvisionalNavigation navigation: WKNavigation!,

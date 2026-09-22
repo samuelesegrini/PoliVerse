@@ -2,22 +2,40 @@ import Foundation
 
 /// One line of a sitting's timeline.
 nonisolated struct ExamTimelineEntry: Identifiable, Sendable, Equatable {
+    /// The milestone's key within the sitting, or the update's own id.
     let id: String
+    /// When the line is placed: the milestone's date, or when the update was noticed.
     let date: Date
+    /// What the line says.
     let title: String
+    /// A second line, such as the room.
     let detail: String?
-    /// Where the fact comes from, shown so nothing guessed passes as official.
+    /// Where the fact comes from, shown so that nothing inferred passes as official.
     let source: String
+    /// Whether the line is still ahead.
     let isFuture: Bool
-    /// The update behind this line; nil for a date read off the sitting.
+    /// The update behind the line, or `nil` for a date read off the sitting itself.
     let update: ExamUpdate?
 }
 
-/// Builds a sitting's timeline from what the app noticed and the dates the
-/// sitting already carries.
+/// Builds a sitting's timeline from the dates it carries and the updates the app has
+/// noticed.
 nonisolated enum ExamTimeline {
-    /// - Parameter sittings: every sitting known, so a libretto mark can be
-    ///   given to the right one.
+    /// The timeline for one sitting, oldest first.
+    ///
+    /// Three milestones come from the sitting itself — enrolment opening, enrolment
+    /// closing and the exam — and are attributed to the exams service. Updates are then
+    /// added: those naming this sitting directly, plus marks, results and solutions tied
+    /// to it by ``latestSitting(before:among:)``, exam notices tied by
+    /// ``nextSitting(after:among:)``, and announcements the detector already tied to a
+    /// sitting's date.
+    ///
+    /// - Parameters:
+    ///   - exam: The sitting to build the timeline for.
+    ///   - sittings: Every sitting known, so a libretto mark reaches the right one.
+    ///   - updates: The updates the app has noticed.
+    ///   - now: The moment that decides ``ExamTimelineEntry/isFuture``.
+    /// - Returns: The lines, sorted by date.
     static func entries(
         for exam: ExamSession, sittings: [ExamSession], updates: [ExamUpdate], now: Date
     ) -> [ExamTimelineEntry] {
@@ -32,7 +50,7 @@ nonisolated enum ExamTimeline {
             date.map {
                 ExamTimelineEntry(
                     id: "\(exam.id)-\(key)", date: $0, title: title,
-                    detail: key == "exam" ? exam.room.map { String(localized: "Aula \($0)") } : nil,
+                    detail: key == "exam" ? exam.room.map(RoomNaming.sentence) : nil,
                     source: official, isFuture: $0 > now, update: nil)
             }
         }
@@ -62,16 +80,18 @@ nonisolated enum ExamTimeline {
         return entries.sorted { $0.date < $1.date }
     }
 
-    /// The libretto and WeBeep have no sitting id. A mark, a results file or
-    /// solutions belong to the course's most recent sitting before they were
-    /// seen — not to every earlier one, or a January fail would show
-    /// February's pass.
+    /// The sitting a mark, a results file or a set of solutions belongs to.
     ///
-    /// Matched by code or by name: the libretto's id is `c_insegn` or, when
-    /// that is absent, a row id that shares nothing with `/v1/insegn`.
+    /// Neither the libretto nor WeBeep carries a sitting id, so the update is tied to
+    /// the course's most recent sitting before it was noticed — not to every earlier
+    /// one, or a January failure would show February's pass. The match is capped at
+    /// ``ExamUpdatePolicy/resultsWindow``, since results posted a year after a sitting
+    /// are not that sitting's.
     ///
-    /// Within ``ExamUpdatePolicy/resultsWindow``: a file of results posted a
-    /// year after a sitting is not that sitting's.
+    /// - Parameters:
+    ///   - update: The update to place.
+    ///   - sittings: Every sitting known.
+    /// - Returns: The sitting, or `nil` when none fits.
     private static func latestSitting(before update: ExamUpdate, among sittings: [ExamSession]) -> ExamSession? {
         sittings
             .filter { $0.isOf(courseCode: update.courseCode, courseName: update.courseName) }
@@ -83,7 +103,13 @@ nonisolated enum ExamTimeline {
             .max { ($0.date ?? .distantPast) < ($1.date ?? .distantPast) }
     }
 
-    /// A notice about rooms or instructions belongs to the sitting ahead.
+    /// The sitting a notice about rooms or instructions belongs to: the course's next
+    /// sitting within ``ExamUpdatePolicy/noticeHorizon``.
+    ///
+    /// - Parameters:
+    ///   - update: The update to place.
+    ///   - sittings: Every sitting known.
+    /// - Returns: The sitting, or `nil` when none fits.
     private static func nextSitting(after update: ExamUpdate, among sittings: [ExamSession]) -> ExamSession? {
         sittings
             .filter { $0.isOf(courseCode: update.courseCode, courseName: update.courseName) }

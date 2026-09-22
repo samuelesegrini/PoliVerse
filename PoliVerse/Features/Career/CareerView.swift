@@ -2,33 +2,32 @@ import SwiftUI
 
 /// Carriera: what expires, where you are, and then the lists.
 ///
-/// The page used to open on a segmented control, then two tinted navigation
-/// buttons, then a news feed, then six figures, then two truncated lists.
-/// Nothing on it was an action, and the two things that actually cost a
-/// student something — an enrolment window closing, a mark that can still be
-/// refused — were spelled as a colour on a row and as the third item of a
-/// feed. Meanwhile "Riepilogo" ended with three of the Esiti and one of the
-/// Appelli, so the first tab was a smaller copy of the other two.
-///
-/// The order now answers three questions, in the order they are asked:
+/// The order answers three questions, in the order they are asked:
 ///
 /// 1. **What expires** — ``CareerNowCard``, absent when nothing does.
 /// 2. **Where am I** — ``CareerStandingCard``: one figure with its direction,
 ///    the marks behind it, the credits and what is left.
 /// 3. **The detail** — the libretto by year, or the sittings by deadline.
 ///
-/// Riepilogo is gone because 1 and 2 sit permanently above the picker: they
-/// *are* the summary, and they no longer repeat the lists. Novità, the study
-/// plan and the simulator moved to the toolbar — they are destinations, and
-/// they were taking the top of the page from the content.
+/// There is no summary tab: 1 and 2 sit permanently above the picker and *are*
+/// the summary, without repeating the lists under it. Novità, the study plan
+/// and the simulator are destinations, so they live in the toolbar rather than
+/// taking the top of the page from the content.
 struct CareerView: View {
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
+    /// The shared ``UpdateFeed``, from the environment.
     @Environment(UpdateFeed.self) private var feed
 
+    /// Which of the two lists is shown under the cards.
     @State private var scope: Scope = .libretto
+    /// The sitting whose detail sheet is open, if any.
     @State private var selectedExam: ExamSession?
+    /// Whether the study plan is presented.
     @State private var showingPlan = false
+    /// Whether the grade simulator is presented.
     @State private var showingSimulator = false
+    /// Whether the exam updates feed is presented.
     @State private var showingUpdates = false
     /// Which years are open. Nil until the student touches one, so the
     /// defaults below can depend on the data rather than on a first render.
@@ -38,21 +37,30 @@ struct CareerView: View {
     /// Politecnico navy on a page the student had coloured read as a screen
     /// borrowed from another app.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// Which list the picker is on.
     enum Scope: String, CaseIterable, Identifiable {
+        /// The libretto, grouped by academic year.
         case libretto = "Libretto"
+        /// The sittings, grouped by what is being asked of the student.
         case upcoming = "Appelli"
+        /// The scope's identity, which is its title.
         var id: String { rawValue }
     }
 
     /// Shown inside a navigation stack that is not its own.
     private let embedded: Bool
 
+    /// Creates the page.
+    ///
+    /// - Parameter embedded: True when a navigation stack already surrounds it, such as Cerca's or the panel's.
     init(embedded: Bool = false) {
         self.embedded = embedded
     }
 
+    /// The view's content.
     var body: some View {
         RootStack(embedded: embedded) {
             content(career)
@@ -69,6 +77,10 @@ struct CareerView: View {
 
     // MARK: - The page
 
+    /// The page itself: what expires, where the student is, and then the chosen list.
+    ///
+    /// - Parameter career: The career to draw.
+    /// - Returns: The page.
     @ViewBuilder
     private func content(_ career: CareerModel) -> some View {
         ScrollView {
@@ -127,6 +139,7 @@ struct CareerView: View {
 
     // MARK: - Toolbar
 
+    /// The toolbar menu: the updates feed, the study plan and the simulator.
     private var menu: some View {
         Menu {
             Button("Novità", systemImage: "bell.badge") { showingUpdates = true }
@@ -144,6 +157,10 @@ struct CareerView: View {
 
     // MARK: - Libretto
 
+    /// The libretto as one card per academic year, each opening on a tap.
+    ///
+    /// - Parameter career: The career to draw.
+    /// - Returns: The list, or an empty state.
     @ViewBuilder
     private func libretto(_ career: CareerModel) -> some View {
         let groups = career.studyPlan.byYear
@@ -171,6 +188,11 @@ struct CareerView: View {
             || year == groups.first(where: { $0.year != StudyPlan.pendingGroup })?.year
     }
 
+    /// Opens or closes one year, taking over from the defaults on the first touch.
+    ///
+    /// - Parameters:
+    ///   - year: The year to toggle.
+    ///   - groups: Every year, for working out which were open by default.
     private func toggle(_ year: String, in groups: [(year: String, exams: [LibrettoExam])]) {
         var open = openYears ?? Set(groups.map(\.year).filter { isOpen($0, in: groups) })
         if open.contains(year) { open.remove(year) } else { open.insert(year) }
@@ -179,6 +201,10 @@ struct CareerView: View {
 
     // MARK: - Appelli
 
+    /// The sittings grouped by what is being asked of the student, most urgent group first.
+    ///
+    /// - Parameter career: The career to draw.
+    /// - Returns: The list, or an empty state.
     @ViewBuilder
     private func upcoming(_ career: CareerModel) -> some View {
         let sections = ExamAgenda.sections(from: career.sessions)
@@ -209,6 +235,10 @@ struct CareerView: View {
 
     // MARK: - Nothing to show
 
+    /// What the page says when there is no career to draw: the service's own answer where it gave one.
+    ///
+    /// - Parameter career: The career, read for why it is empty.
+    /// - Returns: The empty state.
     @ViewBuilder
     private func unavailable(_ career: CareerModel) -> some View {
         if career.examServicesRefused {
@@ -227,6 +257,10 @@ struct CareerView: View {
         }
     }
 
+    /// A failure said over the page that is still being shown.
+    ///
+    /// - Parameter message: What went wrong.
+    /// - Returns: The banner.
     private func errorBanner(_ message: String) -> some View {
         Label(message, systemImage: "exclamationmark.triangle.fill")
             .font(.footnote)

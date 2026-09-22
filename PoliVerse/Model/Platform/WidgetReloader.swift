@@ -1,27 +1,33 @@
 import Foundation
 import WidgetKit
 
-/// Tells widgets their data changed — once, for the kinds that read it, after
-/// the file is on disk.
+/// Tells the widgets their data changed — once per kind, and only after the file is
+/// on disk.
 ///
-/// Three services each called `reloadAllTimelines()` straight after saving,
-/// so one foreground revalidation reloaded every widget up to three times,
-/// sometimes before the write it announced had happened. WidgetKit throttles
-/// frequent reloads from a foreground app, and suggests a final reload as the
-/// app leaves the screen instead (`docs/metrickit-performance.md` §3.7).
+/// Requests gather for ``window`` and then go out as one reload per kind, behind
+/// ``OfflineStore``'s pending writes, so a widget never reloads onto the file it is
+/// replacing. WidgetKit throttles frequent reloads from a foreground app and
+/// recommends a final reload as the app leaves the screen, which
+/// ``appDidEnterBackground()`` performs.
 ///
-/// So: requests gather for a moment and go out as one reload per kind, after
-/// `OfflineStore`'s pending writes; and whatever changed while the app was
-/// open is reloaded once more when it goes to the background.
+/// See `docs/metrickit-performance.md` §3.7.
 @MainActor
 enum WidgetReloader {
+    /// Kinds waiting to be reloaded by the next flush.
     private static var pending: Set<WidgetKind> = []
+    /// Every kind that changed since the app came forward, reloaded once more as it
+    /// leaves the screen.
     private static var changedWhileActive: Set<WidgetKind> = []
+    /// The gathering window currently running, if any.
     private static var debounce: Task<Void, Never>?
 
     /// How long requests gather before going out.
     static let window: Duration = .seconds(2)
 
+    /// Asks for these kinds to be reloaded, opening a gathering window if none is
+    /// running.
+    ///
+    /// - Parameter kinds: The widget kinds whose data changed.
     static func request(_ kinds: Set<WidgetKind>) {
         pending.formUnion(kinds)
         changedWhileActive.formUnion(kinds)
@@ -32,9 +38,10 @@ enum WidgetReloader {
         }
     }
 
-    /// Sends whatever is gathered now. A background refresh must call this
-    /// before it finishes: once iOS suspends the app, the gathering window
-    /// never ends.
+    /// Sends whatever has gathered, after waiting for pending offline writes.
+    ///
+    /// A background refresh must call this before reporting completion: once iOS suspends
+    /// the app, the gathering window never ends.
     static func flush() async {
         debounce?.cancel()
         debounce = nil
@@ -48,7 +55,9 @@ enum WidgetReloader {
         DiagnosticsLog.shared.widgetsReloaded()
     }
 
-    /// The final reload WidgetKit recommends as the app leaves the screen.
+    /// Reloads everything that changed while the app was on screen.
+    ///
+    /// The final reload WidgetKit recommends as an app leaves the foreground.
     static func appDidEnterBackground() async {
         pending.formUnion(changedWhileActive)
         changedWhileActive = []

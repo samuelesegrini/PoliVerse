@@ -3,12 +3,15 @@ import SwiftUI
 
 /// A page of Personalizza's panel: one part of the look.
 enum CustomizePage: Hashable, Identifiable {
+    /// The parts of the look the bento offers a tile for.
     case flavor, paper, cards, appearance, widget, accessory, layout, greeting, bar
+    /// One section of Oggi, with its form and surface.
     case section(TodaySection.Kind)
     /// The emoji keyboard, pushed from the accessory page rather than
     /// presented over the panel.
     case stickerPicker
 
+    /// The page's identity, which names the section it belongs to where there is one.
     var id: String {
         switch self {
         case .section(let kind): "section-\(kind.rawValue)"
@@ -28,6 +31,7 @@ enum CustomizePage: Hashable, Identifiable {
         }
     }
 
+    /// What the page is called on its tile and in its navigation bar.
     var title: LocalizedStringKey {
         switch self {
         case .flavor: "Flavor"
@@ -47,16 +51,23 @@ enum CustomizePage: Hashable, Identifiable {
 
 /// The controls of one panel page: a curated set and one fine control.
 struct CustomizeControls: View {
+    /// Which part of the look these controls set.
     let page: CustomizePage
+    /// The look being edited.
     @Binding var style: TodayStyle
+    /// Whether the page above is in arranging mode.
     @Binding var arranging: Bool
+    /// Opens the sticker picker.
     var pickStickers: () -> Void = {}
 
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
     @State private var photoItem: PhotosPickerItem?
     @State private var photoItems: [PhotosPickerItem] = []
 
+    /// The view's content.
     var body: some View {
         Form {
             switch page {
@@ -82,6 +93,7 @@ struct CustomizeControls: View {
 
     // MARK: Flavor
 
+    /// The Flavor: its colours drifting, the swatches, the picker, a photo to take a colour from, and the three roles by hand.
     @ViewBuilder
     private var flavorControls: some View {
         Section {
@@ -193,6 +205,7 @@ struct CustomizeControls: View {
 
     // MARK: Cards
 
+    /// What the page's cards are made of, as a grid of small previews.
     private var cardControls: some View {
         Section {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 12) {
@@ -226,6 +239,7 @@ struct CustomizeControls: View {
 
     // MARK: Appearance
 
+    /// How the app is lit, each choice drawn as a small page.
     @ViewBuilder
     private var appearanceControls: some View {
         Section {
@@ -263,6 +277,7 @@ struct CustomizeControls: View {
 
     // MARK: Bar
 
+    /// Which of Oggi's optional bar buttons show.
     private var barControls: some View {
         Section {
             Toggle("Profilo", isOn: $style.bar.showsProfile)
@@ -276,6 +291,7 @@ struct CustomizeControls: View {
 
     // MARK: Accessory
 
+    /// What sits beside the date, and the controls for whichever accessory is chosen.
     @ViewBuilder
     private var accessoryControls: some View {
         Section {
@@ -360,6 +376,7 @@ struct CustomizeControls: View {
 
     // MARK: Layout
 
+    /// The sections of Oggi in order, draggable, with the hidden ones offered below.
     @ViewBuilder
     private var layoutControls: some View {
         Section {
@@ -409,6 +426,7 @@ struct CustomizeControls: View {
 
     // MARK: Greeting
 
+    /// Whether a greeting shows, which one, and the student's own words where they chose them.
     @ViewBuilder
     private var greetingControls: some View {
         Section {
@@ -445,6 +463,7 @@ struct CustomizeControls: View {
 
     // MARK: Date
 
+    /// The date's layout and alignment, each layout drawn as it will appear.
     private var dateLayoutControls: some View {
         Section("Forma") {
             ScrollView(.horizontal) {
@@ -481,6 +500,7 @@ struct CustomizeControls: View {
         }
     }
 
+    /// The date in full: its layout, typeface, weight, size and colour.
     @ViewBuilder
     private var dateControls: some View {
         dateLayoutControls
@@ -533,10 +553,14 @@ struct CustomizeControls: View {
 
 /// One of a Flavor's three colours, with the system picker over it.
 private struct FlavorRoleSwatch: View {
+    /// Which of the three colours this swatch sets.
     let role: Flavor.Role
+    /// The Flavor being edited.
     @Binding var flavor: Flavor
+    /// The environment's `self`.
     @Environment(\.self) private var environment
 
+    /// The role's name, in small caps on the swatch.
     private var label: LocalizedStringKey {
         switch role {
         case .main: "PRINCIPALE"
@@ -545,6 +569,7 @@ private struct FlavorRoleSwatch: View {
         }
     }
 
+    /// The view's content.
     var body: some View {
         let colour = flavor.colour(role)
         RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -567,6 +592,7 @@ private struct FlavorRoleSwatch: View {
             .accessibilityIdentifier("flavor-role-\(role.rawValue)")
     }
 
+    /// This role's colour, read from the Flavor and written back resolved to sRGB.
     private var binding: Binding<Color> {
         Binding {
             flavor.colour(role).color
@@ -584,9 +610,12 @@ private struct FlavorRoleSwatch: View {
 
 /// The system's colour picker for any colour, then the Flavor swatches.
 private struct FlavorRow: View {
+    /// The Flavor being edited.
     @Binding var flavor: Flavor
+    /// The environment's `self`.
     @Environment(\.self) private var environment
 
+    /// The view's content.
     var body: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 12) {
@@ -615,6 +644,7 @@ private struct FlavorRow: View {
         .scrollIndicators(.hidden)
     }
 
+    /// Main, read from the Flavor and written back as a fresh Flavor with Accent and Extra derived.
     private var pickerColour: Binding<Color> {
         Binding {
             flavor.base.color
@@ -627,10 +657,14 @@ private struct FlavorRow: View {
 
 /// A material on the look's background, with a line of text and an accent.
 struct MaterialPreview: View {
+    /// The material to draw.
     let material: TodayMaterial
+    /// The look, which supplies the background and the accent.
     let style: TodayStyle
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// The view's content.
     var body: some View {
         TodayBackgroundView(style: style)
             .overlay {
@@ -652,11 +686,22 @@ struct PaperTile: View {
     /// Either sheet: a paper, or a decoration drawn instead of one. Both are
     /// pages, so both are shown as a sheet with its corner peeled up.
     let sheet: TodaySheet
+    /// The look, which supplies the Flavor and the grain.
     let style: TodayStyle
+    /// True for the sheet in use, which is ringed.
     var selected = false
+    /// Whether the sheet's name is drawn under it.
     var showsTitle = true
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// A tile for either kind of sheet.
+    ///
+    /// - Parameters:
+    ///   - sheet: The paper or decoration.
+    ///   - style: The look.
+    ///   - selected: True for the sheet in use.
+    ///   - showsTitle: Whether to name it.
     init(sheet: TodaySheet, style: TodayStyle, selected: Bool = false, showsTitle: Bool = true) {
         self.sheet = sheet
         self.style = style
@@ -664,18 +709,28 @@ struct PaperTile: View {
         self.showsTitle = showsTitle
     }
 
+    /// A tile for a paper.
+    ///
+    /// - Parameters:
+    ///   - paper: The paper.
+    ///   - style: The look.
+    ///   - selected: True for the paper in use.
+    ///   - showsTitle: Whether to name it.
     init(paper: TodayPaper, style: TodayStyle, selected: Bool = false, showsTitle: Bool = true) {
         self.init(sheet: .paper(paper), style: style, selected: selected, showsTitle: showsTitle)
     }
 
+    /// The paper this tile shows, or plain when it shows a decoration.
     private var paper: TodayPaper {
         if case .paper(let paper) = sheet { paper } else { .plain }
     }
 
+    /// The decoration this tile shows, or plain when it shows a paper.
     private var background: TodayBackground {
         if case .decoration(let background) = sheet { background } else { .plain }
     }
 
+    /// The view's content.
     var body: some View {
         let shape = UnevenRoundedRectangle(topLeadingRadius: 34, bottomLeadingRadius: 8, bottomTrailingRadius: 16,
                                            topTrailingRadius: 16, style: .continuous)
@@ -702,8 +757,10 @@ struct PaperTile: View {
 
 /// A folded corner: the back of the sheet, and the white beneath.
 private struct PeeledCorner: View {
+    /// The colour of the sheet's back.
     let colour: Color
 
+    /// The view's content.
     var body: some View {
         GeometryReader { proxy in
             let size = proxy.size
@@ -731,9 +788,12 @@ private struct PeeledCorner: View {
 
 /// An appearance drawn as a small page: the date and a card.
 private struct AppearanceTile: View {
+    /// The appearance to draw.
     let appearance: TodayAppearance
+    /// The look, which supplies the Flavor.
     let style: TodayStyle
 
+    /// The view's content.
     var body: some View {
         switch appearance {
         case .system:
@@ -749,6 +809,10 @@ private struct AppearanceTile: View {
         }
     }
 
+    /// A small page in one appearance: the date and a card.
+    ///
+    /// - Parameter dark: True to draw it dark.
+    /// - Returns: The page.
     private func page(dark: Bool) -> some View {
         let mode = appearance.flavorMode
         let ground = style.flavor.ground(dark: dark, mode: mode).color
@@ -766,12 +830,15 @@ private struct AppearanceTile: View {
     }
 }
 
+/// Telling an emoji sticker from an image one.
 private extension PlacedSticker.Content {
+    /// True for an emoji sticker.
     var isEmoji: Bool {
         if case .emoji = self { true } else { false }
     }
 }
 
+/// Reading a photo's colours, to take a Flavor from it.
 extension UIImage {
     /// A small grid of the image's colours, for picking a Flavor from it.
     func samplePixels(side: Int = 40) -> [Flavor.RGB] {

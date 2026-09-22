@@ -6,15 +6,22 @@ import UIKit
 /// Arranging, each sticker follows a finger, a pinch and a twist, and has a
 /// button to take it away; the changes go back through `onChange`.
 struct StickerPanel: View {
+    /// The stickers to draw, each placed by fractions of the panel.
     let stickers: [PlacedSticker]
     /// In Personalizza, where an empty panel shows where stickers go.
     var editing = false
+    /// In Personalizza's arranging mode, where stickers move and can be removed.
     var arranging = false
+    /// Whether each sticker gets the look's outline.
     var outline = true
+    /// Records a change to one sticker's place, size or angle.
     var onChange: (UUID, (inout PlacedSticker) -> Void) -> Void = { _, _ in }
+    /// Takes one sticker off the panel.
     var onRemove: (UUID) -> Void = { _ in }
+    /// Opens the sticker picker.
     var onAdd: () -> Void = {}
 
+    /// The view's content.
     var body: some View {
         GeometryReader { proxy in
             let panel = proxy.size
@@ -49,17 +56,27 @@ struct StickerPanel: View {
 
 /// One sticker, placed by fractions of the panel.
 private struct StickerItem: View {
+    /// The sticker to draw.
     let sticker: PlacedSticker
+    /// The panel's size, which the sticker's fractions are read against.
     let panel: CGSize
+    /// True while the sticker can be moved, resized and turned.
     let arranging: Bool
+    /// Whether to draw the look's outline around it.
     let outline: Bool
+    /// Records a change to this sticker.
     let onChange: ((inout PlacedSticker) -> Void) -> Void
+    /// Takes this sticker off the panel.
     let onRemove: () -> Void
 
+    /// The gesture's live value while it is in progress.
     @GestureState private var drag = CGSize.zero
+    /// The gesture's live value while it is in progress.
     @GestureState private var pinch = 1.0
+    /// The gesture's live value while it is in progress.
     @GestureState private var twist = Angle.zero
 
+    /// The view's content.
     var body: some View {
         let side = panel.height * sticker.size * pinch
         StickerContentView(content: sticker.content)
@@ -82,6 +99,7 @@ private struct StickerItem: View {
             .animation(.snappy, value: sticker)
     }
 
+    /// Drag, pinch and twist at once, each writing back when it ends.
     private var gestures: some Gesture {
         // A few points of travel first, so a tap still reaches the remove
         // button and a swipe that starts elsewhere still scrolls.
@@ -105,10 +123,12 @@ private struct StickerItem: View {
 
 /// A sticker's picture: an emoji as text, a keyboard sticker as its image.
 struct StickerContentView: View {
+    /// What the sticker is: an emoji, or a stored image.
     let content: PlacedSticker.Content
     /// Fills the frame, cropping, as a photo does; stickers fit whole.
     var fill = false
 
+    /// The view's content.
     var body: some View {
         switch content {
         case .emoji(let emoji):
@@ -134,8 +154,13 @@ struct StickerContentView: View {
 /// Decoded sticker images, kept while the app runs: every card of the gallery
 /// draws them, and decoding a multi-resolution image each time would stutter.
 enum StickerImages {
+    /// Decoded images by sticker id, dropped under memory pressure.
     private static let cache = NSCache<NSString, UIImage>()
 
+    /// A sticker's image, decoded once and kept.
+    ///
+    /// - Parameter id: The sticker's id in ``StickerStore``.
+    /// - Returns: The image, or `nil` when there is none to decode.
     static func image(for id: String) -> UIImage? {
         if let cached = cache.object(forKey: id as NSString) { return cached }
         guard let data = StickerStore.shared.data(for: id), let image = UIImage(data: data) else { return nil }
@@ -148,12 +173,17 @@ enum StickerImages {
 /// keyboard, whose sticker drawer holds Messages stickers, Live Stickers,
 /// Memoji and Genmoji. Emoji typed there become stickers too.
 struct StickerPicker: View {
+    /// How many more stickers the look has room for.
     let remaining: Int
+    /// Adds one picked sticker to the look.
     let onPick: (PlacedSticker.Content) -> Void
+    /// Where picked images are saved.
     private let store = StickerStore.shared
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
     @State private var picked = 0
 
+    /// The view's content.
     var body: some View {
         VStack(spacing: 16) {
             Text("Scegli uno sticker o un’emoji dalla tastiera.")
@@ -195,12 +225,19 @@ struct StickerPicker: View {
 private struct StickerKeyboard: UIViewRepresentable {
     /// What the keyboard put in, before anything is saved.
     enum Pick {
+        /// An emoji typed on the keyboard.
         case emoji(String)
+        /// A sticker's image, as the keyboard handed it over.
         case image(Data)
     }
 
+    /// Called for each thing the keyboard puts in.
     let onPick: (Pick) -> Void
 
+    /// Builds the text view, set up for adaptive image glyphs.
+    ///
+    /// - Parameter context: The representable's context.
+    /// - Returns: The view.
     func makeUIView(context: Context) -> EmojiTextView {
         let view = EmojiTextView()
         view.supportsAdaptiveImageGlyph = true
@@ -214,19 +251,35 @@ private struct StickerKeyboard: UIViewRepresentable {
         return view
     }
 
+    /// Keeps the coordinator's callback current.
+    ///
+    /// - Parameters:
+    ///   - view: The text view.
+    ///   - context: The representable's context.
     func updateUIView(_ view: EmojiTextView, context: Context) {
         context.coordinator.onPick = onPick
     }
 
+    /// Creates the delegate that reads picks out of the view.
+    ///
+    /// - Returns: The coordinator.
     func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick) }
 
+    /// Turns whatever the keyboard puts in the view into picks, then empties it.
     final class Coordinator: NSObject, UITextViewDelegate {
+        /// Called for each pick.
         var onPick: (Pick) -> Void
 
+        /// Creates the coordinator.
+        ///
+        /// - Parameter onPick: Called for each pick.
         init(onPick: @escaping (Pick) -> Void) {
             self.onPick = onPick
         }
 
+        /// Reads every glyph and sticker emoji out of the view, empties it, and reports them.
+        ///
+        /// - Parameter textView: The view the keyboard wrote into.
         func textViewDidChange(_ textView: UITextView) {
             let text = textView.attributedText ?? NSAttributedString()
             guard text.length > 0 else { return }
@@ -253,11 +306,13 @@ final class EmojiTextView: UITextView {
         if window != nil { becomeFirstResponder() }
     }
 
+    /// The emoji keyboard, where the stickers are, falling back to the system's choice.
     override var textInputMode: UITextInputMode? {
         UITextInputMode.activeInputModes.first { $0.primaryLanguage == "emoji" } ?? super.textInputMode
     }
 }
 
+/// Which characters count as stickers.
 private extension Character {
     /// An emoji a person would pick, not a digit or letter that happens to
     /// have an emoji form.

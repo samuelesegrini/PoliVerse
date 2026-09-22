@@ -1,70 +1,74 @@
 import Foundation
 import OSLog
 
-/// Fetch-once, share, cache, prefetch.
+/// A keyed cache that fetches once, shares the result among concurrent callers,
+/// expires by time, bounds itself by capacity and can be warmed ahead of use.
 ///
-/// ## Why this exists
+/// ## Coalescing
 ///
-/// Four services had grown their own answer to "have I already fetched this?"
-/// — ``LoadWindow``, an `isLoading` flag, a `loadedKey` string, a dictionary
-/// keyed by id — each subtly different, none of them able to do the two things
-/// that actually matter on a phone:
+/// ``value(for:)`` joins a fetch already running for the same key, so several
+/// screens asking for one resource at once cost one request and all receive the
+/// answer.
 ///
-/// - **Coalesce.** Two screens asking for the same thing at once should cost
-///   one request. An `isLoading` flag makes the second caller give up and
-///   render nothing, which is why opening a room from search while the rooms
-///   list was still loading showed an empty screen.
-/// - **Prefetch.** Warming the next thing while the user reads this one is the
-///   difference between a tap that feels instant and one that spins. Nothing
-///   in the app could express it.
+/// ## Prefetching
 ///
-/// ## Isolation
+/// ``prefetch(_:)-(Key)`` queues a fetch at background priority and returns
+/// immediately, so the next thing can be warmed while the student reads this one.
+/// ``settle()`` waits for everything queued, which tests and the background
+/// refresh both need.
 ///
-/// An `actor`, so the cache and the in-flight table are consistent without a
-/// lock, and `@concurrent` work runs off the main actor. The project defaults
-/// to `MainActor` isolation, so this must be explicit or the fetches would
-/// serialise behind the UI.
+/// ## Isolation and cancellation
 ///
-/// ## Cancellation, which is the subtle part
+/// An actor, so the cache and the in-flight table stay consistent without a lock
+/// and fetches do not serialise behind the main actor. Fetches run in unstructured
+/// `Task`s held by the actor and callers await their value, so a caller that goes
+/// away does not cancel a fetch other callers are still waiting on.
 ///
-/// The work runs in an **unstructured** `Task` held by the actor, and callers
-/// await its value. That is deliberate: with structured concurrency, a caller
-/// that goes away cancels the work, and any *other* screen waiting on the same
-/// resource loses it too. Awaiting a stored task means a caller can vanish
-/// without taking the shared fetch with it.
+/// Failures are never cached: one flaky moment must not poison a key for the life
+/// of the process.
 actor ResourceLoader<Key: Hashable & Sendable, Value: Sendable> {
-    /// What the loader does when it has nothing cached. Returning nil means
-    /// "failed" — and failures are deliberately not cached, or one flaky
-    /// moment poisons the resource for the lifetime of the app.
+    /// Produces the value for a key. Returning `nil` means the fetch failed, and
+    /// failures are not cached.
     typealias Fetch = @Sendable (Key) async -> Value?
 
+    /// A cached value with the times that govern expiry and eviction.
     private struct Entry {
+        /// The cached value.
         let value: Value
+        /// When the value was filed, which ``lifetime`` is measured from.
         let storedAt: ContinuousClock.Instant
+        /// When the value was last read, which eviction orders by.
         var lastUsed: ContinuousClock.Instant
     }
 
+    /// How a missing value is produced.
     private let fetch: Fetch
+    /// How long a cached value stays good.
     private let lifetime: Duration
+    /// How many values to hold before evicting.
     private let capacity: Int
+    /// The clock expiry and eviction are measured against.
     private let clock = ContinuousClock()
+    /// Diagnostic log for this type, under the `loader` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "loader")
 
+    /// The cached values.
     private var cache: [Key: Entry] = [:]
+    /// Fetches currently running, by key.
     private var inFlight: [Key: Task<Value?, Never>] = [:]
-    /// The task that files a result once its fetch returns.
+    /// The task that files each result once its fetch returns.
     ///
-    /// Tracked separately from ``inFlight`` because awaiting a fetch is not
-    /// the same as the cache having been written: the write happens in a
-    /// second task, and ``settle()`` has to wait for *that* one or it spins
-    /// on an entry nothing will ever clear.
+    /// Tracked separately from ``inFlight`` because awaiting a fetch is not the same as
+    /// the cache having been written; ``settle()`` waits on these.
     private var filing: [Key: Task<Void, Never>] = [:]
 
+    /// Creates a loader.
+    ///
     /// - Parameters:
-    ///   - lifetime: how long a value stays good. Five minutes by default,
-    ///     comfortably longer than a tab switch.
-    ///   - capacity: how many values to hold. Bounded, or a long session in
-    ///     the rooms list keeps every floor plan it ever showed.
+    ///   - lifetime: How long a value stays good.
+    ///   - capacity: How many values to hold before the least recently used are
+    ///     evicted.
+    ///   - fetch: Produces the value for a key.
     init(
         lifetime: Duration = .seconds(300),
         capacity: Int = 128,
@@ -75,14 +79,25 @@ actor ResourceLoader<Key: Hashable & Sendable, Value: Sendable> {
         self.fetch = fetch
     }
 
+    /// How many values are cached, expired ones included.
     var count: Int { cache.count }
 
+    /// Whether a key has an unexpired value.
+    ///
+    /// - Parameter key: The key to check.
+    /// - Returns: `true` when a value is cached and within ``lifetime``.
     func isCached(_ key: Key) -> Bool {
         guard let entry = cache[key] else { return false }
         return clock.now - entry.storedAt < lifetime
     }
 
-    /// The value, fetching if needed and joining any fetch already running.
+    /// The value for a key, fetching it if needed and joining any fetch already
+    /// running.
+    ///
+    /// A cache hit refreshes the key's eviction position.
+    ///
+    /// - Parameter key: What to load.
+    /// - Returns: The value, or `nil` when the fetch failed.
     func value(for key: Key) async -> Value? {
         if let entry = cache[key], clock.now - entry.storedAt < lifetime {
             cache[key]?.lastUsed = clock.now
@@ -98,27 +113,30 @@ actor ResourceLoader<Key: Hashable & Sendable, Value: Sendable> {
         return await start(key).value
     }
 
-    /// Warms a value without waiting for it.
+    /// Queues a fetch for a key and returns immediately.
     ///
-    /// Returns as soon as the work is queued — a prefetch that blocked would
-    /// defeat the point. Runs at background priority so it yields to anything
-    /// the user is actually waiting on.
+    /// Runs at background priority, so it yields to anything the student is waiting on.
+    /// Does nothing when the key is already cached or already in flight.
+    ///
+    /// - Parameter key: What to warm.
     func prefetch(_ key: Key) {
         guard !isCached(key), inFlight[key] == nil else { return }
         _ = start(key, priority: .background)
     }
 
+    /// Queues a fetch for each key and returns immediately.
+    ///
+    /// - Parameter keys: What to warm.
     func prefetch(_ keys: some Sequence<Key>) {
         for key in keys { prefetch(key) }
     }
 
-    /// Waits for everything in flight to finish.
+    /// Waits until every queued fetch has been filed.
     ///
-    /// Prefetches run at background priority, which the system is free to
-    /// starve for a long time when anything else is busy — desirable in the
-    /// app, unusable in a test that would otherwise sleep and hope. The
-    /// background refresh uses it too: a thirty-second window is no place to
-    /// return before the work is actually done.
+    /// Prefetches run at background priority, which the system may starve for a long
+    /// time — acceptable in the app, unusable in a test or in a background refresh that
+    /// must not report completion early. Loops, because a fetch may queue more while it
+    /// is awaited.
     func settle() async {
         // Loops because a caller may queue more while we wait; terminates
         // because each pass awaits tasks that clear their own entry.
@@ -127,12 +145,17 @@ actor ResourceLoader<Key: Hashable & Sendable, Value: Sendable> {
         }
     }
 
+    /// Drops the cached value for a key, leaving any fetch in flight alone.
+    ///
+    /// - Parameter key: What to forget.
     func invalidate(_ key: Key) {
         cache[key] = nil
     }
 
-    /// Empties the cache and abandons anything in flight. For sign-out: the
-    /// next person on this device must not inherit the last one's data.
+    /// Empties the cache and cancels everything in flight.
+    ///
+    /// Used on sign-out, so the next person on the device does not inherit the last
+    /// one's data.
     func clear() {
         cache.removeAll()
         for task in inFlight.values { task.cancel() }
@@ -141,6 +164,15 @@ actor ResourceLoader<Key: Hashable & Sendable, Value: Sendable> {
         filing.removeAll()
     }
 
+    /// Starts a fetch and the task that files its result.
+    ///
+    /// Filing happens in a second task because recording the result must run on the
+    /// actor, which the fetch task cannot do without re-entering it.
+    ///
+    /// - Parameters:
+    ///   - key: What to load.
+    ///   - priority: The fetch task's priority.
+    /// - Returns: The fetch task, which callers may await.
     @discardableResult
     private func start(_ key: Key, priority: TaskPriority = .userInitiated) -> Task<Value?, Never> {
         let fetch = self.fetch
@@ -156,6 +188,13 @@ actor ResourceLoader<Key: Hashable & Sendable, Value: Sendable> {
         return task
     }
 
+    /// Files a completed fetch, unless a newer fetch for the same key has replaced it.
+    ///
+    /// A `nil` result clears the in-flight entry without caching anything.
+    ///
+    /// - Parameters:
+    ///   - key: The key that was fetched.
+    ///   - task: The fetch whose value to file.
     private func finish(_ key: Key, task: Task<Value?, Never>) async {
         let value = await task.value
         // A newer fetch may have replaced this one while it ran; only the
@@ -169,8 +208,7 @@ actor ResourceLoader<Key: Hashable & Sendable, Value: Sendable> {
         evictIfNeeded()
     }
 
-    /// Least recently used first — the room the user scrolled past ten
-    /// screens ago is the one they are least likely to open.
+    /// Drops least recently used values until the cache is back within ``capacity``.
     private func evictIfNeeded() {
         guard cache.count > capacity else { return }
         let ordered = cache.sorted { $0.value.lastUsed < $1.value.lastUsed }

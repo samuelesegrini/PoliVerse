@@ -10,27 +10,42 @@ import SwiftUI
 /// changed. Where they stand with it — passed, or not yet — sits under the
 /// name, before any of that.
 struct CourseDetailView: View {
+    /// The course this page is about.
     let course: Course
 
+    /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
+    /// The shared ``CourseModel``, from the environment.
     @Environment(CourseModel.self) private var courses
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
+    /// The shared ``UpdateFeed``, from the environment.
     @Environment(UpdateFeed.self) private var feed
+    /// The shared ``ManifestiModel``, from the environment.
     @Environment(ManifestiModel.self) private var manifesti
+    /// The shared ``StudyProgrammeModel``, from the environment.
     @Environment(StudyProgrammeModel.self) private var programmes
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// Colours around the course's own, checked against the look's page.
     private var ramp: CourseRamp { CourseRamp(course: course, style: style, scheme: scheme) }
     /// Scaled, so the tile grows with the reader's text.
     @ScaledMetric(relativeTo: .largeTitle) private var tileSide: CGFloat = 104
 
+    /// The sitting whose detail sheet is open, if any.
     @State private var selectedExam: ExamSession?
+    /// The teaching whose bracket picker is open, by name.
     @State private var bracketTeacher: String?
+    /// The programme once the Manifesti service has answered.
     @State private var syllabus: Syllabus?
 
+    /// The course's own colour.
     private var accent: Color { Theme.accent(for: course) }
 
     /// Agenda entries whose title matches this course.
@@ -51,6 +66,7 @@ struct CourseDetailView: View {
             .map { $0 }
     }
 
+    /// The course's sittings, earliest first, with undated ones last.
     private var examSessions: [ExamSession] {
         career.sessions
             .filter { $0.isOf(courseCode: course.id, courseName: course.name) }
@@ -63,6 +79,7 @@ struct CourseDetailView: View {
             || $0.name.caseInsensitiveCompare(course.name) == .orderedSame }
     }
 
+    /// The view's content.
     var body: some View {
         let sittings = examSessions
         let upcoming = sittings.filter { $0.grade == nil && ($0.date ?? .distantPast) > .now }
@@ -304,6 +321,10 @@ struct CourseDetailView: View {
         .lookCard()
     }
 
+    /// The "n nuovi" badge for a section.
+    ///
+    /// - Parameter count: How many items are unread.
+    /// - Returns: The badge, or `nil` when nothing is unread.
     private func newCount(_ count: Int) -> Text? {
         guard count > 0 else { return nil }
         return Text(count == 1 ? "1 nuovo" : "\(count) nuovi")
@@ -311,17 +332,27 @@ struct CourseDetailView: View {
 
     // MARK: - Lectures
 
+    /// One upcoming lesson: when it is, its room, and a live mark while it runs.
+    ///
+    /// - Parameters:
+    ///   - lecture: The agenda entry.
+    ///   - last: True for the last row, which draws no divider.
+    /// - Returns: The row.
     private func lectureRow(_ lecture: AgendaEvent, last: Bool) -> some View {
         let live = lecture.start <= .now
         let time = lecture.start.formatted(.dateTime.hour().minute().locale(locale))
         return row(symbol: live ? "dot.radiowaves.left.and.right" : "clock",
                    title: live ? String(localized: "In corso") : "\(dayLabel(lecture.start)) · \(time)",
                    detail: live ? String(localized: "fino alle \(lecture.end.formatted(.dateTime.hour().minute().locale(locale)))") : nil,
-                   trailing: Text(lecture.roomAcronym ?? lecture.room ?? String(localized: "Aula da definire")),
+                   trailing: Text(lecture.roomLabel ?? String(localized: "Aula da definire")),
                    tile: live ? Flavor.RGB(red: 0.2, green: 0.62, blue: 0.36) : nil,
                    last: last)
     }
 
+    /// A day named as a student would name it.
+    ///
+    /// - Parameter date: The day.
+    /// - Returns: "Oggi", "Domani", or the weekday and date.
     private func dayLabel(_ date: Date) -> String {
         let calendar = PoliMiDate.romeCalendar
         if calendar.isDateInToday(date) { return String(localized: "Oggi") }
@@ -331,6 +362,12 @@ struct CourseDetailView: View {
 
     // MARK: - Sittings
 
+    /// One sitting: its date, its kind, and its mark or status.
+    ///
+    /// - Parameters:
+    ///   - sitting: The sitting.
+    ///   - last: True for the last row, which draws no divider.
+    /// - Returns: The row.
     private func sittingRow(_ sitting: ExamSession, last: Bool) -> some View {
         let tint = ExamDetailView.accent(for: sitting.status)
         let trailing: Text = if let grade = sitting.grade {
@@ -349,6 +386,10 @@ struct CourseDetailView: View {
 
     // MARK: - Overview
 
+    /// What the programme says about the course: its hours, its language, and how it is assessed.
+    ///
+    /// - Parameter syllabus: The programme as the Manifesti service gives it.
+    /// - Returns: The section.
     private func overview(_ syllabus: Syllabus) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             let facts: [(String, String)] = [
@@ -399,12 +440,20 @@ struct CourseDetailView: View {
         }
     }
 
+    /// One line of the overview: a symbol, a sentence, and the colour to draw the symbol's tile in.
     private struct OverviewLine {
+        /// The line's SF Symbol.
         let symbol: String
+        /// The sentence.
         let text: String
+        /// The tile's colour; the course's own when left out.
         var tile: Flavor.RGB?
     }
 
+    /// The overview's lines, in reading order.
+    ///
+    /// - Parameter syllabus: The programme to read.
+    /// - Returns: The lines, including whether partial exams are offered when the programme says so.
     private func overviewLines(_ syllabus: Syllabus) -> [OverviewLine] {
         var lines: [OverviewLine] = []
         if let language = syllabus.language { lines.append(OverviewLine(symbol: "globe", text: language.taughtIn)) }
@@ -427,6 +476,12 @@ struct CourseDetailView: View {
     /// Inside a card, rows keep off its edge; on a bare page they meet it.
     private var cardPadding: CGFloat { style.material.hasCard ? 14 : 0 }
 
+    /// A heading and what belongs under it, spaced as Oggi's sections are.
+    ///
+    /// - Parameters:
+    ///   - title: The heading.
+    ///   - content: What goes under it.
+    /// - Returns: The section.
     private func block<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             LookHeading(title)
@@ -490,12 +545,16 @@ struct CourseDetailView: View {
 /// The next sitting, large, in the course's colour with Oggi's sheen: the
 /// date in the look's typeface, how far off it is, and how it goes.
 private struct NextSittingCard: View {
+    /// The sitting the card is about.
     let exam: ExamSession
+    /// The course's colour, which the card is drawn in.
     let accent: Color
 
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
 
+    /// Whole days from today to the sitting, or `nil` when it has no date yet.
     private var daysAway: Int? {
         guard let date = exam.date else { return nil }
         let calendar = PoliMiDate.romeCalendar
@@ -503,6 +562,7 @@ private struct NextSittingCard: View {
                                        to: calendar.startOfDay(for: date)).day
     }
 
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
@@ -530,7 +590,7 @@ private struct NextSittingCard: View {
             HStack(alignment: .top, spacing: 20) {
                 fact(String(localized: "Data"), exam.date?.formatted(.dateTime.day().month(.abbreviated).locale(locale)))
                 fact(String(localized: "Ora"), exam.date?.formatted(.dateTime.hour().minute().locale(locale)))
-                fact(String(localized: "Aula"), exam.room)
+                fact(String(localized: "Aula"), exam.room.map(RoomNaming.bare))
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
@@ -551,6 +611,12 @@ private struct NextSittingCard: View {
         .accessibilityHint("Apre l’appello")
     }
 
+    /// One labelled fact on the card, drawn only when there is a value.
+    ///
+    /// - Parameters:
+    ///   - label: What the value is.
+    ///   - value: The value, or `nil` to draw nothing.
+    /// - Returns: The pair, or an empty view.
     @ViewBuilder
     private func fact(_ label: String, _ value: String?) -> some View {
         if let value {

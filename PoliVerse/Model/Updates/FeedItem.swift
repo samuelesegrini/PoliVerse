@@ -2,24 +2,35 @@ import Foundation
 
 /// One row of the updates feed.
 ///
-/// The log keeps every sighting, because notifications and budgets are
-/// counted on sightings. A person reads facts: a mark and its refusal window
-/// seen together are one thing, and a mark read from a file is old news once
-/// the exam services publish the official one (§11.4, §10.4).
+/// The log keeps every sighting, because notifications and budgets are counted on
+/// sightings. A person reads facts instead: a mark and its refusal window seen together
+/// are one row, and a mark read out of a file is old news once the exam services publish
+/// the official one.
 nonisolated struct FeedItem: Identifiable, Sendable, Equatable {
+    /// The sighting this row shows.
     let update: ExamUpdate
-    /// Said after the detail, e.g. that the mark can be refused.
+    /// A line said after the detail, such as that the mark can still be refused.
     let note: String?
-    /// A file's mark the official record has since published.
+    /// Whether this is a mark read from a file that the official record has since published.
+    /// A superseded row never counts as unread.
     let isSuperseded: Bool
 
+    /// The sighting's id.
     var id: String { update.id }
 
+    /// The row's detail line, or a note that the mark has been confirmed on Servizi Online
+    /// when the row has been superseded.
     var detail: String? {
         isSuperseded ? String(localized: "Voto confermato sui Servizi Online") : update.detail
     }
 
     /// Rows for the given updates, in their order.
+    ///
+    /// A refusal window seen with its mark is dropped and folded into the mark's row. A mark
+    /// read out of a file is marked superseded once the official one is present.
+    ///
+    /// - Parameter updates: The sightings to show.
+    /// - Returns: The rows.
     static func items(from updates: [ExamUpdate]) -> [FeedItem] {
         updates.compactMap { update in
             switch update.kind {
@@ -45,9 +56,16 @@ nonisolated struct FeedItem: Identifiable, Sendable, Equatable {
         }
     }
 
-    /// A course's own rows: matched by code, or by name where the sources
-    /// give the same teaching different codes (§3) — only then, so two
-    /// teachings that share a name but both have a real code stay apart.
+    /// One course's rows.
+    ///
+    /// Matched by teaching code, or by name where the sources give the same teaching
+    /// different codes — but only then, so two teachings that share a name and both have a
+    /// real code stay apart.
+    ///
+    /// - Parameters:
+    ///   - updates: The sightings to filter.
+    ///   - course: The course whose rows to show.
+    /// - Returns: The rows.
     static func items(from updates: [ExamUpdate], for course: Course) -> [FeedItem] {
         let codes = Set([course.id, course.code, course.teachingCode].compactMap { $0 })
         let name = MutedCourse.key(course.name)
@@ -59,19 +77,34 @@ nonisolated struct FeedItem: Identifiable, Sendable, Equatable {
         })
     }
 
-    /// Rows the student has not seen: newer than their last visit, and not a
-    /// file's mark the official one has already replaced.
+    /// How many rows the student has not seen.
+    ///
+    /// - Parameters:
+    ///   - items: The rows to count.
+    ///   - seenAt: When the feed was last opened, or `nil` if never.
+    /// - Returns: The count.
     static func unreadCount(_ items: [FeedItem], seenAt: Date?) -> Int {
         items.filter { $0.isUnread(since: seenAt) }.count
     }
 
+    /// Whether this row is newer than the student's last visit and not superseded.
+    ///
+    /// - Parameter seenAt: When the feed was last opened, or `nil` if never.
+    /// - Returns: `true` when the row counts as unread.
     func isUnread(since seenAt: Date?) -> Bool {
         !isSuperseded && update.detectedAt > (seenAt ?? .distantPast)
     }
 
-    /// Sightings this close together are the same refresh.
+    /// Sightings this close together came from the same refresh, and so are one fact.
     static let foldWindow: TimeInterval = 3600
 
+    /// The published mark a refusal window belongs to, when both were seen in the same
+    /// refresh.
+    ///
+    /// - Parameters:
+    ///   - refusal: The refusal-window sighting.
+    ///   - updates: The sightings to search.
+    /// - Returns: The mark, or `nil` when it was seen at another time or not at all.
     private static func mark(for refusal: ExamUpdate, in updates: [ExamUpdate]) -> ExamUpdate? {
         updates.first {
             $0.kind == .gradePublished && $0.examID == refusal.examID

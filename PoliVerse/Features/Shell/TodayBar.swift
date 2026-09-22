@@ -10,7 +10,9 @@ import SwiftUI
 /// change of layout.
 struct TodayBar: ViewModifier {
 
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
+    /// The environment's `shell`.
     @Environment(\.shell) private var shell
     /// Which buttons the look in use keeps in the bar.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
@@ -19,6 +21,10 @@ struct TodayBar: ViewModifier {
     /// alone, the toolbar only redrew it once the popover had gone.
     @State private var chevronUp = false
 
+    /// Applies the modifier to `content`.
+    ///
+    /// - Parameter content: The view being modified.
+    /// - Returns: The modified view.
     func body(content: Content) -> some View {
         content
             .navigationBarTitleDisplayMode(.inline)
@@ -27,6 +33,7 @@ struct TodayBar: ViewModifier {
 
     // MARK: - Toolbar
 
+    /// Oggi's bar: the profile and settings circles leading, the date in the middle, and the way into Personalizza trailing.
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         // Profile and settings are two glass circles, split by a fixed spacer
@@ -76,7 +83,11 @@ struct TodayBar: ViewModifier {
     }
 }
 
+/// Putting Oggi's bar on a screen.
 extension View {
+    /// Draws Oggi's navigation bar over this view.
+    ///
+    /// - Returns: The view, with the bar.
     func todayBar() -> some View {
         modifier(TodayBar())
     }

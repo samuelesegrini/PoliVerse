@@ -3,16 +3,24 @@ import SwiftUI
 /// WeBeep materials for one course, grouped by Moodle section: one card of
 /// files per section, on the look in use, as Oggi draws its lists.
 struct CourseMaterialsView: View {
+    /// The course whose materials these are.
     let course: Course
 
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The shared ``WeBeepModel``, from the environment.
     @Environment(WeBeepModel.self) private var weBeep
+    /// The shared ``FileDownloadModel``, from the environment.
     @Environment(FileDownloadModel.self) private var downloads
 
+    /// What the student typed into the search field.
+    /// Whether the WeBeep sign-in sheet is up.
     @State private var query = ""
     @State private var showingLogin = false
     @State private var previewURL: URL?
 
+    /// The sections to draw: every one when the search field is empty, and otherwise only the
+    /// files whose names match, with empty sections dropped.
     private var sections: [WeBeepSection] {
         guard !query.isEmpty else { return weBeep.sections }
         return weBeep.sections.compactMap { section in
@@ -21,13 +29,17 @@ struct CourseMaterialsView: View {
         }
     }
 
+    /// The course's own accent.
     private var tint: Color { Theme.accent(for: course) }
 
+    /// Whether the screen should offer a WeBeep sign-in rather than a list.
     private var needsLogin: Bool {
         !session.useMockData && !weBeep.isAuthenticated
     }
 
+    /// The look in use, which the page's materials and typeface come from.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
     /// The kinds of file the course has, largest first, each with its colour.
@@ -48,6 +60,7 @@ struct CourseMaterialsView: View {
         return kinds
     }
 
+    /// The view's content.
     var body: some View {
         let kinds = kinds
         ScrollView {
@@ -186,6 +199,13 @@ struct CourseMaterialsView: View {
         }
     }
 
+    /// One file's row, with a menu to remove a downloaded copy.
+    ///
+    /// - Parameters:
+    ///   - file: The file to draw.
+    ///   - colour: The colour for its kind.
+    ///   - last: Whether it is the last row of its card, which draws no hairline.
+    /// - Returns: The row.
     private func fileRow(_ file: WeBeepFile, colour: Flavor.RGB, last: Bool) -> some View {
         let status = downloads.status(for: file)
         return FileRow(colour: colour, file: file, status: status, last: last, onTap: { Task { await open(file) } })
@@ -212,17 +232,27 @@ struct CourseMaterialsView: View {
 
 /// `sheet(item:)` needs an Identifiable; a bare URL is not.
 private struct PreviewItem: Identifiable {
+    /// The file to preview.
     let url: URL
+    /// The file's path.
     var id: String { url.path }
 }
 
 /// One kind of file on the page: what it weighs, how many, its colour.
 struct MaterialKind {
+    /// The SF Symbol shared by the files of this kind.
     let symbol: String
+    /// How much space they take together.
     let bytes: Int
+    /// How many there are.
     let count: Int
+    /// The colour this kind is drawn in.
     let colour: Flavor.RGB
 
+    /// The name for a kind of file.
+    ///
+    /// - Parameter symbol: The kind's SF Symbol.
+    /// - Returns: Its name on screen.
     static func title(_ symbol: String) -> String {
         switch symbol {
         case "doc.richtext": String(localized: "PDF")
@@ -237,18 +267,25 @@ struct MaterialKind {
     }
 }
 
+/// One file: its name, its size, when it changed, and whether a copy is on the device.
 private struct FileRow: View {
+    /// The colour for the file's kind.
     let colour: Flavor.RGB
+    /// The file this row shows.
     let file: WeBeepFile
+    /// Where its download has got to.
     let status: FileDownloadModel.Status
     /// The last row of its card draws no hairline under it.
     var last = false
+    /// Downloads the file on first tap, and previews it thereafter.
     let onTap: () -> Void
 
     // `Date.formatted` reads `Locale.current`, not the SwiftUI environment, so
     // the locale has to be threaded into the format style by hand.
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
 
+    /// The view's content.
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: 0) {
@@ -307,16 +344,22 @@ private struct FileRow: View {
 
 /// Wraps ``WeBeepLoginView`` in a dismissible sheet.
 struct WeBeepLoginSheet: View {
+    /// The shared ``WeBeepModel``, from the environment.
     @Environment(WeBeepModel.self) private var weBeep
+    /// The shared ``CieIDRouter``, from the environment.
     @Environment(CieIDRouter.self) private var cieID
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
 
     /// Run after a successful login, so the caller can refresh.
     let onSuccess: () async -> Void
 
+    /// Why the WeBeep sign-in failed, or `nil` when it has not.
+    /// Whether the prompt to install CieID is up.
     @State private var errorMessage: String?
     @State private var showingCieIDMissing = false
 
+    /// The view's content.
     var body: some View {
         NavigationStack {
             WeBeepLoginWebView(
@@ -364,6 +407,7 @@ struct WeBeepLoginSheet: View {
 /// Shown while the user is over in CieID, so returning to a seemingly idle
 /// login page does not read as a failure.
 struct CieIDWaitingBanner: View {
+    /// The view's content.
     var body: some View {
         HStack(spacing: 10) {
             ProgressView()

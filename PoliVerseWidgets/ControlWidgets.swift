@@ -8,6 +8,7 @@ import WidgetKit
 /// couple of words, so the only honest thing to put there is "take me
 /// straight to the thing I open the app for anyway".
 struct FreeRoomsControl: ControlWidget {
+    /// The Control Centre button that opens free rooms.
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "control.freeRooms") {
             ControlWidgetButton(action: OpenFreeRoomsIntent()) {
@@ -19,7 +20,12 @@ struct FreeRoomsControl: ControlWidget {
     }
 }
 
+/// A Control Centre button that opens the timetable.
+///
+/// Its intent runs in this extension rather than in the app, so the destination travels
+/// through the shared container — see ``AppDestination/send()``.
 struct TimetableControl: ControlWidget {
+    /// The Control Centre button that opens the timetable.
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "control.timetable") {
             ControlWidgetButton(action: OpenTimetableIntent()) {
@@ -31,7 +37,9 @@ struct TimetableControl: ControlWidget {
     }
 }
 
+/// A Control Centre button that opens the career.
 struct CareerControl: ControlWidget {
+    /// The Control Centre button that opens the career.
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "control.career") {
             ControlWidgetButton(action: OpenCareerIntent()) {

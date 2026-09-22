@@ -3,65 +3,78 @@ import OSLog
 
 /// Which backend a request goes to.
 ///
-/// Resolved through ``ServiceDirectory`` rather than hardcoded, because the
-/// Politecnico moves these. `www22.dmz.polimi.it/iae` became
-/// `api.polimi.it/iae`, and the app that hardcoded the old host simply broke.
+/// Resolved through ``ServiceDirectory`` rather than hardcoded, since the
+/// Politecnico moves these hosts.
 typealias APIHost = ServiceDirectory.Service
 
+/// One request to one Politecnico backend, before a base URL, headers or a token
+/// are attached.
+///
+/// ``PoliMiAPI`` resolves and sends it; ``PublicHTTP`` sends the unauthenticated
+/// ones; ``FixtureHTTP`` matches it by ``path``.
 nonisolated struct APIRequest {
+    /// Which backend to address.
     var host: APIHost
+    /// The path below the host's base URL, leading slash included.
     var path: String
+    /// The HTTP method.
     var method: String = "GET"
+    /// Query items to send. ``sendsMatricola`` may append one more.
     var query: [URLQueryItem] = []
+    /// The request body. When present, a JSON content type is sent with it.
     var body: Data?
+    /// Whether to attach a bearer token and the profile headers.
     var authenticated: Bool = true
 
-    /// Appends `matricola` when the service's configured profile is non-zero.
+    /// Whether to append the signed-in matricola as a query parameter.
     ///
-    /// The official client applies this rule to every call:
-    ///
-    /// ```js
-    /// profile === 0 ? client.get(path) : client.get(path, {params: {matricola}})
-    /// ```
-    ///
-    /// `props` reports `iae.profile` and `libretto.profile` as `0`, so those
-    /// need nothing — but `ws_aule.profile` is `3`, and a rooms call without
-    /// `matricola` would simply not work. Encoding the rule once means adding
-    /// a service does not mean rediscovering it.
+    /// The rule the official client applies is to send it whenever the service's
+    /// configured profile is non-zero. `iae` and `libretto` report profile `0` and need
+    /// nothing; `ws_aule` reports `3`, and a rooms call without a matricola does not
+    /// work.
     var sendsMatricola: Bool = false
-    /// Overrides `poliAuthProfile` for this one call.
+    /// Overrides `poliAuthProfile` for this one call, or `nil` to use the value
+    /// ``ServiceDirectory/profile(for:userProfile:)`` resolves.
     ///
-    /// Exists for `ws_aule`, whose configured profile (3) is a profile the
-    /// signed-in account may not hold — a student has profile 1 — and the
-    /// service answers "Utente non abilitato" rather than saying so.
+    /// Exists for `ws_aule`, whose configured profile is one the signed-in account may
+    /// not hold.
     var profileOverride: Int?
 }
 
+/// What can go wrong with one request.
+///
+/// ``isPermanent`` marks the cases that retrying or waiting cannot fix.
+/// ``userFacingMessage(_:)`` decides which of these are worth telling the student
+/// about.
 nonisolated enum APIError: LocalizedError {
+    /// An unhandled non-success status, with the first 300 bytes of the body.
     case badStatus(Int, body: String)
-    /// The path returned 404 — the service moved or was withdrawn, which is a
-    /// different problem from the network being down and deserves saying so.
+    /// The path answered 404: the service moved or was withdrawn. A different problem
+    /// from the network being down.
     case endpointGone(String)
-    /// The request was cancelled — almost always because the view that asked
-    /// for it went away. Not a failure, and must never reach the user: it was
-    /// surfacing as "Impossibile raggiungere i server del Politecnico" every
-    /// time someone left a tab while it was loading.
+    /// The request was cancelled, almost always because the view that asked for it went
+    /// away. Not a failure, and never shown to the student.
     case cancelled
-    /// The account is not permitted to use this service, whatever the token
-    /// says. Permanent for this user, so retrying or re-authenticating is
-    /// pointless — the UI should say so rather than offer a login.
-    case notEntitled(String, body: String)
-    /// The token is valid but was not minted for this service.
+    /// The account may not use this service, whatever its token says.
     ///
-    /// The backends report it as 401 with
-    /// "Scope OAuth non valido. Effettuare logout/login…  Code: 33", which no
-    /// amount of refreshing fixes — the scopes are fixed when the token is
-    /// created. Only a fresh login helps.
+    /// Permanent for this student, so neither retrying nor signing in again helps.
+    /// Carries the path and the first 200 bytes of the body.
+    case notEntitled(String, body: String)
+    /// The token is valid but was not minted with the scope this service requires.
+    ///
+    /// Reported upstream as a 401 mentioning “Scope OAuth non valido”. Refreshing
+    /// cannot fix it, because scopes are fixed when a token is created; only a fresh
+    /// sign-in helps.
     case invalidScope
+    /// The request never completed, carrying the underlying error.
     case transport(any Error)
+    /// The response arrived but would not decode into the expected shape.
     case decoding(any Error)
+    /// The server kept answering with a 5xx status, carrying how many attempts were
+    /// made.
     case retriesExhausted(Int)
 
+    /// The localised sentence shown to the student.
     var errorDescription: String? {
         switch self {
         case .badStatus(let code, _): String(localized: "Il server ha risposto \(code).")
@@ -75,8 +88,11 @@ nonisolated enum APIError: LocalizedError {
         }
     }
 
-    /// True when retrying or waiting will not help — the endpoint itself is the
-    /// problem.
+    /// Whether retrying or waiting cannot help, because the endpoint or the
+    /// authorisation is the problem.
+    ///
+    /// `true` for ``endpointGone(_:)``, ``invalidScope``, ``notEntitled(_:body:)``,
+    /// ``cancelled``, and for a transport failure whose host does not resolve.
     var isPermanent: Bool {
         switch self {
         case .endpointGone, .invalidScope, .notEntitled, .cancelled: true
@@ -86,50 +102,83 @@ nonisolated enum APIError: LocalizedError {
     }
 }
 
-/// Thin async client over `URLSession`.
-///
-/// Two deliberate differences from PoliFemo's axios setup:
-///
-/// 1. **Bounded backoff.** Their `RETRY_INDEFINETELY` default re-issued a failed
-///    request every 3 s forever, so a permanently-500 endpoint pinned the
-///    network and the battery. Here retries cap out and the delay grows.
-/// 2. **One refresh.** A 401 asks ``TokenStore`` for a token; the actor
-///    collapses concurrent requests into a single refresh.
-/// The text to show the user for an error, or nil when there is nothing to
+/// The sentence to show the student for an error, or `nil` when there is nothing to
 /// say.
 ///
-/// Cancellation returns nil: a request abandoned because its view went away is
-/// not a failure, and reporting it put "Impossibile raggiungere i server del
-/// Politecnico" on screen for anyone who left a tab mid-load.
+/// Cancellation returns `nil`: a request abandoned because its view went away is
+/// not a failure, and ``Store`` reads this to decide whether a load failed at all.
+///
+/// - Parameter error: The error a load threw.
+/// - Returns: The localised description, or `nil` for a cancellation.
 nonisolated func userFacingMessage(_ error: any Error) -> String? {
     if let apiError = error as? APIError, case .cancelled = apiError { return nil }
     if PoliMiAPI.isCancellation(error) { return nil }
     return error.localizedDescription
 }
 
+/// The authenticated transport for every Politecnico backend.
+///
+/// Resolves a ``APIRequest`` against ``ServiceDirectory``, attaches the bearer token
+/// and the two profile headers, sends it, and classifies what comes back.
+///
+/// ## Retries
+///
+/// A 5xx status or a transient transport failure is retried up to ``maxRetries``
+/// times with a delay of 0.5, 1 then 2 seconds. Permanent failures — a host that
+/// does not resolve, a bad URL, a TLS refusal, being offline — are not retried at
+/// all.
+///
+/// ## The four kinds of 401
+///
+/// 1. A token that looks valid locally but is refused: refreshed once through
+///    ``TokenStore/forceRefresh()`` and replayed.
+/// 2. “Utente non abilitato”, recognised by ``isNotEntitled(_:)``: the account may
+///    not use this service. Thrown as ``APIError/notEntitled(_:body:)`` without
+///    re-authenticating, since a fresh sign-in grants the same account the same
+///    services.
+/// 3. A scope refusal, recognised by ``isInvalidScope(_:)``: reported as
+///    ``APIError/invalidScope`` and escalated through `onInvalidScope` only for
+///    hosts where ``ServiceDirectory/Service/refusalMeansBrokenSession`` holds.
+/// 4. Anything else that survives a refresh, thrown as
+///    ``APIError/badStatus(_:body:)`` with the body logged.
+///
+/// Conforms to ``HTTP`` through ``data(for:)``.
 nonisolated final class PoliMiAPI: Sendable {
+    /// The session requests are issued through.
     private let session: URLSession
+    /// Supplies and refreshes the bearer token.
     private let tokens: TokenStore
+    /// Resolves hosts to base URLs and supplies the profile values.
     private let directory: ServiceDirectory
+    /// Diagnostic log for this type, under the `api` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "api")
 
+    /// How many times a retryable failure is re-attempted.
     private let maxRetries = 3
 
-    /// Supplies the value of the `poliAuthProfile` header.
+    /// Supplies the signed-in student's `poliAuthProfile`.
     ///
-    /// Injected rather than fixed because the correct value is the signed-in
-    /// user's profile, which is only known after login.
+    /// Injected because the value is only known after sign-in, and this type is built
+    /// before it.
     private let profileID: @Sendable () async -> Int
 
-    /// Supplies `matricola` for the services that require it as a query
-    /// parameter. Injected for the same reason as ``profileID``: it is only
-    /// known once the user has signed in.
+    /// Supplies the matricola for requests with ``APIRequest/sendsMatricola`` set.
+    /// Injected for the same reason as ``profileID``.
     private let matricola: @Sendable () async -> String?
 
-    /// Called when the server says the token's scopes are wrong, so the app can
-    /// drop it and send the user back to login rather than retrying forever.
+    /// Called when a service the app depends on refuses the token's scopes, so the app
+    /// can drop the token and send the student back to sign-in.
     private let onInvalidScope: @Sendable () async -> Void
 
+    /// Creates the authenticated transport.
+    ///
+    /// - Parameters:
+    ///   - tokens: Supplies and refreshes the bearer token.
+    ///   - directory: Resolves hosts and profile values.
+    ///   - profileID: Supplies the signed-in student's profile.
+    ///   - matricola: Supplies the matricola, for the services that require it.
+    ///   - onInvalidScope: Called on a scope refusal from a service the app depends on.
+    ///   - session: The session requests are issued through.
     init(
         tokens: TokenStore,
         directory: ServiceDirectory,
@@ -146,25 +195,33 @@ nonisolated final class PoliMiAPI: Sendable {
         self.session = session
     }
 
-    /// Recognises the backends' "wrong scopes" 401.
+    /// Whether a 401 body reports that the token's scopes are wrong.
     ///
-    /// Matched on the message because the status code and `statusCode` field
-    /// are the same 401 used for an ordinary expired token, and the two need
-    /// opposite responses: refresh for one, re-login for the other.
+    /// Matched on the message, because the status code is the same 401 used for an
+    /// ordinary expired token and the two need opposite responses: a refresh for one, a
+    /// fresh sign-in for the other. A body that ``isNotEntitled(_:)`` claims is never
+    /// treated as a scope failure.
+    ///
+    /// - Parameter body: The response body.
+    /// - Returns: `true` when the body names an invalid scope or a
+    ///   `JafUnauthorizedException`.
     static func isInvalidScope(_ body: String) -> Bool {
         guard !isNotEntitled(body) else { return false }
         return body.localizedCaseInsensitiveContains("Scope OAuth non valido")
             || body.localizedCaseInsensitiveContains("JafUnauthorizedException")
     }
 
-    /// "This account may not use this service", as distinct from "this token
-    /// is no good".
+    /// Whether a 401 body reports that this account may not use the service, as
+    /// distinct from the token being no good.
     ///
-    /// Both arrive as 401 `JafUnauthorizedException`, so the generic check
-    /// above claimed the session had expired and sent the user back to login —
-    /// where nothing would change, because signing in again grants the same
-    /// account the same services. `ws_aule` is the case that exposed it: its
-    /// configured profile is 3, and a student holds profile 1.
+    /// Both arrive as 401 `JafUnauthorizedException`, and only the message tells them
+    /// apart. The code match is anchored so that `Code: 60` and `Code: 66` are not read
+    /// as `Code: 6`, which would report a genuine session failure as a permissions one
+    /// and never offer the sign-in that would fix it.
+    ///
+    /// - Parameter body: The response body.
+    /// - Returns: `true` when the body says “Utente non abilitato” or carries
+    ///   `Code: 6`.
     static func isNotEntitled(_ body: String) -> Bool {
         if body.localizedCaseInsensitiveContains("Utente non abilitato") { return true }
         // Anchored: a plain `contains("Code: 6")` also matches `Code: 60` and
@@ -173,6 +230,18 @@ nonisolated final class PoliMiAPI: Sendable {
         return body.range(of: "Code:\\s*6(?![0-9])", options: .regularExpression) != nil
     }
 
+    /// Sends a request and decodes its response off the main actor, with ISO 8601
+    /// dates.
+    ///
+    /// A decoding failure logs the first 1200 bytes of the body, since an endpoint that
+    /// moves usually changes shape with it.
+    ///
+    /// - Parameters:
+    ///   - request: What to fetch.
+    ///   - type: The shape to decode.
+    /// - Returns: The decoded value.
+    /// - Throws: ``APIError/decoding(_:)`` when the body will not decode, or any error
+    ///   ``send(_:)`` raises.
     func send<T: Decodable & Sendable>(_ request: APIRequest, as type: T.Type) async throws -> T {
         let data = try await send(request)
         do {
@@ -188,6 +257,13 @@ nonisolated final class PoliMiAPI: Sendable {
         }
     }
 
+    /// Sends a request and returns its body, handling retries and the 401 cases.
+    ///
+    /// - Parameter request: What to fetch.
+    /// - Returns: The response body. A response that is not an `HTTPURLResponse` is
+    ///   returned as-is.
+    /// - Throws: ``APIError`` or ``AuthError``. See the type's discussion for how each
+    ///   status is classified.
     @discardableResult
     func send(_ request: APIRequest) async throws -> Data {
         var attempt = 0
@@ -295,15 +371,21 @@ nonisolated final class PoliMiAPI: Sendable {
         }
     }
 
-    /// Exposed for tests; the classification is what stopped a six-deep retry
-    /// storm against a host that no longer resolves.
+    /// ``isRetryable(_:)``, exposed for tests.
+    ///
+    /// - Parameter error: The transport error to classify.
+    /// - Returns: `true` when another attempt is worthwhile.
     static func isRetryableForTesting(_ error: any Error) -> Bool { isRetryable(error) }
 
-    /// Which of the official app's two HTTP clients serves this request.
+    /// Which of the official app's two HTTP clients serves a request.
     ///
-    /// The `jaf` layer and the `iae`/`libretto` services go through axios; the
-    /// `/v1/*` app endpoints and the agenda go through openapi-fetch. They
-    /// differ only in how they treat `poliAuthD_profile`.
+    /// The `jaf` layer and the `iae`, `libretto` and `ws_aule` services go through
+    /// axios; the `/v1/*` app endpoints and the agenda go through openapi-fetch. They
+    /// differ only in how they treat `poliAuthD_profile` — see
+    /// ``makeURLRequest(_:)``.
+    ///
+    /// - Parameter request: The request to classify.
+    /// - Returns: `true` for the axios-served hosts and paths.
     static func usesAxiosClient(_ request: APIRequest) -> Bool {
         switch request.host {
         case .iae, .libretto, .wsAule: true
@@ -314,21 +396,30 @@ nonisolated final class PoliMiAPI: Sendable {
         }
     }
 
-    /// Whether a transport failure is worth another attempt.
+    /// Whether an error is the task being cancelled rather than anything going wrong.
     ///
-    /// DNS and TLS failures are verdicts, not hiccups. Treating them as
-    /// transient produced six round trips per request against a host that no
-    /// longer exists.
-    /// Whether this error is the task being cancelled rather than anything
-    /// going wrong. Cancellation arrives in two shapes — Swift's own
-    /// `CancellationError` and `URLError` -999 — and both mean the caller
-    /// stopped caring, not that the Politecnico is unreachable.
+    /// Cancellation arrives in two shapes — Swift's `CancellationError` and `URLError`
+    /// −999 — and both mean the caller stopped waiting, not that the Politecnico is
+    /// unreachable.
+    ///
+    /// - Parameter error: The error to classify.
+    /// - Returns: `true` for either shape.
     static func isCancellation(_ error: any Error) -> Bool {
         if error is CancellationError { return true }
         let nsError = error as NSError
         return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
     }
 
+    /// Whether a transport failure is worth another attempt.
+    ///
+    /// Timeouts, a refused connection, a lost connection, a DNS lookup failure and an
+    /// unavailable resource are transient. A host that does not resolve, a malformed or
+    /// unsupported URL, being offline, a cancellation and every TLS failure are
+    /// verdicts rather than hiccups, and are not retried. Anything outside the URL error
+    /// domain is not retried.
+    ///
+    /// - Parameter error: The transport error to classify.
+    /// - Returns: `true` when another attempt is worthwhile.
     private static func isRetryable(_ error: any Error) -> Bool {
         let nsError = error as NSError
         guard nsError.domain == NSURLErrorDomain else { return false }
@@ -354,6 +445,24 @@ nonisolated final class PoliMiAPI: Sendable {
         }
     }
 
+    /// Builds the `URLRequest` for a request: base URL, query, body, headers, token and
+    /// a 30-second timeout.
+    ///
+    /// ## The profile headers
+    ///
+    /// `poliAuthProfile` carries the service's own profile where `props` declares one,
+    /// and the signed-in student's otherwise, unless ``APIRequest/profileOverride``
+    /// supplies a value.
+    ///
+    /// `poliAuthD_profile` carries the account's secondary profile when it has one.
+    /// When it does not, the axios-served paths receive the literal sentinel
+    /// ``PoliMiProfile/emptyDProfile`` and the openapi-fetch paths receive no header at
+    /// all — matching the two official clients. See ``usesAxiosClient(_:)``.
+    ///
+    /// - Parameter request: What to fetch.
+    /// - Returns: The prepared request.
+    /// - Throws: Whatever ``TokenStore/validToken()`` raises for an authenticated
+    ///   request.
     private func makeURLRequest(_ request: APIRequest) async throws -> URLRequest {
         let base = await MainActor.run { directory.baseURL(for: request.host) }
         var components = URLComponents(

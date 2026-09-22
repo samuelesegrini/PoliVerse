@@ -7,12 +7,16 @@ import SwiftUI
 /// simply empty with a login button on it, which reads as a broken feature
 /// rather than a second front door.
 struct WeBeepStepView: View {
+    /// The shared ``WeBeepModel``, from the environment.
     @Environment(WeBeepModel.self) private var weBeep
+    /// The shared ``CourseModel``, from the environment.
     @Environment(CourseModel.self) private var courses
     let advance: () -> Void
 
+    /// Whether the WeBeep login sheet is presented.
     @State private var showingLogin = false
 
+    /// The view's content.
     var body: some View {
         OnboardingStepLayout(
             symbol: "books.vertical.fill",

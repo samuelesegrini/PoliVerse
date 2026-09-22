@@ -68,6 +68,16 @@ nonisolated enum ManifestoParser {
 
     // MARK: - Teaching detail
 
+    /// Reads a teaching's detail page.
+    ///
+    /// The context card says which degree course, plan and year the row belongs to; the
+    /// scheda card carries the facts; the module table carries the brackets and their
+    /// lecturers. The short programme is taken out of the facts, because it is prose.
+    ///
+    /// - Parameters:
+    ///   - html: The page.
+    ///   - code: The teaching code, used as the name when the page states none.
+    /// - Returns: The detail, or `nil` when the page is not a teaching's.
     static func detail(_ html: String, code: String) -> ManifestoDetail? {
         let context = HTMLScraper.section("Contesto", in: html).map(HTMLScraper.cardPairs) ?? []
         let scheda = HTMLScraper.section("Scheda Insegnamento", in: html)
@@ -208,6 +218,10 @@ nonisolated enum ManifestoParser {
         return HTMLScraper.queryValue("c_classe", in: href)
     }
 
+    /// The lecturers linked in one table cell, with their catalogue identifiers.
+    ///
+    /// - Parameter cell: The cell's markup.
+    /// - Returns: The lecturers, in page order. Nameless links are dropped.
     static func teachers(in cell: String) -> [ManifestoTeacher] {
         HTMLScraper.matches("<a[^>]*href=\"([^\"]*k_doc=[^\"]*)\"[^>]*>(.*?)</a>", in: cell)
             .compactMap { groups in
@@ -307,6 +321,11 @@ nonisolated enum ManifestoParser {
         }
     }
 
+    /// Reads the syllabus's summary card: credits, teaching type and the lecturers.
+    ///
+    /// - Parameters:
+    ///   - body: The card's markup.
+    ///   - syllabus: The syllabus being assembled, updated in place.
     private static func readSummary(_ body: String, into syllabus: inout Syllabus) {
         for (label, value) in HTMLScraper.cardPairs(in: body) {
             let key = label.lowercased()
@@ -353,6 +372,12 @@ nonisolated enum ManifestoParser {
         }
     }
 
+    /// Reads the hours table: the assisted and independent-study totals, and one
+    /// ``TeachingForm`` per row that has hours.
+    ///
+    /// - Parameters:
+    ///   - body: The card's markup.
+    ///   - syllabus: The syllabus being assembled, updated in place.
     private static func readForms(_ body: String, into syllabus: inout Syllabus) {
         for row in HTMLScraper.rows(in: body) {
             let cells = row.map(HTMLScraper.text)
@@ -375,6 +400,12 @@ nonisolated enum ManifestoParser {
         return parts[0] * 60 + parts[1]
     }
 
+    /// Reads the language card: which language the teaching is delivered in, from the page's
+    /// own flag image, and what it offers in English.
+    ///
+    /// - Parameters:
+    ///   - body: The card's markup.
+    ///   - syllabus: The syllabus being assembled, updated in place.
     private static func readEnglish(_ body: String, into syllabus: inout Syllabus) {
         if body.localizedCaseInsensitiveContains("bandiera_inglese") {
             syllabus.language = .english

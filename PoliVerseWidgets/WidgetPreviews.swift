@@ -18,6 +18,15 @@ import WidgetKit
 /// with and without a building, and a title that has to wrap. A preview full
 /// of tidy data proves nothing.
 enum WidgetPreviewData {
+    /// One lecture on today's date, for a preview.
+    ///
+    /// - Parameters:
+    ///   - title: The lecture's name.
+    ///   - hour: The hour it starts at.
+    ///   - minute: The minute it starts at.
+    ///   - lasting: How many hours it runs for.
+    ///   - room: The room, or `nil` for a lecture with none.
+    /// - Returns: The lecture.
     static func lecture(
         _ title: String = "Analisi Matematica 2",
         at hour: Int, _ minute: Int = 0, lasting: Double = 2,
@@ -31,9 +40,12 @@ enum WidgetPreviewData {
             kind: .lecture, room: room, roomAcronym: room)
     }
 
+    /// A real course name long enough to wrap, so a layout is tested against one.
     static let longTitle =
         "Modelli e Metodi dell'Ottimizzazione Combinatoria per l'Ingegneria"
 
+    /// A full day: four lectures, one with a long name, one with no room, at the hours the
+    /// timetable actually uses.
     static var day: [AgendaEvent] {
         [lecture(at: 8, 15),
          lecture(longTitle, at: 10, 15, room: "Aula Rogers"),
@@ -49,6 +61,7 @@ enum WidgetPreviewData {
                            kind: .lecture, room: "Aula Rogers", roomAcronym: "R.0.1")
     }
 
+    /// A lecture already under way whenever the preview is opened.
     static var running: AgendaEvent {
         let start = Date.now.addingTimeInterval(-1800)
         return AgendaEvent(id: 2, title: WidgetPreviewData.longTitle,
@@ -56,6 +69,7 @@ enum WidgetPreviewData {
                            kind: .lecture, room: "3.0.1", roomAcronym: "3.0.1")
     }
 
+    /// Today's snapshot for one campus, with nothing booked.
     static var freeRooms: FreeRoomsSnapshot {
         FreeRoomsSnapshot(day: .now, campus: "Milano Leonardo",
                           rooms: FreeRoomsSnapshot.previewRooms)
@@ -200,6 +214,7 @@ enum WidgetPreviewData {
 
 // MARK: - Live Activity
 
+/// The lecture the Live Activity previews are drawn for.
 private let previewLecture = LectureActivityAttributes(
     title: "Analisi Matematica 2", room: "Aula Rogers", building: "Edificio 3",
     start: .now.addingTimeInterval(900),

@@ -7,14 +7,18 @@ import SwiftUI
 /// direction is decided before the change animates — read from `onChange` the
 /// slide had already started, and every day arrived from the same side.
 struct DayTransition<Content: View>: View {
+    /// The day to show.
     let day: Date
+    /// The content this view wraps.
     @ViewBuilder let content: (Date) -> Content
 
+    /// Whether the reader has asked for reduced motion.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var shown: Date?
     /// True while moving forwards in time; decides which edge each half uses.
     @State private var forwards = true
 
+    /// How the two days cross: a slide in the direction the calendar moved, or a plain fade under reduced motion.
     private var transition: AnyTransition {
         guard !reduceMotion else { return .opacity }
         return .asymmetric(
@@ -22,6 +26,7 @@ struct DayTransition<Content: View>: View {
             removal: .move(edge: forwards ? .leading : .trailing).combined(with: .opacity))
     }
 
+    /// The view's content.
     var body: some View {
         ZStack(alignment: .topLeading) {
             content(shown ?? day)

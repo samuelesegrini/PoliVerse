@@ -7,8 +7,10 @@ enum AppLayout: String, CaseIterable, Identifiable {
     /// One landing page with everything else in a bottom panel, like Maps.
     case singlePage
 
+    /// The layout's identity, which is its raw value.
     var id: String { rawValue }
 
+    /// What the layout is called in Impostazioni.
     var title: LocalizedStringKey {
         switch self {
         case .tabs: "Tab"
@@ -16,6 +18,7 @@ enum AppLayout: String, CaseIterable, Identifiable {
         }
     }
 
+    /// One line describing what the layout does.
     var detail: LocalizedStringKey {
         switch self {
         case .tabs: "Oggi, Corsi, Carriera e Cerca in schede separate."
@@ -23,6 +26,7 @@ enum AppLayout: String, CaseIterable, Identifiable {
         }
     }
 
+    /// The SF Symbol shown beside the choice.
     var systemImage: String {
         switch self {
         case .tabs: "rectangle.split.3x1"
@@ -30,5 +34,6 @@ enum AppLayout: String, CaseIterable, Identifiable {
         }
     }
 
+    /// The `UserDefaults` key the choice is stored under.
     static let storageKey = "appLayout"
 }

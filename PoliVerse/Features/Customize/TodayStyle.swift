@@ -8,13 +8,19 @@ import SwiftUI
 /// greeting, the date, stickers beside it and an ordered list of
 /// ``TodaySection``s.
 nonisolated struct TodayStyle: Equatable, Sendable {
+    /// The default look: the Politecnico's navy, soft cards, and Oggi's usual sections.
     init() {}
 
+    /// The typeface the date is set in.
     nonisolated enum DateFont: String, Codable, CaseIterable, Identifiable, Sendable {
+        /// The system typeface in its widths and designs.
         case expanded, rounded, serif, mono, condensed, italic
+        /// The faces iOS ships, set at a fixed size because they carry no weight axis.
         case didot, futura, avenir, rockwell, bodoni, typewriter, chalkboard
+        /// The typeface's identity, which is its raw value.
         var id: String { rawValue }
 
+        /// What the typeface is called in Personalizza.
         var title: LocalizedStringKey {
             switch self {
             case .expanded: "Largo"
@@ -56,6 +62,12 @@ nonisolated struct TodayStyle: Equatable, Sendable {
             return faces[min(Int(weight.clamped(to: 0...1) * Double(faces.count)), faces.count - 1)]
         }
 
+        /// The typeface at a size and weight.
+        ///
+        /// - Parameters:
+        ///   - size: The point size.
+        ///   - weight: 0 for the lightest face, 1 for the heaviest.
+        /// - Returns: The font.
         @MainActor func font(size: CGFloat, weight: Double) -> Font {
             let system = TodayStyle.systemWeight(weight)
             switch self {
@@ -74,9 +86,12 @@ nonisolated struct TodayStyle: Equatable, Sendable {
 
     /// The design of the page's other text: the greeting and the sections.
     nonisolated enum TextDesign: String, Codable, CaseIterable, Identifiable, Sendable {
+        /// The four system designs.
         case standard, rounded, serif, monospaced
+        /// The design's identity, which is its raw value.
         var id: String { rawValue }
 
+        /// What the design is called in Personalizza.
         var title: LocalizedStringKey {
             switch self {
             case .standard: "Sistema"
@@ -86,6 +101,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
             }
         }
 
+        /// The design as SwiftUI takes it.
         var design: Font.Design {
             switch self {
             case .standard: .default
@@ -98,9 +114,12 @@ nonisolated struct TodayStyle: Equatable, Sendable {
 
     /// The date in the text colour, or in the Flavor's accent.
     nonisolated enum DateColour: String, Codable, CaseIterable, Identifiable, Sendable {
+        /// The text colour, or the Flavor's accent.
         case ink, flavor
+        /// The choice's identity, which is its raw value.
         var id: String { rawValue }
 
+        /// What the choice is called in Personalizza.
         var title: LocalizedStringKey {
             switch self {
             case .ink: "Inchiostro"
@@ -109,9 +128,13 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         }
     }
 
+    /// The one colour the whole palette is built from.
     var flavor = Flavor.polimi
+    /// What the page's cards are made of.
     var material = TodayMaterial.soft
+    /// The design of the page's text other than the date.
     var textDesign = TextDesign.standard
+    /// The typeface the date is set in.
     var dateFont: DateFont = .expanded
     /// 0 is the lightest, 1 the heaviest.
     var dateWeight: Double = 1
@@ -119,18 +142,26 @@ nonisolated struct TodayStyle: Equatable, Sendable {
     var dateSize: Double = 1 {
         didSet { dateSize = dateSize.clamped(to: Self.dateSizes) }
     }
+    /// Whether the date takes the text colour or the Flavor's accent.
     var dateColour = DateColour.ink
+    /// Whether a greeting sits above the date.
     var showsGreeting = true
+    /// The decoration drawn on the page.
     var background: TodayBackground = .plain
+    /// Which greeting the page opens with.
     var greeting: GreetingStyle = .classic
     /// The student's own line, for ``GreetingStyle/custom``: one line above
     /// the date, so kept short.
     var customGreeting = "" {
         didSet { if customGreeting.count > Self.customGreetingLimit { customGreeting = String(customGreeting.prefix(Self.customGreetingLimit)) } }
     }
+    /// How the date is laid out.
     var dateLayout: DateLayout = .stacked
+    /// Which edge the date and greeting sit against.
     var dateAlignment: DateAlignment = .leading
+    /// What sits beside the date: nothing, stickers, a photo, or text.
     var accessory = TodayAccessory.none
+    /// The stickers and where the student put them.
     var stickers: [PlacedSticker] = []
     /// Stickers get a white cut-out edge, like printed ones.
     var stickerOutline = true
@@ -140,13 +171,17 @@ nonisolated struct TodayStyle: Equatable, Sendable {
     }
     /// The photo accessory, oldest first; the last is on top.
     var photoIDs: [String] = []
+    /// The paper the page is printed on, under any decoration.
     var paper = TodayPaper.plain
     /// Film grain over the page, from none to full.
     var grain: Double = 0 {
         didSet { grain = grain.clamped(to: 0...1) }
     }
+    /// How the app is lit, and how strongly the Flavor colours it.
     var appearance = TodayAppearance.system
+    /// The sections of Oggi, in the order they are drawn.
     var sections: [TodaySection] = TodaySection.defaultKinds.map(TodaySection.init(kind:))
+    /// Which of Oggi's optional bar buttons show.
     var bar = TodayBarStyle()
     /// What the student calls this look. Empty while it has no name, and the
     /// gallery calls it by its place instead.
@@ -154,9 +189,13 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         didSet { if name.count > Self.nameLimit { name = String(name.prefix(Self.nameLimit)) } }
     }
 
+    /// The range the date's size multiplier is clamped to.
     static let dateSizes = 0.6...1.3
+    /// How long the student's own greeting may be.
     static let customGreetingLimit = 40
+    /// How long a text accessory may be.
     static let accessoryTextLimit = 24
+    /// How long a look's name may be.
     static let nameLimit = 24
 
     /// The look's name, or its place in the gallery when it has none.
@@ -175,6 +214,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         return steps[min(Int((value * Double(steps.count - 1)).rounded()), steps.count - 1)]
     }
 
+    /// The date's weight as SwiftUI takes it.
     var weight: Font.Weight { Self.systemWeight(dateWeight) }
 
     /// The accent in a colour scheme, readable on the page and on cards.
@@ -198,12 +238,19 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         flavor.accent(dark: dark, mode: appearance.flavorMode)
     }
 
+    /// The control accent as a SwiftUI colour.
+    ///
+    /// - Parameter scheme: Light or dark.
+    /// - Returns: The colour.
     @MainActor func controlTint(_ scheme: ColorScheme) -> Color {
         controlAccent(dark: scheme == .dark).color
     }
 
+    /// The `UserDefaults` key the look in use is stored under.
     static let storageKey = "todayStyle"
+    /// The `UserDefaults` key the saved looks are stored under.
     static let libraryKey = "todayStyleLibrary"
+    /// The `UserDefaults` key the chosen look's index is stored under.
     static let selectionKey = "todayStyleSelection"
 
     // MARK: - Themes
@@ -375,6 +422,10 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         return looks.isEmpty ? presets : looks
     }
 
+    /// The saved looks as one string, one look per line.
+    ///
+    /// - Parameter looks: The looks to store.
+    /// - Returns: The string.
     static func encodeLibrary(_ looks: [TodayStyle]) -> String {
         looks.map(\.rawValue).joined(separator: "\n")
     }
@@ -396,11 +447,18 @@ nonisolated struct TodayStyle: Equatable, Sendable {
 /// Which optional buttons Oggi's navigation bar shows. Settings and
 /// Personalizza are always there: hiding them would leave no way back.
 nonisolated struct TodayBarStyle: Codable, Equatable, Hashable, Sendable {
+    /// Whether the profile button shows at the bar's leading edge.
     var showsProfile = true
+    /// Whether the date shows in the middle of the bar.
     var showsDate = true
 
+    /// Both optional buttons shown.
     init() {}
 
+    /// Reads the choices, keeping the defaults for anything a stored look does not name.
+    ///
+    /// - Parameter decoder: The decoder.
+    /// - Throws: Whatever the decoder throws.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         showsProfile = try container.decodeIfPresent(Bool.self, forKey: .showsProfile) ?? showsProfile
@@ -412,29 +470,53 @@ nonisolated struct TodayBarStyle: Codable, Equatable, Hashable, Sendable {
 /// from `TodayStyle` because a `RawRepresentable` string type picks up the
 /// standard library's Codable, which encodes `rawValue` instead.
 nonisolated private struct StoredTodayStyle: Codable {
+    /// The look's Flavor.
     var flavor: Flavor?
+    /// What the cards are made of.
     var material: TodayMaterial?
+    /// The design of the page's other text.
     var textDesign: TodayStyle.TextDesign?
+    /// The date's typeface.
     var dateFont: TodayStyle.DateFont?
+    /// The date's weight, 0 to 1.
     var dateWeight: Double?
+    /// The multiplier on the date's natural size.
     var dateSize: Double?
+    /// Whether the date takes the text colour or the accent.
     var dateColour: TodayStyle.DateColour?
+    /// Whether a greeting shows.
     var showsGreeting: Bool?
+    /// The page's decoration.
     var background: TodayBackground?
+    /// Which greeting the page opens with.
     var greeting: GreetingStyle?
+    /// The student's own greeting.
     var customGreeting: String?
+    /// How the date is laid out.
     var dateLayout: DateLayout?
+    /// Which edge the date sits against.
     var dateAlignment: DateAlignment?
+    /// What sits beside the date.
     var accessory: TodayAccessory?
+    /// The stickers and where they sit, skipping any that no longer decode.
     var stickers: Lenient<PlacedSticker>?
+    /// Whether each sticker gets the look's outline.
     var stickerOutline: Bool?
+    /// The words of a text accessory.
     var accessoryText: String?
+    /// The ids of the photos in a photo accessory.
     var photoIDs: [String]?
+    /// The paper the page is printed on.
     var paper: TodayPaper?
+    /// How much grain is rasterised over the page.
     var grain: Double?
+    /// How the app is lit.
     var appearance: TodayAppearance?
+    /// The sections of Oggi, in order, skipping any that no longer decode.
     var sections: Lenient<TodaySection>?
+    /// Which of Oggi's bar controls show.
     var bar: TodayBarStyle?
+    /// What the student called the look.
     var name: String?
 }
 
@@ -442,30 +524,48 @@ nonisolated private struct StoredTodayStyle: Codable {
 nonisolated private struct LegacyTodayStyle: Decodable {
     /// Before sections: whether In arrivo and the timetable showed.
     var showsUpcoming: Bool?
+    /// Before sections: whether the timetable showed.
     var showsTimetable: Bool?
     /// Before Flavor: the date's colour, the background's, the controls'.
     var dateAccent: String?
+    /// Before Flavor: the background's colour, as a hex string.
     var backgroundAccent: String?
+    /// Before Flavor: the bar's own tint.
     var bar: LegacyBar?
     /// Before accessories: the date alone, or beside stickers.
     var header: String?
 
+    /// The bar as older versions stored it.
     struct LegacyBar: Decodable {
+        /// The bar's colour, as a hex string.
         var tint: String?
     }
 }
 
+/// Writing a lenient array back out, element by element.
 nonisolated extension Lenient: Encodable where Element: Encodable {
+    /// Wraps an array for encoding.
+    ///
+    /// - Parameter elements: The elements.
     init(_ elements: [Element]) {
         self.elements = elements
     }
 
+    /// Writes the elements as a plain array.
+    ///
+    /// - Parameter encoder: The encoder.
+    /// - Throws: Whatever the encoder throws.
     func encode(to encoder: any Encoder) throws {
         try elements.encode(to: encoder)
     }
 }
 
+/// The look as the JSON string `@AppStorage` keeps it in.
 nonisolated extension TodayStyle: RawRepresentable {
+    /// Reads a look from its stored string, carrying over what older versions wrote.
+    ///
+    /// - Parameter rawValue: The JSON.
+    /// - Returns: `nil` when it is not a stored look.
     init?(rawValue: String) {
         guard let data = rawValue.data(using: .utf8),
               let stored = try? JSONDecoder().decode(StoredTodayStyle.self, from: data) else { return nil }
@@ -513,6 +613,7 @@ nonisolated extension TodayStyle: RawRepresentable {
         }
     }
 
+    /// The look as JSON, with sorted keys so two equal looks give the same string.
     var rawValue: String {
         let stored = StoredTodayStyle(flavor: flavor, material: material, textDesign: textDesign,
                                       dateFont: dateFont, dateWeight: dateWeight, dateSize: dateSize, dateColour: dateColour,

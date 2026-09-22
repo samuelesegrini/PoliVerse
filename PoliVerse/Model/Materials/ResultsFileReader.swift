@@ -1,34 +1,48 @@
 import Foundation
 import PDFKit
 
-/// What a results file says about the student — and only about them.
+/// What a results file said about the student, and only about them.
 ///
-/// Stored with the update, so it is deliberately all the file leaves behind:
-/// no other row, no count, no average. See
-/// `docs/academic-intelligence-layer.md` §10.4.
+/// Stored alongside the update, and deliberately all the file leaves behind: no other
+/// row, no count, no average. See `docs/academic-intelligence-layer.md` §10.4.
 nonisolated struct ResultsLookup: Sendable, Equatable, Codable {
-    /// A table of student identifiers, rather than a notice with "risultati"
-    /// in its name.
+    /// Whether the file is a table of student identifiers, rather than a notice that
+    /// merely has “risultati” in its name.
     let looksLikeResults: Bool
-    /// The student's matricola or person code is on a line of it.
+    /// Whether the student's own matricola or person code appears on a line.
     let found: Bool
-    /// The mark on that line, as written. Unconfirmed until the exam services
-    /// publish it; they win any disagreement.
+    /// What was written on that line, as written.
+    ///
+    /// Unconfirmed until the exam services publish the mark, and they win any
+    /// disagreement. `nil` when the line carries nothing that can be told apart from
+    /// anything else on it.
     let grade: String?
 }
 
-/// Reads a teacher's results file for the student's own line.
+/// Reads a lecturer's results file for the student's own line.
 ///
-/// Pure over text, so the rules are tested without files. The text itself
-/// lives only for the duration of a call: nothing here stores it, logs it,
-/// or looks at any line but the student's.
+/// Pure over text, so the rules can be tested without files. The text lives only for
+/// the duration of a call: nothing here stores it, logs it, or looks at any line but
+/// the student's.
 nonisolated enum ResultsFileReader {
-    /// A results table lists at least this many distinct identifiers.
+    /// How many distinct identifiers a file must carry before it counts as a results
+    /// table.
     static let minimumRows = 5
-    /// Files larger than this are not read: a results list is small, and a
-    /// background pass has seconds, not minutes.
+    /// The largest file that will be read. A results list is small, and a background pass
+    /// has seconds rather than minutes.
     static let maximumBytes = 5_000_000
 
+    /// Looks for the student's own line in a file's text.
+    ///
+    /// Only the part of the line after the student's identifier is read, and only up to
+    /// the next identifier — a PDF laid out in two columns puts another student's row on
+    /// the same line.
+    ///
+    /// - Parameters:
+    ///   - text: The file's text.
+    ///   - identifiers: The student's matricola and person code. Only six- and
+    ///     eight-digit numeric values are used.
+    /// - Returns: What the file said.
     static func lookup(text: String, identifiers: [String]) -> ResultsLookup {
         let lines = text.components(separatedBy: .newlines).map(cells)
 
@@ -56,26 +70,35 @@ nonisolated enum ResultsFileReader {
         return ResultsLookup(looksLikeResults: looksLikeResults, found: false, grade: nil)
     }
 
+    /// A student identifier: a six- or eight-digit number not adjacent to other digits.
     private static let identifier = #"(?<!\d)(\d{6}|\d{8})(?!\d)"#
 
-    /// One line with its cell separators as spaces.
+    /// One line with its cell separators turned into spaces.
     ///
-    /// Semicolons, tabs and bars always separate. A comma separates when the
-    /// line uses commas as its delimiter — two or more outside numbers —
-    /// and otherwise, between digits, is an Italian decimal: "25,5".
+    /// Semicolons, tabs and bars always separate. A comma separates when the line uses
+    /// commas as its delimiter — two or more outside numbers — and otherwise, between
+    /// digits, is an Italian decimal point.
+    ///
+    /// - Parameter line: The line as read.
+    /// - Returns: The line with separators normalised.
     private static func cells(_ line: String) -> String {
         let delimiterCommas = matches(#"(?<!\d),|,(?!\d)"#, in: line).count
         let commas = delimiterCommas >= 2 ? #","# : #"(?<!\d),|,(?!\d)"#
         return line.replacingOccurrences(of: #"[;\t|]|"# + commas, with: " ", options: .regularExpression)
     }
 
-    /// The mark in the student's own cells, or nil when it cannot be told
-    /// apart from anything else there.
+    /// The mark in the student's own cells.
     ///
-    /// Words first — "Insufficiente 14" is insufficient, not fourteen — then
-    /// honours and "27/30", then a number that can be a mark. Dates and times
-    /// are removed first. Two different candidate numbers (a score and a
-    /// mark, a mark and CFU) are not guessed between: found, mark unknown.
+    /// Dates and times are removed first. Words win over numbers, so “Insufficiente 14”
+    /// is insufficient rather than fourteen, and the earliest word on the line wins, with
+    /// the more specific rule preferred at the same position. Honours and `27/30` are
+    /// then recognised, and finally a bare number that could be a mark.
+    ///
+    /// Two different candidate numbers — a raw score and a mark, or a mark and a credit
+    /// count — are not guessed between.
+    ///
+    /// - Parameter rest: The student's cells.
+    /// - Returns: The mark as written, or `nil` when it cannot be told apart.
     private static func grade(in rest: String) -> String? {
         var folded = rest.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
         folded = folded
@@ -115,8 +138,14 @@ nonisolated enum ResultsFileReader {
         return candidates.count == 1 ? candidates.first : nil
     }
 
-    /// Every match of an ICU pattern. ICU rather than `Regex`: the rules need
-    /// lookbehind, which Swift's engine does not support.
+    /// Every match of an ICU pattern.
+    ///
+    /// ICU rather than `Regex`, because these rules need lookbehind.
+    ///
+    /// - Parameters:
+    ///   - pattern: The ICU pattern.
+    ///   - text: The text to search.
+    /// - Returns: The matched substrings, in order.
     private static func matches(_ pattern: String, in text: String) -> [String] {
         guard let regex = RegexCache.regex(pattern) else { return [] }
         let range = NSRange(text.startIndex..., in: text)
@@ -125,14 +154,14 @@ nonisolated enum ResultsFileReader {
         }
     }
 
-    /// The text of a downloaded file, for the formats that can be read without
-    /// a third-party library: PDF with a text layer, CSV, plain text.
+    /// Reads a downloaded file and looks the student up in it, off the main actor.
     ///
-    /// A scanned PDF has no text layer and yields nothing — the update stays
-    /// a plain "results file posted". Spreadsheets likewise, until reading
-    /// them is worth a dependency.
-    /// Reads and looks up away from the main actor: a PDF of a few megabytes
-    /// takes long enough to drop frames.
+    /// - Parameters:
+    ///   - data: The file's bytes.
+    ///   - mimetype: The file's media type, where known.
+    ///   - fileName: The file's name, whose extension is used when there is no media type.
+    ///   - identifiers: The student's matricola and person code.
+    /// - Returns: What the file said, or `nil` when it cannot be read.
     static func read(_ data: Data, mimetype: String?, fileName: String, identifiers: [String]) async -> ResultsLookup? {
         await Task.detached(priority: .utility) {
             text(from: data, mimetype: mimetype, fileName: fileName)
@@ -140,6 +169,17 @@ nonisolated enum ResultsFileReader {
         }.value
     }
 
+    /// The text of a file, for the formats readable without a third-party library: PDF
+    /// with a text layer, CSV and plain text.
+    ///
+    /// A scanned PDF has no text layer and yields nothing, which leaves the update a plain
+    /// posting. Spreadsheets are not read.
+    ///
+    /// - Parameters:
+    ///   - data: The file's bytes.
+    ///   - mimetype: The file's media type, where known.
+    ///   - fileName: The file's name, whose extension is used when there is no media type.
+    /// - Returns: The text, or `nil` for a file too large or of an unreadable format.
     static func text(from data: Data, mimetype: String?, fileName: String) -> String? {
         guard data.count <= maximumBytes else { return nil }
         let ext = (fileName as NSString).pathExtension.lowercased()

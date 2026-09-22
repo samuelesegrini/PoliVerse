@@ -15,8 +15,10 @@ nonisolated enum GreetingStyle: String, Codable, CaseIterable, Identifiable, Sen
     /// The student's own words.
     case custom
 
+    /// The greeting's identity, which is its raw value.
     var id: String { rawValue }
 
+    /// What the greeting is called in Personalizza.
     var title: LocalizedStringKey {
         switch self {
         case .classic: "Classico"
@@ -80,8 +82,10 @@ nonisolated enum DateLayout: String, Codable, CaseIterable, Identifiable, Sendab
     /// The weekday alone, large.
     case weekday
 
+    /// The layout's identity, which is its raw value.
     var id: String { rawValue }
 
+    /// What the layout is called in Personalizza.
     var title: LocalizedStringKey {
         switch self {
         case .stacked: "Impilata"
@@ -93,10 +97,14 @@ nonisolated enum DateLayout: String, Codable, CaseIterable, Identifiable, Sendab
     }
 }
 
+/// Which edge the date and greeting sit against.
 nonisolated enum DateAlignment: String, Codable, CaseIterable, Identifiable, Sendable {
+    /// Against the leading edge, centred, or against the trailing edge.
     case leading, center, trailing
+    /// The alignment's identity, which is its raw value.
     var id: String { rawValue }
 
+    /// The SF Symbol shown in the picker.
     var systemImage: String {
         switch self {
         case .leading: "text.alignleft"
@@ -105,6 +113,7 @@ nonisolated enum DateAlignment: String, Codable, CaseIterable, Identifiable, Sen
         }
     }
 
+    /// The alignment as a stack takes it.
     var horizontal: HorizontalAlignment {
         switch self {
         case .leading: .leading
@@ -113,6 +122,7 @@ nonisolated enum DateAlignment: String, Codable, CaseIterable, Identifiable, Sen
         }
     }
 
+    /// The alignment as a frame takes it.
     var frame: Alignment {
         switch self {
         case .leading: .leading
@@ -121,6 +131,7 @@ nonisolated enum DateAlignment: String, Codable, CaseIterable, Identifiable, Sen
         }
     }
 
+    /// The alignment as multi-line text takes it.
     var text: TextAlignment {
         switch self {
         case .leading: .leading
@@ -132,14 +143,19 @@ nonisolated enum DateAlignment: String, Codable, CaseIterable, Identifiable, Sen
 
 /// The date in the chosen layout, font and colour.
 struct DateHeader: View {
+    /// The day to write.
     let day: Date
+    /// The look, which supplies the layout, typeface, weight, colour and alignment.
     let style: TodayStyle
     /// The size of the largest line; previews in the editor pass a smaller one.
     var size: CGFloat = 72
 
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// The view's content.
     var body: some View {
         content
             .foregroundStyle(style.dateTint(scheme))
@@ -150,10 +166,15 @@ struct DateHeader: View {
             .contentTransition(.interpolate)
     }
 
+    /// The look's date typeface at a share of the header's size.
+    ///
+    /// - Parameter scale: The size as a fraction of ``size``.
+    /// - Returns: The font.
     private func font(_ scale: CGFloat) -> Font {
         style.dateFont.font(size: size * scale, weight: style.dateWeight)
     }
 
+    /// The date written out in whichever layout the look asks for.
     @ViewBuilder
     private var content: some View {
         switch style.dateLayout {

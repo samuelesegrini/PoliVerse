@@ -6,13 +6,18 @@ import SwiftUI
 /// `/elencoinsegnamenti/{matricola}` returns both halves already split — with
 /// the header from `/testatapiano/{matricola}` on top.
 struct StudyPlanView: View {
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
 
+    /// Whether the passed teachings are listed.
+    /// Whether the teachings still to sit are listed.
     @State private var showPassed = true
     @State private var showPending = true
 
+    /// The libretto's arithmetic, which the figures and the grouping come from.
     private var plan: StudyPlan { career.studyPlan }
 
+    /// The view's content.
     var body: some View {
         List {
             Section {
@@ -84,20 +89,25 @@ struct StudyPlanView: View {
         .refreshable { await career.load(force: true) }
     }
 
+    /// The teachings the two filters leave.
     private var shown: [LibrettoExam] {
         plan.exams.filter { exam in
             exam.isPassed ? showPassed : showPending
         }
     }
 
+    /// Those teachings grouped as ``StudyPlan/byYear`` groups them, with empty groups dropped.
     private var shownByYear: [(year: String, exams: [LibrettoExam])] {
         StudyPlan(exams: shown).byYear
     }
 }
 
+/// One teaching of the plan: its name, its credits, and its mark or its status.
 private struct PlanRow: View {
+    /// The teaching this row shows.
     let exam: LibrettoExam
 
+    /// The view's content.
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {

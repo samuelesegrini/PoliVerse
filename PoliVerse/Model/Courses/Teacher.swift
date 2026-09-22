@@ -2,27 +2,31 @@ import Foundation
 
 /// A member of teaching staff, assembled from what the app already knows.
 ///
-/// There is no public directory to search: `maps_rest /struttura/{personaId}`
-/// needs a token *and* a person id the app never sees, and there is no
-/// name-to-id lookup anywhere in the service map. So this is built from the
-/// places a teacher's name genuinely appears — the course list and the exam
-/// sittings — rather than from an endpoint that does not exist.
-///
-/// That is a smaller thing than a staff directory, and honest about it: it
-/// finds the people who teach *you*, which is what a student searching by name
-/// almost always wants.
+/// There is no public staff directory to search: the structure endpoint needs a
+/// token and a person id the app never sees, and the service map carries no
+/// name-to-id lookup. So the roster is built from the places a lecturer's name does
+/// appear — the course list and the exam sittings — which finds the people who teach
+/// this student.
 nonisolated struct Teacher: Identifiable, Sendable, Hashable {
-    /// The normalised name, which is all that reliably identifies them here.
+    /// The lower-cased name, which is all that identifies a lecturer here.
     var id: String { name.lowercased() }
+    /// The lecturer's name, normalised by ``normalise(_:)``.
     let name: String
+    /// Their address, where a course carried one.
     let email: String?
-    /// Courses of theirs the student is enrolled in.
+    /// Courses of theirs the student is enrolled in. Empty for a lecturer known only from an exam sitting.
     let courses: [Course]
 
-    /// Builds the roster from courses and exam sittings.
+    /// Builds the roster from the course list and the exam sittings.
     ///
-    /// Names arrive shouted from `/v1/insegn` and title-cased elsewhere, so
-    /// they are normalised before grouping or the same person appears twice.
+    /// Names are normalised before grouping, since they arrive upper-cased from the
+    /// exams endpoint and title-cased elsewhere and would otherwise produce the same
+    /// person twice. The first address found for a name is kept.
+    ///
+    /// - Parameters:
+    ///   - courses: The enrolled teachings.
+    ///   - sessions: The exam sittings.
+    /// - Returns: The lecturers, sorted by name.
     static func roster(courses: [Course], sessions: [ExamSession]) -> [Teacher] {
         var byName: [String: (name: String, email: String?, courses: [Course])] = [:]
 
@@ -48,8 +52,12 @@ nonisolated struct Teacher: Identifiable, Sendable, Hashable {
             .sorted { $0.name < $1.name }
     }
 
-    /// Rejects the placeholders the endpoints use for "no teacher recorded",
-    /// which would otherwise become a person called "—".
+    /// Trims and title-cases a lecturer's name, rejecting the placeholders the
+    /// endpoints use for “no lecturer recorded”.
+    ///
+    /// - Parameter raw: The name as an endpoint sends it.
+    /// - Returns: The name, or `nil` for `nil`, for two characters or fewer, or for a
+    ///   dash. An upper-cased name is title-cased by ``Course/normalise(_:)``.
     static func normalise(_ raw: String?) -> String? {
         guard let raw else { return nil }
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -58,6 +66,10 @@ nonisolated struct Teacher: Identifiable, Sendable, Hashable {
         return trimmed == trimmed.uppercased() ? Course.normalise(trimmed) : trimmed
     }
 
+    /// Whether a query appears in this lecturer's name or address.
+    ///
+    /// - Parameter query: What the student typed.
+    /// - Returns: `true` on a case-insensitive substring match.
     func matches(_ query: String) -> Bool {
         name.localizedCaseInsensitiveContains(query)
             || (email ?? "").localizedCaseInsensitiveContains(query)

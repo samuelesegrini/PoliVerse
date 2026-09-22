@@ -1,31 +1,44 @@
 import Foundation
 
-/// How a query is compared to text, and how well.
+/// How a query is compared to text, and how well it matches.
 ///
-/// One rule, in one place, so every kind of result is matched and ranked the
-/// same way. `localizedCaseInsensitiveContains` used to do this per call site,
-/// which was wrong twice over: it misses a word typed without its accent, and
-/// it cannot tell a title that *starts* with the query from one that merely
-/// contains it, so "ana" put "Metodi Analitici" above "Analisi".
+/// One rule for every kind of result, so courses, rooms, teachers and exams are
+/// matched and ranked alike. Comparison ignores case and diacritics, matching is
+/// word-wise rather than by substring, and ``score(_:fields:)`` ranks a field that
+/// begins with the query above one that merely contains it.
 nonisolated enum SearchMatch {
-    /// Case- and diacritic-insensitive, so "citta" finds "Città" and
-    /// "informatica" finds "Informàtici".
+    /// Case-, diacritic- and width-insensitive, so `"citta"` finds `"Città"`.
     private static let options: String.CompareOptions = [
         .caseInsensitive, .diacriticInsensitive, .widthInsensitive,
     ]
 
+    /// Splits a query on whitespace.
+    ///
+    /// - Parameter query: What the student typed.
+    /// - Returns: The words, in order. Empty for a blank query.
     static func words(in query: String) -> [String] {
         query.split(whereSeparator: \.isWhitespace).map(String.init)
     }
 
-    /// Whether every word of the query appears somewhere in the fields.
+    /// Whether every word of the query appears somewhere in the given fields.
     ///
-    /// Word-wise rather than as one substring: "basi dati" should find "Basi
-    /// di Dati", which a single `contains` never will.
+    /// - Parameters:
+    ///   - query: What the student typed.
+    ///   - fields: The fields to search. `nil` fields are ignored.
+    /// - Returns: `true` when every word is found. `false` for a blank query.
     static func matches(_ query: String, in fields: String?...) -> Bool {
         matches(query, fields: fields.compactMap { $0 })
     }
 
+    /// Whether every word of the query appears somewhere in the given fields.
+    ///
+    /// The fields are joined before searching, so words may be spread across them:
+    /// `"basi dati"` matches `"Basi di Dati"`, which no single substring search would.
+    ///
+    /// - Parameters:
+    ///   - query: What the student typed.
+    ///   - fields: The fields to search.
+    /// - Returns: `true` when every word is found. `false` for a blank query.
     static func matches(_ query: String, fields: [String]) -> Bool {
         let words = words(in: query)
         guard !words.isEmpty else { return false }
@@ -33,16 +46,28 @@ nonisolated enum SearchMatch {
         return words.allSatisfy { haystack.range(of: $0, options: options) != nil }
     }
 
-    /// How good a match is. Zero means no match; higher is better.
+    /// How well a query matches, as a number.
     ///
-    /// The ladder, highest first: the whole field equals the query, the field
-    /// starts with it, a word inside starts with it, it appears anywhere.
-    /// Ties are broken by how much of the field the query accounts for, so a
-    /// short precise title beats a long one that happens to contain the word.
+    /// - Parameters:
+    ///   - query: What the student typed.
+    ///   - fields: The fields to search. `nil` fields are ignored.
+    /// - Returns: Zero for no match; higher is better.
     static func score(_ query: String, in fields: String?...) -> Int {
         score(query, fields: fields.compactMap { $0 })
     }
 
+    /// How well a query matches, as a number.
+    ///
+    /// The best-scoring field decides, on this ladder: the whole field equals the
+    /// query (1000), the field begins with it (500), a word inside it begins with it
+    /// (250), it appears anywhere (100), or every word is present but not adjacent
+    /// (50). A shorter field then earns a bonus of up to 40, never enough to cross a
+    /// rung, so a short precise title outranks a long one containing the same word.
+    ///
+    /// - Parameters:
+    ///   - query: What the student typed.
+    ///   - fields: The fields to search.
+    /// - Returns: Zero when the query does not match; higher is better.
     static func score(_ query: String, fields: [String]) -> Int {
         let words = words(in: query)
         guard !words.isEmpty, matches(query, fields: fields) else { return 0 }
@@ -73,13 +98,30 @@ nonisolated enum SearchMatch {
         return best
     }
 
+    /// Whether any word of the field begins with the query.
+    ///
+    /// Words are split on whitespace and on both apostrophe forms, so `"ing"` begins a
+    /// word in `"dell'Ingegneria"`.
+    ///
+    /// - Parameters:
+    ///   - query: What the student typed.
+    ///   - field: The field to search.
+    /// - Returns: `true` when a word begins with the query.
     private static func startsAWord(_ query: String, in field: String) -> Bool {
         field.split(whereSeparator: { $0.isWhitespace || $0 == "'" || $0 == "\u{2019}" })
             .contains { $0.range(of: query, options: [options, .anchored]) != nil }
     }
 
-    /// Filters to what matches and orders by score, then alphabetically so the
-    /// list is stable between keystrokes that do not change the ranking.
+    /// Filters items to those that match and orders them best first.
+    ///
+    /// Equal scores are broken alphabetically on the first field, so the list is stable
+    /// between keystrokes that do not change the ranking.
+    ///
+    /// - Parameters:
+    ///   - items: The candidates.
+    ///   - query: What the student typed.
+    ///   - fields: The searchable fields of one item.
+    /// - Returns: The matching items, best first.
     static func rank<T>(
         _ items: [T], query: String, fields: (T) -> [String]
     ) -> [T] {
@@ -94,6 +136,13 @@ nonisolated enum SearchMatch {
             .map(\.item)
     }
 
+    /// Filters items to those that match one field and orders them best first.
+    ///
+    /// - Parameters:
+    ///   - items: The candidates.
+    ///   - query: What the student typed.
+    ///   - field: The searchable field of one item.
+    /// - Returns: The matching items, best first.
     static func rank<T>(
         _ items: [T], query: String, field: @escaping (T) -> String
     ) -> [T] {

@@ -4,18 +4,23 @@ import SwiftUI
 /// the tabs show Corsi and Carriera and list the rest in Cerca, the single
 /// page lists them all in its panel. See `docs/information-architecture.md`.
 nonisolated enum NewDestination: String, CaseIterable, Identifiable, Hashable, Sendable {
+    /// The two places that are tabs of their own in the tab layout.
     case courses, career
+    /// The places Cerca lists in the tab layout.
     case calendar, freeRooms, map, studyPlan, news, notices
 
+    /// The place's identity, which is its raw value.
     var id: String { rawValue }
 
     /// The tab a place lives in, in the tab layout.
     /// `CaseIterable` because the field metrics are split by tab, and the set
     /// of labels reported has to be this one rather than a copy that drifts.
     nonisolated enum Tab: String, CaseIterable, Hashable, Sendable {
+        /// The four tabs of the tab layout.
         case today, courses, career, search
     }
 
+    /// Which tab this place is reached through.
     var tab: Tab {
         switch self {
         case .courses: .courses
@@ -30,6 +35,7 @@ nonisolated enum NewDestination: String, CaseIterable, Identifiable, Hashable, S
     /// The single page's panel: every place.
     static var panel: [NewDestination] { allCases }
 
+    /// What the place is called.
     var title: LocalizedStringKey {
         switch self {
         case .courses: "Corsi"
@@ -43,6 +49,7 @@ nonisolated enum NewDestination: String, CaseIterable, Identifiable, Hashable, S
         }
     }
 
+    /// One line saying what is there.
     var detail: LocalizedStringKey {
         switch self {
         case .courses: "Materiali, avvisi e appelli"
@@ -56,6 +63,7 @@ nonisolated enum NewDestination: String, CaseIterable, Identifiable, Hashable, S
         }
     }
 
+    /// The place's SF Symbol.
     var systemImage: String {
         switch self {
         case .courses: "books.vertical"
@@ -73,10 +81,16 @@ nonisolated enum NewDestination: String, CaseIterable, Identifiable, Hashable, S
 /// Where a way in from outside (Siri, Shortcuts, Control Center, a
 /// notification) lands in the new interface.
 nonisolated enum NewRoute: Hashable, Sendable {
+    /// Oggi, the landing page.
     case today
+    /// Cerca, or the panel in the single-page layout.
     case search
+    /// One of the places, opened directly.
     case destination(NewDestination)
 
+    /// The route an outside entry point asks for.
+    ///
+    /// - Parameter destination: The destination named by Siri, Shortcuts, Control Center or a notification.
     init(_ destination: AppDestination) {
         switch destination {
         case .home: self = .today

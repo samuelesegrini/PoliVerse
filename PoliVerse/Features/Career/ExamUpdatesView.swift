@@ -5,8 +5,11 @@ import SwiftUI
 /// The feed replaces the habit of opening each sitting to see whether anything
 /// moved. It says only what official data said, and where it said it.
 struct ExamUpdatesView: View {
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
+    /// The shared ``UpdateFeed``, from the environment.
     @Environment(UpdateFeed.self) private var feed
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
     @State private var selectedExam: ExamSession?
     /// When the feed was last seen before this visit: what is newer keeps its
@@ -14,6 +17,7 @@ struct ExamUpdatesView: View {
     @State private var seenBefore: Date?
     @State private var hasMarked = false
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
     /// The bell, and how many are still to read.
@@ -29,6 +33,7 @@ struct ExamUpdatesView: View {
             mode: ramp.mode)
     }
 
+    /// The feed grouped by the day each update was noticed, newest day and newest update first.
     private var days: [(Date, [FeedItem])] {
         let calendar = PoliMiDate.romeCalendar
         return Dictionary(grouping: FeedItem.items(from: feed.updates)) {
@@ -46,6 +51,7 @@ struct ExamUpdatesView: View {
         return day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)).capitalized
     }
 
+    /// The view's content.
     var body: some View {
         ScrollView {
             if feed.updates.isEmpty {
@@ -109,16 +115,23 @@ struct ExamUpdatesView: View {
 
 /// One update: what changed, for which course, and when it was seen.
 struct ExamUpdateRow: View {
+    /// The update this row is about, with the course it belongs to.
     let item: FeedItem
+    /// Shows the time of day rather than how long ago, for the rows already grouped under a day.
     var showsClockTime = false
+    /// Marks the row as not yet seen.
     var isUnread = false
     /// On a card of its own; off where the rows share one card.
     var card = true
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
+    /// The shared ``NotificationModel``, from the environment.
     @Environment(NotificationModel.self) private var notifications
 
+    /// The update itself.
     private var update: ExamUpdate { item.update }
 
+    /// The view's content.
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: update.kind.symbol)
@@ -186,15 +199,21 @@ struct ExamUpdateRow: View {
 
 /// A sitting's timeline, for the detail sheet.
 struct ExamTimelineSection: View {
+    /// The sitting whose history is shown.
     let exam: ExamSession
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
+    /// The shared ``UpdateFeed``, from the environment.
     @Environment(UpdateFeed.self) private var feed
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
 
+    /// Everything that has happened to the sitting, and what is still to come, in order.
     private var entries: [ExamTimelineEntry] {
         ExamTimeline.entries(for: exam, sittings: career.sessions, updates: feed.updates, now: .now)
     }
 
+    /// The view's content.
     var body: some View {
         let entries = entries
         if !entries.isEmpty {
@@ -213,6 +232,12 @@ struct ExamTimelineSection: View {
         }
     }
 
+    /// One entry of the timeline: its dot, its rail, and what happened.
+    ///
+    /// - Parameters:
+    ///   - entry: The entry to draw.
+    ///   - isLast: True for the last entry, which draws no rail below it.
+    /// - Returns: The line.
     private func line(_ entry: ExamTimelineEntry, isLast: Bool) -> some View {
         let tint = entry.update?.kind.tint ?? .secondary
         return HStack(alignment: .top, spacing: 12) {
@@ -255,7 +280,9 @@ struct ExamTimelineSection: View {
     }
 }
 
+/// The colour each kind of update is shown in.
 extension ExamUpdate.Kind {
+    /// The kind's colour: green for a result, orange for a change, red for something withdrawn, and the career's own colours for the states they belong to.
     var tint: Color {
         switch self {
         case .gradePublished, .gradeRecorded: .green
@@ -292,8 +319,13 @@ extension ExamUpdate.Kind {
 /// section that is already one. Either way the card is the look's material,
 /// not a fixed system grey.
 private struct UpdateRowSurface: ViewModifier {
+    /// True when the row draws its own card.
     let card: Bool
 
+    /// Applies the modifier to `content`.
+    ///
+    /// - Parameter content: The view being modified.
+    /// - Returns: The modified view.
     func body(content: Content) -> some View {
         if card {
             content.lookCard(cornerRadius: Theme.cardCorner)

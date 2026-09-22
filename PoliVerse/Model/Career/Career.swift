@@ -1,36 +1,35 @@
 import Foundation
 
-/// Aggregate career statistics — `GET {app}/v1/io-e-polimi/{matricola}`.
-///
-/// PoliFemo's `/rest/me/polimi/{matricola}` now 404s. The official web app
-/// reads the same three numbers from `/v1/io-e-polimi/{registration_number}`:
-///
-/// ```js
-/// WBe = (n, t) => bh.useQuery("get", "/v1/io-e-polimi/{registration_number}", …)
-/// // rendered as: d.mean, d.given_cfu, "/" + d.planned_cfu
-/// ```
-///
-/// so the field names survived the move even though the path did not.
+/// The aggregate career figures, from `GET {app}/v1/io-e-polimi/{matricola}`.
 nonisolated struct GradeBook: Sendable, Equatable, Codable {
+    /// The credit-weighted average of the recorded marks, out of 30.
     var mean: Double
+    /// Credits already earned.
     var earnedCFU: Int
+    /// Credits the study plan totals.
     var plannedCFU: Int
+    /// Exams the study plan contains.
     var examsPlanned: Int
+    /// Sittings the student is currently enrolled in.
     var examsSubscribed: Int
+    /// Exams with a recorded result.
     var examsGiven: Int
 
+    /// ``earnedCFU`` as a fraction of ``plannedCFU``, clamped to 1. Zero when the plan
+    /// totals no credits.
     var progress: Double {
         guard plannedCFU > 0 else { return 0 }
         return min(Double(earnedCFU) / Double(plannedCFU), 1)
     }
 
-    /// Degree mark out of 110, the number students actually care about.
+    /// The degree mark out of 110 implied by ``mean``.
     ///
-    /// The standard conversion is `mean * 110 / 30`, before any bonus for
-    /// thesis, timeliness or Erasmus — which vary by school, so this is a
-    /// baseline, not a prediction.
+    /// The standard conversion, before any bonus for the thesis, for finishing on time
+    /// or for an Erasmus period — all of which vary by school, so this is a baseline
+    /// rather than a prediction.
     var baseGraduationMark: Double { mean * 110 / 30 }
 
+    /// Every figure at zero, for a career with nothing recorded yet.
     static let empty = GradeBook(
         mean: 0, earnedCFU: 0, plannedCFU: 0,
         examsPlanned: 0, examsSubscribed: 0, examsGiven: 0
@@ -41,17 +40,18 @@ nonisolated struct GradeBook: Sendable, Equatable, Codable {
 
 /// How an exam sitting relates to the student right now.
 nonisolated enum ExamStatus: Sendable, Equatable, Codable {
-    /// Enrolment window open, not enrolled.
+    /// The enrolment window is open and the student is not enrolled.
     case open
-    /// Enrolled, sitting still to come.
+    /// Enrolled, with the sitting still to come.
     case enrolled
-    /// Enrolment window not open yet.
+    /// The enrolment window has not opened yet.
     case notYetOpen
-    /// Window closed and not enrolled.
+    /// The enrolment window has closed and the student did not enrol.
     case closed
-    /// A mark has been published.
+    /// A mark has been published, carrying it.
     case graded(ExamGrade)
 
+    /// The status as it appears on screen.
     var label: String {
         switch self {
         case .open: "Iscrizioni aperte"
@@ -65,14 +65,17 @@ nonisolated enum ExamStatus: Sendable, Equatable, Codable {
 
 /// A published exam result.
 nonisolated struct ExamGrade: Sendable, Equatable, Codable {
-    /// Numeric mark where one exists. Pass/fail and "idoneo" outcomes have none.
+    /// The numeric mark, where there is one. Pass/fail and “idoneo” outcomes have none.
     let value: Int?
-    /// The upstream text, e.g. "28", "30 e lode", "SUPERATO", "RESPINTO".
+    /// The upstream wording, for example `"28"`, `"30 e lode"`, `"SUPERATO"` or
+    /// `"RESPINTO"`.
     let text: String
+    /// Whether the exam was passed.
     let passed: Bool
     /// Whether the student may still refuse the mark.
     let refusable: Bool
 
+    /// The mark as it is shown: `"30L"` for a mark with honours, and ``text`` otherwise.
     var display: String {
         if let value, text.localizedCaseInsensitiveContains("lode") { return "\(value)L" }
         return text
@@ -80,41 +83,56 @@ nonisolated struct ExamGrade: Sendable, Equatable, Codable {
 }
 
 /// One sitting of one exam.
-/// `Codable` so that sittings survive a launch offline, like the libretto
-/// beside them: a student on a train should still see when their next exam is.
+///
+/// `Codable`, so sittings survive a launch offline alongside the libretto: a student
+/// on a train should still see when their next exam is.
 nonisolated struct ExamSession: Identifiable, Sendable, Equatable, Codable {
+    /// The sitting's upstream identifier.
     let id: Int
+    /// The teaching's name.
     let courseName: String
+    /// The teaching's code, as the exams endpoint spells it.
     let courseCode: String
+    /// The examining lecturer, where recorded.
     let teacher: String?
+    /// When the sitting is held, where recorded.
     let date: Date?
+    /// Where it is held, once published.
     let room: String?
+    /// When the enrolment window opens.
     let enrolmentOpens: Date?
+    /// When the enrolment window closes.
     let enrolmentCloses: Date?
+    /// How many students are enrolled, where published.
     let enrolledCount: Int?
+    /// The sitting's type as upstream words it, which is what names a partial exam. See
+    /// ``PartialExams/sittings(_:)``.
     let kind: String?
+    /// How the sitting relates to the student.
     let status: ExamStatus
-    /// Whether the marked script can be looked at on Servizi Online —
-    /// `iscrizioneAttiva.hasCorrezioni`.
+    /// Whether the marked script can be inspected on Servizi Online.
     var hasCorrections = false
 
+    /// The published mark, or `nil` in any status but ``ExamStatus/graded(_:)``.
     var grade: ExamGrade? {
         if case .graded(let grade) = status { return grade }
         return nil
     }
 
-    /// Whether this sitting is of the given course.
+    /// Whether this sitting belongs to a given teaching.
     ///
-    /// By code first; by name where the codes differ — WeBeep's title code,
-    /// the libretto's `c_insegn` and `/v1/insegn`'s `c_insegn_piano` are not
-    /// guaranteed to agree, while the names are normalised the same way.
+    /// Matched by code first, then by normalised name, since WeBeep's title code, the
+    /// libretto's row id and the exams endpoint's plan code are not guaranteed to agree
+    /// while the names normalise alike.
     ///
-    /// Neither comparison is made on a blank value. Comparing them plainly
-    /// meant two *missing* codes counted as the same code, so one sitting that
-    /// arrived without one matched every course that also lacked one — and,
-    /// through ``ExamTimeline`` and the course screens, showed up under all of
-    /// them at once. A value nobody has is not evidence that two things are
-    /// the same.
+    /// Neither comparison is made on a blank value: two missing codes are not evidence
+    /// that two teachings are the same, and treating them as equal would match one
+    /// sitting to every teaching that also lacks a code.
+    ///
+    /// - Parameters:
+    ///   - courseCode: The teaching's code, as the caller knows it.
+    ///   - courseName: The teaching's name.
+    /// - Returns: `true` when both name the same teaching.
     func isOf(courseCode: String, courseName: String) -> Bool {
         if isMeaningful(courseCode), isMeaningful(self.courseCode), courseCode == self.courseCode {
             return true
@@ -124,7 +142,11 @@ nonisolated struct ExamSession: Identifiable, Sendable, Equatable, Codable {
         return name.caseInsensitiveCompare(self.courseName) == .orderedSame
     }
 
-    /// Blank, or one of the dashes these endpoints use for "not recorded".
+    /// Whether a value is worth comparing: not blank, and not one of the dashes these
+    /// endpoints use for “not recorded”.
+    ///
+    /// - Parameter value: The value to test.
+    /// - Returns: `true` when it carries information.
     private func isMeaningful(_ value: String) -> Bool {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return !trimmed.isEmpty && trimmed != "—" && trimmed != "-"

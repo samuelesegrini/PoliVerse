@@ -10,6 +10,7 @@ import WidgetKit
 /// fetched, and says how old it is rather than pretending otherwise.
 @main
 struct PoliVerseWidgetBundle: WidgetBundle {
+    /// The declaration's content.
     var body: some Widget {
         NextLectureWidget()
         TodayWidget()

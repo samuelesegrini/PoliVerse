@@ -1,91 +1,100 @@
 import Foundation
 
-/// One made-up but complete Ingegneria Informatica degree, and the single
-/// place every other sample reads from.
+/// One complete fictional Ingegneria Informatica degree, and the single source every
+/// other sample reads from.
 ///
-/// The demo used to be written out area by area: the libretto listed Basi di
-/// Dati at 8 CFU, the course page at 10, the gradebook carried a hand-typed
-/// 27.4 average that matched neither, and the same exam was sat 640 days ago
-/// in one file and 190 in another. A student exploring the app was shown
-/// three different careers depending on which tab they opened.
+/// ``teachings`` is the plan — twenty-two teachings, 180 credits, three years — and
+/// the libretto, the grade book, the sittings, the courses, the week's timetable and
+/// the WeBeep material are all derived from it. The average is computed by the same
+/// ``StudyPlan`` the real career uses, so no two screens can disagree about the same
+/// student.
 ///
-/// So nothing below is written twice. ``SampleDegree/teachings`` is the plan —
-/// twenty-two teachings, 180 CFU, three years — and the libretto, the
-/// gradebook, the sittings, the courses and the week's timetable are all
-/// *derived* from it. The average is computed by the same ``StudyPlan`` the
-/// real career uses, so Carriera and Simulazione media cannot disagree: there
-/// is only one number.
-///
-/// The plan is also chosen to exercise the app rather than to look tidy. It
-/// carries a mark with honours and a mark of 22, an *idoneità* with no number
-/// at all, two teachings failed once before they were passed, a mark still
-/// inside its refusal window, a sitting the student is enrolled in the day
-/// after tomorrow, an enrolment window about to close, a window not yet open,
-/// and one closed without enrolling — every state ``CareerState`` can paint,
-/// and every card ``CareerNowCard`` can show.
+/// The plan is chosen to exercise the app rather than to look tidy. It carries a mark
+/// with honours and a mark of 22, an *idoneità* with no mark at all, two teachings
+/// failed once before being passed, a mark still inside its refusal window, a sitting
+/// the student is enrolled in, an enrolment window about to close, one not yet open,
+/// and one closed without enrolling.
 nonisolated enum SampleDegree {
-    /// A sitting already taken. `mark` is nil when it was not passed — a
-    /// failed attempt is part of a real career and the app draws it.
+    /// A sitting already taken.
     struct Attempt: Sendable {
-        /// How long ago, in months. Chosen to land in the Politecnico's real
-        /// sessions: January–February, June–July, September.
+        /// How long ago the sitting was, in months. Chosen to land in the Politecnico's real
+        /// sessions: January–February, June–July and September.
         let monthsAgo: Double
+        /// The mark awarded, or `nil` for a sitting that was not passed or that carried no
+        /// mark.
         let mark: Int?
+        /// Whether the mark carried honours.
         var lode = false
 
+        /// Whether the attempt passed.
         var passed: Bool { (mark ?? 0) >= 18 }
     }
 
-    /// What a teaching is examined by. Drives the words on the sitting and
-    /// the shape of ``ExamFormatSection``.
+    /// What a teaching is examined by. Its raw value is the sitting's
+    /// ``ExamSession/kind``, and it shapes ``ExamFormatSection``.
     enum Assessment: String, Sendable {
+        /// A written exam.
         case written = "Scritto"
+        /// An oral exam.
         case oral = "Orale"
+        /// A written exam followed by an oral.
         case writtenAndOral = "Scritto e orale"
+        /// A written exam alongside a project.
         case writtenAndProject = "Scritto e progetto"
+        /// A project alone.
         case project = "Progetto"
+        /// Passed without a mark.
         case qualifying = "Idoneità"
     }
 
     /// One line of the study plan.
     struct Teaching: Identifiable, Sendable {
+        /// The six-digit teaching code, which is also its identity.
         let code: String
+        /// The teaching's name.
         let name: String
+        /// The lecturer.
         let teacher: String
+        /// The teaching's credits.
         let cfu: Int
-        /// 1, 2 or 3 — the year of the course it belongs to.
+        /// The year of the course it belongs to: 1, 2 or 3.
         let year: Int
-        /// 1 or 2.
+        /// The semester it runs in: 1 or 2.
         let semester: Int
+        /// What it is examined by.
         let assessment: Assessment
-        /// Oldest first. Empty for a teaching never sat.
+        /// Sittings taken, oldest first. Empty for a teaching never sat.
         var attempts: [Attempt] = []
-        /// Passed without a mark: the English requirement, the final project.
+        /// Whether it is passed without a mark — the English requirement, the final project —
+        /// and so stays out of every average.
         var isQualifying = false
-        /// Lecture topics, in the order they are taught. WeBeep's sample
-        /// material is built from these, so a course's files are about the
-        /// course rather than the same four Assembly slides everywhere.
+        /// Lecture topics, in teaching order. The sample WeBeep material is built from these,
+        /// so a course's files are about that course.
         var topics: [String] = []
-        /// Work handed in on WeBeep: the name and how many days from now it
-        /// is due. Negative is already closed.
+        /// Work handed in on WeBeep, with how many days from now it is due. A negative value
+        /// is a deadline already closed.
         var assignments: [(name: String, dueInDays: Double)] = []
 
+        /// ``code``.
         var id: String { code }
 
-        /// The sitting that passed it, if one did.
+        /// The latest attempt that passed, or `nil` when none did.
         var passingAttempt: Attempt? { attempts.last { $0.passed } }
+        /// Whether the teaching is passed. A qualifying teaching counts as passed once it has
+        /// been attempted at all, since it carries no mark.
         var isPassed: Bool { passingAttempt != nil || (isQualifying && !attempts.isEmpty) }
-        /// The mark that counts. Nil for an *idoneità*, which has none — and
-        /// which must therefore stay out of every average.
+        /// The mark that counts, or `nil` for an *idoneità* — which must stay out of every
+        /// average.
         var mark: Int? { passingAttempt?.mark }
+        /// Whether the mark that counts carried honours.
         var hasLode: Bool { passingAttempt?.lode ?? false }
     }
 
     // MARK: - The plan
 
-    /// Twenty-two teachings, 180 CFU. The student is starting the third year
-    /// with the second still not quite closed — the ordinary case, and the
-    /// one with the most to show.
+    /// The whole plan: twenty-two teachings, 180 credits, three years.
+    ///
+    /// The student is starting the third year with the second not quite closed.
     static let teachings: [Teaching] = [
         // ---- Year one: done, and long enough ago to give the chart a run-up.
         Teaching(code: "086088", name: "Analisi Matematica 1", teacher: "Gianmaria Verzini",
@@ -197,31 +206,42 @@ nonisolated enum SampleDegree {
 
     // MARK: - Reading the plan
 
+    /// The teaching with a given code.
+    ///
+    /// - Parameter code: A code that must appear in ``teachings``.
+    /// - Returns: The teaching.
     static func teaching(_ code: String) -> Teaching {
         teachings.first { $0.code == code }!
     }
 
-    /// The teachings whose lectures are running now: third year, first
-    /// semester. What the week's timetable and the course pages are made of.
+    /// The teachings whose lectures are running now — third year, first semester — which
+    /// the week's timetable and the course pages are built from.
     static var currentTeachings: [Teaching] {
         teachings.filter { $0.year == 3 && $0.semester == 1 }
     }
 
-    /// Everything still to sit, in plan order — what the sittings list and
-    /// the September session are drawn from.
+    /// Everything still to sit, in plan order, which the sittings list is drawn from.
+    /// Qualifying teachings are excluded.
     static var pending: [Teaching] {
         teachings.filter { !$0.isPassed && !$0.isQualifying }
     }
 
+    /// The plan's total credits.
     static var plannedCFU: Int { teachings.reduce(0) { $0 + $1.cfu } }
 
     // MARK: - Dates
 
-    /// `monthsAgo` as a real date, at an hour an exam would plausibly start.
+    /// An ``Attempt/monthsAgo`` offset as a real date, at an hour an exam would plausibly
+    /// start.
     ///
-    /// Whole months back from today keeps every sitting inside a real session
-    /// — the plan's offsets were picked for that — without pinning the demo
-    /// to a calendar year that goes stale the moment it ships.
+    /// Measured back from the current date, so the sample never pins itself to a calendar
+    /// year that goes stale.
+    ///
+    /// - Parameters:
+    ///   - monthsAgo: How far back, in months of 30.44 days.
+    ///   - hour: The hour of day, in Rome.
+    ///   - now: The date to measure back from.
+    /// - Returns: The resolved date.
     static func date(monthsAgo: Double, hour: Int = 9, now: Date = .now) -> Date {
         let calendar = PoliMiDate.romeCalendar
         let seconds = -monthsAgo * 30.44 * 86_400
@@ -229,9 +249,16 @@ nonisolated enum SampleDegree {
         return calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day) ?? day
     }
 
-    /// The academic year a teaching was taught in, written the way the
-    /// Politecnico writes it. Derived from today, so the demo never claims to
-    /// be three years out of date.
+    /// The academic year a teaching was taught in, as `"2025/26"`.
+    ///
+    /// Derived from the current date on the assumption that the student is in their third
+    /// year, so the sample never claims to be years out of date. The year turns in
+    /// September.
+    ///
+    /// - Parameters:
+    ///   - teaching: The teaching to place.
+    ///   - now: The date to derive from.
+    /// - Returns: The year label.
     static func academicYear(for teaching: Teaching, now: Date = .now) -> String {
         let calendar = PoliMiDate.romeCalendar
         // The academic year turns over in the autumn, not in January.

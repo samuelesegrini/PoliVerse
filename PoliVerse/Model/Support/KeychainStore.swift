@@ -1,18 +1,25 @@
 import Foundation
 import Security
 
-/// Minimal Keychain wrapper for the token pair.
+/// Keychain storage for the OAuth token pair.
 ///
-/// PoliFemo kept tokens in AsyncStorage, which is an unencrypted file in the
-/// app container — readable from any backup or a jailbroken device. These are
-/// long-lived credentials to a student's academic record, so they belong in the
-/// Keychain with `ThisDeviceOnly` (never synced to iCloud, never restored onto
-/// a different device).
+/// Items are generic passwords under one service, accessible after first unlock and
+/// marked this-device-only, so they are never written to iCloud and never restored
+/// onto another device. These are long-lived credentials to a student's academic
+/// record, which is why they are not kept in a file in the app container.
 nonisolated enum KeychainStore {
+    /// A Keychain call that did not succeed, carrying its `OSStatus`.
     enum Failure: Error { case status(OSStatus) }
 
+    /// The `kSecAttrService` every item is filed under.
     private static let service = "segrini.samuele.PoliVerse.tokens"
 
+    /// Stores bytes for an account, updating an existing item or adding a new one.
+    ///
+    /// - Parameters:
+    ///   - data: The bytes to store.
+    ///   - account: The `kSecAttrAccount` to file them under.
+    /// - Throws: ``Failure/status(_:)`` when the update or the insert fails.
     static func save(_ data: Data, account: String) throws {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -37,6 +44,10 @@ nonisolated enum KeychainStore {
         }
     }
 
+    /// Reads the bytes stored for an account.
+    ///
+    /// - Parameter account: The `kSecAttrAccount` to look under.
+    /// - Returns: The stored bytes, or `nil` when there is no item or the read fails.
     static func load(account: String) -> Data? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -50,6 +61,9 @@ nonisolated enum KeychainStore {
         return item as? Data
     }
 
+    /// Removes the item stored for an account. A missing item is not an error.
+    ///
+    /// - Parameter account: The `kSecAttrAccount` to remove.
     static func delete(account: String) {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

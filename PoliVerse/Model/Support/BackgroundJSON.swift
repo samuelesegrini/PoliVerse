@@ -1,18 +1,28 @@
 import Foundation
 
-/// JSON decoding that does not run on the main actor.
+/// JSON decoding that runs off the main actor.
 ///
-/// Under this project's settings — main actor by default, and approachable
-/// concurrency, which makes a plain `nonisolated async` function run on its
-/// *caller's* actor (SE-0461) — every `JSONDecoder().decode` in a service ran
-/// on the main thread, however `nonisolated` the client that fetched the bytes.
-/// A calendar or a gradebook payload is the kind of work that shows up as a
-/// dropped frame during a pull-to-refresh.
+/// The target defaults to main-actor isolation, and under approachable concurrency
+/// a plain `nonisolated async` function runs on its caller's actor, so an ordinary
+/// `JSONDecoder().decode` inside a service decodes on the main thread however
+/// `nonisolated` the client that fetched the bytes. The `@concurrent` attribute on
+/// ``decode(_:from:iso8601Dates:)`` moves the work to the global executor, and only
+/// the `Sendable` result returns.
 ///
-/// `@concurrent` is the explicit way off: the decode runs on the global
-/// executor and only the `Sendable` result comes back.
-/// See `docs/metrickit-performance.md` §3.3, H1–H2.
+/// Services built on ``Store`` get this for free through ``Source/fetch(_:)``; this
+/// type serves the models that fetch by hand.
+///
+/// See `docs/metrickit-performance.md` §3.3.
 nonisolated enum BackgroundJSON {
+    /// Decodes a value on the global executor.
+    ///
+    /// - Parameters:
+    ///   - type: The shape to decode.
+    ///   - data: The bytes to decode from.
+    ///   - iso8601Dates: Decodes dates with `.iso8601` rather than the default
+    ///     strategy.
+    /// - Returns: The decoded value.
+    /// - Throws: Whatever `JSONDecoder` raises.
     @concurrent
     static func decode<T: Decodable & Sendable>(
         _ type: T.Type, from data: Data, iso8601Dates: Bool = false

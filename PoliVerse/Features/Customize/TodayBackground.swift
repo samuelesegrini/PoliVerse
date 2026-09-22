@@ -4,11 +4,14 @@ import SwiftUI
 /// the look's colour, like the Lock Screen's wallpapers but kept faint so the
 /// timetable stays readable.
 nonisolated enum TodayBackground: String, Codable, CaseIterable, Identifiable, Sendable {
+    /// A plain ground, a wash of colour, and the geometric and symbol patterns drawn over it.
     case plain, wash, mesh, grid, dots, halftone, ovals, waves, stripes, zigzag, crosses, checker, hexagons, rings, confetti,
          study, science, maths, coding, space, nature, coffee, music, travel, sparkles
 
+    /// The decoration's identity, which is its raw value.
     var id: String { rawValue }
 
+    /// What the decoration is called in Personalizza.
     var title: LocalizedStringKey {
         switch self {
         case .plain: "Nessuno"
@@ -62,9 +65,12 @@ nonisolated enum TodayBackground: String, Codable, CaseIterable, Identifiable, S
 /// Flavor's colour, never both. Two separate settings only ever read as one
 /// question — what does the page look like — so the app asks it once.
 nonisolated enum TodaySheet: Hashable, Sendable, Identifiable {
+    /// A paper texture, with no decoration over it.
     case paper(TodayPaper)
+    /// A decoration in the Flavor's colour.
     case decoration(TodayBackground)
 
+    /// The sheet's identity, which names its kind.
     var id: String {
         switch self {
         case .paper(let paper): "paper-\(paper.rawValue)"
@@ -72,6 +78,7 @@ nonisolated enum TodaySheet: Hashable, Sendable, Identifiable {
         }
     }
 
+    /// What the sheet is called in Personalizza.
     var title: LocalizedStringKey {
         switch self {
         case .paper(let paper): paper.title
@@ -87,6 +94,7 @@ nonisolated enum TodaySheet: Hashable, Sendable, Identifiable {
     }
 }
 
+/// The page's sheet, read and written as one setting.
 nonisolated extension TodayStyle {
     /// The page's sheet. Setting one clears the other: a look saved with both
     /// shows its decoration, which is the one drawn on top.
@@ -110,15 +118,21 @@ nonisolated extension TodayStyle {
 /// size and cost one layer. With no pattern the page keeps the system's
 /// background.
 struct TodayBackgroundView: View {
+    /// The decoration to draw.
     let background: TodayBackground
+    /// The colours the ground and pattern are taken from.
     let flavor: Flavor
+    /// The paper texture under the decoration.
     var paper = TodayPaper.plain
+    /// How much grain to rasterise over the page, 0 for none.
     var grain = 0.0
+    /// How strongly the Flavor colours the page.
     var mode = Flavor.Mode.standard
     /// Rounded here rather than by the caller: the grain shader rasterises the
     /// page, and a clip put around it afterwards does not reach the corners.
     var cornerRadius: CGFloat = 0
 
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
     /// A look's whole page: paper, decoration, grain, in its appearance.
@@ -127,6 +141,15 @@ struct TodayBackgroundView: View {
                   mode: style.appearance.flavorMode, cornerRadius: cornerRadius)
     }
 
+    /// A page from its pieces.
+    ///
+    /// - Parameters:
+    ///   - background: The decoration.
+    ///   - flavor: The colours.
+    ///   - paper: The paper texture.
+    ///   - grain: How much grain.
+    ///   - mode: How strongly the Flavor colours the page.
+    ///   - cornerRadius: How far to round the page's corners.
     init(background: TodayBackground, flavor: Flavor, paper: TodayPaper = .plain, grain: Double = 0,
          mode: Flavor.Mode = .standard, cornerRadius: CGFloat = 0) {
         self.background = background
@@ -137,15 +160,19 @@ struct TodayBackgroundView: View {
         self.cornerRadius = cornerRadius
     }
 
+    /// How much to multiply a pattern's opacity by: patterns need more weight on a dark ground.
     private var strength: Double { scheme == .dark ? 1.4 : 1 }
+    /// The colour every pattern is drawn in.
     private var tint: Color { flavor.accent(dark: scheme == .dark, mode: mode).color }
 
+    /// The view's content.
     var body: some View {
         page
             .paperGrain(grain)
             .accessibilityHidden(true)
     }
 
+    /// The ground, clipped to the corner radius only when one was asked for.
     @ViewBuilder
     private var page: some View {
         // Rounded only when a card asks for it: the whole page draws faster
@@ -157,6 +184,7 @@ struct TodayBackgroundView: View {
         }
     }
 
+    /// The ground colour, the paper texture, and the decoration over it.
     private var ground: some View {
         ZStack {
             // The system's own background only for a page with nothing on it.
@@ -170,6 +198,7 @@ struct TodayBackgroundView: View {
         }
     }
 
+    /// The paper's own texture: a plotting grid, a fibrous grain, or a dotted notebook.
     @ViewBuilder
     private var paperTexture: some View {
         switch paper {
@@ -217,6 +246,7 @@ struct TodayBackgroundView: View {
         }
     }
 
+    /// The decoration, drawn with `Canvas` so it stays sharp at any size.
     @ViewBuilder
     private var pattern: some View {
         switch background {
@@ -401,9 +431,12 @@ struct TodayBackgroundView: View {
 /// SF Symbols scattered on a staggered grid, each a little turned and sized
 /// differently, so the pattern reads as drawn by hand rather than stamped.
 private struct SymbolPattern: View {
+    /// The symbols to scatter, cycled through the grid.
     let symbols: [String]
+    /// The colour they are drawn in.
     let tint: Color
 
+    /// The view's content.
     var body: some View {
         Canvas { context, size in
             let cell: CGFloat = 54
@@ -436,9 +469,16 @@ private struct SymbolPattern: View {
 /// A small deterministic random source (SplitMix64) for patterns that must
 /// look scattered but draw the same every time.
 nonisolated struct SeededGenerator: RandomNumberGenerator {
+    /// The generator's state, advanced on every draw.
     private var state: UInt64
+    /// A generator that always gives the same sequence for the same seed.
+    ///
+    /// - Parameter seed: The starting state.
     init(seed: UInt64) { state = seed }
 
+    /// The next value in the sequence.
+    ///
+    /// - Returns: A pseudo-random 64-bit value.
     mutating func next() -> UInt64 {
         state &+= 0x9E37_79B9_7F4A_7C15
         var z = state

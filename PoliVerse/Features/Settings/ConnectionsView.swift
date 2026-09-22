@@ -22,23 +22,39 @@ import SwiftUI
 /// read the live services instead, because their buttons change them and the
 /// row must follow at once.
 struct ConnectionsView: View {
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The shared ``WeBeepModel``, from the environment.
     @Environment(WeBeepModel.self) private var weBeep
+    /// The shared ``NetworkMonitor``, from the environment.
     @Environment(NetworkMonitor.self) private var network
+    /// The shared ``PendingChanges``, from the environment.
     @Environment(PendingChanges.self) private var pending
+    /// The shared ``NotificationModel``, from the environment.
     @Environment(NotificationModel.self) private var notifications
+    /// The shared ``LiveActivityController``, from the environment.
     @Environment(LiveActivityController.self) private var liveActivity
+    /// The shared ``CieIDRouter``, from the environment.
     @Environment(CieIDRouter.self) private var cieID
+    /// The shared ``LoginMethodMemory``, from the environment.
     @Environment(LoginMethodMemory.self) private var loginMemory
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
 
+    /// Whether the WeBeep login sheet is presented.
     @State private var connectingWeBeep = false
+    /// Whether disconnecting WeBeep is being confirmed.
     @State private var confirmingDisconnect = false
+    /// Everything the page reports, gathered in one pass.
     @State private var snapshot: DiagnosticsSnapshot?
+    /// What each service answered when last asked, in ``DiagnosticsCollector/services`` order.
     @State private var probes: [DiagnosticsSnapshot.Probe] = []
+    /// True while the services are being asked.
     @State private var isProbing = false
+    /// True while a failed request is being tried again.
     @State private var isRetrying = false
+    /// Whether the shared report names the matricola.
     @State private var includesMatricola = false
 
     /// Drawn behind WeBeep, in this order. Three, because the badge takes the
@@ -49,12 +65,14 @@ struct ConnectionsView: View {
     /// Listed under Servizi del Politecnico. WeBeep has a section of its own.
     private static let listed: [ServiceDirectory.Service] = [.app, .iae, .agenda, .libretto, .wsAule]
 
+    /// Reads the app's state into a snapshot, without touching the network.
     private var collector: DiagnosticsCollector {
         DiagnosticsCollector(session: session, weBeep: weBeep, network: network, pending: pending,
                              notifications: notifications, liveActivity: liveActivity,
                              cieID: cieID, loginMemory: loginMemory)
     }
 
+    /// The view's content.
     var body: some View {
         @Bindable var session = session
         let ramp = FlavorRamp(style: style, scheme: scheme)
@@ -149,17 +167,25 @@ struct ConnectionsView: View {
         }
     }
 
+    /// What the page watches to know the snapshot is stale.
     private struct RefreshKey: Equatable {
+        /// The session's state, and whether the services accepted its token.
         let session: Session.State, authorised: Bool
+        /// Whether WeBeep is connected, how many courses it lists, whether the network is up, how many queued changes wait and have failed, and whether the sample data is on.
         let weBeep: Bool, courses: Int, online: Bool, pending: Int, failed: Int, mock: Bool
     }
 
+    /// Gathers a fresh snapshot, keeping the probe results already in hand.
     private func reload() async {
         snapshot = await collector.snapshot(probes: probes)
     }
 
     // MARK: - Sections
 
+    /// WeBeep: whether it is connected, what it answered, and the way to connect or disconnect it.
+    ///
+    /// - Parameter colour: The tile's colour, from the look's ramp.
+    /// - Returns: The section.
     private func weBeepSection(colour: Flavor.RGB) -> some View {
         Section {
             ServiceRow(title: "WeBeep", detail: weBeepDetail, symbol: ServiceDirectory.Service.weBeep.symbol,
@@ -185,6 +211,7 @@ struct ConnectionsView: View {
         .lookRow()
     }
 
+    /// The session: its state, the way the student last signed in, and the scopes the token carries.
     @ViewBuilder
     private var accountSection: some View {
         if let account = snapshot?.account {
@@ -233,6 +260,12 @@ struct ConnectionsView: View {
         }
     }
 
+    /// The Politecnico's own services, each with its host and what it last answered.
+    ///
+    /// - Parameters:
+    ///   - colours: One colour per service, from the look's ramp.
+    ///   - neutral: The colour for a service the ramp has none for.
+    /// - Returns: The section.
     private func servicesSection(colours: [ServiceDirectory.Service: Flavor.RGB], neutral: Flavor.RGB) -> some View {
         Section {
             ForEach(Self.listed, id: \.rawValue) { service in
@@ -275,6 +308,7 @@ struct ConnectionsView: View {
         .lookRow()
     }
 
+    /// Changes made without a network: how many wait, and which have been refused.
     @ViewBuilder
     private var pendingSection: some View {
         Section {
@@ -314,6 +348,7 @@ struct ConnectionsView: View {
         .lookRow()
     }
 
+    /// Background refresh: whether iOS allows it, and how the last run went.
     @ViewBuilder
     private var backgroundSection: some View {
         if let background = snapshot?.background {
@@ -385,6 +420,7 @@ struct ConnectionsView: View {
         }
     }
 
+    /// The device's own side of things: notifications, Live Activities, and low-power mode.
     @ViewBuilder
     private var deviceSection: some View {
         if let device = snapshot?.device {
@@ -412,6 +448,7 @@ struct ConnectionsView: View {
         }
     }
 
+    /// What MetricKit has delivered: the reports on performance and on crashes, which stay on the device.
     @ViewBuilder
     private var performanceSection: some View {
         if let performance = snapshot?.performance {
@@ -448,6 +485,7 @@ struct ConnectionsView: View {
         }
     }
 
+    /// The whole page as text, to attach to a bug report, with or without the matricola.
     @ViewBuilder
     private var reportSection: some View {
         if let snapshot {
@@ -473,16 +511,28 @@ struct ConnectionsView: View {
 
     // MARK: - Helpers
 
+    /// What one service answered when last asked.
+    ///
+    /// - Parameter service: The service.
+    /// - Returns: Its answer, or `nil` before it has been asked.
     private func probe(for service: ServiceDirectory.Service) -> DiagnosticsSnapshot.Probe? {
         guard let index = DiagnosticsCollector.services.firstIndex(of: service), index < probes.count else { return nil }
         return probes[index]
     }
 
+    /// How many of the scopes asked for were granted.
+    ///
+    /// - Parameter scopes: What the token carries.
+    /// - Returns: The count, or a note that nothing was recorded.
     private func scopeSummary(_ scopes: ScopeAudit) -> LocalizedStringResource {
         if scopes.isUnknown { return "Non registrati" }
         return "\(scopes.grantedCount) su \(scopes.requestedCount)"
     }
 
+    /// How a background run ended, in words.
+    ///
+    /// - Parameter run: The run.
+    /// - Returns: The wording.
     private func outcome(of run: DiagnosticsLog.BackgroundRun) -> LocalizedStringResource {
         switch run.outcome {
         case .completed: "Concluso"
@@ -498,11 +548,16 @@ struct ConnectionsView: View {
         return Dictionary(uniqueKeysWithValues: zip(order, ramp.colours(order.count)))
     }
 
+    /// The host a service is reached at, as the directory currently resolves it.
+    ///
+    /// - Parameter service: The service.
+    /// - Returns: Its host.
     private func host(of service: ServiceDirectory.Service) -> String {
         let url = session.directory.baseURL(for: service)
         return url.host() ?? url.absoluteString
     }
 
+    /// WeBeep's second line: what it last said, or what it is for when it is not connected.
     private var weBeepDetail: String {
         guard weBeep.isAuthenticated else { return String(localized: "Materiali dei corsi") }
         switch weBeep.state {
@@ -521,6 +576,7 @@ struct ConnectionsView: View {
     /// because then nothing else on the page is true; no connection before any
     /// failure, because it explains the failures.
     private enum Health: Equatable {
+        /// The states, in the precedence the page reads them: sample data, then no connection, then an unauthorised token, then WeBeep failing, then WeBeep not connected, then everything working.
         case sample, offline, unauthorised, weBeepFailing(String), weBeepMissing, fine
 
         /// - Parameter accent: the look's accent, for the one badge that is
@@ -537,6 +593,7 @@ struct ConnectionsView: View {
             }
         }
 
+        /// What the state is called at the top of the page.
         var title: LocalizedStringResource {
             switch self {
             case .sample: "Dati di esempio"
@@ -548,6 +605,7 @@ struct ConnectionsView: View {
             }
         }
 
+        /// One line saying what it means, or what to do about it.
         var detail: LocalizedStringResource {
             switch self {
             case .sample: "Finché li usi l’app non si collega né al Politecnico né a WeBeep."
@@ -560,6 +618,7 @@ struct ConnectionsView: View {
         }
     }
 
+    /// Where the app stands, by the precedence above.
     private var health: Health {
         if session.useMockData { return .sample }
         if !network.isOnline { return .offline }
@@ -575,12 +634,18 @@ struct ConnectionsView: View {
 /// A service as a row: its tile, its name, one line of detail, and whatever
 /// the row needs on the trailing edge.
 private struct ServiceRow<Trailing: View>: View {
+    /// The service's name.
     let title: LocalizedStringResource
+    /// One line under it, such as its host or what it last said.
     let detail: String
+    /// The tile's SF Symbol.
     let symbol: String
+    /// The tile's colour.
     let colour: Flavor.RGB
+    /// The `trailing` this view draws.
     @ViewBuilder let trailing: Trailing
 
+    /// The view's content.
     var body: some View {
         HStack(spacing: 12) {
             GlassTile(symbol: symbol, colour: colour, side: 30)
@@ -600,8 +665,10 @@ private struct ServiceRow<Trailing: View>: View {
 
 /// A probe's answer, short enough for a row's trailing edge.
 private struct ProbeLabel: View {
+    /// What the service answered.
     let result: ConnectionProbe.Result
 
+    /// The view's content.
     var body: some View {
         switch result.verdict {
         case .reachable:
@@ -619,9 +686,12 @@ private struct ProbeLabel: View {
 /// Fine or not, said in words with a symbol beside them rather than by colour
 /// alone.
 private struct StatusLabel: View {
+    /// True when nothing is wrong.
     let ok: Bool
+    /// What to say.
     let text: LocalizedStringResource
 
+    /// The view's content.
     var body: some View {
         Label {
             Text(text)
@@ -635,6 +705,7 @@ private struct StatusLabel: View {
     }
 }
 
+/// How the page names and pictures each service.
 extension ServiceDirectory.Service {
     /// The name a student would use, not the host's.
     var title: LocalizedStringResource {
@@ -649,6 +720,7 @@ extension ServiceDirectory.Service {
         }
     }
 
+    /// The service's SF Symbol.
     var symbol: String {
         switch self {
         case .app: "person.badge.key"

@@ -1,13 +1,19 @@
 import Foundation
 
-/// Sample data for this area: what its screens show when the student chose
-/// "Esplora con dati di esempio", and what the previews render.
-///
-/// The week is built from ``SampleDegree``'s third-year teachings, so every
-/// lesson on Oggi has a course page and a sitting behind it. This ships — an
-/// incoherent demo is something a student sees.
+// Sample data for this area: what its screens show when the student chose
+// "Esplora con dati di esempio", and what the previews render.
+//
+// The week is built from ``SampleDegree``'s third-year teachings, so every
+// lesson on Oggi has a course page and a sitting behind it. This ships — an
+// incoherent demo is something a student sees.
 
+/// The sample agenda, built from ``SampleDegree``'s current teachings so that every
+/// lesson has a course page and a sitting behind it.
 nonisolated extension AgendaEvent {
+    /// A week of lectures, exams and deadlines around a date.
+    ///
+    /// - Parameter date: The date whose week is built.
+    /// - Returns: The entries.
     static func samples(around date: Date) -> [AgendaEvent] {
         let calendar = PoliMiDate.romeCalendar
         let weekStart = calendar.dateInterval(of: .weekOfYear, for: date)?.start
@@ -84,11 +90,18 @@ nonisolated extension AgendaEvent {
     }
 }
 
+/// The sample personal timetable.
 nonisolated extension PersonalTimetable {
-    /// The Manifesto's own view of the same semester: the third year's
-    /// teachings, at the hours the week's lessons run.
+    /// ``sample(now:)`` against the current date.
     static var sample: PersonalTimetable { sample(now: .now) }
 
+    /// The manifesto's view of the same semester: the current teachings, at the hours the
+    /// sample week's lessons run, in real Città Studi rooms.
+    ///
+    /// The academic year is derived from `now` rather than written into the source.
+    ///
+    /// - Parameter now: The date the semester is derived from.
+    /// - Returns: The timetable.
     static func sample(now: Date = .now) -> PersonalTimetable {
         let calendar = PoliMiDate.romeCalendar
         // The semester the student is in, not a year typed into the source.

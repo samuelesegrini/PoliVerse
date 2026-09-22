@@ -7,11 +7,16 @@ import SwiftUI
 /// to cover the screen and back without anything changing at either end: same
 /// controls, same glass, same places as the system's bars.
 struct ReplicaNavigationBar: View {
+    /// Whose avatar the bar shows.
     let student: Student?
+    /// The day named in the middle of the bar.
     let day: Date
+    /// Which of the bar's controls the look asks for.
     var bar = TodayBarStyle()
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
 
+    /// The view's content.
     var body: some View {
         HStack(spacing: 12) {
             if bar.showsProfile {
@@ -54,8 +59,10 @@ struct ReplicaNavigationBar: View {
 /// The current class above the tab bar, as the tab view's bottom accessory
 /// draws it.
 struct ReplicaAccessory: View {
+    /// The lesson the accessory is about.
     let current: CurrentClass
 
+    /// The view's content.
     var body: some View {
         CurrentClassAccessory(current: current)
             .frame(maxWidth: .infinity)
@@ -67,7 +74,9 @@ struct ReplicaAccessory: View {
     }
 }
 
+/// The tab bar as the app draws it, with Oggi selected.
 struct ReplicaTabBar: View {
+    /// The view's content.
     var body: some View {
         HStack(spacing: 10) {
             HStack(spacing: 0) {
@@ -89,6 +98,13 @@ struct ReplicaTabBar: View {
         .accessibilityHidden(true)
     }
 
+    /// One tab of the bar.
+    ///
+    /// - Parameters:
+    ///   - title: The tab's name.
+    ///   - icon: Its SF Symbol.
+    ///   - selected: True for the tab drawn as chosen.
+    /// - Returns: The tab.
     private func tab(_ title: LocalizedStringKey, _ icon: String, selected: Bool) -> some View {
         VStack(spacing: 2) {
             Image(systemName: icon).font(.system(size: 20)).symbolVariant(.fill)

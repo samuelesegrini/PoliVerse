@@ -1,45 +1,44 @@
 import OSLog
 @preconcurrency import WebKit
 
-/// The WebKit setup the login runs on.
+/// The WebKit configuration the sign-in runs on.
 ///
-/// ## What was slow, measured
+/// The sign-in has to run the Politecnico's own Servizi Online single-page app,
+/// which is around 13.7 MB of JavaScript and CSS, because a token minted by the app
+/// directly is refused by the data services while the one that app mints is
+/// accepted. See ``PoliMiAppLoginWebView``.
 ///
-/// The official Servizi Online SPA is **13.7 MB** on every login — 8.27 MB of
-/// JavaScript and 5.43 MB of CSS — and the app has to run it, because a token
-/// this app mints itself is rejected by the data services while the one the
-/// SPA mints is accepted (see ``PoliMiAppLoginWebView``).
+/// ## What this type provides
 ///
-/// Both files are cacheable: `cache-control: private` with an `ETag` and a
-/// `Last-Modified`, so a second load should be two 304s and nothing else. The
-/// web view was using a **non-persistent** data store, which throws the cache
-/// away with the view — so every single login downloaded all 13.7 MB again.
-///
-/// ## The trade, stated
-///
-/// The non-persistent store was not an accident: it guaranteed that a
-/// Shibboleth session could never outlive the login. That property is worth
-/// keeping, and it does not require throwing away the cache with it. This uses
-/// a persistent store scoped to its own identifier and deletes **cookies**
-/// when the flow ends — so the session dies exactly as before, and the 13.7 MB
-/// survives.
+/// - ``dataStore``: a persistent store under a fixed identifier, so those 13.7 MB
+///   are cached between sign-ins. ``endSession()`` then removes cookies and web
+///   storage while keeping the cache, so a Shibboleth session still cannot outlive
+///   the flow.
+/// - ``contentRules()``: blocks images, media and fonts on the Politecnico's app
+///   host only.
+/// - ``credentialObserver(key:)``: reports the credential in the same turn the page
+///   writes it, rather than polling for it.
+/// - ``prewarm(_:)``: loads the page while the student is still on the sign-in
+///   screen.
 @MainActor
 enum LoginWebKit {
+    /// Diagnostic log for this type, under the `loginweb` category.
     private static let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "loginweb")
 
-    /// A store of this app's own, separate from anything else WebKit holds.
+    /// A persistent website data store of the app's own, separate from anything else
+    /// WebKit holds.
     ///
-    /// The identifier is fixed, because a new one each launch would be a new
-    /// empty cache each launch — which is what we are trying to stop.
+    /// The identifier is fixed, since a new one each launch would mean an empty cache
+    /// each launch.
     static let dataStore: WKWebsiteDataStore = {
         let identifier = UUID(uuidString: "7F1C2A64-9E3B-4D58-A0E7-1B6C5D9F2A83")!
         return WKWebsiteDataStore(forIdentifier: identifier)
     }()
 
-    /// Removes the session while keeping the cache.
+    /// Removes cookies, session storage and local storage from ``dataStore``, leaving
+    /// the disk cache intact.
     ///
-    /// Cookies only — not `WKWebsiteDataTypeDiskCache`, which is the whole
-    /// point. Called when a login finishes and when the user signs out.
+    /// Called when a sign-in finishes and when the student signs out.
     static func endSession() async {
         await dataStore.removeData(
             ofTypes: [WKWebsiteDataTypeCookies,
@@ -51,13 +50,12 @@ enum LoginWebKit {
 
     // MARK: - Blocking what the login does not need
 
-    /// Blocks images, media and fonts **on the Politecnico's own app host**.
+    /// Content rules blocking images, media and fonts on `polimiapp.polimi.it`.
     ///
-    /// Scoped to that host deliberately. The identity providers — CIE, SPID,
-    /// aunicalogin — are pages the user actually reads and taps, and their
-    /// buttons are often images; blocking there would make the login
-    /// unusable. The SPA behind it is a page nobody reads: it exists to run
-    /// its JavaScript and hand back a credential.
+    /// Scoped to that host deliberately: the identity providers' pages are ones the
+    /// student reads and taps, and their buttons are often images, so blocking there
+    /// would make the sign-in unusable. The page behind it is never read — it exists to
+    /// run its JavaScript and hand back a credential.
     private static let ruleSource = """
     [
       {
@@ -71,9 +69,14 @@ enum LoginWebKit {
     ]
     """
 
+    /// Identifier the compiled rule list is stored under.
     private static let ruleIdentifier = "segrini.samuele.PoliVerse.login-rules"
 
-    /// Compiled once and kept by WebKit between launches.
+    /// The compiled content rules, compiling them on first use and letting WebKit keep
+    /// them between launches.
+    ///
+    /// - Returns: The rule list, or `nil` when it cannot be compiled — in which case
+    ///   the sign-in is slower rather than broken.
     static func contentRules() async -> WKContentRuleList? {
         guard let store = WKContentRuleListStore.default() else { return nil }
         if let existing = try? await store.contentRuleList(forIdentifier: ruleIdentifier) {
@@ -91,17 +94,21 @@ enum LoginWebKit {
 
     // MARK: - Being told rather than asking
 
+    /// Name of the WebKit message handler ``credentialObserver(key:)`` posts to.
     static let messageName = "poliverseCredentials"
 
-    /// Reports the credential the moment the SPA writes it.
+    /// A script that reports the credential the moment the page writes it.
     ///
-    /// Replaces a polling loop that woke every 400 ms up to twenty-five times:
-    /// in the worst case the app sat there for ten seconds after the login had
-    /// already succeeded. Hooking `setItem` means the message arrives in the
-    /// same turn the SPA stores the value.
+    /// Wraps `Storage.prototype.setItem` and posts the value to ``messageName`` when
+    /// the named key is written, then also posts any value already present — which
+    /// happens when the page is restored rather than loaded. The original method is
+    /// called first and its result returned unchanged, so the page cannot tell.
     ///
-    /// The original method is called first and its result returned unchanged,
-    /// so the page cannot tell the difference.
+    /// Injected at document start, so the hook is in place before the page's own code
+    /// runs.
+    ///
+    /// - Parameter key: The session-storage key to watch.
+    /// - Returns: The user script to add to the configuration.
     static func credentialObserver(key: String) -> WKUserScript {
         let source = """
         (function () {
@@ -136,13 +143,16 @@ enum LoginWebKit {
 
     // MARK: - Warming
 
+    /// The web view loading the page ahead of time, released after ninety seconds.
     private static var warmed: WKWebView?
 
-    /// Loads the SPA while the user is still looking at the login screen.
+    /// Loads the sign-in page while the student is still on the sign-in screen, so the
+    /// web view appears with the page already up.
     ///
-    /// The expensive part is parsing 8 MB of JavaScript, and it can happen
-    /// during the seconds before anyone taps anything. On a warm cache this
-    /// makes the web view appear with the page already up.
+    /// Does nothing when a warm view is already held. The view is released after ninety
+    /// seconds rather than held for the life of the process.
+    ///
+    /// - Parameter url: The page to load.
     static func prewarm(_ url: URL) {
         guard warmed == nil else { return }
         let configuration = WKWebViewConfiguration()

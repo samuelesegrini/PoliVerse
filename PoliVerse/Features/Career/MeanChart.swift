@@ -4,13 +4,8 @@ import SwiftUI
 
 /// The average over time, as a chart you can scrub.
 ///
-/// The figure this replaces drew one bar per exam along an axis of *exam
-/// number*, so a three-year gap and a three-day gap looked the same, a bar
-/// carried two encodings at once (height for the mark, width for the credits)
-/// and nothing on it said which exam any bar was. It was a picture of the
-/// data rather than a reading of it.
-///
-/// Structured as Swift Charts wants it, each channel says one thing:
+/// Each channel says one thing, so the chart is a reading of the data rather
+/// than a picture of it:
 ///
 /// - **x is time.** The real dates of the sittings, so the gaps are the gaps.
 /// - **y is the mark**, 18 to 30, the scale a student already has in mind.
@@ -25,22 +20,25 @@ import SwiftUI
 ///
 /// The line follows days rather than exams because two exams recorded on the
 /// same date have no order between them: ``StudyPlan/progression`` sorts by
-/// date alone, so "the average after the first of the two" is an artefact of
-/// whatever order the libretto happened to return. Per exam, the line drew a
-/// vertical segment at one date and only ever one of the two could be put
-/// under the finger. Per day, both marks keep their dots and the reading is
-/// the one figure that is true: where the average stood once that day was
-/// over.
+/// date alone, so "the average after the first of the two" would be an
+/// artefact of whatever order the libretto happened to return, and one of the
+/// two could never be put under a finger. Per day, both marks keep their dots
+/// and the reading is the one figure that is true: where the average stood
+/// once that day was over.
 /// VoiceOver gets the same through ``AXChartDescriptor``, which also makes it
 /// playable as an audio graph.
 struct MeanChart: View {
+    /// The libretto the chart is drawn from.
     let exams: [LibrettoExam]
     /// The day under the finger, read by whoever owns the headline.
     @Binding var selection: MeanDay?
     var height: CGFloat = 150
 
+    /// The look in use, which supplies the line's colour and the ramp.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
     /// Where the finger is, while it is down.
     @State private var scrubbing: Date?
@@ -56,6 +54,7 @@ struct MeanChart: View {
     /// and an 18 are not drawn on the frame of the plot.
     private static let domain = 17.0...31.0
 
+    /// One point per graded exam, with the average as it stood once that exam was recorded.
     private var points: [MeanPoint] { MeanPoint.all(in: exams) }
 
     /// The same marks gathered into the days they were recorded on: what the
@@ -67,8 +66,13 @@ struct MeanChart: View {
     /// figure already says where the average stands.
     private var hasTrajectory: Bool { days.count >= 2 }
 
+    /// The day being read, as the chart's own marks see it.
     private var selected: MeanDay? { selection }
 
+    /// The day closest to a place on the axis, which is what a finger selects.
+    ///
+    /// - Parameter when: The date under the finger, or `nil` when it has lifted.
+    /// - Returns: The nearest day, or `nil`.
     private func nearest(_ when: Date?) -> MeanDay? {
         guard let when else { return nil }
         return days.min {
@@ -76,6 +80,7 @@ struct MeanChart: View {
         }
     }
 
+    /// The view's content.
     var body: some View {
         if hasTrajectory {
             // The look's colour on the line, its own neutral behind it.
@@ -129,6 +134,12 @@ struct MeanChart: View {
 
     // MARK: - The chart
 
+    /// The chart itself: the average as a line through the days, the marks as points sized by their credits, and the selection.
+    ///
+    /// - Parameters:
+    ///   - line: The colour of the average's line.
+    ///   - ramp: The look's ramp, whose neutral the marks are drawn in.
+    /// - Returns: The chart.
     private func chart(_ line: Color, ramp: FlavorRamp) -> some View {
         // The marks are evidence, not a second series to tell apart: the
         // ramp's neutral is exactly the colour for "plainly not one of the
@@ -238,12 +249,12 @@ struct MeanChart: View {
 
 // MARK: - Audio graphs and VoiceOver
 
+/// The chart as VoiceOver reads it and as an audio graph plays it.
 extension MeanChart: AXChartDescriptorRepresentable {
     /// The chart as VoiceOver reads and plays it.
     ///
     /// Two series, as on screen: the marks and the average they add up to.
-    /// This is what replaces the one-sentence summary the old figure carried
-    /// — a sentence cannot be scrubbed, and an audio graph can.
+    /// An audio graph can be scrubbed, which a one-sentence summary cannot.
     func makeChartDescriptor() -> AXChartDescriptor {
         let points = points
         let dates = points.map(\.date.timeIntervalSince1970)
@@ -293,6 +304,7 @@ extension MeanChart: AXChartDescriptorRepresentable {
             series: [marks, mean])
     }
 
+    /// What the chart says in one sentence: the span it covers and where the average went.
     private var summary: String {
         guard let first = days.first, let last = days.last else { return "" }
         let change = last.mean - first.mean
@@ -311,15 +323,24 @@ extension MeanChart: AXChartDescriptorRepresentable {
 /// One exam on the chart: when it was, what it was, and where the average
 /// stood once it was recorded.
 nonisolated struct MeanPoint: Identifiable, Sendable {
+    /// The point's identity, which is the libretto entry's.
     let id: String
+    /// The teaching's name.
     let name: String
+    /// When the mark was recorded, which is the point's place on the axis.
     let date: Date
+    /// The mark, 18 to 30.
     let grade: Int
+    /// True for a 30 with distinction.
     let hasLode: Bool
+    /// The teaching's credits, which are the point's area.
     let cfu: Int
+    /// The weighted average as it stood once this mark was recorded.
     let mean: Double
 
+    /// The mark as it is written, with the L for a distinction.
     var displayGrade: String { hasLode ? "\(grade)L" : String(grade) }
+    /// The credits in words, or nothing when the libretto gave none.
     var credits: String { cfu > 0 ? String(localized: "\(cfu) CFU") : "" }
 
     /// Credits as the point's area, clamped: a one-credit teaching still has
@@ -327,6 +348,10 @@ nonisolated struct MeanPoint: Identifiable, Sendable {
     /// its neighbours.
     var symbolSize: CGFloat { cfu > 0 ? CGFloat(min(max(cfu, 2), 14)) * 9 + 30 : 40 }
 
+    /// The points behind a libretto, in the order the marks were recorded.
+    ///
+    /// - Parameter exams: The libretto.
+    /// - Returns: One point per graded, dated entry.
     static func all(in exams: [LibrettoExam]) -> [MeanPoint] {
         StudyPlan(exams: exams).progression.compactMap { step in
             guard let date = step.exam.date, let grade = step.exam.grade else { return nil }
@@ -348,12 +373,14 @@ nonisolated struct MeanPoint: Identifiable, Sendable {
 nonisolated struct MeanDay: Identifiable, Sendable {
     /// The start of the day, which is also its place on the axis.
     let id: Date
+    /// The day itself.
     let date: Date
     /// In the order they were recorded, at least one.
     let exams: [MeanPoint]
     /// The weighted average over everything up to the end of this day.
     let mean: Double
 
+    /// True when only one mark was recorded that day, which the caption reads differently.
     var isSingle: Bool { exams.count == 1 }
 
     /// The teachings, for the caption and for VoiceOver.
@@ -366,8 +393,10 @@ nonisolated struct MeanDay: Identifiable, Sendable {
         exams.map(\.displayGrade).joined(separator: " · ")
     }
 
+    /// The credits recorded that day, added up.
     var cfu: Int { exams.reduce(0) { $0 + $1.cfu } }
 
+    /// The day's credits in words, or nothing when none are known.
     var credits: String { cfu > 0 ? String(localized: "\(cfu) CFU") : "" }
 
     /// Groups marks into their days, keeping the progression's order.

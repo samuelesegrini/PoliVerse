@@ -1,0 +1,35 @@
+<html><body style="margin:0;background:#17171a;font:12px -apple-system;color:#aaa">
+<div style="padding:20px 24px 8px;color:#ddd;font-weight:600">Composed preview</div>
+<div style="display:flex;gap:26px;align-items:flex-end;padding:0 24px 20px">
+  <div><div style="width:240px;height:240px;border-radius:53.7px;overflow:hidden"><img src="preview.svg" width="240"></div><div style="text-align:center;margin-top:6px">240</div></div>
+  <div><div style="width:120px;height:120px;border-radius:26.8px;overflow:hidden"><img src="preview.svg" width="120"></div><div style="text-align:center;margin-top:6px">120</div></div>
+  <div><div style="width:64px;height:64px;border-radius:14.3px;overflow:hidden"><img src="preview.svg" width="64"></div><div style="text-align:center;margin-top:6px">64</div></div>
+  <div><div style="width:40px;height:40px;border-radius:8.9px;overflow:hidden"><img src="preview.svg" width="40"></div><div style="text-align:center;margin-top:6px">40</div></div>
+  <div><div style="width:29px;height:29px;border-radius:6.5px;overflow:hidden"><img src="preview.svg" width="29"></div><div style="text-align:center;margin-top:6px">29</div></div>
+</div>
+<div style="padding:8px 24px;color:#ddd;font-weight:600">Layers, on transparency</div>
+<div style="display:flex;gap:14px;padding:0 24px 20px;flex-wrap:wrap">
+  <div><div style="width:150px;height:150px;background-image:linear-gradient(45deg,#3a3a3e 25%,transparent 25%),linear-gradient(-45deg,#3a3a3e 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#3a3a3e 75%),linear-gradient(-45deg,transparent 75%,#3a3a3e 75%);background-size:14px 14px;background-position:0 0,0 7px,7px -7px,-7px 0"><img src="layers/1-background.svg" width="150"></div><div style="text-align:center;margin-top:5px">1-background</div></div>
+  <div><div style="width:150px;height:150px;background-image:linear-gradient(45deg,#3a3a3e 25%,transparent 25%),linear-gradient(-45deg,#3a3a3e 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#3a3a3e 75%),linear-gradient(-45deg,transparent 75%,#3a3a3e 75%);background-size:14px 14px;background-position:0 0,0 7px,7px -7px,-7px 0"><img src="layers/2-ring-back.svg" width="150"></div><div style="text-align:center;margin-top:5px">2-ring-back</div></div>
+  <div><div style="width:150px;height:150px;background-image:linear-gradient(45deg,#3a3a3e 25%,transparent 25%),linear-gradient(-45deg,#3a3a3e 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#3a3a3e 75%),linear-gradient(-45deg,transparent 75%,#3a3a3e 75%);background-size:14px 14px;background-position:0 0,0 7px,7px -7px,-7px 0"><img src="layers/3-planet.svg" width="150"></div><div style="text-align:center;margin-top:5px">3-planet</div></div>
+  <div><div style="width:150px;height:150px;background-image:linear-gradient(45deg,#3a3a3e 25%,transparent 25%),linear-gradient(-45deg,#3a3a3e 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#3a3a3e 75%),linear-gradient(-45deg,transparent 75%,#3a3a3e 75%);background-size:14px 14px;background-position:0 0,0 7px,7px -7px,-7px 0"><img src="layers/4-ring-front.svg" width="150"></div><div style="text-align:center;margin-top:5px">4-ring-front</div></div>
+  <div><div style="width:150px;height:150px;background-image:linear-gradient(45deg,#3a3a3e 25%,transparent 25%),linear-gradient(-45deg,#3a3a3e 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#3a3a3e 75%),linear-gradient(-45deg,transparent 75%,#3a3a3e 75%);background-size:14px 14px;background-position:0 0,0 7px,7px -7px,-7px 0"><img src="layers/5-moon.svg" width="150"></div><div style="text-align:center;margin-top:5px">5-moon</div></div>
+</div>
+<div style="padding:8px 24px;color:#ddd;font-weight:600">Layers stacked by CSS &mdash; must match the preview</div>
+<div style="padding:0 24px 30px;display:flex;gap:26px;align-items:flex-start">
+  <div style="position:relative;width:240px;height:240px;border-radius:53.7px;overflow:hidden">
+    <img src="layers/1-background.svg" style="position:absolute;inset:0" width="240">
+    <img src="layers/2-ring-back.svg" style="position:absolute;inset:0" width="240">
+    <img src="layers/3-planet.svg" style="position:absolute;inset:0" width="240">
+    <img src="layers/4-ring-front.svg" style="position:absolute;inset:0" width="240">
+    <img src="layers/5-moon.svg" style="position:absolute;inset:0" width="240">
+  </div>
+  <div style="position:relative;width:240px;height:240px;border-radius:53.7px;overflow:hidden;background:#EDEDF2">
+    <img src="layers/2-ring-back.svg" style="position:absolute;inset:0" width="240">
+    <img src="layers/3-planet.svg" style="position:absolute;inset:0" width="240">
+    <img src="layers/4-ring-front.svg" style="position:absolute;inset:0" width="240">
+    <img src="layers/5-moon.svg" style="position:absolute;inset:0" width="240">
+    <div style="position:absolute;bottom:6px;left:0;right:0;text-align:center;color:#555">no background layer</div>
+  </div>
+</div>
+</body></html>

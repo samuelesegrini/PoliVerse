@@ -5,13 +5,20 @@ import WidgetKit
 /// Which campus the widget is about. The only thing worth configuring: a
 /// student at Leonardo has no use for Bovisa's rooms, and vice versa.
 struct FreeRoomsConfiguration: WidgetConfigurationIntent {
+    /// The intent's name in Siri and the Shortcuts library.
     static let title: LocalizedStringResource = "Aule libere"
+    /// The intent's subtitle in the Shortcuts library.
     static let description = IntentDescription("Scegli la sede da mostrare.")
 
+    /// The campus to show, or `nil` to fall back to the last one the app wrote.
     @Parameter(title: "Sede", optionsProvider: CampusOptions())
     var campus: String?
 
+    /// Creates an unconfigured intent, as WidgetKit requires.
     init() {}
+    /// Creates the intent for one campus.
+    ///
+    /// - Parameter campus: The campus to show.
     init(campus: String?) { self.campus = campus }
 }
 
@@ -20,6 +27,11 @@ struct FreeRoomsConfiguration: WidgetConfigurationIntent {
 /// Not a hardcoded list: the catalogue names them, they have changed before,
 /// and a widget offering a campus with no data would configure into a blank.
 struct CampusOptions: DynamicOptionsProvider {
+    /// The campuses to offer.
+    ///
+    /// - Returns: The campuses the app has written a snapshot for. Empty until it has written
+    ///   one, so the widget cannot be configured into a blank.
+    /// - Throws: Never.
     func results() async throws -> [String] {
         FreeRoomsSnapshot.knownCampuses
     }
@@ -31,15 +43,26 @@ struct CampusOptions: DynamicOptionsProvider {
 /// when `perform()` returns — without charging the reload to the widget's
 /// daily budget. So the fetch must be finished, and on disk, before returning.
 struct RefreshFreeRoomsIntent: AppIntent {
+    /// The intent's name in Siri and the Shortcuts library.
     static let title: LocalizedStringResource = "Aggiorna aule libere"
+    /// Whether the intent is offered in the Shortcuts library.
     static let isDiscoverable = false
 
+    /// The campus to refresh.
     @Parameter(title: "Sede")
     var campus: String?
 
+    /// Creates an unconfigured intent, as WidgetKit requires.
     init() {}
+    /// Creates the intent for one campus.
+    ///
+    /// - Parameter campus: The campus to refresh.
     init(campus: String?) { self.campus = campus }
 
+    /// Runs the intent.
+    ///
+    /// - Returns: An empty result; the intent's effect is the navigation it performs.
+    /// - Throws: Nothing in practice.
     func perform() async throws -> some IntentResult {
         if let campus = FreeRoomsProvider.campus(campus) {
             await FreeRoomsProvider.refresh(campus: campus, deadline: .now.addingTimeInterval(20))
@@ -48,14 +71,22 @@ struct RefreshFreeRoomsIntent: AppIntent {
     }
 }
 
+/// One moment's answer: which rooms are free, and why there is nothing to show.
 struct FreeRoomsEntry: TimelineEntry {
+    /// The moment this entry describes.
     let date: Date
+    /// The campus being shown.
     let campus: String?
+    /// The rooms free at ``date``, by name.
     let free: [FreeRoomsSnapshot.Room]
+    /// How many rooms the snapshot covers.
     let total: Int
     /// Why there is nothing to show, when there is nothing to show.
     let state: State
 
+    /// `ok` when the question could be answered, `noData` when the app has never written a
+    /// snapshot, `staleDay` when the snapshot is another day's, and `closed` outside teaching
+    /// hours.
     enum State { case ok, noData, staleDay, closed }
 
     /// Moderately relevant through the teaching day, when there is an answer.
@@ -64,22 +95,41 @@ struct FreeRoomsEntry: TimelineEntry {
     }
 }
 
+/// Builds the timeline from the snapshot the app wrote, and fetches one itself when there
+/// is none for today.
+///
+/// Each entry is the same bookings asked a different question — which rooms are free at
+/// this time — so a timeline of half-hourly entries costs one read from disk.
 struct FreeRoomsProvider: AppIntentTimelineProvider {
+    /// A representative campus, for the widget gallery and for redaction.
+    ///
+    /// - Parameter context: WidgetKit's context.
+    /// - Returns: The placeholder entry.
     func placeholder(in context: Context) -> FreeRoomsEntry {
         FreeRoomsEntry(date: .now, campus: "Milano Leonardo",
                        free: FreeRoomsSnapshot.previewRooms, total: 96, state: .ok)
     }
 
+    /// The configured campus as it stands now.
+    ///
+    /// - Parameters:
+    ///   - configuration: Which campus the student chose.
+    ///   - context: WidgetKit's context.
+    /// - Returns: The entry.
     func snapshot(for configuration: FreeRoomsConfiguration, in context: Context) async -> FreeRoomsEntry {
         entry(at: .now, campus: configuration.campus)
     }
 
-    /// Recomputed every half hour of the teaching day.
+    /// Half-hourly entries over the next six hours.
     ///
-    /// Nothing is fetched: the bookings for the day are already on disk, so
-    /// each entry is the same data asked a different question — "which rooms
-    /// are free *at this time*". Half an hour matches the granularity the
-    /// timetable itself has.
+    /// Today's bookings are fetched first when none are on disk — the one network call a
+    /// widget makes on its own — so that a timeline reload every half hour stays a read from
+    /// disk.
+    ///
+    /// - Parameters:
+    ///   - configuration: Which campus the student chose.
+    ///   - context: WidgetKit's context.
+    /// - Returns: The timeline.
     func timeline(for configuration: FreeRoomsConfiguration, in context: Context) async -> Timeline<FreeRoomsEntry> {
         let now = Date.now
         // The one network call a widget makes on its own: only when there is
@@ -95,28 +145,42 @@ struct FreeRoomsProvider: AppIntentTimelineProvider {
                         policy: .after(steps.last ?? now.addingTimeInterval(1800)))
     }
 
+    /// The campus to show: the configured one, then the last the app wrote, then the first it
+    /// knows about.
+    ///
+    /// - Parameter configured: What the student chose, if anything.
+    /// - Returns: The campus, or `nil` when the app has written nothing.
     nonisolated static func campus(_ configured: String?) -> String? {
         configured ?? FreeRoomsSnapshot.lastCampus ?? FreeRoomsSnapshot.knownCampuses.first
     }
 
+    /// The app group's offline store, where the app writes the snapshots.
     nonisolated private static var store: OfflineStore {
         OfflineStore(groupIdentifier: OfflineStore.groupIdentifier)
     }
 
-    /// Today's snapshot for `campus`, if one is on disk.
+    /// Today's snapshot for a campus.
+    ///
+    /// - Parameter campus: The campus to read.
+    /// - Returns: The snapshot, or `nil` when none is stored or it is another day's.
     nonisolated static func today(_ campus: String) -> FreeRoomsSnapshot? {
         store.load(FreeRoomsSnapshot.self, as: FreeRoomsSnapshot.cacheName, account: campus)
             .map(\.value)
             .flatMap { $0.covers(.now) ? $0 : nil }
     }
 
-    /// Fetches today's bookings from the widget itself.
+    /// Fetches today's bookings from the widget itself, and waits for the write to land.
     ///
-    /// Needs the room list the app publishes: an extension has no catalogue,
-    /// and fetching one here would be four more requests inside a budget of
-    /// seconds. Without it, nothing happens and the widget asks for the app.
-    /// A pass where no room answered is not written — an empty snapshot would
-    /// read as "no free rooms", which is a claim, not an absence.
+    /// Needs the room list the app publishes, since an extension has no catalogue of its own
+    /// and fetching one would be several more requests inside a budget of seconds. Without
+    /// it nothing happens and the widget asks for the app.
+    ///
+    /// A pass in which no room answered is not written: an empty snapshot would read as “no
+    /// free rooms”, which is a claim rather than an absence.
+    ///
+    /// - Parameters:
+    ///   - campus: The campus to fetch.
+    ///   - deadline: When to stop starting requests.
     nonisolated static func refresh(campus: String, deadline: Date) async {
         guard let refs = store.load([FreeRoomsSnapshot.RoomRef].self,
                                     as: FreeRoomsSnapshot.catalogueCacheName,
@@ -131,6 +195,13 @@ struct FreeRoomsProvider: AppIntentTimelineProvider {
         await store.flushed()
     }
 
+    /// One entry for a moment, read from the snapshot.
+    ///
+    /// - Parameters:
+    ///   - date: The moment to answer for.
+    ///   - campus: The configured campus, if any.
+    /// - Returns: The entry, with a ``FreeRoomsEntry/State`` saying why it is empty when it
+    ///   is.
     private func entry(at date: Date, campus: String?) -> FreeRoomsEntry {
         let name = Self.campus(campus)
         guard let name,
@@ -154,15 +225,23 @@ struct FreeRoomsProvider: AppIntentTimelineProvider {
                               total: snapshot.rooms.count, state: .ok)
     }
 
-    /// Outside 08:00–20:00 every room is trivially free, which is true and
-    /// useless — the building is shut. Same window the app uses.
+    /// Whether a moment falls in the teaching day.
+    ///
+    /// Outside 08:00 to 20:00 every room is trivially free, which is true and useless. The
+    /// same window the app uses.
+    ///
+    /// - Parameter date: The moment to test.
+    /// - Returns: `true` inside teaching hours.
     private static func isTeachingHours(_ date: Date) -> Bool {
         let hour = Calendar.current.component(.hour, from: date)
         return (8..<20).contains(hour)
     }
 }
 
+/// The free-rooms widget, configurable per campus. Tapping it opens the free-rooms
+/// screen.
 struct FreeRoomsWidget: Widget {
+    /// The declaration's content.
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: WidgetKind.freeRooms.rawValue,
                                intent: FreeRoomsConfiguration.self,
@@ -177,12 +256,17 @@ struct FreeRoomsWidget: Widget {
     }
 }
 
+/// Draws one ``FreeRoomsEntry``, in whichever family is asked for.
 struct FreeRoomsWidgetView: View {
+    /// The rooms to draw.
     let entry: FreeRoomsEntry
+    /// The widget family being drawn.
     @Environment(\.widgetFamily) private var family
 
+    /// How many rooms this family has room for.
     private var limit: Int { family == .systemMedium ? 6 : 3 }
 
+    /// The view's content.
     var body: some View {
         switch family {
         case .accessoryRectangular: rectangular
@@ -190,6 +274,7 @@ struct FreeRoomsWidgetView: View {
         }
     }
 
+    /// The rectangular Lock Screen accessory: the count and the first few names.
     private var rectangular: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text("Aule libere").font(.headline)
@@ -205,6 +290,9 @@ struct FreeRoomsWidgetView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// The Home Screen families: the count, a refresh button, and a shortlist of rooms — in
+    /// two columns at the medium size, where one column of six would be taller than the
+    /// widget.
     private var home: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline) {
@@ -255,6 +343,10 @@ struct FreeRoomsWidgetView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
+    /// One room: its name, and its capacity where the catalogue records one.
+    ///
+    /// - Parameter room: The room to draw.
+    /// - Returns: The line.
     private func roomLine(_ room: FreeRoomsSnapshot.Room) -> some View {
         HStack(spacing: 4) {
             Text(room.name).font(.caption.weight(.medium)).lineLimit(1)
@@ -277,6 +369,7 @@ struct FreeRoomsWidgetView: View {
     }
 }
 
+/// Representative rooms, for the gallery and for previews.
 extension FreeRoomsSnapshot {
     /// Only for the placeholder the system renders before real data exists.
     static var previewRooms: [Room] {

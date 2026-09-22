@@ -12,9 +12,12 @@ import SwiftUI
 /// buttons do, and there is one accent again.
 @MainActor
 struct OnboardingTint: DynamicProperty {
+    /// The look in use, whose control colour this accent follows.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// The accent itself: the same colour the look gives its controls.
     var color: Color { style.controlTint(scheme) }
     /// The same colour as components, for the tiles that build a ramp on it.
     var rgb: Flavor.RGB { style.controlAccent(dark: scheme == .dark) }
@@ -27,12 +30,18 @@ struct OnboardingTint: DynamicProperty {
 /// One layout rather than five, so the steps differ in what they ask and not
 /// in where their buttons sit.
 struct OnboardingStepLayout<Content: View, Actions: View>: View {
+    /// The SF Symbol drawn in the step's tile.
     let symbol: String
+    /// The step's headline.
     let title: LocalizedStringKey
+    /// One paragraph saying why the step exists.
     let detail: LocalizedStringKey
+    /// The content this view wraps.
     @ViewBuilder var content: Content
+    /// The `actions` this view draws.
     @ViewBuilder var actions: Actions
 
+    /// The onboarding flow's accent, taken from the look in use.
     private var tint = OnboardingTint()
     /// Scaled, matching the hero tiles in Impostazioni (``HeroTileStack``).
     @ScaledMetric(relativeTo: .largeTitle) private var iconSide: CGFloat = 88
@@ -46,6 +55,7 @@ struct OnboardingStepLayout<Content: View, Actions: View>: View {
     /// when there is something behind it to cut off.
     @State private var overflows = false
 
+    /// The view's content.
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
@@ -101,16 +111,25 @@ struct OnboardingStepLayout<Content: View, Actions: View>: View {
 
 /// One line of "what this means", with its own symbol.
 struct OnboardingPoint: View {
+    /// The SF Symbol drawn beside the line.
     let symbol: String
+    /// The line itself.
     let text: LocalizedStringKey
 
+    /// The onboarding flow's accent, taken from the look in use.
     private var tint = OnboardingTint()
 
+    /// Creates a point.
+    ///
+    /// - Parameters:
+    ///   - symbol: The SF Symbol to draw.
+    ///   - text: The line to show.
     init(symbol: String, text: LocalizedStringKey) {
         self.symbol = symbol
         self.text = text
     }
 
+    /// The view's content.
     var body: some View {
         Label {
             Text(text)
@@ -128,9 +147,12 @@ struct OnboardingPoint: View {
 /// The button that ends a step without doing what it offered. Every step past
 /// the sign-in has one: a setup that cannot be postponed is a wall.
 struct OnboardingSkipButton: View {
+    /// The button's wording, which a step can change.
     var title: LocalizedStringKey = "Più tardi"
+    /// What the tap does.
     let action: () -> Void
 
+    /// The view's content.
     var body: some View {
         Button(action: action) {
             Text(title).font(.subheadline)
@@ -143,13 +165,16 @@ struct OnboardingSkipButton: View {
 
 /// The filled button that carries the step's actual offer.
 struct OnboardingPrimaryButton: View {
+    /// The button's wording, which states the step's offer.
     let title: LocalizedStringKey
     /// Something the tap started is still running. The button keeps its size
     /// and its place — a row that collapses to a spinner makes the screen jump
     /// at the exact moment the student is waiting to see whether it worked.
     var isBusy = false
+    /// What the tap does.
     let action: () -> Void
 
+    /// The view's content.
     var body: some View {
         Button(action: action) {
             ZStack {

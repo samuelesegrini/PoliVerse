@@ -4,25 +4,42 @@ import UserNotifications
 
 /// Reads the live services and the system into a ``DiagnosticsSnapshot``.
 ///
-/// The only place that knows where each fact lives. Kept apart from the page
-/// so the page draws plain values and the report writes the same values: a
-/// diagnostics screen that read one thing and copied another would be worse
-/// than none.
+/// The only place that knows where each fact lives. Kept apart from the page, so the
+/// page draws plain values and the report writes those same values: a diagnostics screen
+/// that read one thing and copied another would be worse than none.
 @MainActor
 struct DiagnosticsCollector {
+    /// Supplies the session state, the token's facts and the service directory.
     let session: Session
+    /// Supplies the WeBeep connection and its last failure.
     let weBeep: WeBeepModel
+    /// Supplies reachability.
     let network: NetworkMonitor
+    /// Supplies the queued and abandoned changes.
     let pending: PendingChanges
+    /// Supplies the notification permission and the pending reminders.
     let notifications: NotificationModel
+    /// Supplies whether Live Activities are permitted and whether one is showing.
     let liveActivity: LiveActivityController
+    /// Supplies the CIE sign-in's state and last error.
     let cieID: CieIDRouter
+    /// Supplies how the student signed in last.
     let loginMemory: LoginMethodMemory
+    /// Supplies when the background work last ran.
     var log: DiagnosticsLog = .shared
 
-    /// Services in the order the page lists them.
+    /// The backends the page lists, in order.
     static let services: [ServiceDirectory.Service] = [.app, .iae, .agenda, .libretto, .wsAule, .weBeep]
 
+    /// Gathers everything the page shows.
+    ///
+    /// The token's facts and the report archive's summary are read concurrently. The scope
+    /// audit is omitted entirely when no token is stored, since there would be nothing to
+    /// compare.
+    ///
+    /// - Parameter probes: Reachability results from a previous ``probe()``, or empty when
+    ///   the student has not asked for them.
+    /// - Returns: The snapshot.
     func snapshot(probes: [DiagnosticsSnapshot.Probe]) async -> DiagnosticsSnapshot {
         await notifications.refreshAuthorization()
         async let expiresAt = session.tokens.expiresAt
@@ -93,6 +110,8 @@ struct DiagnosticsCollector {
     }
 
     /// Probes every service's base address, WeBeep included.
+    ///
+    /// - Returns: One result per service, in ``services`` order.
     func probe() async -> [DiagnosticsSnapshot.Probe] {
         let urls = Self.services.map { session.directory.baseURL(for: $0) }
         let results = await ConnectionProbe().probe(urls)
@@ -103,6 +122,8 @@ struct DiagnosticsCollector {
 
     // MARK: - Words for system states
 
+    /// Where the session stands, in words. A signed-in session under sample data says so
+    /// rather than claiming to be connected.
     private var sessionState: String {
         switch session.state {
         case .loading: String(localized: "In caricamento")
@@ -113,6 +134,10 @@ struct DiagnosticsCollector {
         }
     }
 
+    /// A sign-in method in words, with the provider's name for SPID.
+    ///
+    /// - Parameter method: The method the student used.
+    /// - Returns: The phrase.
     static func label(for method: PoliMiLoginMethod) -> String {
         switch method {
         case .password: String(localized: "Codice persona e password")
@@ -123,6 +148,10 @@ struct DiagnosticsCollector {
         }
     }
 
+    /// A background-refresh permission in words.
+    ///
+    /// - Parameter status: What iOS reports.
+    /// - Returns: The phrase.
     static func label(for status: UIBackgroundRefreshStatus) -> String {
         switch status {
         case .available: String(localized: "Consentito")
@@ -132,6 +161,10 @@ struct DiagnosticsCollector {
         }
     }
 
+    /// A notification permission in words.
+    ///
+    /// - Parameter status: What iOS reports.
+    /// - Returns: The phrase.
     static func label(for status: UNAuthorizationStatus) -> String {
         switch status {
         case .authorized: String(localized: "Consentite")
@@ -143,8 +176,11 @@ struct DiagnosticsCollector {
         }
     }
 
-    /// `iPhone17,1` rather than "iPhone": the marketing name hides exactly the
-    /// hardware difference a crash can depend on.
+    /// The hardware identifier, for example `iPhone17,1` rather than “iPhone”: the marketing
+    /// name hides exactly the hardware difference a crash can depend on.
+    ///
+    /// In the simulator the host's architecture is reported instead, so the identifier of
+    /// the device being imitated is read from the environment.
     static var modelIdentifier: String {
         // The simulator reports its host's architecture; it says which device
         // it is imitating in the environment instead.
@@ -159,7 +195,10 @@ struct DiagnosticsCollector {
     }
 }
 
+/// The app's version, as the diagnostics report prints it.
 extension Bundle {
+    /// `CFBundleShortVersionString` with the build number in brackets. See
+    /// ``releaseVersion`` for the short version alone.
     var appVersion: String {
         let short = infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
         let build = infoDictionary?["CFBundleVersion"] as? String ?? "—"

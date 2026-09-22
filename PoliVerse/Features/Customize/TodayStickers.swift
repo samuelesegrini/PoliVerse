@@ -3,6 +3,7 @@ import SwiftUI
 /// What sits on the right half beside the greeting and the date. With
 /// nothing, the date takes the whole width.
 nonisolated enum TodayAccessory: String, Codable, CaseIterable, Identifiable, Sendable {
+    /// Nothing, so the date takes the whole width.
     case none
     /// Stickers placed by hand.
     case stickers
@@ -11,8 +12,10 @@ nonisolated enum TodayAccessory: String, Codable, CaseIterable, Identifiable, Se
     /// Up to three photos in a small stack.
     case photos
 
+    /// The accessory's identity, which is its raw value.
     var id: String { rawValue }
 
+    /// What the accessory is called in Personalizza.
     var title: LocalizedStringKey {
         switch self {
         case .none: "Nessuno"
@@ -22,6 +25,7 @@ nonisolated enum TodayAccessory: String, Codable, CaseIterable, Identifiable, Se
         }
     }
 
+    /// The accessory's SF Symbol.
     var systemImage: String {
         switch self {
         case .none: "rectangle"
@@ -37,6 +41,7 @@ nonisolated enum TodayAccessory: String, Codable, CaseIterable, Identifiable, Se
 /// Positions are fractions of the panel, so the same look draws the same way
 /// on a gallery card and at full size.
 nonisolated struct PlacedSticker: Codable, Equatable, Hashable, Sendable, Identifiable {
+    /// What a sticker is: an emoji, or an image the keyboard handed over.
     nonisolated enum Content: Codable, Equatable, Hashable, Sendable {
         /// An emoji, drawn as text.
         case emoji(String)
@@ -44,7 +49,9 @@ nonisolated struct PlacedSticker: Codable, Equatable, Hashable, Sendable, Identi
         case image(String)
     }
 
+    /// The sticker's identity, kept so a change reaches the right one.
     let id: UUID
+    /// What the sticker is.
     var content: Content
     /// The centre, from 0 (left) to 1 (right).
     var x = 0.5
@@ -55,12 +62,19 @@ nonisolated struct PlacedSticker: Codable, Equatable, Hashable, Sendable, Identi
     /// Degrees clockwise.
     var rotation = 0.0
 
+    /// A sticker in the middle of the panel, unturned.
+    ///
+    /// - Parameters:
+    ///   - id: Its identity; a fresh one by default.
+    ///   - content: What the sticker is.
     init(id: UUID = UUID(), content: Content) {
         self.id = id
         self.content = content
     }
 
+    /// The range a sticker's size is clamped to.
     static let sizes = 0.2...0.9
+    /// The range a sticker's turn is clamped to, in degrees.
     static let rotations = -40.0...40.0
 
     /// The same sticker kept inside the panel, at a size and turn that read.
@@ -74,6 +88,7 @@ nonisolated struct PlacedSticker: Codable, Equatable, Hashable, Sendable, Identi
     }
 }
 
+/// Adding, changing and removing a look's stickers and photos.
 nonisolated extension TodayStyle {
     /// Beyond this the panel is a pile, not an arrangement.
     static let maxStickers = 6
@@ -108,12 +123,20 @@ nonisolated extension TodayStyle {
         return sticker
     }
 
+    /// Changes one sticker and pulls it back inside the panel.
+    ///
+    /// - Parameters:
+    ///   - id: Which sticker.
+    ///   - change: What to change about it.
     mutating func updateSticker(_ id: UUID, _ change: (inout PlacedSticker) -> Void) {
         guard let index = stickers.firstIndex(where: { $0.id == id }) else { return }
         change(&stickers[index])
         stickers[index] = stickers[index].clamped()
     }
 
+    /// Takes one sticker off the panel.
+    ///
+    /// - Parameter id: Which sticker.
     mutating func removeSticker(_ id: UUID) {
         stickers.removeAll { $0.id == id }
     }
@@ -129,6 +152,9 @@ nonisolated extension TodayStyle {
         accessory = .photos
     }
 
+    /// Takes one photo off the stack.
+    ///
+    /// - Parameter id: The photo's id in ``StickerStore``.
     mutating func removePhoto(_ id: String) {
         photoIDs.removeAll { $0 == id }
     }
@@ -145,8 +171,10 @@ nonisolated extension TodayStyle {
 /// The images of keyboard stickers, one file each, outside the looks: a look
 /// is a short string in the defaults and an image would not fit there.
 nonisolated struct StickerStore: Sendable {
+    /// The folder the images are kept in, one file each.
     let directory: URL
 
+    /// The app's own store, under Application Support.
     static let shared = StickerStore(
         directory: URL.applicationSupportDirectory.appending(path: "TodayStickers", directoryHint: .isDirectory))
 
@@ -158,6 +186,10 @@ nonisolated struct StickerStore: Sendable {
         return id
     }
 
+    /// One stored image.
+    ///
+    /// - Parameter id: The id a look refers to it by.
+    /// - Returns: The image's data, or `nil` when there is no such file.
     func data(for id: String) -> Data? {
         try? Data(contentsOf: url(for: id))
     }
@@ -171,6 +203,10 @@ nonisolated struct StickerStore: Sendable {
         }
     }
 
+    /// Where one image lives, with the id stripped to letters, digits and dashes so a crafted one stays inside the folder.
+    ///
+    /// - Parameter id: The image's id.
+    /// - Returns: Its file's URL.
     private func url(for id: String) -> URL {
         // Ids are ours, but a stored look is still outside input: keep a
         // crafted one inside the directory.
@@ -179,6 +215,7 @@ nonisolated struct StickerStore: Sendable {
     }
 }
 
+/// Pulling a value into a range.
 nonisolated extension Comparable {
     /// The value pulled into the range.
     func clamped(to range: ClosedRange<Self>) -> Self {

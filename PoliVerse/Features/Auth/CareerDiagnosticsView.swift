@@ -9,31 +9,49 @@ import UIKit
 /// report follows the same choice: it is meant to be pasted into a bug report
 /// without handing over a libretto.
 struct CareerDiagnosticsView: View {
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The shared ``ManifestiModel``, from the environment.
     @Environment(ManifestiModel.self) private var manifesti
 
+    /// One endpoint's payload as the inspector read it.
     private struct Payload: Identifiable {
+        /// The endpoint's path, which identifies the row.
         let id: String
+        /// The endpoint's name on screen.
         let title: String
+        /// Every field found, by path.
         var fields: [PayloadInspector.Field] = []
+        /// Why the endpoint could not be read, if it could not.
         var error: String?
     }
 
+    /// One course's scheda, checked against the lecturer its sitting names — which is how a
+    /// wrongly matched scheda shows up.
     private struct ClassCheck: Identifiable {
+        /// The teaching code and the class id together.
         var id: String { code + classID }
+        /// The teaching code.
         let code: String
+        /// The teaching's name.
         let name: String
+        /// The `c_classe` the scheda was found under.
         let classID: String
+        /// The lecturer the exam services name, where they name one.
         let examLecturer: String?
+        /// The lecturers the scheda names, or `nil` when it could not be read.
         let schedaLecturers: [String]?
     }
 
+    /// The endpoints that have been read.
+    /// The scheda checks that have been run.
     @State private var payloads: [Payload] = []
     @State private var checks: [ClassCheck] = []
     @State private var loading = false
     @State private var showValues = false
     @State private var copied = false
 
+    /// The view's content.
     var body: some View {
         List {
             Section {
@@ -105,6 +123,7 @@ struct CareerDiagnosticsView: View {
         .onChange(of: showValues) { copied = false }
     }
 
+    /// Everything on screen as text, for pasting into an issue.
     private var report: String {
         let header = "Diagnostica carriera · matricola \(showValues ? (session.student?.matricola ?? "—") : PayloadInspector.mask(session.student?.matricola ?? "—"))"
         let sections = payloads.map { payload in
@@ -115,6 +134,10 @@ struct CareerDiagnosticsView: View {
         return ([header] + sections + classes).joined(separator: "\n\n")
     }
 
+    /// What a scheda check found, in words.
+    ///
+    /// - Parameter check: The check to describe.
+    /// - Returns: Whether the lecturers agree, disagree, or could not be compared.
     private func verdict(_ check: ClassCheck) -> String {
         guard let scheda = check.schedaLecturers else { return "nessuna scheda con questa classe" }
         guard let exam = check.examLecturer, !exam.isEmpty else { return "scheda: \(scheda.joined(separator: ", ")); nessun docente d'esame" }
@@ -124,11 +147,17 @@ struct CareerDiagnosticsView: View {
             : "non combacia\(names)"
     }
 
+    /// The colour for a check's verdict.
+    ///
+    /// - Parameter check: The check.
+    /// - Returns: Green when the lecturers agree, red when they disagree, and neutral when it
+    ///   could not be told.
     private func color(_ check: ClassCheck) -> Color {
         guard let scheda = check.schedaLecturers, let exam = check.examLecturer else { return .secondary }
         return PayloadInspector.sameLecturer(exam: exam, scheda: scheda) ? .green : .orange
     }
 
+    /// Reads every endpoint the screen inspects, and runs the scheda checks.
     private func load() async {
         guard let matricola = session.student?.matricola else { return }
         loading = true

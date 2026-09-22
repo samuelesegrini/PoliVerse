@@ -7,8 +7,10 @@ import SwiftUI
 /// so its strings stay out of the String Catalog. Each report can be shared
 /// as its JSON — to a Mac, where `atos` turns its addresses into symbols.
 struct MetricReportsView: View {
+    /// The stored reports, newest first.
     @State private var entries: [ReportArchive.Entry] = []
 
+    /// The view's content.
     var body: some View {
         List {
             Section {
@@ -50,6 +52,7 @@ struct MetricReportsView: View {
         .refreshable { await reload() }
     }
 
+    /// Re-reads the archive.
     private func reload() async {
         entries = await ReportArchive.shared.entries()
     }

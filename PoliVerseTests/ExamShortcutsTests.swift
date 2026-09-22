@@ -21,7 +21,7 @@ struct ExamShortcutsTests {
         #expect(event.title == "Basi di Dati · Scritto")
         #expect(event.start == start)
         #expect(event.end == start.addingTimeInterval(ExamCalendarEvent.defaultLength))
-        #expect(event.location == "B.3.2")
+        #expect(event.location == "Aula B.3.2")
         #expect(event.notes.contains("Stefano Ceri"))
         #expect(event.notes.contains("Servizi Online"))
     }

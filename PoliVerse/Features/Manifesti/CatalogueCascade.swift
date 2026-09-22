@@ -7,6 +7,8 @@ import SwiftUI
 /// Used by the personal timetable and by the study programme, so the two
 /// always pick a degree course the same way.
 struct CatalogueCascade: View {
+    /// The page the cascade has settled on, which the caller reads the chosen degree course
+    /// and plan from.
     @Binding var page: CataloguePage?
     /// Where to open when there is no page yet.
     let initial: CatalogueSelection?
@@ -14,16 +16,20 @@ struct CatalogueCascade: View {
     /// there is nothing to open on — wrong for picking another career's.
     var locatesFromCareer = true
 
+    /// The shared ``ManifestiModel``, from the environment.
     @Environment(ManifestiModel.self) private var manifesti
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
     @State private var loading = false
     @State private var message: String?
 
+    /// The five levels and their labels, in the order the manifesto lays them out.
     private static let levels: [(CatalogueField, LocalizedStringKey)] = [
         (.year, "Anno accademico"), (.campus, "Sede"), (.school, "Scuola"),
         (.degree, "Corso di studi"), (.plan, "Piano di studi"),
     ]
 
+    /// The view's content.
     var body: some View {
         Group {
             if let page {
@@ -53,6 +59,12 @@ struct CatalogueCascade: View {
         .task { if page == nil { await open() } }
     }
 
+    /// One level as a picker, grouped by the page's own option groups.
+    ///
+    /// - Parameters:
+    ///   - level: The level to offer.
+    ///   - title: Its label.
+    /// - Returns: The picker.
     @ViewBuilder
     private func picker(_ level: CatalogueLevel, title: LocalizedStringKey) -> some View {
         let binding = Binding(get: { level.selected ?? "" },
@@ -99,6 +111,11 @@ struct CatalogueCascade: View {
         show(first)
     }
 
+    /// Asks the service for the page with one level changed, and shows whatever it settles on.
+    ///
+    /// - Parameters:
+    ///   - field: The level being changed.
+    ///   - value: Its new value.
     private func change(_ field: CatalogueField, to value: String) async {
         guard let current = page?.selection, current[field] != value else { return }
         loading = true
@@ -112,6 +129,9 @@ struct CatalogueCascade: View {
         }
     }
 
+    /// Publishes a page and says so when it lists no teachings.
+    ///
+    /// - Parameter found: The page the service answered with.
     private func show(_ found: CataloguePage) {
         // Landed on the empty non-differentiated plan: open the first real one.
         if found.selection?.plan == "***", let real = found.level(.plan)?.options.first?.value, real != "***" {
@@ -126,15 +146,23 @@ struct CatalogueCascade: View {
 /// Which bracket of a teaching to follow: the one the surname falls in by
 /// default, or another lecturer's. Choosing the student's own stores nothing.
 struct BracketPicker: View {
+    /// The teaching's name, shown in the bar.
     let title: String
+    /// The student's surname, which marks the bracket they fall in by default.
     let surname: String
+    /// The bracket already chosen, or `nil` when the default stands.
     let chosen: BracketChoice?
+    /// Fetches the teaching's brackets.
     let load: () async -> [BracketChoice]
+    /// Records the choice. `nil` returns to the bracket the surname falls in, which stores
+    /// nothing.
     let onChoose: (BracketChoice?) -> Void
 
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
     @State private var brackets: [BracketChoice]?
 
+    /// The view's content.
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -173,6 +201,10 @@ struct BracketPicker: View {
         .presentationDetents([.medium, .large])
     }
 
+    /// One bracket: its range, its lecturers, and a mark when it is the student's own.
+    ///
+    /// - Parameter bracket: The bracket to draw.
+    /// - Returns: The row.
     private func row(_ bracket: BracketChoice) -> some View {
         let mine = bracket.covers(surname: surname)
         let selected = chosen.map { $0 == bracket } ?? mine
@@ -216,13 +248,19 @@ struct StudyProgrammeSheet: View {
     /// Nil for the career in use.
     var career: String? = nil
 
+    /// The shared ``StudyProgrammeModel``, from the environment.
     @Environment(StudyProgrammeModel.self) private var programmes
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
     @State private var page: CataloguePage?
 
+    /// The enrolment the chosen programme will be stored for: the one named, or the one in
+    /// use.
     private var target: String? { career ?? session.student?.matricola }
 
+    /// The view's content.
     var body: some View {
         NavigationStack {
             Form {

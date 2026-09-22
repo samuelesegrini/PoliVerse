@@ -1,22 +1,54 @@
 import Foundation
 
-/// The occupancy endpoint, shared by the app and the widget.
+/// The Politecnico's room-occupancy endpoint, callable from both the app and the
+/// widget extension.
 ///
-/// It lives here because the widget fetches rooms on its own: a snapshot that
-/// only the Aule libere screen could write left the widget empty on every day
-/// the student did not open that screen. The endpoint is public and needs no
-/// token, which is the only reason an extension can call it at all.
+/// The endpoint is public and needs no token, which is what lets an extension fetch
+/// rooms on its own rather than depending on the student having opened the Aule
+/// libere screen that day.
 nonisolated enum RoomOccupancy {
+    /// Root of the public maps REST service.
     static let base = URL(string: "https://onlineservices.polimi.it/maps_rest/rest")!
 
+    /// What one occupancy fetch produced.
     enum Result: Sendable {
+        /// The room's bookings for the day. An empty array means the room is free all day.
         case busy([FreeRoomsSnapshot.Interval])
-        /// `MSG_OCCUPAZIONI_NASCOSTE` — the university does not publish this
-        /// room's bookings.
+        /// The university does not publish this room's bookings — the endpoint answers
+        /// `MSG_OCCUPAZIONI_NASCOSTE`. Not the same as free.
         case hidden
+        /// The fetch did not produce a usable answer: a transport error, a non-200
+        /// response, or a payload that would not decode.
         case failed
     }
 
+    /// Fetches a campus's bookings for a day, in batches, stopping at a deadline.
+    ///
+    /// A widget extension may be halted before every request finishes, so a snapshot
+    /// containing the rooms that did answer is written rather than none at all. Rooms
+    /// that did not answer — failed or hidden — are omitted rather than reported free.
+    ///
+    /// - Parameters:
+    ///   - campus: The campus name to stamp on the snapshot.
+    ///   - rooms: The rooms to ask about.
+    ///   - day: The day to ask about.
+    ///   - deadline: When to stop starting batches.
+    ///   - concurrency: How many rooms are fetched at once.
+    ///   - session: The URL session to fetch through.
+    /// - Returns: A snapshot for the rooms that answered, each room's bookings sorted
+    ///   by start.
+    /// Fetches one room's bookings for one day.
+    ///
+    /// A hidden room is reported as ``Result/hidden`` and a failure as
+    /// ``Result/failed``, never as free: callers must not turn “cannot tell” into “it
+    /// is empty”.
+    ///
+    /// - Parameters:
+    ///   - id: The room's occupancy identifier from the catalogue.
+    ///   - day: The day to ask about.
+    ///   - session: The URL session to fetch through.
+    /// - Returns: The bookings, or why there are none to report. Never throws; the
+    ///   20-second timeout and every error land in ``Result/failed``.
     static func fetch(
         occupancyID id: String, on day: Date, session: URLSession = .shared
     ) async -> Result {
@@ -45,14 +77,23 @@ nonisolated enum RoomOccupancy {
     }
 }
 
-/// One busy band, as `/ricerca/aula/occupazione` sends it.
+/// One busy band as `/ricerca/aula/occupazione` sends it.
 ///
-/// Times only — the date is the one that was asked for — and they are wall
-/// clock in Rome like every other timestamp these services produce.
+/// Times only — the date is the one that was asked for — and they are Rome wall
+/// clock, like every other timestamp these services produce.
 nonisolated struct OccupancyBand: Decodable, Sendable {
+    /// Start time of the band, as wall clock.
     let inizio: String?
+    /// End time of the band, as wall clock.
     let fine: String?
 
+    /// Resolves the band's times against a day.
+    ///
+    /// The end is clamped to be no earlier than the start, so a malformed pair cannot
+    /// produce an inverted interval.
+    ///
+    /// - Parameter day: The day the times belong to.
+    /// - Returns: The interval, or `nil` when either time is missing or unparseable.
     func interval(on day: Date) -> FreeRoomsSnapshot.Interval? {
         guard
             let inizio, let fine,
@@ -63,18 +104,28 @@ nonisolated struct OccupancyBand: Decodable, Sendable {
     }
 }
 
+/// Fetching a whole campus's bookings, for the app and for the widget's own
+/// refresh.
 nonisolated extension FreeRoomsSnapshot {
-    /// A room as the widget needs to ask about it: the catalogue has the
-    /// occupancy id, and an extension has no catalogue of its own.
+    /// A room as the widget needs to ask about it, including the occupancy identifier
+    /// that only the catalogue holds.
+    ///
+    /// Written per campus by the app under ``catalogueCacheName``, since an extension
+    /// has no catalogue of its own.
     nonisolated struct RoomRef: Codable, Sendable, Equatable {
+        /// The room's identifier in the catalogue.
         var id: String
+        /// The room's name as it is signposted.
         var name: String
+        /// The building it is in, when known.
         var building: String?
+        /// Seating capacity, when known.
         var seats: Int?
+        /// The identifier ``RoomOccupancy/fetch(occupancyID:on:session:)`` takes.
         var occupancyID: String
     }
 
-    /// Per campus, written by the app whenever it has the catalogue.
+    /// The record name the per-campus ``RoomRef`` list is stored under.
     static let catalogueCacheName = "free-rooms-catalogue"
 
     /// Fetches a campus's bookings for `day`, stopping at `deadline`.

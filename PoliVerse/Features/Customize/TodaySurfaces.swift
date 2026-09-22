@@ -2,6 +2,7 @@ import SwiftUI
 
 // MARK: - Shader effects
 
+/// Grain and the sticker edge, as shader effects over any view.
 extension View {
     /// Film grain over the view, stable from frame to frame.
     @ViewBuilder
@@ -22,10 +23,17 @@ extension View {
     }
 }
 
+/// The white cut-out edge and its shadow, drawn only when asked for.
 private struct StickerOutline: ViewModifier {
+    /// Whether to draw the edge at all.
     let enabled: Bool
+    /// How wide the white edge is, in points.
     let radius: CGFloat
 
+    /// Applies the modifier to `content`.
+    ///
+    /// - Parameter content: The view being modified.
+    /// - Returns: The modified view.
     func body(content: Content) -> some View {
         ZStack {
             if enabled {
@@ -45,12 +53,15 @@ private struct StickerOutline: ViewModifier {
 
 /// A Flavor's three colours drifting slowly, for its tile and preview.
 struct FlavorFlowView: View {
+    /// The Flavor whose three colours drift.
     let flavor: Flavor
+    /// Whether the reader has asked for reduced motion.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// iOS 27: the system asks apps to do less — Low Power Mode, a hot device.
     /// A shader redrawn thirty times a second is the first thing to stop.
     @Environment(\.systemPrefersReducedResourceUsage) private var reducedResources
 
+    /// The view's content.
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || reducedResources)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3600)
@@ -75,13 +86,21 @@ struct FlavorFlowView: View {
 /// A lacquered button in the Flavor's colours, with a coloured glow: filled
 /// for the main action, a light tinted pill for the others.
 struct FlavorGlossButtonStyle: ButtonStyle {
+    /// Filled for the main action, or a light tinted pill for the others.
     enum Kind { case prominent, tinted }
 
+    /// The Flavor the button is lacquered in.
     let flavor: Flavor
+    /// Whether the button is the main action.
     var kind: Kind = .prominent
 
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// Draws the button.
+    ///
+    /// - Parameter configuration: The button's label and whether it is pressed.
+    /// - Returns: The styled button.
     func makeBody(configuration: Configuration) -> some View {
         let palette = flavor.palette(scheme)
         let shape = Capsule()
@@ -119,15 +138,23 @@ struct FlavorGlossButtonStyle: ButtonStyle {
 
 /// What sits beside the date: stickers, a few words, or a stack of photos.
 struct TodayAccessoryView: View {
+    /// The look, which says which accessory to draw and how.
     let style: TodayStyle
+    /// In Personalizza, where an empty accessory shows where things go.
     var editing = false
+    /// In Personalizza's arranging mode, where stickers move.
     var arranging = false
+    /// Records a change to one sticker.
     var onChange: (UUID, (inout PlacedSticker) -> Void) -> Void = { _, _ in }
+    /// Takes one sticker away.
     var onRemove: (UUID) -> Void = { _ in }
+    /// Opens the sticker picker.
     var onAdd: () -> Void = {}
 
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// The view's content.
     var body: some View {
         ZStack {
             switch style.accessory {
@@ -154,12 +181,15 @@ struct TodayAccessoryView: View {
 
 /// Up to three photos, each with a white border, fanned like prints on a desk.
 struct PhotoStack: View {
+    /// The photos to fan, oldest first; the last is on top.
     let ids: [String]
 
+    /// Each print's offset and tilt, so the stack always falls the same way.
     private static let placements: [(x: CGFloat, y: CGFloat, angle: Double)] = [
         (-0.18, -0.2, -8), (0.2, 0.02, 7), (-0.06, 0.24, -3),
     ]
 
+    /// The view's content.
     var body: some View {
         GeometryReader { proxy in
             let side = min(proxy.size.width, proxy.size.height) * 0.58

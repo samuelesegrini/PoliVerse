@@ -1,63 +1,82 @@
 import Foundation
 
-/// What a source is handed when it is asked to fetch.
+/// The context a ``Source`` is handed when it is asked to fetch.
 ///
-/// Passed in rather than captured, so the same source instance works for a
-/// signed-in account, for sample data and for a fixture without knowing which
-/// it is looking at.
+/// Passed in rather than captured, so one source instance serves a signed-in
+/// account, sample data and a fixture without knowing which it is looking at.
 nonisolated struct Env: Sendable {
+    /// The transport to issue requests through.
     let http: any HTTP
+    /// The signed-in matricola, or `nil` when signed out.
     let matricola: String?
+    /// `true` when the app is showing representative data rather than a student's own.
     let isSample: Bool
 }
 
-/// Everything a feature has to say about one piece of remote data.
+/// Everything a feature has to declare about one piece of remote data.
 ///
-/// This is the whole of what porting a service costs: name it, say how long a
-/// fetch stays good for, say how to fetch it, and say what it looks like when
-/// the app is showing sample data. The window, the offline copy, the error
-/// text, the age on screen, the signpost and the sample substitution are
-/// ``Store``'s, once, rather than each service's, nineteen times.
+/// A conformance names the data, states how long a fetch stays good for, says
+/// how to fetch it and says what it looks like under sample data. The load
+/// window, the offline copy, the error text, the age shown on screen, the
+/// signpost and the sample substitution all belong to ``Store``.
 ///
-/// `fetch` is deliberately `nonisolated` and `async`: decoding a payload is
-/// work the main actor has no business doing, and every current service pays
-/// for that by hand through ``BackgroundJSON``.
+/// ``fetch(_:)`` is `nonisolated` and `async` so that decoding runs off the main
+/// actor.
 nonisolated protocol Source: Sendable {
+    /// The decoded shape this source produces. `Codable` because ``Store`` persists
+    /// it as the offline copy.
     associatedtype Value: Codable & Sendable
 
-    /// Names the offline file, the log line and the freshness registration.
-    /// Changing it discards that service's cache, which is the correct
-    /// behaviour when its shape has changed.
+    /// Names the offline file, the log category and the freshness registration.
+    ///
+    /// Changing it discards this service's cache, which is the intended behaviour
+    /// when ``Value`` changes shape.
     static var id: String { get }
-    /// How long a successful fetch suppresses the next one.
+    /// How long a successful fetch suppresses the next one. Defaults to
+    /// ``LoadWindow/defaultInterval``.
     static var ttl: TimeInterval { get }
-    /// The signpost to time this load under, if it is one of the few the
-    /// performance report names. The system caps how many it keeps, so most
-    /// sources leave this nil — see ``PerfSignpost``.
+    /// The signpost to time this load under, or `nil` not to time it.
+    ///
+    /// The system caps how many signposts it retains, so only the loads named in the
+    /// performance report set this. See ``PerfSignpost``.
     static var signpost: PerfSignpost.Name? { get }
 
+    /// Fetches and decodes the current value.
+    ///
+    /// - Parameter env: The transport, matricola and sample flag for this load.
+    /// - Returns: The freshly decoded value.
+    /// - Throws: Whatever the transport or the decoder raises. ``Store`` turns it
+    ///   into a message, and treats a cancellation as neither failure nor success.
     func fetch(_ env: Env) async throws -> Value
 
-    /// What this service looks like with sample data. Required, not optional:
-    /// the app used to decide that per call site, and twenty-three `if
-    /// useMockData` branches across the screens is what that cost.
+    /// What this service looks like under sample data.
+    ///
+    /// Required rather than optional, so no call site has to branch on whether
+    /// sample data is in use.
     func sample() -> Value
 
-    /// Applies whatever this device remembers on top of a value, whether it
-    /// came from the network, from the cache or from ``sample()``.
+    /// Layers whatever this device remembers on top of a value, whichever of the
+    /// three origins it came from — network, offline copy or ``sample()``.
     ///
-    /// Exists for read state: a notice marked read in PoliVerse is a local
-    /// fact, and it has to survive every one of those three paths or it
-    /// reverts on the next refresh.
+    /// Carries local read state: a notice marked read in PoliVerse is a device-local
+    /// fact, and has to survive all three paths or it reverts on the next refresh.
+    ///
+    /// - Parameter value: The value as it arrived.
+    /// - Returns: The value with local state applied. The default returns it
+    ///   unchanged.
     func adjust(_ value: Value) -> Value
 }
 
-/// `nonisolated` throughout: the target defaults to main-actor isolation, and
-/// a default implementation that picked that up would drag every conforming
-/// source onto the main actor with it — which is exactly what `fetch` is shaped
-/// to avoid.
+/// Defaults for the parts of ``Source`` most services do not customise.
+///
+/// Every member is `nonisolated`: the target defaults to main-actor isolation,
+/// and a default that inherited it would pull conforming sources onto the main
+/// actor.
 extension Source {
+    /// Defaults to ``LoadWindow/defaultInterval``.
     nonisolated static var ttl: TimeInterval { LoadWindow.defaultInterval }
+    /// Defaults to untimed.
     nonisolated static var signpost: PerfSignpost.Name? { nil }
+    /// Defaults to returning the value unchanged.
     nonisolated func adjust(_ value: Value) -> Value { value }
 }

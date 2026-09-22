@@ -2,16 +2,23 @@ import SwiftUI
 
 /// The notification inbox, reached from the bell on the Home screen.
 struct NoticesView: View {
+    /// The shared ``NoticeModel``, from the environment.
     @Environment(NoticeModel.self) private var notices
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
 
     /// Shown inside a navigation stack that is not its own.
     private let embedded: Bool
 
+    /// Creates the screen.
+    ///
+    /// - Parameter embedded: `true` when it is already inside a navigation stack, in which
+    ///   case it adds none of its own.
     init(embedded: Bool = false) {
         self.embedded = embedded
     }
 
+    /// The view's content.
     var body: some View {
         RootStack(embedded: embedded) {
             Group {
@@ -53,6 +60,7 @@ struct NoticesView: View {
         }
     }
 
+    /// The notices, newest first, with a button to mark them all read.
     private var list: some View {
         List {
             Section {
@@ -74,9 +82,12 @@ struct NoticesView: View {
     }
 }
 
+/// One notice in the list: its title, date and an unread mark.
 private struct NoticeRow: View {
+    /// The notice this row shows.
     let notice: Notice
 
+    /// The view's content.
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             // An unread dot rather than bold text alone: weight is easy to
@@ -126,14 +137,19 @@ private struct NoticeRow: View {
 /// whole text — and if that call fails, the summary stays on screen rather
 /// than the view going blank.
 struct NoticeDetailView: View {
+    /// The notice being shown. Its full text is fetched on appearance where the list carried
+    /// only a summary.
     let notice: Notice
+    /// The shared ``NoticeModel``, from the environment.
     @Environment(NoticeModel.self) private var notices
+    /// Opens a link outside the app.
     @Environment(\.openURL) private var openURL
 
     /// The detail endpoint's body, markup intact.
     @State private var fullText: String?
     @State private var isLoading = false
 
+    /// The view's content.
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
@@ -190,9 +206,11 @@ struct NoticeDetailView: View {
 
 /// The bell, with its unread count, for the Home toolbar.
 struct NoticesToolbarButton: View {
+    /// The shared ``NoticeModel``, from the environment.
     @Environment(NoticeModel.self) private var notices
     @Binding var isPresented: Bool
 
+    /// The view's content.
     var body: some View {
         Button {
             isPresented = true

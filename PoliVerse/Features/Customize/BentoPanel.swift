@@ -3,12 +3,18 @@ import SwiftUI
 /// Personalizza's panel under the live page, as in Kyo: a bento of tiles, each
 /// a small preview of one part of the look, opening its controls in place.
 struct BentoPanel: View {
+    /// The look being edited, which every tile writes to.
     @Binding var style: TodayStyle
+    /// The controls pushed over the bento, if any.
     @Binding var path: [CustomizePage]
+    /// Whether the page above is in arranging mode.
     @Binding var arranging: Bool
+    /// How far the panel is open.
     @Binding var detent: PresentationDetent
 
+    /// The environment's `shell`.
     @Environment(\.shell) private var shell
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
     /// The bento's width, split into thirds.
     @State private var width: CGFloat = 360
@@ -20,6 +26,7 @@ struct BentoPanel: View {
         return unit * CGFloat(columns) + gap * CGFloat(columns - 1)
     }
 
+    /// The view's content.
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
@@ -96,6 +103,13 @@ struct BentoPanel: View {
 
     // MARK: Tiles
 
+    /// One tile of the bento: a preview, its name, and the controls it opens.
+    ///
+    /// - Parameters:
+    ///   - page: The controls this tile opens.
+    ///   - columns: How many of the bento's three columns it spans.
+    ///   - preview: The small preview drawn on it.
+    /// - Returns: The tile.
     private func tile<Preview: View>(_ page: CustomizePage, columns: Int = 1,
                                      @ViewBuilder preview: () -> Preview) -> some View {
         Button { path.append(page) } label: {
@@ -119,6 +133,7 @@ struct BentoPanel: View {
         .accessibilityIdentifier("bento-\(page.id)")
     }
 
+    /// The Flavor's three colours drifting, with the colour's name over them.
     private var flavorPreview: some View {
         FlavorFlowView(flavor: style.flavor)
             .overlay {
@@ -131,6 +146,7 @@ struct BentoPanel: View {
             }
     }
 
+    /// Whatever sits beside the date, at tile size.
     @ViewBuilder
     private var accessoryPreview: some View {
         if style.accessory == .none {
@@ -143,6 +159,7 @@ struct BentoPanel: View {
         }
     }
 
+    /// The two layouts as small diagrams, the one in use marked.
     private var layoutPreview: some View {
         VStack(alignment: .leading, spacing: 5) {
             ForEach(style.visibleSections.prefix(4)) { section in
@@ -173,6 +190,7 @@ struct BentoPanel: View {
         .padding(.bottom, 16)
     }
 
+    /// The page in light and dark side by side.
     private var appearancePreview: some View {
         HStack(spacing: 0) {
             style.flavor.ground(dark: false, mode: style.appearance.flavorMode).color
@@ -188,6 +206,10 @@ struct BentoPanel: View {
 
 /// A tile presses in a little, like Kyo's.
 private struct BentoTileStyle: ButtonStyle {
+    /// Presses the tile in a little while it is held.
+    ///
+    /// - Parameter configuration: The tile's label and whether it is pressed.
+    /// - Returns: The styled tile.
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.96 : 1)

@@ -2,70 +2,101 @@ import Foundation
 
 /// The course a WeBeep listing belongs to.
 nonisolated struct MaterialCourse: Sendable, Equatable {
+    /// Moodle's course id, which every WeBeep call is keyed by.
     let moodleID: Int
-    /// The Politecnico teaching code where the title carries one; otherwise
-    /// `moodle-<id>`, which is still stable and never collides with a code.
+    /// The Politecnico teaching code where the title carries one, and `moodle-<id>`
+    /// otherwise — still stable, and it cannot collide with a real code.
     let code: String
+    /// The teaching's name.
     let name: String
 
+    /// Creates a course reference.
+    ///
+    /// - Parameters:
+    ///   - moodleID: Moodle's course id.
+    ///   - code: The teaching code, or a Moodle-derived stand-in.
+    ///   - name: The teaching's name.
     init(moodleID: Int, code: String, name: String) {
         self.moodleID = moodleID
         self.code = code
         self.name = name
     }
 
-    /// Only for a course that knows its Moodle id — never one matched by name.
+    /// Builds a reference from a course.
+    ///
+    /// - Parameter course: The course.
+    /// - Returns: `nil` for a course with no ``Course/moodleID``, which is one matched by
+    ///   name rather than known to WeBeep.
     init?(_ course: Course) {
         guard let moodleID = course.moodleID else { return nil }
         self.init(moodleID: moodleID, code: course.code ?? course.id, name: course.name)
     }
 }
 
-/// The student's sittings of a course around the moment a listing is read —
-/// what separates "a results file was posted" from "results for the sitting
-/// you just took".
+/// The student's sittings of a course around the moment a listing is read.
+///
+/// This is what separates “a results file was posted” from “results for the sitting
+/// you just took”.
 nonisolated struct MaterialContext: Sendable, Equatable {
     /// The most recent sitting the student took, within two months.
     let lastSat: Date?
     /// The next sitting the student is enrolled in, within a fortnight.
     let next: Date?
 
+    /// No sitting either side, which makes every finding a plain posting.
     static let none = MaterialContext(lastSat: nil, next: nil)
 }
 
 /// A results file that may be read, if the student allowed it.
 ///
-/// The URL is the listing's own, without a token: the token is added only at
-/// the moment of download, and neither is ever stored.
+/// The address is the listing's own, without a token: the token is added at the moment
+/// of download, and neither is stored.
 nonisolated struct ResultsFileRef: Sendable, Equatable {
+    /// Where the file can be fetched, without a token.
     let fileURL: String
+    /// The file's name.
     let name: String
+    /// The file's media type, where Moodle records one.
     let mimetype: String?
+    /// The file's size in bytes, where Moodle records it.
     var size: Int? = nil
 }
 
 /// One item of a WeBeep course page, reduced to what a change is made of.
 nonisolated struct MaterialItem: Sendable, Equatable {
-    /// `cm:<module id><path><file name>` for a file, `cm:<module id>` for a
-    /// module with none — stable across listings and across renames of the
-    /// section around it.
+    /// `cm:<module id><path><file name>` for a file, `cm:<module id>` for a module with
+    /// none.
+    ///
+    /// Stable across listings, and across a rename of the section around it.
     let id: String
+    /// The course module the item belongs to.
     let moduleID: Int
+    /// The file's name, or the module's when it holds no file.
     let name: String
+    /// The file's size in bytes.
     let size: Int?
+    /// When the file last changed, in epoch seconds.
     let modified: Int?
+    /// What the item is about, from ``DocumentClassifier/tags(fileName:moduleName:sectionName:modname:mimetype:)``.
     let tags: Set<DocumentTag>
+    /// Where the file can be fetched, without a token.
     var fileURL: String? = nil
+    /// The file's media type.
     var mimetype: String? = nil
 
-    /// Changes when the file does. Moodle's listing has no content hash; size
-    /// and modification time are what it offers, and both are free.
+    /// What is compared between listings: the size and modification time together.
+    ///
+    /// Moodle's listing carries no content hash, and these two are what it does offer.
     var version: String { "\(size ?? -1)@\(modified ?? -1)" }
 
-    /// Flattens a listing, keeping the teacher's order.
+    /// Flattens a course listing into items, keeping the lecturer's order.
     ///
-    /// Labels are skipped: they are text on the page, not items, and their
-    /// edits say nothing a student can act on.
+    /// A module with files yields one item per file; a module with none yields one item
+    /// for itself. Labels are skipped: they are text on the page rather than items, and
+    /// their edits say nothing a student can act on.
+    ///
+    /// - Parameter sections: The course's contents.
+    /// - Returns: The items.
     static func items(from sections: [MoodleSection]) -> [MaterialItem] {
         sections.flatMap { section in
             (section.modules ?? []).flatMap { module -> [MaterialItem] in
@@ -95,34 +126,60 @@ nonisolated struct MaterialItem: Sendable, Equatable {
     }
 }
 
-/// What is kept of one course's last listing: enough to tell new from
-/// changed, and nothing whose shape could stop the log decoding later.
+/// What is kept of one course's last listing: enough to tell new from changed, and
+/// nothing whose shape could stop the stored log decoding later.
 nonisolated struct MaterialSnapshot: Sendable, Equatable, Codable {
-    /// Item id → version.
+    /// Item id to ``MaterialItem/version``.
     var versions: [String: String]
-    /// Item id → the notable kind it was read as, by raw value — a string, so
-    /// renaming a kind can never make a stored log unreadable.
+    /// Item id to the notable kind it was read as, by raw value — a string, so renaming a
+    /// kind cannot make a stored log unreadable.
     var notable: [String: String]
+    /// When the listing was read.
     var takenAt: Date
 }
 
 /// Compares two listings of one course and says what is new.
 ///
-/// Like ``ExamChangeDetector``: pure, silent on the first listing, and it
-/// never reads an empty listing as everything removed. Removals are not
-/// reported — a teacher tidying a page is not news.
+/// Pure, like ``ExamChangeDetector``: silent on the first listing, treating a snapshot
+/// older than ``staleAfter`` as a new baseline, and never reading an empty listing as
+/// everything having been removed. Removals are not reported — a lecturer tidying a
+/// page is not news.
+///
+/// Notable items — results, solutions and exam notices — are reported individually;
+/// everything else new is collapsed into one ``ExamUpdate/Kind/materialAdded`` update
+/// carrying a count.
 nonisolated enum MaterialChangeDetector {
+    /// What one comparison produced.
     struct Result: Sendable {
+        /// What changed. Empty on a baseline listing.
         let updates: [ExamUpdate]
+        /// The listing to compare the next one against. The previous snapshot is returned
+        /// unchanged for an empty listing.
         let snapshot: MaterialSnapshot
-        /// The file behind each results update, by update id.
+        /// The file behind each results or solutions update, by update id, for the reader that
+        /// may open it.
         var files: [String: ResultsFileRef] = [:]
     }
 
-    /// A snapshot older than this is a new baseline: a page last read months
-    /// ago would otherwise announce everything posted since as news.
+    /// How old a snapshot may be before it becomes a new baseline.
+    ///
+    /// A page last read months ago would otherwise announce everything posted since as
+    /// news.
     static let staleAfter: TimeInterval = 14 * 86400
 
+    /// Compares a course's listing against the previous one.
+    ///
+    /// A notable item that has vanished and reappeared under a new name is reported as a
+    /// correction rather than as news, as is one replaced in place. A name that reads as
+    /// both results and solutions is marked probable rather than guessed at.
+    ///
+    /// - Parameters:
+    ///   - previous: The last listing, or `nil` for the first.
+    ///   - current: This listing's items.
+    ///   - course: The course being read.
+    ///   - context: The sittings either side of this moment.
+    ///   - now: The moment of this reading.
+    /// - Returns: The updates, the new snapshot and the results files behind them.
     static func detect(
         previous: MaterialSnapshot?,
         current: [MaterialItem],
@@ -194,8 +251,13 @@ nonisolated enum MaterialChangeDetector {
         return Result(updates: updates, snapshot: snapshot, files: files)
     }
 
-    /// Results win over solutions and notices: they are what a student waits
-    /// for, and an ambiguous name is marked as such rather than guessed.
+    /// Which notable kind an item is, if any.
+    ///
+    /// Results win over solutions and notices, since they are what a student waits for.
+    /// Solutions to an exercise sheet are not solutions to an exam.
+    ///
+    /// - Parameter item: The item to classify.
+    /// - Returns: The kind, or `nil` for an ordinary item.
     private static func kind(for item: MaterialItem) -> ExamUpdate.Kind? {
         if item.tags.contains(.results) { return .resultsPosted }
         if item.tags.contains(.solutions), !item.tags.contains(.exercise) { return .solutionsPosted }
@@ -203,6 +265,22 @@ nonisolated enum MaterialChangeDetector {
         return nil
     }
 
+    /// Builds one material update, tying it to the sitting it concerns.
+    ///
+    /// Results and solutions concern the sitting just taken; a notice concerns the one
+    /// ahead.
+    ///
+    /// - Parameters:
+    ///   - kind: What happened.
+    ///   - course: The course it happened in.
+    ///   - context: The sittings either side of this moment.
+    ///   - now: When it was noticed.
+    ///   - confidence: How sure the reading is.
+    ///   - evidence: The call and identifiers it was read from.
+    ///   - oldValue: The previous version, for a replacement or a rename.
+    ///   - newValue: The item's name, or the count for a collapsed update.
+    ///   - identity: What makes this update distinct from the next.
+    /// - Returns: The update.
     private static func update(
         _ kind: ExamUpdate.Kind, course: MaterialCourse, context: MaterialContext, now: Date,
         confidence: ExamUpdate.Confidence, evidence: String,

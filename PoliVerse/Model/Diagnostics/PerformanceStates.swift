@@ -2,37 +2,48 @@ import Foundation
 import MetricKit
 import StateReporting
 
-/// Tells MetricKit what the app was doing, so a hang or a hitch arrives
-/// already attributed: "the Calendar hitches", not "the app hitches".
+/// Tells MetricKit what the app was doing, so a hang or a hitch arrives already
+/// attributed to a screen rather than to the app as a whole.
 ///
-/// iOS 27's StateReporting splits hang time, hitch time, terminations and
-/// signpost intervals by the state that was active. Two domains, each a small
-/// fixed set of labels, which is what Apple asks for — the number of unique
-/// states is limited, and reports flag it when an app goes past it.
+/// StateReporting splits hang time, hitch time, terminations and signpost intervals by
+/// the state that was active. Two domains, each a small fixed set of labels, because the
+/// number of unique states is limited and reports flag an app that goes past it:
 ///
-/// - Tab: the selected tab, reported as it changes.
-/// - Data: live or sample data. Demo sessions do no networking and would
-///   otherwise flatter every number they are averaged into.
+/// - ``Domain/tab``: the selected tab.
+/// - ``Domain/data``: live or sample data. A sample session does no networking and would
+///   otherwise flatter every number it is averaged into.
 ///
-/// Apple's sample calls `MetricManager.stateReporter(for:)`, which the iOS 27
-/// SDK does not have; `StateReporter.reporter(for:)` is the real entry point
-/// (`docs/metrickit-performance.md` §1.8).
+/// See `docs/metrickit-performance.md` §1.8.
 @MainActor
 enum PerformanceStates {
+    /// The state domains this app reports.
     nonisolated enum Domain: String, CaseIterable {
+        /// Which tab is selected.
         case tab = "segrini.samuele.PoliVerse.tab"
+        /// Whether the app is showing live or sample data.
         case data = "segrini.samuele.PoliVerse.data"
     }
 
-    /// The tab values the app uses: ``NewDestination/Tab``, and `single` for
-    /// the single page. Anything else is reported as no state rather than as
-    /// a new one: an unbounded label set is exactly what the state limit
-    /// punishes, and an empty label is a fatal error.
+    /// The tab labels that may be reported: ``NewDestination/Tab``'s, plus `single` for the
+    /// single-page layout.
+    ///
+    /// Anything else is reported as no state rather than as a new one — an unbounded label
+    /// set is what the state limit punishes, and an empty label is fatal.
     static let tabs: Set<String> = ["today", "courses", "career", "search", "single"]
 
+    /// The last tab reported, so the same state is not reported twice. Doubly optional: not
+    /// yet reported differs from reported as no state.
     private static var lastTab: String??
+    /// The last data source reported, so the same state is not reported twice.
     private static var lastData: Bool?
 
+    /// Reports which tab is now selected.
+    ///
+    /// StateReporting is rate-limited to human timescales, so repeating the current state is
+    /// skipped.
+    ///
+    /// - Parameter tab: The tab's label, or `nil` for no state. A label outside ``tabs`` is
+    ///   reported as no state.
     static func tabSelected(_ tab: String?) {
         let label = tab.flatMap { tabs.contains($0) ? $0 : nil }
         // StateReporting is rate-limited to human timescales; a repeated
@@ -42,20 +53,26 @@ enum PerformanceStates {
         Reporters.tab.reportTransition(to: label)
     }
 
+    /// Reports whether the app is showing live or sample data.
+    ///
+    /// - Parameter usesSampleData: `true` for sample data.
     static func dataSource(usesSampleData: Bool) {
         guard lastData != usesSampleData else { return }
         lastData = usesSampleData
         Reporters.data.reportTransition(to: usesSampleData ? "sample" : "live")
     }
 
+    /// Every domain, for the `MetricManager` that must be created with them.
     nonisolated static var enabledDomains: Set<StateReportingDomain> {
         Set(Domain.allCases.map { StateReportingDomain(rawValue: $0.rawValue) })
     }
 
-    /// One reporter per domain for the process: asking again for the same
-    /// domain with different metadata types crashes.
+    /// One reporter per domain for the whole process: asking again for the same domain with
+    /// different metadata types crashes.
     private enum Reporters {
+        /// The tab domain's reporter.
         static let tab = StateReporter<Never, Never>.reporter(for: Domain.tab.rawValue)
+        /// The data-source domain's reporter.
         static let data = StateReporter<Never, Never>.reporter(for: Domain.data.rawValue)
     }
 }

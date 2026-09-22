@@ -1,6 +1,20 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
+    "${room} è libera in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "it" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "${room} è libera in ${applicationName}",
+              "Controlla ${room} in ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
     "Apri l'orario in ${applicationName}" : {
       "localizations" : {
         "en" : {
@@ -106,6 +120,34 @@
             "values" : [
               "Quando è il prossimo esame in ${applicationName}",
               "Prossimo esame in ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Quando è l'esame di ${exam} in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "it" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Quando è l'esame di ${exam} in ${applicationName}",
+              "Data dell'appello ${exam} in ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Quando ho lezione di ${course} in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "it" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Quando ho lezione di ${course} in ${applicationName}",
+              "Prossima lezione di ${course} in ${applicationName}"
             ]
           }
         }

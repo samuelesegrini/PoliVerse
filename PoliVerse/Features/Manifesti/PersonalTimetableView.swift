@@ -8,16 +8,22 @@ import SwiftUI
 /// reads the result back into a week it keeps on the phone. The manifesto's
 /// own pages are never shown.
 struct PersonalTimetableView: View {
+    /// The shared ``PersonalTimetableModel``, from the environment.
     @Environment(PersonalTimetableModel.self) private var personal
+    /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
 
+    /// Whether the builder sheet is up.
+    /// Which semester's week is shown.
     @State private var building = false
     @State private var semester = 1
     @State private var confirmingDelete = false
     @State private var confirmingExport = false
     @State private var exportOutcome: CalendarExporter.Outcome?
 
+    /// The view's content.
     var body: some View {
         Group {
             if let timetable = personal.timetable {
@@ -82,11 +88,13 @@ struct PersonalTimetableView: View {
         }
     }
 
+    /// The title of the alert reporting an export's outcome.
     private var exportTitle: String {
         if case .synced = exportOutcome { return String(localized: "Calendario aggiornato") }
         return String(localized: "Calendario non aggiornato")
     }
 
+    /// The body of that alert: how many events were written, or why none were.
     private var exportMessage: String {
         switch exportOutcome {
         case .synced(let count): String(localized: "\(count) eventi settimanali nel calendario «Orario personalizzato».")
@@ -98,12 +106,20 @@ struct PersonalTimetableView: View {
 
     // MARK: - Week
 
+    /// Whether the official agenda has taken over each teaching, by teaching code.
+    ///
+    /// - Parameter timetable: The timetable to judge.
+    /// - Returns: One status per teaching.
     private func statuses(_ timetable: PersonalTimetable) -> [String: TimetableHandover.Status] {
         Dictionary(uniqueKeysWithValues: timetable.entries.map {
             ($0.code, TimetableHandover.status(of: $0, agenda: agenda.officialEvents))
         })
     }
 
+    /// The chosen semester's week: one card per weekday, with its slots in time order.
+    ///
+    /// - Parameter timetable: The timetable to draw.
+    /// - Returns: The week.
     @ViewBuilder
     private func week(_ timetable: PersonalTimetable) -> some View {
         let statuses = statuses(timetable)
@@ -203,6 +219,10 @@ struct PersonalTimetableView: View {
         }
     }
 
+    /// A weekday's name.
+    ///
+    /// - Parameter weekday: The weekday in `Calendar` numbering.
+    /// - Returns: The name, in the reader's language.
     private func weekdayName(_ weekday: Int) -> String {
         var calendar = PoliMiDate.romeCalendar
         calendar.locale = locale
@@ -210,11 +230,16 @@ struct PersonalTimetableView: View {
     }
 }
 
+/// One weekly slot: its time, its teaching, its room and its address.
 private struct SlotRow: View {
+    /// The teaching this slot belongs to.
     let entry: PersonalTimetable.Entry
+    /// The slot being drawn.
     let slot: PersonalTimetable.Slot
+    /// Whether the official agenda now carries this teaching, which the row marks.
     let status: TimetableHandover.Status
 
+    /// The view's content.
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .trailing, spacing: 2) {
@@ -240,6 +265,10 @@ private struct SlotRow: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// Minutes from midnight as `HH:mm`.
+    ///
+    /// - Parameter minutes: Minutes from midnight.
+    /// - Returns: The time.
     static func clock(_ minutes: Int) -> String {
         String(format: "%02d:%02d", minutes / 60, minutes % 60)
     }
@@ -249,20 +278,31 @@ private struct SlotRow: View {
 
 /// Name, teachings, result: the manifesto's cart flow as three native steps.
 private struct PersonalTimetableBuilder: View {
+    /// The shared ``PersonalTimetableModel``, from the environment.
     @Environment(PersonalTimetableModel.self) private var personal
+    /// The shared ``ManifestiModel``, from the environment.
     @Environment(ManifestiModel.self) private var manifesti
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The shared ``CourseModel``, from the environment.
     @Environment(CourseModel.self) private var courses
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
     @AppStorage("manifestoSurname") private var surname = ""
     @AppStorage("personalTimetableFirstName") private var storedFirstName = ""
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
 
+    /// The builder's four steps: the student's name, the degree course, the teachings, and the
+    /// build itself.
     enum Step { case name, course, teachings, build }
+    /// Which step the builder is on.
+    /// The surname, asked for separately so a compound one is never split wrongly.
     @State private var step: Step = .name
     @State private var lastName = ""
     @State private var firstName = ""
     @State private var page: CataloguePage?
+    /// The shared ``StudyProgrammeModel``, from the environment.
     @Environment(StudyProgrammeModel.self) private var programmes
     @State private var yearOfCourse: String?
     @State private var bracketTeaching: ManifestoTeaching?
@@ -274,8 +314,10 @@ private struct PersonalTimetableBuilder: View {
             .filter { !$0.isEmpty }.joined(separator: " ")
     }
 
+    /// The degree course the career names, used to open the cascade in the right place.
     private var myDegree: String? { career.planHeader?.course }
 
+    /// The view's content.
     var body: some View {
         NavigationStack {
             Group {
@@ -305,6 +347,7 @@ private struct PersonalTimetableBuilder: View {
 
     // Step 1
 
+    /// The first step: the surname and forename the service picks brackets from.
     private var nameStep: some View {
         Form {
             Section {
@@ -341,6 +384,7 @@ private struct PersonalTimetableBuilder: View {
 
     // Step 2: where in the manifesto
 
+    /// The second step: the degree course and plan, through ``CatalogueCascade``.
     private var courseStep: some View {
         Form {
             CatalogueCascade(page: Binding(get: { page }, set: { found in
@@ -372,10 +416,13 @@ private struct PersonalTimetableBuilder: View {
 
     // Step 3: the plan's teachings
 
+    /// The years of course the chosen plan lists, in order.
     private var yearsOfCourse: [String] {
         Array(Set(page?.teachings.compactMap(\.yearOfCourse) ?? [])).sorted()
     }
 
+    /// The third step: the plan's teachings by year of course, with the chosen ones counted
+    /// against ``PersonalTimetableModel/capacity``.
     private var teachingsStep: some View {
         let rows = (page?.teachings ?? []).filter { yearOfCourse == nil || $0.yearOfCourse == yearOfCourse }
         let listed = Set((page?.teachings ?? []).map(\.teaching.code))
@@ -452,6 +499,10 @@ private struct PersonalTimetableBuilder: View {
         }
     }
 
+    /// One teaching of the plan: its name, its credits, and a way to choose another bracket.
+    ///
+    /// - Parameter row: The plan row to draw.
+    /// - Returns: The row.
     private func teachingRow(_ row: PlanTeaching) -> some View {
         let selected = personal.isSelected(row.teaching)
         let details: [String] = [
@@ -505,6 +556,7 @@ private struct PersonalTimetableBuilder: View {
 
     // Step 3
 
+    /// The last step: the build's progress, and what the service refused.
     private var buildStep: some View {
         List {
             Section {
@@ -566,16 +618,22 @@ private struct PersonalTimetableBuilder: View {
 /// `sheet(item:)` identity for the section question on screen, so the next
 /// question replaces it instead of the sheet staying shut.
 private struct PendingID: Identifiable {
+    /// The teaching code the question is about.
     let code: String
+    /// ``code``.
     var id: String { code }
 }
 
 /// Which section of a teaching offered in sections.
 private struct SectionPicker: View {
+    /// The teaching whose sections are being chosen between.
     let teaching: ManifestoTeaching
+    /// The sections on offer.
     let options: [PersonalTimetableParser.SectionOption]
+    /// Records the chosen section.
     let onChoose: (PersonalTimetableParser.SectionOption) -> Void
 
+    /// The view's content.
     var body: some View {
         NavigationStack {
             List {
@@ -603,8 +661,11 @@ private struct SectionPicker: View {
     }
 }
 
+/// One line of the build's progress, with a spinner beside it.
 private struct ProgressRow: View {
+    /// What the build is doing.
     let text: String
+    /// The view's content.
     var body: some View {
         HStack(spacing: 10) {
             ProgressView()

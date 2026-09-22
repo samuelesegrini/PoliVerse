@@ -3,21 +3,32 @@ import SwiftUI
 /// Settings, opened as a sheet from Oggi: the profile first, then data,
 /// appearance, the parts of the university the app reads, and help.
 struct SettingsSheet: View {
+    /// The shared ``WhatsNewState``, from the environment.
     @Environment(WhatsNewState.self) private var whatsNew
+    /// The shared ``OnboardingState``, from the environment.
     @Environment(OnboardingState.self) private var onboarding
     /// Opened from the row below, rather than by the shell: a sheet raised
     /// over this one from outside it never comes up.
     @State private var readingNotes: [ReleaseNote] = []
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The shared ``DataStatus``, from the environment.
     @Environment(DataStatus.self) private var status
+    /// The shared ``WeBeepModel``, from the environment.
     @Environment(WeBeepModel.self) private var weBeep
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
+    /// The environment's `shell`.
     @Environment(\.shell) private var shell
 
+    /// How the app is laid out: tabs, or one page with a panel.
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
+    /// Whether opening Cerca brings the keyboard up.
     @AppStorage(SearchTabKeyboard.storageKey) private var searchOpensKeyboard = true
+    /// Whether the sign-out confirmation is presented.
     @State private var confirmingSignOut = false
 
+    /// The view's content.
     var body: some View {
         NavigationStack(path: Binding(get: { shell.settingsPath }, set: { shell.settingsPath = $0 })) {
             List {

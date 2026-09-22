@@ -11,6 +11,7 @@ struct RichText: View {
     /// The stripped form, used when it did not.
     let plain: String?
 
+    /// The view's content.
     var body: some View {
         if let html {
             // Rendered on demand rather than stored: an AttributedString is

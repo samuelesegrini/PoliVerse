@@ -9,13 +9,17 @@ import SwiftUI
 /// yesterday's from today's, and the difference is turning up to a lecture
 /// that moved.
 struct FreshnessBar: View {
+    /// Seconds since the data on screen was fetched, or `nil` when it never was.
     let age: TimeInterval?
+    /// The shared ``NetworkMonitor``, from the environment.
     @Environment(NetworkMonitor.self) private var network
 
+    /// The age and the connection together, which decide what the bar says.
     private var freshness: Freshness {
         Freshness(age: age, isOnline: network.isOnline)
     }
 
+    /// The view's content.
     var body: some View {
         if let label = freshness.label {
             Label(label, systemImage: network.isOnline ? "clock.arrow.circlepath" : "wifi.slash")
@@ -43,8 +47,10 @@ struct FreshnessBar: View {
 /// change the Politecnico refused three times, because a star that quietly
 /// un-stars itself several launches later is worse than being told.
 struct PendingChangesBar: View {
+    /// The shared ``PendingChanges``, from the environment.
     @Environment(PendingChanges.self) private var pending
 
+    /// The view's content.
     var body: some View {
         if !pending.failed.isEmpty {
             VStack(alignment: .leading, spacing: 4) {

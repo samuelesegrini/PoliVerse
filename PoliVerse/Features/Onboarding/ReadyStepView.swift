@@ -11,9 +11,12 @@ import SwiftUI
 /// data is being told that none of it is real. Those have nothing in common
 /// but the button at the bottom.
 struct ReadyStepView: View {
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// Closes the flow and hands the student the app.
     let finish: () -> Void
 
+    /// The view's content.
     var body: some View {
         if session.useMockData {
             SampleDataReadyView(finish: finish)
@@ -25,10 +28,14 @@ struct ReadyStepView: View {
 
 /// The end of the flow for someone who signed in.
 private struct AccountReadyView: View {
+    /// The shared ``WeBeepModel``, from the environment.
     @Environment(WeBeepModel.self) private var weBeep
+    /// The shared ``NotificationModel``, from the environment.
     @Environment(NotificationModel.self) private var notifications
+    /// Closes the flow and hands the student the app.
     let finish: () -> Void
 
+    /// The view's content.
     var body: some View {
         OnboardingStepLayout(
             symbol: "checkmark.seal.fill",
@@ -72,8 +79,10 @@ private struct AccountReadyView: View {
 
 /// The end of the flow for someone who chose to look around first.
 private struct SampleDataReadyView: View {
+    /// Closes the flow and hands the student the app.
     let finish: () -> Void
 
+    /// The view's content.
     var body: some View {
         OnboardingStepLayout(
             symbol: "theatermasks.fill",

@@ -2,13 +2,22 @@ import Foundation
 
 /// What Siri says when asked for news about exams.
 ///
-/// Titles and course names only, never a mark: Siri answers out loud, and
-/// the details stay in the app (§18.3). A week, not the feed's fortnight,
-/// because "questa settimana" is what a spoken answer can promise.
+/// Titles and teaching names only, never a mark: Siri answers out loud, so the details
+/// stay in the app. A week rather than the feed's fortnight, because that is what a
+/// spoken answer can promise.
 nonisolated enum ExamUpdatesSummary {
-    /// Named out loud; the rest is a number.
+    /// How many updates are named out loud; the rest become a count.
     static let spokenLimit = 3
 
+    /// The spoken answer for the week's exam news.
+    ///
+    /// Ordinary course material is left out, and a mark read from a file that the exam
+    /// services have since confirmed is not counted twice.
+    ///
+    /// - Parameters:
+    ///   - updates: The recorded updates.
+    ///   - now: The moment the week is measured back from.
+    /// - Returns: The sentence to speak.
     static func spoken(_ updates: [ExamUpdate], now: Date) -> String {
         let week = updates.filter {
             $0.detectedAt > now.addingTimeInterval(-7 * 86400) && $0.kind != .materialAdded
@@ -28,6 +37,16 @@ nonisolated enum ExamUpdatesSummary {
 
 /// What Siri says when asked for the next exam.
 nonisolated enum NextExamSummary {
+    /// The spoken answer for the next sitting, read from the widgets' snapshot.
+    ///
+    /// A sitting with no time of day — which the services express as midnight in Rome — is
+    /// named by its day alone rather than claiming it begins at midnight.
+    ///
+    /// - Parameters:
+    ///   - snapshot: The career snapshot, or `nil` when none has been written.
+    ///   - now: The moment to measure from.
+    ///   - locale: The locale the date is formatted in.
+    /// - Returns: The sentence to speak.
     static func spoken(_ snapshot: CareerSnapshot?, now: Date, locale: Locale = .current) -> String {
         guard let snapshot, let name = snapshot.nextExamName, let date = snapshot.nextExamDate, date > now else {
             return String(localized: "Non risultano appelli in programma.")

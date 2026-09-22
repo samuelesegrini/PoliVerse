@@ -10,9 +10,12 @@ import SwiftUI
 /// Advisory, never automatic: switching re-runs authorisation through a web
 /// view, which is not something to do to someone without asking.
 struct CareerMismatchBanner: View {
+    /// The shared ``CareersModel``, from the environment.
     @Environment(CareersModel.self) private var careers
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
 
+    /// The view's content.
     var body: some View {
         if let suggested = careers.suggestedSwitch() {
             NavigationLink {

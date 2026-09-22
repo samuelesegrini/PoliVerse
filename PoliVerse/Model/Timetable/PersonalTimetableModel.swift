@@ -2,60 +2,105 @@ import Foundation
 import Observation
 import OSLog
 
-/// Builds the personalised timetable natively and keeps it on the phone.
+/// Builds the personalised timetable and keeps it on the device.
 ///
-/// The Politecnico's cart is only the calculator: the app sets the name,
-/// adds each teaching, reads the "orario testuale" back, and from then on the
-/// timetable is a local file. The student never sees the manifesto's pages.
+/// The Politecnico's cart is used only as a calculator: the app sets a name on the
+/// session, adds each chosen teaching, reads the orario testuale back, and from then
+/// on the timetable is a local file. The student never sees the service's own pages.
+///
+/// ## Building
+///
+/// ``build(name:surname:)`` recreates the cart from ``selection`` and reads the
+/// result. Because setting a name empties the cart, teachings whose alphabetical
+/// bracket differs from the student's are added in separate runs — see
+/// ``CartBatches`` — and the entries from each run are merged.
+///
+/// ## Sections
+///
+/// Most teachings are bracketed by surname, but some are offered in sections the
+/// student picks. Those raise a ``SectionQuestion``, which the builder answers
+/// through ``choose(_:for:link:)``.
+///
+/// ## Refreshing
+///
+/// ``refreshIfStale(now:)`` rebuilds quietly once a timetable is a week old, since
+/// rooms move in the first weeks of term and nothing announces it.
 @Observable
 final class PersonalTimetableModel {
+    /// How far a build has got.
     enum Progress: Equatable {
+        /// No build is running, and none has just finished.
         case idle
+        /// Setting the name on the service and clearing the cart.
         case settingName
+        /// Adding teachings, with how many of how many have been attempted.
         case adding(done: Int, total: Int)
+        /// Reading the orario testuale back.
         case reading
+        /// The build produced a timetable.
         case finished
+        /// The build produced nothing, with a sentence explaining why.
         case failed(String)
     }
 
+    /// The built timetable, restored from disk at init. `nil` when none has been built.
     private(set) var timetable: PersonalTimetable?
-    /// Teachings chosen for the next build, in the order they were picked.
+    /// Teachings chosen for the next build, in the order they were picked. Capped at
+    /// ``capacity``.
     private(set) var selection: [ManifestoTeaching] = []
+    /// How far the current or last build got.
     private(set) var progress: Progress = .idle
-    /// Teachings the service refused, with its reason when it gave one.
+    /// Teachings the service refused during the last build, with its reason where it gave
+    /// one.
     private(set) var refused: [(teaching: ManifestoTeaching, reason: String?)] = []
 
+    /// A section the student picked, with the link it was picked through.
     typealias SectionChoice = PersonalTimetable.SectionChoice
 
     /// A teaching offered in sections, waiting for the student's choice.
     struct SectionQuestion: Sendable {
+        /// The teaching being asked about.
         let teaching: ManifestoTeaching
+        /// The link its sections were listed from.
         let link: PersonalTimetableParser.SectionsLink
+        /// The sections on offer.
         let options: [PersonalTimetableParser.SectionOption]
     }
 
-    /// Chosen sections, by teaching code.
+    /// Sections chosen so far, by teaching code.
     private(set) var sectionChoices: [String: SectionChoice] = [:]
-    /// Chosen brackets, by teaching code, when not the student's own.
+    /// Alphabetical brackets chosen so far, by teaching code, where not the student's own.
     private(set) var bracketChoices: [String: BracketChoice] = [:]
-    /// The year of course each picked teaching is listed under.
+    /// The year of course each picked teaching is listed under, by teaching code. Known
+    /// only for teachings picked from a plan page.
     private(set) var yearsOfCourse: [String: String] = [:]
-    /// Where the student last was in the manifesto.
+    /// Where the student last was in the manifesto, so the picker reopens there.
     var catalogue: CatalogueSelection?
-    /// Questions in the order teachings were picked; the sheet shows the first.
+    /// Outstanding section questions, in the order the teachings were picked.
     private(set) var sectionQuestions: [SectionQuestion] = []
+    /// The question the sheet should ask, or `nil` when there is none.
     var pendingSections: SectionQuestion? { sectionQuestions.first }
 
-    /// The service's own cap.
+    /// The service's own cap on how many teachings a cart may hold.
     static let capacity = 15
+    /// The ``DiskCache`` record the timetable is stored under.
     private static let cacheName = "personal-timetable"
 
-    /// The cart, not the catalogue: this model only ever spoke to that half —
-    /// which is what made the split obvious. See ``TimetableCart``.
+    /// The cart half of the timetable service: naming, adding and reading back. The
+    /// catalogue half is ``ManifestiModel``'s.
     private let cart: TimetableCart
+    /// Where a built timetable is published, so the agenda merges its lessons.
     private let agenda: (any TimetablePublishing)?
+    /// Diagnostic log for this type, under the `manifesti` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "manifesti")
 
+    /// Restores the stored timetable and everything derived from it, then publishes it to
+    /// the agenda.
+    ///
+    /// - Parameters:
+    ///   - cart: The cart half of the timetable service.
+    ///   - agenda: Where a built timetable is published.
+    ///   - preview: A timetable to use instead of the stored one, for previews.
     init(cart: TimetableCart, agenda: (any TimetablePublishing)? = nil, preview: PersonalTimetable? = nil) {
         self.cart = cart
         self.agenda = agenda
@@ -69,6 +114,7 @@ final class PersonalTimetableModel {
         agenda?.personalTimetable = timetable
     }
 
+    /// `true` while a build is running.
     var isBuilding: Bool {
         switch progress {
         case .settingName, .adding, .reading: true
@@ -78,22 +124,40 @@ final class PersonalTimetableModel {
 
     // MARK: - Selection
 
+    /// Whether a teaching is in ``selection``.
+    ///
+    /// - Parameter teaching: The teaching to check.
+    /// - Returns: `true` when it is chosen, matched by code.
     func isSelected(_ teaching: ManifestoTeaching) -> Bool {
         selection.contains { $0.code == teaching.code }
     }
 
-    /// A teaching picked from its plan page, which knows its year of course.
+    /// Adds or removes a teaching picked from a plan page, recording the year of course
+    /// the page lists it under.
+    ///
+    /// - Parameter row: The plan row that was tapped.
     func toggle(_ row: PlanTeaching) {
         if let year = row.yearOfCourse { yearsOfCourse[row.teaching.code] = year }
         toggle(row.teaching)
     }
 
-    /// The student's bracket choice for a teaching; nil goes back to the one
-    /// their name falls in.
+    /// Records the bracket to add a teaching under.
+    ///
+    /// - Parameters:
+    ///   - bracket: The bracket to use, or `nil` to use the one the student's surname
+    ///     falls in.
+    ///   - teaching: The teaching it applies to.
     func choose(bracket: BracketChoice?, for teaching: ManifestoTeaching) {
         bracketChoices[teaching.code] = bracket
     }
 
+    /// Adds or removes a teaching from ``selection``.
+    ///
+    /// Adding is refused once ``capacity`` is reached. A newly added teaching is checked
+    /// for sections, which only a named session can see — before the name is set,
+    /// ``prepare(name:)`` asks instead.
+    ///
+    /// - Parameter teaching: The teaching that was tapped.
     func toggle(_ teaching: ManifestoTeaching) {
         if let index = selection.firstIndex(where: { $0.code == teaching.code }) {
             selection.remove(at: index)
@@ -108,20 +172,38 @@ final class PersonalTimetableModel {
         }
     }
 
+    /// Raises a ``SectionQuestion`` when a teaching is offered in sections.
+    ///
+    /// Does nothing when a section is already chosen, a question is already outstanding,
+    /// the teaching is not offered in sections, or it has been deselected while the
+    /// service was being asked.
+    ///
+    /// - Parameter teaching: The teaching to check.
     private func askForSections(_ teaching: ManifestoTeaching) async {
         guard sectionChoices[teaching.code] == nil, !sectionQuestions.contains(where: { $0.teaching.code == teaching.code }),
               let found = await cart.sections(for: teaching), isSelected(teaching) else { return }
         sectionQuestions.append(SectionQuestion(teaching: teaching, link: found.link, options: found.options))
     }
 
+    /// Answers a section question and clears it.
+    ///
+    /// - Parameters:
+    ///   - option: The section chosen, or `nil` to leave the teaching unsectioned.
+    ///   - teaching: The teaching it applies to.
+    ///   - link: The link the sections were listed from.
     func choose(_ option: PersonalTimetableParser.SectionOption?, for teaching: ManifestoTeaching,
                 link: PersonalTimetableParser.SectionsLink) {
         sectionChoices[teaching.code] = option.map { SectionChoice(link: link, option: $0) }
         sectionQuestions.removeAll { $0.teaching.code == teaching.code }
     }
 
-    /// Sets the name on the service ahead of the build, so choosing teachings
-    /// can find those offered in sections.
+    /// Sets the name on the service ahead of a build, then asks about the sections of
+    /// every already-chosen teaching.
+    ///
+    /// Teachings kept from a previous build were picked before a name was set, so their
+    /// sections can only be discovered now.
+    ///
+    /// - Parameter name: The name to set on the session.
     func prepare(name: String) async {
         await cart.setName(name)
         // Teachings kept from the last build were picked before the name was
@@ -131,15 +213,27 @@ final class PersonalTimetableModel {
 
     // MARK: - Building
 
-    /// Recreates the cart from the selection and reads the timetable back.
+    /// Builds the timetable from ``selection``, in the catalogue's year or the cart's.
+    ///
+    /// - Parameters:
+    ///   - name: The name to set on the service, and the timetable's own name.
+    ///   - surname: The surname the alphabetical brackets are resolved against.
     func build(name: String, surname: String) async {
         await build(name: name, surname: surname, teachings: selection,
                     yearCode: catalogue?.year ?? cart.year.code)
     }
 
-    /// A week: rooms move in the first weeks of term, and nothing announces it.
+    /// How old a timetable may get before ``refreshIfStale(now:)`` rebuilds it: a week,
+    /// because rooms move in the first weeks of term and nothing announces it.
     static let refreshInterval: TimeInterval = 7 * 86400
 
+    /// Whether a timetable is worth rebuilding.
+    ///
+    /// - Parameters:
+    ///   - timetable: The timetable to judge.
+    ///   - now: The moment to measure against.
+    /// - Returns: `true` only for a live timetable, older than ``refreshInterval``, that
+    ///   knows what it was built from and still has lessons to come.
     static func needsRefresh(_ timetable: PersonalTimetable, now: Date) -> Bool {
         guard timetable.retiredAt == nil, !timetable.sources.isEmpty,
               now.timeIntervalSince(timetable.builtAt) >= refreshInterval else { return false }
@@ -148,6 +242,13 @@ final class PersonalTimetableModel {
     }
 
     /// Rebuilds a week-old timetable quietly, from what it was built from.
+    ///
+    /// Runs in the timetable's own academic year, whatever the catalogue is browsing. A
+    /// timetable already synced to the Calendar app follows the rebuild. The outcome is
+    /// not left on ``progress``: a background rebuild that fails keeps the timetable it
+    /// had and reports nothing to the builder.
+    ///
+    /// - Parameter now: The moment to measure staleness against.
     func refreshIfStale(now: Date = .now) async {
         guard let current = timetable, !isBuilding, Self.needsRefresh(current, now: now) else { return }
         // In the timetable's own year, whatever the catalogue is browsing.
@@ -164,6 +265,26 @@ final class PersonalTimetableModel {
         if progress == .finished { progress = .idle }
     }
 
+    /// Recreates the cart from a set of teachings and reads the timetable back.
+    ///
+    /// The cart is cleared first, since it outlives the app on the server's session and a
+    /// leftover teaching would reappear in the result. Teachings are then added in
+    /// ``CartBatches`` runs — one per bracket, because setting a name empties the cart —
+    /// one at a time within a run, and both semesters' pages are read after each run that
+    /// added anything.
+    ///
+    /// Cancellation mid-build leaves ``progress`` at ``Progress/idle`` and saves nothing,
+    /// so a partial timetable cannot pass for a complete one. A build that adds nothing,
+    /// or that the service never answers, ends in ``Progress/failed(_:)``.
+    ///
+    /// A successful build keeps the hidden teachings that still exist, and records the
+    /// sources, brackets, sections, catalogue position and surname needed to rebuild.
+    ///
+    /// - Parameters:
+    ///   - name: The name to set, and the timetable's own name.
+    ///   - surname: The surname the brackets are resolved against.
+    ///   - teachings: What to add.
+    ///   - yearCode: The academic year to build in.
     private func build(name: String, surname: String, teachings: [ManifestoTeaching], yearCode: String) async {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !teachings.isEmpty, !isBuilding else { return }
@@ -238,8 +359,13 @@ final class PersonalTimetableModel {
         progress = .finished
     }
 
-    /// One teaching into the cart: its chosen section, else the row's own
-    /// link when it came from a plan page, else the link on its detail page.
+    /// Adds one teaching to the cart.
+    ///
+    /// Uses the chosen section's link where there is one, then the plan page's own year of
+    /// course, and otherwise the link on the teaching's detail page.
+    ///
+    /// - Parameter teaching: The teaching to add.
+    /// - Returns: What the cart answered.
     private func add(_ teaching: ManifestoTeaching) async -> PersonalTimetableParser.CartReply {
         if let choice = sectionChoices[teaching.code] {
             let link = PersonalTimetableParser.CartLink(
@@ -255,12 +381,19 @@ final class PersonalTimetableModel {
         return await cart.addToTimetable(teaching, link: await cart.cartLink(for: teaching))
     }
 
+    /// Returns ``progress`` to ``Progress/idle`` once a build is over, so a finished or
+    /// failed build stops being reported.
     func resetProgress() {
         if !isBuilding { progress = .idle }
     }
 
     // MARK: - Decisions
 
+    /// Hides or reveals one teaching, and follows the change into a synced calendar.
+    ///
+    /// - Parameters:
+    ///   - hidden: Whether to hide it.
+    ///   - code: The teaching code.
     func setHidden(_ hidden: Bool, code: String) {
         guard var current = timetable else { return }
         if hidden { current.hiddenCodes.insert(code) } else { current.hiddenCodes.remove(code) }
@@ -271,8 +404,12 @@ final class PersonalTimetableModel {
         }
     }
 
-    /// Hands over to the official agenda, keeping the file in case it is
-    /// needed again.
+    /// Hands over to the official agenda, or takes the timetable back.
+    ///
+    /// The file is kept either way. Retiring removes the timetable's lessons from the
+    /// synced calendar as well.
+    ///
+    /// - Parameter retired: `true` to hand over, `false` to resume.
     func retire(_ retired: Bool) {
         guard var current = timetable else { return }
         // Archived for the official agenda: its lessons leave the calendar too.
@@ -281,6 +418,8 @@ final class PersonalTimetableModel {
         save(current)
     }
 
+    /// Discards the timetable, its selection and its stored file, and removes its lessons
+    /// from the synced calendar.
     func delete() {
         CalendarExporter.remove()
         timetable = nil
@@ -293,6 +432,9 @@ final class PersonalTimetableModel {
         DiskCache.save(Optional<PersonalTimetable>.none, as: Self.cacheName)
     }
 
+    /// Stores a timetable, publishes it to the agenda and writes it to disk.
+    ///
+    /// - Parameter value: The timetable to keep.
     private func save(_ value: PersonalTimetable) {
         timetable = value
         agenda?.personalTimetable = value

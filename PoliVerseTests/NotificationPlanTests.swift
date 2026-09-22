@@ -35,6 +35,41 @@ struct NotificationPlanTests {
                                 enrolments: true, leadMinutes: 15)
     }
 
+    /// The timetable names a room twice, and only one of the two is signposted
+    /// anywhere a student will stand: `"005A"` is the ateneo's own code and is
+    /// printed on no door, while `"5.1.1"` is building, floor and room. A
+    /// reminder that names the room the student cannot find has not told them
+    /// where to go.
+    @Test("A lecture reminder names the room by its door code, not the internal one")
+    func lectureNamesDoorCode() {
+        let start = now.addingTimeInterval(120 * 60)
+        let lecture = AgendaEvent(
+            id: 1, title: "Analisi", start: start, end: start.addingTimeInterval(7200),
+            kind: .lecture, room: "005A", roomAcronym: "5.1.1")
+        let plan = NotificationPlan.build(
+            events: [lecture], exams: [], preferences: preferences, now: now)
+        let reminder = plan.first { $0.kind == .lecture }
+        #expect(reminder?.body.contains("Aula 5.1.1") == true)
+        #expect(reminder?.body.contains("005A") == false)
+    }
+
+    /// Named halls keep their names even when a door code is available: Rogers
+    /// and De Donato are what students are told and what they ask for, and
+    /// `"R.0.1"` in their place is a step backwards. The name already says
+    /// "Aula", so the word is not added a second time.
+    @Test("A lecture in a named hall is announced by the hall's name")
+    func lectureKeepsHallName() {
+        let start = now.addingTimeInterval(120 * 60)
+        let lecture = AgendaEvent(
+            id: 2, title: "Analisi", start: start, end: start.addingTimeInterval(7200),
+            kind: .lecture, room: "Aula Rogers", roomAcronym: "R.0.1")
+        let plan = NotificationPlan.build(
+            events: [lecture], exams: [], preferences: preferences, now: now)
+        let body = plan.first { $0.kind == .lecture }?.body
+        #expect(body?.contains("Aula Rogers") == true)
+        #expect(body?.contains("Aula Aula") == false)
+    }
+
     @Test("A lecture is announced the chosen number of minutes before")
     func lectureLead() {
         let plan = NotificationPlan.build(

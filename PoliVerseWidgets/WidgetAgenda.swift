@@ -7,6 +7,7 @@ import Foundation
 /// means every widget agrees on *whose* records those are and how stale they
 /// are allowed to look.
 enum WidgetAgenda {
+    /// The app group's offline store, where the app writes the agenda.
     private static var store: OfflineStore {
         OfflineStore(groupIdentifier: OfflineStore.groupIdentifier)
     }

@@ -9,11 +9,16 @@ import SwiftUI
 /// exams are missing because the app is pointed at the triennale they
 /// finished.
 struct CareerStepView: View {
+    /// The shared ``CareersModel``, from the environment.
     @Environment(CareersModel.self) private var careers
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The onboarding flow's accent, taken from the look in use.
     private var tint = OnboardingTint()
+    /// Moves the flow on to the next step.
     let advance: () -> Void
 
+    /// The view's content.
     var body: some View {
         OnboardingStepLayout(
             symbol: "person.2.badge.gearshape.fill",

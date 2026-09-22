@@ -10,8 +10,11 @@ import SwiftUI
 
 /// One tile of the picture.
 struct HeroTile: Identifiable, Equatable {
+    /// The tile's identity, which the animation between pictures tracks.
     let id: String
+    /// The tile's SF Symbol.
     let symbol: String
+    /// The tile's colour, from the look's ramp.
     let colour: Flavor.RGB
     /// How much this tile weighs against the front one, in whatever unit the
     /// page counts in — bytes for storage. Nil when the page has nothing to
@@ -22,7 +25,9 @@ struct HeroTile: Identifiable, Equatable {
 /// A mark on the front tile's corner, like the plus on an "add" icon: the one
 /// piece of news the picture carries.
 struct HeroBadge: Equatable {
+    /// The badge's SF Symbol.
     let symbol: String
+    /// The badge's colour.
     let tint: Color
 }
 
@@ -46,7 +51,9 @@ struct HeroTileStack: View {
     /// False until there is something to say: a placeholder that flashes for a
     /// frame before the real tiles arrive reads as "empty".
     var showsPlaceholder = true
+    /// A mark on the front tile's corner, if any.
     var badge: HeroBadge?
+    /// How the look asks its surfaces to be drawn.
     let mode: Flavor.Mode
 
     /// Scaled, so the picture grows with the reader's text rather than staying
@@ -82,6 +89,7 @@ struct HeroTileStack: View {
     /// fixed centre leaves a gap behind a small tile and swallows a large one.
     private static let tuck: CGFloat = 0.18
 
+    /// The view's content.
     var body: some View {
         ZStack {
             if let front = tiles.first {
@@ -114,6 +122,7 @@ struct HeroTileStack: View {
         .accessibilityHidden(true)
     }
 
+    /// The mark on the front tile's corner, in its own colour.
     @ViewBuilder
     private var badgeView: some View {
         if let badge {
@@ -172,14 +181,21 @@ struct GlassTile: View {
         case glass
     }
 
+    /// The tile's SF Symbol.
     let symbol: String
+    /// The tile's colour.
     let colour: Flavor.RGB
+    /// The tile's side, in points; every other measurement follows from it.
     let side: CGFloat
+    /// How the tile is drawn: solid, tinted glass, or clear glass.
     var surface: Surface = .solid
+    /// How the look asks its surfaces to be drawn.
     var mode: Flavor.Mode = .standard
 
+    /// The squircle's corner radius, in the proportion iOS gives an app icon.
     private var radius: CGFloat { side * 0.2237 }
 
+    /// The view's content.
     var body: some View {
         switch surface {
         case .solid:
@@ -212,12 +228,17 @@ struct GlassTile: View {
         }
     }
 
+    /// The tile's symbol at a share of its side.
+    ///
+    /// - Parameter size: The symbol's size as a fraction of ``side``.
+    /// - Returns: The symbol.
     private func glyph(size: CGFloat) -> some View {
         Image(systemName: symbol)
             .font(.system(size: side * size, weight: .medium))
     }
 }
 
+/// Colours a hero tile derives from its own.
 extension Flavor.RGB {
     /// Black or white on this colour, whichever reads — the choice
     /// ``Flavor/onAccent(dark:mode:)`` makes, per colour because a ramp runs
@@ -239,32 +260,40 @@ extension Flavor.RGB {
 
 /// Colours for a page's marks, built from the look the student chose.
 ///
-/// Settings used to paint its icons in system colours — a red PDF, a green
-/// spreadsheet. It was wrong for *this* app: PoliVerse lets a student pick a
-/// Flavor and paints the whole of Oggi with it, and a settings page that
-/// ignores that choice reads as a page borrowed from somewhere else.
+/// Not system colours per kind — a red PDF, a green spreadsheet — which would
+/// ignore the Flavor the student picked and make a settings page read as one
+/// borrowed from somewhere else.
 ///
-/// So colours come in a ramp from deep to pale around the Flavor's hue, and a
-/// page hands out steps by **position**: storage by size, so deeper means
-/// bigger, the way iCloud's bar steps from dark to light green. Fixed colours
-/// per item were tried first and failed: ten items from one hue leave
-/// neighbours a shade apart. Spreading only the items actually on screen gives
+/// Instead colours come in a ramp from deep to pale around the Flavor's hue,
+/// and a page hands out steps by **position**: storage by size, so deeper means
+/// bigger, the way iCloud's bar steps from dark to light green. A fixed colour
+/// per item would not do it: ten items from one hue leave neighbours a shade
+/// apart. Spreading only the items actually on screen gives
 /// them the whole ramp between them.
 ///
 /// A colourful Flavor gives a narrow hue ramp; a grey one gives a lightness
 /// ramp only, because spreading hues around a grey would invent a colour the
 /// student deliberately did not pick — the refusal ``Flavor/derived`` makes.
 struct FlavorRamp {
+    /// The look's Flavor, which the ramp is centred on.
     let flavor: Flavor
+    /// How the look asks its surfaces to be drawn.
     let mode: Flavor.Mode
+    /// True in dark mode, which flips the ramp's direction.
     private let dark: Bool
+    /// The colour the ramp is checked for contrast against.
     private let ground: Flavor.RGB
 
     /// How much of the colour wheel the ramp covers, centred on the Flavor's
-    /// hue. A sixth: roughly the span of "blues". Half the wheel was tried
-    /// first and turned a navy look into a green PDF and a purple archive.
+    /// hue. A sixth: roughly the span of "blues". Much wider and a navy look
+    /// would give a green PDF and a purple archive.
     private static let spread = 0.16
 
+    /// The ramp for a look.
+    ///
+    /// - Parameters:
+    ///   - style: The look in use.
+    ///   - scheme: Light or dark.
     init(style: TodayStyle, scheme: ColorScheme) {
         flavor = style.flavor
         mode = style.appearance.flavorMode

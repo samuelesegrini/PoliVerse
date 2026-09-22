@@ -2,17 +2,20 @@ import SwiftUI
 
 /// The sittings, grouped by what the student has to decide about them.
 ///
-/// The list used to be ordered by the date of the exam, which is the wrong
-/// clock: an exam in June that you must enrol for by Friday is more urgent
-/// than one in January you are already enrolled in. What costs a session is
-/// the *decision* expiring, so that is what the order and the rows lead with.
+/// Not by the date of the exam, which is the wrong clock: an exam in June
+/// that you must enrol for by Friday is more urgent than one in January you
+/// are already enrolled in. What costs a session is the *decision* expiring,
+/// so that is what the order and the rows lead with.
 nonisolated struct ExamAgenda {
     /// A group of sittings under one heading.
     struct Section: Identifiable {
+        /// The group's identity, which is its heading.
         let id: String
+        /// The heading.
         let title: String
         /// Said once under the group rather than on each of its rows.
         let footnote: String?
+        /// The sittings in the group, in the order they need attention.
         let exams: [ExamSession]
     }
 
@@ -54,14 +57,19 @@ nonisolated struct ExamAgenda {
 /// the question becomes "when". Same row, two different first lines, decided
 /// by what the student can still do about it.
 struct ExamRow: View {
+    /// The sitting this row is about.
     let exam: ExamSession
 
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// What the sitting is asking of the student, which picks the row's colour and words.
     private var state: CareerState { CareerState(exam) }
 
+    /// The view's content.
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             if exam.status == .enrolled, let date = exam.date {
@@ -95,6 +103,10 @@ struct ExamRow: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// The day and month at the row's leading edge, for a sitting already booked.
+    ///
+    /// - Parameter date: The sitting's date.
+    /// - Returns: The gutter.
     private func dateGutter(_ date: Date) -> some View {
         VStack(spacing: 1) {
             Text(date.formatted(.dateTime.day().locale(locale)))
@@ -122,6 +134,7 @@ struct ExamRow: View {
         }
     }
 
+    /// The row's second line, which says what is known about the sitting's dates.
     private var detail: String {
         let day = Date.FormatStyle.dateTime.day().month(.wide).locale(locale)
         switch exam.status {

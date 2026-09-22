@@ -16,16 +16,20 @@ struct RoomFacilitiesSection: View {
     /// whole `Classroom` so the free-rooms detail, which holds a schedule
     /// instead, can show the same sections.
     let roomID: String?
+    /// The shared ``RoomFacilitiesModel``, from the environment.
     @Environment(RoomFacilitiesModel.self) private var facilities
     /// Whether the fetch has been tried for ``roomID``. Both endpoints
     /// failing leaves nothing loaded, and without this the placeholder would
     /// spin for as long as the screen was open.
     @State private var attempted = false
 
+    /// The room's equipment, once fetched.
     private var equipment: [RoomFacility] {
         roomID.flatMap { facilities.equipment[$0] } ?? []
     }
 
+    /// The software installed in the room. Empty for anything that is not a computer
+    /// laboratory.
     private var software: [RoomFacility] {
         roomID.flatMap { facilities.software[$0] } ?? []
     }
@@ -37,6 +41,7 @@ struct RoomFacilitiesSection: View {
         return facilities.isLoaded(roomID)
     }
 
+    /// The view's content.
     var body: some View {
         Group {
             if !isLoaded && !attempted {
@@ -86,9 +91,12 @@ struct RoomFacilitiesSection: View {
 
 /// One room from the catalogue: where it is, what it holds, what it has.
 struct ClassroomDetailView: View {
+    /// The room being shown.
     let room: Classroom
+    /// Opens a link outside the app.
     @Environment(\.openURL) private var openURL
 
+    /// The view's content.
     var body: some View {
         List {
             Section {
@@ -138,6 +146,9 @@ struct ClassroomDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    /// Opens the building's address in Maps.
+    ///
+    /// - Parameter address: The address as the catalogue records it.
     private func openInMaps(_ address: String) {
         guard
             let encoded = address.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),

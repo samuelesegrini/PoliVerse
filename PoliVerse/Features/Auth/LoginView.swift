@@ -11,6 +11,7 @@ import SwiftUI
 /// same choice looked like two different apps when this one had its own
 /// centred, spacer-driven layout instead.
 struct LoginView: View {
+    /// The view's content.
     var body: some View {
         OnboardingStepLayout(
             symbol: "graduationcap.fill",

@@ -5,11 +5,16 @@ import SwiftUI
 /// Not just the ones the student is enrolled in — this is the manifesto, so it
 /// covers every degree course, every year, and the years before this one.
 struct ManifestiView: View {
+    /// The shared ``ManifestiModel``, from the environment.
     @Environment(ManifestiModel.self) private var manifesti
 
+    /// What the student is typing.
+    /// The query actually searched for. The catalogue search is a round trip, so it runs on
+    /// submit rather than on every keystroke.
     @State private var query = ""
     @State private var submitted = ""
 
+    /// The view's content.
     var body: some View {
         @Bindable var manifesti = manifesti
 
@@ -82,15 +87,19 @@ struct ManifestiView: View {
         }
     }
 
+    /// Runs the catalogue search for what has been typed.
     private func runSearch() {
         submitted = query
         Task { await manifesti.search(query) }
     }
 }
 
+/// One catalogue row: the teaching's code and name, and which degree course offers it.
 struct ManifestoRow: View {
+    /// The catalogue row this row shows.
     let teaching: ManifestoTeaching
 
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(teaching.name)

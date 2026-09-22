@@ -9,10 +9,14 @@ import SwiftUI
 /// ones are added at the bottom, and stickers follow a finger, a pinch and a
 /// twist.
 struct TodayLanding: View {
+    /// A part of the page Personalizza can edit on its own.
     enum Zone: Hashable, Identifiable {
+        /// The fixed parts: the navigation bar, the greeting, the date, the accessory and the Flavor behind everything.
         case bar, greeting, date, stickers, background
+        /// One of the day's sections.
         case section(TodaySection.Kind)
 
+        /// The zone's identity.
         var id: String {
             switch self {
             case .bar: "bar"
@@ -24,6 +28,7 @@ struct TodayLanding: View {
             }
         }
 
+        /// What the zone is called in Personalizza.
         var title: LocalizedStringKey {
             switch self {
             case .bar: "Barra"
@@ -36,15 +41,24 @@ struct TodayLanding: View {
         }
     }
 
+    /// The day the page is about.
     let day: Date
+    /// The look the page is drawn in: the draft while editing, the stored one otherwise.
     let style: TodayStyle
+    /// The look being edited, or `nil` outside Personalizza — which is also what tells the page it is not being edited.
     private let draft: Binding<TodayStyle>?
+    /// True in Personalizza's arranging mode, where sections wiggle and move.
     private let arranging: Bool
+    /// Opens a zone's controls.
     private let onEdit: (Zone) -> Void
+    /// Opens the sticker picker.
     private let onAddSticker: () -> Void
 
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
 
     /// The page as the app shows it.
@@ -68,8 +82,10 @@ struct TodayLanding: View {
         self.onEdit = onEdit
     }
 
+    /// True in Personalizza, in either of its modes.
     private var editing: Bool { draft != nil }
 
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: editing ? 28 : 24) {
             if editing {
@@ -95,6 +111,7 @@ struct TodayLanding: View {
 
     // MARK: - Header
 
+    /// The top of the page: the greeting and date, beside the accessory when there is one.
     @ViewBuilder
     private var header: some View {
         // Editing, an empty right half invites an accessory.
@@ -132,6 +149,10 @@ struct TodayLanding: View {
         }
     }
 
+    /// The greeting and the date, in the look's own typeface and alignment.
+    ///
+    /// - Parameter dateScale: How much to shrink the date by when it shares the row with an accessory.
+    /// - Returns: The column.
     private func titles(dateScale: CGFloat) -> some View {
         VStack(alignment: style.dateAlignment.horizontal, spacing: editing ? 20 : 8) {
             if style.showsGreeting || editing {
@@ -182,6 +203,10 @@ struct TodayLanding: View {
         }
     }
 
+    /// One section, wrapped for whichever mode the page is in: plain, editable, or arranging with its remove button and wiggle.
+    ///
+    /// - Parameter section: The section to draw.
+    /// - Returns: The section.
     @ViewBuilder
     private func sectionZone(_ section: TodaySection) -> some View {
         let view = TodaySectionView(section: section, style: style, day: day, collapsed: arranging, opensDetails: draft == nil)
@@ -220,10 +245,16 @@ struct TodayLanding: View {
         }
     }
 
+    /// Moves a section up or down the page, for assistive technologies where dragging is not available.
+    ///
+    /// - Parameters:
+    ///   - kind: The section to move.
+    ///   - offset: -1 to move it up, 1 to move it down.
     private func move(_ kind: TodaySection.Kind, by offset: Int) {
         withAnimation(.snappy) { draft?.wrappedValue.moveSection(kind, by: offset) }
     }
 
+    /// The menu at the bottom of the arranging page, offering the sections not on it.
     private var addSectionMenu: some View {
         Menu {
             ForEach(style.addableSections) { kind in
@@ -259,6 +290,14 @@ struct TodayLanding: View {
         withAnimation(.snappy) { draft?.wrappedValue.dateLayout = next }
     }
 
+    /// Wraps a part of the page as an editable zone: outlined, tappable, and badged with what can be done to it.
+    ///
+    /// - Parameters:
+    ///   - zone: Which zone this is.
+    ///   - swap: Changes the zone for another kind, when it has alternatives.
+    ///   - remove: Takes the zone off the page, when it can be removed.
+    ///   - content: The zone's own content.
+    /// - Returns: The zone, or bare content outside Personalizza.
     @ViewBuilder
     private func zone<Content: View>(_ zone: Zone, swap: (() -> Void)? = nil, remove: (() -> Void)? = nil,
                                      @ViewBuilder content: () -> Content) -> some View {
@@ -304,6 +343,7 @@ struct TodayLanding: View {
         }
     }
 
+    /// The dashed border that marks an editable zone.
     private var outline: some View {
         RoundedRectangle(cornerRadius: 20, style: .continuous)
             .strokeBorder(.secondary.opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [6, 5]))
@@ -312,10 +352,14 @@ struct TodayLanding: View {
 
 /// A small round badge on a zone's corner.
 private struct ZoneBadge: View {
+    /// The badge's SF Symbol.
     let symbol: String
+    /// What the badge does, for assistive technologies.
     let label: LocalizedStringKey
+    /// What the tap does.
     let action: () -> Void
 
+    /// The view's content.
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
@@ -330,10 +374,16 @@ private struct ZoneBadge: View {
 
 /// The Home Screen's jiggle, a little slower so a page of cards stays calm.
 private struct Wiggle: ViewModifier {
+    /// Whether the reader has asked for reduced motion.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The environment's `systemPrefersReducedResourceUsage`.
     @Environment(\.systemPrefersReducedResourceUsage) private var reducedResources
     @State private var phase = Double.random(in: 0...1)
 
+    /// Applies the modifier to `content`.
+    ///
+    /// - Parameter content: The view being modified.
+    /// - Returns: The modified view.
     func body(content: Content) -> some View {
         if reduceMotion || reducedResources {
             content

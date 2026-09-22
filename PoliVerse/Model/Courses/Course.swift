@@ -1,42 +1,63 @@
 import Foundation
 
 /// A teaching the student is enrolled in.
+///
+/// Built from either of two sources — WeBeep, through ``init(moodle:)``, or the exam
+/// registration endpoint, through ``TeachingDTO/toCourse()`` — and ``code`` is what
+/// lets the same teaching be recognised across both.
+///
+/// ``isFavourite`` is excluded from the coding keys: it belongs to WeBeep and is
+/// reapplied on every load, so a stale cache cannot resurrect a favourite that has
+/// since been removed on the web. ``OptimisticFlags`` carries an unsent change
+/// across a relaunch instead.
 nonisolated struct Course: Identifiable, Sendable, Hashable, Codable {
+    /// Unique identity: `moodle-<id>` for a WeBeep course, the teaching's plan or class
+    /// code for one from the exams endpoint.
     let id: String
-    /// `xdescrizione` upstream — arrives SHOUTED, so normalise on the way in.
+    /// The teaching's name, normalised by ``normalise(_:)``. Arrives upper-cased
+    /// upstream.
     let name: String
+    /// The lecturer's name, or `"—"` when none is recorded.
     let teacher: String
+    /// Credits. Zero from both fetch paths, since neither endpoint carries it; the study
+    /// plan supplies it.
     let cfu: Int
+    /// The semester, or `"—"` when not recorded.
     let semester: String
+    /// The academic year, as `"2025/26"` or `"2025-26"`, or `"—"` when not recorded.
     let academicYear: String
+    /// The lecturer's address, where the exams endpoint carries one.
     var teacherEmail: String?
     /// Moodle's own course id, when this course came from WeBeep.
     ///
-    /// Having it removes the need to match a PoliMi course to a Moodle one by
-    /// name, which was the weakest link in the materials lookup.
+    /// What every materials, forum and flag call is keyed by, so no PoliMi course has to
+    /// be matched to a Moodle one by name.
     var moodleID: Int?
-    /// The Politecnico teaching code, where the WeBeep title carries one.
+    /// The six-digit Politecnico teaching code, where the source carries one.
     ///
-    /// Kept separate from ``id`` because it is **not unique**: a real account
-    /// has several WeBeep courses sharing a code — the same teaching across
-    /// years, or a lecture and its lab. Using it as the identity made SwiftUI
-    /// collapse those rows into one and warn about duplicate IDs.
+    /// Kept apart from ``id`` because it is not unique: one account can hold several
+    /// WeBeep courses sharing a code — the same teaching across years, or a lecture and
+    /// its laboratory.
     var code: String?
+    /// Whether the course is starred on WeBeep. Owned by WeBeep and reapplied on every
+    /// load; not persisted here.
     var isFavourite: Bool = false
-    /// Hidden from the normal list, mirroring Moodle's "Remove from view".
-    /// Hidden courses are still reachable, just not in the way.
+    /// Whether the course is hidden from the normal list, mirroring Moodle's “Remove
+    /// from view”. A hidden course is still reachable, just not in the way.
     var isHidden: Bool = false
-    /// Start of the course, used to group by academic year.
+    /// When the course starts, where WeBeep reports it. Used to derive the academic year
+    /// when the title does not carry one.
     var startDate: Date?
 
-    /// Deterministic accent so a course keeps the same colour between launches
-    /// without persisting anything. PoliFemo shipped 23 MB of stock wallpapers
-    /// to solve this; a hash is free.
+    /// A stable accent index in `0..<8`, so a course keeps the same colour between
+    /// launches without anything being persisted.
     ///
-    /// - Important: this must NOT use `hashValue`. Swift seeds string hashing
-    ///   randomly per process, so `hashValue` gives a different answer on every
-    ///   launch — the colours visibly reshuffled each time the app restarted.
-    ///   FNV-1a is stable across processes and platforms.
+    /// Seeded from ``code`` where there is one, so a course keeps its colour whether it
+    /// arrived from WeBeep or from the exams endpoint.
+    ///
+    /// - Important: computed with FNV-1a rather than `hashValue`. Swift seeds string
+    ///   hashing per process, so `hashValue` would give a different answer on every
+    ///   launch and the colours would reshuffle.
     var colorSeed: Int {
         var hash: UInt64 = 0xcbf2_9ce4_8422_2325
         // Seeded from the teaching code where there is one, so a course keeps
@@ -48,15 +69,23 @@ nonisolated struct Course: Identifiable, Sendable, Hashable, Codable {
         return Int(hash % 8)
     }
 
-    /// `isFavourite` is deliberately absent from the coding keys: it lives in
-    /// `UserDefaults` and is reapplied on load, so a stale cache can never
-    /// resurrect a favourite the user has since removed.
+    /// Every stored property except ``isFavourite``, which is WeBeep's and is reapplied
+    /// rather than cached.
     private enum CodingKeys: String, CodingKey {
         case id, name, teacher, cfu, semester, academicYear, teacherEmail, moodleID, code
         case isHidden, startDate
     }
 
-    /// "ARCHITETTURE DEI CALCOLATORI" reads badly in a title; fix it once here.
+    /// Title-cases a shouted course name the way Italian wants it.
+    ///
+    /// `String.capitalized` gets two things wrong that appear constantly in these
+    /// names: it capitalises after an apostrophe, turning `dell'informatica` into
+    /// `Dell'Informatica`, and it capitalises articles and prepositions mid-title. This
+    /// leaves the minor words lower case except as the first word, and capitalises the
+    /// noun after an elided article without capitalising the article.
+    ///
+    /// - Parameter raw: The name as the endpoint sends it.
+    /// - Returns: The title-cased name.
     static func normalise(_ raw: String) -> String {
         // Two things `String.capitalized` gets wrong for Italian, both of which
         // turn up constantly in real course names: it capitalises after an
@@ -88,20 +117,29 @@ nonisolated struct Course: Identifiable, Sendable, Hashable, Codable {
         }.joined(separator: " ")
     }
 
-    /// Uppercases the first character only, leaving the rest untouched.
+    /// Upper-cases the first character only, leaving the rest as written.
+    ///
+    /// - Parameter value: The word.
+    /// - Returns: The word with its first character upper-cased.
     private static func upperFirst(_ value: String) -> String {
         guard let first = value.first else { return value }
         return first.uppercased() + value.dropFirst()
     }
 }
 
+/// Building a course from WeBeep, and reading the identifiers out of its title.
 extension Course {
-    /// Builds a course from a WeBeep (Moodle) enrolment.
+    /// Builds a course from a WeBeep enrolment.
     ///
-    /// WeBeep names courses like `"097785 - BASI DI DATI [2025-26]"`, so the
-    /// leading code is pulled out where present — it is what PoliMi's own
-    /// endpoints key on, and keeping the two identifiers aligned means a course
-    /// from either source refers to the same thing.
+    /// WeBeep names courses like `"097785 - BASI DI DATI [2025-26]"`, so the leading
+    /// code is pulled out where present — it is what the Politecnico's own endpoints key
+    /// on, which keeps a course from either source referring to the same teaching.
+    ///
+    /// Moodle's id becomes the identity, since it is the one value guaranteed unique.
+    /// ``cfu``, ``teacher`` and ``semester`` are left empty, as Moodle carries none of
+    /// them, and the favourite and hidden flags come straight from WeBeep.
+    ///
+    /// - Parameter moodle: The enrolment as Moodle sends it.
     init(moodle: MoodleCourse) {
         let full = moodle.fullname
         let (code, title) = Course.splitCode(from: full)
@@ -131,7 +169,13 @@ extension Course {
         )
     }
 
-    /// Splits `"097785 - BASI DI DATI [2025-26]"` into its code and title.
+    /// Splits a WeBeep course title into its teaching code and its name.
+    ///
+    /// A trailing bracketed academic year is trimmed first. The leading segment counts
+    /// as a code only when it is entirely digits; anything else is part of the title.
+    ///
+    /// - Parameter fullname: The title as WeBeep sends it.
+    /// - Returns: The code, when there is one, and the title without it.
     static func splitCode(from fullname: String) -> (code: String?, title: String) {
         var title = fullname
         // Trim a trailing academic year in brackets.
@@ -149,25 +193,29 @@ extension Course {
         return (candidate, parts.dropFirst().joined(separator: " - "))
     }
 
-    /// The Politecnico year a date falls in, as `"2025/26"`.
+    /// The calendar year ``academicYear`` begins in — `"2025"` for `"2025-26"` or
+    /// `"2025/26"`, which is how the manifesto names its years.
     ///
-    /// The academic year starts in autumn, so anything before September belongs
-    /// to the year that began the previous calendar year — a January lecture is
-    /// in 2025/26, not 2026/27.
-    /// The year the course's academic year starts in, `2025` for "2025-26"
-    /// or "2025/26" — how the manifesto names its years.
+    /// `nil` when the value does not start with four digits.
     nonisolated var academicYearStart: String? {
         let prefix = academicYear.prefix(4)
         return prefix.count == 4 && prefix.allSatisfy(\.isNumber) ? String(prefix) : nil
     }
 
-    /// The six-digit Politecnico teaching code, where the course has one.
+    /// The six-digit Politecnico teaching code, taken from ``code`` or ``id``, or `nil`
+    /// when neither is one.
     nonisolated var teachingCode: String? {
         [code, id].compactMap { $0 }.first { $0.range(of: "^[0-9]{6}$", options: .regularExpression) != nil }
     }
 
-    /// `nonisolated` like its neighbours above: it is arithmetic over a date
-    /// and has no business requiring the main actor to answer.
+    /// The academic year a date falls in, as `"2025/26"`.
+    ///
+    /// A teaching's year turns in September, so a January lecture belongs to the year
+    /// that began the previous autumn. Exam sittings turn in October instead — see
+    /// ``PoliMiDate/academicYear(ofSitting:calendar:)``.
+    ///
+    /// - Parameter date: The date to place.
+    /// - Returns: The year label.
     nonisolated static func academicYearLabel(for date: Date) -> String {
         let calendar = PoliMiDate.romeCalendar
         let year = calendar.component(.year, from: date)
@@ -175,6 +223,10 @@ extension Course {
         return "\(start)/\(String(format: "%02d", (start + 1) % 100))"
     }
 
+    /// The bracketed academic year in a WeBeep course title.
+    ///
+    /// - Parameter fullname: The title as WeBeep sends it.
+    /// - Returns: The text between the last brackets, or `nil` when there is none.
     static func academicYear(from fullname: String) -> String? {
         guard
             let open = fullname.range(of: "[", options: .backwards),
@@ -185,16 +237,17 @@ extension Course {
     }
 }
 
+/// Matching a course against the timetable.
 nonisolated extension Course {
     /// Whether an agenda entry is a lesson of this course.
     ///
-    /// By name, because the agenda carries no teaching code — either name
-    /// containing the other, since the agenda titles a lab and its lecture
-    /// differently from WeBeep but never unrecognisably.
+    /// Matched by name, since the agenda carries no teaching code, and by either name
+    /// containing the other, since the agenda titles a laboratory and its lecture
+    /// differently from WeBeep.
     ///
-    /// The same comparison is written out by hand in ``CoursesPage``,
-    /// ``CourseDetailView``, ``CalendarView`` and ``CourseCard``; this is the
-    /// copy new code should call.
+    /// - Parameter event: The agenda entry to test.
+    /// - Returns: `true` when the two name the same teaching. Always `false` when either
+    ///   name is empty.
     func matches(_ event: AgendaEvent) -> Bool {
         let title = event.title.lowercased(), target = name.lowercased()
         guard !title.isEmpty, !target.isEmpty else { return false }

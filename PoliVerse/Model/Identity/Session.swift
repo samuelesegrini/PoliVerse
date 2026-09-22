@@ -3,55 +3,87 @@ import UserNotifications
 import Observation
 import OSLog
 
-/// Whether the app has a usable PoliMi session, and who it belongs to.
+/// Whether the app has a usable Politecnico session, who it belongs to, and the
+/// transport everything else talks through.
+///
+/// The composition root for identity: it owns the ``TokenStore``, the
+/// ``ServiceDirectory``, the ``PoliMiAPI`` built over them, and the ``LoginFlow``
+/// that moves it between states. It conforms to ``Account``, which is how every
+/// ``Store`` learns whose data it is loading.
+///
+/// ``state`` is changed only from within this type and from ``LoginFlow``, through
+/// ``enter(_:)``.
+///
+/// Nothing here touches the network at init: the Keychain is read on first use and
+/// ``ServiceDirectory/load()`` is driven by ``LoginFlow/restore()``.
 @Observable
 final class Session {
+    /// Where the session stands.
     enum State: Equatable {
+        /// Before ``LoginFlow/restore()`` has decided anything.
         case loading
+        /// No usable token. The sign-in screen is shown.
         case signedOut
+        /// An authorisation code is being exchanged for a token pair.
         case exchangingCode
+        /// Signed in, with the student the token belongs to.
         case signedIn(Student)
+        /// Sign-in did not complete, with a sentence explaining why.
         case failed(String)
     }
 
-    /// Set by ``Session`` itself and by ``LoginFlow``, which is the only
-    /// other thing allowed to move a session between states.
+    /// Where the session stands. Moved only by this type and by ``LoginFlow``, through
+    /// ``enter(_:)``.
     internal private(set) var state: State = .loading
 
-    /// Set when the app is built without a live backend, so every screen renders
-    /// with representative data.
+    /// Whether every screen renders representative data instead of this student's.
     ///
-    /// **Defaults off.** It used to default on, from when the endpoints were
-    /// still being verified, and the cost of leaving it that way was that a
-    /// fresh install showed invented lectures to someone who had never been
-    /// told the setting existed. The first run now asks outright
-    /// (``WelcomeStepView``), and the answer is a choice rather than a
-    /// leftover.
+    /// Off by default, persisted in `UserDefaults`, and offered explicitly during the
+    /// first run by ``WelcomeStepView``. ``Account/isSample`` mirrors it, which is how
+    /// it reaches every ``Store``.
     var useMockData: Bool {
         didSet { UserDefaults.standard.set(useMockData, forKey: "useMockData") }
     }
 
+    /// The token pair, and the single refresh in flight.
     let tokens: TokenStore
+    /// Where each backend lives, and the OAuth configuration.
     let directory = ServiceDirectory()
+    /// The authenticated transport. Built in ``init()`` and non-nil thereafter.
     private(set) var api: PoliMiAPI!
 
-    /// Sent as `poliAuthProfile`. Defaults to the student profile and is
-    /// refined once `/jaf/internal/profiles` has been read.
+    /// The value sent as `poliAuthProfile`. Starts at the student profile and is
+    /// refined by ``loadProfile()``.
     private(set) var profileID: Int = PoliMiProfile.default
 
-    /// True when the Politecnico accepted the login but refuses the token for
-    /// its data services ("Scope OAuth non valido … Code: 33").
+    /// `true` when the Politecnico accepted the sign-in but refuses the token for its
+    /// data services.
     ///
-    /// Kept separate from ``state`` because the two are genuinely different:
-    /// the session is fine, a subset of services is not.
+    /// Kept apart from ``state`` because the two differ: the session is good, a subset
+    /// of services is not. Set by the transport's scope-refusal callback and cleared by
+    /// a fresh sign-in.
     var serviceAuthorizationFailed = false
+    /// Diagnostic log for this type, under the `session` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "session")
+    /// Carries the profile id and matricola to the transport, which is not main-actor
+    /// bound. Built in ``init()`` and non-nil thereafter.
     var profileBox: ProfileBox!
 
-    /// How the student got in. Owned here, so that the order in which the
-    /// session and the login are built cannot come apart.
+    /// How the student signs in. Owned here so that the order in which the session and
+    /// the sign-in are built cannot come apart.
     private(set) var login: LoginFlow!
 
+    /// Builds the token store, the transport and the sign-in flow.
+    ///
+    /// The refresh call is supplied as a closure over an ephemeral session and the
+    /// fallback base URL, rather than reaching back into ``PoliMiAPI``: refresh has to
+    /// work before anything else has loaded, and routing it through the transport would
+    /// let a refresh recurse into itself on a 401. It carries a 20-second timeout,
+    /// since every other request waits behind it.
+    ///
+    /// A scope refusal sets ``serviceAuthorizationFailed`` rather than signing the
+    /// student out. The token is genuinely valid — the identity endpoints accept it —
+    /// so signing out would only send them round the sign-in again to the same result.
     init() {
         self.useMockData = UserDefaults.standard.object(forKey: "useMockData") as? Bool ?? false
 
@@ -109,20 +141,22 @@ final class Session {
         self.login = LoginFlow(session: self)
     }
 
-    /// The OAuth configuration, for views that drive their own flow.
+    /// The OAuth configuration in force, for the views that drive their own flow.
     var oauthParams: ServiceDirectory.OAuthParams { directory.oauth }
 
-    /// The token currently held, which the IdP requires as proof of identity
-    /// when moving a grant to another enrolment.
+    /// The access token currently held, refreshing if necessary.
+    ///
+    /// The identity provider requires it as proof of identity when moving a grant to
+    /// another enrolment. `nil` when there is no usable token.
     var currentAccessToken: String? {
         get async { try? await tokens.validToken() }
     }
 
-    /// Reads `/jaf/internal/profiles` to learn which profile to present.
+    /// Reads `/jaf/internal/profiles` to learn which profile to present, and the
+    /// account's secondary profile.
     ///
-    /// The response shape is unverified, so the raw body is logged once: that
-    /// log line is what turns the guesswork in ``PoliMiProfileDTO`` into a
-    /// definite answer.
+    /// The student profile is preferred when the account holds several. A failure, or a
+    /// payload with no usable profile, leaves ``profileID`` as it was.
     func loadProfile() async {
         do {
             let data = try await api.send(APIRequest(host: .app, path: "/jaf/internal/profiles"))
@@ -146,12 +180,15 @@ final class Session {
         }
     }
 
-    /// Signs the user in, keeping the matricola the API client reads in step
-    /// with the student on screen.
+    /// Enters ``State/signedIn(_:)`` and brings everything keyed by matricola into
+    /// step: the transport's query parameter and the app group's ``SharedAccount``,
+    /// which is how the widgets know whose records to read.
     ///
-    /// Centralised because there are four ways in — restore, two exchange
-    /// paths and mock data — and a matricola set at three of them would fail
-    /// only on the fourth.
+    /// Centralised because there are four ways in — a restore, two exchange paths and
+    /// sample data — and a matricola set at three of them would fail only on the
+    /// fourth.
+    ///
+    /// - Parameter student: Who the token belongs to.
     func signIn(_ student: Student) async {
         state = .signedIn(student)
         await profileBox.set(matricola: student.matricola)
@@ -160,28 +197,38 @@ final class Session {
         SharedAccount.update(matricola: student.matricola, firstName: student.firstName)
     }
 
-    /// The only way to move a session between states from outside this file,
-    /// which is ``LoginFlow`` and nothing else.
+    /// Moves the session to another state. The only way to do so from outside this
+    /// file, which is ``LoginFlow`` and nothing else.
+    ///
+    /// - Parameter newState: Where the session now stands.
     func enter(_ newState: State) { state = newState }
 
+    /// The signed-in student, or `nil` in any state but ``State/signedIn(_:)``.
     var student: Student? {
         if case .signedIn(let student) = state { return student }
         return nil
     }
 }
 
-/// Carries the profile id across actor boundaries so ``PoliMiAPI`` — which is
-/// not main-actor bound — can read the current value without capturing
-/// ``Session``.
+/// Carries the profile id and the matricola across actor boundaries, so
+/// ``PoliMiAPI`` — which is not main-actor bound — can read the current values
+/// without capturing ``Session``.
+///
+/// Read through closures, so the transport always sees the current value rather
+/// than whatever it was when the transport was built.
 actor ProfileBox {
+    /// The value to send as `poliAuthProfile`.
     private(set) var value: Int = PoliMiProfile.default
+    /// Updates the profile id.
+    ///
+    /// - Parameter newValue: The value to send.
     func set(_ newValue: Int) { value = newValue }
 
-    /// The signed-in matricola, for the services that take it as a query
-    /// parameter. Kept beside the profile because both are known at the same
-    /// moment and read the same way — through a closure, so the API client
-    /// always sees the current value rather than whatever it was at
-    /// construction.
+    /// The signed-in matricola, for the services that take it as a query parameter, or
+    /// `nil` when signed out.
     private(set) var matricola: String?
+    /// Updates the matricola.
+    ///
+    /// - Parameter newValue: The matricola, or `nil` when signed out.
     func set(matricola newValue: String?) { matricola = newValue }
 }

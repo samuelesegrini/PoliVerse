@@ -7,8 +7,13 @@ import SwiftUI
 /// go to the Politecnico is saving a target, and that happens on an explicit
 /// button, never from the slider.
 struct GradeSimulatorView: View {
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
 
+    /// The final average the student is aiming at, which the required average is computed
+    /// from.
+    /// The mark the student assumes for everything still to sit, which the projection is
+    /// computed from.
     @State private var target: Double = 27
     @State private var assumed: Double = 27
     @State private var saving = false
@@ -21,8 +26,10 @@ struct GradeSimulatorView: View {
     /// from a button that was never pressed.
     @State private var saveFailed = false
 
+    /// The libretto's arithmetic, which every figure here comes from.
     private var plan: StudyPlan { career.studyPlan }
 
+    /// The view's content.
     var body: some View {
         List {
             Section {
@@ -59,6 +66,8 @@ struct GradeSimulatorView: View {
         }
     }
 
+    /// Where the student stands now: the weighted average, the credits, and the degree mark
+    /// it implies.
     private var current: some View {
         Section {
             LabeledContent("Media attuale",
@@ -76,6 +85,8 @@ struct GradeSimulatorView: View {
         .lookRow()
     }
 
+    /// The target average, the average it would require across what is left, and whether that
+    /// is attainable — with a button to save the target back to Servizi Online.
     private var targetSection: some View {
         Section {
             Stepper(value: $target, in: 18...30, step: 0.5) {
@@ -140,6 +151,8 @@ struct GradeSimulatorView: View {
         .onChange(of: target) { saveFailed = false }
     }
 
+    /// What the average and the degree mark become if everything left is passed at the
+    /// assumed mark.
     private var projectionSection: some View {
         Section {
             Stepper(value: $assumed, in: 18...30, step: 1) {

@@ -16,10 +16,14 @@ struct DataStatusLine: View {
     /// tap that would do nothing.
     var opensSettings = true
 
+    /// The shared ``DataStatus``, from the environment.
     @Environment(DataStatus.self) private var status
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The environment's `shell`.
     @Environment(\.shell) private var shell
 
+    /// The view's content.
     var body: some View {
         if !status.isQuiet {
             HStack(spacing: 7) {
@@ -83,14 +87,18 @@ struct DataStatusLine: View {
 /// A button that changed cog when something went wrong would read as a
 /// different button rather than as the same one with news.
 struct BadgedSymbol: View {
+    /// The mark in the cog's notch: a dot, or a glyph, in a colour that says how urgent it is.
     struct Badge: Equatable {
         /// The mark inside the badge. Nil is a plain dot: enough to be
         /// noticed, for a state that is not an error.
         var glyph: String?
+        /// The badge's colour.
         var tint: Color
     }
 
+    /// The SF Symbol to draw, notch and all.
     let symbol: String
+    /// The badge to punch into it, or `nil` for the plain symbol.
     let badge: Badge?
 
     /// The symbol's nominal point size. Scaled, so the badge keeps its
@@ -103,8 +111,10 @@ struct BadgedSymbol: View {
     /// sits at the bottom trailing corner, where it is clear of the bar's
     /// glass edge and of the neighbouring profile button.
     private var diameter: CGFloat { pointSize * 0.58 }
+    /// The clear ring between the badge and the symbol, a tenth of the symbol's box.
     private var gap: CGFloat { pointSize * 0.08 }
 
+    /// The view's content.
     var body: some View {
         Image(systemName: symbol)
             .overlay(alignment: .bottomTrailing) {
@@ -142,7 +152,9 @@ struct BadgedSymbol: View {
 /// Impostazioni in the bar, carrying a mark when the data behind it needs
 /// attention.
 struct SettingsBarButton: View {
+    /// The shared ``DataStatus``, from the environment.
     @Environment(DataStatus.self) private var status
+    /// The environment's `shell`.
     @Environment(\.shell) private var shell
 
     /// The failure gets the cross, sample data the bare dot. The line at the
@@ -155,6 +167,7 @@ struct SettingsBarButton: View {
         }
     }
 
+    /// The view's content.
     var body: some View {
         Button { shell.present { shell.showingSettings = true } } label: {
             BadgedSymbol(symbol: "gearshape", badge: badge)
@@ -167,6 +180,7 @@ struct SettingsBarButton: View {
     }
 }
 
+/// Putting the status line at the bottom of a screen.
 extension View {
     /// The status line above whatever is at the bottom of the screen. Draws
     /// nothing, and takes no height, while there is nothing to say.

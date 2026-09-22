@@ -7,12 +7,16 @@ import SwiftUI
 /// a JPEG of a CAD drawing, so it is zoomable rather than scaled to fit: at
 /// thumbnail size the room numbers are unreadable.
 struct FloorPlanView: View {
+    /// The room whose floor the plan shows.
     let room: Classroom
+    /// The fetched plan, or `nil` before it has loaded.
+    /// `true` when the plan could not be fetched.
     @State private var image: UIImage?
     @State private var failed = false
     @State private var fullScreen = false
     @State private var loadedURL: URL?
 
+    /// The view's content.
     var body: some View {
         if let url = room.floorPlanURL, !failed {
             Section {
@@ -69,11 +73,15 @@ struct FloorPlanView: View {
 
 /// A floor plan over the whole screen: pinch, pan, double tap.
 private struct FloorPlanFullScreen: View {
+    /// The plan to show.
     let image: UIImage
+    /// The room's name, shown in the bar.
     let title: String
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
     @State private var resetToken = 0
 
+    /// The view's content.
     var body: some View {
         NavigationStack {
             ZoomingImageView(image: image, resetToken: resetToken)
@@ -98,12 +106,18 @@ private struct FloorPlanFullScreen: View {
 /// `MagnifyGesture` over a SwiftUI `ScrollView` competed with the scroll
 /// view's own pan and grew the image from its top-left corner.
 struct ZoomingImageView: UIViewRepresentable {
+    /// The image to zoom.
     let image: UIImage
     /// Changed to fit the image again.
     var resetToken = 0
 
+    /// How far past fitting the image may be zoomed.
     static let maximumZoom: CGFloat = 8
 
+    /// Creates the scroll view, with a double tap to zoom.
+    ///
+    /// - Parameter context: The representable's context.
+    /// - Returns: The scroll view.
     func makeUIView(context: Context) -> FittingScrollView {
         let scrollView = FittingScrollView(image: image)
         scrollView.delegate = context.coordinator
@@ -114,6 +128,11 @@ struct ZoomingImageView: UIViewRepresentable {
         return scrollView
     }
 
+    /// Zooms back out to fitting when ``resetToken`` changes.
+    ///
+    /// - Parameters:
+    ///   - scrollView: The scroll view to update.
+    ///   - context: The representable's context.
     func updateUIView(_ scrollView: FittingScrollView, context: Context) {
         if context.coordinator.resetToken != resetToken {
             context.coordinator.resetToken = resetToken
@@ -121,16 +140,31 @@ struct ZoomingImageView: UIViewRepresentable {
         }
     }
 
+    /// Creates the scroll view's delegate.
+    ///
+    /// - Returns: The coordinator.
     func makeCoordinator() -> Coordinator { Coordinator(resetToken: resetToken) }
 
+    /// Tells the scroll view what to zoom, and handles the double tap.
     final class Coordinator: NSObject, UIScrollViewDelegate {
+        /// The last reset the coordinator has acted on.
         var resetToken: Int
+        /// Creates the delegate.
+        ///
+        /// - Parameter resetToken: The reset value to start from.
         init(resetToken: Int) { self.resetToken = resetToken }
 
+        /// The image view, which is what zooms.
+        ///
+        /// - Parameter scrollView: The scroll view asking.
+        /// - Returns: The image view.
         func viewForZooming(in scrollView: UIScrollView) -> UIView? {
             (scrollView as? FittingScrollView)?.imageView
         }
 
+        /// Keeps the image centred while it is smaller than the screen.
+        ///
+        /// - Parameter scrollView: The scroll view that zoomed.
         func scrollViewDidZoom(_ scrollView: UIScrollView) {
             (scrollView as? FittingScrollView)?.centreImage()
         }
@@ -155,9 +189,15 @@ struct ZoomingImageView: UIViewRepresentable {
 /// Keeps the image fitted as the window resizes, and centred when smaller
 /// than the screen.
 final class FittingScrollView: UIScrollView {
+    /// The view holding the plan.
     let imageView: UIImageView
+    /// The bounds the zoom limits were last computed for, so they are only recomputed when the
+    /// window changes.
     private var fittedSize: CGSize = .zero
 
+    /// Creates the scroll view around an image.
+    ///
+    /// - Parameter image: The image to show.
     init(image: UIImage) {
         imageView = UIImageView(image: image)
         super.init(frame: .zero)
@@ -170,9 +210,12 @@ final class FittingScrollView: UIScrollView {
         contentInsetAdjustmentBehavior = .never
     }
 
+    /// Unavailable: this view is never created from a nib.
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
+    /// Recomputes the zoom limits when the window changes, keeping the image fitted if it
+    /// already was, and re-centres it.
     override func layoutSubviews() {
         super.layoutSubviews()
         guard bounds.size != fittedSize, bounds.width > 0, bounds.height > 0,
@@ -186,6 +229,7 @@ final class FittingScrollView: UIScrollView {
         centreImage()
     }
 
+    /// Insets the content so an image smaller than the screen sits in the middle of it.
     func centreImage() {
         let x = max((bounds.width - contentSize.width) / 2, 0)
         let y = max((bounds.height - contentSize.height) / 2, 0)
@@ -199,9 +243,12 @@ final class FittingScrollView: UIScrollView {
 /// bookings overlap — a lecture and an exam in the same hour are two rows
 /// covering the same time, and laying them end to end would stretch the day.
 struct OccupancyTimeline: View {
+    /// What is booked in the room.
     let bookings: [RoomBooking]
+    /// The span the track covers, which is the teaching day.
     let day: DateInterval
 
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             GeometryReader { geometry in
@@ -235,6 +282,12 @@ struct OccupancyTimeline: View {
             : "\(bookings.count) prenotazioni nella giornata")
     }
 
+    /// Where a booking sits on the track.
+    ///
+    /// - Parameters:
+    ///   - interval: The booking's span.
+    ///   - width: The track's width.
+    /// - Returns: The band's offset and width, clipped to the track.
     private func slot(_ interval: DateInterval, in width: CGFloat) -> (start: CGFloat, width: CGFloat) {
         guard day.duration > 0, let clipped = day.intersection(with: interval) else {
             return (0, 0)
@@ -251,15 +304,24 @@ struct OccupancyTimeline: View {
 /// one room should not cost 150 requests, and the free-rooms screen's cache
 /// is keyed by campus and day, not by room.
 struct RoomDayView: View {
+    /// The room whose day is shown.
     let room: Classroom
+    /// The shared ``FreeRoomsModel``, from the environment.
     @Environment(FreeRoomsModel.self) private var aule
 
+    /// The room's bookings for the day, or `nil` before they have been fetched — which is not
+    /// the same as a room with none.
+    /// `true` when the occupancy could not be read, which includes a room the university does
+    /// not publish.
     @State private var bookings: [RoomBooking]?
     @State private var failed = false
 
+    /// The teaching day the timeline covers.
     private var day: DateInterval { aule.teachingDay }
+    /// Whether that day is today, which decides whether “free now” means anything.
     private var isToday: Bool { PoliMiDate.romeCalendar.isDateInToday(day.start) }
 
+    /// The view's content.
     var body: some View {
         Section {
             if let bookings {

@@ -1,15 +1,20 @@
 import Foundation
 
-/// Sample data for this area: what its screens show when the student chose
-/// "Esplora con dati di esempio", and what the previews render.
-///
-/// Everything here is derived from ``SampleDegree`` rather than typed out.
-/// The gradebook in particular is *computed* — the average the student sees
-/// on Carriera is the same arithmetic Simulazione media runs on the same
-/// libretto, so the two screens cannot drift apart. This ships: an incoherent
-/// demo is something a student sees.
+// Sample data for this area: what its screens show when the student chose
+// "Esplora con dati di esempio", and what the previews render.
+//
+// Everything here is derived from ``SampleDegree`` rather than typed out.
+// The gradebook in particular is *computed* — the average the student sees
+// on Carriera is the same arithmetic Simulazione media runs on the same
+// libretto, so the two screens cannot drift apart. This ships: an incoherent
+// demo is something a student sees.
 
+/// The sample libretto, derived from ``SampleDegree``.
 nonisolated extension LibrettoExam {
+    /// One row per teaching in the sample degree, dated from its passing attempt.
+    ///
+    /// - Parameter now: The date the attempt offsets are measured back from.
+    /// - Returns: The rows. An unpassed teaching has no date.
     static func samples(now: Date = .now) -> [LibrettoExam] {
         SampleDegree.teachings.map { teaching in
             let attempt = teaching.passingAttempt ?? teaching.attempts.last
@@ -28,7 +33,12 @@ nonisolated extension LibrettoExam {
         }
     }
 
-    /// What the libretto column says when there is no number to put there.
+    /// What the libretto's status column says when there is no mark to show.
+    ///
+    /// - Parameter teaching: The teaching to describe.
+    /// - Returns: `"Idoneo"` for a passed pass/fail teaching, `"Superato"` for any other
+    ///   pass, `"Non superato"` for a failed attempt, and `nil` for a teaching never
+    ///   attempted.
     private static func statusText(for teaching: SampleDegree.Teaching) -> String? {
         if teaching.isQualifying && teaching.isPassed { return "Idoneo" }
         if teaching.isPassed { return "Superato" }
@@ -36,15 +46,16 @@ nonisolated extension LibrettoExam {
     }
 }
 
+/// The sample aggregate figures, computed from the sample libretto rather than typed
+/// out — so Carriera and Simulazione media cannot disagree about the same student.
 nonisolated extension GradeBook {
-    /// Computed from the libretto, never typed.
-    ///
-    /// The old sample carried a hand-written mean of 27.4 against 108 CFU
-    /// while the libretto it sat beside added up to 27.16 against 55 — the
-    /// same student with two careers, one per screen. There is now one
-    /// source, and this is a reading of it.
+    /// ``sample(now:)`` against the current date.
     static var sample: GradeBook { sample(now: .now) }
 
+    /// The figures a reading of the sample libretto produces.
+    ///
+    /// - Parameter now: The date the sample libretto is dated against.
+    /// - Returns: The grade book.
     static func sample(now: Date = .now) -> GradeBook {
         let plan = StudyPlan(exams: LibrettoExam.samples(now: now))
         let teachings = SampleDegree.teachings
@@ -59,19 +70,28 @@ nonisolated extension GradeBook {
     }
 }
 
+/// The sample exam sittings.
 nonisolated extension ExamSession {
-    /// Every sitting: the ones already sat, one per attempt, and the ones
-    /// this September's session is offering.
+    /// Every sample sitting: one per past attempt, plus the session currently open.
     ///
-    /// Several attempts at one teaching are deliberate — they are what fills
-    /// "Altre date" on the sitting's own page, and what lets the app show a
-    /// mark refused or failed and then passed.
+    /// Several attempts at one teaching are deliberate — they fill “Altre date” on a
+    /// sitting's page, and let the app show a mark refused or failed and then passed.
+    ///
+    /// - Parameter now: The date the offsets are measured from.
+    /// - Returns: The sittings.
     static func samples(now: Date = .now) -> [ExamSession] {
         past(now: now) + upcoming(now: now)
     }
 
     // MARK: - Sat already
 
+    /// One marked sitting per recorded attempt in the sample degree.
+    ///
+    /// A mark is refusable only for a few days after it appears, and only the most recent
+    /// sitting still has a script to inspect.
+    ///
+    /// - Parameter now: The date the offsets are measured back from.
+    /// - Returns: The marked sittings.
     private static func past(now: Date = .now) -> [ExamSession] {
         var id = 900
         return SampleDegree.teachings.flatMap { teaching -> [ExamSession] in
@@ -94,6 +114,15 @@ nonisolated extension ExamSession {
         }
     }
 
+    /// The published result for one sample attempt.
+    ///
+    /// - Parameters:
+    ///   - attempt: The attempt to describe.
+    ///   - teaching: The teaching it belongs to, which decides whether the result is
+    ///     pass/fail.
+    ///   - daysSince: How long ago the mark appeared, which decides whether it is still
+    ///     refusable.
+    /// - Returns: The result.
     private static func grade(for attempt: SampleDegree.Attempt,
                               teaching: SampleDegree.Teaching,
                               daysSince: Double) -> ExamGrade {
@@ -113,9 +142,11 @@ nonisolated extension ExamSession {
 
     // MARK: - The session now open
 
-    /// One sitting in each state the app can draw, so the demo shows all of
-    /// them: enrolled and imminent, open and closing, closed without
-    /// enrolling, and not yet open.
+    /// One sitting in each state the app can draw: enrolled and imminent, open and
+    /// closing, closed without enrolling, and not yet open.
+    ///
+    /// - Parameter now: The date the offsets are measured from.
+    /// - Returns: The upcoming sittings.
     private static func upcoming(now: Date = .now) -> [ExamSession] {
         let calendar = PoliMiDate.romeCalendar
         func day(_ offset: Int, hour: Int = 9, minute: Int = 0) -> Date {
@@ -143,8 +174,8 @@ nonisolated extension ExamSession {
             // Open, closing in four days: Adesso's enrolment card.
             sitting(802, "089156", date: day(11, hour: 14, minute: 30), room: "Aula De Donato",
                     opens: day(-6), closes: day(4), enrolled: 62, status: .open),
-            // The window shut and the student never enrolled — a state that
-            // exists and that nothing else in the demo used to show.
+            // The window shut and the student never enrolled: a real state,
+            // and the only sitting in the demo that shows it.
             sitting(803, "091250", date: day(16, hour: 9), room: nil,
                     opens: day(-30), closes: day(-9), enrolled: 94, status: .closed),
             // January, still months off.

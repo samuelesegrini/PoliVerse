@@ -3,31 +3,39 @@ import Network
 import Observation
 import OSLog
 
-/// The one thing most callers want to know about the network.
+/// Whether the device has a usable connection.
 ///
-/// A protocol so that a test can say "offline" without an `NWPathMonitor`,
-/// which reports asynchronously and cannot be told what to think.
+/// A protocol so that a test can assert offline behaviour without an
+/// `NWPathMonitor`, which reports asynchronously and cannot be told what to think.
+/// ``NetworkMonitor`` conforms; ``StubReachability`` serves tests and previews.
 @MainActor
 protocol Reachability: AnyObject, Sendable {
+    /// `true` when a network path is available.
     var isOnline: Bool { get }
 }
 
-/// Whether the phone has a usable connection.
+/// Live reachability, backed by `NWPathMonitor`.
 ///
-/// Exists so the app can say "offline" instead of "Impossibile raggiungere i
-/// server del Politecnico". Those read as the same sentence to a developer and
-/// as completely different ones to a student: the first is their basement, the
-/// second is the university being broken.
+/// Lets the app distinguish “offline” from “the Politecnico is unreachable”, which
+/// read alike to a developer and mean entirely different things to a student.
+/// Observable, so views update as the path changes.
 @Observable
 final class NetworkMonitor {
+    /// `true` when a network path is available.
+    ///
+    /// Starts optimistic: `NWPathMonitor` reports asynchronously, so a first frame
+    /// claiming offline would be wrong more often than right.
     private(set) var isOnline = true
-    /// True on cellular, so a 150-request room sweep can be offered rather
+    /// `true` on a metered path, so a sweep of many requests can be offered rather
     /// than performed.
     private(set) var isExpensive = false
 
+    /// The system path monitor, cancelled on deinit.
     private let monitor = NWPathMonitor()
+    /// Diagnostic log for this type, under the `network` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "network")
 
+    /// Starts monitoring on a private queue and publishes changes on the main actor.
     init() {
         monitor.pathUpdateHandler = { [weak self] path in
             Task { @MainActor in
@@ -46,16 +54,22 @@ final class NetworkMonitor {
         monitor.start(queue: DispatchQueue(label: "segrini.samuele.PoliVerse.network"))
     }
 
+    /// Stops monitoring.
     deinit { monitor.cancel() }
 }
 
+/// Live reachability satisfies the protocol as it stands.
 extension NetworkMonitor: Reachability {}
 
-/// A connection that is whatever a test says it is.
+/// Reachability that is whatever a test says it is.
 @MainActor
 final class StubReachability: Reachability {
+    /// The value to report. Settable at any time.
     var isOnline: Bool
 
+    /// Creates a stub.
+    ///
+    /// - Parameter isOnline: The value to report.
     init(isOnline: Bool = true) {
         self.isOnline = isOnline
     }

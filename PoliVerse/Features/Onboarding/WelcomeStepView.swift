@@ -2,18 +2,20 @@ import SwiftUI
 
 /// What PoliVerse is, before it asks for anything.
 ///
-/// A deck of the app's own screens rather than a list of features: this used
-/// to be five symbols over five paragraphs, which said what the app does
-/// without ever showing it. ``FeatureTour`` draws the screens themselves, in
-/// the look in use, and this step is the frame around it — the choice between
-/// a real account and the sample data, stated here rather than left as a
-/// switch in Settings, which is where it used to live while being on by
-/// default.
+/// A deck of the app's own screens rather than a list of features:
+/// ``FeatureTour`` draws the screens themselves, in the look in use, and this
+/// step is the frame around it. The choice between a real account and the
+/// sample data is made here, at the start, rather than left as a switch in
+/// Settings.
 struct WelcomeStepView: View {
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The onboarding flow's accent, taken from the look in use.
     private var tint = OnboardingTint()
+    /// Moves the flow on to the next step.
     let advance: () -> Void
 
+    /// The view's content.
     var body: some View {
         FeatureTour {
             actions

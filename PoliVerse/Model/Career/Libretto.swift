@@ -2,47 +2,60 @@ import Foundation
 
 /// One teaching in the study plan, with its result if it has been sat.
 ///
-/// This is the libretto — the record of what has actually been passed. It is a
-/// different thing from an exam *sitting*: `/v1/insegn` lists sittings still
-/// open to register for and is empty once everything is passed, which is
-/// exactly when a student most wants to see their results.
+/// This is the libretto — the record of what has been passed — and a different thing
+/// from an ``ExamSession``, which is a sitting still open to register for. The
+/// sittings endpoint is empty once everything is passed, which is exactly when a
+/// student most wants to see their results.
 nonisolated struct LibrettoExam: Identifiable, Sendable, Hashable, Codable {
+    /// The teaching's code where the payload carries one, and the row's own id
+    /// otherwise.
     let id: String
+    /// The teaching's name.
     let name: String
-    /// Absent until the exam is sat; also absent for pass/fail teachings.
+    /// The numeric mark. Absent until the exam is sat, and absent for pass/fail
+    /// teachings.
     let grade: Int?
+    /// Whether the mark carries honours.
     let hasLode: Bool
+    /// The teaching's credits, where recorded.
     let cfu: Int?
+    /// When the exam was sat, where recorded.
     let date: Date?
-    /// Upstream's own status wording, e.g. "Superato".
+    /// Upstream's own status wording, for example “Superato”.
     let statusText: String?
-    /// Academic year the teaching belongs to, for grouping a study plan.
+    /// An academic year supplied by the payload.
+    ///
+    /// Never filled in practice — the libretto carries no academic year, only the date
+    /// of the sitting — and kept as an override for a service that does send one. Read
+    /// through ``academicYear(calendar:)``.
     var year: String?
 
-    /// Taken from which list the server returned this row in, rather than
-    /// inferred from the mark — a pass/fail teaching ("idoneità") is passed
-    /// with no numeric mark at all.
+    /// Whether the teaching is passed.
+    ///
+    /// Taken from which list the server returned the row in rather than inferred from
+    /// the mark, since a pass/fail teaching is passed with no numeric mark at all.
     let isPassed: Bool
-    /// `descrizione_eng`. With no teaching code in the libretto, the names are
-    /// all there is to recognise a teaching by in the manifesto.
+    /// The teaching's English name, from `descrizione_eng`.
+    ///
+    /// With no teaching code in the libretto, the names are all there is to recognise a
+    /// teaching by in the manifesto.
     var englishName: String? = nil
 
-    /// `30L` for a mark with honours, matching how the official app renders it.
+    /// The mark as it is shown: `"30L"` for honours, the number otherwise, and `"—"`
+    /// when there is none.
     var displayGrade: String {
         guard let grade, grade > 0 else { return "—" }
         return hasLode ? "\(grade)L" : String(grade)
     }
 
-    /// The academic year this exam was sat in, as "2024/25".
+    /// The academic year this exam was sat in, as `"2024/25"`.
     ///
-    /// Derived, because ``year`` is never filled: the libretto payload
-    /// (``LibrettoEntryDTO``) carries no academic year at all, only the date
-    /// of the sitting. The field stays as an override for the day a service
-    /// does send one.
+    /// ``year`` wins when it is filled; otherwise it is derived from ``date``, with the
+    /// boundary on 1 October so that the autumn session counts under the year whose
+    /// teaching it examines.
     ///
-    /// The boundary is 1 October, so the autumn session — an exam sat in
-    /// September — counts under the year whose teaching it belongs to rather
-    /// than opening the next one.
+    /// - Parameter calendar: The calendar to read the date in.
+    /// - Returns: The year label, or `nil` without a year or a date.
     func academicYear(calendar: Calendar = PoliMiDate.romeCalendar) -> String? {
         if let year, !year.isEmpty { return year }
         guard let date else { return nil }

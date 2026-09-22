@@ -23,20 +23,34 @@ final class CampusMapModel {
     private(set) var placed: [MapPin] = []
     /// True while pins are still arriving, for the status line.
     private(set) var isPlacing = false
+    /// `true` while a load is in flight.
     private(set) var isLoading = false
+    /// The last load's error, or `nil` when it succeeded. Only set when there are no
+    /// cached coordinates to fall back on.
     private(set) var errorMessage: String?
     /// Whether pins are coloured by availability. Off until occupancy has been
     /// fetched, since a grey map is honest and a green one would not be.
     private(set) var showsAvailability = false
 
+    /// Supplies the rooms per building, and the campus list.
     private let catalogue: any RoomCatalogue
+    /// Supplies the occupancy ``loadAvailability(campus:)`` colours the pins with.
     private let freeRooms: any RoomAvailability
+    /// The transport the building geojson is fetched through.
     private let http: any HTTP
+    /// Diagnostic log for this type, under the `map` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "map")
 
-    /// Fetched once: buildings do not move.
+    /// Building coordinates by building code. Served from the cache first and refreshed
+    /// once per launch, since buildings do not move.
     private var locations: [String: BuildingLocation] = [:]
 
+    /// Seeds the pins and stops the model fetching, for previews.
+    ///
+    /// - Parameters:
+    ///   - catalogue: Supplies the rooms per building.
+    ///   - freeRooms: Supplies occupancy.
+    ///   - pins: The pins to draw.
     convenience init(catalogue: any RoomCatalogue, freeRooms: any RoomAvailability, preview pins: [MapPin]) {
         self.init(catalogue: catalogue, freeRooms: freeRooms)
         self.pins = pins
@@ -44,14 +58,22 @@ final class CampusMapModel {
         self.skipsLoading = true
     }
 
+    /// Set by the preview initialiser; makes ``load(campus:)`` do nothing.
     private var skipsLoading = false
 
+    /// Creates the model without fetching anything.
+    ///
+    /// - Parameters:
+    ///   - catalogue: Supplies the rooms per building, and the campus list.
+    ///   - freeRooms: Supplies occupancy.
+    ///   - http: The transport the geojson is fetched through.
     init(catalogue: any RoomCatalogue, freeRooms: any RoomAvailability, http: any HTTP = PublicHTTP()) {
         self.catalogue = catalogue
         self.freeRooms = freeRooms
         self.http = http
     }
 
+    /// The campuses the catalogue knows.
     var campuses: [String] { catalogue.campuses }
 
     /// A region around whatever is currently pinned.
@@ -64,15 +86,24 @@ final class CampusMapModel {
         })
     }
 
+    /// The rooms in one building, for the sheet a pin opens.
+    ///
+    /// - Parameter buildingCode: The building's `csie`.
+    /// - Returns: The rooms, sorted by code.
     func rooms(in buildingCode: String) -> [Classroom] {
         catalogue.rooms.filter { $0.buildingCode == buildingCode }
             .sorted { $0.id < $1.id }
     }
 
-    /// Pins appear as soon as anything can place them: coordinates cached
-    /// from an earlier visit and the cached catalogue first, then again as
-    /// fresh coordinates and a fresh catalogue arrive. Before, the map waited
-    /// for all four catalogue requests and the geojson before its first pin.
+    /// Places the campus's buildings on the map.
+    ///
+    /// Pins appear as soon as anything can place them: the cached coordinates and cached
+    /// catalogue first, then again as fresh coordinates and a fresh catalogue arrive. The
+    /// geojson is refetched once per launch.
+    ///
+    /// Availability is not loaded — see ``loadAvailability(campus:)``.
+    ///
+    /// - Parameter campus: The campus to show, or `nil` for every campus.
     func load(campus: String?) async {
         guard !skipsLoading else { return }
         guard !isLoading else { return }
@@ -96,6 +127,14 @@ final class CampusMapModel {
         log.notice("map: \(self.placed.count, privacy: .public) buildings placed")
     }
 
+    /// Recomputes the pins for a campus and starts revealing them.
+    ///
+    /// Does nothing before both coordinates and a catalogue are held, or when the
+    /// placement is unchanged. A new placement drops any colouring, since a legend over
+    /// grey pins would claim more than it knows. The reveal is not awaited, so
+    /// ``load(campus:)`` can keep fetching while pins land.
+    ///
+    /// - Parameter campus: The campus to place, or `nil` for every campus.
     private func place(campus: String?) async {
         guard !locations.isEmpty, !catalogue.rooms.isEmpty else { return }
         let placed = await MapPlacement.pinsInBackground(
@@ -111,19 +150,22 @@ final class CampusMapModel {
         revealTask = Task { await reveal(placed) }
     }
 
+    /// The reveal currently running, cancelled when a new placement supersedes it.
     private var revealTask: Task<Void, Never>?
 
-    /// How many pins land together, and how long between batches. Small enough
-    /// that a campus visibly fills in, brief enough that the whole of Milano
-    /// Leonardo — around 30 buildings — is there inside half a second.
+    /// How many pins land together during a reveal. Small enough that a campus visibly
+    /// fills in, and brief enough that a whole campus is placed inside half a second.
     private static let batchSize = 4
+    /// How long between batches during a reveal.
     private static let batchDelay = Duration.milliseconds(60)
 
     /// Hands the map its pins a batch at a time.
     ///
-    /// Pins already on screen keep their place: only what is new is added, so
-    /// a second placement (fresh coordinates, then the fresh catalogue) tops
-    /// the map up instead of clearing it and starting again.
+    /// Pins already on screen keep their place: only what is new is added, so a second
+    /// placement tops the map up instead of clearing it and starting again. A reveal
+    /// superseded by a newer placement stops rather than interleaving with it.
+    ///
+    /// - Parameter placed: The full placement to reveal.
     private func reveal(_ placed: [MapPin]) async {
         revealID += 1
         let id = revealID
@@ -147,19 +189,24 @@ final class CampusMapModel {
         }
     }
 
-    /// Identifies the reveal in flight, so a placement that arrives mid-reveal
-    /// supersedes the old one rather than interleaving with it.
+    /// Identifies the reveal in flight, so a placement arriving mid-reveal supersedes the
+    /// previous one.
     private var revealID = 0
 
-    /// Whether this launch has fetched the geojson; cached coordinates are
-    /// shown first but refreshed once per launch.
+    /// Whether this launch has refetched the geojson. Cached coordinates are shown first
+    /// and refreshed once.
     private var locationsRefreshed = false
 
-    /// Colours the pins by how many rooms are free right now.
+    /// Colours the pins by how many of each building's rooms are free right now.
     ///
-    /// Separate from ``load(campus:)`` and never automatic: this is one
-    /// request per room — around 150 for Milano Leonardo — so it happens when
-    /// the user asks for it and not before.
+    /// Never automatic: this is one request per room, so it happens only when the student
+    /// asks. The occupancy service is pointed at the campus on screen first — without
+    /// that it keeps whichever campus the Aule libere screen last used, and every pin
+    /// would silently fall back to unknown.
+    ///
+    /// Only rooms the occupancy pass answered for are counted.
+    ///
+    /// - Parameter campus: The campus on screen.
     func loadAvailability(campus: String?) async {
         guard !placed.isEmpty else { return }
         // Point the occupancy service at the campus on screen first. Without
@@ -180,6 +227,11 @@ final class CampusMapModel {
         showsAvailability = true
     }
 
+    /// Fetches the building coordinates from the public geojson and caches them.
+    ///
+    /// The empty `filter` parameter is required: without it the service answers 400
+    /// rather than everything. A failure is only reported when there are no cached
+    /// coordinates to place pins with.
     private func loadLocations() async {
         do {
             // The empty `filter` is required: without the parameter the

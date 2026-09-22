@@ -1,38 +1,50 @@
 import Foundation
 import OSLog
 
-/// News from the Politecnico.
+/// The ``Source`` for the Politecnico's news.
 ///
-/// `GET {agenda}/v1/persona/news?start_date=…&end_date=…` — path and query
-/// parameters verified from the official bundle, response body not. The payload
-/// is read leniently and its *shape* is logged, so one run on a real account
-/// settles the field names.
+/// `GET {agenda}/v1/persona/news` over a window from a month behind to a year ahead —
+/// wider than the official client's, because news published last week is still news to
+/// someone opening the app today, and the endpoint filters server-side.
 ///
 /// Unlike the agenda's other calls this one is not scoped to a matricola: it is
-/// `persona`, not `matricola/{m}`, so the token alone identifies the reader.
+/// `persona`, so the token alone identifies the reader.
+///
+/// The path and query are verified from the official client; the body's field names are
+/// read leniently and its shape is logged in debug builds.
 nonisolated struct NewsSource: Source {
+    /// Names the offline record and the log category.
     static let id = "news"
-    /// Fifteen minutes: the ateneo publishes a handful of items a week.
+    /// Fifteen minutes: the university publishes a handful of items a week.
     static let ttl: TimeInterval = 900
 
+    /// Diagnostic log for this type, under the `news` category.
     private static let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "news")
 
-    /// The items, plus whether the endpoint answered with something this
-    /// decoder could not read.
+    /// The items, and whether the endpoint answered with something this decoder could not
+    /// read.
     ///
-    /// Carried together rather than as two properties on the service, because
-    /// "unreadable" is a fact about *this* payload: held apart, an empty list
-    /// from a successful fetch and an empty list from a garbled one would be
-    /// indistinguishable the moment either was cached.
+    /// Carried together rather than as two properties on the model, because unreadability is
+    /// a fact about this payload: held apart, an empty list from a clean fetch and an empty
+    /// list from a garbled one would be indistinguishable once either was cached.
     struct Payload: Codable, Sendable, Equatable {
+        /// The current items, newest first by ``NewsItem/displayDate``.
         var items: [NewsItem] = []
+        /// Whether the payload carried rows the decoder could not read. An empty array is a
+        /// quiet week; an unreadable body is a bug, and the two must not look alike.
         var unreadable = false
     }
 
-    /// Fixed in tests, which would otherwise assert against a window that moves
-    /// with the clock.
+    /// The moment the window is measured from. Fixed in tests, which would otherwise assert
+    /// against a window that moves with the clock.
     var now: @Sendable () -> Date = { .now }
 
+    /// Fetches the news for the window, keeping only what is still posted.
+    ///
+    /// - Parameter env: The transport.
+    /// - Returns: The items, newest first, flagged unreadable when the payload carried rows
+    ///   the decoder could not read.
+    /// - Throws: ``APIError``.
     func fetch(_ env: Env) async throws -> Payload {
         let calendar = PoliMiDate.romeCalendar
         let now = now()
@@ -66,6 +78,7 @@ nonisolated struct NewsSource: Source {
         return Payload(items: current, unreadable: unreadable)
     }
 
+    /// The sample news items.
     func sample() -> Payload {
         Payload(items: NewsItem.samples())
     }

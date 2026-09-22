@@ -1,36 +1,51 @@
 import Foundation
 
-/// The study plan: every teaching, passed or not, with the arithmetic a
-/// student actually asks of it.
+/// The study plan: every teaching, passed or not, with the arithmetic a student asks of
+/// it.
 ///
-/// The Politecnico has endpoints for this — `/sequenzamedia/{matricola}`,
-/// `/mediaobiettivo/{matricola}`, `/simulazionemedia/insegnsenzavoto/{matricola}`
-/// — and ``CareerModel`` reads the official target from them. The
-/// arithmetic below is still done on the device: answering "what if I get 28
-/// in the rest?" has to be instant while a slider moves, and it is a weighted
-/// mean over data already here.
+/// The Politecnico has endpoints for the average and the target, and ``CareerModel``
+/// reads the official target from them. The arithmetic here is still done on the device,
+/// because answering “what if I get 28 in the rest?” has to be instant while a slider
+/// moves, and it is a weighted mean over data already in hand.
+///
+/// A value type, so it needs no session, no network and no actor to answer and can be
+/// tested directly.
+///
+/// ## What counts
+///
+/// Only teachings with a numeric mark enter an average. A pass/fail teaching carries
+/// credits but no mark, and counting it as zero would wreck every average it appears
+/// in. Honours count as 30, since they sit on top of a full mark.
 nonisolated struct StudyPlan: Sendable, Equatable {
+    /// The plan's teachings, passed and pending.
     let exams: [LibrettoExam]
 
-    /// Exams with a numeric mark. Pass/fail teachings carry CFU but no mark,
-    /// and counting them as zero would wreck every average they appear in.
+    /// The teachings carrying a numeric mark, which are the only ones an average is computed
+    /// over.
     private var graded: [LibrettoExam] {
         exams.filter { ($0.grade ?? 0) > 0 }
     }
 
+    /// The teachings passed, pass/fail ones included.
     var passed: [LibrettoExam] { exams.filter(\.isPassed) }
+    /// The teachings still to sit.
     var pending: [LibrettoExam] { exams.filter { !$0.isPassed } }
 
+    /// Credits already earned.
     var earnedCFU: Int { passed.reduce(0) { $0 + ($1.cfu ?? 0) } }
+    /// Credits still to earn.
     var remainingCFU: Int { pending.reduce(0) { $0 + ($1.cfu ?? 0) } }
+    /// Credits in the whole plan.
     var totalCFU: Int { earnedCFU + remainingCFU }
 
-    /// CFU actually behind the average — less than ``earnedCFU`` whenever the
-    /// plan contains a pass/fail teaching.
+    /// Credits actually behind the average — less than ``earnedCFU`` whenever the plan holds
+    /// a pass/fail teaching.
     private var gradedCFU: Int { graded.reduce(0) { $0 + ($1.cfu ?? 0) } }
 
-    /// The weighted mean. `30L` counts as 30: honours sit on top of a full
-    /// mark, and scoring them higher inflates every average containing one.
+    /// The credit-weighted average of the marks recorded so far.
+    ///
+    /// Falls back to a plain mean when no credits are recorded anywhere, rather than
+    /// reporting nothing. `nil` when there are no marks at all.
     var weightedMean: Double? {
         guard gradedCFU > 0 else {
             // No CFU recorded anywhere: fall back to a plain mean rather than
@@ -42,20 +57,22 @@ nonisolated struct StudyPlan: Sendable, Equatable {
         return total / Double(gradedCFU)
     }
 
-    /// The base degree mark, `mean / 30 × 110`, rounded.
+    /// The base degree mark out of 110, rounded.
     ///
-    /// An estimate and labelled as one: thesis points, honours and any
-    /// bonus the school applies are not derivable from the libretto.
+    /// An estimate: thesis points, honours and any bonus the school applies are not
+    /// derivable from the libretto. `nil` when there are no marks.
     var baseDegreeMark: Int? {
         weightedMean.map { Int((($0 / 30) * 110).rounded()) }
     }
 
-    /// The average needed across everything still to sit, to finish on
-    /// `target`.
+    /// The average needed across everything still to sit, to finish on a target.
     ///
-    /// Returns a figure above 30 when the target is out of reach rather than
-    /// clamping: a clamped 30 reads as "get top marks and you're fine", which
-    /// would be a lie. Use ``isReachable(_:)`` to ask the yes/no question.
+    /// Returns a figure above 30 when the target is out of reach rather than clamping: a
+    /// clamped 30 would read as “get top marks and you are fine”. Use ``isReachable(_:)``
+    /// for the yes-or-no question.
+    ///
+    /// - Parameter target: The final average wanted.
+    /// - Returns: The average needed, or `nil` when there is nothing left to sit.
     func requiredAverage(for target: Double) -> Double? {
         guard remainingCFU > 0 else { return nil }
         let doneWeight = (weightedMean ?? 0) * Double(gradedCFU)
@@ -63,6 +80,11 @@ nonisolated struct StudyPlan: Sendable, Equatable {
         return (totalWeight - doneWeight) / Double(remainingCFU)
     }
 
+    /// Whether a target average is still attainable.
+    ///
+    /// - Parameter target: The final average wanted.
+    /// - Returns: `true` when the required average is at most 30. With nothing left to sit,
+    ///   whether the current average already meets the target.
     func isReachable(_ target: Double) -> Bool {
         guard let needed = requiredAverage(for: target) else {
             return (weightedMean ?? 0) >= target
@@ -70,7 +92,11 @@ nonisolated struct StudyPlan: Sendable, Equatable {
         return needed <= 30
     }
 
-    /// What the mean becomes if everything left is passed at `grade`.
+    /// What the average becomes if everything left is passed at one mark.
+    ///
+    /// - Parameter grade: The mark to assume.
+    /// - Returns: The projected average. The current average when nothing is left to sit,
+    ///   and `nil` when there is nothing to project from.
     func projectedMean(assuming grade: Double) -> Double? {
         guard remainingCFU > 0 else { return weightedMean }
         guard let mean = weightedMean else {
@@ -81,17 +107,15 @@ nonisolated struct StudyPlan: Sendable, Equatable {
             / Double(gradedCFU + remainingCFU)
     }
 
-    /// Each graded exam in the order it was sat, with the weighted mean as it
-    /// stood once that mark was recorded.
+    /// Each marked teaching in the order it was sat, with the weighted average as it stood
+    /// once that mark was recorded.
     ///
-    /// This is what a student means by "how am I doing": not the marks, which
-    /// bounce, but the line they add up to. Each step recomputes the mean over
-    /// everything up to that point rather than accumulating a running total,
-    /// so every value on it is the same arithmetic as ``weightedMean`` and the
-    /// last one is that figure exactly.
+    /// This is what a student means by how they are doing: not the marks, which bounce, but
+    /// the line they add up to. Each step recomputes the average over everything up to that
+    /// point, so every value is the same arithmetic as ``weightedMean`` and the last is that
+    /// figure exactly.
     ///
-    /// Only dated marks take part: an exam with no date has no place on a time
-    /// axis, and putting it at one would be inventing when it happened.
+    /// Only dated marks take part: an exam with no date has no place on a time axis.
     var progression: [(exam: LibrettoExam, mean: Double)] {
         let dated = graded
             .filter { $0.date != nil }
@@ -102,25 +126,23 @@ nonisolated struct StudyPlan: Sendable, Equatable {
         }
     }
 
-    /// The most recently sat exam carrying a numeric mark.
+    /// The most recently sat teaching carrying a numeric mark.
     ///
-    /// Undated marks are excluded: "most recent" is a question about time, and
-    /// an exam with no date cannot answer it.
+    /// Undated marks are excluded: “most recent” is a question about time.
     var lastGraded: LibrettoExam? {
         graded
             .filter { $0.date != nil }
             .max { ($0.date ?? .distantPast) < ($1.date ?? .distantPast) }
     }
 
-    /// How the weighted mean moved when ``lastGraded`` was recorded.
+    /// How far the weighted average moved when ``lastGraded`` was recorded.
     ///
-    /// The single most interesting thing about an average is which way it is
-    /// going, and a student cannot get that from a number on its own — they
-    /// would have to remember what it said last month. Both sides are computed
-    /// by the same arithmetic as ``weightedMean``, so the difference is honest
-    /// even where it is a tenth off the official mean.
+    /// Which way an average is going is the most interesting thing about it, and a student
+    /// cannot get that from a number alone. Both sides are computed by the same arithmetic
+    /// as ``weightedMean``, so the difference is honest even where it is a tenth off the
+    /// official figure.
     ///
-    /// Nil until there are two marks to have moved between.
+    /// `nil` until there are two marks to have moved between.
     var meanDelta: Double? {
         guard let last = lastGraded else { return nil }
         let before = StudyPlan(exams: exams.filter { $0.id != last.id })
@@ -128,19 +150,19 @@ nonisolated struct StudyPlan: Sendable, Equatable {
         return current - previous
     }
 
-    /// Everything still to sit, which has no year to be grouped under.
+    /// The group name for everything still to sit, which has no academic year to be grouped
+    /// under.
     static let pendingGroup = String(localized: "Da sostenere")
 
-    /// The plan grouped for display: what is left first, then the academic
-    /// years the rest was sat in, newest first.
+    /// The plan grouped for display: what is left first, then the academic years the rest was
+    /// sat in, newest first.
     ///
-    /// Every group used to be called "Altro", because it grouped by
-    /// ``LibrettoExam/year`` and nothing has ever set that field. It now goes
-    /// through ``LibrettoExam/academicYear(calendar:)``, which reads the year
-    /// off the date of the sitting.
+    /// Years come from ``LibrettoExam/academicYear(calendar:)``, which reads them off the
+    /// date of the sitting. Within a year, the newest sitting leads and undated teachings
+    /// sort by name at the end.
     ///
-    /// What is left leads rather than trailing: it is the only group with
-    /// anything to do in it.
+    /// What is left leads rather than trailing, since it is the only group with anything to
+    /// do in it.
     var byYear: [(year: String, exams: [LibrettoExam])] {
         Dictionary(grouping: exams) { $0.academicYear() ?? Self.pendingGroup }
             .map { group in
@@ -162,43 +184,62 @@ nonisolated struct StudyPlan: Sendable, Equatable {
             }
     }
 
-    /// The weighted mean of one slice of the plan, for a year's own line.
+    /// The weighted average of one slice of a plan, for a year's own line.
+    ///
+    /// - Parameter exams: The teachings to average.
+    /// - Returns: The average, or `nil` when none carries a mark.
     static func mean(of exams: [LibrettoExam]) -> Double? {
         StudyPlan(exams: exams).weightedMean
     }
 
-    /// Credits earned in one slice.
+    /// Credits earned in one slice of a plan.
+    ///
+    /// - Parameter exams: The teachings to total.
+    /// - Returns: The credits of those passed.
     static func earnedCFU(of exams: [LibrettoExam]) -> Int {
         exams.filter(\.isPassed).reduce(0) { $0 + ($1.cfu ?? 0) }
     }
 }
 
-/// `GET {libretto}/testatapiano/{matricola}` — what the plan is *for*.
+/// What a study plan is for, from `GET {libretto}/testatapiano/{matricola}`.
 ///
-/// Shape unconfirmed, so every field is optional and read across candidate
-/// names; the header is decoration around the exam list, and a missing field
-/// must not cost the screen.
+/// The payload's shape is not confirmed, so every field is optional and read across
+/// candidate names: the header is decoration around the teaching list, and a missing
+/// field must not cost the screen. The payload's shape is logged in debug builds.
+///
+/// ``degreeCode`` and ``planCode`` matter beyond display: they are the manifesto's own
+/// keys, which make finding the programme exact rather than inferred from a name.
 nonisolated struct StudyPlanHeader: Sendable, Equatable, Codable {
+    /// The degree course's name.
     let course: String?
+    /// The plan's academic year, as the service writes it.
     let year: String?
+    /// The orientation or curriculum within the course.
     let track: String?
+    /// The credits the plan totals.
     let totalCFU: Int?
-    /// `k_corso_la` and `k_indir`, if the service sends them: the manifesto's
-    /// own keys, which make finding the programme exact. Unconfirmed names,
-    /// read leniently; the payload's shape is logged in debug builds.
+    /// `k_corso_la`, the manifesto's key for the degree course.
     var degreeCode: String? = nil
+    /// `k_indir`, the manifesto's key for the plan within it.
     var planCode: String? = nil
-    /// `tipoCorso`, e.g. "LAUREA DI PRIMO LIVELLO": what tells a bachelor's
-    /// from a master's of the same name. The careers list only says "Studente".
+    /// `tipoCorso`, for example “LAUREA DI PRIMO LIVELLO”, which tells a bachelor's from a
+    /// master's of the same name. The careers list says only “Studente”.
     var level: String? = nil
+    /// The degree course's English name, where the service sends one.
     var englishCourse: String? = nil
 
-    /// The plan's academic year as the manifesto keys it: "2025/26" → "2025".
+    /// ``year`` as the manifesto keys it — `"2025"` for `"2025/26"` — or `nil` when it does
+    /// not begin with four digits.
     var yearCode: String? {
         guard let prefix = year?.prefix(4), prefix.count == 4, prefix.allSatisfy(\.isNumber) else { return nil }
         return String(prefix)
     }
 
+    /// Reads a header out of a decoded payload, trying candidate key spellings for each
+    /// field.
+    ///
+    /// - Parameter value: The payload, as an object or the first element of an array.
+    /// - Returns: `nil` when nothing readable was found, which is not a header.
     init?(value: JSONValue) {
         guard let fields = value.objectValue ?? value.arrayValue?.first?.objectValue else {
             return nil
@@ -231,6 +272,13 @@ nonisolated struct StudyPlanHeader: Sendable, Equatable, Codable {
         }
     }
 
+    /// Creates a header directly, for tests and previews.
+    ///
+    /// - Parameters:
+    ///   - course: The degree course's name.
+    ///   - year: The plan's academic year.
+    ///   - track: The orientation within the course.
+    ///   - totalCFU: The credits the plan totals.
     init(course: String?, year: String?, track: String?, totalCFU: Int?) {
         self.course = course
         self.year = year

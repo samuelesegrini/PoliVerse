@@ -4,17 +4,23 @@ import SwiftUI
 /// ``TodayBar``. In the single-page layout the same page hides the tab bar
 /// and carries the ``SinglePagePanel``.
 struct TodayTab: View {
+    /// Drops the single-page panel back to its peek height, where it is out of the way of the day.
     private func minimizePanel() {
         guard shell.singlePage, shell.panelDetent != .peek else { return }
         withAnimation(.snappy) { shell.panelDetent = .peek }
     }
 
+    /// The environment's `shell`.
     @Environment(\.shell) private var shell
+    /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
+    /// Whether the app is on screen, in the foreground or in the background.
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
 
+    /// The view's content.
     var body: some View {
         NavigationStack {
             ScrollView {

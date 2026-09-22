@@ -1,19 +1,29 @@
 import Foundation
 
-/// Turns the HTML these endpoints send into readable plain text.
+/// Renders the HTML fragments these endpoints send as readable text.
 ///
-/// The news feed returns its description as an HTML fragment — the field
-/// arrived on screen as literal `<p>` and `&egrave;`. Notifications use the
-/// same backend conventions, so both go through here.
+/// The news feed and the notice service both return their bodies as HTML
+/// fragments. ``plain(_:)`` produces plain text with block structure kept as line
+/// breaks; ``attributed(_:)`` produces an `AttributedString` with bold, italic and
+/// tappable links.
 ///
-/// Deliberately **not** `NSAttributedString(data:options:documentType:.html)`.
-/// That importer is WebKit-backed and main-actor bound: running it per row in
-/// a scrolling list is a well-known source of hitches, and even in a detail
-/// view it blocks the first frame. These are short announcements where
-/// paragraph structure is the only formatting that carries meaning, and the
-/// link out to the site is already a separate field.
+/// Neither goes through `NSAttributedString`'s HTML importer, which is
+/// WebKit-backed and main-actor bound. Both are plain scans over the string, so
+/// they are `nonisolated` and cannot block a frame.
+///
+/// Emphasis is expressed as `inlinePresentationIntent` rather than an explicit
+/// `Font`, so the text keeps whatever font the view gives it and still scales with
+/// Dynamic Type.
 nonisolated enum HTMLText {
-    /// Plain text, with block structure preserved as blank lines.
+    /// A fragment as plain text, with block structure preserved as line breaks.
+    ///
+    /// Script, style and head elements are dropped whole, block tags become breaks,
+    /// remaining tags are stripped, and entities are decoded last — so an encoded
+    /// `&lt;b&gt;` stays literal text rather than becoming a tag and being deleted.
+    ///
+    /// - Parameter html: The fragment.
+    /// - Returns: The text. A paragraph or heading ends with a blank line, a `<br>`
+    ///   with a single newline, and list items are bulleted.
     static func plain(_ html: String) -> String {
         var text = markBlocks(stripNonContent(html))
 
@@ -29,13 +39,25 @@ nonisolated enum HTMLText {
         return tidy(text)
     }
 
-    /// Script and style carry no reading content, and their bodies are not
-    /// markup — dropping tags alone would leave CSS on screen.
+    /// Removes `script`, `style` and `head` elements with their contents.
+    ///
+    /// Their bodies are not markup, so stripping tags alone would leave CSS on screen.
+    ///
+    /// - Parameter html: The fragment.
+    /// - Returns: The fragment without those elements.
     private static func stripNonContent(_ html: String) -> String {
         removeElements(named: ["script", "style", "head"], from: html)
     }
 
-    /// Replaces block-level tags with break marks, leaving inline tags alone.
+    /// Replaces block-level tags with break marks, leaving inline tags in place.
+    ///
+    /// Breaks are recorded as ``breakMark`` rather than as newlines so that the next
+    /// step can tell them from the newlines in the source, which HTML treats as spaces.
+    /// A paragraph, heading, blockquote or list close leaves two marks; a `<br>` or row
+    /// close leaves one; a list item opens a line and a bullet.
+    ///
+    /// - Parameter html: The fragment.
+    /// - Returns: The fragment with block boundaries marked.
     private static func markBlocks(_ html: String) -> String {
         var text = html
 
@@ -79,24 +101,21 @@ nonisolated enum HTMLText {
 
     // MARK: - Rich text
 
-    /// The inline formatting these fragments actually use.
+    /// The inline formatting these fragments use.
     private struct Style: Equatable {
+        /// Whether the run is strongly emphasised.
         var bold = false
+        /// Whether the run is emphasised.
         var italic = false
+        /// The link the run sits inside, if any.
         var link: URL?
     }
 
-    /// Renders the fragment as styled text: bold, italic, headings and
-    /// tappable links.
+    /// A fragment as styled text: bold, italic, headings and tappable links.
     ///
-    /// Still not `NSAttributedString`'s HTML importer — that one is
-    /// WebKit-backed and main-actor bound. This is a plain scan over the
-    /// string, so it is `nonisolated`, cheap, and cannot block a frame.
-    ///
-    /// Emphasis is expressed as `inlinePresentationIntent` rather than an
-    /// explicit `Font`. SwiftUI honours it and, crucially, the text keeps
-    /// whatever font the view gives it — so it still scales with Dynamic Type
-    /// instead of being pinned to a size chosen here.
+    /// - Parameter html: The fragment.
+    /// - Returns: The attributed text, with whitespace collapsed to HTML's rules and
+    ///   block boundaries rendered as line breaks.
     static func attributed(_ html: String) -> AttributedString {
         let source = markBlocks(stripNonContent(html))
         var builder = Builder()
@@ -128,8 +147,15 @@ nonisolated enum HTMLText {
         return builder.finish()
     }
 
-    /// Updates the running style for one tag. Unknown tags are ignored, which
-    /// is what makes an unexpected `<span class=…>` harmless.
+    /// Updates the running style for one tag.
+    ///
+    /// `b` and `strong` and the six heading levels set bold, `i` and `em` set italic,
+    /// and `a` sets the link. Unknown tags are ignored, which is what makes an
+    /// unexpected `<span class=…>` harmless.
+    ///
+    /// - Parameters:
+    ///   - tag: The tag's body, without its angle brackets.
+    ///   - style: The running style to update.
     private static func apply(tag: String, to style: inout Style) {
         var body = tag.trimmingCharacters(in: .whitespaces)
         let isClosing = body.hasPrefix("/")
@@ -145,11 +171,13 @@ nonisolated enum HTMLText {
         }
     }
 
-    /// Pulls the URL out of an anchor, quoted or not.
+    /// The URL of an anchor tag, quoted with either quote character or unquoted.
     ///
-    /// Relative hrefs are dropped rather than guessed at: there is no base URL
-    /// to resolve them against, and a link that silently goes nowhere is worse
-    /// than text that is plainly not a link.
+    /// Relative links are dropped rather than guessed at: there is no base URL to
+    /// resolve them against, and a link that goes nowhere is worse than plain text.
+    ///
+    /// - Parameter tag: The anchor's body.
+    /// - Returns: The absolute URL, or `nil`.
     private static func href(in tag: String) -> URL? {
         guard
             let match = tag.range(
@@ -168,19 +196,29 @@ nonisolated enum HTMLText {
         return url
     }
 
-    /// Assembles the runs, applying HTML's whitespace rules as it goes.
+    /// Assembles the runs of an ``AttributedString``, applying HTML's whitespace rules
+    /// as it goes.
     ///
-    /// Collapsing afterwards is not an option once the string carries
-    /// attributes — the runs would have to be walked and re-spliced. Doing it
-    /// during the build keeps it to one pass and one rule.
+    /// Collapsing whitespace afterwards would mean walking and re-splicing attributed
+    /// runs; doing it during the build keeps it to one pass.
     private struct Builder {
+        /// What has been built so far.
         private var result = AttributedString()
+        /// Block breaks recorded but not yet written, capped at two. Never flushed at the
+        /// end, so the result has no trailing newlines.
         private var pendingBreaks = 0
-        /// Starts true so leading whitespace is dropped rather than indenting
-        /// the first line.
+        /// Whether the last character written was a space. Starts `true`, so leading
+        /// whitespace is dropped rather than indenting the first line.
         private var lastWasSpace = true
+        /// Whether anything has been written. Suppresses breaks before the first run.
         private var isEmpty = true
 
+        /// Appends one piece of text, splitting it on the block marks recorded earlier and
+        /// decoding its entities.
+        ///
+        /// - Parameters:
+        ///   - raw: The text, which may contain ``HTMLText/breakMark``.
+        ///   - style: The formatting in force.
         mutating func add(_ raw: String, style: Style) {
             // Break marks inside the text are the block boundaries recorded
             // earlier; everything between them is one run of inline content.
@@ -196,6 +234,11 @@ nonisolated enum HTMLText {
             }
         }
 
+        /// Appends one run, collapsing its whitespace and applying the style.
+        ///
+        /// - Parameters:
+        ///   - raw: The text of one run, without block marks.
+        ///   - style: The formatting to apply.
         private mutating func append(_ raw: String, style: Style) {
             var text = raw.replacingOccurrences(
                 of: "\\s+", with: " ", options: .regularExpression)
@@ -219,8 +262,9 @@ nonisolated enum HTMLText {
             isEmpty = false
         }
 
-        /// Trailing breaks are simply never flushed; a trailing space can
-        /// survive the last run, so drop it here.
+        /// The assembled text, with any trailing spaces removed.
+        ///
+        /// - Returns: The finished string.
         mutating func finish() -> AttributedString {
             while let last = result.characters.indices.last,
                   result.characters[last] == " " {
@@ -230,21 +274,29 @@ nonisolated enum HTMLText {
         }
     }
 
-    /// Whether a string looks like it carries markup worth stripping.
+    /// Whether a string looks like it carries tags or entities.
     ///
-    /// Used to keep the work off strings that are already plain — most titles
-    /// are, and a regex pass per row for nothing is waste.
+    /// - Parameter string: The string to test.
+    /// - Returns: `true` when a tag or an entity is present.
     static func containsMarkup(_ string: String) -> Bool {
         string.range(of: "<[^>]+>|&[#a-zA-Z][a-zA-Z0-9]{1,9};",
                      options: .regularExpression) != nil
     }
 
-    /// Strips markup only when there is some, so a plain string is returned
-    /// untouched and uncopied.
+    /// Strips markup only when there is some, so a plain string is returned untouched.
+    ///
+    /// - Parameter string: The string to clean.
+    /// - Returns: The plain text, or the input unchanged.
     static func plainIfNeeded(_ string: String) -> String {
         containsMarkup(string) ? plain(string) : string
     }
 
+    /// Removes named elements together with their contents.
+    ///
+    /// - Parameters:
+    ///   - names: The element names to remove.
+    ///   - html: The fragment.
+    /// - Returns: The fragment without those elements.
     private static func removeElements(named names: [String], from html: String) -> String {
         names.reduce(html) { partial, name in
             partial.replacingOccurrences(
@@ -256,8 +308,11 @@ nonisolated enum HTMLText {
         }
     }
 
-    /// The named entities that actually turn up in Italian university copy,
-    /// plus numeric escapes in both decimal and hex.
+    /// Decodes HTML entities: the named set in ``named``, then numeric escapes, then
+    /// `&amp;` last — so `&amp;egrave;` stays literal instead of becoming `è`.
+    ///
+    /// - Parameter text: The text to decode.
+    /// - Returns: The decoded text.
     private static func decodeEntities(_ text: String) -> String {
         var result = text
         for (entity, replacement) in named {
@@ -272,6 +327,13 @@ nonisolated enum HTMLText {
         return result
     }
 
+    /// Decodes `&#nnn;` and `&#xhh;` escapes.
+    ///
+    /// Replacements are applied back to front so earlier ranges stay valid. An escape
+    /// that names no scalar is left as written.
+    ///
+    /// - Parameter text: The text to decode.
+    /// - Returns: The decoded text.
     private static func decodeNumeric(_ text: String) -> String {
         guard let regex = RegexCache.regex("&#(x?)([0-9a-fA-F]+);") else {
             return text
@@ -297,6 +359,8 @@ nonisolated enum HTMLText {
         return result
     }
 
+    /// The named entities that appear in Italian university copy, with their
+    /// replacements. Applied in order, with `&amp;` handled separately and last.
     private static let named: [(String, String)] = [
         ("&nbsp;", " "), ("&#160;", " "),
         ("&lt;", "<"), ("&gt;", ">"), ("&quot;", "\""), ("&apos;", "'"),
@@ -313,15 +377,18 @@ nonisolated enum HTMLText {
         ("&copy;", "©"), ("&trade;", "™"),
     ]
 
-    /// A character that cannot appear in the source, standing in for a real
-    /// line break until the source's own whitespace has been collapsed.
+    /// Stands in for a real line break until the source's own whitespace has been
+    /// collapsed. A character that cannot appear in the source.
     private static let breakMark = "\u{0}"
 
-    /// Collapses whitespace the way HTML does, then restores the real breaks.
+    /// Collapses whitespace the way HTML does, then turns the surviving marks into
+    /// newlines.
     ///
-    /// Every run of whitespace in a fragment — including the newlines it is
-    /// wrapped with — is one space on screen. Only the marks inserted for
-    /// block tags survive as newlines.
+    /// Every run of whitespace becomes one space; runs of three or more block marks
+    /// become two, which reads as a paragraph break.
+    ///
+    /// - Parameter text: The marked text.
+    /// - Returns: The text, trimmed.
     private static func tidy(_ text: String) -> String {
         var result = text.replacingOccurrences(
             of: "\\s+", with: " ", options: .regularExpression)

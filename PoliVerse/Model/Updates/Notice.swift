@@ -2,45 +2,54 @@ import Foundation
 
 /// A message from the Politecnico — the bell in the official app.
 ///
-/// `GET {app}/v1/notifications`, with `GET {app}/v1/notifications/{id_notice}`
-/// for the full text of one. The path parameter's name is the only thing about
-/// this endpoint that is documented: it appears as `id_notice` in the official
-/// bundle's own client, which is why `id_notice` heads the list of candidate
-/// keys below.
+/// `GET {app}/v1/notifications` lists them, and
+/// `GET {app}/v1/notifications/{id_notice}` carries the full text of one.
 ///
-/// - Important: the response body has **never been captured from a real
-///   account**. Everything except that one parameter name is a guess, so this
-///   reads fields by trying a list of plausible names rather than binding to
-///   one, and ``NoticeModel`` logs the payload's shape so the guess can be
-///   replaced with fact after a single run.
+/// - Important: the response body has not been captured from a real account. Only the
+///   path parameter's name is known, from the official client, so every field is read
+///   by trying a list of plausible names — see ``init(fields:index:)`` — and
+///   ``NoticeSource`` logs the payload's shape so the guesses can be replaced with
+///   fact after a single run.
 nonisolated struct Notice: Identifiable, Sendable, Hashable, Codable {
+    /// The notice's identity, which the detail call takes. Falls back to the row's
+    /// position when the payload carries no identifier at all.
     let id: String
+    /// The notice's title, falling back to a generic word.
     let title: String
-    /// The summary or full text, where the list carries one. The detail
-    /// endpoint is what has the whole thing. Plain text, for rows.
+    /// The summary or full text as plain text, for rows. The detail endpoint is what
+    /// carries the whole thing.
     let body: String?
-    /// The same content with its markup intact, when it arrived as HTML, so
-    /// the detail view can render bold and links rather than flat text.
+    /// The same content with its markup intact, when it arrived as HTML, so the detail
+    /// view can render bold and links rather than flat text.
     var bodyHTML: String?
+    /// When the notice was sent, where the payload says.
     let date: Date?
+    /// Which service or channel it came from, where the payload says.
     let category: String?
-    /// Upstream's own read flag, when it sends one. Nil means it does not,
-    /// and read state is tracked on the device instead.
+    /// Upstream's own read flag. `nil` when it sends none, in which case read state is
+    /// tracked on the device.
     let serverRead: Bool?
-    /// Resolved by ``NoticeModel``: the server's flag when there is one,
-    /// otherwise what this device remembers.
+    /// Whether the notice counts as read: the server's flag where there is one, and what
+    /// this device remembers otherwise. Resolved by ``NoticeSource/adjust(_:)``.
     var isRead: Bool = false
-    /// Whether a link out to the web exists for this notice.
+    /// A link out to the web, where the payload carries one.
     let link: URL?
 }
 
+/// Reading a notice out of a payload whose field names are not known.
 nonisolated extension Notice {
-    /// Builds a notice from a payload whose field names are not known.
+    /// Builds a notice from a payload, trying a list of candidate key spellings for each
+    /// field.
     ///
-    /// Returns nil only when there is no usable identity **and** no title —
-    /// a row that can be neither addressed nor displayed. Everything else
-    /// degrades to nil rather than dropping the row: a notification missing
-    /// its date is still worth reading.
+    /// Everything but the identity and the title degrades to `nil` rather than dropping
+    /// the row: a notice missing its date is still worth reading.
+    ///
+    /// - Parameters:
+    ///   - fields: One notice's fields.
+    ///   - index: The row's position, which keeps rows distinct when the payload carries
+    ///     no identifier.
+    /// - Returns: `nil` only when there is neither an identity nor a title, which is a row
+    ///   that can be neither addressed nor displayed.
     init?(fields: [String: JSONValue], index: Int) {
         let rawID = fields.firstValue([
             "id_notice", "idNotice", "id", "notice_id", "id_notifica",
@@ -86,22 +95,22 @@ nonisolated extension Notice {
         )
     }
 
-    /// Reads a string that may be a plain string or an `{it, en}` pair — the
-    /// agenda sends every label the second way, so this endpoint may too.
+    /// A string field as plain text, accepting either a bare string or an `{it, en}` pair.
     ///
-    /// Markup is stripped here rather than at display time. These fields
-    /// arrive as HTML fragments — the news description reached the screen as
-    /// literal `<p>` and `&egrave;` — and doing it once on the way in means
-    /// every view, row and detail alike, shows text rather than source.
+    /// Markup is stripped here rather than at display time, so every view shows text
+    /// rather than source.
+    ///
+    /// - Parameter value: The decoded field.
+    /// - Returns: The text, or `nil` when it is absent or empty.
     static func text(from value: JSONValue) -> String? {
         rawText(from: value).map(HTMLText.plainIfNeeded)?.nonEmpty
     }
 
-    /// The same reading, with markup left in place.
+    /// The same reading with markup left in place, for the fields a detail view renders
+    /// richly.
     ///
-    /// Kept for the fields a detail view renders richly — the plain form is
-    /// what rows and titles want, the original is what carries the bold and
-    /// the links.
+    /// - Parameter value: The decoded field.
+    /// - Returns: The text as written, or `nil` when it is absent or empty.
     static func rawText(from value: JSONValue) -> String? {
         if let fields = value.objectValue {
             let localised = fields.firstValue(["it", "ita", "italian"])?.stringValue
@@ -111,29 +120,35 @@ nonisolated extension Notice {
         return value.stringValue?.nonEmpty
     }
 
-    /// The original markup, but only when there is some — a plain string is
-    /// already its own best rendering and storing it twice helps nobody.
+    /// The original markup, but only when there is some — a plain string is already its own
+    /// best rendering, and storing it twice helps nobody.
+    ///
+    /// - Parameter raw: The text as written.
+    /// - Returns: The text when it carries markup, and `nil` otherwise.
     static func markup(_ raw: String?) -> String? {
         guard let raw, HTMLText.containsMarkup(raw) else { return nil }
         return raw
     }
 
-    /// Reads a timestamp in any of the forms PoliMi's services actually use.
-    ///
-    /// All four appear across endpoints already in this app: the libretto
-    /// sends epoch **milliseconds**, the agenda sends timezone-less wall clock
-    /// in Europe/Rome, and other services send ISO 8601. Guessing one would be
-    /// a coin flip, so try them in order of how unambiguous they are.
-    /// Built once: two formatters used to be allocated for every date in
-    /// every payload. `ISO8601DateFormatter` is documented as thread-safe,
-    /// which is what makes sharing it across decodes sound.
+    /// ISO 8601 without fractional seconds. Shared, which `ISO8601DateFormatter` documents
+    /// as safe.
     private nonisolated(unsafe) static let isoPlain = ISO8601DateFormatter()
+    /// ISO 8601 with fractional seconds.
     private nonisolated(unsafe) static let isoFractional: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return formatter
     }()
 
+    /// A timestamp in any of the forms these services use.
+    ///
+    /// A number is epoch seconds or milliseconds, told apart by magnitude. A string is
+    /// tried as ISO 8601, then as ISO 8601 with fractional seconds, then as Rome wall clock
+    /// with a `T` separator, and finally as Rome wall clock with a space — which is how the
+    /// JAF services tend to write it.
+    ///
+    /// - Parameter value: The decoded field.
+    /// - Returns: The date, or `nil` when no form matches.
     static func date(from value: JSONValue) -> Date? {
         if let number = value.doubleValue, number > 0 {
             // Seconds and milliseconds are told apart by magnitude: epoch
@@ -156,8 +171,11 @@ nonisolated extension Notice {
         return Notice.spacedWallClock.date(from: text)
     }
 
-    /// `yyyy-MM-dd HH:mm:ss`, read as Europe/Rome like every other
-    /// timezone-less timestamp these services send.
+    /// `yyyy-MM-dd HH:mm:ss` in Europe/Rome.
+    ///
+    /// Kept here rather than in ``PoliMiDate`` so that a guess made for an unconfirmed
+    /// endpoint cannot alter the parsing of the agenda and the libretto, both of which are
+    /// verified against a real account.
     static let spacedWallClock: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -166,8 +184,13 @@ nonisolated extension Notice {
         return formatter
     }()
 
-    /// Upstream may express "read" either way round, so look for both and
-    /// invert the negative one rather than reporting everything unread.
+    /// Upstream's read flag, however it is expressed.
+    ///
+    /// A read timestamp means read and an empty one unread; a negative flag such as
+    /// `unread` is inverted rather than reported as everything being unread.
+    ///
+    /// - Parameter fields: One notice's fields.
+    /// - Returns: Whether the notice is read, or `nil` when the payload says nothing.
     static func readFlag(in fields: [String: JSONValue]) -> Bool? {
         if let read = fields.firstValue([
             "read", "letto", "is_read", "isRead", "visualizzato", "seen",
@@ -188,13 +211,17 @@ nonisolated extension Notice {
 
 /// The list payload, which may be a bare array or an array behind a key.
 ///
-/// Both conventions are in use across the services this app already talks to:
-/// `/v1/insegn` wraps its array in `INSEGN`, the agenda returns a bare array.
+/// Both conventions are in use across the services this app talks to.
 nonisolated struct NoticesResponse: Decodable, Sendable {
+    /// The notices read out of the payload. Empty when none could be.
     let notices: [Notice]
-    /// Kept so the service can log the payload's shape without re-parsing it.
+    /// The payload as it arrived, so its shape can be logged without parsing it again.
     let raw: JSONValue
 
+    /// Decodes the payload into ``JSONValue`` and extracts the notices from it.
+    ///
+    /// - Parameter decoder: The decoder to read from.
+    /// - Throws: Only when the body is not JSON at all.
     init(from decoder: any Decoder) throws {
         let container = try decoder.singleValueContainer()
         let value = try container.decode(JSONValue.self)
@@ -202,6 +229,14 @@ nonisolated struct NoticesResponse: Decodable, Sendable {
         notices = NoticesResponse.extract(from: value)
     }
 
+    /// Reads notices out of a decoded payload, whatever it is wrapped in.
+    ///
+    /// An array is read directly. An object is followed into the first named key holding an
+    /// array, then into any array-valued member — the name being exactly what is unknown —
+    /// and finally read as a single notice.
+    ///
+    /// - Parameter value: The decoded payload.
+    /// - Returns: The notices, or an empty array when none can be read.
     static func extract(from value: JSONValue) -> [Notice] {
         if let items = value.arrayValue {
             return items.enumerated().compactMap { index, item in
@@ -225,19 +260,21 @@ nonisolated struct NoticesResponse: Decodable, Sendable {
     }
 }
 
+/// Small string conveniences these payloads need.
 nonisolated extension String {
-    /// Empty strings are how these backends spell "absent", and an empty
-    /// title is worse than a fallback one.
+    /// The string trimmed, or `nil` when nothing is left.
+    ///
+    /// An empty string is how these backends spell absent, and an empty title is worse than
+    /// a fallback one.
     var nonEmpty: String? {
         let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
 
-    /// The first letter capitalised and the rest left alone.
+    /// The first letter upper-cased and the rest left alone.
     ///
-    /// `capitalized` capitalises every word, which is right for a title and
-    /// wrong for a phrase: an exam of kind "Scritto e orale" came back from
-    /// it as "Scritto E Orale".
+    /// `capitalized` capitalises every word, which is right for a title and wrong for a
+    /// phrase.
     var sentenceCased: String {
         guard let first else { return self }
         return first.uppercased() + dropFirst()

@@ -6,20 +6,26 @@ import SwiftUI
 ///
 /// Two months either side of today are enough for a timetable.
 struct DayStrip: View {
+    /// The day shown, which the strip writes as it scrolls.
     @Binding var day: Date
 
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
     /// The day under the fixed highlight while scrolling.
     @State private var centred: Date?
 
+    /// The Politecnico's own calendar, in which the days are counted.
     private let calendar = PoliMiDate.romeCalendar
+    /// One day's width, which the scroll view snaps to.
     private let cellWidth: CGFloat = 50
 
+    /// Two months either side of today, which is as far as a timetable reaches.
     private var days: [Date] {
         let today = calendar.startOfDay(for: .now)
         return (-60...60).compactMap { calendar.date(byAdding: .day, value: $0, to: today) }
     }
 
+    /// The view's content.
     var body: some View {
         VStack(spacing: 10) {
             HStack {
@@ -76,6 +82,10 @@ struct DayStrip: View {
         .animation(.snappy, value: day)
     }
 
+    /// One day: its weekday, its number, and the highlight when it is the one chosen.
+    ///
+    /// - Parameter date: The day to draw.
+    /// - Returns: The cell.
     private func cell(_ date: Date) -> some View {
         let selected = centred.map { calendar.isDate(date, inSameDayAs: $0) } ?? false
         let today = calendar.isDateInToday(date)

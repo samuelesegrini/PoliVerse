@@ -7,29 +7,48 @@ import SwiftUI
 /// "which course am I going to" is the reason most visits start. Then the
 /// favourites and the rest, one card each, with what is new beside a course.
 struct CoursesPage: View {
+    /// The shared ``CourseModel``, from the environment.
     @Environment(CourseModel.self) private var courses
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The shared ``WeBeepModel``, from the environment.
     @Environment(WeBeepModel.self) private var weBeep
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
+    /// The shared ``StudyProgrammeModel``, from the environment.
     @Environment(StudyProgrammeModel.self) private var programmes
+    /// The shared ``CareersModel``, from the environment.
     @Environment(CareersModel.self) private var careers
+    /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
+    /// The shared ``UpdateFeed``, from the environment.
     @Environment(UpdateFeed.self) private var feed
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
 
+    /// The look in use, which supplies the page's material and typeface.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
 
+    /// The academic year the list is filtered to, or `nil` for every year.
     @State private var year: String?
+    /// Which provenance the list is filtered to.
     @State private var originFilter: CourseOrigins.Filter = .all
+    /// The provenances the student has corrected by hand, by course id.
     @State private var overrides = EnrolmentOverrides.all()
+    /// The study plans of the account's other enrolments, which a course can belong to.
     @State private var otherPlans: [EnrolmentOrigin.Plan] = []
+    /// Whether the WeBeep login sheet is presented.
     @State private var showingLogin = false
+    /// Whether the hidden-courses sheet is presented.
     @State private var showingHidden = false
     #if DEBUG
+    /// Debug builds only: the course a launch argument asks to open.
     @State private var debugCourse: Course?
+    /// Debug builds only: true once that course has been opened, so it opens once.
     @State private var openedDebugCourse = false
     #endif
 
+    /// Where each course comes from, worked out from the plans, the career and the student's own corrections.
     private var origins: CourseOrigins {
         CourseOrigins(student: session.student, career: career, programmes: programmes, otherPlans: otherPlans,
                       overrides: overrides, weBeep: weBeep)
@@ -41,6 +60,7 @@ struct CoursesPage: View {
         !session.useMockData && !weBeep.isAuthenticated
     }
 
+    /// The view's content.
     var body: some View {
         let origins = origins
         let shown = origins.filter(courses.courses(in: year), by: originFilter)
@@ -134,6 +154,10 @@ struct CoursesPage: View {
         .animation(.snappy, value: originFilter)
     }
 
+    /// The line under the title: how many courses are shown, and the year when one is chosen.
+    ///
+    /// - Parameter count: How many courses the list shows.
+    /// - Returns: The line, or `nil` before any course has arrived.
     private func subtitle(count: Int) -> Text? {
         guard !courses.courses.isEmpty else { return nil }
         let courseCount = Text("\(count) corsi")
@@ -143,6 +167,7 @@ struct CoursesPage: View {
 
     // MARK: - Filters
 
+    /// The chips over the list: the provenance filter when one is on, and one chip per academic year.
     private var filters: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 8) {
@@ -172,6 +197,7 @@ struct CoursesPage: View {
         .padding(.horizontal, -20)
     }
 
+    /// The toolbar menu: the provenance filter, and a way into the hidden courses.
     private var menu: some View {
         Menu {
             Picker("Mostra", selection: $originFilter) {
@@ -196,6 +222,12 @@ struct CoursesPage: View {
 
     // MARK: - Blocks
 
+    /// A heading and what belongs under it, spaced as Oggi's sections are.
+    ///
+    /// - Parameters:
+    ///   - title: The heading.
+    ///   - content: What goes under it.
+    /// - Returns: The section.
     private func block<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             LookHeading(title)
@@ -203,6 +235,12 @@ struct CoursesPage: View {
         }
     }
 
+    /// A group of courses as rows on one card.
+    ///
+    /// - Parameters:
+    ///   - list: The courses, in the order they are drawn.
+    ///   - origins: Where each comes from.
+    /// - Returns: The card.
     private func list(_ list: [Course], origins: CourseOrigins) -> some View {
         let padding: CGFloat = style.material.hasCard ? 14 : 0
         return VStack(spacing: 0) {
@@ -223,6 +261,10 @@ struct CoursesPage: View {
         .lookCard()
     }
 
+    /// A course's context menu: favourite, hide, and its provenance.
+    ///
+    /// - Parameter course: The course the menu belongs to.
+    /// - Returns: The menu's items.
     @ViewBuilder
     private func menuItems(_ course: Course) -> some View {
         Button(course.isFavourite ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti",
@@ -243,11 +285,17 @@ struct CoursesPage: View {
         }
     }
 
+    /// Records the student's own answer about where a course comes from.
+    ///
+    /// - Parameters:
+    ///   - value: The provenance, or `nil` to go back to the deduced one.
+    ///   - course: The course.
     private func setOverride(_ value: EnrolmentOrigin.Override?, _ course: Course) {
         EnrolmentOverrides.set(value, for: course.id)
         overrides = EnrolmentOverrides.all()
     }
 
+    /// The card shown in place of the list when WeBeep has not been connected, which is where the list comes from.
     private var loginCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("Collega WeBeep", systemImage: "books.vertical")
@@ -263,6 +311,13 @@ struct CoursesPage: View {
         .lookCard()
     }
 
+    /// An empty state on the look's card.
+    ///
+    /// - Parameters:
+    ///   - title: What is missing.
+    ///   - systemImage: Its SF Symbol.
+    ///   - detail: Why, or what to do about it.
+    /// - Returns: The card.
     private func empty(_ title: LocalizedStringKey, systemImage: String, detail: LocalizedStringKey) -> some View {
         ContentUnavailableView(title, systemImage: systemImage, description: Text(detail))
             .padding(.vertical, 20)
@@ -270,6 +325,7 @@ struct CoursesPage: View {
             .lookCard()
     }
 
+    /// Four sample rows, redacted, standing in for the list while it loads.
     private var placeholder: some View {
         VStack(spacing: 0) {
             ForEach(Course.samples.prefix(4)) { course in
@@ -290,6 +346,10 @@ struct CoursesPage: View {
         return title.contains(target) || target.contains(title)
     }
 
+    /// The course's next lesson still to finish.
+    ///
+    /// - Parameter course: The course.
+    /// - Returns: The earliest such lesson, or `nil` when there is none.
     private func nextLecture(of course: Course) -> AgendaEvent? {
         agenda.events.lazy
             .filter { $0.kind == .lecture && $0.end > .now && matches($0, course) }
@@ -308,18 +368,27 @@ struct CoursesPage: View {
 
 /// One course: its colour, its name, when it is next, and what is new.
 private struct CourseRow: View {
+    /// The course this row is about.
     let course: Course
+    /// Where the course comes from, named in the row's second line.
     let origin: EnrolmentOrigin
+    /// The course's next lesson, when it has one.
     let nextLecture: AgendaEvent?
+    /// What is unread in the course, counted by kind.
     let news: CourseHubBadges
+    /// True for the last row on the card, which draws no divider.
     let last: Bool
 
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// Everything unread in the course, added up.
     private var unread: Int { news.announcements + news.materials + news.exams }
 
+    /// The view's content.
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
@@ -372,7 +441,7 @@ private struct CourseRow: View {
         var parts: [String] = []
         if let lecture = nextLecture, lecture.start < .now.addingTimeInterval(7 * 86_400) {
             parts.append(lectureText(lecture))
-            if let room = lecture.roomAcronym ?? lecture.room { parts.append(room) }
+            if let room = lecture.roomLabel { parts.append(room) }
         } else {
             if course.teacher != "—", !course.teacher.isEmpty { parts.append(course.teacher) }
             if course.academicYear != "—" { parts.append(course.academicYear) }
@@ -381,6 +450,10 @@ private struct CourseRow: View {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
+    /// When a lesson is, in the shortest form that is still unambiguous.
+    ///
+    /// - Parameter lecture: The lesson.
+    /// - Returns: "In corso", "Oggi alle …", "Domani alle …", or the weekday and time.
     private func lectureText(_ lecture: AgendaEvent) -> String {
         let time = lecture.start.formatted(.dateTime.hour().minute().locale(locale))
         if lecture.start <= .now { return String(localized: "In corso") }
@@ -393,11 +466,15 @@ private struct CourseRow: View {
 
 /// A lesson today, as a card in its course's colour with Oggi's sheen.
 private struct LessonCourseCard: View {
+    /// The course the lesson belongs to, whose colour the card takes.
     let course: Course
+    /// The lesson itself.
     let lesson: AgendaEvent
 
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
 
+    /// The view's content.
     var body: some View {
         let colour = Theme.accent(for: course)
         let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -406,7 +483,7 @@ private struct LessonCourseCard: View {
                 Text(course.name)
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
-                Text([lesson.room ?? lesson.roomAcronym].compactMap { $0 }.joined())
+                Text(lesson.roomLabel ?? "")
                     .font(.caption)
                     .opacity(0.8)
                     .lineLimit(1)
@@ -444,9 +521,12 @@ private struct LessonCourseCard: View {
 /// A course's initials on its colour: how a course is recognised across
 /// Corsi and its own page.
 struct CourseMonogram: View {
+    /// The course whose initials and colour are drawn.
     let course: Course
+    /// The monogram's side, in points.
     var size: CGFloat = 38
 
+    /// The view's content.
     var body: some View {
         Text(course.monogram)
             .font(.system(size: size * 0.38, weight: .bold, design: .rounded))
@@ -457,6 +537,7 @@ struct CourseMonogram: View {
     }
 }
 
+/// The initials a course is recognised by.
 extension Course {
     /// "AC" for "Architetture dei Calcolatori": skips the short joining words.
     var monogram: String {
@@ -471,10 +552,14 @@ extension Course {
 
 // MARK: - Hidden courses
 
+/// The courses removed from the list, with a way to bring each one back.
 private struct HiddenCoursesSheet: View {
+    /// The shared ``CourseModel``, from the environment.
     @Environment(CourseModel.self) private var courses
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
 
+    /// The view's content.
     var body: some View {
         NavigationStack {
             List(courses.hiddenOnly) { course in

@@ -2,8 +2,10 @@ import SwiftUI
 
 /// The full news list.
 struct NewsView: View {
+    /// The shared ``NewsModel``, from the environment.
     @Environment(NewsModel.self) private var news
 
+    /// The view's content.
     var body: some View {
         Group {
             if let message = news.errorMessage, news.items.isEmpty {
@@ -47,9 +49,12 @@ struct NewsView: View {
     }
 }
 
+/// One item in the news list: its title, date and summary.
 private struct NewsRow: View {
+    /// The item this row shows.
     let item: NewsItem
 
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(item.title)
@@ -81,10 +86,15 @@ private struct NewsRow: View {
     }
 }
 
+/// One news item in full, with its picture and a link out to the site where there is
+/// one.
 struct NewsDetailView: View {
+    /// The item being shown.
     let item: NewsItem
+    /// Opens a link outside the app.
     @Environment(\.openURL) private var openURL
 
+    /// The view's content.
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
@@ -142,8 +152,10 @@ struct NewsDetailView: View {
 
 /// The Home section: a few headlines, with a way through to the rest.
 struct NewsHighlights: View {
+    /// The shared ``NewsModel``, from the environment.
     @Environment(NewsModel.self) private var news
 
+    /// The view's content.
     var body: some View {
         // Silent when there is nothing: an error banner for news would push
         // the timetable and courses down the screen for the least urgent
@@ -171,9 +183,12 @@ struct NewsHighlights: View {
     }
 }
 
+/// One item as it appears in the Oggi summary.
 private struct NewsHighlightCard: View {
+    /// The item this card shows.
     let item: NewsItem
 
+    /// The view's content.
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             RoundedRectangle(cornerRadius: 3)

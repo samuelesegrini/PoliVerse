@@ -1,14 +1,18 @@
 import CoreLocation
 import Foundation
 
-/// Sample data for this area: what its screens show when the student chose
-/// "Esplora con dati di esempio", and what the previews render.
-///
-/// Real names from an Ingegneria Informatica plan, so layout is tested against
-/// realistic string lengths rather than "Lorem ipsum". This ships — an
-/// incoherent demo is something a student sees.
+// Sample data for this area: what its screens show when the student chose
+// "Esplora con dati di esempio", and what the previews render.
+//
+// Real names from an Ingegneria Informatica plan, so layout is tested against
+// realistic string lengths rather than "Lorem ipsum". This ships — an
+// incoherent demo is something a student sees.
 
+/// The sample campuses.
 nonisolated extension AuleSite {
+    /// Milano Leonardo and Milano Bovisa.
+    ///
+    /// - Returns: The sample campuses.
     static func samples() -> [AuleSite] {
         [
             AuleSite(id: "MIA", name: "Milano Leonardo"),
@@ -17,6 +21,7 @@ nonisolated extension AuleSite {
     }
 }
 
+/// The sample room bookings.
 nonisolated extension RoomSchedule {
     /// The rooms the sample week's lessons are in, booked with those same
     /// lessons — so a room opened from Oggi shows the lesson that sent the
@@ -68,7 +73,12 @@ nonisolated extension RoomSchedule {
     }
 }
 
+/// The sample room catalogue.
 nonisolated extension Classroom {
+    /// Three real Città Studi and Bovisa rooms, with the building, floor, capacity and
+    /// the three identifiers the real catalogue carries.
+    ///
+    /// - Returns: The sample rooms.
     static func samples() -> [Classroom] {
         [
             Classroom(id: "3.0.1", capacity: 120, buildingCode: "MIA0103",
@@ -91,7 +101,12 @@ nonisolated extension Classroom {
     }
 }
 
+/// The sample room equipment.
 nonisolated extension RoomFacility {
+    /// A projector, a radio microphone and seats with power — the items the real
+    /// catalogue lists most often.
+    ///
+    /// - Returns: The sample equipment.
     static func samples() -> [RoomFacility] {
         [
             RoomFacility(id: 4, it: "Video proiettore", en: "Video projector"),
@@ -102,7 +117,12 @@ nonisolated extension RoomFacility {
     }
 }
 
+/// The sample map pins.
 nonisolated extension MapPin {
+    /// Three buildings at their real coordinates, one of each availability: mostly free,
+    /// mostly busy, and not yet counted.
+    ///
+    /// - Returns: The sample pins.
     static func samples() -> [MapPin] {
         [
             MapPin(id: "MIA0103", name: "Edificio 3",

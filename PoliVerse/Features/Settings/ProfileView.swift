@@ -7,22 +7,35 @@ import SwiftUI
 /// results and exams belong to Carriera. Name, codes and email come from the
 /// university account and cannot be edited; only the photo's look can.
 struct ProfileView: View {
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
+    /// The shared ``CareersModel``, from the environment.
     @Environment(CareersModel.self) private var careers
+    /// The shared ``WeBeepModel``, from the environment.
     @Environment(WeBeepModel.self) private var weBeep
+    /// The shared ``LoginMethodMemory``, from the environment.
     @Environment(LoginMethodMemory.self) private var loginMemory
+    /// Opens a link outside the app.
     @Environment(\.openURL) private var openURL
 
+    /// The shape the avatar is cut to, which the photo page changes.
     @AppStorage(AvatarShape.storageKey) private var shape: AvatarShape = .circle
+    /// The profile page pushed, if any.
     @State private var page: ProfilePage?
+    /// The code just copied, which its cell confirms for a moment.
     @State private var copied: String?
 
+    /// A page pushed from the profile.
     enum ProfilePage: String, Identifiable {
+        /// The contact card, the photo settings, and the choice of enrolment.
         case contact, photo, career
+        /// The page's identity, which is its raw value.
         var id: String { rawValue }
     }
 
+    /// The view's content.
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -84,6 +97,7 @@ struct ProfileView: View {
 
     // MARK: - Header
 
+    /// The avatar, the name, and what the student is enrolled in.
     private var header: some View {
         VStack(spacing: 4) {
             ProfileAvatar(student: session.student, size: 112)
@@ -111,6 +125,7 @@ struct ProfileView: View {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
+    /// The row of quick actions: the QR card, the photo, and the university mailbox.
     private var actions: some View {
         HStack(spacing: 10) {
             if session.student != nil {
@@ -131,6 +146,10 @@ struct ProfileView: View {
 
     // MARK: - Codes
 
+    /// The matricola and the codice persona, each copied on a tap.
+    ///
+    /// - Parameter student: The signed-in student.
+    /// - Returns: The card.
     private func codes(_ student: Student) -> some View {
         ProfileGroup("Codici", footer: "Tocca un codice per copiarlo. Arrivano dal tuo account del Politecnico.") {
             VStack(spacing: 0) {
@@ -172,6 +191,9 @@ struct ProfileView: View {
         }
     }
 
+    /// Puts a code on the pasteboard and confirms it for a moment.
+    ///
+    /// - Parameter value: The code to copy.
     private func copy(_ value: String) {
         UIPasteboard.general.string = value
         withAnimation(.snappy) { copied = value }
@@ -183,6 +205,7 @@ struct ProfileView: View {
 
     // MARK: - Careers
 
+    /// Every enrolment on the account, with the one in use marked.
     private var careerList: some View {
         ProfileGroup("Carriere", footer: "Carriera mostra la carriera scelta qui.") {
             VStack(spacing: 0) {
@@ -199,6 +222,7 @@ struct ProfileView: View {
 
     // MARK: - Access
 
+    /// How the student signs in to each service, and where to change it.
     private var access: some View {
         ProfileGroup("Accesso") {
             VStack(spacing: 0) {
@@ -226,16 +250,26 @@ struct ProfileView: View {
 /// A titled card in the grouped style: small caps title, the content on the
 /// secondary background, an optional footnote under it.
 struct ProfileGroup<Content: View>: View {
+    /// The card's title.
     let title: LocalizedStringKey
+    /// A footnote under the card, if any.
     var footer: LocalizedStringKey? = nil
+    /// The content this view wraps.
     @ViewBuilder var content: Content
 
+    /// Creates the card.
+    ///
+    /// - Parameters:
+    ///   - title: The card's title.
+    ///   - footer: A footnote under it, if any.
+    ///   - content: The card's content.
     init(_ title: LocalizedStringKey, footer: LocalizedStringKey? = nil, @ViewBuilder content: () -> Content) {
         self.title = title
         self.footer = footer
         self.content = content()
     }
 
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
@@ -257,11 +291,16 @@ struct ProfileGroup<Content: View>: View {
     }
 }
 
+/// One of the square buttons under the header.
 private struct QuickAction: View {
+    /// What the button is called.
     let title: LocalizedStringKey
+    /// Its SF Symbol.
     let systemImage: String
+    /// What the tap does.
     let action: () -> Void
 
+    /// The view's content.
     var body: some View {
         Button(action: action) {
             VStack(spacing: 5) {
@@ -280,12 +319,18 @@ private struct QuickAction: View {
     }
 }
 
+/// One code, copied on a tap, confirming for a moment afterwards.
 private struct CodeCell: View {
+    /// What the code is.
     let label: LocalizedStringKey
+    /// The code itself.
     let value: String
+    /// True while the cell is confirming the copy.
     let copied: Bool
+    /// Copies the code.
     let action: () -> Void
 
+    /// The view's content.
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 4) {
@@ -318,10 +363,14 @@ private struct CodeCell: View {
     }
 }
 
+/// One enrolment: its kind, its matricola and status, and a mark when it is the one in use.
 struct CareerRow: View {
+    /// The enrolment this row is about.
     let career: Career
+    /// True when this is the enrolment the app is reading.
     let isCurrent: Bool
 
+    /// The view's content.
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: "graduationcap.fill")
@@ -351,17 +400,24 @@ struct CareerRow: View {
         .contentShape(.rect)
     }
 
+    /// The line under the kind: the matricola and the enrolment's status.
     private var detail: String {
         [career.matricola, career.status].compactMap { $0 }.joined(separator: " · ")
     }
 }
 
+/// One service and how the student signs in to it.
 private struct ServiceRow<Value: View>: View {
+    /// The service's name.
     let title: LocalizedStringKey
+    /// Its SF Symbol.
     let systemImage: String
+    /// The symbol's colour.
     let tint: Color
+    /// The `value` this view draws.
     @ViewBuilder var value: Value
 
+    /// The view's content.
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: systemImage)
@@ -383,9 +439,12 @@ private struct ServiceRow<Value: View>: View {
 
 /// The three photo shapes side by side, the chosen one ringed.
 struct AvatarShapePicker: View {
+    /// The student whose picture is drawn in each shape.
     let student: Student?
+    /// The shape chosen, which the picker writes.
     @Binding var selection: AvatarShape
 
+    /// The view's content.
     var body: some View {
         HStack(spacing: 0) {
             ForEach(AvatarShape.allCases) { option in
@@ -416,6 +475,7 @@ struct AvatarShapePicker: View {
     }
 }
 
+/// How the profile names a way in.
 extension PoliMiLoginMethod {
     /// How the profile names the way in: "SPID · Aruba", "CIE", "Password".
     var profileLabel: String {

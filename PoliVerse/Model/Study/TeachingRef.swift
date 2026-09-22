@@ -2,32 +2,30 @@ import Foundation
 
 /// How a teaching the student is taking is looked up in the manifesto.
 ///
-/// ## The concept this names
-///
-/// Four methods on ``StudyProgrammeModel`` took the same four parameters —
-/// `teachingCode`, `name`, `yearCode`, `courseID` — and every call site built
-/// them inline from a ``Course`` or an ``ExamSession``. The tuple was the
-/// concept; it just had no name, so each caller re-derived it and the rules for
-/// deriving it lived in whichever view happened to need them.
-///
-/// The lookup needs all four because none of them is reliable alone. The
-/// teaching code is missing from WeBeep pages titled with a name only, and it
-/// is **not unique** where it exists — a real account has several courses
-/// sharing one, the same teaching across years or a lecture and its lab. The
-/// name is normalised and so comparable, but two degree courses can teach
-/// something of the same name. The year narrows the manifesto to one edition,
-/// and the course id is what ties a result back to the row on screen.
+/// The lookup needs all four members, because none of them is reliable alone. The
+/// teaching code is missing from WeBeep pages titled with a name only, and where it
+/// exists it is not unique — one account can hold several courses sharing a code. The
+/// name is normalised and so comparable, but two degree courses can teach something of
+/// the same name. The year narrows the manifesto to one edition, and the course id is
+/// what ties a result back to the row on screen.
 nonisolated struct TeachingRef: Sendable, Hashable {
     /// The Politecnico teaching code, where the source carries one.
     let code: String?
-    /// The teaching's name, normalised the way ``Course`` normalises it, so
-    /// that a name-based match is possible at all.
+    /// The teaching's name, normalised the way ``Course/normalise(_:)`` normalises it, which
+    /// is what makes a name-based match possible.
     let name: String
-    /// The academic year the teaching belongs to, as the manifesto spells it.
+    /// The academic year, as the manifesto keys it — `"2025"` for 2025/26.
     let yearCode: String?
     /// The course row this lookup is on behalf of, where there is one.
     let courseID: String?
 
+    /// Creates a reference.
+    ///
+    /// - Parameters:
+    ///   - code: The teaching code, where there is one.
+    ///   - name: The teaching's normalised name.
+    ///   - yearCode: The academic year the manifesto should be read for.
+    ///   - courseID: The course row this is on behalf of.
     init(code: String?, name: String, yearCode: String?, courseID: String? = nil) {
         self.code = code
         self.name = name
@@ -35,24 +33,23 @@ nonisolated struct TeachingRef: Sendable, Hashable {
         self.courseID = courseID
     }
 
-    /// A teaching the student is enrolled in.
+    /// A reference for a teaching the student is enrolled in.
+    ///
+    /// - Parameter course: The enrolled course.
     init(_ course: Course) {
         self.init(code: course.teachingCode, name: course.name,
                   yearCode: course.academicYearStart, courseID: course.id)
     }
 
-    /// The teaching an exam sitting is of.
+    /// A reference for the teaching an exam sitting is of.
     ///
-    /// The year comes from the date of the sitting, through
-    /// ``PoliMiDate/academicYear(ofSitting:calendar:)`` — *not* through
-    /// ``Course/academicYearLabel(for:)``, which draws the boundary a month
-    /// earlier because it answers a different question.
+    /// The year comes from the date of the sitting through
+    /// ``PoliMiDate/academicYear(ofSitting:calendar:)``, whose boundary is October, rather
+    /// than through ``Course/academicYearLabel(for:)``, whose boundary is September. A
+    /// September sitting read the second way would be looked up in the following year's
+    /// manifesto — a different edition, with different lecturers and a different scheda.
     ///
-    /// The view this rule was lifted from used the course one, so a sitting in
-    /// the September session was looked up in the following year's manifesto:
-    /// a different edition, with different lecturers and a different scheda.
-    /// It is arithmetic over a date, so it now lives somewhere it can be
-    /// tested — which is how that was noticed.
+    /// - Parameter sitting: The exam sitting.
     init(_ sitting: ExamSession) {
         self.init(code: sitting.courseCode,
                   name: sitting.courseName,
@@ -61,7 +58,7 @@ nonisolated struct TeachingRef: Sendable, Hashable {
                       .map { String($0.prefix(4)) })
     }
 
-    /// The codes to search by: none where the source carried no code, which is
-    /// the WeBeep-page case and has to fall back to the name.
+    /// The codes to search by. Empty when the source carried none, which is the WeBeep-page
+    /// case and falls back to the name.
     var codes: [String] { [code].compactMap { $0 } }
 }

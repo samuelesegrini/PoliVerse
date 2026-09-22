@@ -4,9 +4,10 @@ import SwiftUI
 ///
 /// There are three such moments, and together they are most of the login: the
 /// Servizi Online app bootstrapping, the chooser page being pressed for them,
-/// and the code being exchanged on the way back. Each used to be visible, and
-/// a redirect chain is the part of a login that looks most like a failure.
+/// and the code being exchanged on the way back. A visible redirect chain is
+/// the part of a login that looks most like a failure.
 struct LoginWaitingView: View {
+    /// How the student chose to sign in, which decides what the screen says.
     let method: PoliMiLoginMethod
     /// Uncovers the web view. Offered after a few seconds so that no spinner
     /// here can ever be a dead end, whatever we failed to anticipate: the
@@ -14,8 +15,11 @@ struct LoginWaitingView: View {
     /// hand.
     var reveal: () -> Void = {}
 
+    /// Whether the way out is offered, after the wait has run long enough that something may
+    /// have gone wrong.
     @State private var showsEscape = false
 
+    /// The view's content.
     var body: some View {
         VStack(spacing: 18) {
             ProgressView()
@@ -46,6 +50,7 @@ struct LoginWaitingView: View {
         }
     }
 
+    /// What is happening, in the words of the method the student chose.
     private var message: LocalizedStringKey {
         switch method {
         case .password: "Apro la pagina del Politecnico…"

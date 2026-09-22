@@ -6,6 +6,7 @@ import SwiftUI
 /// removes them in Personalizza, and each one has its own appearance. A kind
 /// appears at most once.
 nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
+    /// What a section lists.
     nonisolated enum Kind: String, Codable, CaseIterable, Identifiable, Sendable {
         /// The lesson happening now, or the next one today.
         case currentClass
@@ -18,8 +19,10 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
         /// Exam sittings from today on.
         case exams
 
+        /// The kind's identity, which is its raw value.
         var id: String { rawValue }
 
+        /// What the section is called on the page.
         var title: LocalizedStringKey {
             switch self {
             case .currentClass: "Lezione in corso"
@@ -30,6 +33,7 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
             }
         }
 
+        /// The section's SF Symbol.
         var systemImage: String {
             switch self {
             case .currentClass: "person.bubble"
@@ -75,8 +79,10 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
         /// A rail of dates down the left, entries beside it.
         case rail
 
+        /// The form's identity, which is its raw value.
         var id: String { rawValue }
 
+        /// What the form is called in Personalizza.
         var title: LocalizedStringKey {
             switch self {
             case .list: "Elenco"
@@ -86,6 +92,7 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
             }
         }
 
+        /// The form's SF Symbol.
         var systemImage: String {
             switch self {
             case .list: "list.bullet"
@@ -96,11 +103,15 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
         }
     }
 
+    /// How much room the section's rows take.
     nonisolated enum Density: String, Codable, CaseIterable, Identifiable, Sendable {
+        /// Tight rows, or roomy ones.
         case compact, comfortable
 
+        /// The density's identity, which is its raw value.
         var id: String { rawValue }
 
+        /// What the density is called in Personalizza.
         var title: LocalizedStringKey {
             switch self {
             case .compact: "Compatta"
@@ -109,6 +120,7 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
         }
     }
 
+    /// What the section lists.
     var kind: Kind
     /// The section's own material; nil draws it in the page's.
     var material: TodayMaterial?
@@ -116,6 +128,7 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
     var form: Form = .list {
         didSet { if !kind.forms.contains(form) { form = .list } }
     }
+    /// How much room its rows take.
     var density: Density = .comfortable
     /// How many entries a listing section shows.
     var itemLimit = 3 {
@@ -128,25 +141,36 @@ nonisolated struct TodaySection: Equatable, Hashable, Sendable, Identifiable {
     /// Each lesson on its own card in its course's colour.
     var courseColours = true
 
+    /// The section's identity, which is its kind: a kind appears at most once.
     var id: Kind { kind }
 
+    /// A section of one kind, with every other setting at its default.
+    ///
+    /// - Parameter kind: What the section lists.
     init(kind: Kind) {
         self.kind = kind
     }
 
+    /// The range ``itemLimit`` is clamped to.
     static let itemLimits = 1...6
+    /// The sections a new look starts with.
     static let defaultKinds: [Kind] = [.upcoming, .timetable]
 }
 
 /// Settings are read one by one, so a section stored by an older version keeps
 /// its defaults for anything it did not have.
 nonisolated extension TodaySection: Codable {
+    /// Each setting as it is stored.
     private enum CodingKeys: String, CodingKey {
         case kind, material, form, density, itemLimit, tinted, isHidden, courseColours
         /// Before materials: glass, filled or plain.
         case card
     }
 
+    /// Reads a section, keeping the defaults for anything a stored look does not name.
+    ///
+    /// - Parameter decoder: The decoder.
+    /// - Throws: ``DecodingError`` when the kind is missing or unknown.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         kind = try container.decode(Kind.self, forKey: .kind)
@@ -172,6 +196,10 @@ nonisolated extension TodaySection: Codable {
         courseColours = try container.decodeIfPresent(Bool.self, forKey: .courseColours) ?? courseColours
     }
 
+    /// Writes every setting.
+    ///
+    /// - Parameter encoder: The encoder.
+    /// - Throws: Whatever the encoder throws.
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(kind, forKey: .kind)
@@ -188,23 +216,37 @@ nonisolated extension TodaySection: Codable {
 /// Decodes a list skipping the entries that fail, such as a section kind from
 /// a newer version, instead of losing the whole look.
 nonisolated struct Lenient<Element: Decodable>: Decodable {
+    /// The entries that decoded.
     let elements: [Element]
 
+    /// Reads the list, dropping whatever fails.
+    ///
+    /// - Parameter decoder: The decoder.
+    /// - Throws: Whatever reading the list itself throws.
     init(from decoder: any Decoder) throws {
         elements = try [Attempt](from: decoder).compactMap(\.element)
     }
 
     /// Always decodes, so the list moves past an entry that does not.
     private struct Attempt: Decodable {
+        /// The entry, or `nil` when it did not decode.
         let element: Element?
 
+        /// Tries to read one entry, and succeeds either way.
+        ///
+        /// - Parameter decoder: The decoder.
         init(from decoder: any Decoder) throws {
             element = try? Element(from: decoder)
         }
     }
 }
 
+/// Reading and rearranging the look's sections.
 nonisolated extension TodayStyle {
+    /// The look's section of one kind.
+    ///
+    /// - Parameter kind: Which kind.
+    /// - Returns: The section, or `nil` when the look has none.
     func section(_ kind: TodaySection.Kind) -> TodaySection? {
         sections.first { $0.kind == kind }
     }
@@ -235,6 +277,9 @@ nonisolated extension TodayStyle {
         }
     }
 
+    /// Takes a section off the page, keeping its place and settings.
+    ///
+    /// - Parameter kind: Which section.
     mutating func hideSection(_ kind: TodaySection.Kind) {
         updateSection(kind) { $0.isHidden = true }
     }
@@ -270,6 +315,11 @@ nonisolated extension TodayStyle {
         sections = rest
     }
 
+    /// Changes one section in place, doing nothing when the look has none of that kind.
+    ///
+    /// - Parameters:
+    ///   - kind: Which section.
+    ///   - change: What to change about it.
     mutating func updateSection(_ kind: TodaySection.Kind, _ change: (inout TodaySection) -> Void) {
         guard let index = sections.firstIndex(where: { $0.kind == kind }) else { return }
         change(&sections[index])

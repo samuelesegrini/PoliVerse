@@ -4,41 +4,60 @@ import OSLog
 
 /// Downloads WeBeep files into the app's own storage.
 ///
-/// ## Why not just open the URL
+/// Moodle authenticates downloads with the web-service token on the query string, so
+/// handing such an address to the system would open it in Safari and put a long-lived
+/// credential into the address bar, the history and the tab list. Fetching the file
+/// here keeps the token inside the app.
 ///
-/// Moodle authenticates file downloads with the web-service token on the query
-/// string (`pluginfile.php?token=…`). Handing that URL to `openURL` opens it in
-/// Safari, which puts a long-lived credential into the address bar, the history
-/// and any open tab list — somewhere the user cannot easily clear and did not
-/// ask for it to go. Fetching it here keeps the token inside the app.
+/// Files land under `Application Support/WeBeep/<course>/<name>`, excluded from
+/// backup since course material can be downloaded again.
 @Observable
 final class FileDownloadModel {
+    /// Where one file's download has got to.
     enum Status: Equatable {
+        /// Not downloaded, and nothing in flight.
         case idle
+        /// In flight, with the fraction complete.
         case downloading(progress: Double)
+        /// On the device, at this location.
         case downloaded(URL)
+        /// The download did not complete, with a sentence explaining why.
         case failed(String)
     }
 
+    /// The known status per ``WeBeepFile/id``.
     private(set) var statuses: [String: Status] = [:]
 
+    /// Diagnostic log for this type, under the `download` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "download")
+    /// The session downloads are issued through.
     private let session: URLSession
 
+    /// Creates the model.
+    ///
+    /// - Parameter session: The session downloads are issued through.
     init(session: URLSession = .shared) {
         self.session = session
     }
 
+    /// A file's status, checking the filesystem when nothing is recorded.
+    ///
+    /// - Parameter file: The file to ask about.
+    /// - Returns: The recorded status, ``Status/downloaded(_:)`` when a copy exists on
+    ///   disk, and ``Status/idle`` otherwise.
     func status(for file: WeBeepFile) -> Status {
         if let known = statuses[file.id] { return known }
         if let existing = existingFile(for: file) { return .downloaded(existing) }
         return .idle
     }
 
-    /// Where a file lives once downloaded.
+    /// Where a file lives once downloaded, creating the folder if needed.
     ///
-    /// Grouped by course so the Files app shows something navigable rather than
-    /// one flat heap, and named after the original file.
+    /// Grouped by course, so the Files app shows something navigable rather than one flat
+    /// heap, and named after the original file.
+    ///
+    /// - Parameter file: The file.
+    /// - Returns: The location, or `nil` when Application Support cannot be located.
     private func destination(for file: WeBeepFile) -> URL? {
         guard let base = FileManager.default.urls(
             for: .applicationSupportDirectory, in: .userDomainMask
@@ -51,20 +70,36 @@ final class FileDownloadModel {
         return folder.appendingPathComponent(sanitised(file.name))
     }
 
+    /// The file's location if a copy is already on the device.
+    ///
+    /// - Parameter file: The file.
+    /// - Returns: The location, or `nil` when there is no copy.
     private func existingFile(for file: WeBeepFile) -> URL? {
         guard let destination = destination(for: file),
               FileManager.default.fileExists(atPath: destination.path) else { return nil }
         return destination
     }
 
-    /// Strips path separators so a server-supplied name cannot escape the
-    /// folder it is meant to land in.
+    /// Strips path separators and parent references, so a server-supplied name cannot
+    /// escape the folder it is meant to land in.
+    ///
+    /// - Parameter name: The name as WeBeep sent it.
+    /// - Returns: The safe name.
     private func sanitised(_ name: String) -> String {
         name.replacingOccurrences(of: "/", with: "-")
             .replacingOccurrences(of: "\\", with: "-")
             .replacingOccurrences(of: "..", with: "-")
     }
 
+    /// Downloads a file, or returns the copy already on the device.
+    ///
+    /// A non-2xx status, and an HTML body where HTML is not expected — which is how Moodle
+    /// reports an expired token, with a 200 — both fail rather than saving something that
+    /// would later refuse to open. The saved file is excluded from backup.
+    ///
+    /// - Parameter file: The file to fetch.
+    /// - Returns: Where the file is, or `nil` when it has no address, a download is
+    ///   already in flight, or the download failed.
     @discardableResult
     func download(_ file: WeBeepFile) async -> URL? {
         if let existing = existingFile(for: file) {
@@ -118,6 +153,9 @@ final class FileDownloadModel {
         }
     }
 
+    /// Removes the downloaded copy and returns the file to ``Status/idle``.
+    ///
+    /// - Parameter file: The file to remove.
     func delete(_ file: WeBeepFile) {
         if let existing = existingFile(for: file) {
             try? FileManager.default.removeItem(at: existing)
@@ -125,7 +163,8 @@ final class FileDownloadModel {
         statuses[file.id] = .idle
     }
 
-    /// Bytes held by downloaded materials, for Settings.
+    /// Total size of the downloaded materials, in bytes, as Impostazioni reports it. Zero
+    /// when nothing has been downloaded.
     static func storageInBytes() -> Int {
         guard let base = FileManager.default.urls(
             for: .applicationSupportDirectory, in: .userDomainMask).first
@@ -141,6 +180,7 @@ final class FileDownloadModel {
         return total
     }
 
+    /// Removes every downloaded file.
     static func clearStorage() {
         guard let base = FileManager.default.urls(
             for: .applicationSupportDirectory, in: .userDomainMask).first else { return }

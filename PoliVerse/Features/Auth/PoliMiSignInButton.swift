@@ -24,11 +24,17 @@ import SwiftUI
 /// the career switcher — was extracted out of ``LoginView`` when onboarding
 /// gained a sign-in step, so the two cannot drift.
 struct PoliMiSignInButton: View {
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The shared ``CieIDRouter``, from the environment.
     @Environment(CieIDRouter.self) private var cieID
+    /// The shared ``SPIDCatalogue``, from the environment.
     @Environment(SPIDCatalogue.self) private var spid
+    /// The shared ``LoginMethodMemory``, from the environment.
     @Environment(LoginMethodMemory.self) private var loginMemory
 
+    /// Whether the sign-in web view is up.
+    /// Whether the prompt to install CieID is up.
     @State private var showingWeb = false
     @State private var showingCieIDMissing = false
     @State private var showingSPID = false
@@ -37,6 +43,7 @@ struct PoliMiSignInButton: View {
     @State private var webError: String?
     @State private var method: PoliMiLoginMethod = .password
 
+    /// The view's content.
     var body: some View {
         VStack(spacing: 12) {
             if case .exchangingCode = session.state {
@@ -143,13 +150,17 @@ struct PoliMiSignInButton: View {
         .sheet(isPresented: $showingWeb) { webSheet }
     }
 
+    /// The way in to offer first, resolved against the providers currently on offer.
     private var remembered: PoliMiLoginMethod { loginMemory.last(in: spid.providers) }
 
+    /// Whether the remembered method is the password, which decides how the other ways in are
+    /// presented.
     private var isPasswordRemembered: Bool {
         if case .password = remembered { return true }
         return false
     }
 
+    /// The primary button's label, named after the remembered method.
     private var primaryTitle: LocalizedStringKey {
         switch remembered {
         case .password: "Codice persona e password"
@@ -160,6 +171,14 @@ struct PoliMiSignInButton: View {
         }
     }
 
+    /// Begins a sign-in with the chosen method.
+    ///
+    /// The choice is remembered on the attempt rather than on success: the student's intent is
+    /// the same either way, and a failed sign-in is when they least want to hunt for the button
+    /// again. The previous grant is cleared and the single sign-on session ended first, so the
+    /// identity provider mints a new grant rather than replaying the old one.
+    ///
+    /// - Parameter chosen: The way in the student picked.
     private func start(_ chosen: PoliMiLoginMethod) {
         method = chosen
         // Remembered on the attempt, not on success: the student's intent is
@@ -179,6 +198,8 @@ struct PoliMiSignInButton: View {
         }
     }
 
+    /// The sign-in web view, and what to do with what it produces: adopt the token, record the
+    /// SPID list the page carried, or report a failure.
     private var webSheet: some View {
         NavigationStack {
             PoliMiAppLoginWebView(
@@ -229,6 +250,7 @@ struct PoliMiSignInButton: View {
         }
     }
 
+    /// Why the session failed, or `nil` when it has not.
     private var failureMessage: String? {
         if case .failed(let message) = session.state { return message }
         return nil
@@ -242,10 +264,14 @@ struct PoliMiSignInButton: View {
 /// twelve trademarks we have no licence to. Their names are the honest way to
 /// say the same thing.
 struct SPIDProviderPicker: View {
+    /// The providers to offer.
     let providers: [SPIDProvider]
+    /// Records which provider the student picked.
     let choose: (SPIDProvider) -> Void
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
 
+    /// The view's content.
     var body: some View {
         NavigationStack {
             List(providers) { provider in

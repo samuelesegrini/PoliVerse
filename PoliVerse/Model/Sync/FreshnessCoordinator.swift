@@ -1,72 +1,90 @@
 import Foundation
 import OSLog
 
-/// The one place that knows what "refresh everything" means.
+/// The single definition of what refreshing everything means.
 ///
-/// The app used to spell that list out three times — the pull-to-refresh
-/// handler and the `.task` on the home screen, and the background task's
-/// closure in `PoliVerseApp` — and each copy drifted a little from the
-/// others. Worse, two
-/// moments that obviously deserve fresh data triggered nothing at all: coming
-/// back to the app after lunch showed the lectures from before lunch, and
-/// walking out of a basement left the screen as stale as it was underground.
-/// Both are fixed by having somewhere to hang them.
+/// Services register a load with ``register(_:title:failure:age:_:)``, and
+/// ``revalidate(force:)`` runs the registered loads in registration order.
+/// ``standard(courses:agenda:career:notices:news:weBeep:status:)`` builds the set
+/// the app and the preview environment both use.
 ///
-/// The coordinator holds no opinion about *when*; it only owns the list and
-/// the guarantee that one revalidation is in flight at a time. Whether a given
-/// load actually reaches the network is still `LoadWindow`'s decision, which is
-/// why foregrounding can call this on every return from the app switcher
-/// without costing a request.
+/// The coordinator holds no opinion about when to refresh; callers decide that.
+/// Whether a given load reaches the network remains ``LoadWindow``'s decision, so
+/// calling ``revalidate(force:)`` on every return from the app switcher costs no
+/// requests.
+///
+/// ``services`` reports each named service's age and last error for Impostazioni,
+/// and ``status`` receives the begin and end of every pass.
 @MainActor
 @Observable
 final class FreshnessCoordinator {
-    /// One service's load, as the coordinator sees it: take a `force` flag,
-    /// come back when the data is in.
+    /// One service's load: takes a `force` flag, returns when the data is in.
     typealias Load = @MainActor (_ force: Bool) async -> Void
-    /// How a service says, after a load, whether that load got anywhere.
-    /// Nil for the ones that have no error to report.
+    /// Reports whether the last load got what it went for. `nil` means no error to
+    /// report.
     typealias Failure = @MainActor () -> String?
-    /// How a service says how old the data it is holding is.
+    /// Reports how old the data a service is holding is, in seconds.
     typealias Age = @MainActor () -> TimeInterval?
 
-    /// One service as Impostazioni shows it: what it is called, how old what
-    /// it holds is, and what went wrong last time, if anything.
+    /// One service as Impostazioni shows it: its name, the age of what it holds, and
+    /// what went wrong last time.
     struct ServiceStatus: Identifiable, Equatable {
+        /// The registration name, unique within the coordinator.
         let id: String
+        /// The service's localised name on screen.
         let title: String
+        /// Seconds since the held data was fetched, or `nil` if unknown.
         let age: TimeInterval?
+        /// The last load's error message, or `nil` when the last load succeeded.
         let failure: String?
     }
 
+    /// One registered load and everything the coordinator reports about it.
     private struct Registration {
+        /// Identifies the registration in the log and in ``ServiceStatus/id``.
         let name: String
-        /// The service's name on screen, for the status line. Nil means the
-        /// service is not worth naming to the student.
+        /// The service's name on screen. `nil` for work with nothing to show the student,
+        /// which is then omitted from ``services`` and never named in a failure.
         let title: LocalizedStringResource?
+        /// Read after each load to detect a failure.
         let failure: Failure?
+        /// Read on demand to report the age of the held data.
         let age: Age?
+        /// The load itself.
         let run: Load
     }
 
+    /// The registered loads, in the order they run.
     private var loads: [Registration] = []
     /// What the app tells the student about its data.
     ///
-    /// Set by ``standard(courses:agenda:career:notices:news:weBeep:status:)``
-    /// along with the rest of the set. Still settable, and still optional, for
-    /// the tests and previews that build a bare coordinator with no status
-    /// line to feed.
+    /// Set by ``standard(courses:agenda:career:notices:news:weBeep:status:)`` along
+    /// with the rest of the set, and optional for the tests and previews that build a
+    /// bare coordinator with no status line to feed.
     var status: DataStatus?
-    /// The revalidation currently in flight, if any. New runs chain behind it
+    /// The pass currently running, if any. Later passes join it or chain behind it
     /// rather than racing it.
     private var inFlight: Task<Void, Never>?
+    /// Diagnostic log for this type, under the `freshness` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "freshness")
 
-    /// Everything the app shows, in the order the home screen wants it.
+    /// Builds the coordinator with every service the app refreshes, in the order the
+    /// home screen wants them.
     ///
-    /// A factory rather than five `register` calls at each site, because the
-    /// duplication this class exists to remove would otherwise simply move:
-    /// the app and the preview environment both need the same list, and a list
-    /// written twice is a list that drifts.
+    /// Courses, the timetable and the career come first, as the content on screen.
+    /// Notices and news follow. The WeBeep update sweep runs last: it reads several
+    /// course pages and what it finds lands in ``UpdateFeed`` rather than on an open
+    /// screen.
+    ///
+    /// - Parameters:
+    ///   - courses: Loaded as `courses`, titled Corsi.
+    ///   - agenda: Loaded as `agenda` around the current date, titled Orario.
+    ///   - career: Loaded as `career`, titled Carriera.
+    ///   - notices: Loaded as `notices`, titled Avvisi.
+    ///   - news: Loaded as `news`, titled Notizie.
+    ///   - weBeep: Swept for updates as `webeep-updates`, unnamed on screen.
+    ///   - status: Receives the begin and end of every pass.
+    /// - Returns: A coordinator with all six registrations in place.
     static func standard(
         courses: CourseModel,
         agenda: AgendaModel,
@@ -104,30 +122,28 @@ final class FreshnessCoordinator {
 
     /// Adds a load to the set, to run after everything registered before it.
     ///
-    /// The closure captures its service strongly, deliberately. Every service
-    /// is held by `PoliVerseApp` for the whole life of the process, so there
-    /// is nothing to release and nothing to leak: no service holds the
-    /// coordinator, so there is no cycle either. Weak captures here would only
-    /// add a silent failure mode where a load stops running and nothing says
-    /// so.
+    /// The closure captures its service strongly. Every service is held by
+    /// ``PoliVerseApp`` for the life of the process and no service holds the
+    /// coordinator, so there is neither anything to release nor a cycle to break.
     ///
-    /// The name is for the log: "revalidated 5 services" says nothing when one
-    /// of them is hanging, and the names say which.
     /// - Parameters:
-    ///   - title: how the service is named on screen, when a failed load has
-    ///     to be reported. Omitted for work with nothing to show for itself.
-    ///   - failure: read after each load; a non-nil message means that load
-    ///     did not get what it went for.
+    ///   - name: Identifies the registration in the log and in ``services``.
+    ///   - title: The service's name on screen, used when a failed load has to be
+    ///     reported. Omit for work with nothing to show for itself.
+    ///   - failure: Read after each load; a non-empty message means that load did not
+    ///     get what it went for.
+    ///   - age: Read on demand for ``services``.
+    ///   - run: The load itself.
     func register(_ name: String, title: LocalizedStringResource? = nil,
                   failure: Failure? = nil, age: Age? = nil, _ run: @escaping Load) {
         loads.append(Registration(name: name, title: title, failure: failure, age: age, run: run))
     }
 
-    /// Every named service, read as they are now rather than as they were at
-    /// the end of the last pass: a screen opened between passes should show
-    /// what each service is actually holding, not a snapshot that has since
-    /// gone stale. Reading the services here — inside a view's `body` — is
-    /// also what keeps the list updating as loads land.
+    /// Every named service, read as it stands now rather than as it stood at the end
+    /// of the last pass.
+    ///
+    /// Registrations without a title are omitted. Reading this inside a view's `body`
+    /// is what keeps Impostazioni updating as loads land.
     var services: [ServiceStatus] {
         loads.compactMap { load in
             guard let title = load.title else { return nil }
@@ -136,24 +152,23 @@ final class FreshnessCoordinator {
         }
     }
 
-    /// Runs every registered load, in order, and returns when the last one is
-    /// done.
+    /// Runs every registered load in order and returns when the last one is done.
     ///
-    /// Callers may overlap freely — unlocking the phone in a lift foregrounds
-    /// the app and restores signal within a frame of each other. A gentle run
-    /// arriving while another is in flight simply waits for it instead of
-    /// putting a second copy of every request on the wire. A **forced** run
-    /// always gets a pass of its own, chained behind whatever is running: it
-    /// is a promise of data fetched *after this moment*, and a run already
-    /// halfway through its list cannot keep that promise.
+    /// Callers may overlap freely. A gentle pass arriving while another is in flight
+    /// waits for it instead of putting a second copy of every request on the wire. A
+    /// forced pass always gets a pass of its own, chained behind whatever is running,
+    /// because it promises data fetched after the moment it was asked for.
     ///
-    /// The work runs in an unstructured `Task` on purpose. The caller is
-    /// usually a view's `.task`, which is cancelled the moment the view goes
-    /// away; a revalidation triggered by foregrounding or by reconnection is
-    /// about the app's data, not that view's lifetime, and should finish
-    /// writing what it fetched rather than abandon it half-applied. Individual
-    /// requests still surface `APIError.cancelled` normally if the session
-    /// tears down underneath them.
+    /// The work runs in an unstructured `Task`, so a pass triggered by foregrounding
+    /// or by reconnection finishes writing what it fetched even though the view whose
+    /// `.task` started it has gone away. Individual requests still surface
+    /// cancellation normally if the session tears down beneath them.
+    ///
+    /// A service's failure is read after its load rather than during it, since a
+    /// service clears its own error when a load begins.
+    ///
+    /// - Parameter force: Passed to every registered load, bypassing their load
+    ///   windows, and gives this pass a run of its own.
     func revalidate(force: Bool = false) async {
         if !force, let inFlight {
             log.debug("revalidation already in flight, joining it")

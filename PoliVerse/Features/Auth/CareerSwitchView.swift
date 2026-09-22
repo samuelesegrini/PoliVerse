@@ -20,14 +20,21 @@ import SwiftUI
 /// Said plainly on screen rather than hidden behind a spinner, because being
 /// signed out is not what anyone expects from a picker.
 struct CareerSwitchView: View {
+    /// The shared ``CareersModel``, from the environment.
     @Environment(CareersModel.self) private var careers
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
 
+    /// The enrolment the student has asked to switch to, whose confirmation is up.
+    /// `true` while the switch is being set up.
     @State private var pending: Career?
     @State private var working = false
+    /// Diagnostic log for this type, under the `careers` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "careers")
 
+    /// The view's content.
     var body: some View {
         List {
             Section {
@@ -89,6 +96,10 @@ struct CareerSwitchView: View {
         }
     }
 
+    /// Remembers the choice, tells the Politecnico which enrolment to favour, and signs out so
+    /// the student can sign back in on it.
+    ///
+    /// - Parameter career: The enrolment to move to.
     private func switchCareer(to career: Career) {
         working = true
         Task {

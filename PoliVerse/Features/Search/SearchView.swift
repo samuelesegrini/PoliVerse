@@ -19,23 +19,31 @@ import SwiftUI
 /// because reaching the rest would mean 22 requests per keystroke, and the
 /// materials say so rather than leaving the gap to be discovered.
 struct SearchView: View {
+    /// The shared ``CourseModel``, from the environment.
     @Environment(CourseModel.self) private var courses
+    /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
+    /// The shared ``RoomsModel``, from the environment.
     @Environment(RoomsModel.self) private var rooms
+    /// The shared ``NewsModel``, from the environment.
     @Environment(NewsModel.self) private var news
+    /// The shared ``NoticeModel``, from the environment.
     @Environment(NoticeModel.self) private var notices
+    /// The shared ``WeBeepModel``, from the environment.
     @Environment(WeBeepModel.self) private var weBeep
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
+    /// The look in use, which the tiles' colour and typeface come from.
     @Environment(\.colorScheme) private var scheme
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
     /// The latest searches, newest first, one per line.
     @AppStorage("searchRecents") private var storedRecents = ""
 
+    /// What the student is typing, updated on every keystroke.
     @State private var query = ""
-    /// `query`, settled ~180 ms after typing pauses. Matching and the
-    /// browse/results swap key off this, not `query` directly, so a fast
-    /// typist doesn't re-run eight ranking passes per keystroke.
+    /// The kinds the search has been narrowed to. Empty means every kind.
     @State private var debouncedQuery = ""
     @State private var tokens: [Kind] = []
     @State private var expanded: Set<Kind> = []
@@ -47,9 +55,12 @@ struct SearchView: View {
 
     /// A kind of result, which is also a token that narrows the search to it.
     nonisolated enum Kind: String, CaseIterable, Identifiable, Hashable {
+        /// The eight kinds of result, in the order they are shown.
         case courses, teachers, rooms, exams, calendar, materials, news, notices
+        /// The raw value.
         var id: String { rawValue }
 
+        /// The kind's name on screen, which is also its token's label.
         var title: String {
             switch self {
             case .courses: String(localized: "Corsi")
@@ -63,6 +74,7 @@ struct SearchView: View {
             }
         }
 
+        /// The SF Symbol for the kind.
         var symbol: String {
             switch self {
             case .courses: "books.vertical"
@@ -77,20 +89,32 @@ struct SearchView: View {
         }
     }
 
+    /// The settled query, trimmed, which every match is made against.
     private var trimmed: String {
         debouncedQuery.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// Whether there is anything to search for, which decides between the browse and results
+    /// views.
     private var isSearching: Bool { !trimmed.isEmpty }
 
+    /// Whether a kind is being searched.
+    ///
+    /// - Parameter kind: The kind to check.
+    /// - Returns: `true` when no token narrows the search, or when this kind is one of them.
     private func shows(_ kind: Kind) -> Bool {
         tokens.isEmpty || tokens.contains(kind)
     }
 
+    /// The latest searches, newest first.
     private var recents: [String] {
         storedRecents.split(separator: "\n").map(String.init)
     }
 
+    /// Records a search, moving a repeat to the front and keeping the latest eight. Anything
+    /// shorter than two characters is ignored.
+    ///
+    /// - Parameter search: What the student searched for.
     private func remember(_ search: String) {
         let search = search.trimmingCharacters(in: .whitespacesAndNewlines)
         guard search.count >= 2 else { return }
@@ -100,6 +124,7 @@ struct SearchView: View {
 
     // MARK: - Matching
 
+    /// Courses matching the query by name, lecturer, code or academic year, best first.
     private var matchedCourses: [Course] {
         guard isSearching, shows(.courses) else { return [] }
         return SearchMatch.rank(courses.courses, query: trimmed) {
@@ -107,6 +132,7 @@ struct SearchView: View {
         }
     }
 
+    /// Agenda entries matching the query by title or room.
     private var matchedEvents: [AgendaEvent] {
         guard isSearching, shows(.calendar) else { return [] }
         let upcoming = agenda.events.filter { $0.end > .now }
@@ -115,6 +141,7 @@ struct SearchView: View {
         }.prefix(10))
     }
 
+    /// Exam sittings matching the query by teaching, lecturer or room.
     private var matchedExams: [ExamSession] {
         guard isSearching, shows(.exams) else { return [] }
         return SearchMatch.rank(career.sessions, query: trimmed) {
@@ -122,6 +149,7 @@ struct SearchView: View {
         }
     }
 
+    /// Rooms matching the query by code, building or campus.
     private var matchedRooms: [Classroom] {
         guard trimmed.count >= 2, shows(.rooms) else { return [] }
         return Array(SearchMatch.rank(rooms.rooms, query: trimmed) {
@@ -129,6 +157,7 @@ struct SearchView: View {
         }.prefix(8))
     }
 
+    /// Lecturers matching the query by name or address.
     private var matchedTeachers: [Teacher] {
         guard trimmed.count >= 2, shows(.teachers) else { return [] }
         let roster = Teacher.roster(courses: courses.courses, sessions: career.sessions)
@@ -137,6 +166,7 @@ struct SearchView: View {
         }.prefix(8))
     }
 
+    /// News items matching the query by title or summary.
     private var matchedNews: [NewsItem] {
         guard trimmed.count >= 2, shows(.news) else { return [] }
         return Array(SearchMatch.rank(news.items, query: trimmed) {
@@ -144,6 +174,7 @@ struct SearchView: View {
         }.prefix(6))
     }
 
+    /// Notifications matching the query by title or text.
     private var matchedNotices: [Notice] {
         guard trimmed.count >= 2, shows(.notices) else { return [] }
         return Array(SearchMatch.rank(notices.notices, query: trimmed) {
@@ -151,6 +182,7 @@ struct SearchView: View {
         }.prefix(6))
     }
 
+    /// WeBeep files matching the query by name, among those already listed for a course.
     private var matchedFiles: [WeBeepFile] {
         guard trimmed.count >= 2, shows(.materials) else { return [] }
         return Array(SearchMatch.rank(weBeep.sections.flatMap(\.files), query: trimmed) {
@@ -166,6 +198,9 @@ struct SearchView: View {
     /// just when the settled query changes.
     @State private var results: [(kind: Kind, items: [Result])] = []
 
+    /// Runs every match and groups what they found.
+    ///
+    /// - Returns: The non-empty groups, in the order they are shown.
     private func computeResults() -> [(kind: Kind, items: [Result])] {
         let groups: [(Kind, [Result])] = [
             (.courses, matchedCourses.map(Result.course)),
@@ -180,6 +215,7 @@ struct SearchView: View {
         return groups.filter { !$0.1.isEmpty }.map { (kind: $0.0, items: $0.1) }
     }
 
+    /// Recomputes the cached results, which the settled query and the tokens both trigger.
     private func refreshResults() { results = computeResults() }
 
     /// The single match most likely to be what was meant: a name that starts
@@ -202,11 +238,17 @@ struct SearchView: View {
     /// map and the plan; nil in the current interface.
     private let places: [NewDestination]?
 
+    /// Creates the screen.
+    ///
+    /// - Parameters:
+    ///   - embedded: `true` when it is already inside a navigation stack.
+    ///   - places: The destinations to offer before a search, or `nil` to offer none.
     init(embedded: Bool = false, places: [NewDestination]? = nil) {
         self.embedded = embedded
         self.places = places
     }
 
+    /// The view's content.
     var body: some View {
         RootStack(embedded: embedded) {
             ScrollView {
@@ -304,6 +346,8 @@ struct SearchView: View {
 
     // MARK: - Before a search
 
+    /// What is shown before a search: the places, the recent searches, and the kinds that can
+    /// be searched.
     @ViewBuilder
     private var browseContent: some View {
         LookTitle("Cerca")
@@ -434,6 +478,8 @@ struct SearchView: View {
 
     // MARK: - Results
 
+    /// The results: the top hit above, then one group per kind, each expandable past its first
+    /// few rows.
     @ViewBuilder
     private var resultsContent: some View {
         let results = results
@@ -545,9 +591,12 @@ struct SearchView: View {
 
 /// Any result, with the words and symbol a row needs.
 private enum Result: Identifiable {
+    /// A course, a lecturer, a room or an exam sitting.
     case course(Course), teacher(Teacher), room(Classroom), exam(ExamSession)
+    /// An agenda entry, a WeBeep file, a news item or a notification.
     case event(AgendaEvent), file(WeBeepFile), news(NewsItem), notice(Notice)
 
+    /// The kind and the thing's own identifier, so two kinds cannot collide.
     var id: String {
         switch self {
         case .course(let course): "course-\(course.id)"
@@ -561,6 +610,7 @@ private enum Result: Identifiable {
         }
     }
 
+    /// Which group this result belongs to.
     var kind: SearchView.Kind {
         switch self {
         case .course: .courses
@@ -574,6 +624,7 @@ private enum Result: Identifiable {
         }
     }
 
+    /// The result's name, which is what the query is highlighted in.
     var title: String {
         switch self {
         case .course(let course): course.name
@@ -598,6 +649,11 @@ private enum Result: Identifiable {
         }
     }
 
+    /// The second line: what the thing is, or when.
+    ///
+    /// - Parameter locale: The locale dates are formatted in. Passed explicitly because
+    ///   `Date.formatted` reads `Locale.current` rather than the SwiftUI environment.
+    /// - Returns: The line, or `nil` when there is nothing to add.
     @MainActor
     func detail(locale: Locale) -> String? {
         switch self {
@@ -648,11 +704,16 @@ private func highlighted(_ text: String, query: String) -> AttributedString {
 /// is there.
 /// Also drawn by the onboarding tour's Cerca card.
 struct PlaceTile: View {
+    /// The place's name.
     let title: Text
+    /// What is there.
     let detail: Text
+    /// The SF Symbol for the place.
     let symbol: String
+    /// The look's colour, which the symbol is drawn in.
     let colour: Flavor.RGB
 
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Image(systemName: symbol)
@@ -682,13 +743,18 @@ struct PlaceTile: View {
 /// The best match, lifted above the rest: its symbol on a glass tile, the
 /// name large, and what it is.
 private struct TopHitPanel: View {
+    /// The best match.
     let result: Result
+    /// What was searched for, which is shown in bold within the title.
     let query: String
+    /// The look's colour, which the tile is drawn in.
     let colour: Flavor.RGB
 
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
 
+    /// The view's content.
     var body: some View {
         HStack(spacing: 16) {
             GlassTile(symbol: result.symbol, colour: colour, side: 64, surface: .glass,
@@ -722,13 +788,19 @@ private struct TopHitPanel: View {
 
 /// One result: its symbol, the name with the match in bold, and what it is.
 private struct ResultRow: View {
+    /// The result this row shows.
     let result: Result
+    /// What was searched for, which is shown in bold within the title.
     let query: String
+    /// The look's colour, which the symbol is drawn in.
     let colour: Flavor.RGB
+    /// Whether this is the last row of its card, which draws no hairline.
     let last: Bool
 
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
 
+    /// The view's content.
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {

@@ -4,9 +4,12 @@ import SwiftUI
 /// career's, or joined by choice — for the lists that filter by it: WeBeep's
 /// and Corsi's.
 struct CourseOrigins {
+    /// Which courses a list shows.
     enum Filter: Hashable, CaseIterable {
+        /// Everything; the current career's plan; another career's; or joined by choice.
         case all, plan, otherCareer, byChoice
 
+        /// The filter's name on screen.
         var title: LocalizedStringKey {
             switch self {
             case .all: "Tutti"
@@ -17,8 +20,11 @@ struct CourseOrigins {
         }
     }
 
+    /// The careers' study plans, the current one first, which a course is classified against.
     let plans: [EnrolmentOrigin.Plan]
+    /// The classifications the student corrected, by ``Course/id``.
     let overrides: [String: EnrolmentOrigin.Override]
+    /// Supplies each course's Moodle row and whether its page takes self-enrolment.
     let weBeep: WeBeepModel
 
     /// The current career's plan — the libretto and the plan pages read for
@@ -35,6 +41,10 @@ struct CourseOrigins {
         self.weBeep = weBeep
     }
 
+    /// Why a course is on the student's list.
+    ///
+    /// - Parameter course: The course to classify.
+    /// - Returns: Its origin, the student's own correction included.
     @MainActor
     func origin(of course: Course) -> EnrolmentOrigin {
         let moodle = course.moodleID.flatMap(weBeep.moodleCourse(id:))
@@ -44,6 +54,12 @@ struct CourseOrigins {
             selfEnrolmentOpen: course.moodleID.flatMap { weBeep.selfEnrolment[$0] })
     }
 
+    /// The courses a filter leaves.
+    ///
+    /// - Parameters:
+    ///   - list: The courses to filter.
+    ///   - filter: What to show.
+    /// - Returns: The matching courses, in the order given.
     @MainActor
     func filter(_ list: [Course], by filter: Filter) -> [Course] {
         guard filter != .all else { return list }

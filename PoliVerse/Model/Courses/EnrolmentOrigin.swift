@@ -2,29 +2,45 @@ import Foundation
 
 /// Why a WeBeep course is on the student's list.
 ///
-/// WeBeep enrols by codice persona, not matricola, and Moodle's
-/// `core_enrol_get_users_courses` says nothing about how an enrolment came
-/// about. A student finishing a bachelor's while enrolled "con riserva" in a
-/// master's sees both careers' courses mixed with any they joined out of
-/// curiosity. The only thing to go on is each career's study plan: a heuristic,
-/// so the student can always correct it.
+/// WeBeep enrols by person code rather than by matricola, and Moodle says nothing
+/// about how an enrolment came about. A student finishing a bachelor's while
+/// enrolled in a master's therefore sees both careers' courses mixed with any they
+/// joined out of interest.
+///
+/// ``classify(codes:name:plans:override:selfEnrolmentOpen:)`` decides from the
+/// careers' study plans, which is a heuristic — so the student can always correct
+/// it, and ``EnrolmentOverrides`` remembers the correction.
 nonisolated enum EnrolmentOrigin: Sendable, Hashable {
+    /// In the current career's study plan.
     case currentPlan
+    /// In another career's study plan, carrying that career's matricola.
     case otherCareer(String)
+    /// In no plan, on a page that does not take self-enrolment.
     case outsidePlan
-    /// Outside every plan, on a page that takes self-enrolment: most likely
-    /// joined out of interest.
+    /// In no plan, on a page that takes self-enrolment: most likely joined out of
+    /// interest.
     case selfEnrolled
+    /// Undecidable, because the current career's plan has not been read yet.
     case unknown
 
-    /// One career's plan, as its libretto lists it.
+    /// One career's study plan, as the codes and names its libretto lists.
     struct Plan: Sendable {
+        /// The career this plan belongs to.
         let matricola: String
+        /// Whether this is the career currently in use.
         let isCurrent: Bool
+        /// The plan's teaching codes.
         let codes: Set<String>
-        /// Normalised with ``Course/normalise(_:)``, upper-cased.
+        /// The plan's teaching names, normalised by ``EnrolmentOrigin/key(_:)``.
         let names: Set<String>
 
+        /// Creates a plan from codes and names.
+        ///
+        /// - Parameters:
+        ///   - matricola: The career this plan belongs to.
+        ///   - isCurrent: Whether it is the career in use.
+        ///   - codes: The plan's teaching codes.
+        ///   - names: The plan's teaching names, normalised on the way in.
         init(matricola: String, isCurrent: Bool, codes: Set<String>, names: Set<String>) {
             self.matricola = matricola
             self.isCurrent = isCurrent
@@ -32,23 +48,54 @@ nonisolated enum EnrolmentOrigin: Sendable, Hashable {
             self.names = Set(names.map(EnrolmentOrigin.key))
         }
 
+        /// Creates a plan from a libretto.
+        ///
+        /// - Parameters:
+        ///   - matricola: The career this plan belongs to.
+        ///   - isCurrent: Whether it is the career in use.
+        ///   - libretto: The career's recorded teachings.
         init(matricola: String, isCurrent: Bool, libretto: [LibrettoExam]) {
             self.init(matricola: matricola, isCurrent: isCurrent,
                       codes: Set(libretto.map(\.id)), names: Set(libretto.map(\.name)))
         }
 
+        /// `true` when the plan has not been read, which classification treats as
+        /// ``EnrolmentOrigin/unknown`` rather than as “outside the plan”.
         var isEmpty: Bool { codes.isEmpty && names.isEmpty }
 
+        /// Whether this plan contains a teaching, by code or by normalised name.
+        ///
+        /// - Parameters:
+        ///   - candidates: Codes found in the WeBeep course.
+        ///   - name: The WeBeep course's name.
+        /// - Returns: `true` when any code matches, or the name does.
         func contains(codes candidates: [String], name: String) -> Bool {
             if candidates.contains(where: codes.contains) { return true }
             return names.contains(EnrolmentOrigin.key(name))
         }
     }
 
+    /// A correction the student made to a classification.
     enum Override: String, Sendable, Codable {
+        /// `plan` forces ``EnrolmentOrigin/currentPlan``; `byChoice` forces
+        /// ``EnrolmentOrigin/outsidePlan``.
         case plan, byChoice
     }
 
+    /// Decides why a WeBeep course is on the list.
+    ///
+    /// An override wins outright. Otherwise the current career's plan is checked, then
+    /// the other careers'. A teaching in none of them is ``selfEnrolled`` when the page
+    /// takes self-enrolment and ``outsidePlan`` otherwise — unless the current plan has
+    /// not been read, which yields ``unknown``.
+    ///
+    /// - Parameters:
+    ///   - codes: Teaching codes found in the WeBeep course.
+    ///   - name: The WeBeep course's name.
+    ///   - plans: The careers' study plans.
+    ///   - override: The student's own correction, if any.
+    ///   - selfEnrolmentOpen: Whether the course page takes self-enrolment.
+    /// - Returns: The classification.
     static func classify(codes: [String], name: String, plans: [Plan], override: Override?,
                          selfEnrolmentOpen: Bool?) -> EnrolmentOrigin {
         switch override {
@@ -66,8 +113,11 @@ nonisolated enum EnrolmentOrigin: Sendable, Hashable {
         return selfEnrolmentOpen == true ? .selfEnrolled : .outsidePlan
     }
 
-    /// Six-digit teaching codes in whatever WeBeep carries: the title,
+    /// The six-digit teaching codes appearing in whatever WeBeep carries — the title,
     /// `idnumber`, `shortname`.
+    ///
+    /// - Parameter fields: The fields to search. `nil` fields are ignored.
+    /// - Returns: The distinct six-digit runs found, in order.
     static func codes(in fields: [String?]) -> [String] {
         var found: [String] = []
         for field in fields.compactMap({ $0 }) {
@@ -79,15 +129,26 @@ nonisolated enum EnrolmentOrigin: Sendable, Hashable {
         return found
     }
 
+    /// A teaching name reduced to its comparable form: title-cased, folded to ignore
+    /// case and diacritics, then upper-cased.
+    ///
+    /// - Parameter name: The name as its source spells it.
+    /// - Returns: The comparable form.
     static func key(_ name: String) -> String {
         Course.normalise(name).folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).uppercased()
     }
 }
 
-/// Corrections the student made, per WeBeep course id.
+/// The classifications the student corrected, persisted per WeBeep course id in
+/// `UserDefaults`.
 enum EnrolmentOverrides {
+    /// Defaults key the overrides are stored under.
     private static let key = "enrolmentOriginOverrides"
 
+    /// Every stored correction.
+    ///
+    /// - Returns: The corrections by ``Course/id``. Empty when none are stored or they
+    ///   will not decode.
     static func all() -> [String: EnrolmentOrigin.Override] {
         guard let data = UserDefaults.standard.data(forKey: key),
               let decoded = try? JSONDecoder().decode([String: EnrolmentOrigin.Override].self, from: data)
@@ -95,6 +156,11 @@ enum EnrolmentOverrides {
         return decoded
     }
 
+    /// Records or removes one correction.
+    ///
+    /// - Parameters:
+    ///   - value: The correction, or `nil` to return to the heuristic.
+    ///   - courseID: The ``Course/id`` it applies to.
     static func set(_ value: EnrolmentOrigin.Override?, for courseID: String) {
         var current = all()
         current[courseID] = value

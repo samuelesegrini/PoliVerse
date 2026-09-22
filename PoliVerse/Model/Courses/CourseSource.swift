@@ -1,32 +1,35 @@
 import Foundation
 import OSLog
 
-/// The student's enrolled teachings, from whichever service actually knows
-/// them.
+/// The ``Source`` for the student's enrolled teachings.
 ///
-/// ## Why WeBeep leads
-///
-/// `/v1/insegn` is the *exam registration* endpoint — `iae` is iscrizione
-/// appelli esami — so it lists teachings that still have sittings to sit. A
-/// student who has passed everything gets an empty array from it, which is
-/// correct for exams and useless as a course list. WeBeep lists actual
-/// enrolments and keeps them after the exam is passed, so it is asked first and
-/// `/v1/insegn` is the fallback for an account that has not connected it.
+/// WeBeep is asked first and `/v1/insegn` is the fallback. `/v1/insegn` is the exam
+/// registration endpoint, so it lists teachings that still have sittings to sit: a
+/// student who has passed everything gets an empty array from it, which is correct
+/// for exams and useless as a course list. WeBeep lists actual enrolments and keeps
+/// them after the exam is passed.
 nonisolated struct CourseSource: Source {
+    /// Names the offline record and the log category.
     static let id = "courses"
-    /// Fifteen minutes: the enrolled-course list changes at most once a
-    /// semester.
+    /// Fifteen minutes: the enrolled-course list changes at most once a semester.
     static let ttl: TimeInterval = 900
 
+    /// Diagnostic log for this type, under the `courses` category.
     private static let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "courses")
 
-    /// Where the better answer comes from.
+    /// Reads the WeBeep enrolments.
     ///
-    /// A closure over ``CourseEnrolments`` rather than the conformer itself:
-    /// the protocol is main-actor bound and this runs off it, and the weak
-    /// capture belongs at the call site that knows the ownership.
+    /// A closure over ``CourseEnrolments`` rather than the conformer itself, because the
+    /// protocol is main-actor bound while the fetch is not, and the ownership belongs to
+    /// the call site.
     let enrolled: @Sendable @MainActor () async -> [Course]
 
+    /// Fetches the enrolled teachings, preferring WeBeep.
+    ///
+    /// - Parameter env: The transport for the fallback request.
+    /// - Returns: The WeBeep enrolments, or the teachings from `/v1/insegn` when WeBeep
+    ///   has none.
+    /// - Throws: ``APIError`` from the fallback request.
     func fetch(_ env: Env) async throws -> [Course] {
         let webeep = await enrolled()
         if !webeep.isEmpty {
@@ -46,5 +49,6 @@ nonisolated struct CourseSource: Source {
         return loaded
     }
 
+    /// The sample course list.
     func sample() -> [Course] { Course.samples }
 }

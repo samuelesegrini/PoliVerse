@@ -8,8 +8,15 @@ import SwiftUI
 
 /// Colours around a course's own, checked against the look's page.
 struct CourseRamp {
+    /// The look's ramp built around the course's colour.
     let ramp: FlavorRamp
 
+    /// Colours for one course's pages.
+    ///
+    /// - Parameters:
+    ///   - course: The course, whose ``Course/colorSeed`` picks the hue.
+    ///   - style: The look in use.
+    ///   - scheme: Light or dark.
     init(course: Course, style: TodayStyle, scheme: ColorScheme) {
         self.init(index: course.colorSeed, style: style, scheme: scheme)
     }
@@ -19,10 +26,17 @@ struct CourseRamp {
         self.init(index: TodayDigest.colourIndex(for: name), style: style, scheme: scheme)
     }
 
+    /// Builds the ramp from a course-colour index.
+    ///
+    /// - Parameters:
+    ///   - index: The index into ``Theme/courseAccents``.
+    ///   - style: The look in use.
+    ///   - scheme: Light or dark.
     private init(index: Int, style: TodayStyle, scheme: ColorScheme) {
         ramp = FlavorRamp(colour: Theme.courseAccentRGB(index, dark: scheme == .dark), style: style, scheme: scheme)
     }
 
+    /// How the look asks its surfaces to be drawn.
     var mode: Flavor.Mode { ramp.mode }
 
     /// The course's colour itself, made readable on the page.
@@ -36,22 +50,30 @@ struct CourseRamp {
         ramp.colour(at: count > 1 ? Double(index) / Double(count - 1) : 0.3)
     }
 
+    /// The ramp's uncoloured end, for things the course does not own.
     var neutral: Flavor.RGB { ramp.neutral }
 }
 
 /// A page's headline, as the exam page opens: one glass tile in the middle
 /// with the page's symbol, a title, and one line saying where things are.
 struct CoursePageHero: View {
+    /// The tiles to draw, the first of which is the one in front.
     let tiles: [HeroTile]
+    /// What to draw when ``tiles`` is empty.
     let placeholder: HeroTile
+    /// The page's title.
     let title: Text
+    /// One line under the title saying where things stand.
     var summary: Text?
+    /// A small mark on the tile's corner, such as a pass or a warning.
     var badge: HeroBadge?
+    /// How the look asks the tile to be drawn.
     let mode: Flavor.Mode
 
     /// Scaled, so the tile grows with the reader's text.
     @ScaledMetric(relativeTo: .largeTitle) private var side: CGFloat = 104
 
+    /// The view's content.
     var body: some View {
         let front = tiles.first ?? placeholder
         VStack(spacing: 14) {
@@ -92,10 +114,14 @@ struct CoursePageHero: View {
 
 /// The symbol at the start of a course page's row, in the course's colour.
 struct CourseRowTile: View {
+    /// The row's SF Symbol.
     let symbol: String
+    /// The course's colour, as the ramp makes it readable.
     let colour: Flavor.RGB
+    /// The `side`, scaled with the reader's text size.
     @ScaledMetric(relativeTo: .body) private var side: CGFloat = 30
 
+    /// The view's content.
     var body: some View {
         Image(systemName: symbol)
             .font(.body.weight(.medium))
@@ -107,18 +133,27 @@ struct CourseRowTile: View {
 
 /// Parts of a whole on one bar, with a legend under it.
 struct ShareBar: View {
+    /// One part of the whole.
     struct Segment: Identifiable {
+        /// The segment's identity.
         let id: String
+        /// What the segment is called in the legend.
         let title: String
+        /// The segment's colour.
         let colour: Color
+        /// The segment's share, in whatever unit the caller counts in.
         let value: Double
     }
 
+    /// The parts, in the order they are drawn.
     let segments: [Segment]
+    /// What the bar is filled with when the segments add up to nothing.
     var neutral: Color = .secondary
 
+    /// The segments' values added up, which the percentages are taken against.
     private var total: Double { segments.reduce(0) { $0 + $1.value } }
 
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             GeometryReader { geometry in
@@ -144,10 +179,14 @@ struct ShareBar: View {
     }
 }
 
+/// The bar's legend: a dot, a name and a percentage per segment, on one row where it fits and stacked where it does not.
 private struct FlowLegend: View {
+    /// The segments to name.
     let segments: [ShareBar.Segment]
+    /// The segments' values added up, which the percentages are taken against.
     let total: Double
 
+    /// The view's content.
     var body: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 14) { items }
@@ -155,6 +194,7 @@ private struct FlowLegend: View {
         }
     }
 
+    /// One entry per segment, laid out by whichever arrangement fits.
     @ViewBuilder
     private var items: some View {
         ForEach(segments) { segment in
@@ -173,17 +213,25 @@ private struct FlowLegend: View {
 /// A few numbers side by side on one card, each large in the typeface of
 /// Oggi's date with a word under it: what a page is about, at a glance.
 struct GlanceStrip: View {
+    /// One figure and the word under it.
     struct Item: Identifiable {
+        /// The item's identity.
         let id: String
+        /// The figure, already formatted.
         let value: String
+        /// What the figure counts.
         let label: String
     }
 
+    /// The figures, left to right.
     let items: [Item]
+    /// The colour the figures are drawn in.
     let tint: Color
 
+    /// The look in use, whose date typeface the figures are set in.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
 
+    /// The view's content.
     var body: some View {
         HStack(spacing: 0) {
             ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
@@ -216,12 +264,12 @@ struct GlanceStrip: View {
 
 // MARK: - Look lists
 
+/// Lists and rows drawn on the look's own material.
 extension View {
     /// A `List` in the look in use: grouped sections, spaced as the look's
-    /// pages are. Each `Section` asks for its own surface with ``lookRow()``
-    /// — a `listRowBackground` set here, on the `List`, does not reach the
-    /// rows, which is why lists across the app quietly stayed system-white
-    /// whichever material the student had chosen.
+    /// pages are. Each `Section` asks for its own surface with ``lookRow()``,
+    /// because a `listRowBackground` set here, on the `List`, does not reach
+    /// the rows.
     func lookList() -> some View {
         listStyle(.insetGrouped)
             .listSectionSpacing(18)
@@ -239,12 +287,11 @@ extension View {
 /// A cell has no corners of its own to round — the list rounds the group — so
 /// the material is drawn at radius zero and the section's shape does the rest.
 ///
-/// The rectangle is clear on purpose. It used to be filled, faintly, to keep
-/// rows reading as one card; against a material that fill sat *in front* of
-/// the surface and hid it, so every list in the app stayed system-white
-/// whichever material the student had chosen. The material draws behind, and
-/// the rectangle is only there to give it the cell's full size.
+/// The rectangle is clear on purpose: any fill would sit *in front* of the
+/// material and hide it. The material draws behind, and the rectangle is only
+/// there to give it the cell's full size.
 struct LookRowBackground: View {
+    /// The view's content.
     var body: some View {
         Rectangle()
             .fill(.clear)
@@ -256,14 +303,21 @@ struct LookRowBackground: View {
 /// tile in the middle with the page's symbol, a title, and one line saying
 /// where things are. Coloured from the look's own ramp, stable per symbol.
 struct PageHero: View {
+    /// The SF Symbol drawn in the tile, which also picks its colour.
     let symbol: String
+    /// The page's title.
     let title: Text
+    /// One line under the title saying where things stand.
     var summary: Text?
+    /// A small mark on the tile's corner.
     var badge: HeroBadge?
 
+    /// The look in use, which supplies the ramp.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
+    /// The view's content.
     var body: some View {
         let ramp = FlavorRamp(style: style, scheme: scheme)
         CoursePageHero(

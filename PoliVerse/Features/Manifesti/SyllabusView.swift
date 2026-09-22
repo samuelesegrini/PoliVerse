@@ -8,13 +8,17 @@ import SwiftUI
 /// catalogue routes it through `aunicalogin`, but that only redirects to the
 /// same page with two throwaway tokens, so the app skips the round trip.
 struct SyllabusView: View {
+    /// The `c_classe` the scheda is fetched by.
     let classID: String
+    /// The teaching's name, for the bar.
     let title: String
 
+    /// The shared ``ManifestiModel``, from the environment.
     @Environment(ManifestiModel.self) private var manifesti
     @State private var syllabus: Syllabus?
     @State private var loading = true
 
+    /// The view's content.
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -44,11 +48,16 @@ struct SyllabusView: View {
 /// language it is in, who teaches it and how much time it takes — then the
 /// prose and the books. Laid out as cards, for a scrolling page.
 struct SyllabusSections: View {
+    /// The scheda to draw.
     let syllabus: Syllabus
+    /// The colour the cards' icons are drawn in.
     var tint: Color = Theme.brand
 
+    /// Whether the lecturer's own description of the exam is shown in full.
     @State private var notesExpanded = false
 
+    /// The scheda's numbers as tiles: credits, hours in class, hours of independent study.
+    /// Figures the page does not state are left out.
     private var facts: [(value: String, label: String)] {
         [
             syllabus.credits.map { ($0.formatted(.number), String(localized: "CFU")) },
@@ -57,10 +66,13 @@ struct SyllabusSections: View {
         ].compactMap { $0 }
     }
 
+    /// The prose sections, less the assessment one — which is drawn above, beside the
+    /// structured assessment rows.
     private var proseSections: [(title: String, body: String)] {
         syllabus.sections.filter { !$0.title.localizedCaseInsensitiveContains("valutazione") }
     }
 
+    /// The view's content.
     var body: some View {
         if !facts.isEmpty { FactTiles(facts: facts, tint: tint) }
 
@@ -227,6 +239,10 @@ struct SyllabusSections: View {
         return raw.capitalized
     }
 
+    /// Minutes as hours, with the remainder where there is one.
+    ///
+    /// - Parameter minutes: The duration.
+    /// - Returns: The text.
     static func hours(_ minutes: Int) -> String {
         let hours = minutes / 60, rest = minutes % 60
         return rest == 0 ? String(localized: "\(hours) h") : String(localized: "\(hours) h \(rest) min")
@@ -235,11 +251,16 @@ struct SyllabusSections: View {
 
 /// A long prose section, folded to a few lines until asked for.
 private struct ProseCard: View {
+    /// The section's heading.
     let title: String
+    /// The section's prose.
     let text: String
+    /// The colour the card's icon is drawn in.
     let tint: Color
+    /// Whether the prose is shown in full rather than folded to a few lines.
     @State private var expanded = false
 
+    /// The view's content.
     var body: some View {
         CardSection(verbatim: title, tint: tint) {
             CardBlock {
@@ -263,10 +284,14 @@ private struct ProseCard: View {
 
 /// The scheda of one of the student's own courses, found from its code.
 struct CourseSyllabusView: View {
+    /// The course whose scheda is being shown.
     let course: Course
 
+    /// The shared ``ManifestiModel``, from the environment.
     @Environment(ManifestiModel.self) private var manifesti
+    /// The shared ``StudyProgrammeModel``, from the environment.
     @Environment(StudyProgrammeModel.self) private var programmes
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
     @State private var pick: SyllabusPicker.Pick?
     @State private var syllabus: Syllabus?
@@ -276,9 +301,12 @@ struct CourseSyllabusView: View {
     @State private var choosingBracket = false
     @State private var linking = false
 
+    /// The course's own accent.
     private var tint: Color { Theme.accent(for: course) }
 
+    /// The look in use, which the page's materials and typeface come from.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
     /// The scheda as a pile: the programme in front, then the exam, the books,
@@ -302,6 +330,7 @@ struct CourseSyllabusView: View {
             mode: ramp.mode)
     }
 
+    /// The view's content.
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -354,6 +383,11 @@ struct CourseSyllabusView: View {
     /// The plan teaching's code, which brackets are stored under.
     private var bracketCode: String? { course.teachingCode ?? pick?.module.code }
 
+    /// Whose scheda this is: the degree course it was found under, the bracket, and a way to
+    /// correct either.
+    ///
+    /// - Parameter pick: The scheda that was chosen.
+    /// - Returns: The section.
     private func pickSection(_ pick: SyllabusPicker.Pick) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading, spacing: 0) {
@@ -398,6 +432,11 @@ struct CourseSyllabusView: View {
         }
     }
 
+    /// The modules of an integrated course, listed rather than opened — the Politecnico
+    /// publishes one scheda for the whole course.
+    ///
+    /// - Parameter pick: The scheda that was chosen.
+    /// - Returns: The section.
     private func modulesSection(_ pick: SyllabusPicker.Pick) -> some View {
         CardSection("Moduli", icon: "square.stack.3d.up.fill",
                     footer: "Corso integrato: il Politecnico pubblica una sola scheda per tutti i moduli, qui sotto.",
@@ -417,6 +456,7 @@ struct CourseSyllabusView: View {
         }
     }
 
+    /// The degree course and plan the scheda was read against, with a way to change them.
     @ViewBuilder
     private var programmeSection: some View {
         if !session.useMockData {
@@ -482,6 +522,8 @@ struct CourseSyllabusView: View {
         }
     }
 
+    /// A line saying why the scheda may not be the student's own: an unconfirmed programme, or
+    /// a row found under another degree course. `nil` when neither applies.
     private var programmeNote: LocalizedStringKey? {
         if programmes.careerRows.count > 1 {
             return "Ogni carriera ha il suo corso di studi: i corsi dell'altra carriera sono letti dal piano scelto per lei."
@@ -493,6 +535,7 @@ struct CourseSyllabusView: View {
         return nil
     }
 
+    /// Finds the scheda for this course and fetches it, if a module with one was found.
     private func load() async {
         loading = true
         defer { loading = false }
@@ -504,18 +547,24 @@ struct CourseSyllabusView: View {
 
 /// `sheet(item:)` identity for the career whose programme is being chosen.
 private struct CareerChoice: Identifiable {
+    /// The enrolment whose programme is being chosen.
     let matricola: String
+    /// ``matricola``.
     var id: String { matricola }
 }
 
 /// Links a course to a teaching of the plan by hand, for the few that code
 /// and name cannot place.
 private struct PlanLinkSheet: View {
+    /// The course being linked.
     let course: Course
+    /// The shared ``StudyProgrammeModel``, from the environment.
     @Environment(StudyProgrammeModel.self) private var programmes
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
     @State private var plan: [PlanTeaching]?
 
+    /// The view's content.
     var body: some View {
         NavigationStack {
             List {
@@ -564,7 +613,9 @@ private struct PlanLinkSheet: View {
     }
 }
 
+/// Joining a list of strings for display.
 private extension Array where Element == String {
+    /// The elements joined by commas, or `nil` when there are none.
     var nonEmptyJoined: String? { isEmpty ? nil : joined(separator: ", ") }
 }
 

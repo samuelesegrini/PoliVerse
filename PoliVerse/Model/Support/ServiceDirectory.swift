@@ -2,56 +2,47 @@ import Foundation
 import Observation
 import OSLog
 
-/// Where each Politecnico service currently lives.
+/// Where each Politecnico backend currently lives, and the OAuth client
+/// configuration to sign in with.
 ///
-/// ## Why this is fetched rather than hardcoded
+/// Both are fetched rather than hardcoded, from two unauthenticated endpoints on
+/// the `polimiapp` host: `/jaf/public/props` for the service map and the
+/// per-service profile values, and `/jaf/oauth/params` for the OAuth client.
+/// ``load()`` performs both, and every value has a baked-in fallback used until it
+/// lands and after a failure.
 ///
-/// The official web app does not hardcode service hosts. On boot it fetches
-/// `/polimi_app/rest/jaf/public/props` — unauthenticated — and reads the base
-/// URL of every backend out of it:
-///
-/// ```json
-/// {
-///   "iae.base_url":      "https://api.polimi.it/iae",
-///   "libretto.base_url": "https://api.polimi.it/piano_studente",
-///   "ws_aule.base_url":  "https://api.polimi.it/ws_aule",
-///   "maps.base_url":     "https://onlineservices.polimi.it/maps_rest/rest"
-/// }
-/// ```
-///
-/// That indirection is exactly why the official app survived the move off
-/// `www22.dmz.polimi.it` and PoliFemo did not: PoliFemo baked the old host into
-/// a constant in 2023 and still ships it. Reading the same config means a
-/// future migration costs us nothing.
-///
-/// The agenda is the exception — its base is a build-time constant in the
-/// official bundle (`REACT_APP_AGENDA_REST_PATH`), not part of `props`.
+/// The indirection matters in two places. Service hosts move, and a build that
+/// reads `props` follows them. The OAuth scope list also changes, and a token
+/// minted without a scope is refused by that one service with 401 while the login
+/// itself succeeds — a failure indistinguishable from a broken sign-in unless the
+/// granted scope is compared against the current one, which ``TokenStore`` does.
 @Observable
 final class ServiceDirectory {
-    /// Backends the app talks to.
+    /// The backends the app talks to.
     nonisolated enum Service: String, CaseIterable, Sendable {
-        /// The JAF layer: login, token exchange, user identity.
+        /// The JAF layer: sign-in, token exchange and user identity.
         case app
-        /// Courses, exam sittings, enrolment.
+        /// Courses, exam sittings and enrolment.
         case iae
-        /// Timetable.
+        /// The timetable. Its base URL is a build-time constant in the official client
+        /// rather than part of `props`, so it has no ``propsKey``.
         case agenda
-        /// Study plan and grade simulation.
+        /// The study plan and grade simulation.
         case libretto
-        /// WeBeep's Moodle.
+        /// WeBeep's Moodle instance.
         case weBeep
-        /// The room catalogue with its bookings — what is busy and when.
+        /// The room catalogue with its bookings — what is busy and when. Refused to
+        /// student accounts by design; see ``refusalMeansBrokenSession``.
         case wsAule
-        /// The campus map service: which rooms exist, in which building, on
-        /// which floor. Public and needing no token, unlike ``wsAule``, which
-        /// answers what is *happening* in them.
+        /// The campus map service: which rooms exist, in which building and on which
+        /// floor.
         ///
-        /// Listed here rather than hardcoded because four models were each
-        /// carrying their own copy of the URL, which is precisely the drift
-        /// this directory exists to prevent.
+        /// Public and needing no token, unlike ``wsAule``, which answers what is happening
+        /// in them.
         case maps
 
-        /// Key in the `props` payload, where one exists.
+        /// This service's base-URL key in the `props` payload, or `nil` when `props` does
+        /// not carry one and ``fallback`` is always used.
         var propsKey: String? {
             switch self {
             case .iae: "iae.base_url"
@@ -61,13 +52,12 @@ final class ServiceDirectory {
             }
         }
 
-        /// Key holding this service's own profile value in `props`.
+        /// This service's own profile key in the `props` payload, or `nil` when it has
+        /// none.
         ///
-        /// Distinct from the signed-in user's profile. The official app builds
-        /// its client for these hosts as
-        /// `Qr({baseURL, profile: Number(props["iae.profile"])})`, and `Qr`
-        /// presets `poliAuthProfile` from that — so calls to `iae` and
-        /// `libretto` carry the *service* profile (`0`), not the user's.
+        /// Distinct from the signed-in student's profile: the official client presets
+        /// `poliAuthProfile` on these hosts from the service's value rather than the
+        /// user's.
         var profileKey: String? {
             switch self {
             case .iae: "iae.profile"
@@ -77,14 +67,11 @@ final class ServiceDirectory {
             }
         }
 
-        /// Whether a 401 from this service means the session is broken.
+        /// Whether a 401 from this service means the session itself is broken.
         ///
-        /// For most services it does: if `iae` refuses the token, the token
-        /// is the problem and the user needs to sign in again. `ws_aule` is
-        /// the exception — it is refused to student accounts by design, and
-        /// letting that refusal set the session-wide "authorisation failed"
-        /// flag put a re-login banner across an app in which everything else
-        /// was working perfectly.
+        /// `false` for ``wsAule`` and ``maps``, which are refused to student accounts or
+        /// need no token at all. Letting either set the session-wide authorisation flag
+        /// would put a re-login banner over an app in which everything else works.
         var refusalMeansBrokenSession: Bool {
             switch self {
             // Unauthenticated, so a refusal from it says nothing about the
@@ -94,8 +81,12 @@ final class ServiceDirectory {
             }
         }
 
-        /// Service profile used until `props` loads. `nil` means "use the
-        /// signed-in user's profile".
+        /// The service profile to send until `props` loads, or `nil` to send the signed-in
+        /// student's.
+        ///
+        /// ``wsAule`` is `3` rather than `0`, and the difference is load-bearing: a
+        /// non-zero service profile is the condition under which the official client
+        /// appends a `matricola` parameter.
         var fallbackProfile: Int? {
             switch self {
             case .iae, .libretto: 0
@@ -107,8 +98,8 @@ final class ServiceDirectory {
             }
         }
 
-        /// Used until `props` is loaded, and if the fetch fails.
-        /// Current as of 2026-09-11.
+        /// The base URL to use until `props` loads, and if the fetch fails. Current as of
+        /// 2026-09-11.
         var fallback: URL {
             switch self {
             case .app: URL(string: "https://polimiapp.polimi.it/polimi_app/rest")!
@@ -122,40 +113,36 @@ final class ServiceDirectory {
         }
     }
 
-    /// OAuth client configuration, served by the Politecnico itself.
-    ///
-    /// The official app fetches this rather than hardcoding — and it matters:
-    /// the scope list changes. As of 2026-09-11 it grants `agenda`, `so2`,
-    /// `prenotazioni`, `presence_hub`, `cataloghi_aule` and others that did not
-    /// exist in 2023, and no longer lists `esami` or `incarichidocente`.
-    ///
-    /// A token minted without `agenda` is rejected by the agenda service with
-    /// 401 — the endpoint is right, the token simply has no authority over it.
-    /// That is exactly the failure a hardcoded scope list produces, and it is
-    /// indistinguishable from a broken login until you compare the lists.
+    /// The OAuth client configuration, served by the Politecnico at
+    /// `/jaf/oauth/params`.
     nonisolated struct OAuthParams: Decodable, Sendable, Equatable {
+        /// Only the five fields the endpoint sends. ``serviceID`` is the app's own.
         private enum CodingKeys: String, CodingKey {
             case oauthServer, clientId, scope, responseType, accessType
         }
 
+        /// Base URL of the identity provider's OAuth 2 endpoints.
         let oauthServer: String
+        /// The OAuth client identifier to authorise as.
         let clientId: String
+        /// The space-separated scopes to request.
+        ///
+        /// Recorded on the minted token as ``PoliMiToken/grantedScope``, since refreshing
+        /// never widens a token's scopes.
         let scope: String
+        /// The OAuth response type, `code` in practice.
         let responseType: String?
+        /// The OAuth access type, `offline` in practice, which yields a refresh token.
         let accessType: String?
 
-        /// PolimiApp's service id, used for the **logout** link.
+        /// PolimiApp's service id, sent as `logout_service_id` on the sign-out link.
         ///
-        /// `/jaf/public/app?al_id_srv=2428` answers
-        /// `descSrvCorrente: {"it": "PoliMI APP"}`, and the official bundle
-        /// passes the same value as `logout_service_id`.
-        ///
-        /// - Note: it is *not* used on authorize. The IdP drops `al_id_srv`
-        ///   there — probing with it empty and with `2428` returns a
-        ///   byte-identical redirect, signature included.
+        /// - Note: Not used when authorising. The identity provider ignores `al_id_srv`
+        ///   there.
         var serviceID: String = "2428"
 
-        /// Baked-in copy of the live values, used until the fetch lands.
+        /// A baked-in copy of the live configuration, used until the fetch lands and after
+        /// a failure. Current as of 2026-09-11.
         static let fallback = OAuthParams(
             oauthServer: "https://oauthidp.polimi.it/oauthidp/oauth2",
             clientId: "1057407812",
@@ -175,42 +162,69 @@ final class ServiceDirectory {
             serviceID: "2428"
         )
 
+        /// Where a sign-in begins, or `nil` when ``oauthServer`` is not a valid URL.
         var authorizationEndpoint: URL? { URL(string: oauthServer + "/auth") }
-        /// Where the IdP moves an existing grant to another enrolment.
+        /// Where the identity provider moves an existing grant to another enrolment, or
+        /// `nil` when ``oauthServer`` is not a valid URL.
         var careerChangeEndpoint: URL? { URL(string: oauthServer + "/careerChange") }
     }
 
+    /// Base URLs read from `props`. A service absent here uses its ``Service/fallback``.
     private(set) var resolved: [Service: URL] = [:]
     /// Per-service `poliAuthProfile` values read from `props`.
     private(set) var serviceProfiles: [Service: Int] = [:]
-    /// The signed-in account's secondary profile, if it has one.
+    /// The signed-in account's secondary profile, sent as `poliAuthD_profile`. `nil`
+    /// for a plain student account.
     var dProfile: String?
+    /// The OAuth client configuration in force.
     private(set) var oauth: OAuthParams = .fallback
+    /// Whether ``load()`` has run. Set even when the fetch fails, so the fallbacks are
+    /// not re-attempted on every call.
     private(set) var didLoad = false
 
+    /// Diagnostic log for this type, under the `directory` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "directory")
+    /// The session the two configuration fetches are issued through.
     private let session: URLSession
 
+    /// Creates a directory holding only the fallbacks. Call ``load()`` to resolve them.
+    ///
+    /// - Parameter session: The session the configuration fetches are issued through.
     init(session: URLSession = .shared) {
         self.session = session
     }
 
+    /// The base URL for a service.
+    ///
+    /// - Parameter service: The backend to address.
+    /// - Returns: The resolved URL, or ``Service/fallback`` when `props` has not
+    ///   supplied one.
     func baseURL(for service: Service) -> URL {
         resolved[service] ?? service.fallback
     }
 
     /// The `poliAuthProfile` to send for a service.
     ///
-    /// A service that declares its own profile in `props` wins; otherwise the
-    /// signed-in user's profile is used, which is what the official app's
-    /// interceptor falls back to.
+    /// A service's own value from `props` wins, then its ``Service/fallbackProfile``,
+    /// then the signed-in student's.
+    ///
+    /// - Parameters:
+    ///   - service: The backend being addressed.
+    ///   - userProfile: The signed-in student's profile. See ``PoliMiProfile``.
+    /// - Returns: The profile value to send.
     func profile(for service: Service, userProfile: Int) -> Int {
         serviceProfiles[service] ?? service.fallbackProfile ?? userProfile
     }
 
-    /// Fetches the service map and OAuth config. Both are unauthenticated, so
-    /// this runs before login — which it must, since the OAuth config is what
-    /// the login is built from.
+    /// Fetches the OAuth configuration and the service map.
+    ///
+    /// Both endpoints are unauthenticated, so this runs before sign-in — which it must,
+    /// since the sign-in is built from the OAuth configuration. Returns immediately
+    /// once ``didLoad`` is set.
+    ///
+    /// A failure, a non-success status or an undecodable payload leaves the fallbacks
+    /// in place and still marks the directory loaded. A resolved URL that differs from
+    /// its fallback is logged, since it means the baked-in value is stale.
     func load() async {
         guard !didLoad else { return }
         await loadOAuthParams()
@@ -263,6 +277,11 @@ final class ServiceDirectory {
         }
     }
 
+    /// Fetches `/jaf/oauth/params` into ``oauth``, keeping ``OAuthParams/fallback`` on
+    /// any failure.
+    ///
+    /// A scope list that differs from the one in force is logged, because a scope
+    /// change is what silently breaks a client with a hardcoded list.
     private func loadOAuthParams() async {
         let url = Service.app.fallback.appendingPathComponent("/jaf/oauth/params")
         do {

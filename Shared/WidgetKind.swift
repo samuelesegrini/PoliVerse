@@ -1,17 +1,21 @@
 import Foundation
 
-/// The widget kinds, named once for both the extension that declares them and
-/// the app that asks them to reload.
+/// The widget kinds, named once for the extension that declares them and the app
+/// that asks them to reload.
 ///
-/// They used to be string literals in the extension only, which is why the
-/// app could only ever say "reload everything": it had no names to be more
-/// precise with.
+/// The raw value is the `kind` string each `Widget` is declared with, so
+/// ``WidgetReloader`` can reload one kind rather than all of them.
 nonisolated enum WidgetKind: String, Sendable, CaseIterable {
+    /// The Oggi widget: the day's lectures and deadlines.
     case today = "Today"
+    /// The next-lecture widget: one lecture, with its room and time.
     case nextLecture = "NextLecture"
+    /// The career widget: average, credits and the next sitting.
     case career = "Career"
+    /// The free-rooms widget, configured per campus.
     case freeRooms = "FreeRooms"
 
-    /// Every kind that reads the agenda file.
+    /// Every kind that reads the shared agenda file, and so needs reloading when the
+    /// timetable changes.
     static let agenda: Set<WidgetKind> = [.today, .nextLecture, .career]
 }

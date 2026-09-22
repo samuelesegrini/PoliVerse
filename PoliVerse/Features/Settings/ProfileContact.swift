@@ -10,20 +10,33 @@ import UniformTypeIdentifiers
 /// the student to the Politecnico's services, and a classmate has no use for
 /// them.
 nonisolated struct ProfileContact: Equatable, Sendable {
+    /// The student's given name.
     let firstName: String
+    /// Their surname.
     let lastName: String
+    /// Their university address.
     let email: String
 
+    /// Creates a card.
+    ///
+    /// - Parameters:
+    ///   - firstName: The given name.
+    ///   - lastName: The surname.
+    ///   - email: The university address.
     init(firstName: String, lastName: String, email: String) {
         self.firstName = firstName
         self.lastName = lastName
         self.email = email
     }
 
+    /// The card for a signed-in student, without their identifiers.
+    ///
+    /// - Parameter student: The student.
     init(student: Student) {
         self.init(firstName: student.firstName, lastName: student.lastName, email: student.email)
     }
 
+    /// The name as it is written, given name first.
     var fullName: String { "\(firstName) \(lastName)" }
 
     /// vCard 3.0, which Contacts and every scanner read. Lines end in CRLF as
@@ -57,6 +70,10 @@ nonisolated struct ProfileContact: Equatable, Sendable {
         return CIContext().createCGImage(output, from: output.extent)
     }
 
+    /// Escapes a value for a vCard field, where backslashes, commas and semicolons are structural.
+    ///
+    /// - Parameter value: The text to escape.
+    /// - Returns: The escaped text.
     private static func escaped(_ value: String) -> String {
         value
             .replacingOccurrences(of: "\\", with: "\\\\")
@@ -65,7 +82,9 @@ nonisolated struct ProfileContact: Equatable, Sendable {
     }
 }
 
+/// Sharing the card as a vCard file.
 extension ProfileContact: Transferable {
+    /// The card as a `.vcf` named after the student.
     nonisolated static var transferRepresentation: some TransferRepresentation {
         DataRepresentation(exportedContentType: .vCard) { contact in
             Data(contact.vCard.utf8)

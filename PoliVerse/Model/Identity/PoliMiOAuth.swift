@@ -1,39 +1,31 @@
 import Foundation
 
-/// The Politecnico OAuth endpoints, transcribed from the flow PoliFemo drives
-/// in `src/pages/Login.tsx`.
+/// The Politecnico's OAuth endpoints and the requests that drive them.
 ///
-/// PoliFemo runs **two** legs: Microsoft SSO to mint a PoliNetwork token, then
-/// the PoliMi IdP to mint a PoliMi token. The first leg exists only to serve
-/// PoliNetwork's own features (news, room search, groups) — nothing PoliVerse
-/// needs. We run the second leg alone: with no session cookie present, the IdP
-/// prompts for credentials itself and then cascade-redirects with the authcode.
+/// One leg: with no session cookie present, the identity provider prompts for
+/// credentials itself and then redirects to ``redirectURI`` with an authorisation
+/// code, which ``tokenExchangeRequest(authCode:)`` exchanges for a token pair.
 ///
-/// It also avoids PoliFemo's most brittle step — reading the token out of
-/// `document.body.innerText` with injected JavaScript.
+/// The client id and scope list come from ``ServiceDirectory/OAuthParams`` rather
+/// than from the constants here, which are fallbacks only.
 nonisolated enum PoliMiOAuth {
-    /// Registered client for the official PoliMi app. Kept only as a fallback
-    /// — the live value comes from `/jaf/oauth/params`.
+    /// Registered client for the official Politecnico app. A fallback; the live value
+    /// comes from `/jaf/oauth/params`.
     static let clientID = "1057407812"
 
-    /// The URL the IdP redirects to on success, with `?code=` appended.
+    /// Where the identity provider redirects on success, with `?code=` appended.
     static let redirectURI = "https://polimiapp.polimi.it/polimi_app/app"
 
-    /// Builds the authorization URL from the server's own OAuth config.
+    /// The public logout-link request, which answers a `targetURL` on `aunicalogin`
+    /// that ends the single sign-on session rather than only the app's.
     ///
-    /// Hardcoding the scope list is what broke the agenda: a token minted
-    /// without the `agenda` scope reaches the right endpoint and is refused
-    /// with 401. Asking the Politecnico what to request means a scope change
-    /// upstream costs a fetch, not a broken feature.
-    /// Public logout endpoint. Returns a `targetURL` on `aunicalogin` that
-    /// ends the **SSO session**, not just the app's own.
+    /// This matters for scope changes: with a live single sign-on session the identity
+    /// provider can answer a new authorisation request by re-issuing a code against the
+    /// existing grant, ignoring a widened scope — so signing in again would return the
+    /// same narrow token and the affected services would keep refusing it.
     ///
-    /// This matters more than it looks. With a live `aunicalogin` session the
-    /// IdP can answer a new authorize request by re-issuing a code against the
-    /// *existing* grant, ignoring the widened `scope` — so a user who "logs in
-    /// again" gets the old narrow token back and the services keep returning
-    /// "Scope OAuth non valido". Ending the SSO session is precisely what the
-    /// server means by "effettuare logout/login".
+    /// - Parameter serviceID: The service to log out of, sent as `logout_service_id`.
+    /// - Returns: The unauthenticated request.
     static func logoutLinkRequest(serviceID: String = "2428") -> APIRequest {
         APIRequest(
             host: .app,
@@ -46,36 +38,40 @@ nonisolated enum PoliMiOAuth {
         )
     }
 
+    /// The answer to ``logoutLinkRequest(serviceID:)``.
     nonisolated struct LogoutLink: Decodable, Sendable {
+        /// The page to open in order to end the single sign-on session.
         let targetURL: String?
     }
 
-    /// Server-side invalidation of the current token, as the official app does
-    /// on logout.
+    /// Server-side invalidation of the current token, as the official app performs on
+    /// sign-out.
     static var revokeRequest: APIRequest {
         APIRequest(host: .app, path: "/jaf/oauth/revoke", method: "POST")
     }
 
     /// Which authorisation is being asked for.
     ///
-    /// Made explicit because the two differ in four parameters at once —
-    /// endpoint, matricola, access token and scope — and getting one wrong
-    /// silently produces the other flow. A login asking for no scopes, or a
-    /// career change asking for all of them, both fail in ways that look
-    /// like something else.
+    /// Made explicit because the two differ in four parameters at once — endpoint,
+    /// matricola, access token and scope — and getting one wrong silently produces the
+    /// other flow.
     nonisolated enum AuthorizationFlow: Sendable, Equatable {
-        /// A full login. `hintMatricola` asks the IdP to bind the new grant
-        /// to a particular enrolment; it is only a hint, and the reliable
-        /// lever is `PUT /v1/careers/favorite/{matricola}` set beforehand.
-        case login(hintMatricola: String? = nil)
-        /// Moves an existing grant to another enrolment without a new login.
+        /// A full sign-in, requesting the whole scope list.
         ///
-        /// - Important: the Politecnico's own `/careerChange` currently errors
-        ///   for at least some accounts — reproduced in the official app — so
-        ///   the app offers re-login instead. Kept because the flow is correct
-        ///   and the endpoint may recover.
+        /// `hintMatricola` asks the identity provider to bind the new grant to a particular
+        /// enrolment. It is only a hint; the reliable lever is setting the favourite career
+        /// beforehand.
+        case login(hintMatricola: String? = nil)
+        /// Moves an existing grant to another enrolment without a fresh sign-in.
+        ///
+        /// - Important: the Politecnico's `/careerChange` endpoint currently errors for at
+        ///   least some accounts, reproducibly in the official app as well, so the app
+        ///   offers a fresh sign-in instead. Kept because the flow is correct and the
+        ///   endpoint may recover.
         case careerChange(matricola: String, accessToken: String)
 
+        /// The enrolment this flow names — the hint for a sign-in, the target for a career
+        /// change.
         var matricola: String? {
             switch self {
             case .login(let hint): hint
@@ -84,6 +80,21 @@ nonisolated enum PoliMiOAuth {
         }
     }
 
+    /// Builds the authorisation URL for a flow.
+    ///
+    /// Mirrors the official client's request, including the keys it sends empty, and
+    /// percent-encodes the query by hand as `URLSearchParams` does — `queryItems` would
+    /// leave `:` and `/` unescaped in `redirect_uri`.
+    ///
+    /// A career change sends the access token and an empty scope, since it moves an
+    /// existing grant; a sign-in sends the full scope list and no token, or the new
+    /// token comes back with no authority.
+    ///
+    /// - Parameters:
+    ///   - params: The OAuth configuration to build from.
+    ///   - state: The `state` parameter, a fresh UUID by default.
+    ///   - flow: Which authorisation is being asked for.
+    /// - Returns: The URL to load in the sign-in web view.
     static func authorizationURL(
         params: ServiceDirectory.OAuthParams = .fallback,
         state: String = UUID().uuidString,
@@ -140,8 +151,12 @@ nonisolated enum PoliMiOAuth {
         return components.url!
     }
 
-    /// `application/x-www-form-urlencoded`, as `URLSearchParams` produces it:
-    /// spaces become `+`, everything outside the unreserved set is escaped.
+    /// Encodes a value as `application/x-www-form-urlencoded`, the way
+    /// `URLSearchParams` does: spaces become `+`, and everything outside the unreserved
+    /// set is percent-escaped.
+    ///
+    /// - Parameter value: The value to encode.
+    /// - Returns: The encoded value, or the input unchanged if it cannot be encoded.
     static func formURLEncoded(_ value: String) -> String {
         var allowed = CharacterSet.alphanumerics
         allowed.insert(charactersIn: "*-._")
@@ -151,18 +166,23 @@ nonisolated enum PoliMiOAuth {
             ?? value
     }
 
-    /// Pulls the authcode out of a redirect.
+    /// Reads the authorisation code out of a redirect.
     ///
-    /// PoliFemo did `url.replace(polimiTargetUrl, "")`, which breaks the moment
-    /// the IdP appends `&state=` or reorders parameters. Parsing the query is
-    /// the same amount of code and does not.
+    /// The query is parsed rather than the prefix stripped, so appended or reordered
+    /// parameters do not break it.
+    ///
+    /// - Parameter url: The navigation the web view is following.
+    /// - Returns: The code, or `nil` when the URL is not the redirect or carries none.
     static func authCode(from url: URL) -> String? {
         guard url.absoluteString.hasPrefix(redirectURI) else { return nil }
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         return components?.queryItems?.first(where: { $0.name == "code" })?.value
     }
 
-    /// `GET /jaf/oauth/token/get/{authcode}` on the app base — no client secret.
+    /// Exchanges an authorisation code for a token pair. No client secret is involved.
+    ///
+    /// - Parameter authCode: The code from ``authCode(from:)``.
+    /// - Returns: The unauthenticated request.
     static func tokenExchangeRequest(authCode: String) -> APIRequest {
         APIRequest(
             host: .app,
@@ -171,11 +191,13 @@ nonisolated enum PoliMiOAuth {
         )
     }
 
-    /// `GET /jaf/oauth/token/refresh/{refreshToken}` on the app base.
+    /// Exchanges a refresh token for a fresh token pair.
     ///
-    /// Note the refresh token travels in the *path*, not a header or body — an
-    /// upstream design choice worth knowing about, since it means the token can
-    /// end up in server access logs.
+    /// - Note: the refresh token travels in the path rather than in a header or body,
+    ///   which is the endpoint's own design and means it can reach server access logs.
+    ///
+    /// - Parameter refreshToken: The refresh token to present.
+    /// - Returns: The unauthenticated request.
     static func refreshRequest(refreshToken: String) -> APIRequest {
         APIRequest(
             host: .app,

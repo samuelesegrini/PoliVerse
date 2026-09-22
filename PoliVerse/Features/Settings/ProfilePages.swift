@@ -7,9 +7,12 @@ import SwiftUI
 /// Pushed rather than presented: the profile already sits in the settings
 /// sheet, and a sheet over a sheet is one layer too many.
 private struct ProfilePageScaffold<Content: View, Footer: View>: View {
+    /// The content this view wraps.
     @ViewBuilder var content: Content
+    /// The `footer` this view draws.
     @ViewBuilder var footer: Footer
 
+    /// The view's content.
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
@@ -27,10 +30,14 @@ private struct ProfilePageScaffold<Content: View, Footer: View>: View {
     }
 }
 
+/// A profile page's own title, with a line under it where one is needed.
 private struct PageTitle: View {
+    /// The page's name.
     let title: LocalizedStringKey
+    /// One line under it, if any.
     var message: Text? = nil
 
+    /// The view's content.
     var body: some View {
         VStack(spacing: 6) {
             Text(title)
@@ -51,10 +58,13 @@ private struct PageTitle: View {
 /// The student's name and email as a QR code a classmate can scan, and the
 /// same card through the share sheet.
 struct ContactPage: View {
+    /// The student whose card is shown.
     let student: Student
 
+    /// The card itself: name and email, without the identifiers.
     private var contact: ProfileContact { ProfileContact(student: student) }
 
+    /// The view's content.
     var body: some View {
         let contact = contact
         ProfilePageScaffold {
@@ -114,14 +124,18 @@ struct ContactPage: View {
 
 /// Where the picture comes from and how it is cut.
 struct PhotoPage: View {
+    /// The student, read for whether the Politecnico has a photo.
     let student: Student?
 
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
     @AppStorage(AvatarShape.storageKey) private var shape: AvatarShape = .circle
     @AppStorage(AvatarShape.photoKey) private var usesPhoto = true
 
+    /// True when there is a photo to show.
     private var hasPhoto: Bool { student?.photoURL != nil }
 
+    /// The view's content.
     var body: some View {
         ProfilePageScaffold {
             VStack(spacing: 0) {
@@ -165,19 +179,28 @@ struct PhotoPage: View {
 /// Which matricola the app reads. Changing it takes a fresh sign-in: the
 /// Politecnico binds the token to one enrolment.
 struct CareerPage: View {
+    /// The shared ``CareersModel``, from the environment.
     @Environment(CareersModel.self) private var careers
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
 
+    /// The matricola picked but not yet switched to.
     @State private var chosen: String?
+    /// True while the switch signs out and back in, which cannot be interrupted.
     @State private var working = false
+    /// Diagnostic log for this type, under the `careers` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "careers")
 
+    /// The matricola in use.
     private var current: String? { session.student?.matricola }
+    /// The enrolment the page is showing: the one picked, else the one in use.
     private var selection: Career? {
         careers.careers.first { $0.matricola == (chosen ?? current) }
     }
 
+    /// The view's content.
     var body: some View {
         ProfilePageScaffold {
             VStack(spacing: 0) {
@@ -234,6 +257,10 @@ struct CareerPage: View {
         .interactiveDismissDisabled(working)
     }
 
+    /// One enrolment as a choice: its kind, its matricola, and a mark when it is the one selected.
+    ///
+    /// - Parameter career: The enrolment to offer.
+    /// - Returns: The row.
     private func option(_ career: Career) -> some View {
         let isSelected = career.matricola == (chosen ?? current)
         return Button {

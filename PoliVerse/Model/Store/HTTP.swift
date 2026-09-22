@@ -1,45 +1,70 @@
 import Foundation
 
-/// How anything in the model layer reaches the network.
+/// How everything in the model layer reaches the network.
 ///
-/// The app had sixteen files building their own `URLSession` — the authenticated
-/// services through ``PoliMiAPI``, and the public ones (maps, manifesti, WeBeep)
-/// each rolling their own. There was therefore no single place to change a
-/// timeout, add a header, or hand a caller a recorded response instead of a real
-/// one. The last of those is why only one of a hundred test files could build a
-/// model at all: every model reached the network in its initialiser's shadow,
-/// and nothing could get between.
+/// One method, because that is the whole of what a caller needs: the bytes for a
+/// request, or an error. Decoding belongs to the caller; tokens, retries and scope
+/// handling belong to the adapter.
 ///
-/// One method, because that is the whole of what a caller needs: give me the
-/// bytes for this request, or throw. Decoding belongs to the caller, retries and
-/// auth belong to the adapter.
+/// Three adapters conform: ``PoliMiAPI`` for authenticated services, ``PublicHTTP``
+/// for the ones that take no token, and ``FixtureHTTP`` for tests and previews.
 nonisolated protocol HTTP: Sendable {
+    /// Performs a request and returns its body.
+    ///
+    /// - Parameter request: What to fetch.
+    /// - Returns: The response body.
+    /// - Throws: ``APIError``, including ``APIError/cancelled`` when the task is
+    ///   cancelled.
     func data(for request: APIRequest) async throws -> Data
 }
 
-/// The authenticated adapter: tokens, retries, scope handling, typed errors.
+/// The authenticated adapter: tokens, retries, scope handling and typed errors.
 extension PoliMiAPI: HTTP {
+    /// Sends the request through the authenticated pipeline.
+    ///
+    /// - Parameter request: What to fetch.
+    /// - Returns: The response body.
+    /// - Throws: ``APIError``.
     func data(for request: APIRequest) async throws -> Data {
         try await send(request)
     }
 }
 
-/// The unauthenticated adapter, for the services that take no token.
+/// The unauthenticated adapter, for services that take no token.
 ///
-/// The campus map is public, and routing it through ``PoliMiAPI`` would make a
-/// catalogue anyone can read wait on a login it does not need. It still comes
-/// through `HTTP` so that it is substitutable in tests and previews like
-/// everything else — which is the whole point, since the four models that used
-/// to build their own `URLSession` for it had no way to be tested at all.
+/// The campus map, the manifesti pages and the rooms endpoints are public, so
+/// routing them through ``PoliMiAPI`` would make a catalogue anyone can read wait
+/// on a sign-in it does not need. Going through ``HTTP`` all the same keeps them
+/// substitutable in tests and previews.
+///
+/// Base URLs come from a ``ServiceDirectory`` when one is supplied, and from
+/// ``APIRequest/Host/fallback`` otherwise.
 nonisolated struct PublicHTTP: HTTP {
+    /// The session requests are issued through.
     private let session: URLSession
+    /// Resolves a host to its current base URL. When `nil`, each host's fallback is
+    /// used.
     private let directory: ServiceDirectory?
 
+    /// Creates the unauthenticated adapter.
+    ///
+    /// - Parameters:
+    ///   - session: The session requests are issued through.
+    ///   - directory: Resolves hosts to base URLs. Omit to use each host's fallback.
     init(session: URLSession = .shared, directory: ServiceDirectory? = nil) {
         self.session = session
         self.directory = directory
     }
 
+    /// Performs an unauthenticated request with a 30-second timeout.
+    ///
+    /// - Parameter request: What to fetch.
+    /// - Returns: The response body. A response that is not an `HTTPURLResponse` is
+    ///   returned as-is.
+    /// - Throws: ``APIError/endpointGone(_:)`` for a malformed URL or a 404,
+    ///   ``APIError/badStatus(_:body:)`` for any other non-2xx status with the first
+    ///   1200 bytes of the body, ``APIError/cancelled`` for a cancellation, and
+    ///   ``APIError/transport(_:)`` for anything else.
     func data(for request: APIRequest) async throws -> Data {
         let base = await directory?.baseURL(for: request.host) ?? request.host.fallback
         guard var components = URLComponents(
@@ -72,40 +97,54 @@ nonisolated struct PublicHTTP: HTTP {
     }
 }
 
-/// The adapter tests and previews swap in: canned bytes, no network.
+/// The adapter tests and previews substitute: canned bytes, no network.
 ///
-/// An actor so that it can record what was asked of it without a lock; the
-/// recording is most of what a test wants to assert, since "did this source ask
-/// for the right path with the right query" is the part a decoder test cannot
-/// reach.
+/// An actor so that it can record what was asked of it without a lock. The
+/// recording in ``requests`` is most of what a test asserts on, since whether a
+/// source asked for the right path with the right query is not something a decoder
+/// test can reach.
 actor FixtureHTTP: HTTP {
+    /// What a fixture adapter raises on its own behalf.
     enum Failure: Error, Equatable {
-        /// No fixture was registered for this path, which is nearly always a
-        /// test naming the wrong one rather than a behaviour worth exercising.
+        /// No fixture was registered for this path and no fallback was supplied.
         case noFixture(String)
     }
 
     /// Every request made, in order, for assertions.
     private(set) var requests: [APIRequest] = []
 
+    /// Canned responses, keyed by ``APIRequest/path``.
     private let responses: [String: Result<Data, any Error>]
-    /// Answers any path with no fixture of its own. Nil means "throw
-    /// ``Failure/noFixture(_:)``", which is what an unprepared test deserves.
+    /// Answers any path with no fixture of its own. `nil` throws
+    /// ``Failure/noFixture(_:)`` instead.
     private let fallback: Result<Data, any Error>?
 
-    /// - Parameter responses: keyed by path, exactly as ``APIRequest/path``
-    ///   spells it.
+    /// Creates a fixture adapter.
+    ///
+    /// - Parameters:
+    ///   - responses: Canned bodies keyed by path, spelled exactly as
+    ///     ``APIRequest/path`` spells it.
+    ///   - fallback: Answers any path not in `responses`.
     init(_ responses: [String: Data] = [:], fallback: Result<Data, any Error>? = nil) {
         self.responses = responses.mapValues { .success($0) }
         self.fallback = fallback
     }
 
-    /// Answers every path with the same failure. For the error branches, where
-    /// which path failed is beside the point.
+    /// A fixture adapter that answers every path with the same failure, for exercising
+    /// error branches where which path failed is beside the point.
+    ///
+    /// - Parameter error: What every request throws.
+    /// - Returns: The adapter.
     static func failing(_ error: any Error) -> FixtureHTTP {
         FixtureHTTP(fallback: .failure(error))
     }
 
+    /// Records the request and answers it from the fixtures.
+    ///
+    /// - Parameter request: What to fetch.
+    /// - Returns: The canned body for this path, or the fallback's.
+    /// - Throws: The canned error, or ``Failure/noFixture(_:)`` when neither a fixture
+    ///   nor a fallback covers the path.
     func data(for request: APIRequest) async throws -> Data {
         requests.append(request)
         switch responses[request.path] ?? fallback {

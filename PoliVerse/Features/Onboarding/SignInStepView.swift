@@ -7,10 +7,13 @@ import SwiftUI
 /// password (it cannot), what it will pull (their own data), or where it goes
 /// (nowhere — the device).
 struct SignInStepView: View {
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The shared ``CareersModel``, from the environment.
     @Environment(CareersModel.self) private var careers
     let advance: () -> Void
 
+    /// The view's content.
     var body: some View {
         OnboardingStepLayout(
             symbol: "person.badge.key.fill",

@@ -1,29 +1,42 @@
 import Foundation
 
-/// Something that changed about the student's exams since the app last looked.
+/// Something that changed about the student's exams or course pages since the app last
+/// looked.
 ///
-/// The Politecnico sends no change feed: the exam services answer "what is
-/// true now", and the app already showed that. What it did not do was
-/// *notice* — a room published overnight looked exactly like a room that had
-/// always been there. An update is that difference, recorded once, with where
-/// it came from.
+/// The Politecnico publishes no change feed: its services answer what is true now. An
+/// update is the difference between two such answers, recorded once, with where it came
+/// from — ``source`` and ``evidence`` — and how sure the reading is — ``confidence``.
 ///
-/// See `docs/academic-intelligence-layer.md` §6 for the full event model; this
-/// is the slice fed only by official data. Most facts are read straight off a
-/// field; the few that are inferred say so (``confidenceNote``).
+/// ``ExamChangeDetector`` produces the updates read from the exam services and the
+/// libretto; ``MaterialChangeDetector``, ``AnnouncementDetector`` and
+/// ``AssignmentDetector`` produce the ones read from WeBeep. ``ExamUpdatePolicy``
+/// decides what the student is told.
+///
+/// See `docs/academic-intelligence-layer.md` §6 for the event model.
 nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
+    /// What kind of change this is. Every kind belongs to an ``UpdateCategory``, which is
+    /// what the student can switch off.
     nonisolated enum Kind: String, Sendable, Codable, CaseIterable {
+        /// A new sitting appeared, its enrolment window opened, the student enrolled, or their
+        /// enrolment was cancelled.
         case discovered, enrolmentOpened, enrolled, unenrolled
+        /// A sitting's room was published or changed, its date moved, or the sitting itself was
+        /// withdrawn.
         case roomPublished, roomChanged, dateChanged, withdrawn
+        /// A mark was published, became refusable, had its script made inspectable, or was
+        /// recorded in the libretto.
         case gradePublished, refusalOpened, correctionsAvailable, gradeRecorded
-        /// WeBeep, tagged from the file's name — see ``DocumentClassifier``.
+        /// A file appeared on a WeBeep course page, tagged from its name by
+        /// ``DocumentClassifier``: a list of results, worked solutions, an exam notice, or
+        /// ordinary material.
         case resultsPosted, solutionsPosted, examNoticePosted, materialAdded
         /// A new post in a course's announcements forum.
         case announcementPosted
-        /// A WeBeep assignment, and a deadline that moved. `examDate` carries
-        /// the deadline.
+        /// A WeBeep assignment appeared, or its deadline moved. ``examDate`` carries the
+        /// deadline.
         case assignmentAdded, deadlineChanged
 
+        /// The SF Symbol shown beside the update.
         var symbol: String {
             switch self {
             case .discovered: "calendar.badge.plus"
@@ -48,14 +61,16 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         }
     }
 
+    /// Which service the change was read from.
     nonisolated enum Source: String, Sendable, Codable {
-        /// `iae/v1/insegn` — the registration service.
+        /// The exam registration service, `iae/v1/insegn`.
         case exams
-        /// `elencoinsegnamenti` — the libretto.
+        /// The libretto, `elencoinsegnamenti`.
         case libretto
-        /// `core_course_get_contents` — a WeBeep course page.
+        /// A WeBeep course page, `core_course_get_contents` and the forum calls.
         case webeep
 
+        /// The service's name as the student is shown it.
         var label: String {
             switch self {
             case .exams: String(localized: "Servizi Online · iscrizione esami")
@@ -69,54 +84,89 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
     nonisolated enum Confidence: String, Sendable, Codable {
         /// Read straight off a field that changed.
         case exact
-        /// Inferred from an absence or a join by code — right almost always,
-        /// but not a field saying so.
+        /// Inferred from an absence, or joined by teaching code — right almost always, but not
+        /// a field saying so.
         case high
-        /// A name that fits more than one reading. Never pushed on its own.
+        /// Read from a name that fits more than one meaning. Never pushed on its own.
         case probable
     }
 
-    /// What the student is told, decided once when the update is recorded.
+    /// What the student is told, decided once when the update is recorded. See
+    /// ``ExamUpdatePolicy``.
     nonisolated enum Delivery: String, Sendable, Codable {
         /// Shown in the app, never pushed.
         case inApp
         /// Pushed now, within the daily allowance.
         case push
-        /// Pushed now, never rationed — Alta in §11.2 but not imminent.
+        /// Pushed now and never rationed, but not allowed through Focus.
         case priority
-        /// Pushed now, allowed through Focus.
+        /// Pushed now and allowed through Focus.
         case urgent
         /// Folded into the evening summary.
         case digest
-        /// Held back by quiet hours; summarised in the morning.
+        /// Held back by quiet hours and summarised in the morning.
         case morning
 
+        /// Whether this delivery pushes a notification now.
         var isImmediate: Bool { self == .push || self == .priority || self == .urgent }
     }
 
-    /// Stable for the same change: seeing it twice in quick succession
-    /// produces the same id, so the log can refuse the second copy.
+    /// Stable for the same change: seeing it twice in quick succession produces the same
+    /// id, so the log can refuse the second copy.
+    ///
+    /// Built from the kind, the sitting or teaching, and either an explicit identity or the
+    /// new value.
     let id: String
+    /// What kind of change this is.
     let kind: Kind
+    /// The sitting this concerns, where the change was read from a sitting. `nil` for
+    /// anything read from the libretto or from WeBeep, which carry no sitting id.
     let examID: Int?
+    /// The teaching code, or the libretto row's id for a recorded mark.
     let courseCode: String
+    /// The teaching's name.
     let courseName: String
+    /// When the app noticed, which is what the feed orders by.
     let detectedAt: Date
+    /// Which service it was read from.
     let source: Source
+    /// How sure the reading is. See ``confidenceNote``.
     let confidence: Confidence
-    /// Which field said so, e.g. `iae:/v1/insegn c_appello=123 xaula`.
+    /// Which call and field said so, for example `iae:/v1/insegn c_appello=123 xaula`.
     let evidence: String
+    /// What the field said before, where there was a previous value.
     let oldValue: String?
+    /// What it says now — a room, a mark, a file name, or a count for a collapsed update.
     let newValue: String?
-    /// Whether the student was signed up when this was seen — what makes a
-    /// room change urgent rather than trivia.
+    /// Whether the student was signed up when this was seen, which is what makes a room
+    /// change urgent rather than trivia.
     let wasEnrolled: Bool
+    /// The sitting this concerns, or the deadline for an assignment update.
     let examDate: Date?
+    /// What the student is told. Set by ``ExamUpdatePolicy`` when the update is recorded.
     var delivery: Delivery = .inApp
-    /// For a results file the student let the app read: whether they are in
-    /// it, and their own mark. Nothing about anyone else.
+    /// What a results file said about this student, when they allowed the app to read one.
+    /// Nothing about anyone else.
     var lookup: ResultsLookup? = nil
 
+    /// Records one change.
+    ///
+    /// - Parameters:
+    ///   - kind: What kind of change this is.
+    ///   - examID: The sitting it concerns, where there is one.
+    ///   - courseCode: The teaching code.
+    ///   - courseName: The teaching's name.
+    ///   - detectedAt: When the app noticed.
+    ///   - source: Which service it was read from.
+    ///   - confidence: How sure the reading is.
+    ///   - evidence: Which call and field said so.
+    ///   - oldValue: What the field said before.
+    ///   - newValue: What it says now.
+    ///   - identity: Stands in for `newValue` in ``id`` when the value alone would call two
+    ///     different changes the same — a file re-uploaded under its own name.
+    ///   - wasEnrolled: Whether the student was signed up.
+    ///   - examDate: The sitting, or the deadline.
+    ///   - delivery: What the student is told.
     init(kind: Kind, examID: Int?, courseCode: String, courseName: String,
          detectedAt: Date, source: Source, confidence: Confidence = .exact,
          evidence: String, oldValue: String? = nil, newValue: String? = nil,
@@ -141,6 +191,11 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         self.delivery = delivery
     }
 
+    /// The update's headline.
+    ///
+    /// Worded as what was seen rather than as what it probably means: a file named “Esiti”
+    /// is reported as a results file having been posted, not as the student's mark — unless
+    /// ``lookup`` says their own line was in it.
     var title: String {
         switch kind {
         case .discovered: String(localized: "Nuovo appello")
@@ -168,10 +223,13 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         }
     }
 
-    /// One line of detail beyond the course name, where there is one.
+    /// One line of detail beyond the teaching's name, or `nil` where there is none.
+    ///
+    /// A replaced WeBeep file says so. A results file the student was not found in says
+    /// that too, rather than leaving them to wonder.
     var detail: String? {
         switch kind {
-        case .roomPublished: newValue.map { String(localized: "Aula \($0)") }
+        case .roomPublished: newValue.map(RoomNaming.sentence)
         case .roomChanged:
             if let oldValue, let newValue { String(localized: "Da \(oldValue) a \(newValue)") } else { nil }
         case .gradePublished, .gradeRecorded: newValue.map { String(localized: "Voto: \($0)") }
@@ -191,12 +249,16 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         }
     }
 
+    /// An abbreviated date and short time, in Rome, for a deadline.
     private static var deadlineStyle: Date.FormatStyle {
         var style = Date.FormatStyle(date: .abbreviated, time: .shortened)
         style.timeZone = PoliMiDate.romeCalendar.timeZone
         return style
     }
 
+    /// Where the update came from, as the student is shown it. More specific than
+    /// ``Source/label`` for forum posts and assignments, which come from different parts of
+    /// WeBeep.
     var sourceLabel: String {
         switch kind {
         case .announcementPosted: String(localized: "WeBeep · forum Annunci")
@@ -205,9 +267,17 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         }
     }
 
-    /// The same sighting read as another kind, once the file's content says
-    /// what its name did not (§10.3): a "solutions" file holding a table of
-    /// marks is results; a "results" file with no table is a notice.
+    /// The same sighting read as another kind, once a file's contents say what its name did
+    /// not.
+    ///
+    /// A “solutions” file holding a table of marks is results; a “results” file with no
+    /// table is a notice. The original identity is preserved, so the log still recognises
+    /// the two as one sighting.
+    ///
+    /// - Parameters:
+    ///   - kind: What the file turned out to be.
+    ///   - lookup: What the file said about this student.
+    /// - Returns: The reclassified update.
     func reclassified(as kind: Kind, lookup: ResultsLookup?) -> ExamUpdate {
         var copy = ExamUpdate(
             kind: kind, examID: examID, courseCode: courseCode, courseName: courseName,
@@ -219,11 +289,14 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         return copy
     }
 
-    /// A WeBeep file that replaced an earlier one of the same kind.
+    /// Whether this is a WeBeep file that replaced an earlier one of the same kind.
     var isReplacement: Bool { source == .webeep && oldValue != nil }
 
-    /// Said out loud when the fact is inferred rather than read, so it never
-    /// looks as certain as a field.
+    /// A line said out loud when the fact was inferred rather than read, so it never looks
+    /// as certain as a field.
+    ///
+    /// `nil` for ``Confidence/exact``. A mark read out of a file always carries one, since
+    /// the exam services have the last word.
     var confidenceNote: String? {
         if lookup?.found == true {
             return String(localized: "Letto dal file: da confermare sui Servizi Online")
@@ -239,16 +312,22 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
     }
 }
 
-/// The kinds of news a student can switch off one by one (§13).
+/// The kinds of news the student can switch off one at a time. See
+/// `docs/academic-intelligence-layer.md` §13.
 nonisolated enum UpdateCategory: String, Sendable, Codable, CaseIterable, Identifiable {
+    /// Marks and results files; sittings' rooms and dates; enrolment windows; lecturers'
+    /// announcements, notices and solutions; and course material and hand-ins.
     case results, roomsAndDates, enrolments, teachers, coursework
 
+    /// The raw value.
     var id: String { rawValue }
 
+    /// Every ``ExamUpdate/Kind`` that belongs to this category.
     var kinds: Set<ExamUpdate.Kind> {
         Set(ExamUpdate.Kind.allCases.filter { $0.category == self })
     }
 
+    /// The category's name in Impostazioni.
     var label: String {
         switch self {
         case .results: String(localized: "Esiti e voti")
@@ -260,8 +339,12 @@ nonisolated enum UpdateCategory: String, Sendable, Codable, CaseIterable, Identi
     }
 }
 
+/// Which category a kind belongs to.
 extension ExamUpdate.Kind {
-    /// A switch, so a new kind does not compile until it has a category.
+    /// The category this kind belongs to.
+    ///
+    /// A `switch` over every case, so a new kind does not compile until it has been given
+    /// one.
     nonisolated var category: UpdateCategory {
         switch self {
         case .gradePublished, .refusalOpened, .gradeRecorded, .resultsPosted, .correctionsAvailable: .results
@@ -273,33 +356,47 @@ extension ExamUpdate.Kind {
     }
 }
 
-/// What the detector remembers between looks.
+/// What ``ExamChangeDetector`` remembers between looks.
 nonisolated struct ExamWatchState: Sendable, Equatable, Codable {
-    /// The last good snapshot of sittings, by `c_appello`. Nil until one has
-    /// been seen, which is what makes the first look a silent baseline.
+    /// The last good reading of the sittings, by sitting id. `nil` until one has been seen,
+    /// which is what makes the first look a silent baseline.
     var exams: [Int: ExamFacts]?
-    /// Future sittings missing from the latest answer, waiting for a second
-    /// miss before they count as withdrawn.
+    /// Future sittings absent from the latest answer, waiting for a second miss before they
+    /// count as withdrawn.
     var missing: Set<Int> = []
-    /// Libretto rows by id, `true` when passed.
+    /// Libretto rows by id, `true` when passed. `nil` until one reading has been seen.
     var libretto: [String: Bool]?
 }
 
-/// The parts of a sitting whose change is worth noticing, normalised.
+/// The parts of a sitting whose change is worth noticing, normalised for comparison.
 nonisolated struct ExamFacts: Sendable, Equatable, Codable {
+    /// The sitting's id.
     let id: Int
+    /// The teaching code.
     let courseCode: String
+    /// The teaching's name.
     let courseName: String
+    /// When the sitting is held.
     let date: Date?
+    /// The room, trimmed, with an empty value treated as absent.
     let room: String?
+    /// Whether the enrolment window is open.
     let enrolmentOpen: Bool
-    /// Graded counts as enrolled: a mark implies a registration.
+    /// Whether the student is signed up. A published mark counts, since it implies a
+    /// registration.
     let enrolled: Bool
+    /// Whether a mark has been published.
     let graded: Bool
+    /// The mark as it is displayed.
     let gradeText: String?
+    /// Whether the mark may still be refused.
     let refusable: Bool
+    /// Whether the marked script can be inspected.
     let hasCorrections: Bool
 
+    /// Reduces a sitting to the facts worth watching.
+    ///
+    /// - Parameter session: The sitting as the service describes it.
     init(_ session: ExamSession) {
         id = session.id
         courseCode = session.courseCode
@@ -315,21 +412,33 @@ nonisolated struct ExamFacts: Sendable, Equatable, Codable {
     }
 }
 
-/// Compares two looks at the exam services and says what changed.
+/// Compares two looks at the exam services and the libretto, and says what changed.
 ///
-/// Pure, and tested as such. The rules that matter most are about when not
-/// to compare: the first look, a failed request, and the empty answer the
-/// services give between sessions all leave the state alone and report
-/// nothing, because a false "appello annullato" is worse than a late true one.
+/// Pure, and tested as such. The rules that matter most are about when not to compare:
+/// the first look, a failed request and the empty answer the services give between
+/// sessions all leave the state alone and report nothing, because a false “sitting
+/// withdrawn” is worse than a late true one.
+///
+/// A withdrawal needs two consecutive misses, and the previous facts are kept in the
+/// meantime so the withdrawal still has a name and a date to report.
 nonisolated enum ExamChangeDetector {
+    /// What one comparison produced.
     struct Result: Sendable {
+        /// What changed. Empty on a baseline look or a failed request.
         let updates: [ExamUpdate]
+        /// What to remember for the next look.
         let state: ExamWatchState
     }
 
+    /// Compares a look at the exam services and the libretto against the previous one.
+    ///
     /// - Parameters:
-    ///   - sessions: nil when the request failed.
-    ///   - libretto: nil when the request failed.
+    ///   - previous: What was remembered from the last look, or `nil` for the first.
+    ///   - sessions: The sittings, or `nil` when that request failed. An empty array is
+    ///     treated the same as a failure, since the services answer empty between sessions.
+    ///   - libretto: The libretto, or `nil` when that request failed.
+    ///   - now: The moment of this look.
+    /// - Returns: What changed, and what to remember.
     static func detect(
         previous: ExamWatchState?,
         sessions: [ExamSession]?,
@@ -376,6 +485,18 @@ nonisolated enum ExamChangeDetector {
         return Result(updates: updates, state: state)
     }
 
+    /// Compares two readings of the sittings.
+    ///
+    /// A sitting seen for the first time is news only when it is still ahead. A sitting
+    /// absent from the new reading is news only when it was still ahead and has now been
+    /// missing twice — sittings leave the list once they are over, which is normal.
+    ///
+    /// - Parameters:
+    ///   - old: The previous reading, by sitting id.
+    ///   - new: The current reading.
+    ///   - missing: Sittings awaiting a second miss, updated in place.
+    ///   - now: The moment of this look.
+    /// - Returns: What changed, ordered by sitting id.
     private static func compare(
         old: [Int: ExamFacts], new: [Int: ExamFacts], missing: inout Set<Int>, now: Date
     ) -> [ExamUpdate] {
@@ -451,6 +572,8 @@ nonisolated enum ExamChangeDetector {
     }
 }
 
+/// Treating an empty string as absent.
 private extension String {
+    /// The string, or `nil` when it is empty.
     nonisolated var nilIfEmpty: String? { isEmpty ? nil : self }
 }

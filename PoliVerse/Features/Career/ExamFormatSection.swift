@@ -8,16 +8,21 @@ import SwiftUI
 /// sitting it. Nothing is shown when the scheda cannot be found — the sheet
 /// is about the sitting, and a "not found" there would be noise.
 struct ExamFormatSection: View {
+    /// The sitting whose teaching is described.
     let exam: ExamSession
 
+    /// The shared ``ManifestiModel``, from the environment.
     @Environment(ManifestiModel.self) private var manifesti
+    /// The shared ``StudyProgrammeModel``, from the environment.
     @Environment(StudyProgrammeModel.self) private var programmes
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
     @State private var syllabus: Syllabus?
     @State private var classID: String?
     @State private var notesExpanded = false
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
 
+    /// The view's content.
     var body: some View {
         Group {
             if let syllabus, !syllabus.isEmpty {
@@ -123,6 +128,10 @@ struct ExamFormatSection: View {
         }
     }
 
+    /// Whether prove in itinere are offered, and nothing at all when the scheda does not say.
+    ///
+    /// - Parameter syllabus: The teaching's scheda.
+    /// - Returns: The line, or an empty view.
     @ViewBuilder
     private func partialExams(_ syllabus: Syllabus) -> some View {
         switch PartialExams.policy(assessment: syllabus.assessment, notes: syllabus.assessmentNotes) {

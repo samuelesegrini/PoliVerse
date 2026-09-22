@@ -1,12 +1,13 @@
 import Foundation
 
-/// Sample data for this area: what its screens show when the student chose
-/// "Esplora con dati di esempio", and what the previews render.
-///
-/// Real names from an Ingegneria Informatica plan, so layout is tested against
-/// realistic string lengths rather than "Lorem ipsum". This ships — an
-/// incoherent demo is something a student sees.
+// Sample data for this area: what its screens show when the student chose
+// "Esplora con dati di esempio", and what the previews render.
+//
+// Real names from an Ingegneria Informatica plan, so layout is tested against
+// realistic string lengths rather than "Lorem ipsum". This ships — an
+// incoherent demo is something a student sees.
 
+/// The sample exam updates that fill the Novità feed.
 nonisolated extension ExamUpdate {
     /// What the feed would hold a few days into the September session, all of
     /// it about sittings that exist in ``ExamSession/samples(now:)``.
@@ -74,7 +75,12 @@ nonisolated extension ExamUpdate {
     }
 }
 
+/// The sample notifications that fill the bell.
 nonisolated extension Notice {
+    /// A handful of notifications, newest first, some read and some not.
+    ///
+    /// - Parameter now: The date they are dated back from.
+    /// - Returns: The sample notices.
     static func samples(now: Date = .now) -> [Notice] {
         func notice(_ id: Int, _ title: String, _ body: String, _ category: String,
                     daysAgo: Double, read: Bool = false) -> Notice {
@@ -110,7 +116,13 @@ nonisolated extension Notice {
     }
 }
 
+/// The sample news items.
 nonisolated extension NewsItem {
+    /// A handful of items, newest first, with the mix of publication and event dates the
+    /// real endpoint sends.
+    ///
+    /// - Parameter now: The date they are dated from.
+    /// - Returns: The sample items.
     static func samples(now: Date = .now) -> [NewsItem] {
         func news(_ id: Int, _ title: String, _ summary: String, _ category: String,
                   daysAgo: Double) -> NewsItem {

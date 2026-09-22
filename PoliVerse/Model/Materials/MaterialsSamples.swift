@@ -1,25 +1,32 @@
 import Foundation
 
-/// Sample data for this area: what its screens show when the student chose
-/// "Esplora con dati di esempio", and what the previews render.
-///
-/// Built from ``SampleDegree``: a course's files are about that course, its
-/// assignments are the plan's assignments, and its forum talks about the
-/// sitting the career actually has. This ships — an incoherent demo is
-/// something a student sees.
+// Sample data for this area: what its screens show when the student chose
+// "Esplora con dati di esempio", and what the previews render.
+//
+// Built from ``SampleDegree``: a course's files are about that course, its
+// assignments are the plan's assignments, and its forum talks about the
+// sitting the career actually has. This ships — an incoherent demo is
+// something a student sees.
 
+/// The sample forums: one for announcements, one for discussion.
 nonisolated extension CourseForum {
+    /// An announcements forum and a discussion forum.
     static let samples = [
         CourseForum(id: 1, name: "Avvisi del docente", kind: .announcements),
         CourseForum(id: 2, name: "Forum di discussione", kind: .discussion),
     ]
 }
 
+/// The sample forum discussions.
 nonisolated extension MoodleDiscussion {
+    /// ``samples(now:)`` against the current date.
     static var samples: [MoodleDiscussion] { samples(now: .now) }
 
-    /// Threads for the course the student is about to sit, so the forum has
-    /// something to say that matches the rest of the demo.
+    /// Threads for the course the sample student is about to sit, so the forum says
+    /// something that matches the rest of the sample data.
+    ///
+    /// - Parameter now: The date the threads are dated back from.
+    /// - Returns: The discussions.
     static func samples(now: Date = .now) -> [MoodleDiscussion] {
         func created(_ daysAgo: Double) -> Int {
             Int(now.addingTimeInterval(-daysAgo * 86_400).timeIntervalSince1970)
@@ -51,8 +58,13 @@ nonisolated extension MoodleDiscussion {
     }
 }
 
+/// The sample posts within a discussion.
 nonisolated extension MoodlePosts.Post {
-    /// A thread with replies, so the discussion view is not always one post.
+    /// A thread with replies, so the discussion view is not always a single post.
+    ///
+    /// - Parameter discussion: The discussion to build a thread for.
+    /// - Returns: The opening post and its replies, oldest first. A pinned discussion gets
+    ///   the opening post alone.
     static func samples(for discussion: MoodleDiscussion) -> [MoodlePosts.Post] {
         let opening = MoodlePosts.Post(
             id: discussion.id * 100, subject: discussion.subject, message: discussion.message,
@@ -77,12 +89,15 @@ nonisolated extension MoodlePosts.Post {
     }
 }
 
+/// The sample assignment deadlines.
 nonisolated extension AssignmentDeadline {
-    /// The work outstanding on WeBeep, soonest first.
+    /// The work outstanding on WeBeep, soonest first, from ``SampleDegree``'s assignments.
     ///
-    /// Oggi's Scadenze section had nothing to show in the demo: the feed's
-    /// sample path cleared the deadlines outright, so a whole card of the app
-    /// was invisible to anyone exploring it.
+    /// Only deadlines still ahead are included, and each closes at the end of its day as
+    /// WeBeep's do.
+    ///
+    /// - Parameter now: The date the offsets are measured from.
+    /// - Returns: The deadlines.
     static func samples(now: Date = .now) -> [AssignmentDeadline] {
         var id = 500
         return SampleDegree.teachings.flatMap { teaching in
@@ -103,11 +118,15 @@ nonisolated extension AssignmentDeadline {
     }
 }
 
+/// The sample course materials.
 nonisolated extension WeBeepSection {
-    /// A course's material, drawn from its own lecture topics.
+    /// A course's material, drawn from its own lecture topics in ``SampleDegree``, so two
+    /// courses do not show the same files.
     ///
-    /// Every course used to be handed the same four Assembly slides, so
-    /// opening two courses showed the same page twice.
+    /// - Parameters:
+    ///   - course: The course to build material for.
+    ///   - now: The date the files' modification times are measured back from.
+    /// - Returns: The sections, each with its files.
     static func samples(for course: Course, now: Date = .now) -> [WeBeepSection] {
         let teaching = SampleDegree.teachings.first { $0.code == course.id }
         let topics = teaching?.topics ?? []

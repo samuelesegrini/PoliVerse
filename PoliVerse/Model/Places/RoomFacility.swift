@@ -9,23 +9,25 @@ import Foundation
 /// GET /ricerca/aula/software/{idaula}  → [{"id":348,"it":"Overleaf","en":"Overleaf"}]
 /// ```
 ///
-/// Both are unauthenticated, and both answer `[]` for most rooms — software
-/// only for the computer labs. An empty list is a fact ("nothing recorded"),
-/// not a failure.
+/// Both are unauthenticated, and both answer with an empty array for most rooms —
+/// software only for the computer laboratories. An empty list means nothing is
+/// recorded rather than that the call failed.
 nonisolated struct RoomFacility: Identifiable, Sendable, Hashable, Decodable {
+    /// The catalogue's own identifier for this item.
     let id: Int
+    /// The Italian name.
     let it: String?
+    /// The English name.
     let en: String?
 
-    /// Italian, since the rest of the UI is, falling back rather than showing
-    /// a blank row.
+    /// The Italian name, falling back to the English and then to the empty string.
     var name: String { it ?? en ?? "" }
 
-    /// A guess at an SF Symbol from the wording.
+    /// An SF Symbol inferred from the wording.
     ///
-    /// The payload carries no icon and its `id` values are an internal
-    /// catalogue we have no key for, so this matches on words instead. It is
-    /// decoration: an unrecognised item still shows, with a neutral symbol.
+    /// The payload carries no icon and its identifiers belong to an internal catalogue,
+    /// so the name is matched instead. Decoration only: an unrecognised item still shows,
+    /// with a neutral symbol.
     var symbol: String {
         let text = name.lowercased()
         if text.contains("proiettor") || text.contains("projector") { return "videoprojector" }

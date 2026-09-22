@@ -7,15 +7,22 @@ import UserNotifications
 /// install and a refusal is permanent — so it is worth spending a screen
 /// explaining what the notifications are before spending the prompt.
 struct RemindersStepView: View {
+    /// The shared ``NotificationModel``, from the environment.
     @Environment(NotificationModel.self) private var notifications
+    /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
+    /// The shared ``UpdateFeed``, from the environment.
     @Environment(UpdateFeed.self) private var feed
     let advance: () -> Void
 
+    /// The onboarding flow's accent, taken from the look in use.
     private var tint = OnboardingTint()
+    /// True while the system prompt is on screen, so the button cannot be pressed twice.
     @State private var isAsking = false
 
+    /// The view's content.
     var body: some View {
         @Bindable var notifications = notifications
 

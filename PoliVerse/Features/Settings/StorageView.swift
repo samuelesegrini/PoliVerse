@@ -20,23 +20,34 @@ import SwiftUI
 /// which answers "how much" and nothing else. "400 MB di materiali" is not
 /// something anyone can act on; "four lecture recordings" is.
 struct DataStorageView: View {
+    /// The shared ``DataStatus``, from the environment.
     @Environment(DataStatus.self) private var status
+    /// The shared ``FreshnessCoordinator``, from the environment.
     @Environment(FreshnessCoordinator.self) private var freshness
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
     /// The look the student chose, so this screen is painted in it rather than
     /// in colours of its own.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
 
+    /// What the last scan found, largest kind first.
     @State private var categories: [StorageAudit.Category] = []
+    /// True once a scan has finished, so an empty page is not shown as an empty disk.
     @State private var hasScanned = false
+    /// True while a scan is running.
     @State private var isRefreshing = false
+    /// The kind whose deletion is being confirmed, if any.
     @State private var confirmingDeletion: StorageAudit.Category?
+    /// Whether deleting every downloaded material is being confirmed.
     @State private var confirmingMaterials = false
 
+    /// The kinds that are downloaded WeBeep files, which can be fetched again.
     private var materials: [StorageAudit.Category] { categories.filter(\.kind.isMaterial) }
+    /// What the app itself is holding: caches and offline records.
     private var appData: StorageAudit.Category? { categories.first { !$0.kind.isMaterial } }
 
+    /// The view's content.
     var body: some View {
         let palette = FileKindPalette(style: style, scheme: scheme, categories: categories)
         List {
@@ -171,6 +182,7 @@ struct DataStorageView: View {
         }
     }
 
+    /// Scans the disk and publishes what it found.
     private func measure() async {
         categories = await StorageAudit.scan()
         hasScanned = true
@@ -193,11 +205,14 @@ struct DataStorageView: View {
 /// their bytes. The arrangement and the glass are ``HeroTileStack``'s, shared
 /// with the other settings pages.
 struct StorageHero: View {
+    /// The kinds to draw, largest first.
     let categories: [StorageAudit.Category]
     /// Before the first scan there is nothing to draw and nothing to say.
     var hasScanned = true
+    /// The colour each kind is drawn in.
     let palette: FileKindPalette
 
+    /// The view's content.
     var body: some View {
         HeroTileStack(
             tiles: categories.map {
@@ -212,10 +227,14 @@ struct StorageHero: View {
 
 /// One kind of file as a solid icon, for the rows.
 struct FileKindTile: View {
+    /// The kind of file, or `nil` for the app's own data.
     let kind: StorageAudit.Kind?
+    /// The tile's side, in points.
     let side: CGFloat
+    /// The colour this kind is drawn in.
     let palette: FileKindPalette
 
+    /// The view's content.
     var body: some View {
         GlassTile(symbol: kind?.symbol ?? "externaldrive", colour: palette.rgb(kind), side: side)
     }
@@ -227,20 +246,37 @@ struct FileKindTile: View {
 /// kind's colour can change after a deletion; the symbol, not the colour, says
 /// what a tile is.
 struct FileKindPalette {
+    /// The look's ramp the colours are taken from.
     private let ramp: FlavorRamp
+    /// One colour per kind, handed out in order of size.
     private let tints: [StorageAudit.Kind: Flavor.RGB]
 
+    /// How the look asks its surfaces to be drawn.
     var mode: Flavor.Mode { ramp.mode }
 
+    /// The palette for one scan.
+    ///
+    /// - Parameters:
+    ///   - style: The look in use.
+    ///   - scheme: Light or dark.
+    ///   - categories: The kinds found, largest first.
     init(style: TodayStyle, scheme: ColorScheme, categories: [StorageAudit.Category]) {
         ramp = FlavorRamp(style: style, scheme: scheme)
         tints = Dictionary(uniqueKeysWithValues: zip(categories.map(\.kind), ramp.colours(categories.count)))
     }
 
+    /// A kind's colour.
+    ///
+    /// - Parameter kind: The kind, or `nil` for the app's own data.
+    /// - Returns: Its colour, or the ramp's neutral.
     func rgb(_ kind: StorageAudit.Kind?) -> Flavor.RGB {
         kind.flatMap { tints[$0] } ?? ramp.neutral
     }
 
+    /// A kind's colour, as a SwiftUI colour.
+    ///
+    /// - Parameter kind: The kind, or `nil` for the app's own data.
+    /// - Returns: Its colour.
     func tint(_ kind: StorageAudit.Kind?) -> Color { rgb(kind).color }
 
     /// The fold-in segment and its dot, and the empty track.
@@ -255,18 +291,27 @@ struct FileKindPalette {
 /// slivers are too thin to see and the legend wraps to four lines, and a
 /// reader who wants the sixth kind's exact size has the rows below.
 private struct StorageBar: View {
+    /// The kinds to put in proportion, largest first.
     let categories: [StorageAudit.Category]
+    /// The colour each segment is drawn in.
     let palette: FileKindPalette
 
+    /// One stretch of the bar.
     private struct Segment: Identifiable {
+        /// The segment's identity.
         let id: String
+        /// What the segment is called in the legend.
         let title: String
+        /// The segment's colour.
         let tint: Color
+        /// What it takes, in bytes.
         let bytes: Int
     }
 
+    /// Everything the scan found, added up.
     private var total: Int { categories.totalBytes }
 
+    /// The five largest kinds, plus everything else folded into one.
     private var segments: [Segment] {
         let shown = categories.prefix(5).map {
             Segment(id: $0.kind.rawValue, title: $0.kind.title,
@@ -278,6 +323,7 @@ private struct StorageBar: View {
                                 tint: palette.neutral, bytes: rest)]
     }
 
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             GeometryReader { geometry in
@@ -336,6 +382,7 @@ private struct StorageBar: View {
             .formatted(.percent.precision(.fractionLength(0)))
     }
 
+    /// The bar read out as kinds and percentages, for assistive technologies.
     private var spokenBreakdown: String {
         segments.map { "\($0.title) \(percent($0.bytes))" }.joined(separator: ", ")
     }
@@ -347,9 +394,18 @@ private struct StorageBar: View {
 /// a grid sized for the longest, which is most of a line of whitespace at
 /// larger text sizes. Ten lines of `Layout` are cheaper than that.
 private struct LegendFlow: Layout {
+    /// The gap between two chips on a line.
     var spacing: CGFloat
+    /// The gap between two lines.
     var rowSpacing: CGFloat
 
+    /// The height the chips need at the proposed width.
+    ///
+    /// - Parameters:
+    ///   - proposal: The size offered.
+    ///   - subviews: The chips.
+    ///   - cache: Unused.
+    /// - Returns: The size taken.
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = proposal.replacingUnspecifiedDimensions().width
         let rows = rows(of: subviews, within: width)
@@ -357,6 +413,13 @@ private struct LegendFlow: Layout {
         return CGSize(width: width, height: height)
     }
 
+    /// Places each chip on its line, centred vertically within it.
+    ///
+    /// - Parameters:
+    ///   - bounds: The room to fill.
+    ///   - proposal: The size offered.
+    ///   - subviews: The chips.
+    ///   - cache: Unused.
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize,
                        subviews: Subviews, cache: inout ()) {
         var y = bounds.minY
@@ -372,11 +435,20 @@ private struct LegendFlow: Layout {
         }
     }
 
+    /// One line of chips and the height it needs.
     private struct Row {
+        /// Which chips are on this line.
         var indices: [Int] = []
+        /// The tallest chip on it.
         var height: CGFloat = 0
     }
 
+    /// Breaks the chips into lines that fit.
+    ///
+    /// - Parameters:
+    ///   - subviews: The chips, in order.
+    ///   - width: The room on one line.
+    /// - Returns: The lines.
     private func rows(of subviews: Subviews, within width: CGFloat) -> [Row] {
         var rows: [Row] = []
         var current = Row()
@@ -401,9 +473,12 @@ private struct LegendFlow: Layout {
 
 /// One kind: its icon, how many files it is, and what it takes.
 private struct StorageCategoryRow: View {
+    /// The kind this row is about.
     let category: StorageAudit.Category
+    /// The colour its tile is drawn in.
     let palette: FileKindPalette
 
+    /// The view's content.
     var body: some View {
         // Hand-built rather than a `LabeledContent`: with a two-line label
         // that pushes its value onto a third line, under the subtitle, where
@@ -427,8 +502,10 @@ private struct StorageCategoryRow: View {
 
 /// One service, and when it last had something to show for itself.
 private struct ServiceFreshnessRow: View {
+    /// The service this row is about, with when it last answered.
     let service: FreshnessCoordinator.ServiceStatus
 
+    /// The view's content.
     var body: some View {
         LabeledContent {
             if service.failure != nil {

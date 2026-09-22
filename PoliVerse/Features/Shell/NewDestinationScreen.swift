@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// The screen behind each place.
 extension NewDestination {
     /// The screen a place opens, inside a navigation stack that is not its
     /// own: a tab's, Cerca's, or the panel's.
@@ -20,9 +21,12 @@ extension NewDestination {
 
 /// The student's photo in a bar, opening Impostazioni on the profile.
 struct ProfileBarButton: View {
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The environment's `shell`.
     @Environment(\.shell) private var shell
 
+    /// The view's content.
     var body: some View {
         Button { shell.openProfile() } label: {
             // Laid out at a symbol's width so the bar sizes its glass as the
@@ -36,6 +40,7 @@ struct ProfileBarButton: View {
     }
 }
 
+/// The profile button every root screen carries.
 extension View {
     /// The profile at the leading edge of a root screen's bar: the same way
     /// in from every root.

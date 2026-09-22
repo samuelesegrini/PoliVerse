@@ -1,14 +1,22 @@
 import Foundation
 
-/// What kind of entry an agenda item is. Values match the upstream
-/// `event_type.typeId` and must not be renumbered.
+/// What kind of entry an agenda item is.
+///
+/// - Important: The raw values match the upstream `event_type.typeId` and must not
+///   be renumbered.
 nonisolated enum EventKind: Int, Sendable, CaseIterable, Codable {
+    /// A timetabled lecture, laboratory or tutorial.
     case lecture = 1
+    /// An exam sitting.
     case exam = 2
+    /// A notice the agenda carries as an entry.
     case news = 3
+    /// A deadline, which is an instant rather than an interval.
     case deadline = 4
+    /// A personal entry, and the fallback for a `typeId` this app does not know.
     case custom = 5
 
+    /// The kind's name as it appears on screen.
     var label: String {
         switch self {
         case .lecture: "Lezione"
@@ -19,6 +27,7 @@ nonisolated enum EventKind: Int, Sendable, CaseIterable, Codable {
         }
     }
 
+    /// The SF Symbol name for the kind.
     var icon: String {
         switch self {
         case .lecture: "person.bubble"
@@ -31,31 +40,54 @@ nonisolated enum EventKind: Int, Sendable, CaseIterable, Codable {
 }
 
 /// One entry in the student's agenda.
+///
+/// Both initialisers clamp ``end`` to be no earlier than ``start``, so no value of
+/// this type can form an inverted range for a view to trap on. Zero-length entries
+/// are legitimate — a deadline is an instant — and ``isOngoing(at:)`` accounts for
+/// them.
+///
+/// Written into the app group by ``TimetablePublishing`` for the widgets to read.
 nonisolated struct AgendaEvent: Identifiable, Sendable, Hashable, Codable {
+    /// The upstream `event_id`, or a hash of the start timestamp when the payload
+    /// omits it.
     let id: Int
+    /// The entry's name on screen.
     let title: String
+    /// When the entry begins, as an absolute date resolved from Rome wall clock.
     let start: Date
+    /// When the entry ends. Never earlier than ``start``.
     let end: Date
+    /// What kind of entry this is.
     let kind: EventKind
-    /// Full room name, e.g. "Aula Rogers".
+    /// The room as the timetable names it, for example `"Aula Rogers"` — or, for
+    /// the rooms that have no name, the ateneo's own internal code, `"005A"`.
     let room: String?
-    /// Short form shown in tight layouts, e.g. "R.0.1".
+    /// The code on the door: building, floor, room, for example `"5.1.1"`.
+    ///
+    /// Not merely a short form of ``room``. This is the code the Politecnico
+    /// signposts, times and speaks in, and the only one of the two a student
+    /// can act on: `"005A"` names the same room but appears nowhere they will
+    /// ever stand. See ``roomLabel``.
     let roomAcronym: String?
+    /// The upstream calendar the entry came from.
     let calendarName: String?
     /// Free text the agenda attaches to some entries.
     var details: String?
-    /// Teaching form — lecture, lab, tutorial — keyed as `LBL_FORMA_DIDATTICA_*`.
+    /// Teaching form — lecture, laboratory, tutorial — keyed upstream as
+    /// `LBL_FORMA_DIDATTICA_*`.
     var subtype: String?
-    /// Labels the agenda attaches, used upstream to pick card artwork.
+    /// Labels the agenda attaches, used upstream to choose card artwork.
     var tags: [String] = []
 
-    /// Decoding goes through the same clamp as the initialiser.
+    /// Decodes an entry through ``init(id:title:start:end:kind:room:roomAcronym:calendarName:details:subtype:tags:)``,
+    /// so the clamp on ``end`` applies to cached files as well as to fresh payloads.
     ///
-    /// Synthesised `Codable` would assign the stored `end` directly, and an
-    /// inverted range traps the moment a view forms `start...end` — the crash
-    /// this type's initialiser was written to prevent. A cached file that
-    /// predates a fix, or one written by a future version, must not be able to
-    /// reintroduce it.
+    /// A synthesised `Codable` would assign the stored `end` directly, letting a file
+    /// written by another version reintroduce an inverted range.
+    ///
+    /// - Parameter decoder: The decoder to read from.
+    /// - Throws: A decoding error when `id`, `title`, `start`, `end` or `kind` is
+    ///   missing or malformed. Every other key is optional.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.init(
@@ -72,13 +104,20 @@ nonisolated struct AgendaEvent: Identifiable, Sendable, Hashable, Codable {
             tags: try container.decodeIfPresent([String].self, forKey: .tags) ?? [])
     }
 
-    /// Enforces `end >= start`.
+    /// Creates an entry, clamping ``end`` to be no earlier than ``start``.
     ///
-    /// Anything that forms `start...end` traps when the range is inverted, and
-    /// zero-length entries are legitimate here — a deadline is an instant, not
-    /// an interval. Clamping in the initialiser means no call site can build an
-    /// event that crashes a view later, which is exactly how this bit first
-    /// (a mock deadline written as 23:15 → 23:00 took down the calendar tab).
+    /// - Parameters:
+    ///   - id: The entry's identifier.
+    ///   - title: The entry's name on screen.
+    ///   - start: When it begins.
+    ///   - end: When it ends. Raised to `start` when it precedes it.
+    ///   - kind: What kind of entry it is.
+    ///   - room: Full room name.
+    ///   - roomAcronym: Short room form.
+    ///   - calendarName: The upstream calendar it came from.
+    ///   - details: Free text.
+    ///   - subtype: Teaching form.
+    ///   - tags: Labels the agenda attaches.
     init(
         id: Int,
         title: String,
@@ -105,61 +144,217 @@ nonisolated struct AgendaEvent: Identifiable, Sendable, Hashable, Codable {
         self.tags = tags
     }
 
+    /// How long the entry lasts, in seconds. Zero for an instantaneous entry.
     var duration: TimeInterval { end.timeIntervalSince(start) }
 
-    /// True while the event is happening, used to highlight "now" in the list.
+    /// Whether the entry is happening at a given moment, which the list uses to mark
+    /// “now”.
     ///
-    /// Instantaneous events (a deadline) are never "ongoing" — a zero-width
-    /// range would only match the exact second.
+    /// - Parameter moment: The moment to test.
+    /// - Returns: `true` when the moment falls in `start...end`. Always `false` for an
+    ///   instantaneous entry, whose zero-width range would match only one second.
     func isOngoing(at moment: Date = .now) -> Bool {
         guard end > start else { return false }
         return (start...end).contains(moment)
+    }
+
+    /// Where to go, in the words the Politecnico actually uses.
+    ///
+    /// Neither field is reliably the one to show. ``room`` is whatever the
+    /// timetable recorded: sometimes a hall everyone knows by name — Rogers,
+    /// De Donato, Castigliano — and sometimes `"005A"`, the ateneo's internal
+    /// code, which is printed on no door and spoken by nobody. ``roomAcronym``
+    /// is the signposted code, building, floor and room: `"5.1.1"`.
+    ///
+    /// So the choice is not between the two fields but between two kinds of
+    /// answer. Where the hall has a name, the name is what a student will be
+    /// told and what they will ask for, and the code adds nothing. Where it
+    /// does not, the code is the only thing that will get them there, and
+    /// `"005A"` is worse than useless — it looks like an answer.
+    ///
+    /// See ``RoomNaming`` for how the two are told apart.
+    var roomLabel: String? {
+        if let room, RoomNaming.isName(room) { return room }
+        return roomAcronym ?? room
+    }
+
+    /// The door code, when it is worth showing beside ``roomLabel``.
+    ///
+    /// `nil` when the label already is the code, so that a caption showing
+    /// both does not print `"5.1.1 · 5.1.1"`. Named halls keep it: someone who
+    /// has never been to De Donato still needs the building.
+    var roomCode: String? {
+        guard let roomAcronym, roomAcronym != roomLabel else { return nil }
+        return roomAcronym
+    }
+}
+
+/// Telling a room's name apart from a room's code.
+///
+/// The timetable writes both into the same field, and nothing in the payload
+/// says which one arrived. What separates them is what they are made of: halls
+/// are named after people and places — Rogers, De Donato, Magna — while codes
+/// are numbered. Strip the word that says what kind of room it is, and a digit
+/// in what remains means a code.
+///
+/// This is a heuristic, and it is the right kind of heuristic: it is wrong only
+/// about halls with a number in their name, and being wrong there costs a
+/// student the name and hands them the door code, which still gets them to the
+/// room.
+nonisolated enum RoomNaming {
+    /// The words a room label may already begin with, lowercased.
+    ///
+    /// Used only to decide whether to say "Aula" in front of it again. Longest
+    /// first, so that `"laboratorio"` is stripped as itself rather than leaving
+    /// `"oratorio"` behind from `"lab"`.
+    private static let kinds = ["laboratorio", "teatro", "aula", "sala", "lab"]
+
+    /// The subset of ``kinds`` that says what kind of room it is and nothing
+    /// more.
+    ///
+    /// `"Teatro"` is missing on purpose: it is not a kind of room the way
+    /// `"Aula"` is, it is a place, and a hall called nothing but Teatro is
+    /// named. `"Aula"` on its own names nothing — it is the word for any of
+    /// them — so it is the door code that has something to say.
+    private static let generics = ["laboratorio", "aula", "sala", "lab"]
+
+    /// Whether a label already says what kind of room it is.
+    ///
+    /// - Parameter label: The room as the timetable spelled it.
+    /// - Returns: `true` when it begins with a word like `"Aula"`.
+    static func namesKind(_ label: String) -> Bool {
+        let lowered = label.lowercased()
+        return kinds.contains { lowered.hasPrefix($0) }
+    }
+
+    /// Whether a label is a name someone would use, rather than a code.
+    ///
+    /// - Parameter label: The room as the timetable spelled it.
+    /// - Returns: `true` for `"Aula Rogers"`, `false` for `"005A"` or `"Aula 3"`.
+    static func isName(_ label: String) -> Bool {
+        var bare = label.lowercased().trimmingCharacters(in: .whitespaces)
+        guard !bare.isEmpty else { return false }
+        for kind in generics where bare.hasPrefix(kind) {
+            bare = String(bare.dropFirst(kind.count)).trimmingCharacters(in: .whitespaces)
+            // Nothing after the generic word: "Aula" names no particular room.
+            guard !bare.isEmpty else { return false }
+            break
+        }
+        return !bare.contains(where: \.isNumber)
+    }
+
+    /// A room with the generic word taken off, for a field already labelled
+    /// with it.
+    ///
+    /// A row headed "Aula" whose value is `"Aula Magna"` reads "Aula: Aula
+    /// Magna". The word belongs to the heading there, not to the value, so the
+    /// value gives up its copy — `"Aula Magna"` becomes `"Magna"`, which is how
+    /// the hall is spoken of anyway.
+    ///
+    /// Only the generic words go. `"Teatro"` is the room's name, not a heading
+    /// repeated, and stripping it would leave nothing at all.
+    ///
+    /// - Parameter label: The room as the timetable spelled it.
+    /// - Returns: The value to put under an "Aula" heading.
+    static func bare(_ label: String) -> String {
+        let trimmed = label.trimmingCharacters(in: .whitespaces)
+        let lowered = trimmed.lowercased()
+        for kind in generics where lowered.hasPrefix(kind) {
+            let rest = String(trimmed.dropFirst(kind.count)).trimmingCharacters(in: .whitespaces)
+            return rest.isEmpty ? trimmed : rest
+        }
+        return trimmed
+    }
+
+    /// A room worded for a sentence: `"Aula 5.1.1"`, `"Aula Rogers"`.
+    ///
+    /// The word is added, not assumed — the timetable's own names already carry
+    /// it, and prefixing again reads `"Aula Aula Rogers"`.
+    ///
+    /// - Parameter label: The room to word.
+    /// - Returns: The phrase to put in a sentence.
+    static func sentence(_ label: String) -> String {
+        namesKind(label) ? label : "Aula \(label)"
     }
 }
 
 // MARK: - Wire types
 
-/// Most agenda strings arrive as an `{ it, en }` pair.
+/// An `{ it, en }` pair, the shape most agenda strings arrive in.
 nonisolated struct LocalizedText: Decodable, Sendable {
+    /// The Italian text, when present.
     let it: String?
+    /// The English text, when present.
     let en: String?
 
-    /// Prefers Italian, since the rest of the UI is Italian, but falls back
-    /// rather than showing an empty row.
+    /// The Italian text, falling back to the English and then to the empty string, so
+    /// a partly populated pair does not render an empty row.
     var preferred: String { it ?? en ?? "" }
 }
 
+/// One agenda entry as the timetable endpoint sends it.
+///
+/// Every field is optional, and ``toEvent()`` decides what is load-bearing.
 nonisolated struct AgendaEventDTO: Decodable, Sendable {
+    /// The upstream event type, whose `typeId` maps to ``EventKind``.
     struct EventTypeDTO: Decodable, Sendable {
+        /// The numeric kind, matched against ``EventKind``.
         let typeId: Int?
+        /// The kind's upstream display name. Not used; ``EventKind/label`` is shown.
         let type_dn: LocalizedText?
     }
 
+    /// The room an entry is held in.
     struct RoomDTO: Decodable, Sendable {
+        /// Full room name.
         let room_dn: String?
+        /// Short room form.
         let acronym_dn: String?
     }
 
+    /// The upstream calendar an entry belongs to.
     struct CalendarDTO: Decodable, Sendable {
+        /// The calendar's display name.
         let calendar_dn: LocalizedText?
     }
 
+    /// One label the agenda attaches to an entry.
     struct TagDTO: Decodable, Sendable {
+        /// The label's upstream identifier.
         let event_tag_id: Int?
+        /// The label's text.
         let denomination: LocalizedText?
     }
 
+    /// The entry's upstream identifier.
     let event_id: Int?
+    /// Start timestamp, Rome wall clock without a zone designator.
     let date_start: String?
+    /// End timestamp, Rome wall clock without a zone designator.
     let date_end: String?
+    /// The entry's name.
     let title: LocalizedText?
+    /// The entry's kind.
     let event_type: EventTypeDTO?
+    /// Where the entry is held.
     let room: RoomDTO?
+    /// Which upstream calendar the entry came from.
     let calendar: CalendarDTO?
+    /// Free text attached to the entry.
     let description: LocalizedText?
+    /// Teaching form key.
     let event_subtype: String?
+    /// Labels attached to the entry.
     let tags: [TagDTO]?
 
+    /// Converts the payload into an ``AgendaEvent``.
+    ///
+    /// Only the timestamps are load-bearing: everything else degrades to a default —
+    /// an unknown kind becomes ``EventKind/custom``, a missing title becomes
+    /// `"Evento"`, a missing id becomes a hash of the start timestamp.
+    ///
+    /// - Returns: The entry, or `nil` when either timestamp is missing or unparseable,
+    ///   since an entry that cannot be placed in time is worse than no entry.
     func toEvent() -> AgendaEvent? {
         // An event we cannot place in time is worse than no event at all.
         // Everything else degrades; only the timestamps are load-bearing.
@@ -188,16 +383,15 @@ nonisolated struct AgendaEventDTO: Decodable, Sendable {
     }
 }
 
-/// Timestamp handling for the agenda endpoint.
+/// Date and time handling for the Politecnico's endpoints.
 ///
-/// - Important: `date_start` / `date_end` have **no timezone designator** —
-///   they look like `2026-03-14T09:15:00`. They are Politecnico wall-clock
-///   time, i.e. Europe/Rome. Feeding them to `.iso8601` throws, and treating
-///   them as UTC silently shifts every lecture by one or two hours depending
-///   on daylight saving. Both failure modes are easy to ship by accident, so
-///   the zone is pinned here explicitly.
+/// - Important: `date_start` and `date_end` carry no timezone designator — they
+///   look like `2026-03-14T09:15:00` — and are Rome wall clock. Parsing them as
+///   ISO 8601 throws, and treating them as UTC shifts every lecture by one or two
+///   hours depending on daylight saving, so the zone is pinned explicitly
+///   throughout this type.
 nonisolated enum PoliMiDate {
-    /// Wall-clock, the documented shape.
+    /// `yyyy-MM-dd'T'HH:mm:ss` in Europe/Rome, the documented shape.
     private static let wallClock: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -206,7 +400,8 @@ nonisolated enum PoliMiDate {
         return formatter
     }()
 
-    /// Date-only, seen on all-day entries.
+    /// `yyyy-MM-dd` in Europe/Rome, seen on all-day entries and used for query
+    /// parameters.
     private static let dateOnly: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -215,6 +410,12 @@ nonisolated enum PoliMiDate {
         return formatter
     }()
 
+    /// Parses a timestamp from any of the three shapes these endpoints produce.
+    ///
+    /// Tried in order: Rome wall clock, ISO 8601 with a real offset, then date-only.
+    ///
+    /// - Parameter raw: The timestamp, with surrounding whitespace tolerated.
+    /// - Returns: The absolute date, or `nil` when no shape matches.
     static func parse(_ raw: String) -> Date? {
         let trimmed = raw.trimmingCharacters(in: .whitespaces)
         if let date = wallClock.date(from: trimmed) { return date }
@@ -225,13 +426,17 @@ nonisolated enum PoliMiDate {
         return nil
     }
 
-    /// `hour:minute` on the same calendar day as `day`, in Rome.
+    /// A given time of day on the same Rome calendar day as a date.
     ///
-    /// Deliberately not `Calendar.date(bySettingHour:of:)`. That method
-    /// searches *forward* for the next matching time, so asking for 08:00
-    /// from a date already past 08:00 returns tomorrow morning — silently,
-    /// and only when the clock happens to be late enough. It made the
-    /// teaching-day window jump a day whenever the app was opened after 8pm.
+    /// Computed by adding components to the start of the day rather than with
+    /// `Calendar.date(bySettingHour:of:)`, which searches forward for the next match
+    /// and so would return tomorrow when asked for a time already past.
+    ///
+    /// - Parameters:
+    ///   - hour: Hour of the day.
+    ///   - minute: Minute of the hour.
+    ///   - day: The day to resolve against.
+    /// - Returns: The resolved date, or `day` unchanged if it cannot be formed.
     static func time(_ hour: Int, _ minute: Int = 0, on day: Date) -> Date {
         let calendar = romeCalendar
         let start = calendar.startOfDay(for: day)
@@ -239,10 +444,15 @@ nonisolated enum PoliMiDate {
             byAdding: DateComponents(hour: hour, minute: minute), to: start) ?? day
     }
 
-    /// Combines an `HH:mm` (or `HH:mm:ss`) string with an existing date.
+    /// Combines an `HH:mm` or `HH:mm:ss` string with an existing date, in Rome.
     ///
-    /// The exams endpoint splits a sitting into `d_app` (the day) and `ora_ok`
-    /// (the time) instead of sending one timestamp.
+    /// The exams endpoint splits a sitting into a day and a time rather than sending
+    /// one timestamp.
+    ///
+    /// - Parameters:
+    ///   - time: The time of day, colon separated.
+    ///   - date: The day to resolve against.
+    /// - Returns: The resolved date, or `nil` when fewer than two components parse.
     static func applying(time: String, to date: Date) -> Date? {
         let parts = time.split(separator: ":").compactMap { Int($0) }
         guard parts.count >= 2 else { return nil }
@@ -254,24 +464,20 @@ nonisolated enum PoliMiDate {
         )
     }
 
-    /// The academic year an **exam sitting** belongs to, as "2025/26".
+    /// The academic year an exam sitting belongs to, as `"2025/26"`.
     ///
-    /// ## Why this is not ``Course/academicYearLabel(for:)``
+    /// A sitting's year turns in October: the autumn session closes the year whose
+    /// teaching it examines rather than opening the next one. Filing a September
+    /// sitting under the new year would point it at a different edition of the
+    /// manifesto and record it under the wrong year in the libretto.
     ///
-    /// They answer different questions and draw the boundary in different
-    /// months, and the difference is load bearing for two weeks a year.
+    /// This differs from ``Course/academicYearLabel(for:)``, which answers which year a
+    /// *teaching* belongs to and so turns in September.
     ///
-    /// A *teaching* starts in September, so September opens its year — that is
-    /// `academicYearLabel`, and it is right for "which year is this course in".
-    /// A *sitting* is the other end of the same year: the autumn session in
-    /// September closes the year whose teaching it examines rather than opening
-    /// the next one. Filing a September sitting under the new year points it at
-    /// a different edition of the manifesto — different lecturers, different
-    /// scheda — and marks it under the wrong year in the libretto.
-    ///
-    /// ``LibrettoExam/academicYear(calendar:)`` had this rule written out
-    /// inline and correct; the exam-scheda screen had the other one and was
-    /// wrong. One named rule, used by both.
+    /// - Parameters:
+    ///   - date: When the sitting is held.
+    ///   - calendar: The calendar to read the month from.
+    /// - Returns: The label, or `nil` when the date yields no year and month.
     static func academicYear(ofSitting date: Date,
                              calendar: Calendar = PoliMiDate.romeCalendar) -> String? {
         let parts = calendar.dateComponents([.year, .month], from: date)
@@ -280,11 +486,18 @@ nonisolated enum PoliMiDate {
         return "\(start)/\(String(format: "%02d", (start + 1) % 100))"
     }
 
-    /// The `start_date` query parameter wants a bare `yyyy-MM-dd`.
+    /// A date as the bare `yyyy-MM-dd` these endpoints' query parameters want.
+    ///
+    /// - Parameter date: The date to format.
+    /// - Returns: The formatted day, in Rome.
     static func queryString(_ date: Date) -> String { dateOnly.string(from: date) }
 
-    /// Rome, for grouping events into days. Using the device calendar would
-    /// put a 00:30 lecture on the wrong day for a student travelling.
+    /// A Gregorian calendar in Europe/Rome whose weeks start on Monday.
+    ///
+    /// Events are grouped into days with this rather than with the device calendar,
+    /// which would put a late-evening lecture on the wrong day for a travelling
+    /// student. `firstWeekday` is set explicitly because a calendar built by identifier
+    /// starts its weeks on Sunday, and the week strip is derived from it.
     static var romeCalendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "Europe/Rome") ?? .current

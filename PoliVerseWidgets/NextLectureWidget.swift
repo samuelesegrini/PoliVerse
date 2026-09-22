@@ -6,13 +6,16 @@ import WidgetKit
 /// The one thing worth glancing at between classes, so it is offered on the
 /// Lock Screen as well as the Home Screen.
 struct NextLectureEntry: TimelineEntry {
+    /// The moment this entry describes.
     let date: Date
+    /// The next lecture not yet over, or `nil` when nothing is scheduled.
     let lecture: AgendaEvent?
     /// The one after it, for the medium layout.
     let following: AgendaEvent?
     /// How old the cached timetable is, so the widget can be honest when it is
     /// showing something stale.
     let age: TimeInterval?
+    /// Whether anyone is signed in. Distinct from having no lectures.
     let signedIn: Bool
 
     /// Top of the Smart Stack from half an hour before a lecture until it
@@ -25,12 +28,22 @@ struct NextLectureEntry: TimelineEntry {
     }
 }
 
+/// Builds the timeline from the cached agenda, at the lecture boundaries.
 struct NextLectureProvider: TimelineProvider {
+    /// A representative lecture, for the widget gallery and for redaction.
+    ///
+    /// - Parameter context: WidgetKit's context.
+    /// - Returns: The placeholder entry.
     func placeholder(in context: Context) -> NextLectureEntry {
         NextLectureEntry(date: .now, lecture: .preview, following: nil,
                          age: 0, signedIn: true)
     }
 
+    /// The next lecture as it stands now.
+    ///
+    /// - Parameters:
+    ///   - context: WidgetKit's context.
+    ///   - completion: Handed the entry.
     func getSnapshot(in context: Context, completion: @escaping (NextLectureEntry) -> Void) {
         completion(entry(at: .now))
     }
@@ -63,6 +76,12 @@ struct NextLectureProvider: TimelineProvider {
         completion(Timeline(entries: entries, policy: .after(next)))
     }
 
+    /// One entry for a moment: the next lecture not yet over, and the one after it.
+    ///
+    /// - Parameters:
+    ///   - date: The moment to describe.
+    ///   - events: The cached agenda, re-read when not supplied.
+    /// - Returns: The entry.
     private func entry(at date: Date, events: [AgendaEvent]? = nil) -> NextLectureEntry {
         let cached = WidgetAgenda.load()
         let all = events ?? cached?.events ?? []
@@ -79,7 +98,10 @@ struct NextLectureProvider: TimelineProvider {
 
 }
 
+/// The next-lecture widget, offered on the Home Screen and the Lock Screen. Tapping it
+/// opens the calendar.
 struct NextLectureWidget: Widget {
+    /// The declaration's content.
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: WidgetKind.nextLecture.rawValue, provider: NextLectureProvider()) { entry in
             NextLectureView(entry: entry)
@@ -93,10 +115,14 @@ struct NextLectureWidget: Widget {
     }
 }
 
+/// Draws one ``NextLectureEntry``, in whichever family is asked for.
 struct NextLectureView: View {
+    /// The lecture to draw.
     let entry: NextLectureEntry
+    /// The widget family being drawn.
     @Environment(\.widgetFamily) private var family
 
+    /// The view's content.
     var body: some View {
         switch family {
         case .accessoryInline: inline
@@ -109,14 +135,16 @@ struct NextLectureView: View {
 
     // MARK: - Lock Screen
 
+    /// The inline Lock Screen accessory: one line of time and room.
     private var inline: some View {
         if let lecture = entry.lecture {
-            Text("\(lecture.start, style: .time) · \(lecture.roomAcronym ?? lecture.room ?? lecture.title)")
+            Text("\(lecture.start, style: .time) · \(lecture.roomLabel ?? lecture.title)")
         } else {
             Text(emptyLine)
         }
     }
 
+    /// The circular Lock Screen accessory: the countdown alone.
     private var circular: some View {
         ZStack {
             AccessoryWidgetBackground()
@@ -131,12 +159,13 @@ struct NextLectureView: View {
         }
     }
 
+    /// The rectangular Lock Screen accessory: time, title and room.
     private var rectangular: some View {
         VStack(alignment: .leading, spacing: 1) {
             if let lecture = entry.lecture {
                 Text(lecture.title).font(.headline).lineLimit(1)
                 countdown(to: lecture).font(.caption)
-                if let room = lecture.room ?? lecture.roomAcronym {
+                if let room = lecture.roomLabel {
                     Text(room).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                 }
             } else {
@@ -148,6 +177,7 @@ struct NextLectureView: View {
 
     // MARK: - Home Screen
 
+    /// The small Home Screen family: one lecture, with its room and countdown.
     private var small: some View {
         VStack(alignment: .leading, spacing: 4) {
             Label("Prossima lezione", systemImage: "person.bubble")
@@ -160,7 +190,7 @@ struct NextLectureView: View {
                 Spacer(minLength: 0)
                 Text(lecture.start, style: .time).font(.title3.weight(.bold)).monospacedDigit()
                 countdown(to: lecture).font(.caption2.weight(.medium)).foregroundStyle(.tint)
-                if let room = lecture.room ?? lecture.roomAcronym {
+                if let room = lecture.roomLabel {
                     Text(room).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                 }
             } else {
@@ -173,6 +203,7 @@ struct NextLectureView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 
+    /// The medium Home Screen family: the next lecture and the one after it.
     private var medium: some View {
         HStack(alignment: .top, spacing: 14) {
             small
@@ -181,7 +212,7 @@ struct NextLectureView: View {
                     Text("Poi").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
                     Text(following.title).font(.caption).lineLimit(2)
                     Text(following.start, style: .time).font(.caption.weight(.semibold))
-                    if let room = following.room ?? following.roomAcronym {
+                    if let room = following.roomLabel {
                         Text(room).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                     }
                     Spacer(minLength: 0)
@@ -230,6 +261,7 @@ struct NextLectureView: View {
     }
 }
 
+/// A representative lecture, for the gallery and for previews.
 private extension AgendaEvent {
     /// Only for the placeholder the system renders before real data exists.
     static var preview: AgendaEvent {

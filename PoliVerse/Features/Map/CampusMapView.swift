@@ -8,9 +8,13 @@ import SwiftUI
 /// ellipses and bounding boxes rather than footprints, so nothing is drawn
 /// from them. See ``BuildingLocation``.
 struct CampusMapView: View {
+    /// The shared ``CampusMapModel``, from the environment.
     @Environment(CampusMapModel.self) private var map
+    /// The shared ``RoomsModel``, from the environment.
     @Environment(RoomsModel.self) private var rooms
 
+    /// The campus on screen. Changing it moves the camera to that city at once and places its
+    /// pins when they arrive.
     @State private var campus: String?
     /// Opens on a campus rather than `.automatic`, which with no pins yet is
     /// the whole world, then jumps once they arrive.
@@ -20,6 +24,7 @@ struct CampusMapView: View {
     @State private var framedCampus: String??
     @State private var loadingAvailability = false
 
+    /// The view's content.
     var body: some View {
         Map(position: $position, selection: Binding(
             get: { selected?.id },
@@ -111,6 +116,8 @@ struct CampusMapView: View {
         }
     }
 
+    /// The capsule above the map: what the colours mean once availability has been counted,
+    /// and what is happening while pins are being placed or rooms asked about.
     @ViewBuilder
     private var legend: some View {
         if map.showsAvailability {
@@ -142,6 +149,12 @@ struct CampusMapView: View {
         }
     }
 
+    /// One entry of the legend: a dot and its meaning.
+    ///
+    /// - Parameters:
+    ///   - colour: The dot's colour.
+    ///   - text: What it means.
+    /// - Returns: The entry.
     private func swatch(_ colour: Color, _ text: String) -> some View {
         HStack(spacing: 4) {
             Circle().fill(colour).frame(width: 8, height: 8)
@@ -149,6 +162,11 @@ struct CampusMapView: View {
         }
     }
 
+    /// The colour a pin is drawn in.
+    ///
+    /// - Parameter pin: The building.
+    /// - Returns: Green, orange or red by ``MapPin/availability``, and a neutral colour before
+    ///   occupancy has been counted.
     private func colour(for pin: MapPin) -> Color {
         switch pin.availability {
         case .many: .green
@@ -158,6 +176,8 @@ struct CampusMapView: View {
         }
     }
 
+    /// Moves the camera back to frame every placed pin, or to the campus's own region when
+    /// none has been placed.
     private func recentre() {
         guard let region = map.region else { return }
         withAnimation { position = .region(region) }
@@ -166,12 +186,17 @@ struct CampusMapView: View {
 
 /// What is in one building, reached by tapping its pin.
 private struct BuildingSheet: View {
+    /// The building the sheet is about.
     let pin: MapPin
+    /// The shared ``CampusMapModel``, from the environment.
     @Environment(CampusMapModel.self) private var map
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
 
+    /// The rooms in that building, by code.
     private var rooms: [Classroom] { map.rooms(in: pin.id) }
 
+    /// The view's content.
     var body: some View {
         List {
             Section {
@@ -217,6 +242,8 @@ private struct BuildingSheet: View {
         }
     }
 
+    /// The building's rooms grouped by floor, floors in order and rooms by code. Rooms whose
+    /// floor the catalogue does not name are grouped together.
     private var byFloor: [(floor: String, rooms: [Classroom])] {
         Dictionary(grouping: rooms) { $0.floorName ?? "Piano —" }
             .map { (floor: $0.key, rooms: $0.value.sorted { $0.id < $1.id }) }

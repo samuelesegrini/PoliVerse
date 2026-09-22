@@ -10,11 +10,17 @@ import SwiftUI
 /// The margin is what makes it feel instant: warming only what is visible is
 /// warming what the user is already looking at, which is too late to help.
 struct PrefetchModifier<ID: Hashable & Sendable>: ViewModifier {
+    /// The rows' identifiers, in the order they are laid out.
     let ids: [ID]
     /// How many rows either side of the visible window to warm.
     let margin: Int
+    /// Warms the rows just off screen.
     let prefetch: ([ID]) -> Void
 
+    /// Applies the modifier to `content`.
+    ///
+    /// - Parameter content: The view being modified.
+    /// - Returns: The modified view.
     func body(content: Content) -> some View {
         content.onScrollTargetVisibilityChange(idType: ID.self) { visible in
             guard !visible.isEmpty else { return }
@@ -34,6 +40,7 @@ struct PrefetchModifier<ID: Hashable & Sendable>: ViewModifier {
     }
 }
 
+/// Warming rows just off screen as the student scrolls.
 extension View {
     /// Warms resources for rows just off screen as the user scrolls.
     ///

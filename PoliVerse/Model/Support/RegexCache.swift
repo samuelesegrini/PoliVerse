@@ -3,22 +3,32 @@ import Synchronization
 
 /// Compiled ICU patterns, kept rather than rebuilt on every call.
 ///
-/// The scrapers and text readers compiled their `NSRegularExpression` inside
-/// the function that used it, so parsing one Manifesti page or one results
-/// file compiled the same handful of patterns hundreds of times. Compiled
-/// expressions are immutable and documented as safe to share across threads;
-/// the cache itself sits behind a lock because callers run on any of them.
+/// The scrapers and text readers would otherwise compile the same handful of
+/// patterns hundreds of times over one Manifesti page or one results file.
+/// Compiled `NSRegularExpression`s are immutable and safe to share; the cache
+/// itself sits behind a `Mutex` because callers run on any thread.
 nonisolated enum RegexCache {
+    /// A pattern and the options it was compiled with.
     private struct Key: Hashable {
+        /// The pattern source.
         let pattern: String
+        /// The compile options, as their raw value.
         let options: UInt
     }
 
-    /// Patterns built from page content (an escaped course title, say) are
-    /// not a fixed set; past this many the cache starts over rather than grow.
+    /// How many patterns to keep. Patterns built from page content are not a fixed
+    /// set, so beyond this the cache is emptied rather than allowed to grow.
     private static let limit = 256
+    /// The compiled patterns, guarded for use from any thread.
     private static let cache = Mutex<[Key: NSRegularExpression]>([:])
 
+    /// The compiled form of a pattern, compiling it on first use.
+    ///
+    /// - Parameters:
+    ///   - pattern: The ICU pattern.
+    ///   - options: Compile options.
+    /// - Returns: The compiled expression, or `nil` when the pattern does not compile.
+    ///   A failure is not cached.
     static func regex(
         _ pattern: String, options: NSRegularExpression.Options = []
     ) -> NSRegularExpression? {

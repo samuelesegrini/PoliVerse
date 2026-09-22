@@ -1,15 +1,16 @@
 import Foundation
 
-/// An SF Symbol for a course, picked from the words in its name.
+/// Chooses an SF Symbol for a course from the words in its name.
 ///
-/// Politecnico course names are descriptive enough that a handful of Italian
-/// and English stems cover most of them: "Analisi Matematica" is maths,
-/// "Basi di Dati" is databases. Rules are tried in order, so the more specific
-/// ones come first — "Fisica Tecnica" is engineering heat, not physics.
+/// Politecnico course names are descriptive enough that a set of Italian and English
+/// stems covers most of them. ``rules`` is ordered, so the more specific entries
+/// come first — “Fisica Tecnica” is engineering heat rather than physics.
 nonisolated enum SubjectSymbol {
+    /// The symbol for a name no rule matches.
     static let fallback = "book.closed"
 
-    /// Stems, matched against the folded name, and the symbol they mean.
+    /// Stems to match against the folded name, and the symbol each means, most specific
+    /// first.
     static let rules: [(stems: [String], symbol: String)] = [
         (["basi di dati", "database", "data base", "sql"], "cylinder.split.1x2"),
         (["intelligenza artificiale", "machine learning", "apprendimento", "artificial intelligence", "neural"], "brain"),
@@ -43,6 +44,12 @@ nonisolated enum SubjectSymbol {
         (["progetto", "project", "tesi", "thesis"], "hammer"),
     ]
 
+    /// The symbol for a course name.
+    ///
+    /// The name is folded to ignore case and diacritics before matching.
+    ///
+    /// - Parameter courseName: The course's name.
+    /// - Returns: The first matching rule's symbol, or ``fallback``.
     static func symbol(for courseName: String) -> String {
         let folded = courseName.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
         return rules.first { rule in rule.stems.contains { folded.contains($0) } }?.symbol ?? fallback
