@@ -34,6 +34,14 @@ authenticated session to Safari and the login is lost. PoliVerse intercepts the
 hand-off and attaches `sourceApp` so CieID comes back to the app instead. See
 [docs/cie-login.md](docs/cie-login.md).
 
+## What the app does not do
+
+PoliVerse reads from the university's systems and from WeBeep, and never writes
+to them: no enrolling in a sitting, no refusing a mark, no posting in a forum,
+no handing in an assignment. That is a decision, with its reasons and the
+conditions for revisiting it, in
+[docs/writes-to-university-systems.md](docs/writes-to-university-systems.md).
+
 ## Design notes
 
 Colours are adaptive and contrast-checked. The brand navy scores 13:1 on white

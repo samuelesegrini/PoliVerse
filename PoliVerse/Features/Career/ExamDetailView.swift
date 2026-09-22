@@ -231,8 +231,10 @@ struct ExamDetailView: View {
                         .foregroundStyle(CareerState.refusable.tint)
                 }
             } else {
-                // Enrolment is a write against the real university system:
-                // the app points at the official services instead.
+                // Enrolment is a write against the real university system,
+                // which this app does not make: see
+                // `docs/writes-to-university-systems.md`. It points at the
+                // official services instead.
                 Text("Le iscrizioni si gestiscono dai Servizi Online del Politecnico.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
