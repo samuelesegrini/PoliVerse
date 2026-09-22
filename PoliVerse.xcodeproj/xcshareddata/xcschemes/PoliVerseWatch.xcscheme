@@ -53,15 +53,17 @@
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES"
       queueDebuggingEnabled = "No">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
+      <RemoteRunnable
+         runnableDebuggingMode = "2"
+         BundleIdentifier = "com.apple.Carousel"
+         RemotePath = "/PoliVerse">
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "PV00000000000000000063"
             BuildableName = "PoliVerseWatch.app"
             ReferencedContainer = "container:PoliVerse.xcodeproj">
          </BuildableReference>
-      </BuildableProductRunnable>
+      </RemoteRunnable>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -69,15 +71,17 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
+      <RemoteRunnable
+         runnableDebuggingMode = "2"
+         BundleIdentifier = "com.apple.Carousel"
+         RemotePath = "/PoliVerse">
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "PV00000000000000000063"
             BuildableName = "PoliVerseWatch.app"
             ReferencedContainer = "container:PoliVerse.xcodeproj">
          </BuildableReference>
-      </BuildableProductRunnable>
+      </RemoteRunnable>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">
