@@ -35,6 +35,28 @@ struct RootView: View {
     /// Moved on when a lesson starts or ends, so the accessory follows the
     /// timetable without redrawing the whole tab tree every minute.
     @State private var now = Date.now
+    /// Whether the window is wide enough for a sidebar.
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    /// Whether the shell draws a sidebar: regular width, and not the single
+    /// page, which is one page with a panel and has no bar to widen.
+    private var hasSidebar: Bool { sizeClass == .regular && !shell.singlePage }
+
+    /// What the tab view has selected: one of the four tabs, or, at regular
+    /// width, one of the places in the sidebar.
+    ///
+    /// Held here and mirrored to ``ShellState`` rather than computed from it.
+    /// A `TabView` handed a computed `Binding` over the shell drew nothing at
+    /// all — no tabs and no page — so the selection is stored, and the two
+    /// `onChange`s on the tab view keep it and the shell agreeing in both
+    /// directions: a tap here reaches the shell, and a route from Siri, a
+    /// control or a notification reaches the tab view.
+    @State private var tabSelection = ShellSelection.tab(.today)
+
+    /// The selection the shell's own state implies.
+    private var shellSelection: ShellSelection {
+        shell.sidebarPlace.map(ShellSelection.place) ?? .tab(shell.selection)
+    }
 
     /// The class now, except on Oggi when the page already shows it.
     private var current: CurrentClass? {
@@ -167,23 +189,70 @@ struct RootView: View {
         }
     }
 
-    /// The four tabs: Oggi, Corsi, Carriera and Cerca.
+    /// The four tabs: Oggi, Corsi, Carriera and Cerca — and, at regular width,
+    /// the places from Cerca as sidebar items of their own.
+    ///
+    /// On an iPad the tab bar was the whole navigation: six of the app's eight
+    /// places were reachable only by opening Cerca and tapping a row, on a
+    /// screen with room to list them all. At regular width the same places
+    /// become a section of the sidebar; at compact width nothing changes, so
+    /// the iPhone keeps its four tabs rather than growing a "More" tab.
     private var tabs: some View {
-        TabView(selection: $shell.selection) {
-            Tab("Oggi", systemImage: "calendar.day.timeline.left", value: .today) {
+        TabView(selection: $tabSelection) {
+            Tab("Oggi", systemImage: "calendar.day.timeline.left", value: ShellSelection.tab(.today)) {
                 TodayTab().accessibilityIdentifier("tab-today")
             }
-            Tab(NewDestination.courses.title, systemImage: NewDestination.courses.systemImage, value: .courses) {
+            Tab(NewDestination.courses.title, systemImage: NewDestination.courses.systemImage,
+                value: ShellSelection.tab(.courses)) {
                 CoursesTab().accessibilityIdentifier("tab-courses")
             }
-            Tab(NewDestination.career.title, systemImage: NewDestination.career.systemImage, value: .career) {
+            Tab(NewDestination.career.title, systemImage: NewDestination.career.systemImage,
+                value: ShellSelection.tab(.career)) {
                 CareerTab().accessibilityIdentifier("tab-career")
             }
             // What changed since the feed was last opened, one per fact.
             .badge(feed.unreadCount)
-            Tab(value: .search, role: .search) {
+            if hasSidebar {
+                TabSection("Altro") {
+                    ForEach(NewDestination.inSearch) { place in
+                        Tab(place.title, systemImage: place.systemImage, value: ShellSelection.place(place)) {
+                            SidebarPlace(place: place)
+                        }
+                    }
+                }
+            }
+            Tab(value: ShellSelection.tab(.search), role: .search) {
                 SearchTab().accessibilityIdentifier("tab-search")
             }
+
+        }
+        // Applied only at regular width: `.sidebarAdaptable` on an iPhone
+        // still draws a tab bar, but pushes anything past the fifth tab into a
+        // "More" tab, and the compact layout should keep its four.
+        .modifier(SidebarStyle(enabled: hasSidebar))
+        // A tap on a tab or a sidebar row, into the shell.
+        .onChange(of: tabSelection) { _, selection in
+            switch selection {
+            case .tab(let tab):
+                shell.sidebarPlace = nil
+                shell.selection = tab
+            case .place(let place):
+                shell.sidebarPlace = place
+            }
+        }
+        // A route from outside — Siri, a control, a notification — back out to
+        // the tab view. Only when the two disagree, so neither `onChange` sets
+        // off the other.
+        .onChange(of: shellSelection) { _, selection in
+            guard tabSelection != selection else { return }
+            tabSelection = selection
+        }
+        .onChange(of: hasSidebar, initial: true) { _, sidebar in
+            shell.hasSidebar = sidebar
+            // Coming back to a tab bar, a sidebar place has nowhere to be: it
+            // goes back to being a row inside Cerca.
+            guard !sidebar, let place = shell.sidebarPlace else { return }
+            shell.route(to: .destination(place))
         }
         // Above the tab bar while there is a class today, like Music's player.
         .currentClassAccessory(shell.singlePage ? nil : current)
@@ -202,6 +271,12 @@ struct RootView: View {
         .onChange(of: shell.selection, initial: true) { _, tab in
             PerformanceStates.tabSelected(shell.singlePage ? "single" : tab.rawValue)
         }
+        // A sidebar place is its own screen in the field numbers, not a fifth
+        // reading of whichever tab happened to be selected behind it.
+        .onChange(of: shell.sidebarPlace) { _, place in
+            guard !shell.singlePage else { return }
+            PerformanceStates.tabSelected(place?.rawValue ?? shell.selection.rawValue)
+        }
         .onChange(of: shell.singlePage) { _, single in
             PerformanceStates.tabSelected(single ? "single" : shell.selection.rawValue)
         }
@@ -209,7 +284,7 @@ struct RootView: View {
         // Selecting the search tab opens its field straight away, unless the
         // student turned that off in Impostazioni.
         .tabViewSearchActivation(searchOpensKeyboard ? .searchTabSelection : .automatic)
-        .tabBarMinimizeBehavior(.onScrollDown)
+        .modifier(MinimizeBehaviour(enabled: !hasSidebar))
     }
 }
 
@@ -248,3 +323,65 @@ private struct LaunchGate: View {
     }
 }
 
+
+
+/// What the shell's tab view has selected.
+///
+/// At compact width this is always a tab; at regular width the sidebar adds
+/// the places that are otherwise rows inside Cerca, and one of those can be
+/// selected instead. Kept separate from ``NewDestination/Tab``, which names
+/// the four tabs and is what the field metrics are split by.
+nonisolated enum ShellSelection: Hashable, Sendable {
+    /// One of the four tabs.
+    case tab(NewDestination.Tab)
+    /// One of the places listed in the sidebar.
+    case place(NewDestination)
+}
+
+/// The tab bar's minimise behaviour, which only a tab bar has.
+private struct MinimizeBehaviour: ViewModifier {
+    /// Whether there is a tab bar to minimise.
+    let enabled: Bool
+
+    /// The view, with the behaviour or without it.
+    ///
+    /// - Parameter content: The tab view.
+    /// - Returns: The tab view.
+    func body(content: Content) -> some View {
+        if enabled { content.tabBarMinimizeBehavior(.onScrollDown) } else { content }
+    }
+}
+
+/// The sidebar style, applied only where there is room for a sidebar.
+///
+/// A conditional `tabViewStyle` cannot be written inline: the two styles are
+/// different types, and the ternary has nowhere to land.
+private struct SidebarStyle: ViewModifier {
+    /// Whether the sidebar style applies.
+    let enabled: Bool
+
+    /// The view, with the style or without it.
+    ///
+    /// - Parameter content: The tab view.
+    /// - Returns: The styled tab view.
+    func body(content: Content) -> some View {
+        if enabled { content.tabViewStyle(.sidebarAdaptable) } else { content }
+    }
+}
+
+/// A place as a sidebar item: its own navigation stack, since it is a root
+/// here rather than a screen pushed inside Cerca's.
+private struct SidebarPlace: View {
+    /// The place to show.
+    let place: NewDestination
+
+    /// The view's content.
+    var body: some View {
+        NavigationStack {
+            place.screen
+                .profileButton()
+                .dataStatusLine()
+        }
+        .accessibilityIdentifier("sidebar-\(place.rawValue)")
+    }
+}
