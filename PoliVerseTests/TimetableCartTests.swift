@@ -29,18 +29,21 @@ struct TimetableCartTests {
     }
 
     @Test("Setting the name tells the service, and remembers it")
-    func setNamePostsTheName() async {
+    func setNamePostsTheName() async throws {
         let pages = FixturePages(["ManifestoPublic.do": "<html></html>"])
         let cart = TimetableCart(pages: pages)
 
         await cart.setName("Rossi Mario", yearCode: "2025")
 
         #expect(cart.surname == "Rossi Mario")
-        let posted = try? #require(await pages.posted.first)
-        #expect(posted?.form["cognome"] == "Rossi Mario")
+        // `try #require` rather than `try?`, as the other posting tests do:
+        // the two together made the unwrap redundant, and a missing post
+        // should fail the test here rather than pass three `nil == nil`s.
+        let posted = try #require(await pages.posted.first)
+        #expect(posted.form["cognome"] == "Rossi Mario")
         // Both names, because the service warns that a surname alone may
         // resolve the bracket wrongly.
-        #expect(posted?.form["aa"] == "2025")
+        #expect(posted.form["aa"] == "2025")
     }
 
     /// A blank name would clear the bracket the service is using, so it is not

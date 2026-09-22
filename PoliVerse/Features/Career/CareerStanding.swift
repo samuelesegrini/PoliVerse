@@ -2,31 +2,30 @@ import SwiftUI
 
 /// Where the student has got to, as one card.
 ///
-/// This replaces four: two stat tiles, a credits card and a row of three
-/// counters. Between them they put seven figures on screen at near-equal
-/// weight — and three of those figures (esiti, iscrizioni, insegnamenti) were
-/// the lengths of lists printed further down the same page, which is a
-/// database dump rather than information.
+/// One card rather than a grid of tiles, because the card answers the one
+/// question a student opens Carriera with when they open it for no particular
+/// reason: *dove sono arrivato*. The average, which way it moved, the marks
+/// behind it, the credits, and what is still to do. Counts that are only the
+/// lengths of lists printed further down the same page are left to those
+/// lists.
 ///
-/// What is left is the one question a student opens Carriera with when they
-/// open it for no particular reason: *dove sono arrivato*. The average, which
-/// way it moved, the marks behind it, the credits, and what is still to do.
-///
-/// The degree mark is the exception that proves the point. It used to be a
-/// tile the same size as the average — the most emotionally loaded number on
-/// the screen, presented as a fact. ``GradeBook/baseGraduationMark`` is a
-/// baseline that excludes thesis, timeliness and Erasmus points, so it is now
-/// a sentence, it says it is an estimate, and it leads to the simulator where
-/// the what-if belongs.
+/// The degree mark is a sentence rather than a figure beside the average.
+/// ``GradeBook/baseGraduationMark`` is a baseline that excludes thesis,
+/// timeliness and Erasmus points, so it says outright that it is an estimate
+/// and leads to the simulator where the what-if belongs.
 struct CareerStandingCard: View {
+    /// The career's aggregate figures, as the service reports them.
     let book: GradeBook
+    /// The libretto, which the chart is drawn from and the average falls back to.
     let exams: [LibrettoExam]
     /// How the average moved with the last recorded mark, where there is one.
     let delta: Double?
     /// Opens the grade simulator.
     let simulate: () -> Void
 
+    /// The look in use, which supplies the card's material and colour.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
     /// The day being read on the chart. While there is one, the headline is
     /// that day rather than the career: the big number is where the eye
@@ -39,6 +38,7 @@ struct CareerStandingCard: View {
     /// The headline figure's size, scaled with the reader's text.
     @ScaledMetric(relativeTo: .largeTitle) private var headlineSize: CGFloat = 52
 
+    /// The libretto read as a plan, for the credits and the arithmetic behind the average.
     private var plan: StudyPlan { StudyPlan(exams: exams) }
 
     /// The official figure where the service gave one, the libretto's own
@@ -48,6 +48,7 @@ struct CareerStandingCard: View {
         book.mean > 0 ? book.mean : (plan.weightedMean ?? 0)
     }
 
+    /// The view's content.
     var body: some View {
         let palette = style.palette(scheme)
         VStack(alignment: .leading, spacing: 16) {
@@ -64,13 +65,14 @@ struct CareerStandingCard: View {
 
     // MARK: - The number
 
+    /// The headline figure and its caption, with the way back to today's average while a day is being inspected.
     private var average: some View {
         // Two rows in one, on purpose. The figure and its caption are set
         // against a shared baseline; the close button is not text and has no
-        // baseline of its own, so inside that group it was aligned by its
-        // bottom edge and dragged the row's height around with it. It sits in
-        // an outer row aligned to the top instead, which is where it should
-        // appear anyway — beside the number, not hanging off the caption.
+        // baseline of its own, so inside that group it would be aligned by its
+        // bottom edge and drag the row's height around with it. It sits in an
+        // outer row aligned to the top instead, which is also where it belongs
+        // — beside the number, not hanging off the caption.
         HStack(alignment: .top, spacing: 10) {
             HStack(alignment: .lastTextBaseline, spacing: 10) {
                 headline
@@ -97,11 +99,12 @@ struct CareerStandingCard: View {
         .animation(.snappy(duration: 0.2), value: inspected?.id)
     }
 
+    /// The big number: the average, or the day being inspected on the chart.
     private var headline: some View {
         Text(headlineNumber)
             // Scaled, so the page's biggest number stays the page's biggest
             // number when the reader's text grows: at a fixed 52 the section
-            // rows under it eventually overtake it.
+            // rows under it would eventually overtake it.
             .font(.system(size: headlineSize, weight: .bold, design: .rounded))
             .monospacedDigit()
             .contentTransition(.numericText())
@@ -129,10 +132,11 @@ struct CareerStandingCard: View {
     // The caption is aligned by its last baseline against a 52-point figure,
     // so it cannot be padded out to a height common to all three states: a
     // hidden view holding that space still publishes its own text baselines,
-    // and the headline ended up sitting on a line that was not drawn. What
-    // each state can do is hold its own height, which is what the fixed line
-    // limits below are for. The one jump left is entering and leaving a
+    // which would sit the headline on a line that is never drawn. What each
+    // state can do is hold its own height, which is what the fixed line limits
+    // below are for. The one jump left is entering and leaving a
     // selection — a change of subject on a tap, not jitter under the finger.
+    /// The words under the figure: what it is, which way it moved, or which exam the inspected day holds.
     @ViewBuilder
     private var caption: some View {
         if let inspected {
@@ -180,6 +184,10 @@ struct CareerStandingCard: View {
 
     // MARK: - The credits
 
+    /// The credits earned against the credits planned, as a figure and a bar.
+    ///
+    /// - Parameter palette: The look's colours, which the bar is drawn in.
+    /// - Returns: The section.
     private func credits(_ palette: Flavor.Palette) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
@@ -219,13 +227,24 @@ struct CareerStandingCard: View {
 
     // MARK: - The estimate
 
+    /// The degree mark out of 110 the average implies, before any thesis points.
+    ///
+    /// From the grade book where it has one, and from the average shown
+    /// otherwise, so the sentence never reads zero while a mark is on screen.
+    private var mark: Int {
+        book.baseGraduationMark > 0
+            ? Int(book.baseGraduationMark.rounded())
+            : Int((mean / 30 * 110).rounded())
+    }
+
+    /// The baseline degree mark as a sentence, leading to the simulator where the what-if belongs.
     private var estimate: some View {
         Button(action: simulate) {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text("Con questa media ti laurei intorno a ")
-                    + Text("\(book.baseGraduationMark > 0 ? Int(book.baseGraduationMark.rounded()) : Int((mean / 30 * 110).rounded())) su 110")
-                    .fontWeight(.semibold)
-                    + Text(" — stima, senza i punti di tesi")
+                // One interpolated string rather than three `Text`s added
+                // together: `Text.+` is deprecated, and interpolation keeps
+                // the sentence in one translatable unit besides.
+                Text("Con questa media ti laurei intorno a \(Text(verbatim: "\(mark) su 110").fontWeight(.semibold)) — stima, senza i punti di tesi")
                 Image(systemName: "chevron.forward")
                     .font(.caption2.weight(.semibold))
             }

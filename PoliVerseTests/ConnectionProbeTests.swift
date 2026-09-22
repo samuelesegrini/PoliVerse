@@ -104,10 +104,17 @@ nonisolated final class StubProtocol: URLProtocol, @unchecked Sendable {
         }
         switch answer {
         case .status(let code, let delay):
-            let respond = { [self] in
-                let response = HTTPURLResponse(url: request.url!, statusCode: code, httpVersion: nil, headerFields: nil)!
-                client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-                client?.urlProtocolDidFinishLoading(self)
+            // `asyncAfter` takes a `@Sendable` block, so what it captures is
+            // named here rather than left to an implicit `[self]` capture of
+            // the protocol object, which is not one.
+            let stub = self
+            let client = client
+            let url = request.url!
+            let respond: @Sendable () -> Void = {
+                let response = HTTPURLResponse(url: url, statusCode: code,
+                                               httpVersion: nil, headerFields: nil)!
+                client?.urlProtocol(stub, didReceive: response, cacheStoragePolicy: .notAllowed)
+                client?.urlProtocolDidFinishLoading(stub)
             }
             if delay > 0 {
                 DispatchQueue.global().asyncAfter(deadline: .now() + delay, execute: respond)
