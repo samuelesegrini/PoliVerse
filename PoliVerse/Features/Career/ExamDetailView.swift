@@ -9,23 +9,34 @@ import SwiftUI
 /// in a row of glass buttons that merge as one, the other dates are glass
 /// chips to flip through, and how the exam works and its history follow.
 struct ExamDetailView: View {
+    /// The sitting on screen, which the chips at the bottom can change.
     @State private var exam: ExamSession
 
+    /// Opens the screen on one sitting.
+    ///
+    /// - Parameter exam: The sitting to show.
     init(exam: ExamSession) {
         _exam = State(initialValue: exam)
     }
 
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
+    /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
+    /// The shared ``CourseModel``, from the environment.
     @Environment(CourseModel.self) private var courses
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
     /// Scaled, so the tile grows with the reader's text like the settings pictures.
     @ScaledMetric(relativeTo: .largeTitle) private var tileSide: CGFloat = 104
     /// Captured when the button is tapped, so the sheet keeps its event even
     /// if the sitting's start passes while it is open.
     @State private var calendarDraft: ExamCalendarEvent?
+    /// The shared ``LiveActivityController``, from the environment.
+    @Environment(LiveActivityController.self) private var liveActivity
 
     /// Only for a sitting still ahead: past ones have no use in a calendar.
     private var calendarEvent: ExamCalendarEvent? {
@@ -33,6 +44,7 @@ struct ExamDetailView: View {
         return ExamCalendarEvent(sitting: exam)
     }
 
+    /// The sitting read against the rest of the career: its other dates, its libretto row, and what it would do to the average.
     private var context: ExamContext {
         ExamContext(exam: exam, sittings: career.sessions, libretto: career.libretto, now: .now)
     }
@@ -54,6 +66,7 @@ struct ExamDetailView: View {
         }
     }
 
+    /// The view's content.
     var body: some View {
         let context = context
         NavigationStack {
@@ -62,6 +75,10 @@ struct ExamDetailView: View {
                     header
                     sittingPanel(context)
                     actions
+
+                    if LiveActivityController.canStart(exam) {
+                        liveActivityButton
+                    }
 
                     if let impact = context.meanImpact {
                         meanPanel(impact)
@@ -228,6 +245,10 @@ struct ExamDetailView: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 30))
     }
 
+    /// Where the sitting stands, in one sentence.
+    ///
+    /// - Parameter context: The sitting in the career's context.
+    /// - Returns: The sentence.
     private func statusSentence(_ context: ExamContext) -> String {
         let format = Date.FormatStyle.dateTime.day().month(.wide).locale(locale)
         if let grade = exam.grade {
@@ -248,10 +269,14 @@ struct ExamDetailView: View {
         }
     }
 
+    /// The sitting's facts as label-and-value pairs, leaving out whatever the service did not say.
+    ///
+    /// - Parameter context: The sitting in the career's context.
+    /// - Returns: The pairs, in reading order.
     private func facts(_ context: ExamContext) -> [(label: String, value: String)] {
         [
             exam.date.map { (String(localized: "Ora"), $0.formatted(.dateTime.hour().minute().locale(locale))) },
-            exam.room.map { (String(localized: "Aula"), $0) },
+            exam.room.map { (String(localized: "Aula"), RoomNaming.bare($0)) },
             exam.enrolledCount.flatMap { $0 > 0 ? (String(localized: "Iscritti"), "\($0)") : nil },
             context.librettoEntry?.cfu.flatMap { $0 > 0 ? (String(localized: "CFU"), "\($0)") : nil },
             exam.teacher.map { (String(localized: "Docente"), $0) },
@@ -296,8 +321,57 @@ struct ExamDetailView: View {
         }
     }
 
+    /// Following the exam on the Lock Screen, offered the same way the
+    /// timetable offers it for a lecture: only on the day, only while there is
+    /// something left to count down to, and never started by itself.
+    @ViewBuilder
+    private var liveActivityButton: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if liveActivity.isShowing(exam) {
+                Button(role: .destructive) {
+                    liveActivity.end()
+                } label: {
+                    Label("Togli dalla schermata di blocco", systemImage: "stop.circle")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.glass)
+                .controlSize(.large)
+            } else {
+                Button {
+                    liveActivity.start(for: exam)
+                } label: {
+                    Label("Segui l'esame", systemImage: "pencil.and.list.clipboard")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+                .disabled(!liveActivity.isAvailable)
+            }
+
+            if let message = liveActivity.errorMessage {
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if !liveActivity.isAvailable {
+                Text("Attiva le attività in tempo reale nelle impostazioni di iOS.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if !liveActivity.isShowing(exam) {
+                // The sitting's length is never published, so say the figure
+                // is an assumption before it appears as a countdown.
+                Text("Conto alla rovescia e aula sulla schermata di blocco. La durata è stimata in tre ore.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
     // MARK: - Mean
 
+    /// What the mark does to the average: before, after, and the difference.
+    ///
+    /// - Parameter impact: The arithmetic, weighted by credits.
+    /// - Returns: The panel.
     private func meanPanel(_ impact: ExamContext.MeanImpact) -> some View {
         let format = FloatingPointFormatStyle<Double>.number.precision(.fractionLength(2))
         return VStack(alignment: .leading, spacing: 6) {
@@ -323,6 +397,10 @@ struct ExamDetailView: View {
 
     // MARK: - Other dates
 
+    /// The course's other sittings as chips, each one switching the screen to it.
+    ///
+    /// - Parameter sittings: The other sittings.
+    /// - Returns: The row.
     private func otherDates(_ sittings: [ExamSession]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             LookHeading("Altre date")
@@ -362,16 +440,22 @@ struct ExamDetailView: View {
 
 /// Opening and closing of enrolment on one line, with today's place on it.
 private struct EnrolmentWindowBar: View {
+    /// When enrolment opened.
     let opens: Date
+    /// When it closes.
     let closes: Date
+    /// The bar's colour, taken from the sitting's state.
     let tint: Color
 
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
 
+    /// How far through the window today is, from 0 to 1.
     private var progress: Double {
         min(max(Date.now.timeIntervalSince(opens) / closes.timeIntervalSince(opens), 0), 1)
     }
 
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             GeometryReader { proxy in
@@ -391,6 +475,13 @@ private struct EnrolmentWindowBar: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// One end of the bar: what the date is, and the date.
+    ///
+    /// - Parameters:
+    ///   - title: What the date marks.
+    ///   - date: The date.
+    ///   - alignment: Which edge the pair sits against.
+    /// - Returns: The label.
     private func label(_ title: LocalizedStringKey, _ date: Date, alignment: HorizontalAlignment) -> some View {
         VStack(alignment: alignment, spacing: 1) {
             Text(title).font(.caption2).foregroundStyle(.secondary)

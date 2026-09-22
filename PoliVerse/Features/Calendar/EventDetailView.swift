@@ -6,12 +6,17 @@ import SwiftUI
 /// a room code, while the payload carries the full room name, the teaching
 /// form, and whatever the agenda attached as description or tags.
 struct EventDetailView: View {
+    /// The entry being shown.
     let event: AgendaEvent
 
+    /// The shared ``LiveActivityController``, from the environment.
     @Environment(LiveActivityController.self) private var liveActivity
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
+    /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
 
+    /// The colour for this entry's kind.
     private var accent: Color {
         switch event.kind {
         case .lecture: Theme.brand
@@ -22,6 +27,7 @@ struct EventDetailView: View {
         }
     }
 
+    /// The view's content.
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -82,8 +88,8 @@ struct EventDetailView: View {
                 ? (String(localized: "Orario"), "\(event.start.formatted(.dateTime.hour().minute().locale(locale))) – \(event.end.formatted(.dateTime.hour().minute().locale(locale)))")
                 : (String(localized: "Ora"), event.start.formatted(.dateTime.hour().minute().locale(locale))),
             event.duration > 0 ? (String(localized: "Durata"), durationText) : nil,
-            event.room.map { (String(localized: "Aula"), $0) },
-            event.roomAcronym.flatMap { $0 != event.room ? (String(localized: "Codice"), $0) : nil },
+            event.roomLabel.map { (String(localized: "Aula"), RoomNaming.bare($0)) },
+            event.roomCode.map { (String(localized: "Codice"), $0) },
             event.subtype.flatMap { $0.isEmpty ? nil : (String(localized: "Tipo"), $0) },
             event.calendarName.flatMap { $0.isEmpty ? nil : (String(localized: "Calendario"), $0) },
         ].compactMap { $0 }
@@ -135,7 +141,8 @@ struct EventDetailView: View {
                 Button {
                     liveActivity.start(for: event)
                 } label: {
-                    Label("Sto andando a lezione", systemImage: "figure.walk")
+                    Label(event.kind == .exam ? "Segui l'esame" : "Sto andando a lezione",
+                          systemImage: event.kind == .exam ? "pencil.and.list.clipboard" : "figure.walk")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.glassProminent)
@@ -152,13 +159,16 @@ struct EventDetailView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else if !liveActivity.isShowing(event) {
-                Text("Conto alla rovescia e aula sulla schermata di blocco, fino a fine lezione.")
+                Text(event.kind == .exam
+                     ? "Conto alla rovescia e aula sulla schermata di blocco, fino a fine esame."
+                     : "Conto alla rovescia e aula sulla schermata di blocco, fino a fine lezione.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
     }
 
+    /// How long the entry lasts, in hours and minutes, or nothing for an instant.
     private var durationText: String {
         let minutes = Int(event.duration / 60)
         let hours = minutes / 60
@@ -181,9 +191,12 @@ struct EventDetailView: View {
 
 /// Tags wrap onto as many lines as they need.
 private struct FlowTags: View {
+    /// The labels to draw.
     let tags: [String]
+    /// The colour the chips are drawn in.
     let accent: Color
 
+    /// The view's content.
     var body: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 8) { chips }
@@ -192,6 +205,7 @@ private struct FlowTags: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// The chips themselves, laid out by whichever arrangement fits.
     private var chips: some View {
         ForEach(tags, id: \.self) { tag in
             Text(tag)
