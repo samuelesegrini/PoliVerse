@@ -84,6 +84,8 @@ struct ExamDetailView: View {
                         meanPanel(impact)
                     }
 
+                    CorrectionsSection(exam: exam)
+
                     let others = context.otherUpcoming + context.previousAttempts
                     if !others.isEmpty {
                         otherDates(others)
@@ -227,10 +229,6 @@ struct ExamDetailView: View {
                     Label("Puoi ancora rifiutare questo voto dai Servizi Online.", systemImage: "arrow.uturn.backward.circle")
                         .font(.subheadline)
                         .foregroundStyle(CareerState.refusable.tint)
-                }
-                if exam.hasCorrections {
-                    Label("Elaborato corretto consultabile sui Servizi Online.", systemImage: "doc.text.magnifyingglass")
-                        .font(.subheadline)
                 }
             } else {
                 // Enrolment is a write against the real university system:
