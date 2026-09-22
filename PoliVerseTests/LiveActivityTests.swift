@@ -43,10 +43,19 @@ struct LiveActivityTests {
         #expect(LiveActivityController.canStart(lecture(startingIn: 40_000)) == false)
     }
 
-    @Test("Only lectures", arguments: [EventKind.exam, .deadline, .news, .custom])
-    func onlyLectures(kind: EventKind) {
+    @Test("Lectures and exams only", arguments: [EventKind.deadline, .news, .custom])
+    func onlyLecturesAndExams(kind: EventKind) {
         #expect(LiveActivityController.canStart(
             lecture(startingIn: 1800, kind: kind)) == false)
+    }
+
+    @Test("An exam gets a longer window than a lecture: a morning is arranged around it")
+    func examWindow() {
+        // Eleven hours out: too far for a lecture, still the same exam day.
+        #expect(LiveActivityController.canStart(lecture(startingIn: 40_000, kind: .exam)))
+        #expect(LiveActivityController.canStart(lecture(startingIn: 40_000)) == false)
+        // Past the exam's own window it is as quiet as anything else.
+        #expect(LiveActivityController.canStart(lecture(startingIn: 50_000, kind: .exam)) == false)
     }
 
     @Test("The countdown deadline matches the phase")

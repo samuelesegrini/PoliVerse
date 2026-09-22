@@ -5,23 +5,32 @@ import SwiftUI
 /// Reached from the course page's hub. When the page has more than one
 /// discussion forum, each is listed; a single forum opens straight away.
 struct CourseForumsView: View {
+    /// The course whose forums these are.
     let course: Course
+    /// Whether to show the announcements forum or the discussion forums.
     let kind: CourseForum.Kind
 
+    /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The course page's forums, or `nil` before they have been read — which is not the same
+    /// as a page with none.
     @Environment(WeBeepModel.self) private var weBeep
     @State private var forums: [CourseForum]?
     @State private var loaded = false
     @State private var showingLogin = false
 
+    /// The screen's name, which depends on which kind of forum is shown.
     private var title: String {
         kind == .announcements ? String(localized: "Avvisi") : String(localized: "Forum")
     }
 
+    /// The course's own accent.
     private var tint: Color { Theme.accent(for: course) }
 
+    /// The forums of the kind being shown.
     private var matching: [CourseForum] { (forums ?? []).filter { $0.kind == kind } }
 
+    /// The view's content.
     var body: some View {
         Group {
             if !session.useMockData && !weBeep.isAuthenticated {
@@ -83,6 +92,7 @@ struct CourseForumsView: View {
         }
     }
 
+    /// Reads the course page's forums, unless WeBeep is not connected.
     private func load() async {
         guard session.useMockData || weBeep.isAuthenticated else { return }
         forums = await weBeep.forums(for: course)
@@ -92,12 +102,18 @@ struct CourseForumsView: View {
 
 /// The discussions in one forum, newest activity first as Moodle orders them.
 private struct DiscussionsList: View {
+    /// The forum being listed.
     let forum: CourseForum
+    /// The course it belongs to, which supplies the accent ramp.
     let course: Course
+    /// Which kind of forum it is, which decides the heading and the symbol.
     let kind: CourseForum.Kind
+    /// The course's own accent.
     let tint: Color
 
+    /// The look in use, which the page's materials and typeface come from.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
     /// The forum as a pile: its own symbol in front, then what fills it.
@@ -115,11 +131,14 @@ private struct DiscussionsList: View {
             mode: ramp.mode)
     }
 
+    /// The shared ``WeBeepModel``, from the environment.
     @Environment(WeBeepModel.self) private var weBeep
+    /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
     @State private var discussions: [MoodleDiscussion]?
     @State private var failed = false
 
+    /// The view's content.
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 10) {
@@ -203,6 +222,8 @@ private struct DiscussionsList: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// Reads the forum's discussions. A failure is only reported when there is nothing already
+    /// on screen.
     private func load() async {
         do {
             discussions = try await weBeep.discussions(in: forum)
@@ -215,13 +236,28 @@ private struct DiscussionsList: View {
 
 /// One thread: the opening post and its replies, oldest first.
 private struct DiscussionView: View {
+    /// The thread being shown.
     let discussion: MoodleDiscussion
+    /// The course's own accent.
     let tint: Color
 
+    /// The shared ``WeBeepModel``, from the environment.
     @Environment(WeBeepModel.self) private var weBeep
+    /// The thread's posts, oldest first, or `nil` before they have been read.
     @Environment(\.locale) private var locale
     @State private var posts: [MoodlePosts.Post]?
+    /// The one-line summary of a long thread, written on the device.
+    @State private var summary = NoticeSummary()
 
+    /// The thread as plain text: the opening post and every reply that has
+    /// arrived, which is what a summary of "this notice" means.
+    private var plainText: String {
+        (posts ?? fallback)
+            .map { HTMLText.plain($0.message ?? "") }
+            .joined(separator: "\n\n")
+    }
+
+    /// The view's content.
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 12) {
@@ -230,6 +266,8 @@ private struct DiscussionView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 4)
                     .padding(.bottom, 4)
+
+                summaryCard
 
                 ForEach(posts ?? fallback) { post in
                     VStack(alignment: .leading, spacing: 10) {
@@ -269,6 +307,58 @@ private struct DiscussionView: View {
         .task { posts = try? await weBeep.posts(in: discussion) }
     }
 
+    /// The summary, offered only for a long thread on a device that can write
+    /// one, and only when the student asks.
+    ///
+    /// Never automatic: a summary that appears by itself is a claim the app
+    /// makes about the lecturer's words before anyone has asked for one.
+    @ViewBuilder
+    private var summaryCard: some View {
+        if NoticeSummary.isAvailable, NoticeSummary.isWorthSummarising(plainText) {
+            VStack(alignment: .leading, spacing: 8) {
+                switch summary.state {
+                case .idle:
+                    Button {
+                        Task { await summary.summarise(plainText) }
+                    } label: {
+                        Label("Riassumi", systemImage: "sparkles")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.glass)
+                    .controlSize(.large)
+                case .writing:
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text("Sto riassumendo…").font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                case .ready(let text):
+                    VStack(alignment: .leading, spacing: 6) {
+                        Label("In breve", systemImage: "sparkles")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(tint)
+                        Text(text)
+                            .font(.subheadline)
+                            .fixedSize(horizontal: false, vertical: true)
+                        // The avviso underneath is what counts: say so, rather
+                        // than letting a generated sentence stand as the notice.
+                        Text("Riassunto sul dispositivo. L'avviso originale è qui sotto.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                case .unavailable:
+                    // Nothing: the notice reads as it did before.
+                    EmptyView()
+                }
+            }
+            .padding(summary.state == .idle ? 0 : 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .modifier(SummaryCardBackground(showing: summary.state != .idle))
+        }
+    }
+
     /// The opening post, which the discussion list already has, while the
     /// replies load.
     private var fallback: [MoodlePosts.Post] {
@@ -282,4 +372,20 @@ private struct DiscussionView: View {
 
 #Preview("Avvisi") {
     CourseForumsView(course: Course.samples[0], kind: .announcements).previewInNavigation()
+}
+
+
+/// The summary's own surface, which only the written summary has: the button
+/// before it is a button, not a card.
+private struct SummaryCardBackground: ViewModifier {
+    /// Whether there is a summary to sit on a card.
+    let showing: Bool
+
+    /// The view, on a card or bare.
+    ///
+    /// - Parameter content: The summary or the button.
+    /// - Returns: The view.
+    func body(content: Content) -> some View {
+        if showing { content.lookCard() } else { content }
+    }
 }
