@@ -20,6 +20,7 @@ history is not carried forward.
 | Timetable / calendar | Implemented, but the endpoint now returns 404 — see [docs/endpoint-status.md](docs/endpoint-status.md) |
 | Career / grades | Implemented, but the endpoint now returns 404 — see [docs/endpoint-status.md](docs/endpoint-status.md) |
 | Search | Across courses, agenda and exam sittings |
+| Apple Watch | Today's lectures and the next exam, sent from the phone over WatchConnectivity. Builds against the watchOS SDK; not yet run on a device or a watchOS 26 simulator runtime |
 
 The app ships with **mock data on by default** so every screen renders without
 a network. Turn it off in Settings to use a real account.

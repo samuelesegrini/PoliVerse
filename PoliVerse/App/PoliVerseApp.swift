@@ -1,8 +1,42 @@
 import SwiftUI
 import UserNotifications
 
+/// The app, and the composition root for every model in it.
+///
+/// ``init()`` builds each service once and wires the dependencies that cannot be
+/// arguments, then ``body`` places them in the environment for ``RootView`` to read.
+///
+/// ## The order in init
+///
+/// One ``Session`` is shared by everything, since every service reads its sign-in state
+/// and its sample-data flag. ``PendingChanges`` comes early, so a change made offline has
+/// somewhere to go from the first frame. Services are held in locals as well as in state,
+/// because `@State` is not readable until the struct is fully initialised and the wiring
+/// below needs the instances themselves.
+///
+/// Two cycles cannot be broken by argument order and are closed explicitly instead:
+/// ``UpdateFeed/sittings`` is assigned after ``CareerModel`` exists, and
+/// ``PendingChanges/deliver(by:confirmedBy:)`` is called once every service it sends
+/// through has been built.
+///
+/// ## The background refresh
+///
+/// Deliberately narrower than ``FreshnessCoordinator``'s list: a granted run has about
+/// thirty seconds in all, so it warms the timetable and the career, sweeps WeBeep against
+/// a deadline, reschedules the reminders around whatever it found, and flushes the widget
+/// reloads before reporting completion.
+///
+/// ## Scene phases
+///
+/// Coming forward flushes the queue and revalidates gently, so a return from the app
+/// switcher costs nothing; it is skipped while a code is being exchanged, because the
+/// identity providers hand control back by foregrounding the app before sign-in has
+/// finished. Reconnecting forces a pass, since whatever is on screen was fetched before
+/// the outage. Signing in forces one too, which is what fills an empty screen.
 @main
 struct PoliVerseApp: App {
+    /// Who is signed in, and the transport everything else talks through.
+    /// The enrolled teachings.
     @State private var session: Session
     @State private var courses: CourseModel
     @State private var agenda: AgendaModel
@@ -33,9 +67,22 @@ struct PoliVerseApp: App {
     @State private var freshness: FreshnessCoordinator
     @State private var status: DataStatus
     private let notificationRouter = NotificationRouter()
+    /// Registers and schedules the background refresh.
     private let background = BackgroundRefresh()
+    /// Whether the app is on screen, in the foreground or in the background.
     @Environment(\.scenePhase) private var scenePhase
 
+    /// Builds every service and wires them together.
+    ///
+    /// MetricKit collection starts first, because a report already waiting is delivered to
+    /// whoever is subscribed and a late subscription loses it.
+    ///
+    /// In debug builds, `-ResetTodayStyle` forgets the saved looks so a UI test starts on the
+    /// presets. The keys are removed rather than passed as launch arguments, which would pin
+    /// them against every later save.
+    ///
+    /// See the type's discussion for the order the services are built in and the two cycles
+    /// closed by hand.
     init() {
         // Before anything else: a report MetricKit has waiting is delivered to
         // whoever is subscribed, and a late subscription is how one gets lost.
@@ -81,9 +128,8 @@ struct PoliVerseApp: App {
         _rooms = State(initialValue: rooms)
         let manifesti = ManifestiModel()
         _manifesti = State(initialValue: manifesti)
-        // The other half of what used to be one type: the catalogue reads
-        // above, the cookie-bound cart here. Nothing but the personal
-        // timetable talks to it.
+        // The catalogue reads above, the cookie-bound cart here. Nothing but
+        // the personal timetable talks to it.
         let cart = TimetableCart()
         _cart = State(initialValue: cart)
         let freeRooms = FreeRoomsModel(catalogue: rooms)
@@ -176,6 +222,7 @@ struct PoliVerseApp: App {
         }
     }
 
+    /// The declaration's content.
     var body: some Scene {
         WindowGroup {
             RootView()
@@ -207,12 +254,7 @@ struct PoliVerseApp: App {
                 .environment(whatsNew)
                 .environment(spid)
                 .environment(loginMemory)
-                // The locale used to be pinned to it_IT, because every string
-                // was hardcoded Italian and `.formatted(.relative(…))` would
-                // otherwise render "4 weeks ago" beside "Lezioni". The String
-                // Catalog removes that reason: dates and text now follow the
-                // same language, whichever the reader has chosen.
-                // CieID hands control back through our URL scheme. Route it to
+                // CieID hands control back through the app's URL scheme. Route it to
                 // the router, which passes it to whichever login web view is
                 // on screen so the session can continue where it left off.
                 .onOpenURL { url in
@@ -224,6 +266,10 @@ struct PoliVerseApp: App {
                 .task {
                     UNUserNotificationCenter.current().delegate = notificationRouter
                     await notifications.refreshAuthorization()
+                    // Brought up here for the same reason as the delegate
+                    // above: the session is per process, not per view, and
+                    // activating it from a view would do so on every rebuild.
+                    WatchBridge.shared.start()
                 }
                 // Asked for when the app leaves the screen, which is the
                 // moment iOS is deciding whether to grant one.

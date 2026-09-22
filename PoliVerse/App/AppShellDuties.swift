@@ -69,6 +69,20 @@ struct AppShellDuties: ViewModifier {
                                         exams: career.sessions,
                                         account: session.student?.matricola)
             }
+            // The Watch has no session and no network of its own, so the phone
+            // hands it the day. Sent on the same signal the reminders use,
+            // because it answers the same question: what has actually changed
+            // in the timetable and the sittings.
+            .task(id: watchKey) {
+                guard !session.useMockData else { return }
+                let figures = session.student.flatMap {
+                    OfflineStore.shared.load(CareerSnapshot.self,
+                                             as: CareerSnapshot.cacheName,
+                                             account: $0.matricola)?.value
+                }
+                WatchBridge.shared.send(WatchSnapshotBuilder.build(
+                    events: agenda.events, exams: career.sessions, day: .now, career: figures))
+            }
             // Reminders follow the timetable: lectures move and exams are
             // withdrawn, and a reminder for a lecture that no longer exists is
             // invisible from inside the app.
@@ -77,6 +91,15 @@ struct AppShellDuties: ViewModifier {
                 await notifications.reschedule(
                     events: agenda.events, exams: career.sessions, assignments: feed.deadlines, updates: feed.updates)
             }
+    }
+
+    /// Rebuilt when the day, the timetable or the sittings change.
+    ///
+    /// The day is in the key because the Watch is sent one day at a time: past
+    /// midnight the same events describe yesterday.
+    private var watchKey: String {
+        let day = PoliMiDate.romeCalendar.startOfDay(for: .now).timeIntervalSince1970
+        return "\(day)-\(agenda.events.count)-\(career.sessions.count)"
     }
 
     /// Rebuilt when the timetable or the sittings change.

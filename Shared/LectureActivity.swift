@@ -1,3 +1,8 @@
+// ActivityKit is iOS-only, and `Shared` now compiles into the Watch app as
+// well. The attributes are a Live Activity's contract and have no meaning
+// without the framework, so the whole file steps aside on a platform that
+// cannot host one.
+#if canImport(ActivityKit)
 import ActivityKit
 import Foundation
 
@@ -89,3 +94,4 @@ nonisolated struct LectureActivityAttributes: ActivityAttributes {
         }
     }
 }
+#endif

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		PV00000000000000000049 /* PoliVerseWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = PV00000000000000000041 /* PoliVerseWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		PV00000000000000000069 /* PoliVerseWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = PV00000000000000000061 /* PoliVerseWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,6 +33,13 @@
 			remoteGlobalIDString = PV0000000000000000000F;
 			remoteInfo = PoliVerse;
 		};
+		PV0000000000000000006B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = PV00000000000000000013 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = PV00000000000000000063;
+			remoteInfo = PoliVerseWatch;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -46,6 +54,17 @@
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		PV0000000000000000006A /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				PV00000000000000000069 /* PoliVerseWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -53,6 +72,7 @@
 		PV00000000000000000021 /* PoliVerseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PoliVerseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		PV00000000000000000041 /* PoliVerseWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PoliVerseWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		PV00000000000000000050 /* PoliVerseUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PoliVerseUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		PV00000000000000000061 /* PoliVerseWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PoliVerseWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -79,6 +99,11 @@
 		PV00000000000000000051 /* PoliVerseUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = PoliVerseUITests;
+			sourceTree = "<group>";
+		};
+		PV00000000000000000062 /* PoliVerseWatch */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PoliVerseWatch;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -112,6 +137,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		PV00000000000000000065 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -120,6 +152,7 @@
 			children = (
 				PV0000000000000000000A /* PoliVerse */,
 				PV00000000000000000042 /* PoliVerseWidgets */,
+				PV00000000000000000062 /* PoliVerseWatch */,
 				PV00000000000000000040 /* Shared */,
 				PV00000000000000000020 /* PoliVerseTests */,
 				PV00000000000000000051 /* PoliVerseUITests */,
@@ -133,6 +166,7 @@
 				PV0000000000000000000B /* PoliVerse.app */,
 				PV00000000000000000021 /* PoliVerseTests.xctest */,
 				PV00000000000000000041 /* PoliVerseWidgets.appex */,
+				PV00000000000000000061 /* PoliVerseWatch.app */,
 				PV00000000000000000050 /* PoliVerseUITests.xctest */,
 			);
 			name = Products;
@@ -149,11 +183,13 @@
 				PV0000000000000000000C /* Frameworks */,
 				PV00000000000000000012 /* Resources */,
 				PV00000000000000000048 /* Embed Foundation Extensions */,
+				PV0000000000000000006A /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				PV0000000000000000004A /* PBXTargetDependency */,
+				PV00000000000000000068 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				PV0000000000000000000A /* PoliVerse */,
@@ -235,6 +271,29 @@
 			productReference = PV00000000000000000050 /* PoliVerseUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		PV00000000000000000063 /* PoliVerseWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = PV00000000000000000066 /* Build configuration list for PBXNativeTarget "PoliVerseWatch" */;
+			buildPhases = (
+				PV00000000000000000064 /* Sources */,
+				PV00000000000000000065 /* Frameworks */,
+				PV00000000000000000067 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				PV00000000000000000040 /* Shared */,
+				PV00000000000000000062 /* PoliVerseWatch */,
+			);
+			name = PoliVerseWatch;
+			packageProductDependencies = (
+			);
+			productName = PoliVerseWatch;
+			productReference = PV00000000000000000061 /* PoliVerseWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -276,6 +335,7 @@
 				PV0000000000000000000F /* PoliVerse */,
 				PV00000000000000000022 /* PoliVerseTests */,
 				PV00000000000000000043 /* PoliVerseWidgets */,
+				PV00000000000000000063 /* PoliVerseWatch */,
 				PV00000000000000000052 /* PoliVerseUITests */,
 			);
 		};
@@ -304,6 +364,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		PV00000000000000000056 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		PV00000000000000000067 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -341,6 +408,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		PV00000000000000000064 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -358,6 +432,11 @@
 			isa = PBXTargetDependency;
 			target = PV0000000000000000000F /* PoliVerse */;
 			targetProxy = PV00000000000000000058 /* PBXContainerItemProxy */;
+		};
+		PV00000000000000000068 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = PV00000000000000000063 /* PoliVerseWatch */;
+			targetProxy = PV0000000000000000006B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -641,6 +720,72 @@
 			};
 			name = Release;
 		};
+		PV0000000000000000006C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8CHF29UD9Q;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/PoliVerseWatch-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = PoliVerse;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = segrini.samuele.PoliVerse;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = segrini.samuele.PoliVerse.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchsimulator watchos";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		PV0000000000000000006D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8CHF29UD9Q;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/PoliVerseWatch-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = PoliVerse;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = segrini.samuele.PoliVerse;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = segrini.samuele.PoliVerse.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchsimulator watchos";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -685,6 +830,15 @@
 			buildConfigurations = (
 				PV00000000000000000059 /* Debug */,
 				PV0000000000000000005A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		PV00000000000000000066 /* Build configuration list for PBXNativeTarget "PoliVerseWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				PV0000000000000000006C /* Debug */,
+				PV0000000000000000006D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
