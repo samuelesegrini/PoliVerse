@@ -26,17 +26,25 @@ final class ManifestiModel {
     private(set) var results: [ManifestoTeaching] = []
     private(set) var isSearching = false
     private(set) var errorMessage: String?
+    /// The academic year the catalogue is being browsed in. The year a timetable is built for
+    /// is ``TimetableCart/year``.
     var year: AcademicYear = AcademicYear.recent().first ?? AcademicYear(code: "2026")
 
     /// Stateless reads — see ``ScrapedSite/stateless()`` for why that matters
     /// here, and ``TimetableCart`` for the half that is not stateless.
     private let pages: any PageFetching
+    /// Diagnostic log for this type, under the `manifesti` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "manifesti")
+    /// The catalogue controller every request goes to.
     private let base = URL(string: "https://onlineservices.polimi.it/manifesti/manifesti/controller")!
+    /// The syllabus service, which is a different application again and is reached directly
+    /// rather than through the catalogue's sign-in redirect.
     private let syllabusBase = URL(string:
         "https://onlineservices.polimi.it/schedaincarico/schedaincarico/controller/scheda_pubblica/SchedaPublic.do")!
 
+    /// Fetches, caches and coalesces teaching detail pages, keyed by their query.
     private let detailLoader: ResourceLoader<String, ManifestoDetail>
+    /// Fetches, caches and coalesces syllabi, keyed by their class id.
     private let syllabusLoader: ResourceLoader<String, Syllabus>
 
     /// - Parameter pages: the site the catalogue is read from. Swapped for a
@@ -81,6 +89,15 @@ final class ManifestiModel {
 
     // MARK: - Search
 
+    /// Searches the catalogue by teaching name.
+    ///
+    /// A query shorter than three characters clears the results and asks nothing, since the
+    /// service answers the whole catalogue.
+    ///
+    /// - Parameters:
+    ///   - query: What the student typed.
+    ///   - school: Restrict to one school, or `nil` for all.
+    ///   - semester: Restrict to one semester, or `nil` for both.
     func search(_ query: String, school: String? = nil, semester: String? = nil) async {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= 3 else {
@@ -158,16 +175,29 @@ final class ManifestiModel {
     /// A week: schede change once a year, the picked row almost never.
     nonisolated static let storedLifetime: TimeInterval = 7 * 86400
 
+    /// Reads a cached syllabus pick on the global executor.
+    ///
+    /// - Parameter key: What identifies the pick.
+    /// - Returns: The pick with its age, or `nil` when nothing is cached.
     @concurrent
     private nonisolated static func storedPick(_ key: String) async -> DiskCache.Entry<SyllabusPicker.Pick>? {
         DiskCache.load(SyllabusPicker.Pick.self, as: pickFile(key))
     }
 
+    /// Caches a syllabus pick on the global executor.
+    ///
+    /// - Parameters:
+    ///   - pick: The pick to cache.
+    ///   - key: What identifies it.
     @concurrent
     private nonisolated static func storePick(_ pick: SyllabusPicker.Pick, _ key: String) async {
         DiskCache.save(pick, as: pickFile(key))
     }
 
+    /// The ``DiskCache`` record name a syllabus pick is stored under.
+    ///
+    /// - Parameter key: What identifies the pick.
+    /// - Returns: The record name.
     private nonisolated static func pickFile(_ key: String) -> String {
         // By language too: the stored module and degree names are in it.
         "syllabus-pick-\(PoliMiLanguage.current.rawValue)-" + key.map { $0.isLetter || $0.isNumber ? String($0) : "_" }.joined()
@@ -182,6 +212,8 @@ final class ManifestiModel {
         }
     }
 
+    /// Syllabus picks currently being resolved, by key, so concurrent callers join one search
+    /// rather than starting several.
     @ObservationIgnored private var pending: [String: Task<SyllabusPicker.Pick??, Never>] = [:]
 
     /// Answers the catalogue actually gave — a scheda, or a real "none".
@@ -277,6 +309,15 @@ final class ManifestiModel {
         return nil
     }
 
+    /// Walks the catalogue down to a degree course named by the career.
+    ///
+    /// Each level's options are matched by ``DegreeCourseMatch/best(_:name:kind:)``, so the
+    /// level decides between courses of the same name.
+    ///
+    /// - Parameters:
+    ///   - degree: The degree course's name, as the career gives it.
+    ///   - kind: The career's level, for example “Laurea Magistrale”.
+    /// - Returns: The page reached, or `nil` when the course could not be found.
     func locateDegree(named degree: String, kind: String? = nil) async -> CataloguePage? {
         await locateDegree { DegreeCourseMatch.best($0, name: degree, kind: kind) }
     }
@@ -307,13 +348,24 @@ final class ManifestiModel {
         return rows
     }
 
+    /// Teaching-code searches held in memory, by record name, so a repeated question costs
+    /// nothing.
     @ObservationIgnored private var offerings: [String: [ManifestoTeaching]] = [:]
 
+    /// Reads a cached teaching-code search on the global executor.
+    ///
+    /// - Parameter name: The record name.
+    /// - Returns: The rows with their age, or `nil` when nothing is cached.
     @concurrent
     private nonisolated static func storedOffering(_ name: String) async -> DiskCache.Entry<[ManifestoTeaching]>? {
         DiskCache.load([ManifestoTeaching].self, as: name)
     }
 
+    /// Caches a teaching-code search on the global executor.
+    ///
+    /// - Parameters:
+    ///   - rows: The rows the search returned.
+    ///   - name: The record name.
     @concurrent
     private nonisolated static func storeOffering(_ rows: [ManifestoTeaching], _ name: String) async {
         DiskCache.save(rows, as: name)
@@ -329,10 +381,20 @@ final class ManifestiModel {
 
     // MARK: - Detail and syllabus
 
+    /// One catalogue row's detail page, with its modules and their lecturers.
+    ///
+    /// Fetched through a loader, so concurrent callers share one request and a row already
+    /// read costs nothing.
+    ///
+    /// - Parameter teaching: The row to open.
+    /// - Returns: The detail, or `nil` when the page could not be read.
     func detail(for teaching: ManifestoTeaching) async -> ManifestoDetail? {
         await detailLoader.value(for: teaching.detailQuery(defaultYear: year.code))
     }
 
+    /// Warms the detail pages of rows the student has not opened yet.
+    ///
+    /// - Parameter teachings: The rows to warm.
     func prefetchDetails(_ teachings: some Sequence<ManifestoTeaching>) {
         let keys = teachings.map { $0.detailQuery(defaultYear: year.code) }
         Task.detached(priority: .background) { [detailLoader] in
@@ -340,19 +402,39 @@ final class ManifestiModel {
         }
     }
 
+    /// One teaching's syllabus, with its books, objectives and assessment.
+    ///
+    /// - Parameter classID: The `c_classe` from ``ManifestoModule/syllabusID``.
+    /// - Returns: The syllabus, or `nil` when the page could not be read or carried nothing.
     func syllabus(for classID: String) async -> Syllabus? {
         await syllabusLoader.value(for: classID)
     }
 
     // MARK: - Transport
 
+    /// Fetches a page below the catalogue controller.
+    ///
+    /// - Parameter path: The path and query.
+    /// - Returns: The markup, or `nil`.
     private func page(_ path: String) async -> String? {
         guard let url = URL(string: "\(base.absoluteString)/\(path)") else { return nil }
         return await pages.page(url)
     }
 
+    /// Posts a form to a path below the catalogue controller.
+    ///
+    /// - Parameters:
+    ///   - path: The path.
+    ///   - form: The form fields.
+    /// - Returns: The markup, or `nil`.
     private func post(_ path: String, form: [String: String]) async -> String? {
         guard let url = URL(string: "\(base.absoluteString)/\(path)") else { return nil }
         return await pages.post(url, form: form)
     }
 }
+/// ``ManifestiModel`` satisfies ``ManifestoReading`` as it stands.
+///
+/// Declared here rather than beside the protocol: ``ManifestoReading`` refines
+/// `Sendable` — the study plan captures one in `withTaskGroup` — and a
+/// `Sendable` conformance stated in another file is retroactive.
+extension ManifestiModel: ManifestoReading {}

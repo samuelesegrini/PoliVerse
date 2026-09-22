@@ -16,14 +16,18 @@ final class StudyProgrammeModel {
     private(set) var planCodes: Set<String> = []
     private(set) var isLocating = false
 
+    /// The catalogue queries this model asks of the Manifesti site.
     private let manifesti: any ManifestoReading
-    /// Narrow seams rather than the models behind them — see ``Account``,
-    /// ``StudentRecord`` and ``Enrolments``. This module reads four members
-    /// across the two records; naming them is what lets it be built in a test.
+    /// Supplies the matricola, the person code and the sample flag.
     private let account: any Account
+    /// Supplies the libretto and the plan header the programme is found from.
     private let career: any StudentRecord
+    /// Supplies the other enrolments, and the current one's level where the plan header has
+    /// none.
     private let careers: (any Enrolments)?
+    /// Where the programmes are stored, one per enrolment.
     private let store: StudyProgrammeStore
+    /// Diagnostic log for this type, under the `manifesti` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "manifesti")
 
     /// The student's course codes per academic year, from the course list —
@@ -41,6 +45,14 @@ final class StudyProgrammeModel {
     /// Plans of one degree course scored against the libretto, at most.
     static let plansScored = 6
 
+    /// Creates the model. Nothing is read until ``prepare()``.
+    ///
+    /// - Parameters:
+    ///   - manifesti: The catalogue queries.
+    ///   - account: Supplies the matricola and the person code.
+    ///   - career: Supplies the libretto and the plan header.
+    ///   - careers: Supplies the other enrolments.
+    ///   - store: Where the programmes are stored.
     init(manifesti: any ManifestoReading, account: any Account, career: any StudentRecord,
          careers: (any Enrolments)? = nil,
          store: StudyProgrammeStore = StudyProgrammeStore()) {
@@ -51,6 +63,8 @@ final class StudyProgrammeModel {
         self.store = store
     }
 
+    /// The enrolment the programme belongs to, or `nil` under sample data and when signed
+    /// out — in which case nothing is located or stored.
     private var matricola: String? {
         account.isSample ? nil : account.matricola
     }
@@ -109,6 +123,17 @@ final class StudyProgrammeModel {
         log.notice("study programme plan settled from *** to \(settled.plan, privacy: .public)")
     }
 
+    /// Finds the programme from the student's own records.
+    ///
+    /// The plan header's own codes are used where it carries them. Otherwise the degree
+    /// course is located by name and level — the header's level, or the career's, since the
+    /// careers list says only “Studente” — and each of its plans is scored against the
+    /// libretto by ``ProgrammeInference/best(libretto:candidates:)``.
+    ///
+    /// A confident result is adopted outright; anything less is stored unconfirmed, so the
+    /// student is asked to confirm it.
+    ///
+    /// - Parameter matricola: The enrolment to locate for.
     private func locate(for matricola: String) async {
         isLocating = true
         defer { isLocating = false }
@@ -211,6 +236,12 @@ final class StudyProgrammeModel {
         planCodes = []
     }
 
+    /// A programme from a catalogue page, with the labels the page gives its own choices.
+    ///
+    /// - Parameters:
+    ///   - page: The page to read.
+    ///   - confirmed: Whether this is the student's own choice rather than the app's.
+    /// - Returns: The programme, or `nil` when the page's position could not be read.
     private static func programme(from page: CataloguePage, confirmed: Bool) -> StudyProgramme? {
         guard let selection = page.selection else { return nil }
         let label = { (field: CatalogueField) in
@@ -265,6 +296,8 @@ final class StudyProgrammeModel {
         return others[year]?.selection ?? (matricola.flatMap { store.otherProgramme(for: $0, year: year) })?.selection
     }
 
+    /// Records that the student has confirmed the programme the app found, and clears any
+    /// request to review it.
     func confirm() {
         guard var current = programme else { return }
         current.isConfirmed = true
@@ -272,6 +305,11 @@ final class StudyProgrammeModel {
         save(current)
     }
 
+    /// Records the bracket to read one teaching in, or removes the choice.
+    ///
+    /// - Parameters:
+    ///   - bracket: The bracket to use, or `nil` to fall back to the surname's.
+    ///   - code: The teaching code.
     func choose(bracket: BracketChoice?, forTeaching code: String) {
         guard var current = programme else { return }
         current.brackets[code] = bracket
@@ -285,6 +323,9 @@ final class StudyProgrammeModel {
         save(current)
     }
 
+    /// Publishes a programme and stores it under the enrolment in use.
+    ///
+    /// - Parameter value: The programme to keep.
     private func save(_ value: StudyProgramme) {
         programme = value
         if let matricola { store.save(value, for: matricola) }
@@ -292,6 +333,12 @@ final class StudyProgrammeModel {
 
     // MARK: - Plan pages
 
+    /// The ``DiskCache`` record name one plan page is stored under.
+    ///
+    /// - Parameters:
+    ///   - selection: The position in the manifesto.
+    ///   - language: The language the page was read in.
+    /// - Returns: The record name.
     private func key(_ selection: CatalogueSelection, language: PoliMiLanguage = .current) -> String {
         ["plan", selection.year, selection.school, selection.degree, selection.plan, language.rawValue]
             .joined(separator: "-").replacingOccurrences(of: "*", with: "x")
@@ -305,6 +352,19 @@ final class StudyProgrammeModel {
         return await plan(of: programme, year: year, language: language)
     }
 
+    /// One programme's plan page for an academic year.
+    ///
+    /// Served from memory, then from disk while it is within ``planLifetime``, then from the
+    /// site. When the site cannot be reached, last week's page beats none.
+    ///
+    /// The service settles a plan that does not exist in that year onto another one, so the
+    /// page's teachings are kept only when it came back on the plan that was asked for.
+    ///
+    /// - Parameters:
+    ///   - programme: The programme whose plan to read.
+    ///   - year: The academic year, or `nil` for the programme's own.
+    ///   - language: The language to read the page in.
+    /// - Returns: The plan's teachings, or an empty array when the page is not this plan's.
     private func plan(of programme: StudyProgramme, year: String?, language: PoliMiLanguage = .current) async -> [PlanTeaching] {
         let selection = programme.selection(forYear: year)
         let name = key(selection, language: language)
@@ -326,16 +386,32 @@ final class StudyProgrammeModel {
         return teachings
     }
 
+    /// Holds a plan page in memory, and adds its codes to ``planCodes`` when it was read in
+    /// the interface's own language.
+    ///
+    /// - Parameters:
+    ///   - teachings: The page's teachings.
+    ///   - name: The record name the page is cached under.
+    ///   - language: The language it was read in.
     private func remember(_ teachings: [PlanTeaching], as name: String, language: PoliMiLanguage) {
         plans[name] = teachings
         if language == .current { planCodes.formUnion(teachings.map(\.teaching.code)) }
     }
 
+    /// Reads a cached plan page on the global executor.
+    ///
+    /// - Parameter name: The record name.
+    /// - Returns: The page with its age, or `nil` when nothing is cached.
     @concurrent
     private static func stored(_ name: String) async -> DiskCache.Entry<[PlanTeaching]>? {
         DiskCache.load([PlanTeaching].self, as: name)
     }
 
+    /// Caches a plan page on the global executor.
+    ///
+    /// - Parameters:
+    ///   - teachings: The page's teachings.
+    ///   - name: The record name.
     @concurrent
     private static func store(_ teachings: [PlanTeaching], as name: String) async {
         DiskCache.save(teachings, as: name)
@@ -502,3 +578,9 @@ final class StudyProgrammeModel {
         save(current)
     }
 }
+/// ``StudyProgrammeModel`` satisfies ``TeachingCodes`` as it stands.
+///
+/// Declared here rather than beside the protocol: ``TeachingCodes`` refines
+/// `Sendable`, and a `Sendable` conformance stated in another file is
+/// retroactive.
+extension StudyProgrammeModel: TeachingCodes {}

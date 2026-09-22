@@ -2,55 +2,53 @@ import Foundation
 import Observation
 import OSLog
 
-/// The room catalogue, from the Politecnico's maps service.
+/// The room catalogue, from the Politecnico's public maps service.
 ///
-/// ## On "aule libere"
+/// Every room on campus with its building, floor, campus and capacity, joined from
+/// four independent catalogues — rooms, buildings, campuses and floors — that share
+/// the `csi*` codes as foreign keys. Unauthenticated throughout.
 ///
-/// Occupancy **is** available, and lives in ``FreeRoomsModel``. This type
-/// stays the catalogue: every room on campus with its building, floor and
-/// capacity, public and needing no token.
-///
-/// The distinction is worth keeping. The catalogue answers "where is room
-/// 3.0.1"; the bookings service answers "what is happening in it". They come
-/// from different backends — `maps_rest` and `ws_aule` — with different auth
-/// and different lifetimes, and joining them into one type would tie the
+/// This is the catalogue only. What is happening in a room comes from the bookings
+/// service and lives in ``FreeRoomsModel``: a different backend, with different
+/// authorisation and a different lifetime, so joining the two here would tie the
 /// catalogue's availability to a token it does not need.
 ///
-/// An earlier version of this comment asserted that occupancy was
-/// unreachable, having checked the CEDA hosts, PoliNetwork and `maps_rest`.
-/// All of those findings still hold; the conclusion drawn from them did not,
-/// because `props` lists a `ws_aule` service that was never probed. It answers
-/// 401, not 404.
+/// ## Loading
 ///
-/// The catalogue itself is public and needs no token.
+/// The catalogue changes rarely, so ``load(force:)`` serves the ``DiskCache`` copy
+/// first and fetches only when nothing is held or a refresh is asked for. Reading,
+/// joining and writing the catalogue all happen off the main actor.
 @Observable
 final class RoomsModel {
+    /// Every room in the catalogue, sorted by code.
     private(set) var rooms: [Classroom] = []
-    /// Campuses present in the catalogue, for filtering.
+    /// The campuses present, sorted.
     ///
-    /// Kept as a value rather than computed: it was read from view bodies —
-    /// the map's campus picker among them — and a `Set` over 350 rooms on
-    /// every re-render is work the main thread does not need to repeat.
+    /// Stored rather than computed, because view bodies read it and deriving a set over
+    /// the whole catalogue on every render is work the main thread need not repeat.
     private(set) var campuses: [String] = []
+    /// `true` while a load is in flight.
     private(set) var isLoading = false
+    /// The last load's error, or `nil` when it succeeded.
     private(set) var errorMessage: String?
 
+    /// Diagnostic log for this type, under the `rooms` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "rooms")
-    /// The transport, through the one seam — see ``HTTP``. The base URL lives
-    /// in ``ServiceDirectory`` as ``ServiceDirectory/Service/maps`` rather than
-    /// here, so the four models that read this service cannot drift apart.
+    /// The transport. The base URL comes from ``ServiceDirectory/Service/maps`` rather
+    /// than from here, so the models that read this service cannot drift apart.
     private let http: any HTTP
-    /// Which ``DiskCache`` file holds the catalogue.
+    /// Which ``DiskCache`` record holds the catalogue.
     ///
-    /// Injectable only so a test cannot overwrite the real one: this cache is
-    /// deliberately *not* keyed by account — a campus is the same campus for
-    /// everyone — so there is no matricola to keep two runs apart the way
-    /// ``OfflineStore`` does.
+    /// Injectable only so a test cannot overwrite the real one. The cache is deliberately
+    /// not keyed by account — a campus is the same campus for everyone.
     private let cacheName: String
 
-    /// Seeds the catalogue and stops it fetching. For previews only — the
-    /// maps service is unauthenticated and has no mock path of its own, so
-    /// without this every preview of a room screen would hit the network.
+    /// Seeds the catalogue and stops it fetching, for previews.
+    ///
+    /// The maps service is unauthenticated and has no sample path of its own, so without
+    /// this every preview of a room screen would reach the network.
+    ///
+    /// - Parameter rooms: The catalogue to report.
     convenience init(preview rooms: [Classroom]) {
         self.init()
         self.rooms = rooms
@@ -58,8 +56,18 @@ final class RoomsModel {
         self.skipsLoading = true
     }
 
+    /// Set by the preview initialiser; makes ``load(force:)`` do nothing.
     private var skipsLoading = false
 
+    /// Creates the model without reading anything.
+    ///
+    /// The cached catalogue is deliberately not read here: this runs while the app is
+    /// launching, and decoding the whole catalogue on the main thread would stall the
+    /// first frame. ``load(force:)`` reads it in the background instead.
+    ///
+    /// - Parameters:
+    ///   - http: The transport.
+    ///   - cacheName: Which ``DiskCache`` record holds the catalogue.
     init(http: any HTTP = PublicHTTP(), cacheName: String = "rooms") {
         self.http = http
         self.cacheName = cacheName
@@ -69,13 +77,24 @@ final class RoomsModel {
         // background instead, so the first screen that asks gets it.
     }
 
+    /// Publishes a catalogue and its campus list together.
+    ///
+    /// - Parameters:
+    ///   - rooms: The rooms to publish.
+    ///   - campuses: The campuses derived from them.
     private func adopt(_ rooms: [Classroom], campuses: [String]) {
         self.rooms = rooms
         self.campuses = campuses
     }
 
-    /// The catalogue changes rarely, so a cached copy is served immediately and
-    /// only refreshed when it is missing or a refresh is asked for.
+    /// Loads the catalogue, serving the cached copy first.
+    ///
+    /// Returns immediately when a load is in flight, or when a catalogue is already held
+    /// and `force` is `false`. The four catalogues are fetched concurrently and joined
+    /// off the main actor; the result is cached. A failure leaves whatever was held in
+    /// place and sets ``errorMessage``.
+    ///
+    /// - Parameter force: Refetches even when a catalogue is already held.
     func load(force: Bool = false) async {
         guard !skipsLoading else { return }
         guard !isLoading, force || rooms.isEmpty else { return }
@@ -111,23 +130,36 @@ final class RoomsModel {
         }
     }
 
-    /// The catalogue as it is held in memory: the rooms, plus the campus list
-    /// derived from them once instead of per read.
+    /// The catalogue as it is held in memory: the rooms, and the campus list derived from
+    /// them once rather than per read.
     nonisolated private struct Catalogue: Sendable {
+        /// The rooms.
         let rooms: [Classroom]
+        /// The campuses present, sorted.
         let campuses: [String]
 
+        /// Derives the campus list from the rooms.
+        ///
+        /// - Parameter rooms: The rooms to hold.
         nonisolated init(_ rooms: [Classroom]) {
             self.rooms = rooms
             campuses = Array(Set(rooms.compactMap(\.campusName))).sorted()
         }
     }
 
-    /// The join of the four catalogues, off the main actor.
+    /// Joins the four catalogues into rooms, on the global executor.
     ///
-    /// Four dictionaries and a sort over 350 rooms is not free, and under this
-    /// project's main-actor-by-default isolation it all ran on the main thread
-    /// while the map was trying to draw.
+    /// Rooms are indexed against buildings, campuses and floors by their shared codes;
+    /// unusable rooms are dropped by ``ClassroomDTO/toClassroom()``. Runs off the main
+    /// actor because four dictionaries and a sort over the whole catalogue would
+    /// otherwise happen while the map is drawing.
+    ///
+    /// - Parameters:
+    ///   - rawRooms: The room catalogue.
+    ///   - rawBuildings: The building catalogue.
+    ///   - rawCampuses: The campus catalogue.
+    ///   - rawFloors: The floor catalogue.
+    /// - Returns: The joined rooms, sorted by code, with their campus list.
     @concurrent
     private static func join(rooms rawRooms: [ClassroomDTO], buildings rawBuildings: [BuildingDTO],
                              campuses rawCampuses: [CampusDTO], floors rawFloors: [FloorDTO]) async -> Catalogue {
@@ -165,6 +197,10 @@ final class RoomsModel {
         return Catalogue(joined)
     }
 
+    /// Reads the cached catalogue on the global executor.
+    ///
+    /// - Parameter name: The ``DiskCache`` record.
+    /// - Returns: The catalogue, or `nil` when nothing usable is cached.
     @concurrent
     private static func cachedCatalogue(_ name: String) async -> Catalogue? {
         guard let cached = DiskCache.load([Classroom].self, as: name), !cached.value.isEmpty
@@ -172,16 +208,32 @@ final class RoomsModel {
         return Catalogue(cached.value)
     }
 
-    /// Encoding 350 rooms and writing them is a file write; it belongs off the
-    /// main thread just as much as the decode does.
+    /// Encodes and writes the catalogue on the global executor.
+    ///
+    /// - Parameters:
+    ///   - rooms: The rooms to cache.
+    ///   - name: The ``DiskCache`` record.
     @concurrent
     private static func cache(_ rooms: [Classroom], as name: String) async {
         DiskCache.save(rooms, as: name)
     }
 
+    /// Fetches and decodes one unauthenticated maps-service catalogue.
+    ///
+    /// - Parameters:
+    ///   - path: The catalogue's path below the maps host.
+    ///   - type: The shape to decode.
+    /// - Returns: The decoded catalogue.
+    /// - Throws: ``APIError``.
     private func fetch<T: Decodable & Sendable>(_ path: String, as type: T.Type) async throws -> T {
         let data = try await http.data(for: APIRequest(host: .maps, path: path,
                                                        authenticated: false))
         return try await BackgroundJSON.decode(T.self, from: data)
     }
 }
+/// ``RoomsModel`` satisfies ``RoomCatalogue`` as it stands.
+///
+/// Declared here rather than beside the protocol: ``RoomCatalogue`` refines
+/// `Sendable`, and a `Sendable` conformance stated in another file is
+/// retroactive.
+extension RoomsModel: RoomCatalogue {}

@@ -20,9 +20,3 @@ protocol CourseEnrolments: AnyObject, Sendable {
     func setHidden(_ hidden: Bool, moodleID: Int) async -> Bool
 }
 
-extension WeBeepModel: CourseEnrolments {
-    func enrolledCourses() async -> [Course] {
-        await loadCourses()
-        return courses.map(Course.init(moodle:))
-    }
-}

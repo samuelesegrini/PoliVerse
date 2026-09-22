@@ -15,4 +15,3 @@ protocol TeachingCodes: AnyObject, Sendable {
     func codes(for courses: [Course]) async -> [String: String]
 }
 
-extension StudyProgrammeModel: TeachingCodes {}

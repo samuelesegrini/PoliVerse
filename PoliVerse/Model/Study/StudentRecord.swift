@@ -15,33 +15,32 @@ protocol StudentRecord: AnyObject, Sendable {
     /// What the plan is *for* — the degree course, where the service says.
     var planHeader: StudyPlanHeader? { get }
     /// Ensures the record is loaded before the plan reasons about it.
+    ///
+    /// - Parameter force: Bypasses the load window.
     func load(force: Bool) async
 }
 
-extension CareerModel: StudentRecord {}
 
-/// The enrolments the plan may look across.
+/// The enrolments the study plan may look across.
 ///
-/// Two members, because that is all it reads: which matricole this person has
-/// (so the plan knows which it has already seen), and which enrolment is in
-/// use — the plan header says "Laurea di primo livello" where the careers list
-/// only says "Studente", so one fills the other's gap.
+/// Two members, because that is all it reads: which matricole this person has, so the
+/// plan knows which it has already seen, and which enrolment is in use — the plan header
+/// names the degree's level where the careers list says only “Studente”, so one fills the
+/// other's gap.
 @MainActor
 protocol Enrolments: AnyObject, Sendable {
+    /// Every matricola this person holds.
     var matricole: [String] { get }
+    /// The enrolment the token is bound to, or `nil` when it is unknown.
     var current: Career? { get }
 }
 
-extension CareersModel: Enrolments {
-    var matricole: [String] { careers.map(\.matricola) }
-}
 
 /// The catalogue queries the study plan asks of the Manifesti site.
 ///
 /// Seven, which is a large interface for one protocol — but it is a *query*
-/// interface, and these are seven different questions rather than seven steps
-/// of one. Shrinking it would mean merging questions that callers ask
-/// separately, which buys nothing and costs clarity.
+/// interface, and these are seven different questions rather than seven steps of one.
+/// Merging them would join questions that callers ask separately.
 ///
 /// It exists because ``ManifestiModel`` builds its own `URLSession` against a
 /// site that answers only HTML: naming what the plan asks of it is the only
@@ -59,7 +58,6 @@ protocol ManifestoReading: AnyObject, Sendable {
                       yearCode: String?) async -> SyllabusPicker.Pick?
 }
 
-extension ManifestiModel: ManifestoReading {}
 
 /// The defaults the concrete type spells on its own methods.
 ///

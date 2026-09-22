@@ -5,100 +5,111 @@ import OSLog
 
 /// Which rooms are free, and when.
 ///
-/// ## How this endpoint was found
+/// Built on the maps service's public occupancy endpoint,
+/// `GET /ricerca/aula/occupazione/{idaula}/{yyyy-MM-dd}`, which answers the booked
+/// bands for one room on one day and needs no token. Rooms the university does not
+/// publish answer `MSG_OCCUPAZIONI_NASCOSTE`; those are reported in ``hiddenRooms``
+/// rather than guessed at.
 ///
-/// Two dead ends came first, and both are worth keeping written down.
-///
-/// The CEDA hosts and PoliNetwork are genuinely unreachable off campus. Then
-/// `ws_aule` — `/cata/aule?inizio=…&fine=…&sede=…`, straight out of the
-/// official bundle — turned out to exist but to be closed to student accounts:
-/// its own profile (3) answers "Utente non abilitato", and the account's own
-/// profile answers "Scope OAuth non valido". It backs `registroLezioni`, a
-/// lecture register, and is staff-only.
-///
-/// The answer was in neither place. `maps_rest` publishes a **WADL** at
-/// `/rest/application.wadl` — 151 endpoints, machine-readable, no token — and
-/// among them:
-///
-/// ```
-/// GET /ricerca/aula/occupazione/{idaula}/{yyyy-MM-dd}
-///   → [{"inizio":"08:15","fine":"10:15"}, …]
-/// ```
-///
-/// Public, unauthenticated, date-sensitive: Christmas Day and mid-August
-/// return `[]`, a teaching day returns the booked bands. Some rooms answer
-/// `MSG_OCCUPAZIONI_NASCOSTE` — the university hides those deliberately, and
-/// they are reported as unknown rather than guessed at.
-///
-/// The lesson for next time: ask the service to describe itself before
-/// guessing paths. One WADL fetch would have saved both dead ends.
+/// The bookings service `ws_aule`, which the official client uses, is closed to
+/// student accounts: its own profile answers “Utente non abilitato” and the account's
+/// own answers “Scope OAuth non valido”.
 ///
 /// ## Cost
 ///
-/// Occupancy is per room, so a campus means one request each — 158 for Milano
-/// Leonardo, the largest. They run concurrently with a bounded pool and are
-/// cached per room and day, so a day already looked at costs nothing.
+/// Occupancy is per room, so a campus is one request each — up to around 158 for the
+/// largest. They run through a ``ResourceLoader`` in batches of ``concurrency``, are
+/// cached per room and day, and are shared with the room detail screen, so a room
+/// already fetched costs nothing.
+///
+/// ## Freshness
+///
+/// The load window is one minute rather than the usual five, because occupancy turns
+/// over on the lecture boundary and this is the screen where stale data means walking
+/// across campus to an occupied room.
 @Observable
 final class FreeRoomsModel {
+    /// The rooms of the chosen campus, with their bookings for ``day``. Rooms that could
+    /// not be asked about are absent.
     private(set) var rooms: [RoomSchedule] = []
+    /// `true` while a pass is in flight.
     private(set) var isLoading = false
+    /// The last pass's error, or `nil` when it succeeded.
     private(set) var errorMessage: String?
-    /// Rooms whose occupancy the university does not publish. Named rather
-    /// than silently dropped: "we cannot tell" is not "it is free".
-    private(set) var hiddenRooms: [String] = []
-    /// How far through the fetch we are, for a screen that takes a moment.
-    private(set) var progress: (done: Int, total: Int) = (0, 0)
-    /// When the occupancy on screen was fetched, or nil if it never was.
+    /// Rooms whose occupancy could not be read — hidden by the university, or the request
+    /// failed.
     ///
-    /// Unlike the services backed by ``CachedSlot``, this is not persisted:
-    /// occupancy is never restored from disk here, so the only age worth
-    /// reporting is the one since this session's fetch.
+    /// Named rather than silently dropped: not being able to tell is not the same as the
+    /// room being free.
+    private(set) var hiddenRooms: [String] = []
+    /// How far through the pass the fetch has got, for a screen that takes a moment.
+    private(set) var progress: (done: Int, total: Int) = (0, 0)
+    /// When the occupancy on screen was fetched, or `nil` if it never was.
+    ///
+    /// Not persisted: occupancy is never restored from disk here, so the only age worth
+    /// reporting is the one since this session's pass.
     private(set) var loadedAt: Date?
 
+    /// The day being shown.
     var day: Date = .now
+    /// The campus being shown. Set to the catalogue's first campus on the first load when
+    /// nothing has been chosen.
     var campus: String?
 
+    /// Supplies the rooms to ask about, and the campus list.
     private let catalogue: any RoomCatalogue
+    /// The session the occupancy requests are issued through.
     private let session: URLSession
+    /// Diagnostic log for this type, under the `aule` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "aule")
 
-    /// Sixty seconds, not the usual five minutes, and keyed on the day and
-    /// campus being shown. Occupancy turns over on the lecture boundary, and
-    /// this is the one screen where stale data means walking across campus to
-    /// an occupied room — so a foregrounding a minute later is worth a refetch
-    /// here when it would be waste everywhere else.
+    /// Suppresses repeated passes within a minute, keyed on the day and campus being
+    /// shown.
     private var window = LoadWindow(interval: 60)
 
-    /// Occupancy, keyed by room and day.
+    /// Fetches, caches and coalesces occupancy per room and day.
     ///
-    /// Was a plain dictionary, which could not coalesce: opening a room from
-    /// search while the campus pass was still running fetched it twice. The
-    /// loader shares one request per room and lets the rest of the campus be
-    /// warmed in the background.
+    /// Coalescing is what stops a room opened from search being fetched twice while the
+    /// campus pass is still running.
     private let loader: ResourceLoader<OccupancyKey, [RoomBooking]>
 
+    /// One room on one day, which is what occupancy is cached by.
     nonisolated struct OccupancyKey: Hashable, Sendable {
+        /// The room's printed code, which the bookings are identified by.
         let roomID: String
+        /// The room's `idaula`, which the endpoint takes.
         let occupancyID: String
+        /// The day, as `yyyy-MM-dd`.
         let day: String
     }
 
-    /// At most this many requests in flight. A campus is up to 158 rooms;
-    /// firing them all at once is rude to a public service and gets slower,
-    /// not faster.
+    /// How many occupancy requests run at once. Firing a whole campus at a public service
+    /// at once is both rude and slower.
     private let concurrency = 8
 
+    /// Seeds the rooms and stops the model fetching, for previews.
+    ///
+    /// - Parameters:
+    ///   - catalogue: Supplies the campus list.
+    ///   - rooms: The rooms to report.
     convenience init(catalogue: any RoomCatalogue, preview rooms: [RoomSchedule]) {
         self.init(catalogue: catalogue)
         self.rooms = rooms
         self.skipsLoading = true
     }
 
+    /// Set by the preview initialiser; makes ``load(force:)`` do nothing.
     private var skipsLoading = false
-    /// Once a launch: the catalogue barely changes, and every load would
-    /// otherwise rewrite a file per campus.
+    /// Whether the widget's per-campus room list has been written this launch. The
+    /// catalogue barely changes, and writing it on every load would rewrite a file per
+    /// campus each time.
     private var publishedCatalogue = false
 
+    /// Builds the loader, with half an hour's lifetime per room and day.
+    ///
+    /// - Parameters:
+    ///   - catalogue: Supplies the rooms to ask about.
+    ///   - session: The session the occupancy requests are issued through.
     init(catalogue: any RoomCatalogue, session: URLSession = .shared) {
         self.catalogue = catalogue
         self.session = session
@@ -117,37 +128,48 @@ final class FreeRoomsModel {
         }
     }
 
+    /// The campuses the catalogue knows.
     var campuses: [String] { catalogue.campuses }
 
     /// Seconds since the occupancy was fetched, for ``FreshnessBar``.
     ///
-    /// Computed from `loadedAt` rather than stored as a number, so that every
-    /// re-render of the screen reads the current answer rather than the one
-    /// that was true at fetch time. It is not a clock: nothing here ticks, so
-    /// the bar only moves when the view redraws for some other reason. That is
-    /// enough for the question it answers — "is what I am looking at from this
-    /// hour?" — and a timer for a bar that is silent under fifteen minutes
-    /// would be battery spent on nothing.
+    /// Computed from ``loadedAt`` rather than stored, so each render reads the current
+    /// answer. Nothing ticks, so the value only changes when the view redraws for some
+    /// other reason — which is enough for a bar that stays silent under fifteen minutes.
+    ///
+    /// - Parameter now: The moment to measure from.
+    /// - Returns: The age, or `nil` when nothing has been fetched.
     func age(now: Date = .now) -> TimeInterval? {
         loadedAt.map { now.timeIntervalSince($0) }
     }
 
+    /// ``age(now:)`` against the current moment.
     var age: TimeInterval? { age(now: .now) }
 
-    /// Records a pass that produced rooms.
+    /// Records a pass that produced rooms, and marks the load window for this day and
+    /// campus.
+    ///
+    /// - Parameter date: When the pass completed.
     func markLoaded(at date: Date = .now) {
         loadedAt = date
         window.markLoaded(source: "\(PoliMiDate.queryString(day))|\(campus ?? "-")", at: date)
     }
 
-    /// 08:00–20:00 in Rome. Outside those hours every room is trivially free,
-    /// which is true and useless — the building is shut.
+    /// 08:00 to 20:00 in Rome on ``day``.
+    ///
+    /// Free time is only reported within it: outside those hours every room is trivially
+    /// free, which is true and useless because the building is shut.
     var teachingDay: DateInterval {
         let start = PoliMiDate.time(8, on: day)
         let end = PoliMiDate.time(20, on: day)
         return DateInterval(start: start, end: max(start, end))
     }
 
+    /// Rooms with free time during ``teachingDay``, and when.
+    ///
+    /// - Parameter minimumMinutes: The shortest gap worth reporting.
+    /// - Returns: The rooms with at least one such gap, most free time first, ties broken
+    ///   by name.
     func freeRooms(minimumMinutes: Int = 30) -> [(room: RoomSchedule, slots: [DateInterval])] {
         let window = teachingDay
         return rooms
@@ -161,8 +183,10 @@ final class FreeRoomsModel {
             }
     }
 
-    /// Rooms free right now — the question actually being asked by someone
-    /// looking for somewhere to sit.
+    /// Rooms free for the next half hour, which is the question someone looking for
+    /// somewhere to sit is asking.
+    ///
+    /// - Returns: The free rooms, by name. Empty outside ``teachingDay``.
     func freeNow() -> [RoomSchedule] {
         let now = Date.now
         guard teachingDay.contains(now) else { return [] }
@@ -171,6 +195,18 @@ final class FreeRoomsModel {
         return rooms.filter { $0.isFree(during: window) }.sorted { $0.name < $1.name }
     }
 
+    /// Fetches the chosen campus's occupancy for ``day``.
+    ///
+    /// Loads the catalogue first, chooses a campus if none is set, and publishes the
+    /// widget's room list once per launch. Returns without fetching when a pass is in
+    /// flight or the one-minute window has not expired for this day and campus.
+    ///
+    /// Rooms are fetched in batches of ``concurrency`` through the shared loader. A room
+    /// whose occupancy is hidden or whose request failed goes to ``hiddenRooms`` rather
+    /// than being listed as free. Only a pass that produced rooms marks the window, so a
+    /// campus where everything failed is retried rather than reported as fresh and empty.
+    ///
+    /// - Parameter force: Bypasses the load window.
     func load(force: Bool = false) async {
         guard !skipsLoading else { return }
         await catalogue.load()
@@ -250,16 +286,14 @@ final class FreeRoomsModel {
         log.notice("aule \(stamp, privacy: .public): \(loaded.count, privacy: .public) rooms, \(booked, privacy: .public) bookings, \(hidden.count, privacy: .public) hidden, \(self.freeRooms().count, privacy: .public) with free time")
     }
 
-    /// Publishes the day's bookings for the widget to read.
+    /// Publishes the day's bookings for the free-rooms widget.
     ///
-    /// Only for today, and only when there is something to say: a widget
-    /// showing "free now" from yesterday's bookings would be confidently
-    /// wrong, and the snapshot's own day check is the second line of defence,
-    /// not the first.
+    /// Only for today and only when there is something to say, since a widget showing
+    /// “free now” from another day's bookings would be confidently wrong.
     ///
-    /// Stored per campus rather than per account: rooms are not personal, and
-    /// keying them to a matricola would mean re-fetching 150 rooms on a career
-    /// switch for identical data.
+    /// Stored per campus rather than per account: rooms are not personal, and keying them
+    /// to a matricola would mean refetching a whole campus on a career switch for
+    /// identical data.
     private func saveWidgetSnapshot() {
         guard let campus, Calendar.current.isDateInToday(day), !rooms.isEmpty
         else { return }
@@ -284,14 +318,13 @@ final class FreeRoomsModel {
         WidgetReloader.request([.freeRooms])
     }
 
-    /// Fetches today's rooms when a widget on the Home Screen would otherwise
-    /// have nothing to show.
+    /// Fetches today's rooms when the widget would otherwise have nothing to show.
     ///
-    /// The snapshot is written only by a load, and a load used to happen only
-    /// on the Aule libere screen — so a student who never opened it that day
-    /// had a widget saying "apri l'app" however often they opened the app.
-    /// Asks WidgetKit whether the widget is installed first: without one, 150
-    /// requests on every foregrounding would be spent on nothing.
+    /// The snapshot is written only by a load, which happens on the Aule libere screen —
+    /// so a student who never opens it would see a widget asking them to open the app.
+    /// WidgetKit is asked whether the widget is installed first, so a whole campus is not
+    /// fetched on every foregrounding for nothing, and a snapshot already covering today
+    /// is left alone.
     func refreshForWidgetIfNeeded() async {
         guard Calendar.current.isDateInToday(day) else { return }
         let installed = (try? await WidgetCenter.shared.currentConfigurations())?
@@ -306,15 +339,14 @@ final class FreeRoomsModel {
         await load()
     }
 
-    /// One room's bookings for the day being shown.
+    /// One room's bookings for ``day``.
     ///
-    /// Serves the room detail, which must not pay for the campus-wide pass:
-    /// that one is 150 requests and its cache is keyed by campus and day, so
-    /// it cannot answer for a single room opened from anywhere else. Shares
+    /// Serves the room detail screen, which must not pay for the campus-wide pass. Shares
     /// the same per-room cache, so a room already seen costs nothing.
     ///
-    /// Returns nil when the room's occupancy is hidden or the call fails —
-    /// both mean "we cannot say", which the caller must not render as "free".
+    /// - Parameter room: The room to ask about.
+    /// - Returns: The bookings, or `nil` when the room has no `idaula`, its occupancy is
+    ///   hidden, or the call failed — none of which the caller may render as free.
     func bookings(for room: Classroom) async -> [RoomBooking]? {
         guard let occupancyID = room.occupancyID else { return nil }
         let key = OccupancyKey(
@@ -325,8 +357,10 @@ final class FreeRoomsModel {
 
     /// Warms the rooms around the one being looked at.
     ///
-    /// Never awaited and at background priority: the room the user actually
-    /// opened must not wait on its neighbours.
+    /// Detached at background priority and never awaited, so the room the student actually
+    /// opened does not wait on its neighbours.
+    ///
+    /// - Parameter rooms: The rooms to warm.
     func prefetch(_ rooms: some Sequence<Classroom>) {
         let stamp = PoliMiDate.queryString(day)
         let keys = rooms.compactMap { room -> OccupancyKey? in
@@ -339,9 +373,18 @@ final class FreeRoomsModel {
         }
     }
 
-    /// Static and parameterised so it carries no actor-isolated state and can
-    /// run concurrently off the main actor. The request itself is shared with
-    /// the widget, in ``RoomOccupancy``.
+    /// Fetches one room's bookings for a day.
+    ///
+    /// Static and fully parameterised, so it carries no actor-isolated state and runs off
+    /// the main actor. The request itself is shared with the widget, in
+    /// ``RoomOccupancy``.
+    ///
+    /// - Parameters:
+    ///   - id: The room's `idaula`.
+    ///   - roomID: The room's printed code, which the bookings are identified by.
+    ///   - day: The day to ask about.
+    ///   - session: The session to fetch through.
+    /// - Returns: The bookings, or `nil` when the occupancy is hidden or the call failed.
     private static func occupancy(
         occupancyID id: String, roomID: String, day: Date, session: URLSession
     ) async -> [RoomBooking]? {
@@ -353,10 +396,10 @@ final class FreeRoomsModel {
         }
     }
 
-    /// Hands the widget the rooms it needs to fetch a campus by itself.
+    /// Hands the widget the room references it needs to fetch a campus by itself.
     ///
-    /// Every campus, not only the one on screen: the widget can be configured
-    /// for any of them, and the catalogue is already in memory.
+    /// Every campus, not only the one on screen: the widget can be configured for any of
+    /// them, and the catalogue is already in memory. Runs once per launch.
     private func publishWidgetCatalogue() {
         guard !publishedCatalogue, !catalogue.rooms.isEmpty else { return }
         publishedCatalogue = true
@@ -373,10 +416,25 @@ final class FreeRoomsModel {
     }
 }
 
+/// Turning a busy band into a ``RoomBooking``.
 extension OccupancyBand {
+    /// Resolves the band against a day and wraps it as a booking.
+    ///
+    /// - Parameters:
+    ///   - roomID: The room the band belongs to.
+    ///   - day: The day the times belong to.
+    ///   - index: The band's position within the room, which makes the booking's id
+    ///     unique.
+    /// - Returns: The booking, or `nil` when either time is unparseable.
     func toBooking(roomID: String, on day: Date, index: Int) -> RoomBooking? {
         interval(on: day).map {
             RoomBooking(id: "\(roomID)-\(index)", start: $0.start, end: $0.end, title: nil)
         }
     }
 }
+/// ``FreeRoomsModel`` satisfies ``RoomAvailability`` as it stands.
+///
+/// Declared here rather than beside the protocol: ``RoomAvailability`` refines
+/// `Sendable`, and a `Sendable` conformance stated in another file is
+/// retroactive.
+extension FreeRoomsModel: RoomAvailability {}

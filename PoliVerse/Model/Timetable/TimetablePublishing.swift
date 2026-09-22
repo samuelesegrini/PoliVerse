@@ -15,4 +15,3 @@ protocol TimetablePublishing: AnyObject, Sendable {
     var personalTimetable: PersonalTimetable? { get set }
 }
 
-extension AgendaModel: TimetablePublishing {}

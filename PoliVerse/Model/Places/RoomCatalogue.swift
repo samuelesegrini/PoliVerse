@@ -10,13 +10,12 @@ import Foundation
 protocol RoomCatalogue: AnyObject, Sendable {
     /// Every room on campus, with its building, floor and capacity.
     var rooms: [Classroom] { get }
-    /// The campuses present, derived once rather than per read.
+    /// The campuses present, derived once rather than on every read.
     var campuses: [String] { get }
-    /// Ensures the catalogue is loaded. Cheap once it is.
+    /// Ensures the catalogue is loaded, which is cheap once it is.
     func load(force: Bool) async
 }
 
-extension RoomsModel: RoomCatalogue {}
 
 /// What the map needs from the occupancy service.
 ///
@@ -34,7 +33,6 @@ protocol RoomAvailability: AnyObject, Sendable {
     func load(force: Bool) async
 }
 
-extension FreeRoomsModel: RoomAvailability {}
 
 /// The defaults the concrete types spell on their own `load`.
 ///

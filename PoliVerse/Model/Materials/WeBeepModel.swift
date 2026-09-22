@@ -2,55 +2,93 @@ import Foundation
 import Observation
 import OSLog
 
-/// Course materials from WeBeep, via Moodle's web services.
+/// Course materials from WeBeep, through Moodle's web services.
 ///
-/// The token is obtained by ``WeBeepAuth``'s launch handshake and kept in the
-/// Keychain alongside — but separate from — the PoliMi OAuth token. They are
-/// independent credentials with independent lifetimes: the PoliMi session can
-/// be alive while the WeBeep one is dead, and vice versa.
+/// The token comes from ``WeBeepAuth``'s launch handshake and is kept in the Keychain
+/// beside — but separate from — the Politecnico OAuth token: two independent
+/// credentials with independent lifetimes, so one can be alive while the other is
+/// dead.
+///
+/// ## What it does
+///
+/// - ``loadCourses()`` fetches the enrolled course list, which also serves
+///   ``CourseEnrolments``.
+/// - ``loadMaterials(for:)`` fetches one course's files, serving the cached listing
+///   first so downloaded files are still findable offline.
+/// - ``checkForUpdates(force:until:)`` reads this year's course pages for new results,
+///   solutions, notices, announcements and assignments, and records what it finds in
+///   ``UpdateFeed``.
+/// - ``setFavourite(_:moodleID:)`` and ``setHidden(_:moodleID:)`` mirror the two flags
+///   back to WeBeep.
+///
+/// A Moodle refusal that means the token is dead signs WeBeep out, so the interface
+/// offers a fresh sign-in rather than retrying a credential that will never work.
 @Observable
 final class WeBeepModel {
+    /// Where the WeBeep connection stands.
     enum State: Equatable {
+        /// No usable token; the interface offers a WeBeep sign-in.
         case needsLogin
+        /// A load is in flight.
         case loading
+        /// Connected, with whatever has been loaded.
         case ready
+        /// The last load did not complete, with a sentence explaining why.
         case failed(String)
     }
 
+    /// Where the connection stands.
     private(set) var state: State = .needsLogin
+    /// The enrolled courses as Moodle knows them, with their two flags.
     private(set) var courses: [MoodleCourse] = []
+    /// The listing for the course last loaded by ``loadMaterials(for:)``. Sections with no
+    /// files are omitted.
     private(set) var sections: [WeBeepSection] = []
-    /// Materials listings kept per course.
+    /// One offline slot per course's listing.
     ///
-    /// Files already downloaded stay on disk, but without the listing they
-    /// cannot be found: the screen that shows them was empty offline, which
-    /// makes downloading for a train journey pointless. Cached per course,
-    /// since one course's materials say nothing about another's.
+    /// Downloaded files stay on disk, but without the listing they cannot be found — which
+    /// would make downloading for a train journey pointless. Cached per course, since one
+    /// course's materials say nothing about another's.
     private var materialSlots: [String: CachedSlot<[WeBeepSection]>] = [:]
+    /// `true` while a materials load is in flight.
     private(set) var isLoadingMaterials = false
 
+    /// Supplies the signed-in student, whose matricola keys the caches, and the
+    /// sample-data flag.
     private let session: Session
+    /// Where the update sweep records what it notices.
     private let feed: UpdateFeed
-    /// An hour: a course page changes when a teacher uploads, and every check
-    /// is one request per course.
+    /// Suppresses repeated update sweeps within an hour. A course page changes when a
+    /// lecturer uploads, and every sweep is one request per course.
     private var updatesWindow = LoadWindow(interval: 3600)
-    /// Course pages checked per pass. A background refresh has about thirty
-    /// seconds for everything, and the career comes first.
+    /// How many course pages one sweep reads. The cap is what lets a sweep fit in a
+    /// background refresh, which has about thirty seconds for everything.
     static let watchLimit = 6
-    /// Counts passes, so courses past the cap take turns. Kept across
-    /// launches: a background refresh usually starts the app from cold.
+    /// How many sweeps have run, so courses past ``watchLimit`` take turns.
+    ///
+    /// Persisted, because a background refresh usually starts the app from cold.
     private var watchPass: Int {
         get { UserDefaults.standard.integer(forKey: "webeepWatchPass") }
         set { UserDefaults.standard.set(newValue, forKey: "webeepWatchPass") }
     }
+    /// Diagnostic log for this type, under the `webeep` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "webeep")
+    /// The Keychain account the WeBeep token is filed under.
     private let keychainAccount = "webeep"
 
+    /// The Moodle client, built from the stored token. `nil` when WeBeep is not connected.
     private var api: WeBeepAPI?
+    /// The signed-in user's Moodle id, learned by ``loadCourses()``.
     private var userID: Int?
-    /// Course id per PoliMi course code, learned by matching names once.
+    /// Moodle course id per ``Course/id``, remembered once a course has been matched by
+    /// code or name.
     private var courseIDByCode: [String: Int] = [:]
 
+    /// Builds the Moodle client from the stored token, if there is one.
+    ///
+    /// - Parameters:
+    ///   - session: Supplies the signed-in student and the sample-data flag.
+    ///   - feed: Where the update sweep records what it notices.
     init(session: Session, feed: UpdateFeed) {
         self.session = session
         self.feed = feed
@@ -59,21 +97,30 @@ final class WeBeepModel {
         }
     }
 
+    /// Whether a WeBeep token is held.
     var isAuthenticated: Bool { api != nil }
 
     // MARK: - Token
 
+    /// The token from the Keychain.
+    ///
+    /// - Returns: The token, or `nil` when none is stored.
     private func storedToken() -> String? {
         guard let data = KeychainStore.load(account: keychainAccount) else { return nil }
         return String(data: data, encoding: .utf8)
     }
 
+    /// Stores a freshly obtained token and enters ``State/ready``.
+    ///
+    /// - Parameter token: The token from ``WeBeepAuth/token(from:passport:verifySignature:)``.
     func store(_ token: WeBeepAuth.MoodleToken) {
         try? KeychainStore.save(Data(token.token.utf8), account: keychainAccount)
         api = WeBeepAPI(token: token.token)
         state = .ready
     }
 
+    /// Deletes the token and forgets everything loaded from WeBeep, returning to
+    /// ``State/needsLogin``.
     func signOut() {
         KeychainStore.delete(account: keychainAccount)
         api = nil
@@ -84,11 +131,14 @@ final class WeBeepModel {
         state = .needsLogin
     }
 
-    /// Marks a course favourite on WeBeep.
+    /// Stars or unstars a course on WeBeep, updating the held course list on success.
     ///
-    /// - Returns: whether it stuck. The caller updates optimistically and
-    ///   reverts on false, so a failed write does not leave the UI claiming
-    ///   something the server disagrees with.
+    /// - Parameters:
+    ///   - favourite: The value the student chose.
+    ///   - moodleID: Moodle's course id.
+    /// - Returns: `false` when WeBeep is not connected or the write failed, so the caller
+    ///   can queue the change rather than leave the interface claiming something the
+    ///   server disagrees with.
     @discardableResult
     func setFavourite(_ favourite: Bool, moodleID: Int) async -> Bool {
         guard let api else { return false }
@@ -104,6 +154,12 @@ final class WeBeepModel {
         }
     }
 
+    /// Hides or reveals a course on WeBeep, updating the held course list on success.
+    ///
+    /// - Parameters:
+    ///   - hidden: The value the student chose.
+    ///   - moodleID: Moodle's course id.
+    /// - Returns: `false` when WeBeep is not connected or the write failed.
     @discardableResult
     func setHidden(_ hidden: Bool, moodleID: Int) async -> Bool {
         guard let api else { return false }
@@ -121,7 +177,10 @@ final class WeBeepModel {
 
     // MARK: - Loading
 
-    /// Fetches the enrolled course list, establishing the user id on the way.
+    /// Fetches the enrolled course list, learning the Moodle user id on the way.
+    ///
+    /// Under sample data it only enters ``State/ready``. Without a token it enters
+    /// ``State/needsLogin``.
     func loadCourses() async {
         if session.useMockData {
             state = .ready
@@ -145,6 +204,18 @@ final class WeBeepModel {
         }
     }
 
+    /// Fetches one course's files into ``sections``.
+    ///
+    /// The cached listing is restored first, so the screen has content before the request
+    /// and keeps it if the request fails — which is how a downloaded file is found again
+    /// without signal. Only entries that are genuinely files are listed: a module may
+    /// carry links or nothing at all.
+    ///
+    /// A listing for a page the update sweep would read anyway is also handed to
+    /// ``UpdateFeed``, since noticing what is new costs nothing once the listing is here.
+    /// Opening an old course therefore never announces its old results as news.
+    ///
+    /// - Parameter course: The course whose materials to load.
     func loadMaterials(for course: Course) async {
         guard !isLoadingMaterials else { return }
         isLoadingMaterials = true
@@ -221,16 +292,22 @@ final class WeBeepModel {
         }
     }
 
-    /// Reads this academic year's course pages for new items — results,
-    /// solutions, notices — without the student opening each one.
+    /// Reads this academic year's course pages for new items, without the student opening
+    /// each one.
     ///
-    /// Favourites first, capped at ``watchLimit``: the cap is what lets it
-    /// fit in a background refresh, and a favourite is the student saying
-    /// which pages they care about. Every failure is quiet; the next pass
-    /// tries again.
-    /// - Parameter deadline: stop starting new courses after this. A
-    ///   background refresh passes one, so the pass ends on its own terms
-    ///   rather than being killed mid-write.
+    /// Favourites first and capped at ``watchLimit`` — see ``watched(_:now:pass:)``. Each
+    /// page yields its contents, its announcements forum where it has one, and finally
+    /// every page's assignments in a single request. Everything found is recorded in
+    /// ``UpdateFeed``.
+    ///
+    /// The sweep stops early on a sign-out or a career switch, since the rest would be
+    /// weighed against somebody else's sittings, and on cancellation. A sweep that read
+    /// nothing does not mark the load window, so it is retried.
+    ///
+    /// - Parameters:
+    ///   - force: Bypasses the hourly load window.
+    ///   - deadline: Stops starting new courses after this moment, so a background refresh
+    ///     ends on its own terms rather than being killed mid-write.
     func checkForUpdates(force: Bool = false, until deadline: Date? = nil) async {
         guard !session.useMockData, api != nil, let account = session.student?.matricola,
               updatesWindow.shouldLoad(force: force, source: account) else { return }
@@ -293,12 +370,16 @@ final class WeBeepModel {
         if checked > 0 { updatesWindow.markLoaded(source: account) }
     }
 
-    /// Reads a new results file for the student's own line, if they turned
-    /// that on; nil otherwise, so nothing is downloaded.
+    /// Reads a new results file for the student's own line, if they have turned that on.
     ///
-    /// The file is fetched into memory, read, and dropped. Only the lookup —
-    /// found or not, and the student's own mark — outlives the call; the
-    /// URL with its token is never logged or stored.
+    /// The file is fetched into memory through an ephemeral session — the shared session's
+    /// cache would write other students' marks to disk — read, and dropped. Only the
+    /// lookup outlives the call, and the address with its token is never logged or stored.
+    /// Files larger than ``ResultsFileReader/maximumBytes`` are not fetched at all, judged
+    /// from the listing's own size.
+    ///
+    /// - Returns: The inspector, or `nil` when the student has not allowed it, WeBeep is
+    ///   not connected, or nobody is signed in — in which case nothing is downloaded.
     private func resultsInspector() -> (@MainActor (ResultsFileRef) async -> ResultsLookup?)? {
         let preferences = NotificationPreferences.stored
         guard preferences.examUpdates, preferences.readResultsFiles,
@@ -322,11 +403,17 @@ final class WeBeepModel {
         }
     }
 
-    /// The course pages worth checking: this academic year's, not hidden.
+    /// The course pages one sweep should read.
     ///
-    /// Favourites every pass; the rest of the ``watchLimit`` rotates through
-    /// the other courses, so a seventh course is read every few passes rather
-    /// than never.
+    /// Favourites every pass, since a favourite is the student saying which pages they
+    /// care about; the remaining room rotates through the other eligible courses, so a
+    /// seventh course is read every few passes rather than never.
+    ///
+    /// - Parameters:
+    ///   - courses: The enrolled courses.
+    ///   - now: The moment that decides which academic year is current.
+    ///   - pass: The sweep's number, which advances the rotation.
+    /// - Returns: At most ``watchLimit`` courses.
     static func watched(_ courses: [Course], now: Date, pass: Int = 0) -> [Course] {
         let eligible = courses
             .filter { isWatchable($0, now: now) }
@@ -340,19 +427,35 @@ final class WeBeepModel {
         return favourites + rotated.prefix(room)
     }
 
-    /// This academic year's, visible, and linked to WeBeep by id.
+    /// Whether a course page is worth sweeping: this academic year's, not hidden, and
+    /// linked to WeBeep by id.
+    ///
+    /// - Parameters:
+    ///   - course: The course to judge.
+    ///   - now: The moment that decides which academic year is current.
+    /// - Returns: `true` when the page should be read.
     static func isWatchable(_ course: Course, now: Date) -> Bool {
         !course.isHidden && course.moodleID != nil
             && startYear(of: course.academicYear) == startYear(of: Course.academicYearLabel(for: now))
     }
 
-    /// `2025/26`, `2025-26` and `2025-2026` all start in 2025.
+    /// The calendar year an academic-year label begins in.
+    ///
+    /// - Parameter label: `2025/26`, `2025-26` or `2025-2026`, all of which begin in 2025.
+    /// - Returns: The year, or `nil` when the label does not begin with four digits.
     private static func startYear(of label: String) -> Int? {
         Int(label.prefix(4))
     }
 
+    /// The offline record name a course's listing is stored under.
+    ///
+    /// - Parameter course: The course.
+    /// - Returns: The record name.
     private func slotName(for course: Course) -> String { "materials-\(course.id)" }
 
+    /// Puts a course's cached listing into ``sections``, if there is one for this account.
+    ///
+    /// - Parameter course: The course.
     private func restoreMaterials(for course: Course) {
         var slot = materialSlots[course.id]
             ?? CachedSlot<[WeBeepSection]>(name: slotName(for: course))
@@ -362,6 +465,10 @@ final class WeBeepModel {
         materialSlots[course.id] = slot
     }
 
+    /// Stores the current ``sections`` as this course's listing. Nothing is written under
+    /// sample data.
+    ///
+    /// - Parameter course: The course.
     private func saveMaterials(for course: Course) {
         var slot = materialSlots[course.id]
             ?? CachedSlot<[WeBeepSection]>(name: slotName(for: course))
@@ -369,13 +476,15 @@ final class WeBeepModel {
         materialSlots[course.id] = slot
     }
 
-    /// Matches a PoliMi course to its Moodle counterpart.
+    /// Matches a Politecnico course to its Moodle counterpart.
     ///
-    /// The two systems share no identifier — Moodle has its own numeric course
-    /// id and a free-text `fullname`, while PoliMi uses `c_insegn_piano`. The
-    /// course code often appears inside the Moodle title (WeBeep names courses
-    /// like "097785 - BASI DI DATI"), so try that first and fall back to
-    /// comparing normalised names.
+    /// A course sourced from WeBeep already knows its id, so no matching is needed and
+    /// none can go wrong. Otherwise the teaching code is looked for inside Moodle's title
+    /// and short name — WeBeep names courses like `"097785 - BASI DI DATI"` — and failing
+    /// that the normalised names are compared. A match is remembered.
+    ///
+    /// - Parameter course: The course to match.
+    /// - Returns: Moodle's course id, or `nil` when nothing matches.
     private func moodleCourseID(for course: Course) -> Int? {
         // A course sourced from WeBeep already knows its Moodle id; no matching
         // required, and no chance of matching wrongly.
@@ -405,11 +514,16 @@ final class WeBeepModel {
 
     // MARK: - Enrolment
 
-    /// Whether each course page takes self-enrolment, asked once a launch.
+    /// Whether each course page takes self-enrolment, by Moodle course id. Asked once per
+    /// launch and read by ``EnrolmentOrigin``.
     private(set) var selfEnrolment: [Int: Bool] = [:]
 
-    /// Asks the pages not already asked, one at a time: a background nicety,
-    /// not worth a burst of requests.
+    /// Asks the pages not already asked whether they take self-enrolment.
+    ///
+    /// One at a time: a background nicety rather than something worth a burst of requests.
+    /// Failures are ignored and retried on a later launch.
+    ///
+    /// - Parameter moodleIDs: The course pages to ask about.
     func loadSelfEnrolment(for moodleIDs: [Int]) async {
         guard let api, !session.useMockData else { return }
         for id in moodleIDs where selfEnrolment[id] == nil {
@@ -420,9 +534,14 @@ final class WeBeepModel {
         }
     }
 
-    /// Lecturers of each course page, asked once a launch.
+    /// The lecturers listed on each course page, by Moodle course id. Asked once per
+    /// launch.
     private(set) var contacts: [Int: [String]] = [:]
 
+    /// Fetches the lecturers of the pages not already asked, twenty at a time — one
+    /// request carries the ids in its query string.
+    ///
+    /// - Parameter moodleIDs: The course pages to ask about.
     func loadContacts(for moodleIDs: [Int]) async {
         guard let api, !session.useMockData else { return }
         let missing = moodleIDs.filter { contacts[$0] == nil }
@@ -438,17 +557,25 @@ final class WeBeepModel {
         }
     }
 
+    /// The held Moodle course with a given id.
+    ///
+    /// - Parameter id: Moodle's course id.
+    /// - Returns: The course, or `nil` when it is not in the held list.
     func moodleCourse(id: Int) -> MoodleCourse? {
         courses.first { $0.id == id }
     }
 
     // MARK: - Forums
 
-    /// Course pages read recently, so the hub's forums and the materials
-    /// screen share one `core_course_get_contents`.
+    /// Course pages read recently, so the course hub's forums and the materials screen
+    /// share one `core_course_get_contents`. Reused for ten minutes.
     private var contents: [Int: (sections: [MoodleSection], at: Date)] = [:]
 
-    /// The forums on a course's page; nil when WeBeep cannot say.
+    /// The forums on a course's page.
+    ///
+    /// - Parameter course: The course.
+    /// - Returns: The forums, or `nil` when WeBeep is not connected, the course cannot be
+    ///   matched, or the call failed — none of which is the same as a page with no forums.
     func forums(for course: Course) async -> [CourseForum]? {
         if session.useMockData { return CourseForum.samples }
         guard let api else { return nil }
@@ -470,6 +597,12 @@ final class WeBeepModel {
         }
     }
 
+    /// The discussions in one forum.
+    ///
+    /// - Parameter forum: The forum to read.
+    /// - Returns: Up to thirty discussions, in Moodle's own order.
+    /// - Throws: `URLError.userAuthenticationRequired` when WeBeep is not connected, or
+    ///   ``WeBeepAPI/Failure``.
     func discussions(in forum: CourseForum) async throws -> [MoodleDiscussion] {
         if session.useMockData { return MoodleDiscussion.samples }
         // Not connected: the forum screen offers the login before asking.
@@ -477,6 +610,12 @@ final class WeBeepModel {
         return try await api.discussions(forumID: forum.id, perPage: 30)
     }
 
+    /// The posts in one discussion, oldest first.
+    ///
+    /// - Parameter discussion: The discussion to read.
+    /// - Returns: The posts.
+    /// - Throws: `URLError.userAuthenticationRequired` when WeBeep is not connected, or
+    ///   ``WeBeepAPI/Failure``.
     func posts(in discussion: MoodleDiscussion) async throws -> [MoodlePosts.Post] {
         if session.useMockData { return MoodlePosts.Post.samples(for: discussion) }
         // Not connected: the forum screen offers the login before asking.
@@ -484,6 +623,12 @@ final class WeBeepModel {
         return try await api.discussionPosts(discussionID: discussion.discussion ?? discussion.id).chronological
     }
 
+    /// Reports a Moodle failure.
+    ///
+    /// A failure that means the token is dead signs WeBeep out, so the interface offers a
+    /// fresh sign-in; anything else enters ``State/failed(_:)``.
+    ///
+    /// - Parameter error: What the call raised.
     private func handle(_ error: WeBeepAPI.Failure) {
         if error.isAuthFailure {
             // The token is dead; drop it so the UI offers login rather than
@@ -492,5 +637,20 @@ final class WeBeepModel {
         } else {
             state = .failed(error.localizedDescription)
         }
+    }
+}
+/// ``WeBeepModel`` satisfies ``CourseEnrolments``, with its Moodle courses
+/// projected into the app's own ``Course``.
+///
+/// Declared here rather than beside the protocol: ``CourseEnrolments`` refines
+/// `Sendable`, and a `Sendable` conformance stated in another file is
+/// retroactive.
+extension WeBeepModel: CourseEnrolments {
+    /// The enrolled teachings, loading them first if they are not held yet.
+    ///
+    /// - Returns: The teachings.
+    func enrolledCourses() async -> [Course] {
+        await loadCourses()
+        return courses.map(Course.init(moodle:))
     }
 }
