@@ -13,6 +13,13 @@ import OSLog
 /// `Application Support/Recordings/<transfer_id>.mp4`, excluded from backup, and is
 /// never offered to share or export: it holds other students' voices. Signing out
 /// deletes every file.
+///
+/// Force-quitting the app cancels its background downloads — iOS does that on
+/// purpose, and nothing an app does prevents it. What arrives on the next launch is
+/// the cancellation, often with the data to carry on from where it stopped: that is
+/// kept beside the file (`<transfer_id>.resume`), and resumed at once while the
+/// address inside it is still good — Webex's ticket lasts ninety minutes — or on
+/// the student's word, from a fresh address, after that.
 @Observable
 @MainActor
 final class RecordingDownloads {
@@ -22,6 +29,8 @@ final class RecordingDownloads {
         case idle
         /// Downloading, with the fraction done when known.
         case downloading(Double?)
+        /// Stopped part-way — the app was closed — and waiting to be resumed.
+        case interrupted
         /// On the device.
         case downloaded(URL)
         /// The download did not complete, with a sentence to show.
@@ -67,6 +76,17 @@ final class RecordingDownloads {
         reattach()
     }
 
+    /// How long after its start a download's resume data is trusted: the life of the
+    /// Webex ticket in the address it carries, less a margin.
+    private let resumeLifetime: TimeInterval = 80 * 60
+
+    /// When each download in flight was started, by `transfer_id`: the ticket in its
+    /// address is that old. Kept across launches, since resuming happens on the next.
+    private var startedAt: [String: Date] {
+        get { UserDefaults.standard.dictionary(forKey: "recordingDownloadStarts") as? [String: Date] ?? [:] }
+        set { UserDefaults.standard.set(newValue, forKey: "recordingDownloadStarts") }
+    }
+
     /// A recording's status.
     ///
     /// - Parameter recording: The recording.
@@ -107,8 +127,10 @@ final class RecordingDownloads {
         guard stream.allowsDownload, let address = stream.mp4URL else { return }
         switch status(of: recording) {
         case .downloading, .downloaded: return
-        case .idle, .failed: break
+        case .idle, .failed, .interrupted: break
         }
+        // A fresh address supersedes what was left of an earlier attempt.
+        try? FileManager.default.removeItem(at: Self.resumeFile(for: recording.transferID))
         var request = URLRequest(url: address)
         for (field, value) in HTTPCookie.requestHeaderFields(with: cookies) {
             request.setValue(value, forHTTPHeaderField: field)
@@ -117,8 +139,38 @@ final class RecordingDownloads {
         task.taskDescription = String(recording.transferID)
         task.countOfBytesClientExpectsToReceive = Int64(stream.fileSize ?? 0)
         statuses[recording.transferID] = .downloading(nil)
+        startedAt[String(recording.transferID)] = .now
         task.resume()
         log.info("Downloading transfer \(recording.transferID, privacy: .public)")
+    }
+
+    /// Carries on an interrupted download from where it stopped, while the address it
+    /// was started with is still good.
+    ///
+    /// - Parameter recording: The recording.
+    /// - Returns: Whether it resumed; `false` means it needs a fresh address, through
+    ///   ``download(_:from:cookies:)``.
+    @discardableResult
+    func resume(_ recording: Recording) -> Bool {
+        resume(recording.transferID)
+    }
+
+    /// Resumes one download by `transfer_id`. See ``resume(_:)``.
+    @discardableResult
+    private func resume(_ id: Int) -> Bool {
+        let file = Self.resumeFile(for: id)
+        guard let started = startedAt[String(id)],
+              Date.now.timeIntervalSince(started) < resumeLifetime,
+              let data = try? Data(contentsOf: file) else {
+            return false
+        }
+        try? FileManager.default.removeItem(at: file)
+        let task = session.downloadTask(withResumeData: data)
+        task.taskDescription = String(id)
+        statuses[id] = .downloading(nil)
+        task.resume()
+        log.info("Resuming download of transfer \(id, privacy: .public)")
+        return true
     }
 
     /// Stops a download in flight.
@@ -129,14 +181,16 @@ final class RecordingDownloads {
         session.getAllTasks { tasks in
             tasks.filter { $0.taskDescription == id }.forEach { $0.cancel() }
         }
+        try? FileManager.default.removeItem(at: Self.resumeFile(for: recording.transferID))
         statuses[recording.transferID] = nil
     }
 
-    /// Deletes a saved recording.
+    /// Deletes a saved recording, or what is left of an interrupted download.
     ///
     /// - Parameter recording: The recording.
     func delete(_ recording: Recording) {
         try? FileManager.default.removeItem(at: Self.file(for: recording.transferID))
+        try? FileManager.default.removeItem(at: Self.resumeFile(for: recording.transferID))
         statuses[recording.transferID] = nil
     }
 
@@ -145,6 +199,7 @@ final class RecordingDownloads {
         session.getAllTasks { tasks in tasks.forEach { $0.cancel() } }
         try? FileManager.default.removeItem(at: Self.directory)
         statuses = [:]
+        startedAt = [:]
         log.info("Saved recordings deleted")
     }
 
@@ -164,7 +219,15 @@ final class RecordingDownloads {
     /// Takes a download that finished with its file in place.
     fileprivate func finished(_ id: Int, at url: URL) {
         statuses[id] = .downloaded(url)
+        startedAt[String(id)] = nil
         log.info("Downloaded transfer \(id, privacy: .public)")
+    }
+
+    /// Takes a download stopped part-way whose resume data has been kept, and carries
+    /// it on at once when it still can.
+    fileprivate func interrupted(_ id: Int) {
+        log.info("Download of transfer \(id, privacy: .public) interrupted")
+        if !resume(id) { statuses[id] = .interrupted }
     }
 
     /// Takes a download that failed, or was cancelled.
@@ -190,12 +253,20 @@ final class RecordingDownloads {
         directory.appending(path: "\(id).mp4")
     }
 
+    /// Where an interrupted download's resume data goes.
+    nonisolated static func resumeFile(for id: Int) -> URL {
+        directory.appending(path: "\(id).resume")
+    }
+
     /// Marks the files already on the device as downloaded.
     private func scanFiles() {
         let files = (try? FileManager.default.contentsOfDirectory(at: Self.directory, includingPropertiesForKeys: nil)) ?? []
-        for file in files where file.pathExtension == "mp4" {
-            if let id = Int(file.deletingPathExtension().lastPathComponent) {
-                statuses[id] = .downloaded(file)
+        for file in files {
+            guard let id = Int(file.deletingPathExtension().lastPathComponent) else { continue }
+            switch file.pathExtension {
+            case "mp4": statuses[id] = .downloaded(file)
+            case "resume" where statuses[id] == nil: statuses[id] = .interrupted
+            default: break
             }
         }
     }
@@ -258,8 +329,24 @@ private final class Relay: NSObject, URLSessionDownloadDelegate, @unchecked Send
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: (any Error)?) {
         guard let error, let id = task.taskDescription.flatMap(Int.init) else { return }
-        // A cancel is the student's own doing, not a failure to report.
-        let message = (error as NSError).code == NSURLErrorCancelled ? nil : error.localizedDescription
+        let info = (error as NSError).userInfo
+        // Stopped by the system — the app force-quit, or the connection lost — with
+        // the data to carry on: kept, and resumed.
+        if let data = info[NSURLSessionDownloadTaskResumeData] as? Data {
+            do {
+                try FileManager.default.createDirectory(at: RecordingDownloads.directory, withIntermediateDirectories: true)
+                try data.write(to: RecordingDownloads.resumeFile(for: id), options: .atomic)
+                Task { @MainActor [weak owner] in owner?.interrupted(id) }
+                return
+            } catch {}
+        }
+        // A plain cancel is the student's own doing, not a failure to report. One
+        // with a system reason and nothing to resume from is a failure.
+        let byStudent = (error as NSError).code == NSURLErrorCancelled
+            && info[NSURLErrorBackgroundTaskCancelledReasonKey] == nil
+        let message = byStudent
+            ? nil
+            : String(localized: "Il download si è interrotto quando l'app è stata chiusa. Riprova dal menu.")
         Task { @MainActor [weak owner] in owner?.failed(id, message: message) }
     }
 

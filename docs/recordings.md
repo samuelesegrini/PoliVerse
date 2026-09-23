@@ -324,6 +324,11 @@ Step 4 (2026-09-23, not yet tried on a device):
   backup, and are deleted at sign-out. No share sheet, no export.
 - A saved recording plays from the file, without Webex, and keeps its resume
   point. The list says "offline" and the header counts them.
+- **[J]** Force-quitting the app cancels its background downloads; iOS does that
+  on purpose. The cancellation arrives on the next launch, often with resume data,
+  which is kept as `<transfer_id>.resume` and resumed at once while the download
+  is under 80 minutes old (Webex's ticket lasts 90); after that the row offers
+  "Riprendi il download", which starts again from a fresh address.
 
 ## Still to verify
 

@@ -262,6 +262,11 @@ struct CourseRecordingsView: View {
             Button("Rimuovi il download", systemImage: "trash", role: .destructive) { downloads.delete(recording) }
         case .downloading:
             Button("Annulla il download", systemImage: "xmark.circle") { downloads.cancel(recording) }
+        case .interrupted:
+            Button("Riprendi il download", systemImage: "arrow.down.circle") {
+                if !downloads.resume(recording) { Task { await download(recording) } }
+            }
+            Button("Annulla il download", systemImage: "xmark.circle") { downloads.delete(recording) }
         case .idle, .failed:
             if !model.downloadForbidden.contains(recording.transferID), !session.useMockData {
                 Button(recording.megabytes.map { String(localized: "Scarica per vederla offline (\($0) MB)") }
@@ -425,6 +430,7 @@ private struct RecordingRow: View {
         switch download {
         case .downloaded: parts.append(String(localized: "offline"))
         case .failed: parts.append(String(localized: "download non riuscito"))
+        case .interrupted: parts.append(String(localized: "download interrotto"))
         case .idle, .downloading: break
         }
         return parts.joined(separator: " · ")
