@@ -14,6 +14,8 @@ The ActivityKit and WidgetKit Updates pages have no June 2026 entry.
 
 ## Deployment target: it does not match iOS 27
 
+> **Done (checked 2026-09-23).** Commit `b86ee8c` moved `IPHONEOS_DEPLOYMENT_TARGET` to 27.0 for every iOS target, and the fallbacks listed below are gone: a grep for `#available(iOS 2`, `@available(iOS 2`, `MXMetricManager` and `LegacyMetricSubscriber` in `PoliVerse`, `Shared` and `PoliVerseWidgets` finds nothing. The Watch target is on `WATCHOS_DEPLOYMENT_TARGET = 26.0`. The notes below describe the state on 2026-09-17.
+
 - **[V]** `IPHONEOS_DEPLOYMENT_TARGET = 26.0` (`PoliVerse.xcodeproj/project.pbxproj:394`; it is the only value in the project).
 - **[V]** `docs/lazy-loading.md:147-152` argued against raising it to 27, because the release adds no launch API and the change would drop users. The owner's decision overrides that note. The note should be updated when the target changes.
 - **[V]** Once the target is 27, these paths can go:
@@ -49,7 +51,7 @@ So the next features are mostly **new capability**, not a return to parity.
 |---|---------|---------|--------|-------------------------|----------|
 | 1 | Deadline detail screen (WeBeep assignment) | The only Oggi row that opens nothing; the spec says it is missing | S | none; `mod_assign_get_assignments` is already called | `TodaySectionView.swift:193-198`, `information-architecture.md:38` |
 | 2 | iPad / sidebar layout for NewUI | The app ships for iPad, NewUI is the default, and the spec asks for `.sidebarAdaptable` | M | design pass | `project.pbxproj:474`, `RootView.swift:9`, `information-architecture.md:124` |
-| 3 | Decide the fate of the old UI (`MainTabView`) | Two shells double the cost of every feature; the flag comment still says "on this branch" | M | owner decision, merge of `feature/*` | `RootView.swift:7-9,26-30` |
+| 3 | ~~Decide the fate of the old UI (`MainTabView`)~~ **Done** | The old shell was removed in `986d4f6`; see §3 | — | — | `RootView.swift` |
 | 4 | Exam-day Live Activity | Session planning; the lecture Live Activity path already exists | S–M | none (starts manually, no push) | `LiveActivityController.swift:6-11,62`, `academic-intelligence-layer.md` §22 |
 | 5 | Siri/Spotlight entities for courses, exams and rooms (App Entities + `IndexedEntity`) | Intents are screen-level only; Spotlight already indexes courses and rooms by hand | M | none | `AppShortcuts.swift:9-39`, `SpotlightIndex.swift:57,129` |
 | 6 | Official corrections viewer (`/v1/prove/correzioni`) | The app already knows when a correction exists but sends the student to the web | M | response shape unverified; the file is a blob | `ExamDetailView.swift:211-214`, `polimi-api-research.md:384-386` |
@@ -78,6 +80,8 @@ Ranks 1–3 finish what exists. Ranks 4–9 add capability on top of data the ap
 - **[J]** `NewDestination` already lists every place in one enum (`NewDestination.swift:6-8`), so a sidebar can be generated from it. The Personalizza overlay and the single-page panel need a separate check at iPad widths.
 
 ## 3. Retire or freeze the old interface
+
+> **Done (checked 2026-09-23).** Commit `986d4f6` merged NewUI into `Features/` and removed the old shell: `MainTabView` and `NewRootView` no longer exist, and `RootView` is the only shell. The notes below describe the state on 2026-09-17 and no longer gate ranks 1, 2 and 5.
 
 - **[V]** `RootView` still switches between `NewRootView` and `MainTabView` (`RootView.swift:26-30`). The comment says NewUI is "on by default on this branch" (`:7-8`).
 - **[V]** The newer screens (course hub `CoursesPage`, glass exam page) are NewUI-first, and recent commits touch only NewUI or shared views (`git log` `1d9d410`…`631ecf2`).
@@ -186,7 +190,7 @@ Notes per item:
 - **[V]** Scadenze and In arrivo rows don't open anything (`TodaySectionView.swift:198`, `opens: nil`).
 - **[V]** `TodayLanding` has a no-op `onAddSticker = {}` and `onEdit = { _ in }` in one initialiser (`PoliVerse/NewUI/Shared/TodayLanding.swift:56-57`). This is probably the preview or read-only path [?].
 - **[V]** The current-class accessory shows only a placeholder on iOS 26.0 and needs 26.1 (`PoliVerse/NewUI/Shared/CurrentClassAccessory.swift:90`).
-- **[V]** `RootView` still carries the old shell (`RootView.swift:26-30`); see rank 3.
+- ~~**[V]** `RootView` still carries the old shell (`RootView.swift:26-30`); see rank 3.~~ Removed in `986d4f6`.
 - **[V]** The design board `design/profile` has variants (`Pass.dc.html` "Variante · Carta", `Poster`, `Essenziale`; `design/profile/canvas.json:5`). Only the QR contact page is in code (`PoliVerse/NewUI/Profile/ProfilePages.swift:51`, `ProfileView.swift:118`). I did not check which variant the owner chose [?].
 - **[V]** The design board `design/in-arrivo` compares "2a retro" and "2b sotto" for the shape picker (`design/in-arrivo/canvas.json:110,118`). `SectionFormPicker.swift` exists, but I did not check which option was built [?].
 - **[V]** The WeBeep login end-to-end checks listed as "still unverified" (`docs/webeep.md:127-139`) have no later note saying they were done [?].
@@ -207,17 +211,17 @@ These are not grounded in code, docs or Politecnico pages. Treat them as prompts
 
 - Apple Wallet student card (suggested by the "Carta" profile variant). It needs a signing certificate and a server, and the Politecnico would have to accept it.
 - Canteen menus, library seat booking, tuition fees (tasse) and ISEE deadlines. I found no endpoint for any of them in `docs/polimi-api-research.md`.
-- A watchOS companion (no target in the project).
+- ~~A watchOS companion (no target in the project).~~ Built since: the `PoliVerseWatch` target shows the day and the next exam, sent from the phone (`beca9b4`).
 - Study groups or sharing a timetable with classmates beyond the QR contact card.
 - Personal statistics ("tempo medio tra appello ed esito"). This is listed in `academic-intelligence-layer.md` §22 with no user demand shown.
 
 ## Open questions for the owner
 
-1. Is NewUI going to be the only interface on `main`? If yes, when can `MainTabView`/`HomeView` go? (Rank 3 gates ranks 1, 2 and 5.)
+1. ~~Is NewUI going to be the only interface on `main`? If yes, when can `MainTabView`/`HomeView` go? (Rank 3 gates ranks 1, 2 and 5.)~~ Answered: the old shell is gone (`986d4f6`).
 2. Does iPad matter for the first release, or should `TARGETED_DEVICE_FAMILY` drop to iPhone only?
 3. Are writes to `iae` (enrolment, refusing a mark) ever in scope? Has anyone contacted ASICT, as `academic-intelligence-layer.md` open question 7 suggests?
 4. Can an account with a correction document (`hasCorrezioni = true`) and a non-empty `/v1/notifications` be used to capture shapes?
 5. Which profile variant and which In arrivo shape-picker option (2a or 2b) are final?
 6. Is Foundation Models acceptable even though it only runs on Apple Intelligence devices, so part of the students won't get the feature?
-7. When will `IPHONEOS_DEPLOYMENT_TARGET` move from 26.0 to 27.0? Until it does, every iOS 27 API above needs an `#available` path, and the owner's "targets iOS 27" is not true of the build (`project.pbxproj:394`).
+7. ~~When will `IPHONEOS_DEPLOYMENT_TARGET` move from 26.0 to 27.0? Until it does, every iOS 27 API above needs an `#available` path, and the owner's "targets iOS 27" is not true of the build (`project.pbxproj:394`).~~ Answered: 27.0 since `b86ee8c`.
 8. Which Xcode builds releases? The Xcode 27 `@State` macro behaviour applies whatever the target is.
