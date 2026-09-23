@@ -105,9 +105,10 @@ final class RecordingsModel {
     /// How many of a course's recordings are still to watch.
     ///
     /// - Parameter course: The course.
-    /// - Returns: The recordings not yet watched, of those read so far.
+    /// - Returns: The recordings of the course's own edition not yet watched, of
+    ///   those read so far.
     func toWatch(in course: Course) -> Int {
-        recordings(for: course).filter { progress[$0.transferID]?.completed != true }.count
+        recordings(for: course).filter { $0.isOf(edition: course) && progress[$0.transferID]?.completed != true }.count
     }
 
     // MARK: - Progress

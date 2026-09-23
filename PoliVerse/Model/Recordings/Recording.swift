@@ -85,6 +85,19 @@ nonisolated extension Recording {
             .filter { $0.teachingCode == code }
             .sorted { $0.recordedAt > $1.recordedAt }
     }
+
+    /// Whether the recording belongs to the edition of the teaching that `course` is.
+    ///
+    /// A course is one year's edition; recordings of the same teaching from other
+    /// years are the archive's, shown apart. A course whose year cannot be read
+    /// counts every recording as its own.
+    ///
+    /// - Parameter course: The course, whose academic year is the edition's.
+    /// - Returns: `true` when the years match, or the course's is unknown.
+    func isOf(edition course: Course) -> Bool {
+        guard let year = course.academicYearStart else { return true }
+        return academicYearStart == year
+    }
 }
 
 /// How far the student has got with one recording: kept on the device, not read
