@@ -46,9 +46,13 @@ enum RecordingsWebKit {
         await dataStore.removeData(
             ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast)
         KeychainStore.delete(account: sessionAccount)
+        UserDefaults.standard.removeObject(forKey: webexEmailKey)
         restored = false
         log.info("Recordings session cleared")
     }
+
+    /// Where ``RecordingsModel/webexEmail`` is kept.
+    nonisolated static let webexEmailKey = "recordingsWebexEmail"
 
     // MARK: - Keeping the session across launches
 
@@ -99,7 +103,7 @@ enum RecordingsWebKit {
         let cookies: [KeptCookie]
     }
 
-    /// Keeps the session's `polimi.it` cookies in the Keychain.
+    /// Keeps the session's `polimi.it` and `webex.com` cookies in the Keychain.
     ///
     /// The Politecnico serves every one of them session-only, so WebKit drops them when
     /// the app quits and the student would sign in again at every launch. Kept here, on
@@ -108,7 +112,7 @@ enum RecordingsWebKit {
     /// the Politecnico accepted.
     static func saveSession() async {
         let cookies = await dataStore.httpCookieStore.allCookies()
-            .filter { $0.domain.hasSuffix("polimi.it") }
+            .filter { $0.domain.hasSuffix("polimi.it") || $0.domain.hasSuffix("webex.com") }
             .map(KeptCookie.init)
         guard !cookies.isEmpty,
               let data = try? JSONEncoder().encode(KeptSession(savedAt: .now, cookies: cookies))
@@ -141,6 +145,12 @@ enum RecordingsWebKit {
             await store.setCookie(cookie)
         }
         log.info("Recordings session restored: \(kept.cookies.count, privacy: .public) cookies")
+    }
+
+    /// Webex's cookies in the session, for the player to send with the media
+    /// requests.
+    static func webexCookies() async -> [HTTPCookie] {
+        await dataStore.httpCookieStore.allCookies().filter { $0.domain.hasSuffix("webex.com") }
     }
 
     /// Whether a URL belongs to a sign-in step rather than to recman.

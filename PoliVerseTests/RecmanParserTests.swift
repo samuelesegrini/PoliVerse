@@ -277,4 +277,30 @@ struct RecmanParserTests {
         #expect(back.isSecure && back.isHTTPOnly)
         #expect(back.isSessionOnly)
     }
+
+    /// The fields the app reads from Webex's `/stream` answer, as captured on
+    /// 2026-09-23 (addresses shortened, tokens removed).
+    @Test("La risposta /stream di Webex si legge: HLS, durata e permessi")
+    func webexStream() throws {
+        let json = """
+        {"downloadRecordingInfo":{"downloadInfo":{
+            "hlsURL":"https://nfg1wss.webex.com/nbr/MultiThreadDownloadServlet/abc/hls.m3u8",
+            "mp4URL":"https://nfg1wss.webex.com/nbr/MultiThreadDownloadServlet?recordid=1"},"recordUUID":"x"},
+         "duration":8122000,"fileSize":207944795,"preventDownload":false,"enforcePreventDownload":false,
+         "needShowDisclaimer":true,"recordName":"Lezione","canPlayback":true}
+        """
+        let stream = try JSONDecoder().decode(WebexStream.self, from: Data(json.utf8))
+        #expect(stream.hlsURL?.lastPathComponent == "hls.m3u8")
+        #expect(stream.duration == .milliseconds(8_122_000))
+        #expect(stream.fileSize == 207_944_795)
+        #expect(stream.allowsDownload)
+        #expect(stream.needsDisclaimer)
+
+        let locked = try JSONDecoder().decode(WebexStream.self, from: Data(
+            #"{"downloadRecordingInfo":{"downloadInfo":{"hlsURL":"https://x/hls.m3u8","mp4URL":"https://x/y"}},"preventDownload":false,"enforcePreventDownload":true}"#.utf8))
+        #expect(!locked.allowsDownload, "Il divieto del sito vale quanto quello del docente")
+
+        let bare = try JSONDecoder().decode(WebexStream.self, from: Data("{}".utf8))
+        #expect(bare.hlsURL == nil && !bare.allowsDownload)
+    }
 }

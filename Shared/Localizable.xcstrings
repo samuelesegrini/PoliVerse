@@ -1281,6 +1281,9 @@
         }
       }
     },
+    "Accesso a Webex" : {
+
+    },
     "Accesso al Politecnico" : {
 
     },
@@ -2128,9 +2131,6 @@
           }
         }
       }
-    },
-    "Apre la registrazione su Webex" : {
-
     },
     "Apre la simulazione della media" : {
 
@@ -5369,6 +5369,9 @@
         }
       }
     },
+    "Email per Webex" : {
+
+    },
     "Emoji" : {
       "localizations" : {
         "en" : {
@@ -6179,6 +6182,9 @@
           }
         }
       }
+    },
+    "Guarda" : {
+
     },
     "Guarda l'app senza accedere" : {
       "localizations" : {
@@ -7845,6 +7851,9 @@
           }
         }
       }
+    },
+    "La registrazione può contenere le voci e le immagini di altri partecipanti. È per il tuo studio: non va registrata né diffusa." : {
+
     },
     "La scheda non lo dice" : {
       "localizations" : {
@@ -9759,6 +9768,9 @@
       }
     },
     "Nome dello stile" : {
+
+    },
+    "nome.cognome@mail.polimi.it" : {
 
     },
     "Non aggiunti" : {
@@ -12093,6 +12105,9 @@
         }
       }
     },
+    "Registrazione della lezione" : {
+
+    },
     "Registrazione non disponibile" : {
 
     },
@@ -12299,6 +12314,9 @@
 
     },
     "Ripristina" : {
+
+    },
+    "Riproduce la registrazione" : {
 
     },
     "Riprova" : {
@@ -14862,6 +14880,9 @@
           }
         }
       }
+    },
+    "Webex chiede l'email del tuo account del Politecnico prima di passare all'accesso. Te la chiediamo una volta sola." : {
+
     },
     "Widget" : {
 

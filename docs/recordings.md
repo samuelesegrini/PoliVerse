@@ -267,6 +267,32 @@ Step 1 is in the code (2026-09-23):
   Politecnico honours them.
 - `LoginFlow.signOut()` empties the recordings' web store and the kept session.
 
+Step 2 (2026-09-23, not yet tried on a device):
+
+- `Model/Recordings/WebexPlayback.swift` opens the recording's Webex page in a
+  hidden `WKWebView` on the same session and captures the page's own `/stream`
+  answer with a script watching `fetch` and `XMLHttpRequest`, so the app never
+  rebuilds that request or its headers. Content rules keep the page from loading
+  the video, images, fonts, the chat and the participant list.
+- `Features/Recordings/RecordingPlayer.swift` plays `hlsURL` in
+  `AVPlayerViewController`, presented by UIKit so Picture in Picture can take it
+  over and hand it back; the `audio` background mode keeps it playing with the
+  screen off. Webex's cookies go along with the media requests
+  (`AVURLAssetHTTPCookiesKey`) in case the media host wants them.
+- **[V]** Webex keeps its sign-in per page, so each look-up passes through its
+  identity broker: `sites/politecnicomilano/login` → `idbroker…/IdBMeetingsLogin`
+  → `doSSO.jsp`, which asks for the account's email (the broker remembers it only
+  in a cookie it did not set here) → `POST /idb/globalLogin` (`email`,
+  `emailHash`, `domainHash`, …) → SAML to `shibidp.polimi.it`, which passes on the
+  kept session → `loginSuccessPage` → playback page → `/stream`. The Sign In button
+  stays disabled until the page's own validation runs, so `WebexPlayback` fills
+  `IDToken1`, sets `nameValidated` and calls the page's `processForm()`. The
+  email is the institutional one from the profile, or the one the student gives
+  once when that is refused.
+- When `needShowDisclaimer` is set, a notice about other participants' voices is
+  shown before the first recording. When Webex will not say where it streams,
+  the recording opens on Webex in the browser, as in step 1.
+
 ## Still to verify
 
 1. The SSO cookie's lifetime: open recman a day later without signing in.

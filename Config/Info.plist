@@ -47,9 +47,12 @@
 		<string>CIEID</string>
 		<string>cieid</string>
 	</array>
+	<!-- "audio" keeps a lecture recording playing with the screen off and in
+	     Picture in Picture; see ``RecordingPlayerView``. -->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
+		<string>audio</string>
 	</array>
 </dict>
 </plist>

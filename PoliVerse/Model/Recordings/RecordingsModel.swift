@@ -46,6 +46,8 @@ final class RecordingsModel {
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "recordings")
     /// The hidden browser, created on first use and kept for the play links.
     private var browser: RecmanBrowser?
+    /// The hidden Webex page, created on first play.
+    private var playback: WebexPlayback?
     /// The play links read, valid while the session that served them lasts.
     private var playLinks: [Int: URL] = [:]
     /// When each course's play links were read, by teaching code.
@@ -147,6 +149,39 @@ final class RecordingsModel {
             offline.save(webexAddresses.mapKeys(String.init), as: Self.addressesName, account: matricola)
         }
         return address
+    }
+
+    /// Where a recording streams, asked of Webex's own page.
+    ///
+    /// Not kept: the addresses carry a ticket that expires after ninety minutes.
+    ///
+    /// - Parameters:
+    ///   - address: The recording's Webex address, from ``webexAddress(for:)``.
+    ///   - accountEmail: The student's institutional email, given to Webex when
+    ///     ``webexEmail`` has not been set.
+    /// - Returns: The stream with the cookies to send along, or why there is none.
+    func stream(at address: URL, accountEmail: String?) async -> (outcome: WebexPlayback.Outcome, cookies: [HTTPCookie]) {
+        let playback = playback ?? WebexPlayback()
+        self.playback = playback
+        await RecordingsWebKit.restoreSession()
+        let outcome = await playback.stream(at: address, email: webexEmail ?? accountEmail)
+        switch outcome {
+        case .stream(let stream):
+            log.info("Webex stream: hls \(stream.hlsURL != nil, privacy: .public), download \(stream.allowsDownload, privacy: .public), disclaimer \(stream.needsDisclaimer, privacy: .public)")
+            await RecordingsWebKit.saveSession()
+        case .signInNeeded:
+            log.info("Webex stream: sign-in needed")
+        case .failed:
+            break
+        }
+        return (outcome, await RecordingsWebKit.webexCookies())
+    }
+
+    /// The email the student gave for Webex, when the institutional one was not the
+    /// account's. Kept on this device, and forgotten at sign-out.
+    var webexEmail: String? {
+        get { UserDefaults.standard.string(forKey: RecordingsWebKit.webexEmailKey) }
+        set { UserDefaults.standard.set(newValue, forKey: RecordingsWebKit.webexEmailKey) }
     }
 
     /// Reads one course from recman: through its WeBeep link when it has one, and

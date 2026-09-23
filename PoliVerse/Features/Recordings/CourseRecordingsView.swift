@@ -3,7 +3,9 @@ import SwiftUI
 /// The recorded lectures of one course, from the recman archive, grouped by
 /// academic year: one card per year, newest first.
 ///
-/// A tap opens the recording on Webex, in the browser. See `docs/recordings.md`.
+/// A tap plays the recording in the system player, from the stream Webex serves;
+/// when Webex will not say where that is, the recording opens on Webex in the
+/// browser. See `docs/recordings.md`.
 struct CourseRecordingsView: View {
     /// The course whose recordings these are.
     let course: Course
@@ -30,6 +32,19 @@ struct CourseRecordingsView: View {
     @State private var opening: Recording.ID?
     /// Set when a recording could not be opened.
     @State private var openFailed = false
+    /// A recording waiting for the student to sign in to Webex.
+    @State private var webexSignIn: WebexSignIn?
+    /// Recordings whose Webex sign-in went through in this visit, so a look-up that
+    /// stops on a sign-in again opens the browser rather than asking once more.
+    @State private var webexSignedIn: Set<Recording.ID> = []
+    /// A recording waiting for the student to confirm the email Webex wants.
+    @State private var emailFor: Recording?
+    /// The email being typed.
+    @State private var emailDraft = ""
+    /// A recording waiting for the student to read Webex's notice before it plays.
+    @State private var pendingPlay: PendingPlay?
+    /// Whether the notice before a recording has been read once.
+    @AppStorage("recordingsNoticeRead") private var noticeRead = false
 
     /// The course's recordings, newest first.
     private var recordings: [Recording] { model.recordings(for: course) }
@@ -93,6 +108,39 @@ struct CourseRecordingsView: View {
         }
         .sheet(isPresented: $showingSignIn) {
             RecordingsSignInSheet { await model.load(course, force: true, entry: entry) }
+        }
+        .sheet(item: $webexSignIn) { pending in
+            WebexSignInSheet(address: pending.address) {
+                webexSignedIn.insert(pending.recording.id)
+                Task { await open(pending.recording) }
+            }
+        }
+        .alert("Email per Webex", isPresented: Binding(
+            get: { emailFor != nil }, set: { if !$0 { emailFor = nil } })) {
+            TextField("nome.cognome@mail.polimi.it", text: $emailDraft)
+                .keyboardType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            Button("Continua") {
+                let trimmed = emailDraft.trimmingCharacters(in: .whitespaces)
+                model.webexEmail = trimmed.isEmpty ? nil : trimmed
+                if let recording = emailFor { Task { await open(recording) } }
+                emailFor = nil
+            }
+            Button("Annulla", role: .cancel) { emailFor = nil }
+        } message: {
+            Text("Webex chiede l'email del tuo account del Politecnico prima di passare all'accesso. Te la chiediamo una volta sola.")
+        }
+        .alert("Registrazione della lezione", isPresented: Binding(
+            get: { pendingPlay != nil }, set: { if !$0 { pendingPlay = nil } })) {
+            Button("Guarda") {
+                noticeRead = true
+                if let pending = pendingPlay { pending.play() }
+                pendingPlay = nil
+            }
+            Button("Annulla", role: .cancel) { pendingPlay = nil }
+        } message: {
+            Text("La registrazione può contenere le voci e le immagini di altri partecipanti. È per il tuo studio: non va registrata né diffusa.")
         }
         .alert("Registrazione non disponibile", isPresented: $openFailed) {
             Button("Apri l'archivio") { openURL(RecordingsWebKit.entry) }
@@ -178,7 +226,23 @@ struct CourseRecordingsView: View {
         opening = recording.id
         defer { opening = nil }
         if let address = await model.webexAddress(for: recording) {
-            openURL(address)
+            let (outcome, cookies) = await model.stream(at: address, accountEmail: session.student?.email)
+            switch outcome {
+            case .stream(let stream) where stream.hlsURL != nil:
+                let pending = PendingPlay(stream: stream, recording: recording, cookies: cookies)
+                if stream.needsDisclaimer, !noticeRead { pendingPlay = pending } else { pending.play() }
+            case .signInNeeded where model.webexEmail == nil:
+                // Webex refused the institutional email, or there was none: ask
+                // which one the account uses.
+                emailDraft = session.student?.email ?? ""
+                emailFor = recording
+            case .signInNeeded where !webexSignedIn.contains(recording.id):
+                // The email did not get through either: Webex's own page, once.
+                webexSignIn = WebexSignIn(recording: recording, address: address)
+            default:
+                // Webex would not say where it streams: its own page still plays it.
+                openURL(address)
+            }
         } else if model.phase == .needsSignIn {
             showingSignIn = true
         } else if !session.useMockData {
@@ -224,7 +288,7 @@ private struct RecordingRow: View {
                     if isOpening {
                         ProgressView().controlSize(.small)
                     } else {
-                        Image(systemName: "arrow.up.right")
+                        Image(systemName: "play.fill")
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(.secondary)
                     }
@@ -237,7 +301,7 @@ private struct RecordingRow: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityHint("Apre la registrazione su Webex")
+        .accessibilityHint("Riproduce la registrazione")
     }
 
     /// "Lun 21 set, 13:34 · 135 min", with the kind when the topic took the title's place.
@@ -248,4 +312,30 @@ private struct RecordingRow: View {
         if recording.topic != nil, recording.form != .lecture { parts.append(recording.form.title) }
         return parts.joined(separator: " · ")
     }
+}
+
+/// A recording ready to play once the notice has been read.
+private struct PendingPlay {
+    /// What Webex answered.
+    let stream: WebexStream
+    /// The recording.
+    let recording: Recording
+    /// Webex's cookies, sent with the media requests.
+    let cookies: [HTTPCookie]
+
+    /// Starts it in the system player.
+    @MainActor
+    func play() {
+        RecordingPlayer.shared.play(stream, recording: recording, cookies: cookies)
+    }
+}
+
+/// A recording whose Webex page wants the student to sign in to Webex.
+private struct WebexSignIn: Identifiable {
+    /// The recording to play once signed in.
+    let recording: Recording
+    /// Its Webex address, where the sign-in starts.
+    let address: URL
+    /// The recording's identity.
+    var id: Int { recording.id }
 }
