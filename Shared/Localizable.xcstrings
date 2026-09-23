@@ -668,6 +668,9 @@
         }
       }
     },
+    "%lld min" : {
+
+    },
     "%lld min fa" : {
       "localizations" : {
         "en" : {
@@ -880,6 +883,19 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld prenotazioni nella giornata"
+          }
+        }
+      }
+    },
+    "%lld registrazioni" : {
+
+    },
+    "%lld registrazioni · %lld h" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld registrazioni · %2$lld h"
           }
         }
       }
@@ -1186,6 +1202,9 @@
           }
         }
       }
+    },
+    "Accedi all'archivio" : {
+
     },
     "Accedi con account Polimi" : {
       "localizations" : {
@@ -2110,6 +2129,9 @@
         }
       }
     },
+    "Apre la registrazione su Webex" : {
+
+    },
     "Apre la simulazione della media" : {
 
     },
@@ -2207,6 +2229,12 @@
           }
         }
       }
+    },
+    "Apri l'archivio" : {
+
+    },
+    "Apri l'archivio nel browser" : {
+
     },
     "Apri l'orario" : {
       "localizations" : {
@@ -2402,6 +2430,9 @@
           }
         }
       }
+    },
+    "Archivio registrazioni" : {
+
     },
     "Ardesia" : {
       "localizations" : {
@@ -4643,6 +4674,9 @@
         }
       }
     },
+    "Dati di esempio: disattivali per leggere l'archivio reale." : {
+
+    },
     "Dati di esempio: disattivali per usare WeBeep reale." : {
 
     },
@@ -5524,6 +5558,9 @@
           }
         }
       }
+    },
+    "Esercitazione" : {
+
     },
     "Esiti" : {
 
@@ -7687,6 +7724,12 @@
     "L'appello di %@ non ha ancora una data." : {
 
     },
+    "L'archivio delle registrazioni non risponde come previsto. Puoi aprirlo dal browser." : {
+
+    },
+    "L'archivio non ha registrazioni di questo corso." : {
+
+    },
     "L'aula è evidenziata sulla pianta. Tocca per ingrandire." : {
       "localizations" : {
         "en" : {
@@ -8129,6 +8172,9 @@
           }
         }
       }
+    },
+    "Le registrazioni stanno sui Servizi Online, che vogliono un accesso del browser, distinto da quello dell'app." : {
+
     },
     "Le schermate di PoliVerse" : {
 
@@ -9586,6 +9632,9 @@
         }
       }
     },
+    "Nessuna registrazione" : {
+
+    },
     "Nessuna risposta" : {
 
     },
@@ -9856,6 +9905,9 @@
 
     },
     "Non è stato possibile salvare l'obiettivo. Riprova, o impostalo dai Servizi Online." : {
+
+    },
+    "Non è stato possibile trovare il collegamento a Webex. Puoi cercarla nell'archivio dal browser." : {
 
     },
     "Non hai effettuato l'accesso." : {
@@ -12040,6 +12092,12 @@
           }
         }
       }
+    },
+    "Registrazione non disponibile" : {
+
+    },
+    "Registrazioni" : {
+
     },
     "Respinto" : {
       "localizations" : {

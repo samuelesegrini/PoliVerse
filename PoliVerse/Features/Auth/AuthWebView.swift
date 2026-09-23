@@ -46,13 +46,20 @@ struct AuthWebView: UIViewRepresentable {
     var onCredential: ((String) -> Void)?
     /// The `sessionStorage` key to watch.
     var credentialKey: String = ""
+    /// The store the sign-in runs on. ``LoginWebKit/dataStore`` unless a flow keeps
+    /// a session of its own, as the recordings do.
+    var dataStore: WKWebsiteDataStore?
+    /// Whether finishing copies the session's `polimi.it` cookies into the shared
+    /// jar, which the token exchange needs. A flow whose session stays in its own
+    /// store turns it off.
+    var adoptsCookies = true
 
     /// Creates the navigation delegate and credential observer.
     ///
     /// - Returns: The coordinator.
     func makeCoordinator() -> Coordinator {
         Coordinator(router: router, decide: decide, onError: onError,
-                    onCieIDMissing: onCieIDMissing, onFinished: onFinished)
+                    onCieIDMissing: onCieIDMissing, onFinished: onFinished, adoptsCookies: adoptsCookies)
     }
 
     /// Creates the web view on ``LoginWebKit``'s persistent store, with the content rules and,
@@ -76,7 +83,7 @@ struct AuthWebView: UIViewRepresentable {
         // for as long as the card and PIN take, and if iOS reclaimed the app
         // in that window the in-memory cookies went with it and the login had
         // to be restarted from the top.
-        configuration.websiteDataStore = LoginWebKit.dataStore
+        configuration.websiteDataStore = dataStore ?? LoginWebKit.dataStore
 
         // Tells us the instant the credential is written, instead of polling
         // for it.
@@ -155,6 +162,8 @@ struct AuthWebView: UIViewRepresentable {
         private let onCieIDMissing: () -> Void
         /// Reports that a navigation has settled.
         private let onFinished: (WKWebView, URL?) -> Void
+        /// Whether finishing copies the session's cookies into the shared jar.
+        private let adoptsCookies: Bool
         /// Diagnostic log for this type, under the `authweb` category.
         let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "authweb")
 
@@ -183,18 +192,22 @@ struct AuthWebView: UIViewRepresentable {
         ///   - onError: Reports a genuine failure.
         ///   - onCieIDMissing: Reports that CieID is not installed.
         ///   - onFinished: Reports that a navigation has settled.
+        ///   - adoptsCookies: Whether finishing copies the session's cookies into the
+        ///     shared jar.
         init(
             router: CieIDRouter,
             decide: @escaping (URL) -> AuthWebViewDecision,
             onError: @escaping (any Error) -> Void,
             onCieIDMissing: @escaping () -> Void,
-            onFinished: @escaping (WKWebView, URL?) -> Void
+            onFinished: @escaping (WKWebView, URL?) -> Void,
+            adoptsCookies: Bool = true
         ) {
             self.router = router
             self.decide = decide
             self.onError = onError
             self.onCieIDMissing = onCieIDMissing
             self.onFinished = onFinished
+            self.adoptsCookies = adoptsCookies
         }
 
         /// Tells the host a navigation has settled, unless the flow is already over.
@@ -264,7 +277,7 @@ struct AuthWebView: UIViewRepresentable {
                 cancelledDeliberately = true
                 // Cookies first: whatever the action does next runs against the
                 // session this web view just established.
-                await Self.adoptCookies(from: webView)
+                if adoptsCookies { await Self.adoptCookies(from: webView) }
                 await MainActor.run(body: action)
                 return .cancel
             case .load(let next):

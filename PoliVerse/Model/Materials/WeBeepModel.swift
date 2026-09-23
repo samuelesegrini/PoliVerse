@@ -597,6 +597,33 @@ final class WeBeepModel {
         }
     }
 
+    /// The "Registrazioni" link on a course's WeBeep page, which the recordings use as
+    /// a way into recman when the archive will not open. See
+    /// ``RecmanParser/courseEntry(in:)``.
+    ///
+    /// - Parameter course: The course.
+    /// - Returns: The link, or `nil` when WeBeep is not connected, the course cannot be
+    ///   matched, or its page has no such link.
+    func recordingsEntry(for course: Course) async -> URL? {
+        guard !session.useMockData, let api else { return nil }
+        if courses.isEmpty { await loadCourses() }
+        guard let moodleID = moodleCourseID(for: course) else { return nil }
+        if let cached = contents[moodleID], Date.now.timeIntervalSince(cached.at) < 600 {
+            return RecmanParser.courseEntry(in: cached.sections)
+        }
+        do {
+            let raw = try await api.contents(courseID: moodleID)
+            contents[moodleID] = (raw, .now)
+            return RecmanParser.courseEntry(in: raw)
+        } catch let error as WeBeepAPI.Failure where error.isAuthFailure {
+            handle(error)
+            return nil
+        } catch {
+            log.error("Recordings link for course \(moodleID, privacy: .public) failed: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
     /// The discussions in one forum.
     ///
     /// - Parameter forum: The forum to read.

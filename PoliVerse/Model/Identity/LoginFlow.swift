@@ -272,6 +272,9 @@ final class LoginFlow {
         // Cookies only: the login page's 13.7 MB of JavaScript and CSS stays
         // cached, so signing back in is fast. Nothing identifying remains.
         await LoginWebKit.endSession()
+        // The recordings keep a web session of their own; it goes with the
+        // student, like everything else.
+        await RecordingsWebKit.endSession()
         // The offline copies are this student's record. Someone else signing
         // in on the same device must not find them.
         if let matricola = session.student?.matricola {

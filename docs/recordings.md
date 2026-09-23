@@ -158,6 +158,11 @@ finishes, "so a Shibboleth session still cannot outlive the flow"
 
 Options:
 
+0. **Jump from the app's token.** The official app opens its web services with
+   `POST /jaf/public/linksalto` (`docs/polimi-api-research.md` §4a), which answers
+   with a signed-in `jump_url`. No second sign-in and no SSO cookie kept from the
+   app's login. **[?]** The endpoint checks which services the caller may reach
+   (2428 was refused), so it may refuse recman too.
 1. **Re-run the web sign-in on each visit to recordings.** No lasting session, but
    the student may face the Politecnico's login page (and CIE/OTP) each time. Poor
    for a feature used several times a week.
@@ -166,7 +171,7 @@ Options:
    flow, and is removed on sign-out alongside `OfflineStore.clear(account:)`. The
    main sign-in store stays as it is.
 
-**[J]** Option 2. It keeps the existing guarantee for the main flow, and the
+**[J]** Option 0 first, option 2 as the fallback when the jump is refused. Option 2 keeps the existing guarantee for the main flow, and the
 recordings store holds only what a browser tab would. The decision must be written
 down (here, and in the `LoginWebKit` doc comment) so the next reader doesn't take
 the persistent store for a leak.
@@ -222,6 +227,45 @@ same fix helps WeBeep videos.
 | 4 | Download, gated on the flags above, with background session and ticket refresh. | S–M |
 
 Step 1 is worth shipping alone. Steps 2–3 are the reason to build it.
+
+## Implementation status
+
+Step 1 is in the code (2026-09-23):
+
+- `Model/Recordings/RecmanParser.swift` reads the list. The live page differs from
+  the first capture: every cell writes its column's name above its value
+  ("Data", then "21/09/2026 13:34"), the headers are Anno Accademico, Data, Corso,
+  Forma didattica, Argomento, Ospiti, Durata, the Durata cell reads
+  "135 min / 198 MB", and the play link sits in the last cell. Cells are read by
+  their label, by position as a fallback. `RecmanParserTests` covers both shapes.
+- `Model/Recordings/RecmanBrowser.swift` walks recman in a hidden `WKWebView` on
+  `RecordingsWebKit.dataStore`. The archive opens empty; the browser fills in the
+  course, picks the latest academic year and presses search. A search over every
+  year returns the oldest first, a hundred at a time.
+- `Model/Recordings/RecordingsModel.swift` reads **one course at a time** and keeps
+  what it reads as an offline copy per account, with each recording's Webex
+  address. **[V]** The archive (2314) is not the student's list: searched for the
+  latest year it returned a hundred recordings of the whole Politecnico
+  (2026-09-12 … 2026-09-22) and none of the student's course, while that course's
+  WeBeep link returned exactly its five. Ways in, in order:
+  1. The course's WeBeep "Registrazioni" link (`id_servizio=2294&c_classe_webeep=…`,
+     read from `core_course_get_contents`); the list comes back filled.
+  2. The archive, with the search narrowed to the course's teaching code in the
+     Corso field (`contesto`), for a course without that link — first through
+     `RecmanJump` (**[V]** `linksalto` refuses 2294 and 2314 with
+     `id_servizio: Unauthorized`; asked once per launch), then through the kept
+     session. **[V]** `contesto` matches on the teaching code: searched for
+     `089182`, the archive returned that course's five recordings and no other.
+  Either needs the recordings' own session; `RecordingsSignInSheet` signs in when
+  it is missing. Rows of another course are never filed under this one.
+- **[V]** Every cookie the session holds is session-only — `SSO_LOGIN` and
+  `S2314_` on aunicalogin included — so WebKit drops them when the app quits.
+  `RecordingsWebKit.saveSession()` keeps them in the Keychain (this device only)
+  after each read that got through, and `restoreSession()` puts them back once per
+  launch; a kept session older than a day is dropped. **[V]** After a relaunch the
+  restored cookies reached the archive without a sign-in. **[?]** How long the
+  Politecnico honours them.
+- `LoginFlow.signOut()` empties the recordings' web store and the kept session.
 
 ## Still to verify
 

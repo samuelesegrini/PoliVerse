@@ -299,20 +299,24 @@ struct CourseDetailView: View {
         return VStack(spacing: 0) {
             NavigationLink { CourseForumsView(course: course, kind: .announcements) } label: {
                 row(symbol: "megaphone", title: String(localized: "Avvisi"), trailing: newCount(badges.announcements),
-                    tile: ramp.colour(0, of: 5), last: false, chevron: true)
+                    tile: ramp.colour(0, of: 6), last: false, chevron: true)
             }
             NavigationLink { CourseMaterialsView(course: course) } label: {
                 row(symbol: "folder", title: String(localized: "Materiali"), trailing: newCount(badges.materials),
-                    tile: ramp.colour(1, of: 5), last: false, chevron: true)
+                    tile: ramp.colour(1, of: 6), last: false, chevron: true)
+            }
+            NavigationLink { CourseRecordingsView(course: course) } label: {
+                row(symbol: "play.rectangle", title: String(localized: "Registrazioni"), tile: ramp.colour(2, of: 6),
+                    last: false, chevron: true)
             }
             NavigationLink { CourseForumsView(course: course, kind: .discussion) } label: {
-                row(symbol: "bubble.left.and.bubble.right", title: String(localized: "Forum"), tile: ramp.colour(2, of: 5), last: false, chevron: true)
+                row(symbol: "bubble.left.and.bubble.right", title: String(localized: "Forum"), tile: ramp.colour(3, of: 6), last: false, chevron: true)
             }
             NavigationLink { CourseSyllabusView(course: course) } label: {
-                row(symbol: "book.closed", title: String(localized: "Programma"), tile: ramp.colour(3, of: 5), last: false, chevron: true)
+                row(symbol: "book.closed", title: String(localized: "Programma"), tile: ramp.colour(4, of: 6), last: false, chevron: true)
             }
             NavigationLink { CourseInfoView(course: course) } label: {
-                row(symbol: "info.circle", title: String(localized: "Informazioni"), tile: ramp.colour(4, of: 5), last: true, chevron: true)
+                row(symbol: "info.circle", title: String(localized: "Informazioni"), tile: ramp.colour(5, of: 6), last: true, chevron: true)
             }
         }
         .buttonStyle(.plain)

@@ -43,6 +43,7 @@ struct PoliVerseApp: App {
     @State private var career: CareerModel
     @State private var updates: UpdateFeed
     @State private var weBeep: WeBeepModel
+    @State private var recordings: RecordingsModel
     @State private var cieID = CieIDRouter()
     @State private var downloads = FileDownloadModel()
     @State private var rooms: RoomsModel
@@ -144,6 +145,7 @@ struct PoliVerseApp: App {
         _updates = State(initialValue: updates)
         let weBeep = WeBeepModel(session: session, feed: updates)
         _weBeep = State(initialValue: weBeep)
+        _recordings = State(initialValue: RecordingsModel(account: session))
 
         let agenda = AgendaModel(account: session)
         _agenda = State(initialValue: agenda)
@@ -232,6 +234,7 @@ struct PoliVerseApp: App {
                 .environment(career)
                 .environment(updates)
                 .environment(weBeep)
+                .environment(recordings)
                 .environment(cieID)
                 .environment(downloads)
                 .environment(rooms)
