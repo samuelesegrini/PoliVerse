@@ -310,6 +310,21 @@ Step 3 (2026-09-23):
 - **[J]** Kept in `OfflineStore` per account, so signing out loses it, as the data
   model section accepts for now.
 
+Step 4 (2026-09-23, not yet tried on a device):
+
+- `RecordingDownloads` downloads a recording's `mp4URL` on a background
+  `URLSession` (`segrini.samuele.PoliVerse.recordings`) that carries on off
+  screen; `PoliVerseApp` hands iOS's relaunch for finished downloads to it with
+  `.backgroundTask(.urlSession(…))`. Webex's cookies go on the request.
+- Offered from a row's menu only while Webex has not said no: the look-up that
+  starts it reads `preventDownload`/`enforcePreventDownload`, and a refusal hides
+  the option for that recording. A page instead of a video (an expired ticket)
+  or a file under a megabyte counts as a failure.
+- Files go to `Application Support/Recordings/<transfer_id>.mp4`, excluded from
+  backup, and are deleted at sign-out. No share sheet, no export.
+- A saved recording plays from the file, without Webex, and keeps its resume
+  point. The list says "offline" and the header counts them.
+
 ## Still to verify
 
 1. The SSO cookie's lifetime: open recman a day later without signing in.

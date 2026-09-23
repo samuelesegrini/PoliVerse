@@ -37,6 +37,9 @@ final class RecordingsModel {
     private(set) var recordings: [Recording] = []
     /// Where loading stands.
     private(set) var phase: Phase = .idle
+    /// Recordings whose lecturer has said no to downloading, learnt from Webex, so the
+    /// option is not offered again.
+    private(set) var downloadForbidden: Set<Int> = []
     /// How far the student has got with each recording, by `transfer_id`.
     private(set) var progress: [Int: RecordingProgress] = [:]
     /// When ``progress`` was last written, so playback writes it every so often
@@ -222,13 +225,20 @@ final class RecordingsModel {
     ///   - accountEmail: The student's institutional email, given to Webex when
     ///     ``webexEmail`` has not been set.
     /// - Returns: The stream with the cookies to send along, or why there is none.
-    func stream(at address: URL, accountEmail: String?) async -> (outcome: WebexPlayback.Outcome, cookies: [HTTPCookie]) {
+    ///   - recording: The recording the address is for, to note whether it may be
+    ///     downloaded.
+    func stream(at address: URL, accountEmail: String?, for recording: Recording? = nil)
+        async -> (outcome: WebexPlayback.Outcome, cookies: [HTTPCookie]) {
         let playback = playback ?? WebexPlayback()
         self.playback = playback
         await RecordingsWebKit.restoreSession()
         let outcome = await playback.stream(at: address, email: webexEmail ?? accountEmail)
         switch outcome {
         case .stream(let stream):
+            if let recording {
+                if stream.allowsDownload { downloadForbidden.remove(recording.transferID) }
+                else { downloadForbidden.insert(recording.transferID) }
+            }
             log.info("Webex stream: hls \(stream.hlsURL != nil, privacy: .public), download \(stream.allowsDownload, privacy: .public), disclaimer \(stream.needsDisclaimer, privacy: .public)")
             await RecordingsWebKit.saveSession()
         case .signInNeeded:

@@ -235,6 +235,7 @@ struct PoliVerseApp: App {
                 .environment(updates)
                 .environment(weBeep)
                 .environment(recordings)
+                .environment(RecordingDownloads.shared)
                 .environment(cieID)
                 .environment(downloads)
                 .environment(rooms)
@@ -339,6 +340,11 @@ struct PoliVerseApp: App {
                         Task { await freshness.revalidate(force: true) }
                     }
                 }
+        }
+        // A saved lecture that finished downloading while the app was not running:
+        // iOS relaunches it to hand the file over, and waits for the move.
+        .backgroundTask(.urlSession(RecordingDownloads.sessionIdentifier)) {
+            await RecordingDownloads.shared.backgroundEventsDelivered()
         }
     }
 }

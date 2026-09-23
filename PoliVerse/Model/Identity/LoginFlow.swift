@@ -275,6 +275,8 @@ final class LoginFlow {
         // The recordings keep a web session of their own; it goes with the
         // student, like everything else.
         await RecordingsWebKit.endSession()
+        // Saved lectures too: someone else signing in must not find them.
+        RecordingDownloads.shared.deleteAll()
         // The offline copies are this student's record. Someone else signing
         // in on the same device must not find them.
         if let matricola = session.student?.matricola {

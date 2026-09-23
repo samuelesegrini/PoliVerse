@@ -106,6 +106,7 @@ extension View {
             .environment(PreviewEnvironment.notifications)
             .environment(PreviewEnvironment.weBeep)
             .environment(PreviewEnvironment.recordings)
+            .environment(RecordingDownloads.shared)
             .environment(PreviewEnvironment.notices)
             .environment(PreviewEnvironment.news)
             .environment(PreviewEnvironment.careers)

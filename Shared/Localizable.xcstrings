@@ -111,6 +111,16 @@
         }
       }
     },
+    "%@ · %lld offline" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$lld offline"
+          }
+        }
+      }
+    },
     "%@ · %lld posti" : {
       "localizations" : {
         "en" : {
@@ -1958,6 +1968,9 @@
           }
         }
       }
+    },
+    "Annulla il download" : {
+
     },
     "Annunci, avvisi e soluzioni" : {
       "localizations" : {
@@ -5091,6 +5104,15 @@
         }
       }
     },
+    "Download in corso" : {
+
+    },
+    "Download non disponibile" : {
+
+    },
+    "download non riuscito" : {
+
+    },
     "Duplica" : {
 
     },
@@ -6497,6 +6519,9 @@
       }
     },
     "Il colore, il carattere e il materiale che scegli per Oggi valgono adesso in ogni schermata: carriera, corsi, ricerca e impostazioni comprese." : {
+
+    },
+    "Il docente non permette di scaricare questa registrazione. Si può guardare in streaming." : {
 
     },
     "Il giorno prima alle 18:00" : {
@@ -9932,6 +9957,9 @@
     "Non concessa" : {
 
     },
+    "Non è stato possibile raggiungere la registrazione su Webex." : {
+
+    },
     "Non è stato possibile salvare l'obiettivo. Riprova, o impostalo dai Servizi Online." : {
 
     },
@@ -10507,6 +10535,9 @@
           }
         }
       }
+    },
+    "offline" : {
+
     },
     "Offline" : {
       "localizations" : {
@@ -12634,6 +12665,12 @@
           }
         }
       }
+    },
+    "Scarica per vederla offline" : {
+
+    },
+    "Scarica per vederla offline (%lld MB)" : {
+
     },
     "Scarta modifiche" : {
       "extractionState" : "stale",
@@ -14910,6 +14947,12 @@
       }
     },
     "Webex chiede l'email del tuo account del Politecnico prima di passare all'accesso. Te la chiediamo una volta sola." : {
+
+    },
+    "Webex non ha mandato la registrazione. Riprova: il collegamento dura un'ora e mezza." : {
+
+    },
+    "Webex non ha risposto. Apri la registrazione una volta, poi riprova a scaricarla." : {
 
     },
     "Widget" : {

@@ -14,6 +14,8 @@ struct CourseRecordingsView: View {
     @Environment(RecordingsModel.self) private var model
     /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
+    /// The shared ``RecordingDownloads``, from the environment.
+    @Environment(RecordingDownloads.self) private var downloads
     /// The shared ``WeBeepModel``, from the environment, for the course's link into
     /// recman.
     @Environment(WeBeepModel.self) private var weBeep
@@ -32,6 +34,8 @@ struct CourseRecordingsView: View {
     @State private var opening: Recording.ID?
     /// Set when a recording could not be opened.
     @State private var openFailed = false
+    /// Why a download could not start, when one could not.
+    @State private var downloadRefusal: String?
     /// A recording waiting for the student to sign in to Webex.
     @State private var webexSignIn: WebexSignIn?
     /// Recordings whose Webex sign-in went through in this visit, so a look-up that
@@ -142,6 +146,12 @@ struct CourseRecordingsView: View {
         } message: {
             Text("La registrazione può contenere le voci e le immagini di altri partecipanti. È per il tuo studio: non va registrata né diffusa.")
         }
+        .alert("Download non disponibile", isPresented: Binding(
+            get: { downloadRefusal != nil }, set: { if !$0 { downloadRefusal = nil } })) {
+            Button("OK", role: .cancel) { downloadRefusal = nil }
+        } message: {
+            Text(downloadRefusal ?? "")
+        }
         .alert("Registrazione non disponibile", isPresented: $openFailed) {
             Button("Apri l'archivio") { openURL(RecordingsWebKit.entry) }
             Button("OK", role: .cancel) {}
@@ -169,9 +179,11 @@ struct CourseRecordingsView: View {
             return total + max(length - (progress?.position ?? 0), 0)
         }
         let hours = Int((seconds / 3600).rounded())
-        return hours > 0
+        let saved = downloads.savedCount(in: recordings)
+        let base = hours > 0
             ? Text("\(recordings.count) registrazioni · \(toWatch) da vedere · \(hours) h")
             : Text("\(recordings.count) registrazioni · \(toWatch) da vedere")
+        return saved > 0 ? Text("\(base) · \(saved) offline") : base
     }
 
     /// Asks for the Politecnico's sign-in, which recman needs on a session of its own.
@@ -216,7 +228,8 @@ struct CourseRecordingsView: View {
             VStack(spacing: 0) {
                 ForEach(recordings) { recording in
                     let progress = model.progress[recording.transferID]
-                    RecordingRow(recording: recording, progress: progress, colour: colour,
+                    let download = downloads.status(of: recording)
+                    RecordingRow(recording: recording, progress: progress, download: download, colour: colour,
                                  isOpening: opening == recording.id,
                                  last: recording.id == recordings.last?.id) {
                         Task { await open(recording) }
@@ -231,6 +244,7 @@ struct CourseRecordingsView: View {
                                 model.setWatched(true, recording)
                             }
                         }
+                        downloadMenu(recording, download)
                     }
                 }
             }
@@ -240,13 +254,63 @@ struct CourseRecordingsView: View {
         }
     }
 
-    /// Finds the recording's Webex page and opens it in the browser.
-    private func open(_ recording: Recording) async {
+    /// The download entries of a row's menu, for what the recording's state allows.
+    @ViewBuilder
+    private func downloadMenu(_ recording: Recording, _ status: RecordingDownloads.Status) -> some View {
+        switch status {
+        case .downloaded:
+            Button("Rimuovi il download", systemImage: "trash", role: .destructive) { downloads.delete(recording) }
+        case .downloading:
+            Button("Annulla il download", systemImage: "xmark.circle") { downloads.cancel(recording) }
+        case .idle, .failed:
+            if !model.downloadForbidden.contains(recording.transferID), !session.useMockData {
+                Button(recording.megabytes.map { String(localized: "Scarica per vederla offline (\($0) MB)") }
+                       ?? String(localized: "Scarica per vederla offline"),
+                       systemImage: "arrow.down.circle") {
+                    Task { await download(recording) }
+                }
+            }
+        }
+    }
+
+    /// Asks Webex for the recording's file and downloads it, when the lecturer allows.
+    private func download(_ recording: Recording) async {
         guard opening == nil else { return }
         opening = recording.id
         defer { opening = nil }
+        guard let address = await model.webexAddress(for: recording) else {
+            downloadRefusal = String(localized: "Non è stato possibile raggiungere la registrazione su Webex.")
+            return
+        }
+        let (outcome, cookies) = await model.stream(at: address, accountEmail: session.student?.email, for: recording)
+        switch outcome {
+        case .stream(let stream) where stream.allowsDownload:
+            downloads.download(recording, from: stream, cookies: cookies)
+        case .stream:
+            downloadRefusal = String(localized: "Il docente non permette di scaricare questa registrazione. Si può guardare in streaming.")
+        default:
+            downloadRefusal = String(localized: "Webex non ha risposto. Apri la registrazione una volta, poi riprova a scaricarla.")
+        }
+    }
+
+    /// Plays the recording: from the device when it is saved there, and otherwise from
+    /// Webex, finding its stream first.
+    private func open(_ recording: Recording) async {
+        guard opening == nil else { return }
+        if let file = downloads.file(for: recording) {
+            let model = model
+            RecordingPlayer.shared.play(
+                file, recording: recording, duration: Double(recording.minutes ?? 0) * 60,
+                startAt: model.progress[recording.transferID]?.resumeAt
+            ) { position, duration, final in
+                model.played(to: position, of: duration, in: recording, final: final)
+            }
+            return
+        }
+        opening = recording.id
+        defer { opening = nil }
         if let address = await model.webexAddress(for: recording) {
-            let (outcome, cookies) = await model.stream(at: address, accountEmail: session.student?.email)
+            let (outcome, cookies) = await model.stream(at: address, accountEmail: session.student?.email, for: recording)
             switch outcome {
             case .stream(let stream) where stream.hlsURL != nil:
                 let pending = PendingPlay(stream: stream, recording: recording, cookies: cookies,
@@ -278,6 +342,8 @@ private struct RecordingRow: View {
     let recording: Recording
     /// How far the student has got with it.
     let progress: RecordingProgress?
+    /// Where its download stands.
+    let download: RecordingDownloads.Status
     /// The course's colour.
     let colour: Flavor.RGB
     /// Whether the recording is being looked up.
@@ -317,6 +383,12 @@ private struct RecordingRow: View {
                     Spacer(minLength: 4)
                     if isOpening {
                         ProgressView().controlSize(.small)
+                    } else if case .downloading(let fraction) = download {
+                        ProgressView(value: fraction ?? 0)
+                            .progressViewStyle(.circular)
+                            .controlSize(.small)
+                            .tint(colour.color)
+                            .accessibilityLabel("Download in corso")
                     } else if progress?.completed == true {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(.green)
@@ -350,6 +422,11 @@ private struct RecordingRow: View {
             parts.append(String(localized: "\(minutes) min"))
         }
         if recording.topic != nil, recording.form != .lecture { parts.append(recording.form.title) }
+        switch download {
+        case .downloaded: parts.append(String(localized: "offline"))
+        case .failed: parts.append(String(localized: "download non riuscito"))
+        case .idle, .downloading: break
+        }
         return parts.joined(separator: " · ")
     }
 }

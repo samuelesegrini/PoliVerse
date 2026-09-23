@@ -44,6 +44,26 @@ final class RecordingPlayer: NSObject, AVPlayerViewControllerDelegate {
         onProgress: @escaping (_ position: Double, _ duration: Double, _ final: Bool) -> Void = { _, _, _ in }
     ) {
         guard let address = stream.hlsURL else { return }
+        play(address, recording: recording, cookies: cookies,
+             duration: stream.duration.map { Double($0.components.seconds) } ?? 0,
+             startAt: startAt, onProgress: onProgress)
+    }
+
+    /// Plays a recording from an address: Webex's HLS, or a file saved on the device.
+    ///
+    /// - Parameters:
+    ///   - address: What to play.
+    ///   - recording: The recording, for the title on the lock screen.
+    ///   - cookies: Cookies for the media requests; none for a file.
+    ///   - duration: The length in seconds when known, until the player measures it.
+    ///   - startAt: Where to start, in seconds, or `nil` for the beginning.
+    ///   - onProgress: Hears the position and length every five seconds, and once
+    ///     more, marked final, when the player closes.
+    func play(
+        _ address: URL, recording: Recording, cookies: [HTTPCookie] = [], duration: Double = 0,
+        startAt: Double? = nil,
+        onProgress: @escaping (_ position: Double, _ duration: Double, _ final: Bool) -> Void = { _, _, _ in }
+    ) {
         stop()
 
         // The category once, and the activation off the main thread: both block,
@@ -61,11 +81,13 @@ final class RecordingPlayer: NSObject, AVPlayerViewControllerDelegate {
             try? AVAudioSession.sharedInstance().setActive(true)
         }
 
-        let asset = AVURLAsset(url: address, options: [AVURLAssetHTTPCookiesKey: cookies])
+        let asset = address.isFileURL
+            ? AVURLAsset(url: address)
+            : AVURLAsset(url: address, options: [AVURLAssetHTTPCookiesKey: cookies])
         let item = AVPlayerItem(asset: asset)
         item.externalMetadata = Self.metadata(for: recording)
         let player = AVPlayer(playerItem: item)
-        let fallbackDuration = stream.duration.map { Double($0.components.seconds) } ?? 0
+        let fallbackDuration = duration
         self.onProgress = onProgress
         timeObserver = player.addPeriodicTimeObserver(
             forInterval: CMTime(seconds: 5, preferredTimescale: 1), queue: .main
