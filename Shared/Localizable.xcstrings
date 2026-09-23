@@ -111,16 +111,6 @@
         }
       }
     },
-    "%@ · %lld offline" : {
-      "localizations" : {
-        "it" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$lld offline"
-          }
-        }
-      }
-    },
     "%@ · %lld posti" : {
       "localizations" : {
         "en" : {
@@ -681,6 +671,9 @@
         }
       }
     },
+    "%lld lezioni oggi" : {
+
+    },
     "%lld min" : {
 
     },
@@ -900,28 +893,15 @@
         }
       }
     },
-    "%lld registrazioni · %lld da vedere" : {
+    "%lld registrazioni · %@" : {
       "localizations" : {
         "it" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$lld registrazioni · %2$lld da vedere"
+            "value" : "%1$lld registrazioni · %2$@"
           }
         }
       }
-    },
-    "%lld registrazioni · %lld da vedere · %lld h" : {
-      "localizations" : {
-        "it" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld registrazioni · %2$lld da vedere · %3$lld h"
-          }
-        }
-      }
-    },
-    "%lld registrazioni · tutte viste" : {
-
     },
     "%lld su %lld" : {
       "localizations" : {
@@ -987,6 +967,9 @@
           }
         }
       }
+    },
+    "1 lezione oggi" : {
+
     },
     "1 modifica in attesa di connessione" : {
       "localizations" : {
@@ -1277,6 +1260,9 @@
           }
         }
       }
+    },
+    "Accedi per avere la tua tessera" : {
+
     },
     "ACCENTO" : {
       "localizations" : {
@@ -1756,6 +1742,9 @@
     "Altre date" : {
 
     },
+    "Altre edizioni" : {
+
+    },
     "Altri appelli" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1997,6 +1986,9 @@
           }
         }
       }
+    },
+    "Aperta" : {
+
     },
     "Apertura" : {
       "localizations" : {
@@ -3350,6 +3342,9 @@
     "Chiudono oggi · %@" : {
 
     },
+    "Chiusa" : {
+
+    },
     "Chiusura" : {
       "localizations" : {
         "en" : {
@@ -3499,6 +3494,9 @@
           }
         }
       }
+    },
+    "Codice persona %@" : {
+
     },
     "Codice persona e password" : {
       "localizations" : {
@@ -4023,6 +4021,9 @@
         }
       }
     },
+    "Continua a guardare" : {
+
+    },
     "Continua a modificare" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4538,6 +4539,12 @@
         }
       }
     },
+    "da vedere" : {
+
+    },
+    "Da vedere" : {
+
+    },
     "Da WeBeep · la consegna si fa su WeBeep." : {
 
     },
@@ -5000,6 +5007,9 @@
         }
       }
     },
+    "Disponibile offline" : {
+
+    },
     "Dispositivo" : {
 
     },
@@ -5105,6 +5115,9 @@
       }
     },
     "Download in corso" : {
+
+    },
+    "download interrotto" : {
 
     },
     "Download non disponibile" : {
@@ -5854,6 +5867,9 @@
         }
       }
     },
+    "finisce alle %@" : {
+
+    },
     "Finita" : {
       "localizations" : {
         "en" : {
@@ -6178,6 +6194,9 @@
         }
       }
     },
+    "Gira la tessera" : {
+
+    },
     "Grafite" : {
       "localizations" : {
         "en" : {
@@ -6278,6 +6297,9 @@
           }
         }
       }
+    },
+    "Hai visto tutte le registrazioni." : {
+
     },
     "Ho capito" : {
       "localizations" : {
@@ -6522,6 +6544,9 @@
 
     },
     "Il docente non permette di scaricare questa registrazione. Si può guardare in streaming." : {
+
+    },
+    "Il download si è interrotto quando l'app è stata chiusa. Riprova dal menu." : {
 
     },
     "Il giorno prima alle 18:00" : {
@@ -6799,6 +6824,9 @@
           }
         }
       }
+    },
+    "Il prossimo · %@" : {
+
     },
     "Il prossimo %@" : {
 
@@ -8220,6 +8248,9 @@
         }
       }
     },
+    "Le registrazioni dello stesso insegnamento negli anni precedenti, dall'archivio." : {
+
+    },
     "Le registrazioni stanno sui Servizi Online, che vogliono un accesso del browser, distinto da quello dell'app." : {
 
     },
@@ -9530,6 +9561,9 @@
         }
       }
     },
+    "Nessuna lezione in vista" : {
+
+    },
     "Nessuna lezione nel periodo caricato." : {
       "localizations" : {
         "en" : {
@@ -9683,6 +9717,12 @@
       }
     },
     "Nessuna registrazione" : {
+
+    },
+    "Nessuna registrazione salvata sul dispositivo." : {
+
+    },
+    "Nessuna registrazione." : {
 
     },
     "Nessuna risposta" : {
@@ -9964,6 +10004,9 @@
 
     },
     "Non è stato possibile trovare il collegamento a Webex. Puoi cercarla nell'archivio dal browser." : {
+
+    },
+    "Non è un documento ufficiale" : {
 
     },
     "Non hai effettuato l'accesso." : {
@@ -11203,6 +11246,9 @@
         }
       }
     },
+    "Più tardi oggi" : {
+
+    },
     "Poche parole, nel carattere della data e nel colore del Flavor." : {
       "localizations" : {
         "en" : {
@@ -11382,6 +11428,7 @@
       }
     },
     "Preferito" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -12206,6 +12253,9 @@
         }
       }
     },
+    "Retro della tessera: codice QR del contatto di %@" : {
+
+    },
     "Riassumi" : {
 
     },
@@ -12279,6 +12329,9 @@
           }
         }
       }
+    },
+    "rimaste" : {
+
     },
     "Rimuovi" : {
       "localizations" : {
@@ -12361,6 +12414,12 @@
 
     },
     "Riprende la registrazione" : {
+
+    },
+    "Riprendi da %@" : {
+
+    },
+    "Riprendi il download" : {
 
     },
     "Ripristina" : {
@@ -13986,6 +14045,19 @@
         }
       }
     },
+    "Tessera di %@, matricola %@" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tessera di %1$@, matricola %2$@"
+          }
+        }
+      }
+    },
+    "Tessera, ospite" : {
+
+    },
     "Testo" : {
       "localizations" : {
         "en" : {
@@ -14097,6 +14169,9 @@
     "tocca di nuovo per chiudere" : {
 
     },
+    "Tocca la tessera per girarla" : {
+
+    },
     "Tocca per aprire" : {
 
     },
@@ -14193,6 +14268,9 @@
           }
         }
       }
+    },
+    "Tra i preferiti" : {
+
     },
     "Trascina per spostare" : {
       "localizations" : {
@@ -14710,6 +14788,9 @@
       }
     },
     "Vista" : {
+
+    },
+    "Vista al %lld%%" : {
 
     },
     "voti" : {

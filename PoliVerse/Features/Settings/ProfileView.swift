@@ -97,20 +97,16 @@ struct ProfileView: View {
 
     // MARK: - Header
 
-    /// The avatar, the name, and what the student is enrolled in.
+    /// The student's card, with the name and what the student is enrolled in,
+    /// which turns over to the contact's QR code.
     private var header: some View {
-        VStack(spacing: 4) {
-            ProfileAvatar(student: session.student, size: 112)
-                .padding(.bottom, 12)
-            Text(session.student?.fullName ?? String(localized: "Ospite"))
-                .font(.title.weight(.bold))
-                .multilineTextAlignment(.center)
-            if let subtitle {
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
+        VStack(spacing: 12) {
+            StudentCard(student: session.student, subtitle: subtitle)
+                .frame(maxWidth: 420)
+            Text("Tocca la tessera per girarla")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 12)
