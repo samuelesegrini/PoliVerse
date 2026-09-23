@@ -141,7 +141,11 @@ actor TokenStore {
         defer { refreshTask = nil }
 
         do {
-            let fresh = try await task.value
+            var fresh = try await task.value
+            // The server sends back only the pair and its lifetime. The scope is
+            // the app's record, and a refresh never widens it, so it carries over;
+            // dropping it made the next launch read a scope change and sign out.
+            fresh.grantedScope = current.grantedScope
             token = fresh
             persist()
             return fresh.accessToken
@@ -197,7 +201,11 @@ actor TokenStore {
         defer { refreshTask = nil }
 
         do {
-            let fresh = try await task.value
+            var fresh = try await task.value
+            // The server sends back only the pair and its lifetime. The scope is
+            // the app's record, and a refresh never widens it, so it carries over;
+            // dropping it made the next launch read a scope change and sign out.
+            fresh.grantedScope = current.grantedScope
             token = fresh
             persist()
             return fresh.accessToken

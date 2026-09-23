@@ -48,6 +48,23 @@ struct TokenStoreTests {
         #expect(await counter.count == 1)
     }
 
+    /// The server's refresh answer carries no scope. Losing the recorded one made
+    /// every launch after a refresh read a scope change and sign the student out.
+    @Test("A refresh keeps the scope the pair was granted")
+    func refreshKeepsScope() async throws {
+        var stale = expiredToken()
+        stale.grantedScope = "openid polimi_app agenda"
+        let storage = InMemoryTokenPersistence(initial: stale)
+        let store = TokenStore(storage: storage) { _ in
+            PoliMiToken(accessToken: "fresh", refreshToken: "next", expiresIn: 3600)
+        }
+
+        #expect(try await store.validToken() == "fresh")
+        #expect(await store.grantedScope == "openid polimi_app agenda")
+        #expect(try await store.forceRefresh() == "fresh")
+        #expect(await store.grantedScope == "openid polimi_app agenda", "Anche il refresh forzato")
+    }
+
     @Test("A valid token is returned without refreshing")
     func validTokenSkipsRefresh() async throws {
         let counter = RefreshCounter()
