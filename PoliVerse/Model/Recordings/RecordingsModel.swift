@@ -37,6 +37,11 @@ final class RecordingsModel {
     private(set) var recordings: [Recording] = []
     /// Where loading stands.
     private(set) var phase: Phase = .idle
+    /// How far the student has got with each recording, by `transfer_id`.
+    private(set) var progress: [Int: RecordingProgress] = [:]
+    /// When ``progress`` was last written, so playback writes it every so often
+    /// rather than every few seconds.
+    private var progressSavedAt: Date = .distantPast
 
     /// Who is signed in.
     private let account: any Account
@@ -73,6 +78,8 @@ final class RecordingsModel {
     private static let recordName = "recordings"
     /// Name of the offline record of Webex addresses.
     private static let addressesName = "recordings-webex"
+    /// Name of the offline record of watching progress.
+    private static let progressName = "recordings-progress"
 
     /// Creates the model.
     ///
@@ -90,6 +97,61 @@ final class RecordingsModel {
     /// - Returns: Its recordings.
     func recordings(for course: Course) -> [Recording] {
         Recording.of(course, in: recordings)
+    }
+
+    /// How many of a course's recordings are still to watch.
+    ///
+    /// - Parameter course: The course.
+    /// - Returns: The recordings not yet watched, of those read so far.
+    func toWatch(in course: Course) -> Int {
+        recordings(for: course).filter { progress[$0.transferID]?.completed != true }.count
+    }
+
+    // MARK: - Progress
+
+    /// Takes a position the player reported for a recording.
+    ///
+    /// Written every fifteen seconds of playing, and at once when the recording is
+    /// closed or becomes watched.
+    ///
+    /// - Parameters:
+    ///   - position: Where the player is, in seconds.
+    ///   - duration: The recording's length, in seconds, or 0 when unknown.
+    ///   - recording: The recording.
+    ///   - final: Whether the player is closing.
+    func played(to position: Double, of duration: Double, in recording: Recording, final: Bool = false) {
+        var entry = progress[recording.transferID] ?? RecordingProgress(transferID: recording.transferID)
+        let wasCompleted = entry.completed
+        let known = duration > 0 ? duration : Double(recording.minutes ?? 0) * 60
+        entry.played(to: position, of: known)
+        progress[recording.transferID] = entry
+        if final || entry.completed != wasCompleted || Date.now.timeIntervalSince(progressSavedAt) > 15 {
+            saveProgress()
+        }
+    }
+
+    /// Marks a recording watched or not, by hand.
+    ///
+    /// Unmarking also forgets where the student stopped, so the recording starts
+    /// again from the beginning.
+    ///
+    /// - Parameters:
+    ///   - watched: Whether it is watched.
+    ///   - recording: The recording.
+    func setWatched(_ watched: Bool, _ recording: Recording) {
+        var entry = progress[recording.transferID] ?? RecordingProgress(transferID: recording.transferID)
+        entry.completed = watched
+        if !watched { entry.position = 0 }
+        entry.updatedAt = .now
+        progress[recording.transferID] = entry
+        saveProgress()
+    }
+
+    /// Writes ``progress`` to the offline store.
+    private func saveProgress() {
+        progressSavedAt = .now
+        guard let matricola = account.matricola, !account.isSample else { return }
+        offline.save(Array(progress.values), as: Self.progressName, account: matricola)
     }
 
     // MARK: - Loading
@@ -286,10 +348,14 @@ final class RecordingsModel {
         readAt = [:]
         webexAddresses = [:]
         courseEntries = [:]
+        progress = [:]
         phase = .idle
         guard let matricola = account.matricola, !account.isSample else { return }
         if let entry = offline.load([Recording].self, as: Self.recordName, account: matricola) {
             recordings = entry.value
+        }
+        if let entry = offline.load([RecordingProgress].self, as: Self.progressName, account: matricola) {
+            progress = Dictionary(entry.value.map { ($0.transferID, $0) }, uniquingKeysWith: { first, _ in first })
         }
         if let entry = offline.load([String: URL].self, as: Self.addressesName, account: matricola) {
             webexAddresses = Dictionary(entry.value.compactMap { key, value in Int(key).map { ($0, value) } },
@@ -308,6 +374,7 @@ final class RecordingsModel {
         readAt = [:]
         webexAddresses = [:]
         courseEntries = [:]
+        progress = [:]
         phase = .idle
     }
 }

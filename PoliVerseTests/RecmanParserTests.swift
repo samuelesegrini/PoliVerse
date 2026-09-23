@@ -303,4 +303,39 @@ struct RecmanParserTests {
         let bare = try JSONDecoder().decode(WebexStream.self, from: Data("{}".utf8))
         #expect(bare.hlsURL == nil && !bare.allowsDownload)
     }
+
+    // MARK: Progress
+
+    @Test("Nove decimi ascoltati contano come vista")
+    func watchedAtNineTenths() {
+        var progress = RecordingProgress(transferID: 1)
+        progress.played(to: 600, of: 6000)
+        #expect(!progress.completed)
+        #expect(progress.fraction == 0.1)
+        progress.played(to: 5400, of: 6000)
+        #expect(progress.completed)
+    }
+
+    @Test("Si riprende poco prima di dove ci si è fermati, non all'inizio né alla fine")
+    func resumePoint() {
+        var progress = RecordingProgress(transferID: 1)
+        progress.played(to: 20, of: 6000)
+        #expect(progress.resumeAt == nil, "Appena iniziata: si riparte da capo")
+        progress.played(to: 1200, of: 6000)
+        #expect(progress.resumeAt == 1195)
+        progress.played(to: 5990, of: 6000)
+        #expect(progress.resumeAt == nil, "Vista fino in fondo: si riparte da capo")
+    }
+
+    /// A position the player reports before the item knows its length must not
+    /// wipe a length already known.
+    @Test("Una durata sconosciuta non cancella quella già nota")
+    func unknownDurationKept() {
+        var progress = RecordingProgress(transferID: 1)
+        progress.played(to: 100, of: 6000)
+        progress.played(to: 200, of: 0)
+        #expect(progress.duration == 6000)
+        progress.played(to: .nan, of: 6000)
+        #expect(progress.position == 200)
+    }
 }

@@ -25,6 +25,9 @@ struct CourseDetailView: View {
     @Environment(UpdateFeed.self) private var feed
     /// The shared ``ManifestiModel``, from the environment.
     @Environment(ManifestiModel.self) private var manifesti
+    /// The shared ``RecordingsModel``, from the environment, for the recordings left
+    /// to watch.
+    @Environment(RecordingsModel.self) private var recordings
     /// The shared ``StudyProgrammeModel``, from the environment.
     @Environment(StudyProgrammeModel.self) private var programmes
     /// The shared ``Session``, from the environment.
@@ -306,7 +309,8 @@ struct CourseDetailView: View {
                     tile: ramp.colour(1, of: 6), last: false, chevron: true)
             }
             NavigationLink { CourseRecordingsView(course: course) } label: {
-                row(symbol: "play.rectangle", title: String(localized: "Registrazioni"), tile: ramp.colour(2, of: 6),
+                row(symbol: "play.rectangle", title: String(localized: "Registrazioni"),
+                    trailing: toWatch(recordings.toWatch(in: course)), tile: ramp.colour(2, of: 6),
                     last: false, chevron: true)
             }
             NavigationLink { CourseForumsView(course: course, kind: .discussion) } label: {
@@ -323,6 +327,15 @@ struct CourseDetailView: View {
         .padding(.horizontal, cardPadding)
         .padding(.vertical, cardPadding / 2)
         .lookCard()
+    }
+
+    /// The "n da vedere" count for the recordings.
+    ///
+    /// - Parameter count: How many recordings are still to watch.
+    /// - Returns: The count, or `nil` when there is none.
+    private func toWatch(_ count: Int) -> Text? {
+        guard count > 0 else { return nil }
+        return Text("\(count) da vedere")
     }
 
     /// The "n nuovi" badge for a section.

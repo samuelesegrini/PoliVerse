@@ -26,6 +26,7 @@ enum PreviewEnvironment {
     static let notifications = NotificationModel()
     /// The sample WeBeep model.
     static let weBeep = WeBeepModel(session: session, feed: updates)
+    static let recordings = RecordingsModel(account: session)
     /// The sample course list.
     static let courses = CourseModel(account: session, enrolments: weBeep)
     /// The sample timetable.
@@ -104,6 +105,7 @@ extension View {
             .environment(PreviewEnvironment.updates)
             .environment(PreviewEnvironment.notifications)
             .environment(PreviewEnvironment.weBeep)
+            .environment(PreviewEnvironment.recordings)
             .environment(PreviewEnvironment.notices)
             .environment(PreviewEnvironment.news)
             .environment(PreviewEnvironment.careers)

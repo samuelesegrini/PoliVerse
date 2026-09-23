@@ -157,14 +157,21 @@ struct CourseRecordingsView: View {
         await weBeep.recordingsEntry(for: course)
     }
 
-    /// "12 registrazioni · 24 h".
+    /// "12 registrazioni · 3 da vedere · 4 h", the hours being what is left to watch.
     private var summary: Text? {
         guard !recordings.isEmpty else { return nil }
-        let minutes = recordings.compactMap(\.minutes).reduce(0, +)
-        let hours = Int((Double(minutes) / 60).rounded())
-        return minutes > 0
-            ? Text("\(recordings.count) registrazioni · \(hours) h")
-            : Text("\(recordings.count) registrazioni")
+        let toWatch = model.toWatch(in: course)
+        guard toWatch > 0 else { return Text("\(recordings.count) registrazioni · tutte viste") }
+        let seconds = recordings.reduce(0.0) { total, recording in
+            let progress = model.progress[recording.transferID]
+            guard progress?.completed != true else { return total }
+            let length = Double(recording.minutes ?? 0) * 60
+            return total + max(length - (progress?.position ?? 0), 0)
+        }
+        let hours = Int((seconds / 3600).rounded())
+        return hours > 0
+            ? Text("\(recordings.count) registrazioni · \(toWatch) da vedere · \(hours) h")
+            : Text("\(recordings.count) registrazioni · \(toWatch) da vedere")
     }
 
     /// Asks for the Politecnico's sign-in, which recman needs on a session of its own.
@@ -208,9 +215,22 @@ struct CourseRecordingsView: View {
             }
             VStack(spacing: 0) {
                 ForEach(recordings) { recording in
-                    RecordingRow(recording: recording, colour: colour, isOpening: opening == recording.id,
+                    let progress = model.progress[recording.transferID]
+                    RecordingRow(recording: recording, progress: progress, colour: colour,
+                                 isOpening: opening == recording.id,
                                  last: recording.id == recordings.last?.id) {
                         Task { await open(recording) }
+                    }
+                    .contextMenu {
+                        if progress?.completed == true {
+                            Button("Segna come da vedere", systemImage: "circle") {
+                                model.setWatched(false, recording)
+                            }
+                        } else {
+                            Button("Segna come vista", systemImage: "checkmark.circle") {
+                                model.setWatched(true, recording)
+                            }
+                        }
                     }
                 }
             }
@@ -229,7 +249,8 @@ struct CourseRecordingsView: View {
             let (outcome, cookies) = await model.stream(at: address, accountEmail: session.student?.email)
             switch outcome {
             case .stream(let stream) where stream.hlsURL != nil:
-                let pending = PendingPlay(stream: stream, recording: recording, cookies: cookies)
+                let pending = PendingPlay(stream: stream, recording: recording, cookies: cookies,
+                                          startAt: model.progress[recording.transferID]?.resumeAt, model: model)
                 if stream.needsDisclaimer, !noticeRead { pendingPlay = pending } else { pending.play() }
             case .signInNeeded where model.webexEmail == nil:
                 // Webex refused the institutional email, or there was none: ask
@@ -255,6 +276,8 @@ struct CourseRecordingsView: View {
 private struct RecordingRow: View {
     /// The recording this row shows.
     let recording: Recording
+    /// How far the student has got with it.
+    let progress: RecordingProgress?
     /// The course's colour.
     let colour: Flavor.RGB
     /// Whether the recording is being looked up.
@@ -283,10 +306,21 @@ private struct RecordingRow: View {
                         Text(details)
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                        if let progress, !progress.completed, progress.fraction > 0.01 {
+                            ProgressView(value: progress.fraction)
+                                .tint(colour.color)
+                                .frame(maxWidth: 140)
+                                .padding(.top, 3)
+                                .accessibilityHidden(true)
+                        }
                     }
                     Spacer(minLength: 4)
                     if isOpening {
                         ProgressView().controlSize(.small)
+                    } else if progress?.completed == true {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                            .accessibilityLabel("Vista")
                     } else {
                         Image(systemName: "play.fill")
                             .font(.footnote.weight(.semibold))
@@ -301,14 +335,20 @@ private struct RecordingRow: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityHint("Riproduce la registrazione")
+        .accessibilityHint(progress?.resumeAt != nil ? "Riprende la registrazione" : "Riproduce la registrazione")
     }
 
-    /// "Lun 21 set, 13:34 · 135 min", with the kind when the topic took the title's place.
+    /// "Lun 21 set, 13:34 · 135 min", or "· mancano 52 min" once started, with the kind
+    /// when the topic took the title's place.
     private var details: String {
         var parts = [recording.recordedAt.formatted(
             .dateTime.weekday(.abbreviated).day().month(.abbreviated).hour().minute().locale(locale))]
-        if let minutes = recording.minutes { parts.append(String(localized: "\(minutes) min")) }
+        if let progress, !progress.completed, progress.resumeAt != nil, progress.duration > 0 {
+            let left = Int(((progress.duration - progress.position) / 60).rounded())
+            parts.append(String(localized: "mancano \(left) min"))
+        } else if let minutes = recording.minutes {
+            parts.append(String(localized: "\(minutes) min"))
+        }
         if recording.topic != nil, recording.form != .lecture { parts.append(recording.form.title) }
         return parts.joined(separator: " · ")
     }
@@ -322,11 +362,18 @@ private struct PendingPlay {
     let recording: Recording
     /// Webex's cookies, sent with the media requests.
     let cookies: [HTTPCookie]
+    /// Where the student stopped last time, to start from.
+    let startAt: Double?
+    /// Where the position is kept.
+    let model: RecordingsModel
 
-    /// Starts it in the system player.
+    /// Starts it in the system player, from where the student stopped.
     @MainActor
     func play() {
-        RecordingPlayer.shared.play(stream, recording: recording, cookies: cookies)
+        let recording = recording, model = model
+        RecordingPlayer.shared.play(stream, recording: recording, cookies: cookies, startAt: startAt) { position, duration, final in
+            model.played(to: position, of: duration, in: recording, final: final)
+        }
     }
 }
 

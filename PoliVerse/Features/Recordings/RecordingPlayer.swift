@@ -22,6 +22,12 @@ final class RecordingPlayer: NSObject, AVPlayerViewControllerDelegate {
     private var controller: AVPlayerViewController?
     /// Whether the recording is in Picture in Picture.
     private var inPictureInPicture = false
+    /// Hears where the player is, every few seconds and once more on closing.
+    private var onProgress: ((_ position: Double, _ duration: Double, _ final: Bool) -> Void)?
+    /// The periodic time observer on the player.
+    private var timeObserver: Any?
+    /// Waits for the item to be ready before seeking to the resume point.
+    private var readiness: NSKeyValueObservation?
 
     /// Plays a recording from its Webex stream.
     ///
@@ -30,21 +36,45 @@ final class RecordingPlayer: NSObject, AVPlayerViewControllerDelegate {
     ///   - recording: The recording, for the title on the lock screen.
     ///   - cookies: Webex's cookies from the recordings' session, sent with the media
     ///     requests in case the media host wants them as well as the ticket.
-    func play(_ stream: WebexStream, recording: Recording, cookies: [HTTPCookie]) {
+    ///   - startAt: Where to start, in seconds, or `nil` for the beginning.
+    ///   - onProgress: Hears the position and length every five seconds, and once
+    ///     more, marked final, when the player closes.
+    func play(
+        _ stream: WebexStream, recording: Recording, cookies: [HTTPCookie], startAt: Double? = nil,
+        onProgress: @escaping (_ position: Double, _ duration: Double, _ final: Bool) -> Void = { _, _, _ in }
+    ) {
         guard let address = stream.hlsURL else { return }
         stop()
 
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            log.error("Audio session: \(error.localizedDescription, privacy: .public)")
+        // The category once, and the activation off the main thread: both block,
+        // and changing the category of an active session is what the system warns
+        // about on the second recording.
+        let audio = AVAudioSession.sharedInstance()
+        if audio.category != .playback || audio.mode != .moviePlayback {
+            do {
+                try audio.setCategory(.playback, mode: .moviePlayback)
+            } catch {
+                log.error("Audio session: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+        Task.detached(priority: .userInitiated) {
+            try? AVAudioSession.sharedInstance().setActive(true)
         }
 
         let asset = AVURLAsset(url: address, options: [AVURLAssetHTTPCookiesKey: cookies])
         let item = AVPlayerItem(asset: asset)
         item.externalMetadata = Self.metadata(for: recording)
         let player = AVPlayer(playerItem: item)
+        let fallbackDuration = stream.duration.map { Double($0.components.seconds) } ?? 0
+        self.onProgress = onProgress
+        timeObserver = player.addPeriodicTimeObserver(
+            forInterval: CMTime(seconds: 5, preferredTimescale: 1), queue: .main
+        ) { [weak self, weak item] time in
+            MainActor.assumeIsolated {
+                let duration = item?.duration.seconds ?? .nan
+                self?.onProgress?(time.seconds, duration.isFinite ? duration : fallbackDuration, false)
+            }
+        }
 
         let controller = AVPlayerViewController()
         controller.player = player
@@ -58,13 +88,35 @@ final class RecordingPlayer: NSObject, AVPlayerViewControllerDelegate {
         self.controller = controller
 
         guard let presenter = Self.topViewController() else { return }
-        presenter.present(controller, animated: true) { player.play() }
-        log.info("Playing transfer \(recording.transferID, privacy: .public)")
+        presenter.present(controller, animated: true) { [weak self] in
+            guard let startAt, startAt > 0 else {
+                player.play()
+                return
+            }
+            // A seek before the item is ready is dropped, so wait for it.
+            self?.readiness = item.observe(\.status, options: [.initial, .new]) { item, _ in
+                guard item.status == .readyToPlay else { return }
+                Task { @MainActor in
+                    self?.readiness = nil
+                    await player.seek(to: CMTime(seconds: startAt, preferredTimescale: 600))
+                    player.play()
+                }
+            }
+        }
+        log.info("Playing transfer \(recording.transferID, privacy: .public)\(startAt.map { " from \(Int($0)) s" } ?? "", privacy: .public)")
     }
 
-    /// Stops whatever is playing and lets the controller go.
+    /// Stops whatever is playing, reports where it stopped, and lets the controller go.
     func stop() {
-        controller?.player?.pause()
+        if let player = controller?.player {
+            player.pause()
+            let duration = player.currentItem?.duration.seconds ?? .nan
+            onProgress?(player.currentTime().seconds, duration.isFinite ? duration : 0, true)
+            if let timeObserver { player.removeTimeObserver(timeObserver) }
+        }
+        timeObserver = nil
+        readiness = nil
+        onProgress = nil
         controller = nil
         inPictureInPicture = false
     }

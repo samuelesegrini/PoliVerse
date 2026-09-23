@@ -293,6 +293,23 @@ Step 2 (2026-09-23, not yet tried on a device):
   shown before the first recording. When Webex will not say where it streams,
   the recording opens on Webex in the browser, as in step 1.
 
+Step 3 (2026-09-23):
+
+- `RecordingProgress` (in `Recording.swift`) keeps, per recording, where the
+  student stopped and the length the player measured. Nine tenths played count
+  as watched; a recording can also be marked watched, or unwatched, by hand from
+  its row's menu.
+- `RecordingPlayer` reports the position every five seconds and once more on
+  closing; `RecordingsModel.played(to:of:in:final:)` writes it every fifteen
+  seconds, and at once on closing or on becoming watched. The next play starts
+  five seconds before the stopping point, unless the recording was barely begun
+  or played to the end.
+- The course page's "Registrazioni" row shows how many recordings are left to
+  watch; the list shows a bar and the minutes left for a recording under way, and
+  a check for one watched.
+- **[J]** Kept in `OfflineStore` per account, so signing out loses it, as the data
+  model section accepts for now.
+
 ## Still to verify
 
 1. The SSO cookie's lifetime: open recman a day later without signing in.

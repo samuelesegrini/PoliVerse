@@ -86,3 +86,55 @@ nonisolated extension Recording {
             .sorted { $0.recordedAt > $1.recordedAt }
     }
 }
+
+/// How far the student has got with one recording: kept on the device, not read
+/// from anywhere.
+///
+/// Not a cache: nothing can fetch it again. It is kept per account alongside the
+/// recordings, so signing out loses it — acceptable until the app has a store for
+/// the student's own data (see `docs/recordings.md`, "Data model").
+nonisolated struct RecordingProgress: Codable, Sendable, Equatable {
+    /// The recording, by `transfer_id`.
+    let transferID: Int
+    /// Where the student stopped, in seconds.
+    var position: Double = 0
+    /// The recording's length, in seconds, as the player measured it.
+    var duration: Double = 0
+    /// Whether the recording counts as watched: played to nine tenths, or marked by
+    /// hand.
+    var completed = false
+    /// When it was last played or marked.
+    var updatedAt: Date = .now
+
+    /// How much of the recording has been played, from 0 to 1.
+    var fraction: Double {
+        guard duration > 0 else { return 0 }
+        return min(max(position / duration, 0), 1)
+    }
+
+    /// Where to start again, or `nil` to start from the beginning: a recording
+    /// watched to the end, or barely started, starts over.
+    ///
+    /// A few seconds before the stopping point, so the sentence cut off is heard
+    /// again.
+    var resumeAt: Double? {
+        guard !completed, position > 30, duration == 0 || position < duration - 30 else { return nil }
+        return max(position - 5, 0)
+    }
+
+    /// The share of a recording that counts as watching it.
+    static let watchedFraction = 0.9
+
+    /// Takes a position the player reported.
+    ///
+    /// - Parameters:
+    ///   - position: Where the player is, in seconds.
+    ///   - duration: The recording's length, in seconds, when known.
+    mutating func played(to position: Double, of duration: Double) {
+        guard position.isFinite, position >= 0 else { return }
+        self.position = position
+        if duration.isFinite, duration > 0 { self.duration = duration }
+        if self.duration > 0, position >= self.duration * Self.watchedFraction { completed = true }
+        updatedAt = .now
+    }
+}

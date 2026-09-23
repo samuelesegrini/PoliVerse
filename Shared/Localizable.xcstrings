@@ -421,6 +421,9 @@
     "%lld da leggere" : {
 
     },
+    "%lld da vedere" : {
+
+    },
     "%lld di %lld" : {
       "localizations" : {
         "en" : {
@@ -887,18 +890,28 @@
         }
       }
     },
-    "%lld registrazioni" : {
-
-    },
-    "%lld registrazioni · %lld h" : {
+    "%lld registrazioni · %lld da vedere" : {
       "localizations" : {
         "it" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$lld registrazioni · %2$lld h"
+            "value" : "%1$lld registrazioni · %2$lld da vedere"
           }
         }
       }
+    },
+    "%lld registrazioni · %lld da vedere · %lld h" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld registrazioni · %2$lld da vedere · %3$lld h"
+          }
+        }
+      }
+    },
+    "%lld registrazioni · tutte viste" : {
+
     },
     "%lld su %lld" : {
       "localizations" : {
@@ -8486,6 +8499,9 @@
     "Mancano" : {
 
     },
+    "mancano %lld min" : {
+
+    },
     "Mandarino" : {
       "localizations" : {
         "en" : {
@@ -12313,6 +12329,9 @@
     "Rinomina" : {
 
     },
+    "Riprende la registrazione" : {
+
+    },
     "Ripristina" : {
 
     },
@@ -12953,6 +12972,12 @@
           }
         }
       }
+    },
+    "Segna come da vedere" : {
+
+    },
+    "Segna come vista" : {
+
     },
     "Segna tutte" : {
       "localizations" : {
@@ -14646,6 +14671,9 @@
           }
         }
       }
+    },
+    "Vista" : {
+
     },
     "voti" : {
 
