@@ -27,7 +27,7 @@ struct ExamDetailView: View {
     @Environment(CareerModel.self) private var career
     /// The shared ``CourseModel``, from the environment.
     @Environment(CourseModel.self) private var courses
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
     /// Scaled, so the tile grows with the reader's text like the settings pictures.

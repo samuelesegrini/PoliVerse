@@ -229,7 +229,7 @@ struct FeatureTour<Actions: View>: View {
     /// Whether the reader has asked for reduced motion.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// The look in use, which supplies the colours, typeface and material.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
@@ -821,7 +821,7 @@ private struct TourCard: View {
     let size: CGSize
 
     /// The look in use, which supplies the colours, typeface and material.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
@@ -1071,7 +1071,7 @@ private struct TourRow: View {
 /// Oggi as the app opens it, in the look in use: the date in its typeface, the next lessons and the student's own stickers.
 private struct TourToday: View {
     /// The look in use, which supplies the colours, typeface and material.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
@@ -1181,7 +1181,7 @@ private struct TourPlainCard: ViewModifier {
 /// the next sitting and the materials. Full size, scaled into the card.
 private struct TourCourses: View {
     /// The look in use, which supplies the colours, typeface and material.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
@@ -1337,7 +1337,7 @@ private struct TourCareer: View {
 /// place tiles — at the size the tab draws them, then scaled into the card.
 private struct TourRooms: View {
     /// The look in use, which supplies the colours, typeface and material.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
@@ -1401,7 +1401,7 @@ private struct TourRooms: View {
 /// full size, scaled into the card.
 private struct TourLook: View {
     /// The look in use, which supplies the colours, typeface and material.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
 
     /// The view's content.
     var body: some View {

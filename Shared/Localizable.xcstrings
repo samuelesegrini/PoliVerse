@@ -1,6 +1,870 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
+    " / %lld CFU" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " / %lld CFU"
+          }
+        }
+      }
+    },
+    " / 110" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " / 110"
+          }
+        }
+      }
+    },
+    " · ADESSO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " · NOW"
+          }
+        }
+      }
+    },
+    " · appello %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " · sitting %@"
+          }
+        }
+      }
+    },
+    "%lld APPELLI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld SITTINGS"
+          }
+        }
+      }
+    },
+    "%lld aule libere" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld free rooms"
+          }
+        }
+      }
+    },
+    "%lld AULE LIBERE" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld FREE ROOMS"
+          }
+        }
+      }
+    },
+    "%lld avvisi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld notices"
+          }
+        }
+      }
+    },
+    "%lld AVVISI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld NOTICES"
+          }
+        }
+      }
+    },
+    "%lld CFU su %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld of %2$lld credits"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld CFU su %2$lld"
+          }
+        }
+      }
+    },
+    "%lld DA VEDERE" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld TO WATCH"
+          }
+        }
+      }
+    },
+    "%lld FILE" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld FILES"
+          }
+        }
+      }
+    },
+    "%lld file nuovi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld new files"
+          }
+        }
+      }
+    },
+    "%lld lezioni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld lessons"
+          }
+        }
+      }
+    },
+    "%lld LEZIONI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld LESSONS"
+          }
+        }
+      }
+    },
+    "%lld lezioni da vedere" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld lessons to watch"
+          }
+        }
+      }
+    },
+    "%lld novità in %lld corsi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld updates in %2$lld courses"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld novità in %2$lld corsi"
+          }
+        }
+      }
+    },
+    "%lld novità sugli appelli" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld exam updates"
+          }
+        }
+      }
+    },
+    "%lld° anno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Year %lld"
+          }
+        }
+      }
+    },
+    "%lld° ANNO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YEAR %lld"
+          }
+        }
+      }
+    },
+    "%lld° anno di %lld, %lld CFU su %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Year %1$lld of %2$lld, %3$lld of %4$lld credits"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld° anno di %2$lld, %3$lld CFU su %4$lld"
+          }
+        }
+      }
+    },
+    "/ 110 · BASE" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "/ 110 · BASE"
+          }
+        }
+      }
+    },
+    "1 APPELLO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 SITTING"
+          }
+        }
+      }
+    },
+    "1 aula libera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 free room"
+          }
+        }
+      }
+    },
+    "1 AULA LIBERA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 FREE ROOM"
+          }
+        }
+      }
+    },
+    "1 avviso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 notice"
+          }
+        }
+      }
+    },
+    "1 AVVISO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 NOTICE"
+          }
+        }
+      }
+    },
+    "1 file nuovo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 new file"
+          }
+        }
+      }
+    },
+    "1 lezione" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 lesson"
+          }
+        }
+      }
+    },
+    "1 LEZIONE" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 LESSON"
+          }
+        }
+      }
+    },
+    "1 lezione da vedere" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 lesson to watch"
+          }
+        }
+      }
+    },
+    "1 novità sugli appelli" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 exam update"
+          }
+        }
+      }
+    },
+    "adesso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "now"
+          }
+        }
+      }
+    },
+    "alle %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "at %@"
+          }
+        }
+      }
+    },
+    "ALLE %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AT %@"
+          }
+        }
+      }
+    },
+    "Anteprima" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview"
+          }
+        }
+      }
+    },
+    "Apre le aule libere" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the free rooms"
+          }
+        }
+      }
+    },
+    "APRI →" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OPEN →"
+          }
+        }
+      }
+    },
+    "B · POI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "B · LATER"
+          }
+        }
+      }
+    },
+    "base di laurea" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "graduation base"
+          }
+        }
+      }
+    },
+    "Biglietti, scaffali e colori pieni." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tickets, shelves and full colour."
+          }
+        }
+      }
+    },
+    "Blu cianografia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cyanotype blue"
+          }
+        }
+      }
+    },
+    "Blu Politecnico e mandarino" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Politecnico blue and mandarin"
+          }
+        }
+      }
+    },
+    "Blueprint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blueprint"
+          }
+        }
+      }
+    },
+    "C · DA FARE" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C · TO DO"
+          }
+        }
+      }
+    },
+    "Cambiano tutta l’app, pagina per pagina. Ne regoli poche cose." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "They change the whole app, page by page. You adjust just a few things."
+          }
+        }
+      }
+    },
+    "Campus" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Campus"
+          }
+        }
+      }
+    },
+    "Carta e inchiostro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paper and ink"
+          }
+        }
+      }
+    },
+    "Chiudono %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Closes %@"
+          }
+        }
+      }
+    },
+    "chiudono %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "closes %@"
+          }
+        }
+      }
+    },
+    "Chiudono le iscrizioni a %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enrolment closes for %@"
+          }
+        }
+      }
+    },
+    "CONSEGNA · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HAND-IN · %@"
+          }
+        }
+      }
+    },
+    "Coppia di colori" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour pair"
+          }
+        }
+      }
+    },
+    "Cosa scade" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What's expiring"
+          }
+        }
+      }
+    },
+    "CREDITI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CREDITS"
+          }
+        }
+      }
+    },
+    "D · MEDIA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "D · AVERAGE"
+          }
+        }
+      }
+    },
+    "Da fare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To do"
+          }
+        }
+      }
+    },
+    "Dettagli e aula" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Details and room"
+          }
+        }
+      }
+    },
+    "DETTAGLI E AULA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DETAILS AND ROOM"
+          }
+        }
+      }
+    },
+    "Duplica come classico" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicate as classic"
+          }
+        }
+      }
+    },
+    "E · PERCORSO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E · PATH"
+          }
+        }
+      }
+    },
+    "ESAME" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EXAM"
+          }
+        }
+      }
+    },
+    "ESAME IN ARRIVO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EXAM COMING UP"
+          }
+        }
+      }
+    },
+    "FIG. %@ — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FIG. %1$@ — %2$@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "FIG. %1$@ — %2$@"
+          }
+        }
+      }
+    },
+    "FINO ALLE %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "UNTIL %@"
+          }
+        }
+      }
+    },
+    "Fitta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fine"
+          }
+        }
+      }
+    },
+    "Giocherelloso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playful"
+          }
+        }
+      }
+    },
+    "Giornata libera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free day"
+          }
+        }
+      }
+    },
+    "GIORNI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DAYS"
+          }
+        }
+      }
+    },
+    "GIORNO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DAY"
+          }
+        }
+      }
+    },
+    "Grafite e limone" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Graphite and lemon"
+          }
+        }
+      }
+    },
+    "I tuoi docenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your teachers"
+          }
+        }
+      }
+    },
+    "il %@ del percorso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of the way"
+          }
+        }
+      }
+    },
+    "Il tuo percorso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your path"
+          }
+        }
+      }
+    },
+    "Indaco e corallo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indigo and coral"
+          }
+        }
+      }
+    },
+    "INSEGNAMENTO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "COURSE"
+          }
+        }
+      }
+    },
+    "Iscriviti da Carriera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enrol from Career"
+          }
+        }
+      }
+    },
+    "ISCRIZIONI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ENROLMENT"
+          }
+        }
+      }
+    },
+    "ISCRIZIONI IN CHIUSURA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ENROLMENT CLOSING"
+          }
+        }
+      }
+    },
+    "ISCRIZIONI · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ENROLMENT · %@"
+          }
+        }
+      }
+    },
+    "L'app prende colore, icona e barra da questo Flavor. Puoi cambiarli quando vuoi da ••• ▸ App." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The app takes its colour, icon and tab bar from this Flavor. Change them any time from ••• ▸ App."
+          }
+        }
+      }
+    },
+    "Colore, icona e barra seguono Oggi, e cambiano quando cambi Flavor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour, icon and tab bar follow Today, and change when you change Flavor."
+          }
+        }
+      }
+    },
+    "Carattere, colore, sezioni e decorazioni, scelti insieme. Li cambi in ogni parte." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typeface, colour, sections and decorations, chosen together. You can change every part."
+          }
+        }
+      }
+    },
+    "Flavor eliminato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flavor deleted"
+          }
+        }
+      }
+    },
     "" : {
       "localizations" : {
         "en" : {
@@ -19,6 +883,616 @@
     },
     " in %@" : {
 
+    },
+    "La carta è sempre blu e l’app sempre scura: le linee bianche si leggono solo così." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The paper is always blue and the app always dark: white lines only read that way."
+          }
+        }
+      }
+    },
+    "La giornata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The day"
+          }
+        }
+      }
+    },
+    "La giornata come un disegno tecnico." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The day as a technical drawing."
+          }
+        }
+      }
+    },
+    "LA PRIMA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FIRST"
+          }
+        }
+      }
+    },
+    "LA PRIMA LEZIONE" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FIRST LESSON"
+          }
+        }
+      }
+    },
+    "La tua libreria" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your library"
+          }
+        }
+      }
+    },
+    "Lampone e menta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raspberry and mint"
+          }
+        }
+      }
+    },
+    "Larga" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wide"
+          }
+        }
+      }
+    },
+    "Laurea" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Degree"
+          }
+        }
+      }
+    },
+    "LAUREA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DEGREE"
+          }
+        }
+      }
+    },
+    "Le forme delle pagine sono sue: tu scegli queste cose." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The pages' shapes are its own: you choose these."
+          }
+        }
+      }
+    },
+    "LEGENDA — DOCENTI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LEGEND — TEACHERS"
+          }
+        }
+      }
+    },
+    "Lezioni finite" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lessons over"
+          }
+        }
+      }
+    },
+    "LEZIONI FINITE" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LESSONS OVER"
+          }
+        }
+      }
+    },
+    "MEDIA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AVERAGE"
+          }
+        }
+      }
+    },
+    "Media su una scala da 18 a 30" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Average on a scale from 18 to 30"
+          }
+        }
+      }
+    },
+    "NESSUNA LEZIONE" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NO LESSONS"
+          }
+        }
+      }
+    },
+    "Nessuna lezione in calendario." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No lessons on the calendar."
+          }
+        }
+      }
+    },
+    "Niente di nuovo nei tuoi corsi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing new in your courses"
+          }
+        }
+      }
+    },
+    "Notte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Night"
+          }
+        }
+      }
+    },
+    "NOVITÀ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NEW"
+          }
+        }
+      }
+    },
+    "OGGI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TODAY"
+          }
+        }
+      }
+    },
+    "Ordinato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tidy"
+          }
+        }
+      }
+    },
+    "Per oggi è tutto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That's all for today."
+          }
+        }
+      }
+    },
+    "Percorso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Path"
+          }
+        }
+      }
+    },
+    "PIANO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PLAN"
+          }
+        }
+      }
+    },
+    "PIANTA — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PLAN — %@"
+          }
+        }
+      }
+    },
+    "PROSSIMA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NEXT"
+          }
+        }
+      }
+    },
+    "PROSSIMA LEZIONE" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NEXT LESSON"
+          }
+        }
+      }
+    },
+    "Puoi ancora rifiutarlo, dai Servizi Online" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can still refuse it, from Servizi Online"
+          }
+        }
+      }
+    },
+    "Quanto caos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How much chaos"
+          }
+        }
+      }
+    },
+    "Quanto pendono le schede, come adesivi su un quaderno." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How far the cards tilt, like stickers on a notebook."
+          }
+        }
+      }
+    },
+    "Regola il Flavor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjust the Flavor"
+          }
+        }
+      }
+    },
+    "rifiutabile dai Servizi Online" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "can be refused from Servizi Online"
+          }
+        }
+      }
+    },
+    "Scatenato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wild"
+          }
+        }
+      }
+    },
+    "Simula" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simulate"
+          }
+        }
+      }
+    },
+    "SIMULA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SIMULATE"
+          }
+        }
+      }
+    },
+    "Simula la media" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simulate your average"
+          }
+        }
+      }
+    },
+    "SIMULA LA MEDIA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SIMULATE YOUR AVERAGE"
+          }
+        }
+      }
+    },
+    "Speciale · cambia tutta l’app" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Special · changes the whole app"
+          }
+        }
+      }
+    },
+    "Speciale, classico, da un colore o da una foto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Special, classic, from a colour or a photo"
+          }
+        }
+      }
+    },
+    "Speciali" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Specials"
+          }
+        }
+      }
+    },
+    "TAV. 1 — NOVITÀ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SHEET 1 — NEW"
+          }
+        }
+      }
+    },
+    "TAV. 2 — CORSI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SHEET 2 — COURSES"
+          }
+        }
+      }
+    },
+    "Tieni colori e caratteri e cambi ogni parte. Le forme speciali delle pagine restano qui." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep the colours and typefaces and change every part. The pages' special shapes stay here."
+          }
+        }
+      }
+    },
+    "tra %lld h" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in %lld h"
+          }
+        }
+      }
+    },
+    "tra %lld min" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in %lld min"
+          }
+        }
+      }
+    },
+    "Trova" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find"
+          }
+        }
+      }
+    },
+    "Trova un’aula libera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find a free room"
+          }
+        }
+      }
+    },
+    "TROVA UN’AULA LIBERA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FIND A FREE ROOM"
+          }
+        }
+      }
+    },
+    "T–%lld H" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "T–%lld H"
+          }
+        }
+      }
+    },
+    "T–%lld MIN" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "T–%lld MIN"
+          }
+        }
+      }
+    },
+    "Un Flavor speciale cambia tutte le pagine: guardale qui prima di scegliere." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A special Flavor changes every page: look at them here before choosing."
+          }
+        }
+      }
+    },
+    "Un po’" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A bit"
+          }
+        }
+      }
+    },
+    "Vedi l’appello" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See the sitting"
+          }
+        }
+      }
+    },
+    "VEDI L’APPELLO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SEE THE SITTING"
+          }
+        }
+      }
+    },
+    "Vedi l’esito" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See the result"
+          }
+        }
+      }
+    },
+    "VEDI L’ESITO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SEE THE RESULT"
+          }
+        }
+      }
+    },
+    "Verde tecnico" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drafting green"
+          }
+        }
+      }
+    },
+    "VOTO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GRADE"
+          }
+        }
+      }
+    },
+    "VOTO DA DECIDERE" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GRADE TO DECIDE"
+          }
+        }
+      }
     },
     "—" : {
       "localizations" : {
@@ -3894,6 +5368,16 @@
         }
       }
     },
+    "Nel tuo colore" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In your colour"
+          }
+        }
+      }
+    },
     "Colore, carattere e materiale per tutta l'app; sfondo e adesivi per la tua giornata." : {
       "localizations" : {
         "en" : {
@@ -4159,6 +5643,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Share contact"
+          }
+        }
+      }
+    },
+    "Condividi il colore" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share the colour"
           }
         }
       }
@@ -5609,6 +7103,16 @@
         }
       }
     },
+    "Elimina Flavor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Flavor"
+          }
+        }
+      }
+    },
     "Elimina tutti i materiali" : {
       "localizations" : {
         "en" : {
@@ -6237,6 +7741,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Flavor"
+          }
+        }
+      }
+    },
+    "Colore %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour %@"
           }
         }
       }
@@ -10338,6 +11852,16 @@
         }
       }
     },
+    "Nome del Flavor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flavor name"
+          }
+        }
+      }
+    },
     "nome.cognome@mail.polimi.it" : {
 
     },
@@ -10941,6 +12465,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New material"
+          }
+        }
+      }
+    },
+    "Nuovo Flavor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Flavor"
           }
         }
       }
@@ -11822,6 +13356,16 @@
     },
     "Più tardi oggi" : {
 
+    },
+    "Poche parole, nel carattere della data e nel tuo colore." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A few words, in the date's typeface and your colour."
+          }
+        }
+      }
     },
     "Poi" : {
       "localizations" : {
@@ -14511,6 +16055,32 @@
         }
       }
     },
+    "Flavor %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flavor %lld"
+          }
+        }
+      }
+    },
+    "Flavor %lld di %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flavor %1$lld of %2$lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Flavor %1$lld di %2$lld"
+          }
+        }
+      }
+    },
     "Stima sui voti del libretto pesati per CFU (%lld CFU per questo esame)." : {
       "localizations" : {
         "en" : {
@@ -14708,6 +16278,16 @@
     },
     "Tabelle" : {
 
+    },
+    "Classici" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classics"
+          }
+        }
+      }
     },
     "Temporanee" : {
 
@@ -15203,6 +16783,16 @@
         }
       }
     },
+    "Un colore condiviso è un codice: incollalo qui per usarlo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A shared colour is a code: paste it here to use it."
+          }
+        }
+      }
+    },
     "Un giorno libero." : {
 
     },
@@ -15228,6 +16818,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un'aula libera, adesso"
+          }
+        }
+      }
+    },
+    "Una carta su cui stampare la pagina, o un motivo nel tuo colore." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A paper to print the page on, or a pattern in your colour."
           }
         }
       }
@@ -15812,158 +17412,12 @@
         }
       }
     },
-    "Colore del Flavor" : {
+    "└── %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Flavor colour"
-          }
-        }
-      }
-    },
-    "Elimina stile" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete style"
-          }
-        }
-      }
-    },
-    "Nuovo stile" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New style"
-          }
-        }
-      }
-    },
-    "Stile eliminato" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Style deleted"
-          }
-        }
-      }
-    },
-    "Stile %lld di %lld" : {
-      "localizations" : {
-        "it" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Stile %1$lld di %2$lld"
-          }
-        }
-      }
-    },
-    "Temi" : {
-
-    },
-    "Carattere, colore, sezioni e decorazioni, scelti insieme." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Typeface, colour, sections and decorations, chosen together."
-          }
-        }
-      }
-    },
-    "Stile %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Style %lld"
-          }
-        }
-      }
-    },
-    "Flavor %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Flavor %@"
-          }
-        }
-      }
-    },
-    "Condividi il Flavor" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Share the Flavor"
-          }
-        }
-      }
-    },
-    "Un Flavor condiviso è un codice: incollalo qui per usarlo." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A shared Flavor is a code: paste it here to use it."
-          }
-        }
-      }
-    },
-    "Una carta su cui stampare la pagina, o un motivo nel colore del Flavor." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A paper to print the page on, or a pattern in the Flavor's colour."
-          }
-        }
-      }
-    },
-    "Poche parole, nel carattere della data e nel colore del Flavor." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A few words, in the date's typeface and the Flavor's colour."
-          }
-        }
-      }
-    },
-    "Colore, icona e barra seguono Oggi, e cambiano quando cambi lo stile." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Colour, icon and tab bar follow Today, and change when you change style."
-          }
-        }
-      }
-    },
-    "L'app prende colore, icona e barra da questo stile. Puoi cambiarli quando vuoi da ••• ▸ App." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The app takes its colour, icon and tab bar from this style. Change them any time from ••• ▸ App."
-          }
-        }
-      }
-    },
-    "Nome dello stile" : {
-
-    },
-    "Da un tema, un colore o una foto" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "From a theme, a colour or a photo"
+            "value" : "└── %@"
           }
         }
       }

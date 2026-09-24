@@ -56,10 +56,10 @@ si elimina tenendo premuta la sua scheda (resta sempre almeno uno stile).
 
 | Parola | Significa | Non usare per |
 | --- | --- | --- |
-| **Stile** | uno degli aspetti salvati di Oggi, nella galleria di Personalizza | — |
-| **Aspetto** | sistema, chiaro, scuro, contrasto, tinto | gli stili salvati, l'aspetto delle sezioni |
-| **Flavor** | i tre colori dello stile | — |
-| **Carta** | su cosa è stampata la pagina — una carta (liscia, millimetrata, da disegno, puntinata) **oppure** una decorazione nel colore del Flavor — più la grana | la superficie delle sezioni |
+| **Flavor** | la personalità di tutta l'app, salvata nella galleria di Personalizza. I **classici** si cambiano in ogni parte; gli **speciali** (Giocherelloso) hanno forme proprie nelle pagine e solo poche regolazioni loro | «stile», «tema» |
+| **Colore** | il colore scelto; l'app ne ricava accento ed extra, che si possono cambiare a mano | «Flavor» per i colori |
+| **Aspetto** | sistema, chiaro, scuro, contrasto, tinto | i Flavor salvati, l'aspetto delle sezioni |
+| **Carta** | su cosa è stampata la pagina — una carta (liscia, millimetrata, da disegno, puntinata) **oppure** una decorazione nel tuo colore — più la grana | la superficie delle sezioni |
 | **Superficie** | come è disegnata una sezione (vetro, pieno, bagliore…) | la carta |
 | **Data** | il blocco della data; la sua **Forma** è come è composta | «Widget», che nell'app sono i widget della Home |
 | **Sezioni** | la pagina che ordina, nasconde e aggiunge le sezioni | «Layout» |

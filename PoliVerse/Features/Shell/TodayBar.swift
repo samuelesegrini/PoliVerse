@@ -15,7 +15,7 @@ struct TodayBar: ViewModifier {
     /// The environment's `shell`.
     @Environment(\.shell) private var shell
     /// Which buttons the look in use keeps in the bar.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
 
     /// Drives the chevron separately from the popover: bound to `showingDays`
     /// alone, the toolbar only redrew it once the popover had gone.

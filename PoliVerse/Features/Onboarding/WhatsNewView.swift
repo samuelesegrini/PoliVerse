@@ -21,7 +21,7 @@ struct WhatsNewView: View {
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
     /// The look in use, which supplies the colours.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// The `iconSide`, scaled with the reader's text size.
     @ScaledMetric(relativeTo: .largeTitle) private var iconSide: CGFloat = 76
 

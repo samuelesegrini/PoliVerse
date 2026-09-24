@@ -229,7 +229,7 @@ struct GlanceStrip: View {
     let tint: Color
 
     /// The look in use, whose date typeface the figures are set in.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
 
     /// The view's content.
     var body: some View {
@@ -313,7 +313,7 @@ struct PageHero: View {
     var badge: HeroBadge?
 
     /// The look in use, which supplies the ramp.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 

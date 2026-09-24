@@ -29,7 +29,7 @@ struct DataStorageView: View {
 
     /// The look the student chose, so this screen is painted in it rather than
     /// in colours of its own.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
 
     /// What the last scan found, largest kind first.
     @State private var categories: [StorageAudit.Category] = []

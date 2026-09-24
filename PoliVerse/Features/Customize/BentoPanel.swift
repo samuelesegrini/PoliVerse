@@ -139,7 +139,7 @@ struct BentoPanel: View {
             .overlay {
                 VStack(spacing: 0) {
                     Text(style.flavor.name).font(.title3.weight(.bold))
-                    Text("Flavor").font(.caption2.weight(.semibold)).opacity(0.8)
+                    Text("Colore").font(.caption2.weight(.semibold)).opacity(0.8)
                 }
                 .foregroundStyle(.white)
                 .shadow(color: .black.opacity(0.25), radius: 5)

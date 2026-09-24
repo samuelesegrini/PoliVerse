@@ -37,7 +37,7 @@ struct SearchView: View {
     @Environment(\.locale) private var locale
     /// The look in use, which the tiles' colour and typeface come from.
     @Environment(\.colorScheme) private var scheme
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// The latest searches, newest first, one per line.
     @AppStorage("searchRecents") private var storedRecents = ""
 
@@ -352,6 +352,11 @@ struct SearchView: View {
     private var browseContent: some View {
         LookTitle("Cerca")
 
+        switch style.special {
+        case .playful: PlayfulSearchHero()
+        case .blueprint: BlueprintSearchHero()
+        case nil: EmptyView()
+        }
 
         kindChips
 
@@ -752,7 +757,7 @@ private struct TopHitPanel: View {
 
     /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
 
     /// The view's content.
     var body: some View {

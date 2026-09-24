@@ -32,7 +32,7 @@ struct CourseDetailView: View {
     @Environment(StudyProgrammeModel.self) private var programmes
     /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
@@ -569,7 +569,7 @@ private struct NextSittingCard: View {
 
     /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
 
     /// Whole days from today to the sitting, or `nil` when it has no date yet.
     private var daysAway: Int? {

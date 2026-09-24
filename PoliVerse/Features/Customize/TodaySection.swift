@@ -254,7 +254,8 @@ nonisolated extension TodayStyle {
     /// The tab bar's current class, unless the page already shows it as a
     /// section: the same lesson twice on one screen reads as two lessons.
     var wantsCurrentClassAccessory: Bool {
-        !visibleSections.contains { $0.kind == .currentClass }
+        // A special Flavor's Oggi leads with the lesson itself.
+        special == nil && !visibleSections.contains { $0.kind == .currentClass }
     }
 
     /// The sections drawn on the page, in order.

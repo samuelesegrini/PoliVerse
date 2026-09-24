@@ -105,7 +105,7 @@ struct CareerNowCard: View {
     let open: (ExamSession) -> Void
 
     /// The look in use, which supplies the card's material.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
     /// The locale dates and numbers are formatted in.

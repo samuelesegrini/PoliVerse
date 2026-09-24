@@ -6,6 +6,7 @@ struct CareerTab: View {
     var body: some View {
         NavigationStack {
             NewDestination.career.screen
+                .flavorPaper()
                 .profileButton()
                 .dataStatusLine()
         }

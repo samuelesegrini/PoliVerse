@@ -35,6 +35,8 @@ struct LookScreen: View {
 
     /// The view's content.
     var body: some View {
+        // Drawn as the app draws it: a special Flavor's recipe applied.
+        let look = self.look.resolved
         // The look's own light, so a dark look reads dark whatever the
         // gallery around it is in.
         let lit = look.appearance.colorScheme ?? scheme
@@ -62,7 +64,8 @@ struct LookScreen: View {
         }
         .frame(width: screen.width, height: screen.height, alignment: .top)
         .tint(look.controlTint(lit))
-        .background(TodayBackgroundView(style: look))
+        .background(LookBackground(style: look))
+        .environment(\.look, look)
         .environment(\.colorScheme, lit)
         .clipShape(.rect(cornerRadius: cornerRadius))
         .screenScaled(scale, size: screen)
@@ -92,6 +95,16 @@ struct AppPreview: View {
     /// The screen's safe area.
     var insets = LookScreen.referenceInsets
 
+    /// A preview of a look's app half, drawn with its special Flavor applied.
+    init(look: TodayStyle, mode: Mode = .app, showsMinimizedBar: Bool = false,
+         screen: CGSize = LookScreen.reference, insets: EdgeInsets = LookScreen.referenceInsets) {
+        self.look = look.resolved
+        self.mode = mode
+        self.showsMinimizedBar = showsMinimizedBar
+        self.screen = screen
+        self.insets = insets
+    }
+
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
@@ -111,6 +124,7 @@ struct AppPreview: View {
             }
         }
         .frame(width: screen.width, height: screen.height)
+        .environment(\.look, look)
         .clipShape(.rect(cornerRadius: 48))
         .allowsHitTesting(false)
         .accessibilityHidden(true)

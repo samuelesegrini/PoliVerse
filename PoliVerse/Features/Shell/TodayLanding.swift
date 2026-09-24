@@ -35,7 +35,7 @@ struct TodayLanding: View {
             case .greeting: "Saluto"
             case .date: "Data"
             case .stickers: "Accessorio"
-            case .background: "Flavor"
+            case .background: "Colore"
             case .section(let kind): kind.title
             }
         }
@@ -64,7 +64,7 @@ struct TodayLanding: View {
     /// The page as the app shows it.
     init(day: Date, style: TodayStyle) {
         self.day = day
-        self.style = style
+        self.style = style.resolved
         draft = nil
         arranging = false
         onEdit = { _ in }
@@ -75,7 +75,7 @@ struct TodayLanding: View {
     init(day: Date, draft: Binding<TodayStyle>, arranging: Bool, onAddSticker: @escaping () -> Void,
          onEdit: @escaping (Zone) -> Void) {
         self.day = day
-        style = draft.wrappedValue
+        style = draft.wrappedValue.resolved
         self.draft = draft
         self.arranging = arranging
         self.onAddSticker = onAddSticker
@@ -96,12 +96,25 @@ struct TodayLanding: View {
                 }
             }
 
-            header
+            switch style.special {
+            case .playful:
+                // A special Flavor's Oggi is its own page. In Personalizza
+                // the whole of it is one zone, which opens the Flavor's knobs.
+                zone(.background) {
+                    PlayfulToday(day: day, style: style, opensDetails: !editing)
+                }
+            case .blueprint:
+                zone(.background) {
+                    BlueprintToday(day: day, style: style, opensDetails: !editing)
+                }
+            case nil:
+                header
 
-            sections
+                sections
 
-            if arranging, !style.addableSections.isEmpty {
-                addSectionMenu
+                if arranging, !style.addableSections.isEmpty {
+                    addSectionMenu
+                }
             }
         }
         .padding(.horizontal, 20)

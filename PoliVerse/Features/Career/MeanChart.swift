@@ -35,7 +35,7 @@ struct MeanChart: View {
     var height: CGFloat = 150
 
     /// The look in use, which supplies the line's colour and the ramp.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
     /// The locale dates and numbers are formatted in.

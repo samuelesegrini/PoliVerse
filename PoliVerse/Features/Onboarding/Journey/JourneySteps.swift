@@ -824,7 +824,7 @@ struct JourneyReady: View {
     /// The shared ``WeBeepModel``, from the environment.
     @Environment(WeBeepModel.self) private var weBeep
     /// The look in use.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Takes the card away.
     let enter: () -> Void
 

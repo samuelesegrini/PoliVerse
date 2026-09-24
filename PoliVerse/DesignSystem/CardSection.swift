@@ -154,7 +154,7 @@ struct FactTiles: View {
     var tint: Color = Theme.brand
 
     /// The values in the typeface of Oggi's date.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
 
     /// The view's content.
     var body: some View {

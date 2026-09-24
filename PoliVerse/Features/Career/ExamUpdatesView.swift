@@ -16,7 +16,7 @@ struct ExamUpdatesView: View {
     /// dot for as long as the screen is open.
     @State private var seenBefore: Date?
     @State private var hasMarked = false
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 

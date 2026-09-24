@@ -11,7 +11,7 @@ struct SinglePagePanel: View {
     @State private var now = Date.now
 
     /// The look in use, which says whether Oggi already shows the current class.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
 
     /// The class now, unless Oggi already shows it as a section.
     private var current: CurrentClass? {

@@ -29,7 +29,7 @@ struct NotificationSettingsView: View {
     @Environment(\.locale) private var locale
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
 
     /// Whether every pending reminder is listed, rather than the first few.
     @State private var showsAllScheduled = false

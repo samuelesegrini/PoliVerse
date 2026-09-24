@@ -36,7 +36,7 @@ struct CareerView: View {
     /// The page is the look's now, so its own colour is too. A fixed
     /// Politecnico navy on a page the student had coloured read as a screen
     /// borrowed from another app.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
@@ -89,11 +89,33 @@ struct CareerView: View {
 
                 if let message = career.errorMessage { errorBanner(message) }
 
-                CareerNowCard(deadlines: CareerDeadline.all(in: career.sessions)) { selectedExam = $0 }
+                if style.special == .blueprint {
+                    BlueprintDeadlines(deadlines: CareerDeadline.all(in: career.sessions)) { selectedExam = $0 }
+                    if career.gradeBook != .empty || !career.libretto.isEmpty {
+                        BlueprintStanding(book: career.gradeBook,
+                                          mean: career.gradeBook.mean > 0 ? career.gradeBook.mean
+                                              : StudyPlan(exams: career.libretto).weightedMean ?? 0,
+                                          delta: career.meanDelta) { showingSimulator = true }
+                        BlueprintPath(book: career.gradeBook, plan: { showingPlan = true },
+                                      simulate: { showingSimulator = true }, updates: { showingUpdates = true })
+                    }
+                } else if style.special == .playful {
+                    PlayfulTickets(deadlines: CareerDeadline.all(in: career.sessions)) { selectedExam = $0 }
+                    if career.gradeBook != .empty || !career.libretto.isEmpty {
+                        PlayfulStanding(book: career.gradeBook,
+                                        mean: career.gradeBook.mean > 0 ? career.gradeBook.mean
+                                            : StudyPlan(exams: career.libretto).weightedMean ?? 0,
+                                        delta: career.meanDelta) { showingSimulator = true }
+                        PlayfulPath(book: career.gradeBook, plan: { showingPlan = true },
+                                    simulate: { showingSimulator = true }, updates: { showingUpdates = true })
+                    }
+                } else {
+                    CareerNowCard(deadlines: CareerDeadline.all(in: career.sessions)) { selectedExam = $0 }
 
-                if career.gradeBook != .empty || !career.libretto.isEmpty {
-                    CareerStandingCard(book: career.gradeBook, exams: career.libretto,
-                                       delta: career.meanDelta) { showingSimulator = true }
+                    if career.gradeBook != .empty || !career.libretto.isEmpty {
+                        CareerStandingCard(book: career.gradeBook, exams: career.libretto,
+                                           delta: career.meanDelta) { showingSimulator = true }
+                    }
                 }
 
                 // The libretto counts too: the three calls fail separately,

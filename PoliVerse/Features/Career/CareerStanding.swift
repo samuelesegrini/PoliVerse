@@ -24,7 +24,7 @@ struct CareerStandingCard: View {
     let simulate: () -> Void
 
     /// The look in use, which supplies the card's material and colour.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
     /// The day being read on the chart. While there is one, the headline is

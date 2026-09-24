@@ -214,7 +214,7 @@ struct CustomizeOggi: View {
                 .accessibilityAddTraits(.isButton)
                 .accessibilityHint(index == middle ? Text("Tocca per tornare all'app") : Text("Tocca per usarlo"))
                 .accessibilityAction(named: "Personalizza") { if index == middle { beginEditing() } }
-                .accessibilityAction(named: "Elimina stile") {
+                .accessibilityAction(named: "Elimina Flavor") {
                     if index == middle, library.canRemove { delete(index) }
                 }
                 .accessibilityIdentifier("customize-card-\(index)")
@@ -223,7 +223,7 @@ struct CustomizeOggi: View {
                 .contentShape(.rect(cornerRadius: 48 * Self.cardScale))
                 .onTapGesture { tap(index) }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Nuovo stile")
+                .accessibilityLabel("Nuovo Flavor")
                 .accessibilityAddTraits(.isButton)
                 .accessibilityIdentifier("customize-card-new")
         }
@@ -288,7 +288,7 @@ struct CustomizeOggi: View {
             // where VoiceOver and a test find it.
             .padding(.top, cardTop - 52)
 
-            Button("Elimina stile", systemImage: "trash", role: .destructive) { delete(middle) }
+            Button("Elimina Flavor", systemImage: "trash", role: .destructive) { delete(middle) }
                 .labelStyle(.iconOnly)
                 .font(.system(size: 30, weight: .medium))
                 .foregroundStyle(.red)
@@ -315,20 +315,21 @@ struct CustomizeOggi: View {
 
     /// The name of the card in the middle.
     private var title: String {
-        onNewCard ? String(localized: "Nuovo stile").uppercased()
+        onNewCard ? String(localized: "Nuovo Flavor").uppercased()
             : library.looks[middle].displayName(at: middle).uppercased()
     }
 
     /// What the app wears with the card in the middle.
     private var subtitle: LocalizedStringKey {
-        onNewCard ? "Da un tema, un colore o una foto"
+        onNewCard ? "Speciale, classico, da un colore o da una foto"
+            : library.looks[middle].special != nil ? "Speciale · cambia tutta l’app"
             : library.looks[middle].app.paired ? "App abbinata" : "App su misura"
     }
 
-    /// Stile eliminato, with the way back, for a few seconds.
+    /// Flavor eliminato, with the way back, for a few seconds.
     private func undoToast(_ removed: RemovedLook) -> some View {
         HStack(spacing: 12) {
-            Text("Stile eliminato")
+            Text("Flavor eliminato")
                 .font(.subheadline.weight(.semibold))
             Button("Annulla") { undoDelete() }
                 .buttonStyle(.glass)
@@ -362,7 +363,7 @@ struct CustomizeOggi: View {
             }
             .animation(.snappy, value: page)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text("Stile \(min(middle + 1, library.looks.count)) di \(library.looks.count)"))
+            .accessibilityLabel(Text("Flavor \(min(middle + 1, library.looks.count)) di \(library.looks.count)"))
 
             HStack(spacing: 12) {
                 Button { beginEditing() } label: {
@@ -377,7 +378,7 @@ struct CustomizeOggi: View {
                 // The same 44-point label as Personalizza inside the same
                 // glass style, so the two come out the same height.
                 Button { addingLook = true } label: {
-                    Label("Nuovo stile", systemImage: "plus")
+                    Label("Nuovo Flavor", systemImage: "plus")
                         .labelStyle(.iconOnly)
                         .font(.title2)
                         .frame(width: 44, height: 44)
@@ -480,7 +481,7 @@ struct CustomizeOggi: View {
         drop()
         removed = nil
         persist(pruning: true)
-        let icon = library.active.appIcon
+        let icon = library.active.resolved.appIcon
         withAnimation(Self.expand) {
             expanded = true
         } completion: {
@@ -634,7 +635,7 @@ private struct NewLookCard: View {
                         .font(.system(size: 28, weight: .light))
                         .frame(width: 58, height: 58)
                         .glassEffect(.regular, in: .circle)
-                    Text("Nuovo stile")
+                    Text("Nuovo Flavor")
                         .font(.subheadline.weight(.semibold))
                 }
                 .foregroundStyle(.white.opacity(0.8))
@@ -717,7 +718,7 @@ private struct FillScreen: GeometryEffect {
     CustomizeOggi().previewEnvironment()
 }
 
-#Preview("Nuovo stile") {
+#Preview("Nuovo Flavor") {
     NewLookGallery(current: TodayStyle.presets[3]) { _ in }
         .previewEnvironment()
 }

@@ -321,7 +321,7 @@ private struct SectionControlsCard: View {
                         .font(.subheadline)
                 }
             }
-            Toggle("Colore del Flavor", isOn: section.tinted)
+            Toggle("Nel tuo colore", isOn: section.tinted)
                 .font(.subheadline)
             // Course colours draw one card per lesson: only the list has them.
             if kind.hasCourseColours, section.wrappedValue.form == .list {

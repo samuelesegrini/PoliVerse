@@ -18,7 +18,7 @@ struct TodayTab: View {
     @Environment(CareerModel.self) private var career
     /// Whether the app is on screen, in the foreground or in the background.
     @Environment(\.scenePhase) private var scenePhase
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
 
     /// The view's content.
     var body: some View {
@@ -56,7 +56,7 @@ struct TodayTab: View {
             }
             .simultaneousGesture(TapGesture().onEnded(minimizePanel))
             .dataStatusLine()
-            .background(TodayBackgroundView(style: style).ignoresSafeArea())
+            .background(LookBackground(style: style).ignoresSafeArea())
             .todayBar()
             .toolbarVisibility(shell.singlePage ? .hidden : .automatic, for: .tabBar)
             .sheet(isPresented: Binding(get: { shell.showsPanel }, set: { _ in }),

@@ -60,7 +60,7 @@ struct RootView: View {
 
     /// The class now, except on Oggi when the page already shows it.
     private var current: CurrentClass? {
-        guard todayStyle.wantsCurrentClassAccessory || shell.selection != .today else { return nil }
+        guard todayStyle.resolved.wantsCurrentClassAccessory || shell.selection != .today else { return nil }
         return CurrentClass.forAccessory(from: agenda.events, now: now)
     }
 
@@ -110,6 +110,10 @@ struct RootView: View {
         // the detail sheets on the system's blue while the app behind them was
         // not; and set inside the tabs it never reached the login screen.
         .lookControls()
+        // The look every screen reads, decoded and resolved once here rather
+        // than by each screen from storage. Outside ``lookControls`` so the
+        // controls' tint is the resolved look's too.
+        .environment(\.look, todayStyle.resolved)
         // Sample data is its own population in the field numbers.
         .onChange(of: session.useMockData, initial: true) { _, sample in
             PerformanceStates.dataSource(usesSampleData: sample)
@@ -295,7 +299,7 @@ struct RootView: View {
         // Selecting the search tab opens its field straight away, unless the
         // student turned that off in Impostazioni.
         .tabViewSearchActivation(searchOpensKeyboard ? .searchTabSelection : .automatic)
-        .modifier(MinimizeBehaviour(enabled: !hasSidebar, behaviour: todayStyle.appTabBar))
+        .modifier(MinimizeBehaviour(enabled: !hasSidebar, behaviour: todayStyle.resolved.appTabBar))
     }
 }
 

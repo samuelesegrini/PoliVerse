@@ -40,7 +40,7 @@ struct ConnectionsView: View {
     @Environment(LoginMethodMemory.self) private var loginMemory
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
 
     /// Whether the WeBeep login sheet is presented.
     @State private var connectingWeBeep = false

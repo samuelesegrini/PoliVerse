@@ -22,12 +22,22 @@ struct NewLookGallery: View {
     private static let shelfWidth: CGFloat = 112
     /// A thumbnail's width in the featured grid.
     private static let gridWidth: CGFloat = 108
+    /// A special Flavor's thumbnail: larger, since it is a whole app rather than a page.
+    private static let specialWidth: CGFloat = 164
 
     /// The view's content.
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
+                    shelf("Speciali", "Cambiano tutta l’app, pagina per pagina. Ne regoli poche cose.") {
+                        rail {
+                            ForEach(SpecialFlavor.allCases) { special in
+                                tile(specialLook(special), caption: Text(special.title), width: Self.specialWidth,
+                                     id: "customize-new-special-\(special.rawValue)")
+                            }
+                        }
+                    }
                     ways
                     shelf("In primo piano", "Pagine già pensate, diverse da quella che usi.") {
                         HStack(alignment: .top, spacing: 10) {
@@ -38,7 +48,7 @@ struct NewLookGallery: View {
                         }
                         .frame(maxWidth: .infinity)
                     }
-                    shelf("Temi", "Carattere, colore, sezioni e decorazioni, scelti insieme.") {
+                    shelf("Classici", "Carattere, colore, sezioni e decorazioni, scelti insieme. Li cambi in ogni parte.") {
                         rail {
                             ForEach(Array(TodayStyle.presets.enumerated()), id: \.offset) { index, look in
                                 tile(look, caption: Text(look.displayName(at: index)), width: Self.shelfWidth,
@@ -46,7 +56,7 @@ struct NewLookGallery: View {
                             }
                         }
                     }
-                    shelf("Flavor", "Un colore solo: il resto lo sceglie lui, e puoi cambiarlo dopo.") {
+                    shelf("Colori", "Un colore solo: il resto lo sceglie lui, e puoi cambiarlo dopo.") {
                         rail {
                             ForEach(Flavor.swatches) { swatch in
                                 tile(flavorLook(swatch), caption: Text(swatch.name), width: Self.shelfWidth,
@@ -66,7 +76,7 @@ struct NewLookGallery: View {
                 .padding(.vertical, 12)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Nuovo stile")
+            .navigationTitle("Nuovo Flavor")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -158,6 +168,14 @@ struct NewLookGallery: View {
     /// Three themes that are not the look in use.
     private var featured: [TodayStyle] {
         Array(TodayStyle.presets.dropFirst().filter { $0.name != current.name }.prefix(3))
+    }
+
+    /// A special Flavor at its starting knobs, named after it.
+    private func specialLook(_ special: SpecialFlavor) -> TodayStyle {
+        var look = TodayStyle()
+        look.special = special
+        look.name = String(localized: special.name)
+        return look
     }
 
     /// The look in use, as a new look beside it.

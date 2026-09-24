@@ -101,7 +101,7 @@ struct AppLookEditor: View {
             Spacer()
             Button("Fine", action: done)
                 .buttonStyle(.glassProminent)
-                .tint(look.controlTint(.dark))
+                .tint(look.resolved.controlTint(.dark))
                 .accessibilityIdentifier("app-done")
         }
     }
@@ -141,11 +141,11 @@ struct AppLookEditor: View {
                 .font(.title3.weight(.semibold))
         case .tint:
             Circle()
-                .fill(look.controlTint(.dark))
+                .fill(look.resolved.controlTint(.dark))
                 .frame(width: 24, height: 24)
                 .overlay { Circle().strokeBorder(.white, lineWidth: 2) }
         case .icon:
-            Image(look.appIcon.previewImage)
+            Image(look.resolved.appIcon.previewImage)
                 .resizable()
                 .frame(width: 28, height: 28)
                 .clipShape(.rect(cornerRadius: 7, style: .continuous))
@@ -174,7 +174,7 @@ struct AppLookEditor: View {
             switch option {
             case .pair:
                 Text(look.app.paired
-                     ? "Colore, icona e barra seguono Oggi, e cambiano quando cambi lo stile."
+                     ? "Colore, icona e barra seguono Oggi, e cambiano quando cambi Flavor."
                      : "L'app ha scelte sue. Tocca Abbinata per farle seguire di nuovo Oggi.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -246,7 +246,7 @@ struct AppLookEditor: View {
             ScrollView(.horizontal) {
                 HStack(spacing: 12) {
                     ForEach(AppIconChoice.allCases) { choice in
-                        let chosen = look.appIcon == choice
+                        let chosen = look.resolved.appIcon == choice
                         Button {
                             withAnimation(.snappy) {
                                 look.unpairApp()
@@ -279,14 +279,14 @@ struct AppLookEditor: View {
             }
             .scrollIndicators(.hidden)
             // Opens on the icon in use, which a paired app may have far along.
-            .onAppear { reader.scrollTo(look.appIcon, anchor: .center) }
+            .onAppear { reader.scrollTo(look.resolved.appIcon, anchor: .center) }
         }
     }
 
     /// The app's colour for the system picker; picking one unpairs the app.
     private var tintBinding: Binding<Color> {
         Binding {
-            look.appFlavor.base.color
+            look.resolved.appFlavor.base.color
         } set: { colour in
             let resolved = colour.resolve(in: environment)
             look.unpairApp()
@@ -332,7 +332,7 @@ struct AppPairQuestion: View {
                     AppPreview(look: paired).screenScaled(scale, size: LookScreen.reference)
                 }
             }
-            Text("L'app prende colore, icona e barra da questo stile. Puoi cambiarli quando vuoi da ••• ▸ App.")
+            Text("L'app prende colore, icona e barra da questo Flavor. Puoi cambiarli quando vuoi da ••• ▸ App.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

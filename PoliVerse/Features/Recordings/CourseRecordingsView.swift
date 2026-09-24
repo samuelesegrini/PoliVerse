@@ -30,7 +30,7 @@ struct CourseRecordingsView: View {
     /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
     /// The look in use, which the page's materials come from.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 

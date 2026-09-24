@@ -54,7 +54,7 @@ struct CoursesPage: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     /// The look in use, which supplies the page's material and typeface.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
 
     /// The academic year the list is filtered to, or `nil` for every year.
     @State private var year: String?
@@ -103,16 +103,26 @@ struct CoursesPage: View {
         let focus = spotlight(shown: shown, lessons: lessons)
         // The spotlight already shows the first lesson; what is left of the
         // day comes under it.
-        let later = hero == .spotlight && focus?.lesson?.id == lessons.first?.event.id
+        // A special Flavor leaves the day to Oggi and the lesson bar: Corsi
+        // is about what is new in the courses.
+        let later = style.special != nil ? []
+            : hero == .spotlight && focus?.lesson?.id == lessons.first?.event.id
             ? Array(lessons.dropFirst()) : lessons
 
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                switch hero {
-                case .tiles:
-                    tilesHero(shown: shown, lessons: lessons)
-                case .spotlight:
-                    spotlightHero(shown: shown, focus: focus)
+                switch style.special {
+                case .playful:
+                    playfulHero(shown: shown)
+                case .blueprint:
+                    blueprintHero(shown: shown)
+                case nil:
+                    switch hero {
+                    case .tiles:
+                        tilesHero(shown: shown, lessons: lessons)
+                    case .spotlight:
+                        spotlightHero(shown: shown, focus: focus)
+                    }
                 }
 
                 if needsLogin {
@@ -141,11 +151,20 @@ struct CoursesPage: View {
                         }
                     }
 
-                    if !favourites.isEmpty {
-                        block("Preferiti") { grid(favourites) }
-                    }
-                    if !others.isEmpty {
-                        block(favourites.isEmpty ? "I tuoi corsi" : "Altri corsi") { list(others, origins: origins) }
+                    if style.special == .playful, !shown.isEmpty {
+                        VStack(alignment: .leading, spacing: 10) {
+                            PlayfulHeading("La tua libreria")
+                            PlayfulShelf(courses: (favourites + others).map { ($0, colour(of: $0)) })
+                        }
+                    } else if style.special == .blueprint, !shown.isEmpty {
+                        BlueprintCourseTable(courses: favourites + others)
+                    } else {
+                        if !favourites.isEmpty {
+                            block("Preferiti") { grid(favourites) }
+                        }
+                        if !others.isEmpty {
+                            block(favourites.isEmpty ? "I tuoi corsi" : "Altri corsi") { list(others, origins: origins) }
+                        }
                     }
                     if shown.isEmpty {
                         empty("Nessun corso qui", systemImage: "line.3.horizontal.decrease",
@@ -296,6 +315,71 @@ struct CoursesPage: View {
         }
         .padding(.top, 8)
         .animation(.snappy, value: focus?.course.id)
+    }
+
+    /// What is new in each course that has something new, most first.
+    private func newsTallies(_ shown: [Course]) -> [CourseNewsTally] {
+        shown
+            .map { course in
+                let badges = news(for: course)
+                return CourseNewsTally(course: course, colour: colour(of: course),
+                                       notices: badges.announcements, materials: badges.materials,
+                                       exams: badges.exams, toWatch: recordings.toWatch(in: course))
+            }
+            .filter { $0.total > 0 }
+            .sorted { $0.total > $1.total }
+    }
+
+    /// Blueprint's top: the title with the year across from it, then table 1
+    /// of what is new.
+    private func blueprintHero(shown: [Course]) -> some View {
+        let news = newsTallies(shown)
+        return VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .bottom, spacing: 12) {
+                Text("Corsi")
+                    .font(style.dateFont.font(size: 40 * style.dateSize, weight: style.dateWeight))
+                    .accessibilityAddTraits(.isHeader)
+                Spacer(minLength: 8)
+                if courses.academicYears.count > 1 { yearMenu }
+            }
+            .padding(.horizontal, 4)
+            originChip
+            if !news.isEmpty {
+                BlueprintNewsTable(news: Array(news.prefix(6)))
+            }
+        }
+        .padding(.top, 8)
+    }
+
+    /// Giocherelloso's top: the title with the year across from it, then a
+    /// card for each course with something new, most first.
+    private func playfulHero(shown: [Course]) -> some View {
+        let news = newsTallies(shown)
+        let total = news.reduce(0) { $0 + $1.total }
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .bottom, spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Corsi")
+                        .font(style.dateFont.font(size: 40 * style.dateSize, weight: style.dateWeight))
+                        .foregroundStyle(style.dateTint(scheme))
+                        .accessibilityAddTraits(.isHeader)
+                    if !courses.courses.isEmpty {
+                        Text(total > 0 ? String(localized: "\(total) novità in \(news.count) corsi")
+                                       : String(localized: "Niente di nuovo nei tuoi corsi"))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer(minLength: 8)
+                if courses.academicYears.count > 1 { yearMenu }
+            }
+            .padding(.horizontal, 4)
+            originChip
+            if !news.isEmpty {
+                PlayfulNewsRail(news: Array(news.prefix(6)))
+            }
+        }
+        .padding(.top, 8)
     }
 
     /// The course the spotlight is on: the lesson under way or next today, else
@@ -596,7 +680,7 @@ private struct UnreadBadge: View {
     let count: Int
 
     /// The look in use, which supplies the badge's colour.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
@@ -1031,7 +1115,7 @@ struct CourseIcon: View {
     var size: CGFloat = 38
 
     /// The look in use, which the course's colour is checked against.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 

@@ -9,6 +9,10 @@ import SwiftUI
 // The rest of the app is dense — a settings list, a libretto, a plan of forty
 // teachings — and the same pattern behind small secondary text is noise.
 //
+// **A special Flavor carries the paper one step further**: onto the first
+// page of each tab, where there is room for it, and still never onto the
+// pages pushed from there (``View/flavorPaper()``).
+//
 // **Everything else travels.** The Flavor's colours, the typeface, the
 // material the cards are made of and the light or dark the look asks for go on
 // every screen, so the app is recognisably the student's wherever they are
@@ -35,7 +39,7 @@ extension View {
 /// The look's tint, typeface and appearance, put on the environment.
 private struct LookControls: ViewModifier {
     /// The look in use.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
@@ -56,7 +60,7 @@ private struct LookCard: ViewModifier {
     /// How far the card's corners are rounded.
     let cornerRadius: CGFloat
     /// The look in use, which supplies the material.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
 
     /// Applies the modifier to `content`.
     ///
@@ -76,11 +80,25 @@ struct LookHeading<Trailing: View>: View {
     /// The `trailing` this view draws.
     @ViewBuilder var trailing: Trailing
 
+    /// The look in use: a special Flavor sets its headings in its own face.
+    @Environment(\.look) private var style
+
+    /// The heading's face: the system's, or a special Flavor's own.
+    private var headingFont: Font {
+        switch style.special {
+        case .playful: .playful(21, relativeTo: .title3)
+        case .blueprint: .blueprint(13, bold: true, relativeTo: .subheadline)
+        case nil: .subheadline.weight(.semibold)
+        }
+    }
+
     /// The view's content.
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             title
-                .font(.subheadline.weight(.semibold))
+                .font(headingFont)
+                .textCase(style.special == .blueprint ? .uppercase : nil)
+                .tracking(style.special == .blueprint ? 1.6 : 0)
                 .foregroundStyle(.primary)
                 .accessibilityAddTraits(.isHeader)
             Spacer(minLength: 8)
@@ -143,7 +161,7 @@ struct LookTitle: View {
     var subtitle: Text?
 
     /// The look in use, whose date typeface the title is set in.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
@@ -190,7 +208,7 @@ struct LookChip: View {
     let action: () -> Void
 
     /// The look in use, which supplies the chosen chip's colour.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 
@@ -233,6 +251,32 @@ private struct ChipSurface: ViewModifier {
             content
         } else {
             content.lookCard(cornerRadius: 17)
+        }
+    }
+}
+
+extension View {
+    /// A special Flavor's paper behind a tab's first page; nothing for a
+    /// classic Flavor, whose paper stays on Oggi.
+    func flavorPaper() -> some View {
+        modifier(FlavorPaper())
+    }
+}
+
+/// The page's paper behind a tab's root, in a special Flavor only.
+private struct FlavorPaper: ViewModifier {
+    /// The look in use.
+    @Environment(\.look) private var style
+
+    /// Applies the modifier to `content`.
+    ///
+    /// - Parameter content: The view being modified.
+    /// - Returns: The modified view.
+    func body(content: Content) -> some View {
+        if style.special != nil {
+            content.background(LookBackground(style: style).ignoresSafeArea())
+        } else {
+            content
         }
     }
 }

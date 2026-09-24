@@ -13,7 +13,7 @@ import SwiftUI
 @MainActor
 struct OnboardingTint: DynamicProperty {
     /// The look in use, whose control colour this accent follows.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 

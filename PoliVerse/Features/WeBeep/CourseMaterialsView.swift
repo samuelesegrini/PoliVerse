@@ -38,7 +38,7 @@ struct CourseMaterialsView: View {
     }
 
     /// The look in use, which the page's materials and typeface come from.
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
 

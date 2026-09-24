@@ -54,7 +54,7 @@ struct LookLibraryTests {
         #expect(library.looks[2].name == "Notte")
         #expect(library.looks[0].name.isEmpty)
         #expect(library.looks[2].displayName(at: 2) == "Notte")
-        #expect(library.looks[0].displayName(at: 0) == "Stile 1")
+        #expect(library.looks[0].displayName(at: 0) == "Flavor 1")
     }
 
     @Test("Deleting a look before the one in use keeps the same look in use")

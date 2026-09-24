@@ -158,8 +158,10 @@ nonisolated extension TodayStyle {
     /// the first choice made by hand changes only that one thing.
     mutating func unpairApp() {
         guard app.paired else { return }
-        // Read while still paired: afterwards these read the app's own.
-        let (tint, icon, tabBar) = (appFlavor, appIcon, appTabBar)
+        // Read while still paired, and as drawn: afterwards these read the
+        // app's own, and a special Flavor's colours live in its recipe.
+        let drawn = resolved
+        let (tint, icon, tabBar) = (drawn.appFlavor, drawn.appIcon, drawn.appTabBar)
         app.paired = false
         app.tint = tint
         app.icon = icon

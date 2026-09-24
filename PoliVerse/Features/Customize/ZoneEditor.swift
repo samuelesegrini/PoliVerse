@@ -5,6 +5,8 @@ import SwiftUI
 enum CustomizePage: Hashable, Identifiable {
     /// The parts of the look the bento offers a tile for.
     case flavor, paper, cards, appearance, widget, accessory, layout, greeting, bar
+    /// A special Flavor's own knobs, in place of every classic part.
+    case special
     /// One section of Oggi, with its form and surface.
     case section(TodaySection.Kind)
     /// The emoji keyboard, pushed from the accessory page rather than
@@ -34,7 +36,7 @@ enum CustomizePage: Hashable, Identifiable {
     /// What the page is called on its tile and in its navigation bar.
     var title: LocalizedStringKey {
         switch self {
-        case .flavor: "Flavor"
+        case .flavor: "Colore"
         case .paper: "Carta"
         case .cards: "Superficie"
         case .appearance: "Aspetto"
@@ -45,6 +47,7 @@ enum CustomizePage: Hashable, Identifiable {
         case .bar: "Barra"
         case .section(let kind): kind.title
         case .stickerPicker: "Aggiungi sticker"
+        case .special: "Flavor"
         }
     }
 }
@@ -103,6 +106,8 @@ struct CustomizeControls: View {
             // A section's page is the card in ``SectionFormPicker``.
             case .section: EmptyView()
             case .stickerPicker: EmptyView()
+            // A special Flavor's page is ``SpecialFlavorControls``.
+            case .special: EmptyView()
             }
         }
         // Changes reach the page as they are made: the back button is the
@@ -122,7 +127,7 @@ struct CustomizeControls: View {
                 .overlay {
                     VStack(spacing: 2) {
                         Text(style.flavor.name).font(.title2.weight(.bold))
-                        Text("Flavor").font(.caption2.weight(.semibold)).opacity(0.8)
+                        Text("Colore").font(.caption2.weight(.semibold)).opacity(0.8)
                     }
                     .foregroundStyle(.white)
                     .shadow(color: .black.opacity(0.25), radius: 6)
@@ -164,15 +169,15 @@ struct CustomizeControls: View {
             }
         }
         Section {
-            ShareLink(item: style.flavor.shareCode, subject: Text("Flavor \(style.flavor.name)")) {
-                Label("Condividi il Flavor", systemImage: "square.and.arrow.up")
+            ShareLink(item: style.flavor.shareCode, subject: Text("Colore \(style.flavor.name)")) {
+                Label("Condividi il colore", systemImage: "square.and.arrow.up")
             }
             PasteButton(payloadType: String.self) { strings in
                 guard let flavor = strings.lazy.compactMap(Flavor.init(shareCode:)).first else { return }
                 Task { @MainActor in withAnimation(.snappy) { style.flavor = flavor } }
             }
         } footer: {
-            Text("Un Flavor condiviso è un codice: incollalo qui per usarlo.")
+            Text("Un colore condiviso è un codice: incollalo qui per usarlo.")
         }
     }
 
@@ -204,7 +209,7 @@ struct CustomizeControls: View {
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets())
         } footer: {
-            Text("Una carta su cui stampare la pagina, o un motivo nel colore del Flavor.")
+            Text("Una carta su cui stampare la pagina, o un motivo nel tuo colore.")
         }
         Section {
             Slider(value: $style.grain, in: 0...1) {
@@ -354,7 +359,7 @@ struct CustomizeControls: View {
             } header: {
                 Text("Testo")
             } footer: {
-                Text("Poche parole, nel carattere della data e nel colore del Flavor.")
+                Text("Poche parole, nel carattere della data e nel tuo colore.")
             }
         case .photos:
             Section {
@@ -449,7 +454,7 @@ struct CustomizeControls: View {
         Section {
             Toggle("Mostra il saluto", isOn: $style.showsGreeting)
         }
-        Section("Stile") {
+        Section("Tipo") {
             ForEach(GreetingStyle.allCases) { greeting in
                 Button { style.greeting = greeting } label: {
                     HStack {

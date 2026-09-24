@@ -45,6 +45,8 @@ struct LookEditor: View {
     /// A sideways swipe is under way. A zone is a button, and a button fires
     /// on any release inside it, so the swipe that crossed it must not open it.
     @State private var swiping = false
+    /// Which page a special Flavor is previewed on.
+    @State private var preview = SpecialPreview.today
 
     /// The lights a swipe runs through, in order: the page's styles.
     static let variants: [TodayAppearance] = [.system, .tinted, .contrast, .dark, .light]
@@ -64,8 +66,8 @@ struct LookEditor: View {
         .onChange(of: arranging) { _, arranging in
             if arranging { panel = nil }
         }
-        .alert("Nome dello stile", isPresented: $renaming) {
-            TextField("Stile", text: $newName)
+        .alert("Nome del Flavor", isPresented: $renaming) {
+            TextField("Flavor", text: $newName)
                 .accessibilityIdentifier("customize-name-field")
             Button("Annulla", role: .cancel) {}
             Button("Salva") { look.name = newName.trimmingCharacters(in: .whitespaces) }
@@ -83,21 +85,63 @@ struct LookEditor: View {
 
     // MARK: - The page
 
-    /// The page itself, live: zones outlined, each a way into its controls.
+    /// The page being edited, or — for a special Flavor — another tab
+    /// wearing it, as the app will draw it.
+    @ViewBuilder
     private var page: some View {
+        if look.special != nil, preview != .today {
+            otherPage
+        } else {
+            todayPage
+        }
+    }
+
+    /// Corsi, Carriera or Cerca in the draft look: the real pages, drawn but
+    /// not touchable, so a tap anywhere opens the Flavor's knobs again.
+    private var otherPage: some View {
+        let drawn = look.resolved
+        return NavigationStack {
+            Group {
+                switch preview {
+                case .courses: NewDestination.courses.screen
+                case .career: NewDestination.career.screen
+                case .search, .today: SearchView(embedded: true, places: NewDestination.inSearch)
+                }
+            }
+            .flavorPaper()
+        }
+        .padding(.top, insets.top + 40)
+        .background { LookBackground(style: drawn).ignoresSafeArea() }
+        .environment(\.look, drawn)
+        .tint(drawn.controlTint(lit))
+        .environment(\.colorScheme, lit)
+        .allowsHitTesting(false)
+        .overlay {
+            Color.clear
+                .contentShape(.rect)
+                .onTapGesture { open(.special) }
+                .accessibilityLabel(Text("Regola il Flavor"))
+                .accessibilityAddTraits(.isButton)
+        }
+        .transition(.opacity)
+    }
+
+    /// Oggi itself, live: zones outlined, each a way into its controls.
+    private var todayPage: some View {
         ScrollView {
             TodayLanding(day: shell.day, draft: $look, arranging: arranging,
                          onAddSticker: { open(.accessory, then: .stickerPicker) }) { zone in
                 guard !arranging, !swiping else { return }
-                open(CustomizePage(zone: zone))
+                // A special Flavor has no classic parts to open: every zone is its panel.
+                open(look.special == nil ? CustomizePage(zone: zone) : .special)
             }
             .padding(.horizontal, 16)
             .padding(.top, insets.top + 56)
             .padding(.bottom, arranging ? 120 : 200)
         }
         .scrollIndicators(.hidden)
-        .background { TodayBackgroundView(style: look).ignoresSafeArea() }
-        .tint(look.controlTint(lit))
+        .background { LookBackground(style: look.resolved).ignoresSafeArea() }
+        .tint(look.resolved.controlTint(lit))
         // The look's own light on the page alone: the controls over it keep
         // theirs readable against whatever the page turns into.
         .environment(\.colorScheme, lit)
@@ -128,6 +172,7 @@ struct LookEditor: View {
     ///
     /// - Parameter offset: 1 for the next, -1 for the previous.
     private func step(_ offset: Int) {
+        guard look.special != .blueprint else { return }
         let index = Self.variants.firstIndex(of: look.appearance) ?? 0
         let next = min(max(index + offset, 0), Self.variants.count - 1)
         guard next != index else { return }
@@ -167,7 +212,7 @@ struct LookEditor: View {
             .padding(.horizontal, 20)
             .padding(.top, insets.top + 4)
 
-            if showsHint, !arranging {
+            if showsHint, !arranging, look.special != .blueprint {
                 Text("Scorri di lato per cambiare la luce")
                     .font(.footnote.weight(.semibold))
                     .padding(.horizontal, 14)
@@ -182,20 +227,21 @@ struct LookEditor: View {
 
             if !arranging {
                 HStack {
-                    Button { open(.flavor) } label: {
+                    Button { open(look.special == nil ? .flavor : .special) } label: {
                         Circle()
-                            .fill(look.flavor.base.color)
+                            .fill(look.resolved.flavor.base.color)
                             .frame(width: 26, height: 26)
                             .overlay { Circle().strokeBorder(.white, lineWidth: 2) }
                             .frame(width: 52, height: 52)
                     }
                     .buttonStyle(.plain)
                     .glassEffect(.regular.interactive(), in: .circle)
-                    .accessibilityLabel("Flavor")
+                    .accessibilityLabel("Colore")
                     .accessibilityIdentifier("customize-editor-flavor")
 
                     Spacer()
-                    lightIndicator
+                    // Blueprint is always dark: there is no light to swipe through.
+                    if look.special != .blueprint { lightIndicator }
                     Spacer()
 
                     Menu { menuItems } label: {
@@ -216,7 +262,7 @@ struct LookEditor: View {
         // Readable on the page whatever its light: primary for the plain
         // buttons, the look's accent in that light for Fine.
         .environment(\.colorScheme, lit)
-        .tint(look.controlTint(lit))
+        .tint(look.resolved.controlTint(lit))
         .animation(.snappy, value: arranging)
     }
 
@@ -257,6 +303,29 @@ struct LookEditor: View {
             Label("App", systemImage: "apps.iphone")
             Text(look.app.paired ? "Abbinata a Oggi" : "Su misura")
         }
+        if look.special != nil {
+            Section {
+                Button("Regola il Flavor", systemImage: "slider.horizontal.3") { open(.special) }
+                Button("Duplica come classico", systemImage: "square.on.square") { duplicateAsClassic() }
+            }
+        } else {
+            classicMenuItems
+        }
+        Section {
+            Button("Rinomina", systemImage: "pencil") {
+                newName = look.name
+                renaming = true
+            }
+            Button("Ripristina", systemImage: "arrow.uturn.backward") {
+                withAnimation(.snappy) { look = original }
+            }
+            .disabled(look == original)
+        }
+    }
+
+    /// A classic Flavor's parts that have no zone on the page.
+    @ViewBuilder
+    private var classicMenuItems: some View {
         Section {
             Button("Carta e motivo", systemImage: "doc.richtext") { open(.paper) }
             Button("Superficie delle schede", systemImage: "square.on.square") { open(.cards) }
@@ -268,15 +337,18 @@ struct LookEditor: View {
             }
             Button("Sezioni", systemImage: "list.bullet") { open(.layout) }
         }
-        Section {
-            Button("Rinomina", systemImage: "pencil") {
-                newName = look.name
-                renaming = true
-            }
-            Button("Ripristina", systemImage: "arrow.uturn.backward") {
-                withAnimation(.snappy) { look = original }
-            }
-            .disabled(look == original)
+    }
+
+    /// Turns a special Flavor into a classic one that keeps the recipe's
+    /// colours and typefaces, with every part of it the student's again.
+    private func duplicateAsClassic() {
+        panel = nil
+        // A classic Flavor has only Oggi to edit.
+        preview = .today
+        withAnimation(.snappy) {
+            look = look.resolved
+            look.special = nil
+            look.specialSettings = SpecialSettings()
         }
     }
 
@@ -306,7 +378,7 @@ struct LookEditor: View {
                 }
                 .navigationDestination(for: CustomizePage.self) { panelPage($0) }
         }
-        .tint(look.controlTint(scheme))
+        .tint(look.resolved.controlTint(scheme))
         .presentationDetents(isSection ? [.large] : [.medium, .large])
         .presentationBackgroundInteraction(.enabled(upThrough: .medium))
         .presentationDragIndicator(.visible)
@@ -318,6 +390,9 @@ struct LookEditor: View {
         switch page {
         case .section(let kind):
             SectionFormPicker(kind: kind, style: $look, close: { panel = nil })
+        case .special:
+            SpecialFlavorControls(style: $look, preview: $preview.animation(.snappy),
+                                  duplicateAsClassic: duplicateAsClassic)
         case .stickerPicker:
             StickerPicker(remaining: TodayStyle.maxStickers - look.stickers.count) { content in
                 withAnimation(.snappy) { _ = look.addSticker(content) }

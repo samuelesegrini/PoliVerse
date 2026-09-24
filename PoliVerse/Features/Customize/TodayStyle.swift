@@ -123,7 +123,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         var title: LocalizedStringKey {
             switch self {
             case .ink: "Inchiostro"
-            case .flavor: "Flavor"
+            case .flavor: "Colore"
             }
         }
     }
@@ -185,6 +185,12 @@ nonisolated struct TodayStyle: Equatable, Sendable {
     var bar = TodayBarStyle()
     /// What the rest of the app wears with the page: its tint, icon and tab bar.
     var app = AppLook()
+    /// The special Flavor this look is, or `nil` for a classic one. Only the
+    /// name is kept: the recipe lives in ``SpecialFlavor`` and is applied by
+    /// ``resolved``.
+    var special: SpecialFlavor?
+    /// The knobs of ``special`` the student turned.
+    var specialSettings = SpecialSettings()
     /// What the student calls this look. Empty while it has no name, and the
     /// gallery calls it by its place instead.
     var name = "" {
@@ -202,7 +208,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
 
     /// The look's name, or its place in the gallery when it has none.
     func displayName(at index: Int) -> String {
-        name.isEmpty ? String(localized: "Stile \(index + 1)") : name
+        name.isEmpty ? String(localized: "Flavor \(index + 1)") : name
     }
 
     /// The material a section draws in: its own, or the page's.
@@ -237,7 +243,29 @@ nonisolated struct TodayStyle: Equatable, Sendable {
     /// The accent of buttons, the selected tab and links across the app: the
     /// Flavor's while the app is paired with the page, its own otherwise.
     func controlAccent(dark: Bool) -> Flavor.RGB {
-        appFlavor.accent(dark: dark, mode: appearance.flavorMode)
+        // Blueprint's main colour is the paper itself, so the usual readable
+        // accent is blue on blue. White would read on the paper but vanish
+        // under a prominent button's white label; the tone that balances the
+        // two is taken instead.
+        if special == .blueprint && app.paired { return Self.blueprintControl(paper: flavor) }
+        return appFlavor.accent(dark: dark, mode: appearance.flavorMode)
+    }
+
+    /// Blueprint's control colour: the paper's hue at the saturation and
+    /// brightness that read best both on the paper and the dark pages and
+    /// under a white label, since a tint is both a text colour and a fill.
+    static func blueprintControl(paper: Flavor) -> Flavor.RGB {
+        let hue = paper.main.hsb.0
+        let backgrounds = [paper.main, paper.ground(dark: true), paper.surface(dark: true)]
+        var best = Flavor.RGB.white, bestScore = 0.0
+        for saturation in stride(from: 0.3, through: 0.8, by: 0.1) {
+            for brightness in stride(from: 0.5, through: 1.0, by: 0.02) {
+                let candidate = Flavor.RGB(hue: hue, saturation: saturation, brightness: brightness)
+                let score = (backgrounds + [.white]).map { Flavor.contrast(candidate, $0) }.min() ?? 0
+                if score > bestScore { best = candidate; bestScore = score }
+            }
+        }
+        return best
     }
 
     /// The control accent as a SwiftUI colour.
@@ -522,6 +550,11 @@ nonisolated private struct StoredTodayStyle: Codable {
     var app: AppLook?
     /// What the student called the look.
     var name: String?
+    /// The special Flavor's name, kept as a string so one this version does
+    /// not know reads as none rather than failing the whole look.
+    var special: String?
+    /// The special Flavor's knobs.
+    var specialSettings: SpecialSettings?
 }
 
 /// What older versions stored and this one only reads, to carry a look over.
@@ -598,6 +631,8 @@ nonisolated extension TodayStyle: RawRepresentable {
         bar = stored.bar ?? bar
         app = stored.app ?? app
         name = String((stored.name ?? name).prefix(Self.nameLimit))
+        special = stored.special.flatMap(SpecialFlavor.init(rawValue:))
+        specialSettings = stored.specialSettings ?? specialSettings
 
         // Before Flavor a look had up to three colours: the date's wins, then
         // the background's, then the controls'; an ink date stays ink.
@@ -627,7 +662,9 @@ nonisolated extension TodayStyle: RawRepresentable {
                                       dateLayout: dateLayout, dateAlignment: dateAlignment, accessory: accessory,
                                       stickers: Lenient(stickers), stickerOutline: stickerOutline, accessoryText: accessoryText,
                                       photoIDs: photoIDs, paper: paper, grain: grain, appearance: appearance,
-                                      sections: Lenient(sections), bar: bar, app: app, name: name)
+                                      sections: Lenient(sections), bar: bar, app: app, name: name,
+                                      special: special?.rawValue,
+                                      specialSettings: special == nil ? nil : specialSettings)
         // Sorted keys: the standard library's `==` for RawRepresentable types
         // compares `rawValue`, and unsorted JSON keys would make equal styles
         // unequal.

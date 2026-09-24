@@ -20,7 +20,7 @@ struct ExamFormatSection: View {
     @State private var syllabus: Syllabus?
     @State private var classID: String?
     @State private var notesExpanded = false
-    @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
+    @Environment(\.look) private var style
 
     /// The view's content.
     var body: some View {
