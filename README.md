@@ -19,7 +19,10 @@ history is not carried forward.
 | WeBeep materials | Implemented via Moodle web services — see [docs/webeep.md](docs/webeep.md) |
 | Timetable / calendar | Implemented, but the endpoint now returns 404 — see [docs/endpoint-status.md](docs/endpoint-status.md) |
 | Career / grades | Implemented, but the endpoint now returns 404 — see [docs/endpoint-status.md](docs/endpoint-status.md) |
-| Search | Across courses, agenda and exam sittings |
+| Tabs | Oggi (with the calendar), Corsi, Carriera (with the study plan, Manifesto and custom timetable), Cerca (places, teachers, news) — see [docs/information-architecture.md](docs/information-architecture.md) |
+| Search | Across courses, agenda and exam sittings; results filtered by chips with their counts |
+| Personalizza | Flavors: classic ones built from a colour, and special ones (Giocherelloso, Blueprint) with their own page layouts. The app's tint, tab bar and icon follow the page or are set apart |
+| App icon | Orbita, plus the Giorno and Vicino shapes in every swatch colour and eleven special icons, all free. Built by `scripts/build-alternate-icons.py` |
 | Apple Watch | Today's lectures and the next exam, sent from the phone over WatchConnectivity. Builds against the watchOS SDK; not yet run on a device or a watchOS 26 simulator runtime |
 
 The app ships with **mock data on by default** so every screen renders without
@@ -55,6 +58,12 @@ Layout adapts: one column of course cards on iPhone, two on a regular-width
 iPad, capped at a readable measure on very wide windows. Course card actions
 fall back from a single row to a stacked layout at accessibility text sizes,
 where a one-row layout overflowed.
+
+The app icons are Icon Composer files in `PoliVerse/AppIcons`. Their sources
+live in `design/app-icon/orbita` (layers, colour grounds and the special SVGs,
+kept free of SVG filters, which Icon Composer does not draw). After editing
+them, run `python3 scripts/build-alternate-icons.py` and keep the names in
+`ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES` and `AppLook.swift` in step.
 
 ## Requirements
 
@@ -97,10 +106,11 @@ xcodebuild -project PoliVerse.xcodeproj -scheme PoliVerse \
 ```
 PoliVerse/
   App/            entry point, root routing, tab bar
-  DesignSystem/   theme, reusable cards
+  DesignSystem/   colours, reusable cards
   Models/         domain types + wire DTOs, kept separate
   Services/       OAuth, token store, API client, per-feature services
-  Features/       one folder per tab
+  Features/       one folder per tab; Customize/ and Flavors/ hold Personalizza
+                  and the special Flavors' pages
 PoliVerseTests/   unit tests, mirroring Services/ and Models/
 ```
 

@@ -72,8 +72,9 @@ si elimina tenendo premuta la sua scheda (resta sempre almeno uno stile).
 
 | Parola | Significa | Non usare per |
 | --- | --- | --- |
-| **Flavor** | la personalità di tutta l'app, salvata nella galleria di Personalizza. I **classici** si cambiano in ogni parte; gli **speciali** (Giocherelloso) hanno forme proprie nelle pagine e solo poche regolazioni loro | «stile», «tema» |
+| **Flavor** | la personalità di tutta l'app, salvata nella galleria di Personalizza. I **classici** si cambiano in ogni parte; gli **speciali** (Giocherelloso, Blueprint) hanno forme proprie nelle pagine e solo poche regolazioni loro | «stile», «tema» |
 | **Colore** | il colore scelto; l'app ne ricava accento ed extra, che si possono cambiare a mano | «Flavor» per i colori |
+| **Icona** | l'icona dell'app nella Home: una **Forma** (Orbita, Giorno, Vicino, Speciali) e, per Giorno e Vicino, un colore | «tema» per le icone |
 | **Aspetto** | sistema, chiaro, scuro, contrasto, tinto | i Flavor salvati, l'aspetto delle sezioni |
 | **Carta** | su cosa è stampata la pagina — una carta (liscia, millimetrata, da disegno, puntinata) **oppure** una decorazione nel tuo colore — più la grana | la superficie delle sezioni |
 | **Superficie** | come è disegnata una sezione (vetro, pieno, bagliore…) | la carta |
