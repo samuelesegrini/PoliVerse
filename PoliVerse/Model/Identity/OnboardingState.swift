@@ -28,6 +28,23 @@ final class OnboardingState {
     /// two step values.
     private(set) var isMovingBack = false
 
+    /// The step of ``JourneyFlow`` on screen: the first run the app now shows.
+    ///
+    /// Held here rather than in the view, like ``step``, because signing in swaps the
+    /// view out from under it.
+    private(set) var journeyStep: JourneyFlow.Step = .welcome
+
+    /// What the student said the app is for, on ``JourneyFlow/Step/intents``.
+    var intents: Set<JourneyFlow.Intent> = [.timetable, .exams, .recordings]
+
+    /// Whether the journey's sign-in step should open the ways in by itself: set
+    /// when the career sheet signs out to move to another matricola.
+    var reopensSignIn = false
+
+    /// Whether ``RootView`` should draw the app underneath the journey, so pulling the
+    /// last card down reveals it.
+    var revealsApp: Bool { !isComplete && journeyStep == .ready }
+
     /// Where ``isComplete`` is persisted.
     private let defaults: UserDefaults
 
@@ -82,7 +99,42 @@ final class OnboardingState {
     func replay() {
         isMovingBack = false
         step = .welcome
+        journeyStep = .welcome
         isComplete = false
+    }
+
+    // MARK: - Journey
+
+    /// Moves the journey to the next step that applies, or completes it.
+    ///
+    /// - Parameter context: What the journey should take into account now.
+    func advanceJourney(in context: JourneyFlow.Context) {
+        guard let next = JourneyFlow.next(after: journeyStep, in: context) else {
+            complete()
+            return
+        }
+        isMovingBack = false
+        journeyStep = next
+    }
+
+    /// Steps the journey back, where it allows it.
+    ///
+    /// - Parameter context: What the journey should take into account now.
+    func goBackInJourney(in context: JourneyFlow.Context) {
+        guard JourneyFlow.canGoBack(from: journeyStep, in: context),
+              let previous = JourneyFlow.previous(before: journeyStep, in: context)
+        else { return }
+        isMovingBack = true
+        journeyStep = previous
+    }
+
+    /// Jumps straight to a step: the welcome's "Ho già un account" goes to the
+    /// sign-in without the questions.
+    ///
+    /// - Parameter step: Where to go.
+    func jumpJourney(to step: JourneyFlow.Step) {
+        isMovingBack = false
+        journeyStep = step
     }
 }
 
@@ -100,7 +152,7 @@ extension OnboardingState {
     ///
     /// Does nothing once the flow is complete, or past the welcome.
     func adoptExistingInstall() {
-        guard !isComplete, step == .welcome else { return }
+        guard !isComplete, step == .welcome, journeyStep == .welcome else { return }
         complete()
     }
 }

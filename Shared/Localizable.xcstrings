@@ -39,6 +39,36 @@
     "· %@" : {
 
     },
+    "«Analisi 2 tra %lld min, aula B.2.4»" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“Calculus 2 in %lld min, room B.2.4”"
+          }
+        }
+      }
+    },
+    "«Iscrizioni: ultimo giorno per Fisica tecnica»" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“Enrolment: last day for Applied Physics”"
+          }
+        }
+      }
+    },
+    "«Nuova registrazione di Reti logiche»" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“New recording of Digital Logic”"
+          }
+        }
+      }
+    },
     "/30" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -300,6 +330,9 @@
           }
         }
       }
+    },
+    "%@%@" : {
+      "shouldTranslate" : false
     },
     "%@° anno" : {
       "localizations" : {
@@ -693,6 +726,16 @@
         }
       }
     },
+    "%lld minuti prima delle lezioni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld minutes before lectures"
+          }
+        }
+      }
+    },
     "%lld modifiche in attesa di connessione" : {
       "localizations" : {
         "en" : {
@@ -1009,6 +1052,16 @@
         }
       }
     },
+    "2 lezioni da recuperare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 lectures to catch up on"
+          }
+        }
+      }
+    },
     "2 ore" : {
       "localizations" : {
         "en" : {
@@ -1041,6 +1094,15 @@
         }
       }
     },
+    "8 CFU · 2° semestre" : {
+
+    },
+    "10 CFU · 1° semestre" : {
+
+    },
+    "10 CFU · 2° semestre" : {
+
+    },
     "10 minuti" : {
       "localizations" : {
         "en" : {
@@ -1053,6 +1115,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "10 minuti"
+          }
+        }
+      }
+    },
+    "10:15 · Aula B.2.4" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10:15 · Room B.2.4"
           }
         }
       }
@@ -1082,9 +1154,6 @@
           }
         }
       }
-    },
-    "21" : {
-
     },
     "30 min" : {
       "localizations" : {
@@ -1118,6 +1187,19 @@
         }
       }
     },
+    "A cosa ti _serve_ PoliVerse?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What do you _need_ PoliVerse for?"
+          }
+        }
+      }
+    },
+    "A destra" : {
+
+    },
     "a lezione" : {
 
     },
@@ -1149,6 +1231,18 @@
           }
         }
       }
+    },
+    "A sinistra" : {
+
+    },
+    "Abbina all'app" : {
+
+    },
+    "Abbinata" : {
+
+    },
+    "Abbinata a Oggi" : {
+
     },
     "Accanto alla data" : {
       "localizations" : {
@@ -1240,6 +1334,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Accedi con l'account del Politecnico"
+          }
+        }
+      }
+    },
+    "Accedi con Polimi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in with Polimi"
           }
         }
       }
@@ -1661,6 +1765,9 @@
         }
       }
     },
+    "Al centro" : {
+
+    },
     "Alle" : {
       "localizations" : {
         "en" : {
@@ -1841,6 +1948,29 @@
         }
       }
     },
+    "Analisi 2" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calculus 2"
+          }
+        }
+      }
+    },
+    "Analisi 2 · tra 25 min" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calculus 2 · in 25 min"
+          }
+        }
+      }
+    },
+    "Analisi Matematica II" : {
+
+    },
     "Anche da WeBeep" : {
       "localizations" : {
         "en" : {
@@ -1961,6 +2091,9 @@
     "Annulla il download" : {
 
     },
+    "Annullare le modifiche?" : {
+
+    },
     "Annunci, avvisi e soluzioni" : {
       "localizations" : {
         "en" : {
@@ -2016,6 +2149,9 @@
     "App" : {
 
     },
+    "App abbinata" : {
+
+    },
     "App CieID non installata" : {
       "localizations" : {
         "en" : {
@@ -2031,6 +2167,19 @@
           }
         }
       }
+    },
+    "App non ufficiale, fatta da studenti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unofficial app, made by students."
+          }
+        }
+      }
+    },
+    "App su misura" : {
+
     },
     "Appelli" : {
       "localizations" : {
@@ -2492,12 +2641,25 @@
         }
       }
     },
+    "Aspetto e testo" : {
+
+    },
     "Assente" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Absent"
+          }
+        }
+      }
+    },
+    "Atmosfera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mood"
           }
         }
       }
@@ -2565,6 +2727,16 @@
     "Aula %@." : {
 
     },
+    "Aula 3.1.2 libera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Room 3.1.2 free"
+          }
+        }
+      }
+    },
     "Aula cambiata" : {
       "localizations" : {
         "en" : {
@@ -2586,7 +2758,14 @@
       }
     },
     "Aula libera" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free classroom"
+          }
+        }
+      }
     },
     "Aula pubblicata" : {
       "localizations" : {
@@ -2594,6 +2773,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Room published"
+          }
+        }
+      }
+    },
+    "aule" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "classrooms"
           }
         }
       }
@@ -2769,6 +2958,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bodoni"
+          }
+        }
+      }
+    },
+    "Boh… per Tutto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dunno… for Everything"
           }
         }
       }
@@ -2988,6 +3187,16 @@
         }
       }
     },
+    "Cambia scelte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change answers"
+          }
+        }
+      }
+    },
     "Campus ed edifici" : {
       "localizations" : {
         "en" : {
@@ -3121,6 +3330,15 @@
           }
         }
       }
+    },
+    "Carta e motivo" : {
+
+    },
+    "Carte e motivi" : {
+
+    },
+    "Casuale" : {
+
     },
     "Catalogo non disponibile" : {
       "localizations" : {
@@ -3300,6 +3518,9 @@
         }
       }
     },
+    "Chiara" : {
+
+    },
     "Chiaro" : {
       "localizations" : {
         "en" : {
@@ -3423,6 +3644,9 @@
     "Circa una volta all’ora, quando iOS lo concede, l’app aggiorna orario, carriera e novità di WeBeep in circa trenta secondi, poi riprogramma i promemoria e aggiorna i widget. iOS decide quando: con Risparmio energetico o l’aggiornamento disattivato, non succede." : {
 
     },
+    "Classica" : {
+
+    },
     "Classico" : {
       "localizations" : {
         "en" : {
@@ -3510,6 +3734,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Codice persona e password"
+          }
+        }
+      }
+    },
+    "Codice persona, SPID o CIE" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Person code, SPID or CIE"
           }
         }
       }
@@ -3660,16 +3894,6 @@
         }
       }
     },
-    "Colore del Flavor" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Flavor colour"
-          }
-        }
-      }
-    },
     "Colore, carattere e materiale per tutta l'app; sfondo e adesivi per la tua giornata." : {
       "localizations" : {
         "en" : {
@@ -3722,6 +3946,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Suggested colours"
+          }
+        }
+      }
+    },
+    "Come entri?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How do you sign in?"
           }
         }
       }
@@ -3929,16 +4163,6 @@
         }
       }
     },
-    "Condividi il Flavor" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Share the Flavor"
-          }
-        }
-      }
-    },
     "Condividi rapporto" : {
 
     },
@@ -4035,6 +4259,16 @@
         }
       }
     },
+    "Continua con i dati di esempio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue with sample data"
+          }
+        }
+      }
+    },
     "Continua con questa" : {
       "localizations" : {
         "en" : {
@@ -4047,6 +4281,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Continua con questa"
+          }
+        }
+      }
+    },
+    "Continua senza" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue without"
           }
         }
       }
@@ -4113,9 +4357,6 @@
 
     },
     "Copia indirizzo" : {
-
-    },
-    "Copia questo stile" : {
 
     },
     "Copia rapporto" : {
@@ -4500,6 +4741,16 @@
         }
       }
     },
+    "Da collegare, nella scheda Corsi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not connected yet, in the Courses tab"
+          }
+        }
+      }
+    },
     "Da decidere" : {
 
     },
@@ -4538,6 +4789,9 @@
           }
         }
       }
+    },
+    "Da una foto" : {
+
     },
     "da vedere" : {
 
@@ -4712,6 +4966,16 @@
     },
     "Dati di esempio: disattivali per usare WeBeep reale." : {
 
+    },
+    "Dati di esempio: diventano tuoi quando accedi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sample data: it becomes yours when you sign in."
+          }
+        }
+      }
     },
     "Dati di un altro giorno. Aggiorna o apri l'app." : {
 
@@ -4997,6 +5261,9 @@
         }
       }
     },
+    "Disponi le sezioni" : {
+
+    },
     "Disponi sulla pagina" : {
       "localizations" : {
         "en" : {
@@ -5126,9 +5393,6 @@
     "download non riuscito" : {
 
     },
-    "Duplica" : {
-
-    },
     "Durata" : {
 
     },
@@ -5184,6 +5448,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "È il mio corso di studi"
+          }
+        }
+      }
+    },
+    "Ecco la _tua_ Oggi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Here's _your_ Today"
           }
         }
       }
@@ -5335,16 +5609,6 @@
         }
       }
     },
-    "Elimina stile" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete style"
-          }
-        }
-      }
-    },
     "Elimina tutti i materiali" : {
       "localizations" : {
         "en" : {
@@ -5382,6 +5646,7 @@
       }
     },
     "Eliminare questo stile?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5510,6 +5775,16 @@
         }
       }
     },
+    "Entra in PoliVerse" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter PoliVerse"
+          }
+        }
+      }
+    },
     "entro %@" : {
       "localizations" : {
         "en" : {
@@ -5562,6 +5837,16 @@
     "Esame tra" : {
 
     },
+    "esami" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "exams"
+          }
+        }
+      }
+    },
     "Esami" : {
       "localizations" : {
         "en" : {
@@ -5574,6 +5859,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Esami"
+          }
+        }
+      }
+    },
+    "Esami e iscrizioni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exams and enrolment"
           }
         }
       }
@@ -5913,22 +6208,35 @@
         }
       }
     },
+    "Fino alle 14 · in Cerca" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Until 2 pm · in Search"
+          }
+        }
+      }
+    },
+    "Fisica tecnica" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Applied Physics"
+          }
+        }
+      }
+    },
+    "Fisica Tecnica" : {
+
+    },
     "Flavor" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Flavor"
-          }
-        }
-      }
-    },
-    "Flavor %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Flavor %@"
           }
         }
       }
@@ -5942,6 +6250,9 @@
           }
         }
       }
+    },
+    "Fondamenti di Informatica" : {
+
     },
     "Forma" : {
       "localizations" : {
@@ -6282,6 +6593,16 @@
         }
       }
     },
+    "Hai scelto i Video: WeBeep ha un accesso tutto suo. Lo fai una volta, e lezioni e dispense si scaricano anche offline." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You picked Recordings: WeBeep has a sign-in of its own. Do it once, and lectures and notes download for offline use too."
+          }
+        }
+      }
+    },
     "Hai spento ogni tipo di promemoria e di novità." : {
       "localizations" : {
         "en" : {
@@ -6313,6 +6634,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ho capito"
+          }
+        }
+      }
+    },
+    "Ho già un account" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I already have an account"
           }
         }
       }
@@ -6437,6 +6768,19 @@
     "I tuoi corsi" : {
 
     },
+    "I Video stanno su WeBeep" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordings live on WeBeep"
+          }
+        }
+      }
+    },
+    "Icona" : {
+
+    },
     "Identificativi" : {
       "localizations" : {
         "en" : {
@@ -6540,6 +6884,16 @@
         }
       }
     },
+    "Il colore dell'app e della tua Oggi. Il resto in Personalizza." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The colour of the app and your Today. The rest is in Customise."
+          }
+        }
+      }
+    },
     "Il colore, il carattere e il materiale che scegli per Oggi valgono adesso in ogni schermata: carriera, corsi, ricerca e impostazioni comprese." : {
 
     },
@@ -6615,6 +6969,17 @@
     },
     "Il piano giusto" : {
 
+    },
+    "Il Poli risponde per quella con cui hai fatto l'accesso. Si cambia da Impostazioni · Matricola." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Polimi answers for the one you signed in with. Change it in Settings · Student ID."
+          }
+        }
+      }
     },
     "Il Politecnico come lo vuoi tu." : {
 
@@ -6931,6 +7296,16 @@
         }
       }
     },
+    "Il tuo account si collega da Impostazioni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect your account in Settings"
+          }
+        }
+      }
+    },
     "Il tuo cognome" : {
       "localizations" : {
         "en" : {
@@ -7221,6 +7596,16 @@
     "In caricamento" : {
 
     },
+    "In Carriera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Career"
+          }
+        }
+      }
+    },
     "In corso" : {
       "localizations" : {
         "en" : {
@@ -7288,6 +7673,9 @@
           }
         }
       }
+    },
+    "In primo piano" : {
+
     },
     "In queste ore arriva solo ciò che è urgente, come un esito o un appello spostato; il resto aspetta la mattina." : {
       "localizations" : {
@@ -7483,6 +7871,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Initials"
+          }
+        }
+      }
+    },
+    "Iniziamo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Let's start"
           }
         }
       }
@@ -7731,6 +8129,16 @@
     "Iscrizioni non ancora aperte" : {
 
     },
+    "Iscrizioni: chiudono domani" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enrolment closes tomorrow"
+          }
+        }
+      }
+    },
     "Italiano" : {
       "localizations" : {
         "en" : {
@@ -7782,6 +8190,9 @@
           }
         }
       }
+    },
+    "L'app ha scelte sue. Tocca Abbinata per farle seguire di nuovo Oggi." : {
+
     },
     "L’app non sta occupando spazio su questo dispositivo." : {
       "localizations" : {
@@ -7837,6 +8248,9 @@
         }
       }
     },
+    "La barra resta intera anche mentre scorri." : {
+
+    },
     "La carriera %@ (%@) è quella attiva. Esami e orario rispondono solo per quella." : {
       "localizations" : {
         "en" : {
@@ -7883,6 +8297,9 @@
         }
       }
     },
+    "La pagina stampata su una carta, o sotto un motivo nel tuo colore." : {
+
+    },
     "La pagina WeBeep di questo corso non ne ha." : {
       "localizations" : {
         "en" : {
@@ -7895,6 +8312,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La pagina WeBeep di questo corso non ne ha."
+          }
+        }
+      }
+    },
+    "La password non la vediamo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We never see your password"
           }
         }
       }
@@ -7956,6 +8383,26 @@
         }
       }
     },
+    "La tua media" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your average"
+          }
+        }
+      }
+    },
+    "La tua Oggi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Today"
+          }
+        }
+      }
+    },
     "La verifica chiede a ogni servizio, WeBeep compreso, se c’è, senza credenziali. Conta che risponda, anche con un errore come 404: dice se la rete arriva al Politecnico e quanto in fretta, non se i tuoi dati sono corretti." : {
 
     },
@@ -7998,6 +8445,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lavender"
+          }
+        }
+      }
+    },
+    "Le altre restano, solo più in basso." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The others stay, just further down."
           }
         }
       }
@@ -8503,6 +8960,9 @@
     "Lo spazio condiviso è dove l’app lascia orario e carriera per i widget: senza, l’app funziona ma i widget restano vuoti." : {
 
     },
+    "Luce" : {
+
+    },
     "Luminoso" : {
       "localizations" : {
         "en" : {
@@ -8862,6 +9322,16 @@
     "Media ponderata" : {
 
     },
+    "Media ponderata 27,4" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weighted average 27.4"
+          }
+        }
+      }
+    },
     "Media, CFU e prossimo appello." : {
       "localizations" : {
         "en" : {
@@ -9201,6 +9671,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nature"
+          }
+        }
+      }
+    },
+    "Né statistiche, né account" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No analytics, no account"
           }
         }
       }
@@ -9832,6 +10312,16 @@
     "Niente in programma." : {
 
     },
+    "Niente tracciamento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No tracking"
+          }
+        }
+      }
+    },
     "Nome" : {
       "localizations" : {
         "en" : {
@@ -9847,9 +10337,6 @@
           }
         }
       }
-    },
-    "Nome dello stile" : {
-
     },
     "nome.cognome@mail.polimi.it" : {
 
@@ -9922,6 +10409,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Non autorizzati"
+          }
+        }
+      }
+    },
+    "Non c'è un server di PoliVerse" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There's no PoliVerse server"
           }
         }
       }
@@ -10145,6 +10642,7 @@
 
     },
     "Non si può annullare." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10443,16 +10941,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New material"
-          }
-        }
-      }
-    },
-    "Nuovo stile" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New style"
           }
         }
       }
@@ -10757,6 +11245,16 @@
         }
       }
     },
+    "Ora colleghiamo il _tuo_ Poli" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now let's connect _your_ Polimi"
+          }
+        }
+      }
+    },
     "Orari, appelli e materiali di WeBeep dello stesso corso, sulla stessa pagina." : {
       "localizations" : {
         "en" : {
@@ -10779,6 +11277,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Timetables, courses and record, so the app opens without a network. It rebuilds itself on the next refresh: nothing of yours is lost."
+          }
+        }
+      }
+    },
+    "orario" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "timetable"
           }
         }
       }
@@ -10907,10 +11415,20 @@
         }
       }
     },
-    "Pagina vuota" : {
+    "Pagine già pensate, diverse da quella che usi." : {
 
     },
-    "Parti da com'è adesso e cambia quello che vuoi." : {
+    "Parte da: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starts with: %@"
+          }
+        }
+      }
+    },
+    "Passa a questa" : {
 
     },
     "Passare a %@?" : {
@@ -11011,6 +11529,9 @@
         }
       }
     },
+    "Per cambiare matricola serve un nuovo accesso: si riapre la pagina del Poli, questa volta su quella scelta." : {
+
+    },
     "Per cambiare serve un nuovo accesso: lo trovi in Impostazioni · Matricola. Da lì l'app te lo spiega prima di farlo." : {
       "localizations" : {
         "en" : {
@@ -11023,6 +11544,56 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Per cambiare serve un nuovo accesso: lo trovi in Impostazioni · Matricola. Da lì l'app te lo spiega prima di farlo."
+          }
+        }
+      }
+    },
+    "per gli Esami" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "for Exams"
+          }
+        }
+      }
+    },
+    "per i Video" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "for Recordings"
+          }
+        }
+      }
+    },
+    "per l'Orario" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "for the Timetable"
+          }
+        }
+      }
+    },
+    "per la Media" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "for my Average"
+          }
+        }
+      }
+    },
+    "per le Aule" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "for Classrooms"
           }
         }
       }
@@ -11086,6 +11657,9 @@
       }
     },
     "Personalizza · solo tua" : {
+
+    },
+    "Personalizza l'app" : {
 
     },
     "Personalizza, su tutta l'app" : {
@@ -11248,16 +11822,6 @@
     },
     "Più tardi oggi" : {
 
-    },
-    "Poche parole, nel carattere della data e nel colore del Flavor." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A few words, in the date's typeface and the Flavor's colour."
-          }
-        }
-      }
     },
     "Poi" : {
       "localizations" : {
@@ -12067,6 +12631,9 @@
         }
       }
     },
+    "Quella dell'accesso" : {
+
+    },
     "Quello che oggi cerchi tra Servizi Online e WeBeep, in un'app sola — che ti avvisa prima che tu debba controllare." : {
       "localizations" : {
         "en" : {
@@ -12208,12 +12775,32 @@
     "Registrazioni" : {
 
     },
+    "Rendila mia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make it mine"
+          }
+        }
+      }
+    },
     "Respinto" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rejected"
+          }
+        }
+      }
+    },
+    "Resta sul telefono" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It stays on your phone"
           }
         }
       }
@@ -12242,6 +12829,26 @@
     },
     "Rete" : {
 
+    },
+    "Reti logiche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digital Logic"
+          }
+        }
+      }
+    },
+    "Reti logiche · in Corsi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digital Logic · in Courses"
+          }
+        }
+      }
     },
     "Retino" : {
       "localizations" : {
@@ -12731,6 +13338,9 @@
     "Scarica per vederla offline (%lld MB)" : {
 
     },
+    "Scarta le modifiche" : {
+
+    },
     "Scarta modifiche" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -12821,6 +13431,16 @@
         }
       }
     },
+    "Scegli la tua _atmosfera_" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick your _mood_"
+          }
+        }
+      }
+    },
     "Scegli le foto" : {
       "localizations" : {
         "en" : {
@@ -12831,12 +13451,25 @@
         }
       }
     },
+    "Scegli quella da usare. Il Poli risponde per una matricola alla volta." : {
+
+    },
     "Scegli uno sticker o un’emoji dalla tastiera." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pick a sticker or an emoji from the keyboard."
+          }
+        }
+      }
+    },
+    "Scegline quante vuoi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick as many as you like"
           }
         }
       }
@@ -12952,6 +13585,12 @@
         }
       }
     },
+    "Scorrendo, la barra si riduce alla scheda in cui sei." : {
+
+    },
+    "Scorri di lato per cambiare la luce" : {
+
+    },
     "Scrivi" : {
 
     },
@@ -13010,6 +13649,9 @@
           }
         }
       }
+    },
+    "Scura" : {
+
     },
     "Scuro" : {
       "localizations" : {
@@ -13190,6 +13832,9 @@
       }
     },
     "Semestre %@" : {
+
+    },
+    "Sempre intera" : {
 
     },
     "Senza account" : {
@@ -13450,6 +14095,16 @@
         }
       }
     },
+    "Si apre la pagina del Politecnico o del tuo gestore: la password si scrive lì, mai qui." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Polimi's or your provider's page opens: you type your password there, never here."
+          }
+        }
+      }
+    },
     "Si cambia quando vuoi da Impostazioni · Promemoria." : {
       "localizations" : {
         "en" : {
@@ -13462,6 +14117,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Si cambia quando vuoi da Impostazioni · Promemoria."
+          }
+        }
+      }
+    },
+    "Si cambia tutto da Impostazioni." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can change it all in Settings."
           }
         }
       }
@@ -13492,8 +14157,21 @@
         }
       }
     },
+    "Si riduce" : {
+
+    },
     "Si rinnova alla prossima richiesta" : {
 
+    },
+    "Si scrive sulla pagina del Poli" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You type it on Polimi's page"
+          }
+        }
+      }
     },
     "Sigla aula, edificio o sede" : {
       "localizations" : {
@@ -13732,6 +14410,16 @@
     "Spazio condiviso con i widget" : {
 
     },
+    "Spenti, per ora" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off, for now"
+          }
+        }
+      }
+    },
     "Spento" : {
 
     },
@@ -13823,26 +14511,6 @@
         }
       }
     },
-    "Stile %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Style %lld"
-          }
-        }
-      }
-    },
-    "Stile %lld di %lld" : {
-      "localizations" : {
-        "it" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Stile %1$lld di %2$lld"
-          }
-        }
-      }
-    },
     "Stima sui voti del libretto pesati per CFU (%lld CFU per questo esame)." : {
       "localizations" : {
         "en" : {
@@ -13888,6 +14556,16 @@
     },
     "su 30" : {
 
+    },
+    "Su misura" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom"
+          }
+        }
+      }
     },
     "Su una carriera chiusa appelli e iscrizioni di solito non rispondono." : {
       "localizations" : {
@@ -13979,6 +14657,9 @@
         }
       }
     },
+    "Superficie delle schede" : {
+
+    },
     "Superficie e contenuto" : {
       "localizations" : {
         "en" : {
@@ -14028,9 +14709,6 @@
     "Tabelle" : {
 
     },
-    "Temi" : {
-
-    },
     "Temporanee" : {
 
     },
@@ -14064,6 +14742,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Text"
+          }
+        }
+      }
+    },
+    "Ti avvisiamo _noi_" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "_We'll_ remind you"
           }
         }
       }
@@ -14178,7 +14866,20 @@
     "Tocca per chiudere" : {
 
     },
-    "Tocca per personalizzare" : {
+    "Tocca per tenere solo quelli che vuoi. Calcolati sul telefono, non escono da lì." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to keep only the ones you want. Worked out on your phone, they never leave it."
+          }
+        }
+      }
+    },
+    "Tocca per tornare all'app" : {
+
+    },
+    "Tocca per usarlo" : {
 
     },
     "Tocca un codice per copiarlo. Arrivano dal tuo account del Politecnico." : {
@@ -14272,6 +14973,16 @@
     "Tra i preferiti" : {
 
     },
+    "Trascina giù per entrare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pull down to enter"
+          }
+        }
+      }
+    },
     "Trascina per spostare" : {
       "localizations" : {
         "en" : {
@@ -14355,8 +15066,31 @@
     "Tutti gli anni" : {
 
     },
+    "Tutti i corsi" : {
+
+    },
+    "Tutto _pronto._" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All _set._"
+          }
+        }
+      }
+    },
     "Tutto collegato" : {
 
+    },
+    "Tutto il Poli,\nin una _tasca._" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All of Polimi,\nin your _pocket._"
+          }
+        }
+      }
     },
     "Tutto in silenzio" : {
       "localizations" : {
@@ -14450,6 +15184,9 @@
     "Un accesso separato da quello del Politecnico, che può scadere per conto suo. Serve per i materiali dei corsi e per gli avvisi dei docenti." : {
 
     },
+    "Un colore solo: il resto lo sceglie lui, e puoi cambiarlo dopo." : {
+
+    },
     "Un corso, non tre siti" : {
       "localizations" : {
         "en" : {
@@ -14462,16 +15199,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un corso, non tre siti"
-          }
-        }
-      }
-    },
-    "Un Flavor condiviso è un codice: incollalo qui per usarlo." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A shared Flavor is a code: paste it here to use it."
           }
         }
       }
@@ -14501,16 +15228,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un'aula libera, adesso"
-          }
-        }
-      }
-    },
-    "Una carta su cui stampare la pagina, o un motivo nel colore del Flavor." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A paper to print the page on, or a pattern in the Flavor's colour."
           }
         }
       }
@@ -14761,6 +15478,16 @@
         }
       }
     },
+    "video" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "recordings"
+          }
+        }
+      }
+    },
     "Video" : {
       "localizations" : {
         "en" : {
@@ -14900,6 +15627,9 @@
           }
         }
       }
+    },
+    "Vuota" : {
+
     },
     "WeBeep" : {
       "localizations" : {
@@ -15078,6 +15808,162 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Zigzag"
+          }
+        }
+      }
+    },
+    "Colore del Flavor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flavor colour"
+          }
+        }
+      }
+    },
+    "Elimina stile" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete style"
+          }
+        }
+      }
+    },
+    "Nuovo stile" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New style"
+          }
+        }
+      }
+    },
+    "Stile eliminato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Style deleted"
+          }
+        }
+      }
+    },
+    "Stile %lld di %lld" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Stile %1$lld di %2$lld"
+          }
+        }
+      }
+    },
+    "Temi" : {
+
+    },
+    "Carattere, colore, sezioni e decorazioni, scelti insieme." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typeface, colour, sections and decorations, chosen together."
+          }
+        }
+      }
+    },
+    "Stile %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Style %lld"
+          }
+        }
+      }
+    },
+    "Flavor %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flavor %@"
+          }
+        }
+      }
+    },
+    "Condividi il Flavor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share the Flavor"
+          }
+        }
+      }
+    },
+    "Un Flavor condiviso è un codice: incollalo qui per usarlo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A shared Flavor is a code: paste it here to use it."
+          }
+        }
+      }
+    },
+    "Una carta su cui stampare la pagina, o un motivo nel colore del Flavor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A paper to print the page on, or a pattern in the Flavor's colour."
+          }
+        }
+      }
+    },
+    "Poche parole, nel carattere della data e nel colore del Flavor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A few words, in the date's typeface and the Flavor's colour."
+          }
+        }
+      }
+    },
+    "Colore, icona e barra seguono Oggi, e cambiano quando cambi lo stile." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour, icon and tab bar follow Today, and change when you change style."
+          }
+        }
+      }
+    },
+    "L'app prende colore, icona e barra da questo stile. Puoi cambiarli quando vuoi da ••• ▸ App." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The app takes its colour, icon and tab bar from this style. Change them any time from ••• ▸ App."
+          }
+        }
+      }
+    },
+    "Nome dello stile" : {
+
+    },
+    "Da un tema, un colore o una foto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From a theme, a colour or a photo"
           }
         }
       }

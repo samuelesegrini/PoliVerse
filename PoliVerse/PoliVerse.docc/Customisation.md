@@ -64,22 +64,45 @@ is why ``TodaySection/id`` is the kind itself.
 
 ### Personalizza
 
-``CustomizeOggi`` is the screen: a carousel of saved looks, each card a real
-page at full size, so the middle card can grow to cover the screen and back
-without anything changing at either end.
+Personalizza follows the Lock Screen's wallpaper gallery.
+
+``CustomizeOggi`` is the gallery: the saved looks as cards on black, each a
+real page at full size scaled down (``LookScreen``), so the middle card can
+grow to cover the screen and back without anything changing at either end.
+Swiping is choosing — the look in the middle is the one in use. Tapping it
+goes back to the app; pulling it up lifts it off the gallery and shows the
+trash, and a delete can be taken back for a few seconds. The last card adds a
+look.
+
+| Step | Screen | What it does |
+|---|---|---|
+| Add | ``NewLookGallery`` | starting points: a copy, a photo's colours, a surprise, a blank page, then shelves of themes, Flavors and papers |
+| Edit | ``LookEditor`` | the page at full size on a draft; each outlined zone opens its own small sheet, a sideways swipe runs through five fixed lights, the rest is behind ••• |
+| Ask | ``AppPairQuestion`` | once, when a look is added: pair the app with the page, or dress it separately |
+| App | ``AppLookEditor`` | the app half — colour, icon, tab bar — afterwards only from the editor's ••• ▸ App |
 
 > Important: ``LookLibrary`` has one commit point per action — saving an edit
-> changes a look, using a look makes it the page's. Editing never changes the
-> page by itself, so a student can try something without losing what they had.
+> changes a look, using a look makes it the page's. The editor works on a
+> draft, so Annulla leaves the look as it was.
 
-Under the live page sits ``BentoPanel``, a bento of tiles, each a small preview
-of one part of the look opening its controls in place (``CustomizeControls``).
-``TodayLanding`` is the page itself, and in Personalizza it comes in two modes:
+``TodayLanding`` is the page itself, and in the editor it comes in two modes:
 
 | Mode | What it does |
 |---|---|
 | **Editing** | each zone is outlined; a tap opens its controls |
 | **Arranging** | sections wiggle, lift and move; stickers follow a finger, a pinch and a twist |
+
+### The app half
+
+A look is two things, like a Lock Screen and its Home Screen: the page, and
+what the rest of the app wears with it (``AppLook``) — the tint on every
+control, the Home Screen icon (``AppIconChoice``) and how the tab bar behaves
+(``TabBarBehaviour``). Paired, the app follows the page: the Flavor's accent,
+the icon nearest the Flavor, the usual bar. Any choice made by hand unpairs it.
+
+> Note: The icon is set once, when Personalizza closes, never while swiping
+> through looks: the system tells the student about every change with an alert
+> of its own. The icons are built by `scripts/build-alternate-icons.py`.
 
 ### Everywhere else
 
@@ -112,11 +135,18 @@ content
 - ``PlacedSticker``
 - ``StickerStore``
 - ``TodayBarStyle``
+- ``AppLook``
+- ``AppIconChoice``
+- ``TabBarBehaviour``
 
 ### Personalizza
 - ``CustomizeOggi``
 - ``LookLibrary``
-- ``BentoPanel``
+- ``LookScreen``
+- ``NewLookGallery``
+- ``LookEditor``
+- ``AppPairQuestion``
+- ``AppLookEditor``
 - ``CustomizePage``
 - ``CustomizeControls``
 - ``SectionFormPicker``

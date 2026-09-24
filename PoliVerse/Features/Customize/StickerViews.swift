@@ -215,8 +215,7 @@ struct StickerPicker: View {
         }
         .padding(20)
         // Pushed in Personalizza's panel: back returns to the accessory page.
-        .navigationTitle("Aggiungi sticker")
-        .navigationBarTitleDisplayMode(.inline)
+        .panelTitle("Aggiungi sticker")
     }
 }
 

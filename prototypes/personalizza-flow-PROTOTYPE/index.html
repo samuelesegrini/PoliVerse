@@ -1,0 +1,974 @@
+<!doctype html>
+<!--
+  PROTOTYPE — throwaway. Question: what should Personalizza's whole flow be if it
+  follows the Lock Screen's curated model (gallery → add → editor), and how does
+  swipe-up-to-delete feel on a look? One file, no dependencies, state in memory.
+  Drag with the mouse (or touch) exactly as on the phone.
+-->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personalizza · flow prototype</title>
+<style>
+  :root {
+    --W: 402px; --H: 874px;
+    --ink: #1c1c1e; --muted: #6e6e73; --hair: rgba(0,0,0,.08);
+    --desk: #e9e9ee; --panel: #fff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink: #f2f2f7; --muted: #98989f; --hair: rgba(255,255,255,.1); --desk: #111113; --panel: #1c1c1e; }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--desk); color: var(--ink); font: 14px/1.4 -apple-system, "SF Pro Text", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .desk { display: flex; gap: 32px; justify-content: center; align-items: flex-start; padding: 28px 16px 60px; flex-wrap: wrap; }
+
+  /* ---------- Phone ---------- */
+  .phone { width: var(--W); height: var(--H); border-radius: 56px; position: relative; overflow: hidden; background: #000;
+           box-shadow: 0 0 0 10px #1a1a1a, 0 0 0 11px #3a3a3a, 0 30px 60px rgba(0,0,0,.35); user-select: none; touch-action: none; flex: none; }
+  .island { position: absolute; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px; background: #000; border-radius: 20px; z-index: 100; }
+  .status { position: absolute; top: 0; left: 0; right: 0; height: 54px; display: flex; justify-content: space-between; align-items: center; padding: 6px 34px 0 44px; font-weight: 600; font-size: 16px; z-index: 99; pointer-events: none; }
+  .homebar { position: absolute; bottom: 8px; left: 50%; width: 140px; height: 5px; margin-left: -70px; border-radius: 3px; background: currentColor; opacity: .85; z-index: 99; pointer-events: none; }
+  .screen { position: absolute; inset: 0; }
+  .hidden { display: none !important; }
+
+  /* ---------- The page (Oggi drawn in a look) ---------- */
+  .page { position: absolute; left: 0; top: 0; width: var(--W); height: var(--H); overflow: hidden; color: var(--p-ink); background: var(--p-bg); }
+  .page .paper { position: absolute; inset: 0; pointer-events: none; }
+  .page .nav { position: absolute; top: 54px; left: 0; right: 0; height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; }
+  .page .nav .ttl { font-weight: 600; font-size: 17px; }
+  .gbtn { width: 44px; height: 44px; border-radius: 22px; display: grid; place-items: center; background: var(--p-glass); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 0 .5px var(--p-hair), 0 4px 14px rgba(0,0,0,.08); color: var(--p-ink); border: 0; font: inherit; cursor: pointer; }
+  .avatar { width: 34px; height: 34px; border-radius: 17px; background: var(--p-accent); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+  .page .body { position: absolute; top: 106px; left: 16px; right: 16px; bottom: 100px; display: flex; flex-direction: column; gap: 12px; }
+  .zone { position: relative; border-radius: 18px; }
+  .date { padding: 4px 6px 2px; }
+  .date .wd { font-size: 15px; font-weight: 600; color: var(--p-date); letter-spacing: .02em; text-transform: uppercase; opacity: .85; }
+  .date .big { font-size: 64px; line-height: .95; color: var(--p-date); letter-spacing: -.02em; }
+  .greet { font-size: 16px; font-weight: 600; padding: 2px 6px; opacity: .85; }
+  .stickers { position: absolute; right: 8px; top: 2px; font-size: 38px; display: flex; gap: 2px; transform: rotate(8deg); }
+  .card { background: var(--p-card); border-radius: 22px; padding: 14px 16px; box-shadow: 0 0 0 .5px var(--p-hair), 0 6px 18px rgba(0,0,0,var(--p-shadow)); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+  .card.tint { background: var(--p-accent); color: #fff; }
+  .card h4 { margin: 0 0 8px; font-size: 13px; font-weight: 600; opacity: .7; text-transform: uppercase; letter-spacing: .03em; }
+  .card .row { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 15px; }
+  .card .row .t { font-variant-numeric: tabular-nums; opacity: .65; width: 46px; font-size: 13px; }
+  .card .row .bar { width: 4px; align-self: stretch; border-radius: 2px; background: var(--p-accent); }
+  .card.tint .row .bar { background: #fff; }
+  .card .big2 { font-size: 20px; font-weight: 700; }
+  .card .sub { opacity: .7; font-size: 13px; }
+  .card.compact .row { padding: 2px 0; font-size: 14px; }
+  .tabbar { position: absolute; left: 20px; right: 20px; bottom: 22px; height: 62px; border-radius: 31px; display: flex; justify-content: space-around; align-items: center;
+            background: var(--p-glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 0 0 .5px var(--p-hair), 0 8px 24px rgba(0,0,0,.1); font-size: 10px; font-weight: 600; }
+  .tabbar span { display: flex; flex-direction: column; align-items: center; gap: 2px; opacity: .55; }
+  .tabbar span.on { opacity: 1; color: var(--p-accent); }
+  .tabbar i { font-style: normal; font-size: 20px; }
+
+  /* editing zones: the dashed outlines of the Lock Screen editor */
+  .editing .zone.z { outline: 1.5px solid rgba(255,255,255,.0); cursor: pointer; }
+  .editing .zone.z::after { content: ""; position: absolute; inset: -5px; border-radius: 20px; border: 1.5px solid var(--p-zone); background: var(--p-zonefill); pointer-events: none; transition: background .15s; }
+  .editing .zone.z:hover::after { background: var(--p-zonehover); }
+  .editing .zone.z.sel::after { border-color: var(--p-accent); border-width: 2px; }
+  .addzone { border: 1.5px dashed var(--p-zone); border-radius: 18px; padding: 14px; text-align: center; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; opacity: .8; cursor: pointer; }
+  .arranging .card { animation: jiggle .28s infinite alternate ease-in-out; }
+  .arranging .card:nth-child(2n) { animation-delay: -.14s; }
+  @keyframes jiggle { from { transform: rotate(-.8deg); } to { transform: rotate(.8deg); } }
+
+  /* ---------- Gallery ---------- */
+  #gallery { background: #000; color: #fff; }
+  #gallery .label { position: absolute; top: 108px; left: 0; right: 0; text-align: center; font-weight: 600; font-size: 15px; letter-spacing: .06em; transition: opacity .25s, transform .3s; }
+  #track { position: absolute; top: 0; left: 0; height: 100%; will-change: transform; }
+  .slot { position: absolute; top: 138px; width: 273px; height: 594px; }
+  .slot .cardwrap { position: absolute; inset: 0; border-radius: 34px; overflow: hidden; transform-origin: 50% 50%; box-shadow: 0 0 0 1px rgba(255,255,255,.12); background: #111; }
+  .slot .cardwrap .page { transform: scale(.68); transform-origin: 0 0; pointer-events: none; }
+  .slot .newcard { position: absolute; inset: 0; border-radius: 34px; border: 1.5px solid rgba(255,255,255,.22); background: #0e0e0f; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: rgba(255,255,255,.7); }
+  .slot .newcard .plus { width: 58px; height: 58px; border-radius: 29px; background: rgba(255,255,255,.14); display: grid; place-items: center; font-size: 30px; font-weight: 300; }
+  .trash { position: absolute; left: 50%; top: 640px; width: 80px; height: 80px; margin-left: -40px; border-radius: 40px; background: #4a1411; color: #ff453a; display: grid; place-items: center; border: 0; cursor: pointer; opacity: 0; transform: scale(.6); pointer-events: none; z-index: 5; }
+  .trash svg { width: 34px; height: 34px; }
+  .trash.on { pointer-events: auto; }
+  .usebadge { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 12px; background: rgba(0,0,0,.45); color: #fff; backdrop-filter: blur(12px); white-space: nowrap; letter-spacing: .02em; }
+  #gallery .bottom { position: absolute; left: 0; right: 0; bottom: 34px; display: flex; flex-direction: column; align-items: center; gap: 22px; transition: opacity .25s; }
+  .dots { display: flex; gap: 9px; }
+  .dots i { width: 8px; height: 8px; border-radius: 4px; background: rgba(255,255,255,.3); transition: background .2s; }
+  .dots i.on { background: #fff; }
+  .dots i.plus { background: none; width: 9px; color: rgba(255,255,255,.35); font-style: normal; font-size: 13px; line-height: 8px; text-align: center; }
+  .dots i.plus.on { color: #fff; }
+  .darkbtns { display: flex; gap: 14px; align-items: center; }
+  .dbtn { height: 56px; border-radius: 28px; border: 0; background: #1c1c1e; color: #fff; font: 600 19px -apple-system, system-ui; padding: 0 40px; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 0 0 .5px rgba(255,255,255,.08); }
+  .dbtn.round { width: 56px; padding: 0; font-size: 30px; font-weight: 300; }
+  .dbtn:disabled { opacity: .35; }
+  .filled .label, .filled .bottom { opacity: 0; }
+
+  /* ---------- Sheets ---------- */
+  .scrim { position: absolute; inset: 0; background: rgba(0,0,0,.0); transition: background .3s; z-index: 40; pointer-events: none; }
+  .scrim.on { background: rgba(0,0,0,.06); pointer-events: auto; }
+  .sheet { position: absolute; left: 6px; right: 6px; bottom: 6px; border-radius: 38px; background: rgba(250,250,252,.94); color: #1c1c1e; z-index: 50;
+           backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); box-shadow: 0 -10px 40px rgba(0,0,0,.18); transform: translateY(110%); transition: transform .38s cubic-bezier(.2,.9,.25,1); display: flex; flex-direction: column; }
+  .sheet.on { transform: none; }
+  .sheet .grab { width: 36px; height: 5px; border-radius: 3px; background: rgba(0,0,0,.18); margin: 7px auto 0; flex: none; }
+  .sheet .hd { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px 6px; flex: none; }
+  .sheet .hd b { font-size: 17px; }
+  .xbtn { width: 38px; height: 38px; border-radius: 19px; border: 0; background: rgba(0,0,0,.06); font-size: 16px; cursor: pointer; color: #1c1c1e; }
+  .sheet .bd { padding: 6px 18px 26px; overflow: auto; }
+  .sheet h5 { margin: 14px 0 8px; font-size: 13px; font-weight: 600; color: #6e6e73; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { border: 0; border-radius: 16px; padding: 9px 14px; background: rgba(0,0,0,.06); font: 500 15px -apple-system, system-ui; cursor: pointer; color: #1c1c1e; }
+  .chip.on { background: #1c1c1e; color: #fff; }
+  .fonts { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .fonts button { flex: none; width: 66px; height: 66px; border-radius: 16px; border: 0; background: rgba(0,0,0,.06); font-size: 30px; cursor: pointer; color: #1c1c1e; }
+  .fonts button.on { background: #fff; box-shadow: 0 0 0 2px #1c1c1e; }
+  .swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .sw { aspect-ratio: 1; border-radius: 50%; border: 0; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(0,0,0,.1); }
+  .sw.on { box-shadow: 0 0 0 3px #fff, 0 0 0 5px #1c1c1e; }
+  .rowbtn { display: flex; align-items: center; gap: 12px; width: 100%; padding: 13px 14px; background: #fff; border: 0; border-radius: 14px; font: 500 16px -apple-system, system-ui; text-align: left; cursor: pointer; margin-top: 8px; color: #1c1c1e; }
+  .rowbtn.danger { color: #ff3b30; }
+  input[type=range] { width: 100%; accent-color: #1c1c1e; }
+  .seg { display: flex; background: rgba(0,0,0,.06); border-radius: 12px; padding: 3px; }
+  .seg button { flex: 1; border: 0; background: none; padding: 8px 0; border-radius: 9px; font: 500 14px -apple-system, system-ui; cursor: pointer; color: #1c1c1e; }
+  .seg button.on { background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+
+  /* ---------- Add gallery ---------- */
+  #add { background: #f2f2f7; color: #1c1c1e; transform: translateY(100%); transition: transform .42s cubic-bezier(.2,.9,.25,1); z-index: 60; border-radius: 40px 40px 0 0; overflow: auto; top: 58px; box-shadow: 0 -10px 40px rgba(0,0,0,.4); }
+  #add.on { transform: none; }
+  #add .hd { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; padding: 18px 16px 10px; background: rgba(242,242,247,.9); backdrop-filter: blur(20px); z-index: 2; }
+  .kinds { display: flex; gap: 14px; padding: 6px 16px 12px; overflow-x: auto; }
+  .kind { flex: none; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; cursor: pointer; width: 62px; text-align: center; }
+  .kind .ic { width: 58px; height: 58px; border-radius: 29px; display: grid; place-items: center; font-size: 26px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  #add h3 { margin: 16px 16px 2px; font-size: 22px; }
+  #add p.d { margin: 0 16px 10px; color: #6e6e73; font-size: 13px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 16px; }
+  .rail { display: flex; gap: 10px; padding: 0 16px; overflow-x: auto; }
+  .rail .mini { flex: none; width: 112px; }
+  .mini { cursor: pointer; }
+  .mini .thumb { position: relative; width: 100%; aspect-ratio: 402/874; border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 .5px rgba(0,0,0,.12); }
+  .mini .thumb .page { transform-origin: 0 0; pointer-events: none; }
+  .mini .cap { font-size: 12px; font-weight: 500; color: #3a3a3c; text-align: center; margin-top: 5px; }
+
+  /* ---------- Editor ---------- */
+  #editor { background: #000; }
+  #editor .top { position: absolute; top: 58px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+  .pill { height: 38px; padding: 0 16px; border-radius: 19px; border: 0; font: 600 15px -apple-system, system-ui; background: rgba(120,120,128,.32); color: #fff; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); cursor: pointer; }
+  .pill.prim { background: rgba(255,255,255,.92); color: #000; }
+  #editor .varlabel { position: absolute; bottom: 70px; left: 0; right: 0; text-align: center; font-weight: 600; font-size: 15px; z-index: 10; pointer-events: none; }
+  #editor .vardots { position: absolute; bottom: 52px; left: 0; right: 0; display: flex; justify-content: center; gap: 7px; z-index: 10; pointer-events: none; }
+  #editor .vardots i { width: 6px; height: 6px; border-radius: 3px; background: currentColor; opacity: .3; }
+  #editor .vardots i.on { opacity: 1; }
+  .cornerbtn { position: absolute; bottom: 48px; width: 50px; height: 50px; border-radius: 25px; border: 0; z-index: 10; cursor: pointer; display: grid; place-items: center; font-size: 20px;
+               background: rgba(120,120,128,.3); color: #fff; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+  .cornerbtn.l { left: 22px; } .cornerbtn.r { right: 22px; }
+  .cornerbtn .flav { width: 26px; height: 26px; border-radius: 13px; box-shadow: 0 0 0 2px #fff; }
+  .hint { position: absolute; top: 108px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.55); color: #fff; font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 16px; z-index: 11; white-space: nowrap; backdrop-filter: blur(12px); transition: opacity .4s; pointer-events: none; }
+  .menu { position: absolute; right: 18px; bottom: 108px; width: 240px; border-radius: 22px; background: rgba(250,250,252,.96); backdrop-filter: blur(30px); box-shadow: 0 10px 40px rgba(0,0,0,.3); z-index: 45; overflow: hidden; transform-origin: 90% 100%; transform: scale(.4); opacity: 0; transition: transform .25s cubic-bezier(.2,.9,.25,1.2), opacity .2s; pointer-events: none; color: #1c1c1e; }
+  .menu.on { transform: none; opacity: 1; pointer-events: auto; }
+  .menu button { display: flex; justify-content: space-between; width: 100%; padding: 13px 16px; border: 0; background: none; font: 400 16px -apple-system, system-ui; cursor: pointer; color: inherit; border-bottom: .5px solid rgba(0,0,0,.08); }
+  .menu button:last-child { border-bottom: 0; }
+  .menu button.danger { color: #ff3b30; }
+  .menu button:disabled { opacity: .35; }
+
+  /* gallery: which half of the look the app wears */
+  #gallery .sublabel { position: absolute; top: 128px; left: 0; right: 0; text-align: center; font-size: 11px; font-weight: 600; color: rgba(255,255,255,.5); letter-spacing: .02em; transition: opacity .25s; }
+  .filled .sublabel { opacity: 0; }
+  #gallery .slot { top: 150px; }
+
+  /* the question at the end of adding, like "Imposta come coppia di sfondi" */
+  .confirm { position: absolute; left: 10px; right: 10px; bottom: 10px; border-radius: 40px; padding: 22px 20px 16px; background: rgba(245,245,247,.92); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); z-index: 70; color: #1c1c1e;
+             transform: translateY(120%); transition: transform .4s cubic-bezier(.2,.9,.25,1); text-align: center; }
+  .confirm.on { transform: none; }
+  .confirm .pair { display: flex; gap: 14px; justify-content: center; margin-bottom: 16px; }
+  .confirm .pair figure { margin: 0; }
+  .confirm .pair figcaption { font-size: 11px; font-weight: 600; color: #6e6e73; margin-top: 6px; }
+  .confirm .pair .thumb { width: 92px; aspect-ratio: 402/874; border-radius: 14px; overflow: hidden; position: relative; box-shadow: 0 4px 14px rgba(0,0,0,.15); }
+  .confirm p { margin: 0 8px 14px; font-size: 13px; color: #6e6e73; }
+  .bluebtn { width: 100%; height: 52px; border-radius: 26px; border: 0; background: #0a84ff; color: #fff; font: 600 17px -apple-system, system-ui; cursor: pointer; }
+  .plainbtn { margin-top: 6px; border: 0; background: none; font: 600 15px -apple-system, system-ui; color: #1c1c1e; cursor: pointer; padding: 10px; }
+
+  /* ---------- App (the other half of a look) ---------- */
+  .apppage { position: absolute; left: 0; top: 0; width: var(--W); height: var(--H); overflow: hidden; background: var(--a-bg); color: var(--a-ink); }
+  .apppage .ttl { position: absolute; top: 104px; left: 20px; font-size: 34px; font-weight: 800; letter-spacing: -.01em; }
+  .apppage .list { position: absolute; top: 160px; left: 16px; right: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .apppage .course { background: var(--a-card); border-radius: 20px; padding: 14px 16px; display: flex; gap: 12px; align-items: center; box-shadow: 0 0 0 .5px var(--a-hair); }
+  .apppage .course .chip2 { width: 38px; height: 38px; border-radius: 11px; background: var(--a-tint); opacity: var(--o); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 14px; }
+  .apppage .course b { display: block; font-size: 15px; }
+  .apppage .course small { opacity: .6; font-size: 12px; }
+  .apppage .prog { height: 5px; border-radius: 3px; background: var(--a-hair); margin-top: 7px; overflow: hidden; }
+  .apppage .prog i { display: block; height: 100%; background: var(--a-tint); }
+  .apppage .link { color: var(--a-tint); font-weight: 600; font-size: 15px; padding: 6px 4px; }
+  .apptab { position: absolute; left: 20px; right: 20px; bottom: 22px; height: 62px; border-radius: 31px; display: flex; justify-content: space-around; align-items: center; font-size: 10px; font-weight: 600;
+            background: var(--a-glass, var(--p-glass)); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 0 0 .5px var(--a-hair, var(--p-hair)), 0 8px 24px rgba(0,0,0,.1); }
+  .apptab span { display: flex; flex-direction: column; align-items: center; gap: 2px; opacity: .55; }
+  .apptab span.on { opacity: 1; color: var(--a-tint); }
+  .apptab i { font-style: normal; font-size: 20px; }
+  .apptab.filled { background: var(--a-tint); color: #fff; }
+  .apptab.filled span.on { color: #fff; }
+  .apptab.compact { left: 90px; right: 90px; height: 52px; }
+  .apptab.compact span { font-size: 0; gap: 0; }
+  .home { position: absolute; inset: 0; background: var(--h-wall); }
+  .home .grid { position: absolute; top: 90px; left: 26px; right: 26px; display: grid; grid-template-columns: repeat(4, 1fr); row-gap: 26px; justify-items: center; }
+  .home .ph { width: 64px; height: 64px; border-radius: 15px; background: rgba(255,255,255,.28); }
+  .home .lbl { font-size: 11px; color: #fff; text-align: center; margin-top: 5px; font-weight: 500; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .home .dock { position: absolute; left: 14px; right: 14px; bottom: 18px; height: 92px; border-radius: 36px; background: rgba(255,255,255,.25); backdrop-filter: blur(20px); display: flex; justify-content: space-around; align-items: center; }
+  .appicon { display: grid; place-items: center; font-weight: 800; letter-spacing: -.04em; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+
+  #appedit { background: #000; }
+  /* a card, not full screen: the options below must never cover the bar they change */
+  #apreview { position: absolute; left: 50%; top: 104px; width: var(--W); height: var(--H); margin-left: calc(var(--W) / -2 * .66); transform: scale(.66); transform-origin: 0 0; border-radius: 52px; overflow: hidden; box-shadow: 0 0 0 1.5px rgba(255,255,255,.14); transition: opacity .2s; }
+  #appedit .top { position: absolute; top: 58px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+  #appedit .top b { color: #fff; font-size: 15px; text-shadow: 0 1px 3px rgba(0,0,0,.35); }
+  .aopts { position: absolute; left: 0; right: 0; bottom: 36px; display: flex; justify-content: center; gap: 16px; z-index: 10; }
+  .aopt { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #fff; cursor: pointer; border: 0; background: none; font-family: inherit; text-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  .aopt .c { width: 56px; height: 56px; border-radius: 28px; display: grid; place-items: center; font-size: 22px; background: rgba(40,40,44,.55); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: inset 0 0 0 1px rgba(255,255,255,.15); }
+  .aopt.on .c { background: rgba(255,255,255,.92); color: #000; }
+  .astrip { position: absolute; left: 12px; right: 12px; bottom: 124px; border-radius: 26px; padding: 12px; z-index: 10; display: flex; gap: 10px; overflow-x: auto; align-items: center;
+            background: rgba(30,30,32,.72); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); color: #fff; transition: opacity .2s, transform .25s; }
+  .astrip.off { opacity: 0; transform: translateY(12px); pointer-events: none; }
+  .astrip .sw { width: 34px; flex: none; }
+  .astrip .sw.on { box-shadow: 0 0 0 2px #1e1e20, 0 0 0 4px #fff; }
+  .astrip .opt { flex: none; border: 0; background: rgba(255,255,255,.1); color: #fff; border-radius: 16px; padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 5px; font: 600 11px -apple-system, system-ui; cursor: pointer; }
+  .astrip .opt.on { background: rgba(255,255,255,.28); }
+  .astrip .note { font-size: 13px; color: rgba(255,255,255,.75); padding: 2px 6px; }
+
+  /* ---------- Side panel ---------- */
+  .side { width: 380px; max-width: 100%; background: var(--panel); border-radius: 22px; padding: 20px 22px; box-shadow: 0 0 0 .5px var(--hair); }
+  .side h1 { font-size: 20px; margin: 0 0 4px; }
+  .side h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 22px 0 8px; }
+  .side ol { padding-left: 20px; margin: 0; }
+  .side li { margin: 0 0 8px; }
+  .side li.cur { font-weight: 600; }
+  .side li.cur::marker { color: #0a84ff; }
+  .side .jump { display: flex; flex-wrap: wrap; gap: 6px; }
+  .side .jump button { border: 0; border-radius: 10px; padding: 7px 10px; background: var(--desk); color: var(--ink); font: 500 13px -apple-system, system-ui; cursor: pointer; }
+  .side pre { background: var(--desk); border-radius: 12px; padding: 10px 12px; font: 11.5px/1.45 ui-monospace, "SF Mono", Menlo, monospace; white-space: pre-wrap; margin: 0; max-height: 240px; overflow: auto; }
+  .side p { margin: 0 0 8px; color: var(--muted); }
+  .side .q li { color: var(--ink); }
+  .log { font: 12px/1.5 ui-monospace, Menlo, monospace; color: var(--muted); max-height: 120px; overflow: auto; }
+</style>
+</head>
+<body>
+<div class="desk">
+  <div class="phone" id="phone">
+    <div class="island"></div>
+    <div class="status" id="status"><span>9:41</span><span>●●● ◔ ▮</span></div>
+
+    <!-- Oggi, the app itself -->
+    <div class="screen" id="app"></div>
+
+    <!-- Galleria -->
+    <div class="screen hidden" id="gallery">
+      <div class="label" id="glabel"></div>
+      <div class="sublabel" id="gsub"></div>
+      <div id="track"></div>
+      <button class="trash" id="trash" aria-label="Elimina stile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 10v7M14 10v7"/></svg>
+      </button>
+      <div class="bottom">
+        <div class="dots" id="gdots"></div>
+        <div class="darkbtns">
+          <button class="dbtn" id="btnEdit">Personalizza</button>
+          <button class="dbtn round" id="btnAdd">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Editor -->
+    <div class="screen hidden" id="editor">
+      <div id="epage"></div>
+      <div class="top">
+        <button class="pill" id="eCancel">Annulla</button>
+        <button class="pill prim" id="eDone">Fine</button>
+      </div>
+      <div class="hint" id="ehint">Scorri per provare le varianti</div>
+      <div class="varlabel" id="evar"></div>
+      <div class="vardots" id="evdots"></div>
+      <button class="cornerbtn l" id="eFlavor" aria-label="Flavor"><span class="flav" id="eFlavorDot"></span></button>
+      <button class="cornerbtn r" id="eMore" aria-label="Altro">•••</button>
+      <div class="menu" id="emenu"></div>
+    </div>
+
+    <!-- App: the other half of a look -->
+    <div class="screen hidden" id="appedit">
+      <div id="apreview"></div>
+      <div class="top">
+        <button class="pill" id="aCancel">Annulla</button>
+        <b>App</b>
+        <button class="pill prim" id="aDone">Fine</button>
+      </div>
+      <div class="astrip off" id="astrip"></div>
+      <div class="aopts" id="aopts"></div>
+    </div>
+
+    <!-- Aggiungi -->
+    <div class="screen" id="add"></div>
+
+    <div class="scrim" id="scrim"></div>
+    <div class="confirm" id="confirm"></div>
+    <div class="sheet" id="sheet"><div class="grab"></div><div class="hd"><b id="shTitle"></b><button class="xbtn" id="shClose">✕</button></div><div class="bd" id="shBody"></div></div>
+    <div class="homebar" id="homebar"></div>
+  </div>
+
+  <aside class="side">
+    <h1>Personalizza — curated flow</h1>
+    <p>Prototype, throwaway. Drag the cards with the mouse exactly as on the phone. Swipe a card <b>up</b> to reveal the trash.</p>
+
+    <h2>The flow</h2>
+    <ol id="flow">
+      <li data-s="app"><b>Oggi</b> — long-press the date, or the brush in the bar, to open Personalizza.</li>
+      <li data-s="gallery"><b>Galleria</b> — the saved looks, black around them. Swipe sideways to use one, <b>swipe up to delete</b>, tap to go back to the app wearing it. The last card is <i>Aggiungi nuovo</i>.</li>
+      <li data-s="add"><b>Aggiungi</b> — a gallery of starting points rather than a blank form: kinds on top, then curated rows, each with a sentence.</li>
+      <li data-s="editor"><b>Editor</b> — the page at full size. Outlined zones open one small sheet each. Swiping sideways runs through curated <b>variants</b>. Flavor bottom-left, everything else behind •••.</li>
+      <li data-s="pair"><b>Aggiungi → App</b> — the first time a look is saved it asks one thing: <b>Abbina all'app</b> (the app takes colour, icon and bar from the page) or <b>Personalizza l'app</b>. Either way the look goes in use.</li>
+      <li data-s="appedit"><b>App</b> — the other half of a look, previewed on Corsi (and on the Home Screen for the icon). Four buttons: Abbinata, Colore, Icona, Barra. Picking anything of its own unpairs it; tapping Abbinata pairs it again. Later, only from <b>••• › App</b>.</li>
+    </ol>
+
+    <h2>Jump to</h2>
+    <div class="jump">
+      <button data-go="app">Oggi</button><button data-go="gallery">Galleria</button><button data-go="add">Aggiungi</button><button data-go="editNew">Editor (nuovo)</button><button data-go="editOld">Editor (esistente)</button><button data-go="pair">Domanda app</button><button data-go="appMenu">••• › App</button><button data-go="reset">Reset</button>
+    </div>
+
+    <h2>What changes from today's Personalizza</h2>
+    <ul>
+      <li>Delete moves from the context menu + confirmation dialog to <b>swipe up → trash</b>. With one look left the card only rubber-bands.</li>
+      <li>The 9-tile bento goes. Its tiles become <b>zones on the page</b> (date, greeting, stickers, each section, “Aggiungi sezione”) and one <b>•••</b> menu for what has no zone (Carta, Barra, Disponi, Rinomina).</li>
+      <li>Appearance + paper collapse into <b>swipeable variants</b> — Naturale, Tinta, Contrasto, Notte, Carta — the way photos get Naturale / B&amp;N / Duotono.</li>
+      <li>Nuovo stile stops being a form sheet and becomes a <b>gallery</b>; picking a tile goes straight into the editor with <i>Annulla / Aggiungi</i>.</li>
+      <li>Tapping the middle card <b>exits</b> into it (Lock Screen), instead of opening the editor. Personalizza is the one way to edit.</li>
+      <li>Editing a saved look gets <b>Annulla</b> back (replaces Ripristina): the editor works on a draft, Fine saves.</li>
+    </ul>
+
+    <h2>Decided</h2>
+    <ul>
+      <li><b>Adding always uses the new look.</b> Aggiungi saves it, puts it in use, and drops it into the gallery.</li>
+      <li><b>The app question is asked once per look</b>, when it is added: pair or customise. After that the choice lives only in the editor's <b>••• › App</b>, whose Annulla/Fine return to the page editor and are saved by its Fine.</li>
+      <li><b>Barra moves</b> from the page's ••• menu into App, next to Colore and Icona: they are all the app, not the page.</li>
+      <li><b>Variants are fixed:</b> Naturale, Tinta, Contrasto, Notte, Carta — the same five for every look.</li>
+      <li><b>Delete is immediate, with an Annulla toast</b> for four seconds.</li>
+    </ul>
+
+    <h2>State</h2>
+    <pre id="state"></pre>
+    <h2>Log</h2>
+    <div class="log" id="log"></div>
+  </aside>
+</div>
+
+<script>
+/* ======================= Model ======================= */
+const W = 402, H = 874, CARD = 0.68, CW = W * CARD, GAP = 18;
+const SWATCHES = [
+  ["Blu Politecnico","#0F3D6E"],["Lavanda","#7A6FE0"],["Indaco","#3B4BC8"],["Cielo","#2E9BD6"],["Menta","#2FA88A"],["Salvia","#5E8C61"],
+  ["Mandarino","#E8751A"],["Corallo","#E0584F"],["Lampone","#C2386F"],["Caffè","#8A5A3C"],["Ardesia","#5B6472"],["Grafite","#1F2328"]];
+const FONTS = [
+  { id: "sf", css: "-apple-system, system-ui", w: 700 }, { id: "didot", css: "Didot, 'Bodoni 72', serif", w: 400 },
+  { id: "futura", css: "Futura, 'Avenir Next', sans-serif", w: 500 }, { id: "avenir", css: "'Avenir Next', Avenir, sans-serif", w: 200 },
+  { id: "rounded", css: "ui-rounded, 'SF Pro Rounded', system-ui", w: 800 }, { id: "mono", css: "ui-monospace, 'SF Mono', Menlo, monospace", w: 500 }];
+const VARIANTS = [
+  { id: "natural", name: "Naturale", mode: "standard", paper: "none" },
+  { id: "tinted", name: "Tinta", mode: "tinted", paper: "none" },
+  { id: "contrast", name: "Contrasto", mode: "contrast", paper: "none" },
+  { id: "night", name: "Notte", mode: "dark", paper: "none" },
+  { id: "paper", name: "Carta", mode: "standard", paper: "dots" }];
+const SECTIONS = { current: "Lezione in corso", upcoming: "In arrivo", timetable: "Orario", deadlines: "Consegne", exams: "Esami" };
+const GREETINGS = { time: "Buongiorno, Samuele", name: "Ciao Samuele", motto: "Un passo alla volta.", none: "" };
+
+const base = () => ({ name: "", flavor: "#0F3D6E", variant: "natural", font: "sf", weight: 600, dateColour: "flavor", greeting: "time",
+  stickers: [], pattern: "none",
+  // the app's half: paired takes the tint, the icon and the bar from the page
+  app: { paired: true, tint: null, icon: "flavor", bar: "glass" },
+  sections: [{ k: "current", form: "card", tint: false }, { k: "upcoming", form: "list", tint: false }, { k: "timetable", form: "list", tint: false }] });
+const mk = (o) => Object.assign(base(), o, { sections: o.sections || base().sections });
+const ICONS = [["classic", "Classica"], ["flavor", "Flavor"], ["dark", "Scura"], ["light", "Chiara"]];
+const BARS = [["glass", "Vetro", "▭"], ["filled", "Piena", "▬"], ["compact", "Compatta", "▫"]];
+/** What the app wears for a look: derived from the page while paired. */
+function appOf(look) {
+  const a = look.app || { paired: true };
+  if (a.paired) return { paired: true, tint: palette(look).accent, icon: "flavor", bar: "glass" };
+  return { paired: false, tint: a.tint || look.flavor, icon: a.icon || "classic", bar: a.bar || "glass" };
+}
+const PRESETS = [
+  mk({ name: "Tramonto", flavor: "#E8751A", font: "futura", variant: "tinted", pattern: "mesh", sections: [{ k: "current", form: "card", tint: true }, { k: "upcoming", form: "list" }, { k: "timetable", form: "list" }] }),
+  mk({ name: "Politecnico", flavor: "#1B4F8F", font: "didot", greeting: "motto", pattern: "ovals", sections: [{ k: "exams", form: "card", tint: true }, { k: "timetable", form: "list" }] }),
+  mk({ name: "Minimale", flavor: "#5B6472", font: "avenir", greeting: "none", variant: "contrast", sections: [{ k: "timetable", form: "compact" }] }),
+  mk({ name: "Studio", flavor: "#7A6FE0", font: "rounded", greeting: "name", variant: "paper", stickers: ["📚", "✏️"], sections: [{ k: "deadlines", form: "list", tint: true }, { k: "timetable", form: "list", tint: true }] }),
+  mk({ name: "Notte", flavor: "#3B4BC8", font: "sf", variant: "night", stickers: ["🌙"], pattern: "stars", sections: [{ k: "current", form: "card", tint: true }, { k: "timetable", form: "list" }] }),
+  mk({ name: "Menta", flavor: "#2FA88A", font: "rounded", variant: "tinted" }),
+  mk({ name: "Caffè", flavor: "#8A5A3C", font: "didot", variant: "paper", stickers: ["☕️"] }),
+  mk({ name: "Lampone", flavor: "#C2386F", font: "futura", variant: "contrast", greeting: "name" }),
+  mk({ name: "Grafite", flavor: "#1F2328", font: "mono", variant: "night", greeting: "none" }),
+];
+const clone = (x) => JSON.parse(JSON.stringify(x));
+const initial = () => ({ looks: [mk({ name: "Il mio stile", flavor: "#0F3D6E" }), clone(PRESETS[0]), clone(PRESETS[3])], selection: 0 });
+
+let lib = initial();
+let screen = "app";
+let page = 0;              // index in the gallery (looks.length = the "Aggiungi nuovo" card)
+let draft = null;          // look being edited
+let editing = null;        // { index | null (new), original }
+let log = [];
+
+/* ======================= Colour ======================= */
+function hexToHsl(hex) {
+  const n = parseInt(hex.slice(1), 16); let r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let h = 0, s = 0, l = (mx + mn) / 2;
+  if (mx !== mn) { const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn);
+    h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; }
+  return [h, s * 100, l * 100];
+}
+const hsl = (h, s, l, a = 1) => `hsla(${h.toFixed(0)},${s.toFixed(0)}%,${l.toFixed(0)}%,${a})`;
+function palette(look) {
+  const v = VARIANTS.find(v => v.id === look.variant) || VARIANTS[0];
+  const [h, s] = hexToHsl(look.flavor);
+  const dark = v.mode === "dark";
+  const p = {};
+  p.accent = dark ? hsl(h, Math.min(s, 80), 66) : look.flavor;
+  if (v.mode === "standard") { p.bg = hsl(h, Math.min(s * .3, 25), 97); p.card = "rgba(255,255,255,.82)"; p.ink = "#111"; }
+  if (v.mode === "tinted")   { p.bg = hsl(h, Math.min(s * .6, 55), 89); p.card = hsl(h, Math.min(s * .5, 45), 95, .85); p.ink = hsl(h, 40, 14); }
+  if (v.mode === "contrast") { p.bg = "#fff"; p.card = hsl(h, 12, 95); p.ink = "#000"; }
+  if (dark)                  { p.bg = hsl(h, Math.min(s * .5, 45), 9); p.card = hsl(h, Math.min(s * .35, 30), 17, .85); p.ink = "#f5f5f7"; }
+  p.date = look.dateColour === "flavor" ? p.accent : p.ink;
+  p.glass = dark ? "rgba(60,60,67,.45)" : "rgba(255,255,255,.6)";
+  p.hair = dark ? "rgba(255,255,255,.12)" : "rgba(0,0,0,.07)";
+  p.shadow = dark ? ".25" : ".06";
+  p.zone = dark ? "rgba(255,255,255,.55)" : "rgba(0,0,0,.35)";
+  p.zonefill = dark ? "rgba(255,255,255,.05)" : "rgba(255,255,255,.18)";
+  p.zonehover = dark ? "rgba(255,255,255,.12)" : "rgba(255,255,255,.45)";
+  p.dark = dark; p.paper = v.paper; p.h = h; p.s = s;
+  return p;
+}
+function paperLayer(look, p) {
+  const c = p.dark ? "rgba(255,255,255,.07)" : hsl(p.h, Math.min(p.s, 60), 40, .12);
+  let bg = "";
+  if (p.paper === "dots") bg = `radial-gradient(${c} 1.2px, transparent 1.4px) 0 0/18px 18px`;
+  if (look.pattern === "mesh") bg = `radial-gradient(120% 60% at 90% 0%, ${hsl(p.h + 25, 90, p.dark ? 30 : 75, .7)}, transparent 60%), radial-gradient(90% 50% at 0% 100%, ${hsl(p.h - 30, 90, p.dark ? 25 : 80, .6)}, transparent 60%)`;
+  if (look.pattern === "ovals") bg = `radial-gradient(ellipse 22px 12px, ${c} 98%, transparent) 0 0/48px 30px`;
+  if (look.pattern === "stars") bg = `radial-gradient(1.4px 1.4px at 20% 30%, #fff8, transparent), radial-gradient(1px 1px at 70% 60%, #fff6, transparent), radial-gradient(1.2px 1.2px at 40% 80%, #fff7, transparent) 0 0/140px 140px`;
+  return bg ? `<div class="paper" style="background:${bg}"></div>` : "";
+}
+
+/* ======================= Rendering the page ======================= */
+function sectionHTML(s, i, edit) {
+  const cls = `card zone ${edit ? "z" : ""} ${s.tint ? "tint" : ""} ${s.form === "compact" ? "compact" : ""}`;
+  const d = edit ? `data-zone="section:${i}"` : "";
+  switch (s.k) {
+    case "current": return `<div class="${cls}" ${d}><h4>Lezione in corso</h4><div class="big2">Analisi Matematica II</div><div class="sub">Aula 3.1.2 · fino alle 12:15</div></div>`;
+    case "upcoming": return `<div class="${cls}" ${d}><h4>In arrivo</h4><div class="row"><span class="bar"></span>Esame di Fisica<span style="margin-left:auto" class="sub">12 ott</span></div><div class="row"><span class="bar"></span>Consegna laboratorio<span style="margin-left:auto" class="sub">ven</span></div></div>`;
+    case "timetable": return `<div class="${cls}" ${d}><h4>Orario</h4><div class="row"><span class="t">10:15</span><span class="bar"></span>Analisi II</div><div class="row"><span class="t">14:15</span><span class="bar"></span>Fondamenti di Informatica</div>${s.form === "compact" ? "" : `<div class="row"><span class="t">16:15</span><span class="bar"></span>Fisica Tecnica</div>`}</div>`;
+    case "deadlines": return `<div class="${cls}" ${d}><h4>Consegne</h4><div class="row"><span class="bar"></span>Homework 3 · Informatica<span style="margin-left:auto" class="sub">domani</span></div></div>`;
+    case "exams": return `<div class="${cls}" ${d}><h4>Esami</h4><div class="row"><span class="bar"></span>Fisica · appello<span style="margin-left:auto" class="sub">12 ott</span></div><div class="row"><span class="bar"></span>Analisi II<span style="margin-left:auto" class="sub">3 feb</span></div></div>`;
+  }
+}
+function pageHTML(look, { edit = false, arranging = false, chrome = true } = {}) {
+  const p = palette(look), f = FONTS.find(f => f.id === look.font) || FONTS[0];
+  const vars = `--p-bg:${p.bg};--p-card:${p.card};--p-ink:${p.ink};--p-accent:${p.accent};--p-date:${p.date};--p-glass:${p.glass};--p-hair:${p.hair};--p-shadow:${p.shadow};--p-zone:${p.zone};--p-zonefill:${p.zonefill};--p-zonehover:${p.zonehover}`;
+  const z = (name, cls) => edit ? `class="zone z ${cls}" data-zone="${name}"` : `class="zone ${cls}"`;
+  const greet = GREETINGS[look.greeting];
+  const hidden = Object.keys(SECTIONS).filter(k => !look.sections.some(s => s.k === k));
+  return `<div class="page ${edit ? "editing" : ""} ${arranging ? "arranging" : ""}" style="${vars}">
+    ${paperLayer(look, p)}
+    ${chrome || !edit ? `<div class="nav" style="${edit ? "visibility:hidden" : ""}"><div class="avatar">S</div><span class="ttl">Oggi</span><button class="gbtn" data-act="openCustomize" aria-label="Personalizza">🖌</button></div>` : ""}
+    <div class="body">
+      <div ${z("date", "date")} style="font-family:${f.css}">
+        <div class="wd">Mercoledì</div>
+        <div class="big" style="font-weight:${look.weight}">23 set</div>
+        ${look.stickers.length || edit ? `<div class="stickers ${edit ? "zone z" : ""}" ${edit ? 'data-zone="stickers"' : ""}>${look.stickers.join("") || (edit ? '<span style="font-size:13px;font-weight:700;opacity:.6;transform:rotate(-8deg);padding:10px 6px">+ Sticker</span>' : "")}</div>` : ""}
+      </div>
+      ${greet || edit ? `<div ${z("greeting", "greet")}>${greet || '<span style="opacity:.5">Nessun saluto</span>'}</div>` : ""}
+      ${look.sections.map((s, i) => sectionHTML(s, i, edit)).join("")}
+      ${edit && hidden.length ? `<div class="addzone" data-zone="addSection">＋ Aggiungi sezione</div>` : ""}
+    </div>
+    ${edit ? "" : tabbarHTML(look, "Oggi")}
+  </div>`;
+}
+function scaled(look, width) { return `<div style="transform:scale(${width / W});transform-origin:0 0;width:${W}px;height:${H}px;position:absolute">${pageHTML(look)}</div>`; }
+function mini(look, width) { return `<div class="thumb">${scaled(look, width)}</div>`; }
+
+/* ======================= Screens ======================= */
+const $ = (id) => document.getElementById(id);
+function say(msg) { log.unshift(new Date().toLocaleTimeString("it-IT") + "  " + msg); log = log.slice(0, 30); }
+function sync() {
+  $("state").textContent = JSON.stringify({ screen, page, selection: lib.selection,
+    looks: lib.looks.map((l, i) => { const a = appOf(l); return `${i === lib.selection ? "● " : "  "}${l.name || "Senza nome"} · ${l.variant} · ${l.flavor} · app ${a.paired ? "abbinata" : `${a.tint}/${a.icon}/${a.bar}`}`; }),
+    editing: editing ? { target: editing.index === null ? "nuovo" : editing.index, dirty: JSON.stringify(draft) !== JSON.stringify(editing.original) } : null }, null, 2);
+  $("log").innerHTML = log.map(l => `<div>${l}</div>`).join("");
+  document.querySelectorAll("#flow li").forEach(li => li.classList.toggle("cur", li.dataset.s === screen));
+}
+function setStatusTint(dark) { $("status").style.color = dark ? "#fff" : "#000"; $("homebar").style.color = dark ? "#fff" : "#000"; }
+
+function renderApp() {
+  const look = lib.looks[lib.selection];
+  $("app").innerHTML = pageHTML(look);
+  setStatusTint(palette(look).dark);
+  // long-press the date opens Personalizza, like the Lock Screen
+  const date = $("app").querySelector(".date");
+  let t; date.onpointerdown = () => { t = setTimeout(() => openGallery(), 480); };
+  date.onpointerup = date.onpointerleave = () => clearTimeout(t);
+}
+function show(id) { ["app", "gallery", "editor", "appedit"].forEach(s => $(s).classList.toggle("hidden", s !== id)); }
+
+/* ---------- Gallery ---------- */
+const slots = []; let offsetX = 0, lifted = false, lift = 0;
+function slotX(i) { return (W - CW) / 2 + i * (CW + GAP); }
+function renderGallery() {
+  const t = $("track"); t.innerHTML = ""; slots.length = 0;
+  lib.looks.forEach((look, i) => {
+    const s = document.createElement("div"); s.className = "slot"; s.style.left = slotX(i) + "px";
+    s.innerHTML = `<div class="cardwrap">${pageHTML(look)}</div>`;
+    t.appendChild(s); slots.push(s);
+  });
+  const n = document.createElement("div"); n.className = "slot"; n.style.left = slotX(lib.looks.length) + "px";
+  n.innerHTML = `<div class="newcard"><div class="plus">+</div><div style="font-weight:600">Nuovo stile</div></div>`;
+  t.appendChild(n); slots.push(n);
+  layoutGallery(false);
+}
+function layoutGallery(anim = true) {
+  const t = $("track");
+  const x = -slotX(page) + (W - CW) / 2 + offsetX;
+  t.style.transition = anim ? "transform .42s cubic-bezier(.2,.9,.25,1)" : "none";
+  t.style.transform = `translateX(${x}px)`;
+  slots.forEach((s, i) => {
+    const d = Math.abs((slotX(i) + x + CW / 2) - W / 2) / (CW + GAP);
+    const k = Math.min(d, 1);
+    const cw = s.firstElementChild;
+    const y = i === page ? lift : 0;
+    cw.style.transition = anim ? "transform .42s cubic-bezier(.2,.9,.25,1), opacity .3s" : "none";
+    cw.style.transform = `translateY(${y}px) scale(${1 - .08 * k})`;
+    cw.style.opacity = 1 - .45 * k;
+  });
+  const onNew = page === lib.looks.length;
+  $("glabel").textContent = onNew ? "AGGIUNGI NUOVO" : (lib.looks[page].name || "Senza nome").toUpperCase();
+  $("glabel").style.transform = `translateY(${lift * .6}px)`;
+  $("gsub").textContent = onNew ? "" : appOf(lib.looks[page]).paired ? "App abbinata" : "App su misura";
+  $("gsub").style.opacity = lift ? 0 : 1;
+  $("glabel").style.opacity = 1 - Math.min(1, -lift / 120) * .0;
+  $("gdots").innerHTML = lib.looks.map((_, i) => `<i class="${i === page ? "on" : ""}"></i>`).join("") + `<i class="plus ${onNew ? "on" : ""}">+</i>`;
+  $("btnEdit").disabled = onNew;
+  // the trash: appears as the card lifts; one look left, it never does
+  const tr = $("trash"), k = lib.looks.length > 1 && !onNew ? Math.min(1, -lift / 130) : 0;
+  tr.style.transition = anim ? "opacity .3s, transform .42s cubic-bezier(.2,.9,.25,1.3)" : "none";
+  tr.style.opacity = k; tr.style.transform = `translateY(${lift * .35}px) scale(${.6 + .4 * k})`;
+  tr.classList.toggle("on", lifted);
+  document.querySelector("#gallery .bottom").style.opacity = 1 - Math.min(1, -lift / 90);
+}
+function openGallery() {
+  screen = "gallery"; page = lib.selection; lifted = false; lift = 0; offsetX = 0;
+  renderGallery(); show("gallery"); setStatusTint(true);
+  // the page in use shrinks into the middle card
+  const cw = slots[page].firstElementChild;
+  $("gallery").classList.add("filled");
+  slots.forEach((s, i) => { if (i !== page) s.style.opacity = 0; });
+  cw.style.transition = "none"; cw.style.transform = `scale(${1 / CARD})`; cw.style.borderRadius = "0";
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    $("gallery").classList.remove("filled");
+    slots.forEach(s => { s.style.transition = "opacity .35s .1s"; s.style.opacity = 1; });
+    cw.style.borderRadius = ""; layoutGallery(true);
+  }));
+  say("Personalizza aperto"); sync();
+}
+function closeGallery() {
+  // the middle card grows back over the app, then the gallery goes
+  const cw = slots[page].firstElementChild;
+  $("gallery").classList.add("filled");
+  slots.forEach((s, i) => { if (i !== page) { s.style.transition = "opacity .2s"; s.style.opacity = 0; } });
+  cw.style.transition = "transform .45s cubic-bezier(.2,.9,.25,1), border-radius .45s"; cw.style.transform = `scale(${1 / CARD})`; cw.style.borderRadius = "0";
+  setTimeout(() => { $("gallery").classList.remove("filled"); screen = "app"; renderApp(); show("app"); say("Chiuso: l'app usa " + (lib.looks[lib.selection].name || "Senza nome")); sync(); }, 460);
+}
+function use(i) { if (i < lib.looks.length && i !== lib.selection) { lib.selection = i; say("In uso: " + (lib.looks[i].name || "Senza nome")); } }
+function settle() {
+  if (page < lib.looks.length) use(page);
+  sync();
+}
+let toastTimer;
+function deleteMiddle() {
+  const i = page, removed = lib.looks[i], wasSel = lib.selection;
+  const cw = slots[i].firstElementChild;
+  cw.style.transition = "transform .32s cubic-bezier(.4,0,.8,.4), opacity .3s";
+  cw.style.transform = `translateY(${lift - 60}px) scale(.7)`; cw.style.opacity = 0;
+  $("trash").style.opacity = 0; $("trash").classList.remove("on");
+  setTimeout(() => {
+    lib.looks.splice(i, 1);
+    if (i < lib.selection || lib.selection === lib.looks.length) lib.selection--;
+    lib.selection = Math.max(0, Math.min(lib.selection, lib.looks.length - 1));
+    page = Math.min(i, lib.looks.length - 1); lifted = false; lift = 0;
+    renderGallery(); settle(); layoutGallery(true);
+    say("Eliminato: " + (removed.name || "Senza nome"));
+    undoToast(() => { lib.looks.splice(i, 0, removed); lib.selection = wasSel; page = i; renderGallery(); settle(); say("Ripristinato"); });
+  }, 300);
+}
+function undoToast(undo) {
+  let t = $("toast");
+  if (!t) { t = document.createElement("div"); t.id = "toast"; t.style.cssText = "position:absolute;top:98px;left:50%;transform:translateX(-50%);background:rgba(44,44,46,.95);color:#fff;border-radius:20px;padding:9px 10px 9px 16px;display:flex;gap:12px;align-items:center;font-weight:600;font-size:14px;z-index:80;transition:opacity .3s"; $("gallery").appendChild(t); }
+  t.innerHTML = `Stile eliminato <button style="border:0;background:#fff;color:#000;border-radius:12px;padding:5px 10px;font:600 13px -apple-system;cursor:pointer">Annulla</button>`;
+  // takes the name's place above the card while it is up
+  const label = $("glabel"), hide = () => { t.style.opacity = 0; t.style.pointerEvents = "none"; label.style.visibility = ""; };
+  t.style.opacity = 1; t.style.pointerEvents = "auto"; label.style.visibility = "hidden";
+  t.querySelector("button").onclick = () => { undo(); hide(); };
+  clearTimeout(toastTimer); toastTimer = setTimeout(hide, 4000);
+}
+
+// gestures: horizontal pages, vertical up lifts the middle card
+(function galleryGestures() {
+  const g = $("gallery"); let sx, sy, axis, t0, active = false, startLift = 0, moved = false;
+  g.addEventListener("pointerdown", e => {
+    if (e.target.closest("button")) return;
+    active = true; moved = false; sx = e.clientX; sy = e.clientY; axis = null; t0 = performance.now(); startLift = lift;
+    g.setPointerCapture(e.pointerId);
+  });
+  g.addEventListener("pointermove", e => {
+    if (!active) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if (!axis && Math.hypot(dx, dy) > 6) axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+    if (!axis) return; moved = true;
+    if (axis === "x") {
+      if (lifted) { lifted = false; lift = 0; }
+      const n = slots.length; let o = dx;
+      if ((page === 0 && dx > 0) || (page === n - 1 && dx < 0)) o = dx / 3;
+      offsetX = o; layoutGallery(false);
+    } else if (page < lib.looks.length) {
+      let l = startLift + dy;
+      const can = lib.looks.length > 1;
+      if (l > 0) l = l / 4;                                   // pulling down: resist
+      else if (!can) l = -Math.pow(-l, .6);                   // one look left: rubber-band only
+      else if (l < -170) l = -170 - Math.pow(-l - 170, .7);   // past the stop: resist
+      lift = l; layoutGallery(false);
+    }
+  });
+  g.addEventListener("pointerup", e => {
+    if (!active) return; active = false;
+    const dt = performance.now() - t0, dx = e.clientX - sx, dy = e.clientY - sy;
+    if (!moved) { // a tap
+      const el = document.elementFromPoint(e.clientX, e.clientY)?.closest(".slot");
+      const i = slots.indexOf(el);
+      if (lifted) { lifted = false; lift = 0; layoutGallery(true); return; }
+      if (i === page) { if (page === lib.looks.length) openAdd(); else closeGallery(); }
+      else if (i >= 0) { page = i; layoutGallery(true); settle(); }
+      return;
+    }
+    if (axis === "x") {
+      const v = dx / dt; let next = page;
+      if (dx < -CW / 3 || v < -.4) next++; if (dx > CW / 3 || v > .4) next--;
+      page = Math.max(0, Math.min(slots.length - 1, next)); offsetX = 0; layoutGallery(true); settle();
+    } else {
+      const v = dy / dt, can = lib.looks.length > 1 && page < lib.looks.length;
+      lifted = can && (lift < -70 || v < -.5) && !(v > .4);
+      lift = lifted ? -150 : 0; layoutGallery(true);
+      if (lifted) say("Carta sollevata: cestino visibile");
+      sync();
+    }
+  });
+})();
+
+/* ---------- Add ---------- */
+function openAdd() {
+  screen = "add";
+  const kinds = [["🎨", "Flavor", "flavor"], ["🖼️", "Da una foto", "photo"], ["📄", "Carta", "paper"], ["🔀", "Casuale", "shuffle"], ["⧉", "Copia", "copy"], ["⬚", "Vuota", "blank"]];
+  const flavours = SWATCHES.map(([n, h]) => mk({ name: n, flavor: h, variant: "tinted" }));
+  const papers = [["Puntinata", "paper", "none"], ["Maglia ovale", "natural", "ovals"], ["Sfumatura", "natural", "mesh"], ["Notte stellata", "night", "stars"]]
+    .map(([n, v, pat], i) => mk({ name: n, flavor: SWATCHES[i * 3][1], variant: v, pattern: pat }));
+  const suggested = [PRESETS[1], PRESETS[4], PRESETS[2]];
+  window._addPool = { suggested, presets: PRESETS, flavours, papers };
+  $("add").innerHTML = `
+    <div class="hd"><button class="pill" style="background:rgba(0,0,0,.06);color:#000" data-act="closeAdd">Annulla</button><b style="font-size:17px">Nuovo stile</b><span style="width:80px"></span></div>
+    <div class="kinds">${kinds.map(([ic, n, id]) => `<div class="kind" data-kind="${id}"><div class="ic">${ic}</div>${n}</div>`).join("")}</div>
+    <h3>In primo piano</h3><p class="d">Scelti per te, a partire dal tuo corso e dal tuo stile in uso.</p>
+    <div class="grid3">${suggested.map((l, i) => `<div class="mini" data-pick="suggested:${i}">${mini(l, 113)}<div class="cap">${l.name}</div></div>`).join("")}</div>
+    <h3>Temi</h3><p class="d">Una pagina già pensata: carattere, colore, sezioni e decorazioni.</p>
+    <div class="rail">${PRESETS.map((l, i) => `<div class="mini" data-pick="presets:${i}">${mini(l, 112)}<div class="cap">${l.name}</div></div>`).join("")}</div>
+    <h3>Flavor</h3><p class="d">Un colore solo: il resto lo scegliamo noi, e puoi cambiarlo dopo.</p>
+    <div class="rail">${flavours.map((l, i) => `<div class="mini" data-pick="flavours:${i}">${mini(l, 112)}<div class="cap">${l.name}</div></div>`).join("")}</div>
+    <h3>Carte e motivi</h3><p class="d">La pagina stampata su una carta, o sotto un motivo nel colore del Flavor.</p>
+    <div class="rail" style="padding-bottom:40px">${papers.map((l, i) => `<div class="mini" data-pick="papers:${i}">${mini(l, 112)}<div class="cap">${l.name}</div></div>`).join("")}</div>`;
+  $("add").classList.add("on"); say("Aggiungi aperto"); sync();
+}
+function closeAdd() { $("add").classList.remove("on"); screen = "gallery"; if (page === lib.looks.length) { page = lib.looks.length - 1; layoutGallery(true); settle(); } sync(); }
+$("add").addEventListener("click", e => {
+  if (e.target.closest("[data-act=closeAdd]")) return closeAdd();
+  const pick = e.target.closest("[data-pick]"), kind = e.target.closest("[data-kind]");
+  let look;
+  if (pick) { const [pool, i] = pick.dataset.pick.split(":"); look = clone(window._addPool[pool][+i]); }
+  if (kind) {
+    const k = kind.dataset.kind;
+    if (k === "copy") look = clone(lib.looks[lib.selection]), look.name = (look.name || "Stile") + " 2";
+    else if (k === "blank") look = mk({ name: "" });
+    else if (k === "shuffle") { const s = SWATCHES[Math.random() * 12 | 0]; look = mk({ name: "Sorpresa", flavor: s[1], variant: VARIANTS[Math.random() * 5 | 0].id, font: FONTS[Math.random() * 6 | 0].id }); }
+    else if (k === "photo") { look = mk({ name: "Dalla foto", flavor: "#C2386F", variant: "tinted", pattern: "mesh" }); say("(simulato) colori estratti da una foto"); }
+    else if (k === "paper") { look = mk({ name: "Carta", variant: "paper" }); }
+    else look = mk({ name: "", variant: "natural" });
+  }
+  if (!look) return;
+  $("add").classList.remove("on");
+  openEditor(look, null);
+});
+
+/* ---------- Editor ---------- */
+let arranging = false, sel = null, hintShown = false;
+function openEditor(look, index) {
+  draft = clone(look); editing = { index, original: clone(look) }; arranging = false; sel = null;
+  screen = "editor"; show("editor"); renderEditor();
+  $("eDone").textContent = index === null ? "Aggiungi" : "Fine";
+  const h = $("ehint"); h.style.opacity = hintShown ? 0 : 1; hintShown = true; setTimeout(() => h.style.opacity = 0, 2600);
+  say(index === null ? "Editor: nuovo stile" : "Editor: " + (look.name || "Senza nome")); sync();
+}
+function renderEditor() {
+  $("epage").innerHTML = pageHTML(draft, { edit: true, arranging });
+  const p = palette(draft); setStatusTint(p.dark);
+  const vi = VARIANTS.findIndex(v => v.id === draft.variant);
+  $("evar").textContent = arranging ? "Tocca Fine quando hai finito" : VARIANTS[vi].name;
+  $("evar").style.color = $("evdots").style.color = p.dark ? "#fff" : "#000";
+  $("evdots").innerHTML = arranging ? "" : VARIANTS.map((_, i) => `<i class="${i === vi ? "on" : ""}"></i>`).join("");
+  $("eFlavorDot").style.background = draft.flavor;
+  ["eFlavor", "eMore"].forEach(id => $(id).style.visibility = arranging ? "hidden" : "visible");
+  $("eCancel").style.visibility = arranging ? "hidden" : "visible";
+  $("eDone").textContent = arranging ? "Fine" : editing.index === null ? "Aggiungi" : "Fine";
+  document.querySelectorAll("#epage [data-zone]").forEach(z => z.classList.toggle("sel", z.dataset.zone === sel));
+  sync();
+}
+(function editorGestures() {
+  const e = $("epage"); let sx, sy, active = false, axis, dx0;
+  e.addEventListener("pointerdown", ev => { active = true; sx = ev.clientX; sy = ev.clientY; axis = null; });
+  e.addEventListener("pointermove", ev => {
+    if (!active || arranging) return; const dx = ev.clientX - sx, dy = ev.clientY - sy;
+    if (!axis && Math.hypot(dx, dy) > 8) axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+    if (axis === "x") { const pg = e.querySelector(".page"); pg.style.transition = "none"; pg.style.filter = `brightness(${1 - Math.min(.25, Math.abs(dx) / 800)})`; }
+  });
+  e.addEventListener("pointerup", ev => {
+    if (!active) return; active = false; const dx = ev.clientX - sx;
+    if (axis === "x" && Math.abs(dx) > 50) {
+      const vi = VARIANTS.findIndex(v => v.id === draft.variant), ni = Math.max(0, Math.min(VARIANTS.length - 1, vi + (dx < 0 ? 1 : -1)));
+      if (ni !== vi) { draft.variant = VARIANTS[ni].id; say("Variante: " + VARIANTS[ni].name); }
+      renderEditor(); return;
+    }
+    if (axis) { renderEditor(); return; }
+    const z = ev.target.closest("[data-zone]"); if (!z || arranging) return;
+    openZone(z.dataset.zone);
+  });
+})();
+
+function openSheet(title, html, bind) {
+  $("shTitle").textContent = title; $("shBody").innerHTML = html;
+  $("sheet").classList.add("on"); $("scrim").classList.add("on");
+  bind && bind($("shBody"));
+}
+function closeSheet() { $("sheet").classList.remove("on"); $("scrim").classList.remove("on"); $("emenu").classList.remove("on"); sel = null; if (screen === "editor") renderEditor(); }
+$("shClose").onclick = closeSheet;
+$("scrim").onclick = closeSheet;
+
+function openZone(zone) {
+  sel = zone; renderEditor();
+  const redraw = () => { renderEditor(); };
+  if (zone === "date") {
+    openSheet("Carattere e colore", `
+      <div class="fonts">${FONTS.map(f => `<button data-f="${f.id}" class="${draft.font === f.id ? "on" : ""}" style="font-family:${f.css};font-weight:${f.w}">23</button>`).join("")}</div>
+      <h5>Spessore</h5><input type="range" min="100" max="900" step="100" value="${draft.weight}" id="wt">
+      <h5>Colore</h5><div class="chips"><button class="chip ${draft.dateColour === "flavor" ? "on" : ""}" data-dc="flavor">Flavor</button><button class="chip ${draft.dateColour === "ink" ? "on" : ""}" data-dc="ink">Inchiostro</button></div>`, b => {
+      b.querySelectorAll("[data-f]").forEach(x => x.onclick = () => { draft.font = x.dataset.f; b.querySelectorAll("[data-f]").forEach(y => y.classList.toggle("on", y === x)); redraw(); });
+      b.querySelector("#wt").oninput = ev => { draft.weight = +ev.target.value; redraw(); };
+      b.querySelectorAll("[data-dc]").forEach(x => x.onclick = () => { draft.dateColour = x.dataset.dc; b.querySelectorAll("[data-dc]").forEach(y => y.classList.toggle("on", y === x)); redraw(); });
+    });
+  } else if (zone === "greeting") {
+    openSheet("Saluto", `<div class="chips">${Object.entries({ time: "Secondo l'ora", name: "Col nome", motto: "Motto", none: "Nessuno" }).map(([k, n]) => `<button class="chip ${draft.greeting === k ? "on" : ""}" data-g="${k}">${n}</button>`).join("")}</div>`, b => {
+      b.querySelectorAll("[data-g]").forEach(x => x.onclick = () => { draft.greeting = x.dataset.g; b.querySelectorAll("[data-g]").forEach(y => y.classList.toggle("on", y === x)); redraw(); });
+    });
+  } else if (zone === "stickers") {
+    const em = ["📚", "✏️", "☕️", "🌙", "⭐️", "🎧", "🧪", "💻", "🌿", "🔥", "🎓", "📐"];
+    openSheet("Sticker", `<div class="chips">${em.map(x => `<button class="chip ${draft.stickers.includes(x) ? "on" : ""}" data-e="${x}" style="font-size:22px;padding:6px 10px">${x}</button>`).join("")}</div>
+      <p style="color:#6e6e73;font-size:13px;margin-top:12px">Fino a tre, accanto alla data. Trascinali sulla pagina per spostarli.</p>`, b => {
+      b.querySelectorAll("[data-e]").forEach(x => x.onclick = () => {
+        const i = draft.stickers.indexOf(x.dataset.e); if (i >= 0) draft.stickers.splice(i, 1); else if (draft.stickers.length < 3) draft.stickers.push(x.dataset.e);
+        b.querySelectorAll("[data-e]").forEach(y => y.classList.toggle("on", draft.stickers.includes(y.dataset.e))); redraw(); });
+    });
+  } else if (zone.startsWith("section:")) {
+    const i = +zone.split(":")[1], s = draft.sections[i];
+    openSheet(SECTIONS[s.k], `
+      <h5 style="margin-top:4px">Forma</h5><div class="seg">${[["card", "Scheda"], ["list", "Elenco"], ["compact", "Compatta"]].map(([k, n]) => `<button data-form="${k}" class="${s.form === k ? "on" : ""}">${n}</button>`).join("")}</div>
+      <button class="rowbtn" data-tint>Colore del Flavor <span style="margin-left:auto">${s.tint ? "Sì" : "No"}</span></button>
+      <button class="rowbtn" data-arr>Disponi le sezioni…</button>
+      <button class="rowbtn danger" data-rm>Togli dalla pagina</button>`, b => {
+      b.querySelectorAll("[data-form]").forEach(x => x.onclick = () => { s.form = x.dataset.form; b.querySelectorAll("[data-form]").forEach(y => y.classList.toggle("on", y === x)); redraw(); });
+      b.querySelector("[data-tint]").onclick = ev => { s.tint = !s.tint; ev.currentTarget.lastElementChild.textContent = s.tint ? "Sì" : "No"; redraw(); };
+      b.querySelector("[data-arr]").onclick = () => { closeSheet(); startArranging(); };
+      b.querySelector("[data-rm]").onclick = () => { draft.sections.splice(i, 1); closeSheet(); };
+    });
+  } else if (zone === "addSection") {
+    const hidden = Object.keys(SECTIONS).filter(k => !draft.sections.some(s => s.k === k));
+    openSheet("Aggiungi sezione", hidden.map(k => `<button class="rowbtn" data-k="${k}">＋ ${SECTIONS[k]}</button>`).join(""), b => {
+      b.querySelectorAll("[data-k]").forEach(x => x.onclick = () => { draft.sections.push({ k: x.dataset.k, form: "list", tint: false }); closeSheet(); });
+    });
+  }
+}
+function openFlavor() {
+  openSheet("Flavor", `<div class="swatches">${SWATCHES.map(([n, h]) => `<button class="sw ${draft.flavor === h ? "on" : ""}" title="${n}" data-h="${h}" style="background:${h}"></button>`).join("")}</div>
+    <button class="rowbtn">🖼️ Colori da una foto</button><button class="rowbtn">🪄 Colori suggeriti</button>`, b => {
+    b.querySelectorAll("[data-h]").forEach(x => x.onclick = () => { draft.flavor = x.dataset.h; b.querySelectorAll("[data-h]").forEach(y => y.classList.toggle("on", y === x)); renderEditor(); });
+  });
+}
+$("eFlavor").onclick = openFlavor;
+$("eMore").onclick = () => {
+  const dirty = JSON.stringify(draft) !== JSON.stringify(editing.original);
+  $("emenu").innerHTML = `<button data-m="app">App <span>${appOf(draft).paired ? "Abbinata" : "Su misura"} ›</span></button><button data-m="paper">Carta e motivo <span>›</span></button>
+    <button data-m="arrange">Disponi le sezioni</button><button data-m="rename">Rinomina</button>
+    <button data-m="reset" ${dirty ? "" : "disabled"}>Ripristina</button>`;
+  $("emenu").classList.add("on"); $("scrim").classList.add("on");
+};
+$("emenu").onclick = e => {
+  const m = e.target.closest("[data-m]")?.dataset.m; if (!m) return;
+  $("emenu").classList.remove("on"); $("scrim").classList.remove("on");
+  if (m === "arrange") startArranging();
+  if (m === "reset") { draft = clone(editing.original); renderEditor(); say("Ripristinato"); }
+  if (m === "rename") { const n = prompt("Nome dello stile", draft.name); if (n !== null) { draft.name = n.trim(); renderEditor(); } }
+  if (m === "paper") openSheet("Carta e motivo", `<div class="chips">${[["none", "Nessuno"], ["mesh", "Sfumatura"], ["ovals", "Maglia ovale"], ["stars", "Stelle"]].map(([k, n]) => `<button class="chip ${draft.pattern === k ? "on" : ""}" data-p="${k}">${n}</button>`).join("")}</div><h5>Grana</h5><input type="range">`, b =>
+    b.querySelectorAll("[data-p]").forEach(x => x.onclick = () => { draft.pattern = x.dataset.p; b.querySelectorAll("[data-p]").forEach(y => y.classList.toggle("on", y === x)); renderEditor(); }));
+  if (m === "app") openAppEditor("menu");
+};
+function startArranging() { arranging = true; renderEditor(); say("Disponi: trascina le sezioni (riordino non simulato)"); }
+
+$("eCancel").onclick = () => {
+  const target = editing.index; draft = null; editing = null;
+  screen = "gallery"; show("gallery"); setStatusTint(true); if (target === null) { page = lib.looks.length; } layoutGallery(false);
+  say("Annullato"); sync();
+};
+$("eDone").onclick = () => {
+  if (arranging) { arranging = false; renderEditor(); return; }
+  if (editing.index !== null) {
+    lib.looks[editing.index] = clone(draft); say("Salvato: " + (draft.name || "Senza nome"));
+    draft = null; editing = null; screen = "gallery"; show("gallery"); renderGallery(); setStatusTint(true); sync(); return;
+  }
+  // the first time a look is saved, it asks what the app should wear with it
+  showPairQuestion();
+};
+
+/** The one question at the end of adding: pair the app with the page, or dress it separately. */
+function showPairQuestion() {
+  screen = "pair";
+  $("confirm").innerHTML = `<div class="pair">
+      <figure><div class="thumb">${scaled(draft, 92)}</div><figcaption>Oggi</figcaption></figure>
+      <figure><div class="thumb">${scaledApp(draft, 92, "app")}</div><figcaption>App</figcaption></figure></div>
+    <p>L'app prende colore, icona e barra da questo stile. Puoi cambiarlo quando vuoi da ••• › App.</p>
+    <button class="bluebtn" data-c="pair">Abbina all'app</button><br><button class="plainbtn" data-c="custom">Personalizza l'app</button>`;
+  $("confirm").classList.add("on"); $("scrim").classList.add("on"); sync();
+}
+$("confirm").onclick = e => {
+  const c = e.target.closest("[data-c]")?.dataset.c; if (!c) return;
+  $("confirm").classList.remove("on"); $("scrim").classList.remove("on");
+  if (c === "pair") { draft.app = { paired: true }; addDraft(); }
+  else openAppEditor("first");
+};
+/** A new look is always put in use: it lands beside the others and drops into the middle. */
+function addDraft() {
+  const i = lib.looks.length; lib.looks.push(clone(draft)); lib.selection = i;
+  say(`Aggiunto e in uso: ${draft.name || "Senza nome"} · app ${appOf(draft).paired ? "abbinata" : "su misura"}`);
+  draft = null; editing = null;
+  screen = "gallery"; page = i; lift = 0; lifted = false; show("gallery"); renderGallery(); setStatusTint(true);
+  const cw = slots[i].firstElementChild; cw.style.transition = "none"; cw.style.transform = `scale(${1 / CARD})`;
+  requestAnimationFrame(() => requestAnimationFrame(() => layoutGallery(true)));
+  sync();
+}
+
+/* ---------- App editor ---------- */
+let appFrom = null, appBefore = null, aopt = null;
+function tabbarHTML(look, on) {
+  const a = appOf(look);
+  const tabs = [["◉", "Oggi"], ["▦", "Corsi"], ["▤", "Calendario"], ["⌕", "Cerca"]];
+  return `<div class="apptab ${a.bar}" style="--a-tint:${a.tint}">${tabs.map(([i, n]) => `<span class="${n === on ? "on" : ""}"><i>${i}</i>${n}</span>`).join("")}</div>`;
+}
+function iconHTML(look, size) {
+  const a = appOf(look);
+  const [bg, fg] = { classic: ["#0F3D6E", "#fff"], flavor: [a.tint, "#fff"], dark: ["#111", a.tint], light: ["#fff", a.tint] }[a.icon];
+  return `<div class="appicon" style="width:${size}px;height:${size}px;border-radius:${size * .225}px;background:${bg};color:${fg};font-size:${size * .42}px">PV</div>`;
+}
+function appHTML(look, mode) {
+  const a = appOf(look), p = palette(look), dark = p.dark;
+  const vars = `--a-bg:${dark ? "#0b0b0d" : "#f2f2f7"};--a-card:${dark ? "#1c1c1e" : "#fff"};--a-ink:${dark ? "#f5f5f7" : "#111"};--a-hair:${dark ? "rgba(255,255,255,.1)" : "rgba(0,0,0,.07)"};--a-glass:${dark ? "rgba(60,60,67,.5)" : "rgba(255,255,255,.7)"};--a-tint:${a.tint}`;
+  if (mode === "home") {
+    const [h] = hexToHsl(a.tint);
+    const wall = `linear-gradient(160deg, ${hsl(h + 20, 60, 62)}, ${hsl(h - 20, 55, 30)})`;
+    const cell = (x) => x === 5 ? `<div>${iconHTML(look, 64)}<div class="lbl">PoliVerse</div></div>` : `<div><div class="ph"></div><div class="lbl">&nbsp;</div></div>`;
+    return `<div class="apppage" style="${vars}"><div class="home" style="--h-wall:${wall}"><div class="grid">${Array.from({ length: 20 }, (_, i) => cell(i)).join("")}</div>
+      <div class="dock">${"<div class='ph'></div>".repeat(4)}</div></div></div>`;
+  }
+  const courses = [["AN", "Analisi Matematica II", "10 CFU · 2° semestre", 62, 1], ["FI", "Fondamenti di Informatica", "10 CFU · 1° semestre", 88, .8], ["FT", "Fisica Tecnica", "8 CFU · 2° semestre", 35, .6]];
+  return `<div class="apppage" style="${vars}"><div class="ttl">Corsi</div><div class="list">
+    ${courses.map(([c, n, m, pr, o]) => `<div class="course"><span class="chip2" style="--o:${o}">${c}</span><div style="flex:1"><b>${n}</b><small>${m}</small><div class="prog"><i style="width:${pr}%"></i></div></div></div>`).join("")}
+    <div class="link">Tutti i corsi ›</div></div>${tabbarHTML(look, "Corsi")}</div>`;
+}
+function scaledApp(look, width, mode) { return `<div style="transform:scale(${width / W});transform-origin:0 0;width:${W}px;height:${H}px;position:absolute">${appHTML(look, mode)}</div>`; }
+
+/** Opens the app's half: straight after adding ("first"), or later from ••• › App ("menu"). */
+function openAppEditor(from) {
+  appFrom = from; appBefore = clone(draft.app || { paired: true }); aopt = null;
+  if (appBefore.paired) draft.app = { paired: true };
+  screen = "appedit"; show("appedit"); renderAppEditor();
+  say(from === "first" ? "App: personalizza dopo l'aggiunta" : "App: da ••• › App");
+}
+function unpair() {
+  if (!appOf(draft).paired) return;
+  const a = appOf(draft); draft.app = { paired: false, tint: a.tint, icon: a.icon, bar: a.bar };
+}
+function renderAppEditor() {
+  const a = appOf(draft);
+  $("apreview").innerHTML = appHTML(draft, aopt === "icon" ? "home" : "app");
+  setStatusTint(true);
+  const opts = [["pair", "Abbinata", "🔗"], ["tint", "Colore", "●"], ["icon", "Icona", "▢"], ["bar", "Barra", "▭"]];
+  $("aopts").innerHTML = opts.map(([k, n, ic]) => {
+    const on = k === "pair" ? a.paired : aopt === k;
+    const glyph = k === "tint" ? `<span style="width:22px;height:22px;border-radius:11px;background:${a.tint};box-shadow:0 0 0 2px #fff"></span>` : k === "icon" ? iconHTML(draft, 26) : ic;
+    return `<button class="aopt ${on ? "on" : ""}" data-a="${k}"><span class="c">${glyph}</span>${n}</button>`;
+  }).join("");
+  const st = $("astrip");
+  st.classList.toggle("off", !aopt);
+  if (aopt === "pair") st.innerHTML = `<span class="note">${a.paired ? "Colore, icona e barra seguono Oggi: cambiano quando cambi lo stile." : "Tocca per tornare ad abbinare l'app a Oggi."}</span>`;
+  if (aopt === "tint") st.innerHTML = SWATCHES.map(([n, h]) => `<button class="sw ${!a.paired && a.tint === h ? "on" : ""}" data-t="${h}" title="${n}" style="background:${h}"></button>`).join("");
+  if (aopt === "icon") st.innerHTML = ICONS.map(([k, n]) => { const l = clone(draft); l.app = { paired: false, tint: a.tint, icon: k, bar: a.bar };
+    return `<button class="opt ${a.icon === k ? "on" : ""}" data-i="${k}">${iconHTML(l, 46)}${n}</button>`; }).join("");
+  if (aopt === "bar") st.innerHTML = BARS.map(([k, n, g]) => `<button class="opt ${a.bar === k ? "on" : ""}" data-b="${k}" style="min-width:74px"><span style="font-size:22px">${g}</span>${n}</button>`).join("");
+  sync();
+}
+$("aopts").onclick = e => {
+  const k = e.target.closest("[data-a]")?.dataset.a; if (!k) return;
+  if (k === "pair") {
+    // pairing again throws the app's own choices away: it follows Oggi from here
+    if (!appOf(draft).paired) { draft.app = { paired: true }; say("App abbinata a Oggi"); }
+    aopt = aopt === "pair" ? null : "pair";
+  } else aopt = aopt === k ? null : k;
+  renderAppEditor();
+};
+$("astrip").onclick = e => {
+  const t = e.target.closest("[data-t]"), i = e.target.closest("[data-i]"), b = e.target.closest("[data-b]");
+  if (!t && !i && !b) return;
+  // any choice of its own takes the app off the pairing
+  unpair();
+  if (t) draft.app.tint = t.dataset.t;
+  if (i) draft.app.icon = i.dataset.i;
+  if (b) draft.app.bar = b.dataset.b;
+  renderAppEditor();
+};
+$("aCancel").onclick = () => {
+  draft.app = appBefore;
+  if (appFrom === "first") { show("editor"); renderEditor(); showPairQuestion(); }
+  else { screen = "editor"; show("editor"); renderEditor(); }
+  say("App: annullato");
+};
+$("aDone").onclick = () => {
+  if (appFrom === "first") { show("editor"); addDraft(); }
+  else { screen = "editor"; show("editor"); renderEditor(); say("App: " + (appOf(draft).paired ? "abbinata" : "su misura") + " (salvata con Fine)"); }
+};
+
+$("btnEdit").onclick = () => openEditor(lib.looks[page], page);
+$("btnAdd").onclick = openAdd;
+$("trash").onclick = deleteMiddle;
+$("app").addEventListener("click", e => { if (e.target.closest("[data-act=openCustomize]")) openGallery(); });
+
+/* ---------- Side panel jumps ---------- */
+document.querySelector(".jump").onclick = e => {
+  const g = e.target.dataset.go; if (!g) return;
+  $("add").classList.remove("on"); $("confirm").classList.remove("on"); closeSheet();
+  if (g === "reset") { lib = initial(); log = []; screen = "app"; renderApp(); show("app"); sync(); return; }
+  if (g === "app") { screen = "app"; renderApp(); show("app"); sync(); }
+  if (g === "gallery") openGallery();
+  if (g === "add") { if (screen !== "gallery") openGallery(); setTimeout(openAdd, 50); }
+  if (g === "editNew") { if (screen !== "gallery") openGallery(); openEditor(clone(PRESETS[5]), null); }
+  if (g === "pair") { if (screen !== "gallery") openGallery(); openEditor(clone(PRESETS[7]), null); showPairQuestion(); }
+  if (g === "appMenu") { if (screen !== "gallery") openGallery(); page = lib.selection; openEditor(lib.looks[lib.selection], lib.selection); openAppEditor("menu"); }
+  if (g === "editOld") { if (screen !== "gallery") openGallery(); page = lib.selection; openEditor(lib.looks[lib.selection], lib.selection); }
+};
+
+renderApp(); sync();
+</script>
+</body>
+</html>

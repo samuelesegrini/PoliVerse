@@ -337,6 +337,7 @@ struct FeatureTour<Actions: View>: View {
         .onScrollGeometryChange(for: CGPoint.self) { geometry in
             CGPoint(x: geometry.contentOffset.x, y: geometry.contentInsets.leading)
         } action: { _, moved in
+            print("TOURTEST x", moved.x, CACurrentMediaTime())
             guard stride > 0 else { return }
             motion.offset = moved.x
             motion.cards = (moved.x + moved.y) / stride
@@ -345,6 +346,7 @@ struct FeatureTour<Actions: View>: View {
             if !drive.isDrifting { drive.cursor = moved.x }
         }
         .onScrollPhaseChange { _, phase in
+            print("TOURTEST phase", phase)
             // The row's own drift is written unanimated and so is reported as
             // `.idle`: only a finger, or the coast after one, is a touch.
             drive.isHeld = phase == .tracking || phase == .interacting || phase == .decelerating
@@ -457,7 +459,12 @@ struct FeatureTour<Actions: View>: View {
         // still growing and still out of focus is two movements at once, and
         // neither is legible.
         guard !Task.isCancelled else { return }
-        drive.start()
+        print("TOURTEST start", drive.cursor)
+        let x0 = drive.cursor
+        withAnimation(.timingCurve(0.42, 0, 0.7, 0.4, duration: 1.6)) { position.scrollTo(x: x0 + 64) } completion: {
+            print("TOURTEST join")
+            withAnimation(.linear(duration: 50)) { position.scrollTo(x: x0 + 64 + 4000) }
+        }
     }
 }
 
@@ -1467,5 +1474,16 @@ private struct TourDepth: ViewModifier {
                 .rotation3DEffect(.degrees(max(min(turn, 1), -1) * feel.sideRotation),
                                   axis: (x: 0, y: 1, z: 0), perspective: 0.55)
         }
+    }
+}
+
+struct TestDrift: CustomAnimation {
+    var pace: Double, ramp: Double, distance: Double
+    func animate<V: VectorArithmetic>(value: V, time: TimeInterval, context: inout AnimationContext<V>) -> V? {
+        let x = min(time / ramp, 1)
+        var d = pace * ramp * (x*x*x - x*x*x*x/2)
+        if time > ramp { d += pace * (time - ramp) }
+        if d >= distance { return nil }
+        return value.scaled(by: d / distance)
     }
 }

@@ -251,3 +251,9 @@ private struct BentoTileStyle: ButtonStyle {
     BentoPanel(style: $style, path: $path, arranging: $arranging, detent: $detent)
         .previewEnvironment()
 }
+
+/// How far the panel rests open.
+extension BentoPanel {
+    /// The panel's resting height: the page above stays visible and live.
+    static let small = PresentationDetent.fraction(0.46)
+}

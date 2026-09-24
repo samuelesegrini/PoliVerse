@@ -72,8 +72,7 @@ struct SectionFormPicker: View {
             }
         }
         .padding(.bottom, 18)
-        .navigationTitle(kind.title)
-        .navigationBarTitleDisplayMode(.inline)
+        .panelTitle(kind.title)
         // Swiping to a card is choosing it: the page behind follows at once,
         // the way the gallery's carousel works.
         .onChange(of: page) { _, form in
@@ -314,10 +313,7 @@ private struct SectionControlsCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             materials
-            Picker("Densità", selection: section.density) {
-                ForEach(TodaySection.Density.allCases) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented)
+            GlassSegmentedPicker("Densità", selection: section.density) { Text($0.title) }
 
             if kind.listsItems {
                 Stepper(value: section.itemLimit, in: TodaySection.itemLimits) {

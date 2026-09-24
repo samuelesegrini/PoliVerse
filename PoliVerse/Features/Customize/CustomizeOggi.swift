@@ -1,63 +1,71 @@
 import SwiftUI
 
-/// Personalizza, opened from Oggi's bar: one surface with two modes.
+/// Personalizza, opened from Oggi's bar: the student's looks, the way the Lock
+/// Screen keeps its wallpapers.
 ///
-/// **Sfoglia.** The saved looks are paged like the Lock Screen's, at a reduced
-/// size. The look in the middle is the look the app uses — swiping is
-/// choosing, and the page behind changes with it. There is nothing to confirm,
-/// and nothing to lose: every look stays saved, so swiping back undoes it.
+/// **The gallery.** The saved looks are cards on black, the last one an empty
+/// card to add another. The look in the middle is the look the app uses —
+/// swiping is choosing, and every look stays saved, so swiping back undoes it.
+/// Tapping the middle card goes back to the app wearing it. Pulling a card up
+/// lifts it off the gallery and shows the trash under it; the delete is
+/// immediate, with Annulla offered for a few seconds. With one look left the
+/// card only stretches: the page always needs one.
 ///
-/// **Modifica.** Tapping the middle card grows it to full size in place and
-/// raises the bento panel. Changes land on the look as they are made, exactly
-/// as the app will draw them, and ``Ripristina`` puts the look back the way it
-/// was when editing started. Fine lowers the panel and shrinks the card back.
+/// **Editing.** Personalizza grows the middle card to full size and hands it to
+/// ``LookEditor``, which works on a draft: Fine keeps it, Annulla drops it.
 ///
-/// So the whole flow has two ways out, each meaning one thing: Fine leaves
-/// editing, Chiudi leaves Personalizza. Nothing else commits anything.
+/// **Adding.** The + button, or the empty card, opens ``NewLookGallery``;
+/// picking a starting point opens the editor on it, and Aggiungi asks once what
+/// the app should wear with it (``AppPairQuestion``): pair it with the page, or
+/// dress it in ``AppLookEditor``. Either way the new look goes in use.
 ///
-/// Laid over the app by ``RootView``. Like the Lock Screen, the look in use
-/// starts covering the screen, exactly where the app is, and shrinks into the
-/// middle card while the rest of the gallery fades in; closing grows the
-/// middle card back over the app before the gallery goes.
+/// Laid over the app by ``RootView``. The look in use starts covering the
+/// screen, exactly where the app is, and shrinks into the middle card while
+/// the gallery fades in; closing grows it back over the app before the gallery
+/// goes, and puts the look's icon on the Home Screen.
 struct CustomizeOggi: View {
     /// The environment's `shell`.
     @Environment(\.shell) private var shell
-    /// The shared ``Session``, from the environment.
-    @Environment(Session.self) private var session
-    /// The shared ``AgendaModel``, from the environment.
-    @Environment(AgendaModel.self) private var agenda
-    /// Whether the interface is in light or dark mode.
-    @Environment(\.colorScheme) private var scheme
     @AppStorage(TodayStyle.storageKey) private var active = TodayStyle()
     @AppStorage(TodayStyle.libraryKey) private var storedLibrary = ""
     @AppStorage(TodayStyle.selectionKey) private var storedSelection = 0
 
     /// The saved looks and which one the page uses.
     @State private var library: LookLibrary
-    /// The card in the middle of the carousel, or `nil` to follow the library's selection.
+    /// The card in the middle of the carousel, or `nil` to follow the library's
+    /// selection. One past the last look is the empty card.
     @State private var page: Int?
-    /// The card whose deletion is being confirmed.
-    @State private var deleting: Int?
-    /// The middle card covers the screen: on opening, while editing, and on
-    /// closing.
+    /// The middle card covers the screen, on opening and on closing.
     @State private var expanded = true
-    /// The middle card is being edited rather than browsed.
-    @State private var editing = false
-    /// The look as it was when editing started, for Ripristina.
-    @State private var restorePoint: TodayStyle?
-    @State private var panelPath: [CustomizePage] = []
-    @State private var panelDetent = BentoPanel.small
-    @State private var arranging = false
-    /// Where a new look comes from: a copy, a theme, or nothing.
+    /// The middle card covers the screen for editing.
+    @State private var filling = false
+    /// How far the middle card has been pulled up; negative is up.
+    @State private var lift: CGFloat = 0
+    /// The middle card rests lifted, with the trash showing.
+    @State private var lifted = false
+    /// The card on its way out after the trash is tapped.
+    @State private var removing: Int?
+    /// After a delete, the first card that moved into the gap: it and the cards
+    /// after it start a place to the right and slide in, so the row closes up.
+    @State private var closing: Int?
+    /// The look just deleted, while Annulla can still bring it back.
+    @State private var removed: RemovedLook?
+    /// The look being edited, if any.
+    @State private var edit: LookEdit?
     @State private var addingLook = false
-    /// The card being renamed.
-    @State private var renaming: Int?
-    @State private var newName = ""
+    /// The question at the end of adding is up.
+    @State private var askingApp = false
+    /// Where the app half's editor was opened from, while it is open.
+    @State private var appEditor: AppEditorOrigin?
+    /// The app half as it was when its editor opened, for its Annulla.
+    @State private var appBefore = AppLook()
 
     /// How much smaller than the screen a card is.
     static let cardScale: CGFloat = 0.68
     /// The curve a card grows to cover the screen on, and shrinks back.
     private static let expand = Animation.spring(duration: 0.45, bounce: 0.1)
+    /// How far above its place a lifted card rests.
+    private static let liftStop: CGFloat = 150
 
     /// Reads the saved looks before the first layout, so the carousel opens on the one in use.
     init() {
@@ -70,31 +78,19 @@ struct CustomizeOggi: View {
         _page = State(initialValue: library.selection)
     }
 
-    /// The look in the middle: the one the app is using, and the one the panel
-    /// edits. Writing to it saves at once — there is no draft.
-    private var middleLook: Binding<TodayStyle> {
-        Binding {
-            let index = page ?? library.selection
-            return library.looks.indices.contains(index) ? library.looks[index] : library.active
-        } set: { look in
-            let index = page ?? library.selection
-            guard library.looks.indices.contains(index) else { return }
-            library.save(look, at: index)
-            if index == library.selection { active = library.active }
-        }
-    }
-
     /// Which card is in the middle: the one scrolled to, else the one in use.
     private var middle: Int { page ?? library.selection }
 
-    /// Editing has changed the look since it started.
-    private var hasChanges: Bool {
-        guard let restorePoint, library.looks.indices.contains(middle) else { return false }
-        return library.looks[middle] != restorePoint
-    }
+    /// The middle card is the empty one that adds a look.
+    private var onNewCard: Bool { middle >= library.looks.count }
 
-    /// Full size: covering the screen on the way in and out, and while editing.
-    private var filled: Bool { expanded || editing }
+    /// Full size: covering the screen on the way in and out, and for editing.
+    private var filled: Bool { expanded || filling }
+
+    /// The draft the editors change.
+    private var draft: Binding<TodayStyle> {
+        Binding { edit?.draft ?? library.active } set: { edit?.draft = $0 }
+    }
 
     /// The view's content.
     var body: some View {
@@ -104,13 +100,25 @@ struct CustomizeOggi: View {
             let insets = proxy.safeAreaInsets
             let screen = CGSize(width: proxy.size.width + insets.leading + insets.trailing,
                                 height: proxy.size.height + insets.top + insets.bottom)
+            let card = CGSize(width: screen.width * Self.cardScale, height: screen.height * Self.cardScale)
             ZStack {
-                Color(.secondarySystemBackground)
+                Color.black
                     .opacity(expanded ? 0 : 1)
-                carousel(screen: screen, insets: insets)
-                controls(insets: insets)
-                    .opacity(expanded ? 0 : 1)
-                    .allowsHitTesting(!expanded)
+                carousel(screen: screen, insets: insets, card: card)
+                chrome(screen: screen, insets: insets, card: card)
+                    .opacity(filled || edit != nil ? 0 : 1)
+                    .allowsHitTesting(!filled && edit == nil)
+                if let edit {
+                    LookEditor(look: draft, original: edit.original, isNew: edit.index == nil, insets: insets,
+                               cancel: cancelEditing, done: finishEditing, openApp: openAppFromMenu)
+                        .transition(edit.index == nil ? .move(edge: .bottom) : .identity)
+                        .zIndex(2)
+                }
+                if appEditor != nil {
+                    AppLookEditor(look: draft, screen: screen, insets: insets, cancel: cancelApp, done: finishApp)
+                        .transition(.move(edge: .bottom))
+                        .zIndex(3)
+                }
             }
             .frame(width: screen.width, height: screen.height)
             // Takes every touch while it is up, growing back included, so none
@@ -121,60 +129,29 @@ struct CustomizeOggi: View {
         .onAppear {
             withAnimation(Self.expand) { expanded = false }
         }
-        // The panel belongs to editing: it rises with it and steps away while
-        // sections are being arranged.
-        .sheet(isPresented: Binding(get: { editing && !arranging }, set: { _ in })) {
-            BentoPanel(style: middleLook, path: $panelPath, arranging: $arranging, detent: $panelDetent)
-                .presentationDetents([BentoPanel.small, .large], selection: $panelDetent)
-                .presentationBackgroundInteraction(.enabled(upThrough: BentoPanel.small))
-                .presentationDragIndicator(.visible)
+        .sheet(isPresented: $addingLook) {
+            NewLookGallery(current: library.active, pick: startAdding)
+        }
+        .sheet(isPresented: $askingApp) {
+            AppPairQuestion(look: draft.wrappedValue, pair: pairAndAdd, customise: customiseApp)
+                .presentationDetents([.height(500)])
                 .interactiveDismissDisabled()
         }
-        .sheet(isPresented: $addingLook) {
-            NewLookSheet(copying: library.looks.indices.contains(middle) ? library.looks[middle] : library.active,
-                         add: add)
-                .presentationDetents([.large])
-        }
-        .confirmationDialog("Eliminare questo stile?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
-                            titleVisibility: .visible) {
-            Button("Elimina stile", role: .destructive) {
-                if let deleting { delete(deleting) }
-            }
-            .accessibilityIdentifier("customize-delete-confirm")
-        } message: {
-            Text("Non si può annullare.")
-        }
-        .alert("Nome dello stile", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
-            TextField("Stile", text: $newName)
-                .accessibilityIdentifier("customize-name-field")
-            Button("Annulla", role: .cancel) {}
-            Button("Salva") {
-                if let renaming {
-                    library.rename(newName.trimmingCharacters(in: .whitespaces), at: renaming)
-                    if renaming == library.selection { active = library.active }
-                    persist()
-                }
-            }
-        }
+        .sensoryFeedback(.impact(weight: .medium), trigger: lifted) { _, new in new }
     }
 
     // MARK: - Gallery
 
-    /// The looks as cards to scroll through, the middle one snapping into place.
-    ///
-    /// - Parameters:
-    ///   - screen: The screen's size, which a card is a share of.
-    ///   - insets: The safe area, so a card sits clear of the bars.
-    /// - Returns: The carousel.
-    private func carousel(screen: CGSize, insets: EdgeInsets) -> some View {
-        let cardSize = CGSize(width: screen.width * Self.cardScale, height: screen.height * Self.cardScale)
-        return ScrollViewReader { reader in
+    /// The looks as cards to scroll through, then the empty card, the middle
+    /// one snapping into place.
+    private func carousel(screen: CGSize, insets: EdgeInsets, card: CGSize) -> some View {
+        ScrollViewReader { reader in
             ScrollView(.horizontal) {
                 LazyHStack(spacing: 18) {
-                    ForEach(Array(library.looks.enumerated()), id: \.offset) { index, look in
+                    ForEach(0...library.looks.count, id: \.self) { index in
                         let isMiddle = index == middle
-                        slot(look, at: index, screen: screen, insets: insets)
-                            .frame(width: cardSize.width, height: cardSize.height)
+                        slot(index, screen: screen, insets: insets)
+                            .frame(width: card.width, height: card.height)
                             .scrollTransition(.interactive, axis: .horizontal) { [filled] view, phase in
                                 // Off while covering the screen, where it would let
                                 // the app show through.
@@ -182,20 +159,27 @@ struct CustomizeOggi: View {
                                     .scaleEffect(phase.isIdentity || filled ? 1 : 0.92)
                                     .opacity(phase.isIdentity || filled ? 1 : 0.6)
                             }
+                            // A deleted card is pushed off through the top of the
+                            // screen, whole, the way it was being pulled — not
+                            // shrunk away in place.
+                            .offset(y: isMiddle ? (removing == index ? -screen.height : lift) : 0)
+                            .offset(x: (closing.map { index >= $0 } ?? false) ? card.width + 18 : 0)
                             .modifier(FillScreen(progress: isMiddle && filled ? 1 : 0, screen: screen))
                             .opacity(isMiddle || !filled ? 1 : 0)
                             .zIndex(isMiddle ? 1 : 0)
                             .id(index)
-                            .accessibilityIdentifier("customize-card-\(index)")
                     }
                 }
                 .scrollTargetLayout()
             }
             .scrollIndicators(.hidden)
+            // So a card pushed off the top leaves the screen rather than the
+            // scroll view.
+            .scrollClipDisabled()
             .scrollTargetBehavior(.viewAligned)
             .scrollPosition(id: $page, anchor: .center)
-            .scrollDisabled(filled)
-            .contentMargins(.horizontal, (screen.width - cardSize.width) / 2, for: .scrollContent)
+            .scrollDisabled(filled || edit != nil)
+            .contentMargins(.horizontal, (screen.width - card.width) / 2, for: .scrollContent)
             // The position's first value is not applied to a lazy stack: without
             // this the carousel opened on the first look while the look in use,
             // off to the side, was the one shrinking out of the app.
@@ -203,283 +187,232 @@ struct CustomizeOggi: View {
             // Swiping is choosing: the app takes the look that comes to rest in
             // the middle. Every look stays saved, so swiping back undoes it.
             .onChange(of: page) { _, page in
-                guard !editing, let page else { return }
+                if lift != 0 { withAnimation(.snappy) { drop() } }
+                guard edit == nil, let page, page < library.looks.count else { return }
                 use(page)
             }
         }
     }
 
-    /// One place in the carousel: a card to browse, or the live page to edit.
+    /// One place in the carousel: a look, or the empty card that adds one.
     @ViewBuilder
-    private func slot(_ look: TodayStyle, at index: Int, screen: CGSize, insets: EdgeInsets) -> some View {
-        if editing, index == middle {
-            editorPage(screen: screen, insets: insets)
-        } else {
-            card(look, screen: screen, insets: insets)
-                .onTapGesture { select(index) }
-                .contextMenu { cardMenu(index) }
+    private func slot(_ index: Int, screen: CGSize, insets: EdgeInsets) -> some View {
+        if index < library.looks.count {
+            let look = library.looks[index]
+            LookScreen(look: look, scale: Self.cardScale, screen: screen, insets: insets)
+                // A card whose look changes — its neighbour sliding into its
+                // place after a delete — is a new card, not the page animating
+                // from one look into the other.
+                .id(look.rawValue)
+                .shadow(color: .black.opacity(0.3), radius: 18, y: 8)
+                .contentShape(.rect(cornerRadius: 48 * Self.cardScale))
+                .onTapGesture { tap(index) }
+                .gesture(liftGesture(for: index))
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Text(look.displayName(at: index)))
-                .accessibilityValue(index == library.selection ? Text("In uso") : Text("\(index + 1) di \(library.looks.count)"))
+                .accessibilityValue(Text("\(index + 1) di \(library.looks.count)"))
                 .accessibilityAddTraits(.isButton)
-                .accessibilityHint(Text("Tocca per personalizzare"))
-                .accessibilityActions { cardMenu(index) }
-        }
-    }
-
-    /// A card's menu: rename, duplicate, and delete when more than one look is saved.
-    ///
-    /// - Parameter index: Which card.
-    /// - Returns: The menu's items.
-    @ViewBuilder
-    private func cardMenu(_ index: Int) -> some View {
-        Button("Rinomina", systemImage: "pencil") {
-            newName = library.looks.indices.contains(index) ? library.looks[index].name : ""
-            renaming = index
-        }
-        .accessibilityIdentifier("customize-rename")
-        Button("Duplica", systemImage: "plus.square.on.square") {
-            guard library.looks.indices.contains(index) else { return }
-            add(copy(of: library.looks[index]))
-        }
-        .accessibilityIdentifier("customize-duplicate")
-        if library.canRemove {
-            Button("Elimina stile", systemImage: "trash", role: .destructive) { deleting = index }
-        }
-    }
-
-    // MARK: - Controls
-
-    /// The glass controls over the carousel: the bar at the top, and the browsing or editing controls at the bottom.
-    ///
-    /// - Parameter insets: The safe area.
-    /// - Returns: The controls.
-    private func controls(insets: EdgeInsets) -> some View {
-        VStack(spacing: 0) {
-            topBar
-                .padding(.horizontal, 20)
-                .padding(.top, insets.top + 4)
-
-            Spacer()
-
-            if !editing {
-                browseControls
-                    .padding(.bottom, insets.bottom + 4)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(.snappy, value: editing)
-    }
-
-    /// The bar at the top: closing while browsing, and saving or restoring while editing.
-    @ViewBuilder
-    private var topBar: some View {
-        if editing {
-            // While arranging, the only way on is Fine, back to editing: the
-            // page underneath is the thing being dragged.
-            HStack {
-                if hasChanges, !arranging {
-                    Button("Ripristina", systemImage: "arrow.uturn.backward") { restore() }
-                        .labelStyle(.titleOnly)
-                        .buttonStyle(.glass)
-                        .accessibilityIdentifier("customize-restore")
+                .accessibilityHint(index == middle ? Text("Tocca per tornare all'app") : Text("Tocca per usarlo"))
+                .accessibilityAction(named: "Personalizza") { if index == middle { beginEditing() } }
+                .accessibilityAction(named: "Elimina stile") {
+                    if index == middle, library.canRemove { delete(index) }
                 }
-                Spacer()
-                Text(arranging ? "Disponi" : middleLook.wrappedValue.displayName(at: middle))
-                    .font(.headline)
-                    .lineLimit(1)
-                Spacer()
-                Button("Fine", systemImage: "checkmark") {
-                    if arranging {
-                        withAnimation(.snappy) { arranging = false }
-                    } else {
-                        endEditing()
-                    }
-                }
-                .labelStyle(.iconOnly)
-                .buttonStyle(.glassProminent)
-                .buttonBorderShape(.circle)
-                .accessibilityIdentifier(arranging ? "customize-arrange-done" : "customize-edit-done")
-            }
+                .accessibilityIdentifier("customize-card-\(index)")
         } else {
-            HStack {
-                // Every look is saved and the one in the middle is already in
-                // use: Chiudi has nothing left to decide.
-                Button("Chiudi", role: .close) { close() }
-                    .buttonStyle(.glass)
-                    .accessibilityIdentifier("customize-cancel")
-                Spacer()
+            NewLookCard()
+                .contentShape(.rect(cornerRadius: 48 * Self.cardScale))
+                .onTapGesture { tap(index) }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Nuovo stile")
+                .accessibilityAddTraits(.isButton)
+                .accessibilityIdentifier("customize-card-new")
+        }
+    }
+
+    /// Pulling the middle card up lifts it and shows the trash; pulling down,
+    /// or not far enough, sets it back. Sideways is the carousel's: the pan
+    /// only begins when it starts vertical, so the scroll view keeps every
+    /// horizontal swipe. A SwiftUI drag on the card took them all instead.
+    private func liftGesture(for index: Int) -> VerticalPan {
+        VerticalPan { translation in
+            guard index == middle, edit == nil else { return }
+            let start: CGFloat = lifted ? -Self.liftStop : 0
+            var y = start + translation
+            if y > 0 {
+                y /= 4
+            } else if !library.canRemove {
+                // The last look only stretches: there is no trash to show.
+                y = -pow(-y, 0.6)
+            } else if y < -Self.liftStop {
+                y = -Self.liftStop - pow(-y - Self.liftStop, 0.7)
+            }
+            lift = y
+        } ended: { velocity in
+            guard index == middle, edit == nil else { return }
+            let up = (lift < -70 || velocity < -600) && velocity < 600
+            withAnimation(.spring(duration: 0.4, bounce: 0.2)) {
+                lifted = library.canRemove && up
+                lift = lifted ? -Self.liftStop : 0
             }
         }
     }
 
-    /// The controls under the carousel while browsing: the page dots, and the ways to use or add a look.
+    // MARK: - Chrome
+
+    /// Everything around the cards: the name above, the trash and Annulla,
+    /// and the dots and buttons below.
+    private func chrome(screen: CGSize, insets: EdgeInsets, card: CGSize) -> some View {
+        let cardTop = (screen.height - card.height) / 2
+        let cardBottom = cardTop + card.height
+        let reveal = library.canRemove && !onNewCard ? min(max(-lift / 130, 0), 1) : 0
+        return ZStack(alignment: .top) {
+            Group {
+                if let removed {
+                    undoToast(removed)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                } else {
+                    VStack(spacing: 3) {
+                        Text(title)
+                            .font(.subheadline.weight(.semibold))
+                            .tracking(1.2)
+                        Text(subtitle)
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.secondary)
+                    }
+                    .opacity(lift < 0 ? 0 : 1)
+                    .accessibilityHidden(true)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            // Padding, not an offset: an offset moves what is drawn but not
+            // where VoiceOver and a test find it.
+            .padding(.top, cardTop - 52)
+
+            Button("Elimina stile", systemImage: "trash", role: .destructive) { delete(middle) }
+                .labelStyle(.iconOnly)
+                .font(.system(size: 30, weight: .medium))
+                .foregroundStyle(.red)
+                .frame(width: 80, height: 80)
+                .glassEffect(.regular.tint(.red.opacity(0.3)).interactive(), in: .circle)
+                .scaleEffect(0.6 + 0.4 * reveal)
+                .opacity(reveal)
+                .padding(.top, cardBottom - Self.liftStop + 50 + (Self.liftStop + lift) * 0.35)
+                .allowsHitTesting(lifted)
+                .accessibilityHidden(!lifted)
+                .accessibilityIdentifier("customize-trash")
+
+            browseControls
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .padding(.bottom, insets.bottom + 4)
+                .opacity(1 - min(max(-lift / 90, 0), 1))
+        }
+        .environment(\.colorScheme, .dark)
+        // The system's own type and white, whatever the look in use sets on the app.
+        .fontDesign(.default)
+        .tint(.white)
+        .animation(.snappy, value: removed)
+    }
+
+    /// The name of the card in the middle.
+    private var title: String {
+        onNewCard ? String(localized: "Nuovo stile").uppercased()
+            : library.looks[middle].displayName(at: middle).uppercased()
+    }
+
+    /// What the app wears with the card in the middle.
+    private var subtitle: LocalizedStringKey {
+        onNewCard ? "Da un tema, un colore o una foto"
+            : library.looks[middle].app.paired ? "App abbinata" : "App su misura"
+    }
+
+    /// Stile eliminato, with the way back, for a few seconds.
+    private func undoToast(_ removed: RemovedLook) -> some View {
+        HStack(spacing: 12) {
+            Text("Stile eliminato")
+                .font(.subheadline.weight(.semibold))
+            Button("Annulla") { undoDelete() }
+                .buttonStyle(.glass)
+                .controlSize(.small)
+                .accessibilityIdentifier("customize-undo")
+        }
+        .padding(.leading, 16)
+        .padding(.trailing, 6)
+        .padding(.vertical, 6)
+        .glassEffect(.regular, in: .capsule)
+        .task(id: removed.id) {
+            try? await Task.sleep(for: .seconds(5))
+            withAnimation(.snappy) { self.removed = nil }
+            // Past the way back: the deleted look's sticker images can go.
+            persist(pruning: true)
+        }
+    }
+
+    /// The controls under the carousel: the page dots, and the ways to edit or add a look.
     private var browseControls: some View {
-        VStack(spacing: 14) {
-            HStack(spacing: 7) {
+        VStack(spacing: 18) {
+            HStack(spacing: 8) {
                 ForEach(library.looks.indices, id: \.self) { index in
                     Circle()
                         .fill(index == middle ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
                         .frame(width: 7, height: 7)
                 }
+                Image(systemName: "plus")
+                    .font(.system(size: 8, weight: .heavy))
+                    .foregroundStyle(onNewCard ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
             }
             .animation(.snappy, value: page)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text("Stile \(middle + 1) di \(library.looks.count)"))
+            .accessibilityLabel(Text("Stile \(min(middle + 1, library.looks.count)) di \(library.looks.count)"))
 
             HStack(spacing: 12) {
                 Button { beginEditing() } label: {
-                    Label("Personalizza", systemImage: "paintbrush")
+                    Text("Personalizza")
+                        .font(.title3.weight(.semibold))
                         .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .buttonStyle(.glass)
+                .disabled(onNewCard)
                 .accessibilityIdentifier("customize-edit")
 
                 // The same 44-point label as Personalizza inside the same
-                // glass style, so the two come out the same height. A frame
-                // on the button itself sized only the hit area: the glass
-                // is drawn around the label, and was left a small circle.
+                // glass style, so the two come out the same height.
                 Button { addingLook = true } label: {
                     Label("Nuovo stile", systemImage: "plus")
                         .labelStyle(.iconOnly)
-                        // Larger than the brush beside it: alone in its
-                        // circle, a body-size plus reads as too light.
-                        // Sized inside the fixed frame, so the button keeps
-                        // Personalizza's height.
                         .font(.title2)
                         .frame(width: 44, height: 44)
                 }
-                .accessibilityIdentifier("customize-add")
                 .buttonStyle(.glass)
                 .buttonBorderShape(.circle)
+                .accessibilityIdentifier("customize-add")
             }
             .padding(.horizontal, 60)
         }
+        // White on black, as the Lock Screen's gallery: the look's tint belongs to the cards.
+        .tint(.white)
+        .foregroundStyle(.white)
     }
 
-    // MARK: - The page
+    // MARK: - Browsing
 
-    /// A look drawn as the app is at full screen size, bars included, then
-    /// scaled into a card.
-    private func card(_ look: TodayStyle, screen: CGSize, insets: EdgeInsets) -> some View {
-        VStack(spacing: 0) {
-            // The system's inline bar is 54 points tall; its controls sit in
-            // the top 44.
-            ReplicaNavigationBar(student: session.student, day: shell.day, bar: look.bar)
-                .padding(.bottom, 10)
-            TodayLanding(day: shell.day, style: look)
-            Spacer(minLength: 0)
-        }
-        .padding(.top, insets.top)
-        .overlay(alignment: .bottom) {
-            if !shell.singlePage {
-                VStack(spacing: 8) {
-                    if look.wantsCurrentClassAccessory, let current = CurrentClass.forAccessory(from: agenda.events, now: .now) {
-                        ReplicaAccessory(current: current)
-                    }
-                    ReplicaTabBar()
-                }
-                // Where the system floats the tab bar: lower than the safe
-                // area, above the home indicator.
-                .padding(.bottom, max(insets.bottom - 13, 0))
-            }
-        }
-        .frame(width: screen.width, height: screen.height, alignment: .top)
-        .tint(look.controlTint(scheme))
-        .background(TodayBackgroundView(style: look))
-        .clipShape(.rect(cornerRadius: 48))
-        .scaleEffect(Self.cardScale)
-        .frame(width: screen.width * Self.cardScale, height: screen.height * Self.cardScale)
-        .shadow(color: .black.opacity(0.18), radius: 24 * Self.cardScale, y: 10 * Self.cardScale)
-        .allowsHitTesting(false)
-        .contentShape(.rect(cornerRadius: 48 * Self.cardScale))
-    }
-
-    /// The same page, live: zones outlined and each one a way into its
-    /// controls. It stands in the carousel where its card was, so growing into
-    /// it and back is one movement rather than a screen arriving.
-    private func editorPage(screen: CGSize, insets: EdgeInsets) -> some View {
-        ScrollView {
-            TodayLanding(day: shell.day, draft: middleLook, arranging: arranging,
-                         onAddSticker: { panelPath = [.accessory] }) { zone in
-                // Holding a zone arranges the page; the tap that ends the
-                // hold must not also open the zone.
-                guard !arranging else { return }
-                panelPath = [CustomizePage(zone: zone)]
-                panelDetent = BentoPanel.small
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, insets.top + 52)
-            .padding(.bottom, arranging ? 120 : 420)
-        }
-        .frame(width: screen.width, height: screen.height)
-        .background(TodayBackgroundView(style: middleLook.wrappedValue))
-        .scaleEffect(Self.cardScale)
-        .frame(width: screen.width * Self.cardScale, height: screen.height * Self.cardScale)
-        .sensoryFeedback(.impact(weight: .medium), trigger: arranging) { _, new in new }
-        .tint(middleLook.wrappedValue.controlTint(scheme))
-        // The look's own light on the page alone: as `preferredColorScheme`
-        // this flipped the controls over it too, and a dark look being edited
-        // in daylight took the buttons with it.
-        .environment(\.colorScheme, middleLook.wrappedValue.appearance.colorScheme ?? scheme)
-    }
-
-    // MARK: - Actions
-
-    /// The middle card opens for editing; a card to the side comes to the
-    /// middle, which is also what puts it in use.
-    private func select(_ index: Int) {
-        if index == middle {
-            beginEditing()
-        } else {
+    /// The middle card goes back to the app, or adds a look if it is the empty
+    /// one; a card to the side comes to the middle; a lifted card is set back.
+    private func tap(_ index: Int) {
+        if lifted {
+            withAnimation(.spring(duration: 0.4, bounce: 0.2)) { drop() }
+        } else if index != middle {
             withAnimation(.snappy) { page = index }
+        } else if index >= library.looks.count {
+            addingLook = true
+        } else {
+            close()
         }
     }
 
-    /// Opens the middle card for editing, remembering the look as it was for Ripristina.
-    private func beginEditing() {
-        guard library.looks.indices.contains(middle) else { return }
-        restorePoint = library.looks[middle]
-        panelPath = []
-        panelDetent = BentoPanel.small
-        withAnimation(Self.expand) { editing = true }
-    }
-
-    /// Leaves editing and writes the library out.
-    private func endEditing() {
-        arranging = false
-        panelPath = []
-        restorePoint = nil
-        withAnimation(Self.expand) { editing = false }
-        persist()
-    }
-
-    /// Puts the look back the way it was when editing started. The one step
-    /// back the live model needs: everything else is visible and reversible by
-    /// changing it again.
-    private func restore() {
-        guard let restorePoint else { return }
-        withAnimation(.snappy) { middleLook.wrappedValue = restorePoint }
-    }
-
-    /// A copy carries the look's name with a mark, so two cards are never the
-    /// same word.
-    private func copy(of look: TodayStyle) -> TodayStyle {
-        var copy = look
-        copy.name = look.name.isEmpty ? "" : String("\(look.name) 2".prefix(TodayStyle.nameLimit))
-        return copy
-    }
-
-    /// Adds a look beside the one in the middle, brings it there — which puts
-    /// it in use — and opens it for editing.
-    private func add(_ look: TodayStyle) {
-        addingLook = false
-        let index = library.insert(look, after: middle)
-        persist()
-        withAnimation(.snappy) { page = index } completion: {
-            use(index)
-            beginEditing()
-        }
+    /// Sets a lifted card back in its place.
+    private func drop() {
+        lifted = false
+        lift = 0
     }
 
     /// Makes one look the page's.
@@ -492,148 +425,263 @@ struct CustomizeOggi: View {
         storedSelection = library.selection
     }
 
-    /// Deleting the look in use hands the page to its neighbour.
+    /// Sends the lifted card away, then deletes it and offers it back. Deleting
+    /// the look in use hands the page to its neighbour.
     private func delete(_ index: Int) {
-        guard library.remove(at: index) else { return }
-        active = library.active
-        // The cards are keyed by position: the one in the middle stays there
-        // only if the page moves back with it.
-        withAnimation(.snappy) { page = min(index < middle ? middle - 1 : middle, library.looks.count - 1) }
-        persist()
+        guard library.canRemove, library.looks.indices.contains(index) else { return }
+        let look = library.looks[index], selection = library.selection
+        withAnimation(.easeIn(duration: 0.3)) {
+            removing = index
+        } completion: {
+            // Not animated: the slot's offset would bring its new look down
+            // from the top where the deleted one went. The cards after it are
+            // put a place to the right instead, then slide into the gap.
+            guard library.remove(at: index) else { return }
+            active = library.active
+            removing = nil
+            closing = index
+            DispatchQueue.main.async {
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) { closing = nil }
+            }
+            drop()
+            // The cards are keyed by position: the one in the middle stays
+            // there only if the page moves with it.
+            page = min(index, library.looks.count - 1)
+            persist()
+            withAnimation(.snappy) { removed = RemovedLook(look: look, index: index, selection: selection) }
+        }
     }
 
-    /// Writes the library and the selection out, and drops sticker images no saved look draws.
-    private func persist() {
+    /// Puts the deleted look back where it was, in use as it was.
+    private func undoDelete() {
+        guard let removed else { return }
+        library.restore(removed.look, at: removed.index, selection: removed.selection)
+        active = library.active
+        persist()
+        withAnimation(.snappy) {
+            self.removed = nil
+            page = removed.index
+        }
+    }
+
+    /// Writes the library and the selection out; past the undo, also drops
+    /// sticker images no saved look draws any more.
+    private func persist(pruning: Bool = false) {
         storedLibrary = TodayStyle.encodeLibrary(library.looks)
         storedSelection = library.selection
-        // Sticker images no saved style draws any more.
+        guard pruning, removed == nil else { return }
         let inUse = library.looks.reduce(into: active.storedImageIDs) { $0.formUnion($1.storedImageIDs) }
         StickerStore.shared.prune(keeping: inUse)
     }
 
-    /// Grows the middle card back over the app, then goes. The app is already
-    /// wearing the middle look, so there is nothing to settle first.
+    /// Grows the middle card back over the app, puts its icon on the Home
+    /// Screen, then goes. The app is already wearing the middle look.
     private func close() {
-        persist()
+        drop()
+        removed = nil
+        persist(pruning: true)
+        let icon = library.active.appIcon
         withAnimation(Self.expand) {
             expanded = true
         } completion: {
             shell.isCustomizing = false
+            Task { await AppIconSwitcher.apply(icon) }
         }
+    }
+
+    // MARK: - Editing
+
+    /// Grows the middle card to full size, then hands it to the editor.
+    private func beginEditing() {
+        guard library.looks.indices.contains(middle) else { return }
+        let index = middle, look = library.looks[index]
+        drop()
+        withAnimation(Self.expand) {
+            filling = true
+        } completion: {
+            edit = LookEdit(draft: look, original: look, index: index)
+        }
+    }
+
+    /// Opens the editor on a starting point from the add gallery.
+    ///
+    /// - Parameter look: The look picked.
+    private func startAdding(_ look: TodayStyle) {
+        addingLook = false
+        withAnimation(.spring(duration: 0.5, bounce: 0.08)) {
+            edit = LookEdit(draft: look, original: look, index: nil)
+        }
+    }
+
+    /// Leaves the editor without keeping anything.
+    private func cancelEditing() {
+        guard let edit else { return }
+        if edit.index == nil {
+            withAnimation(.spring(duration: 0.45, bounce: 0.05)) { self.edit = nil }
+        } else {
+            self.edit = nil
+            withAnimation(Self.expand) { filling = false }
+        }
+    }
+
+    /// Keeps the draft: a saved look is written back; a new one asks about the app first.
+    private func finishEditing() {
+        guard let edit else { return }
+        guard let index = edit.index else {
+            askingApp = true
+            return
+        }
+        library.save(edit.draft, at: index)
+        if index == library.selection { active = library.active }
+        persist()
+        self.edit = nil
+        withAnimation(Self.expand) { filling = false }
+    }
+
+    // MARK: - The app half
+
+    /// Pairs the new look's app with its page, and adds it.
+    private func pairAndAdd() {
+        edit?.draft.pairApp()
+        askingApp = false
+        addNew()
+    }
+
+    /// Opens the app half before adding the new look.
+    private func customiseApp() {
+        askingApp = false
+        appBefore = draft.wrappedValue.app
+        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { appEditor = .adding }
+    }
+
+    /// Opens the app half of the look being edited, from ••• ▸ App.
+    private func openAppFromMenu() {
+        appBefore = draft.wrappedValue.app
+        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { appEditor = .menu }
+    }
+
+    /// Puts the app half back. After adding, the question comes back too.
+    private func cancelApp() {
+        edit?.draft.app = appBefore
+        let origin = appEditor
+        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { appEditor = nil }
+        if origin == .adding { askingApp = true }
+    }
+
+    /// Keeps the app half: after adding, that adds the look; from the menu it
+    /// returns to the editor, whose Fine saves it with the rest.
+    private func finishApp() {
+        let origin = appEditor
+        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { appEditor = nil }
+        if origin == .adding { addNew() }
+    }
+
+    /// Adds the new look at the end and puts it in use: the editor slides
+    /// away over the gallery, which has it in the middle.
+    private func addNew() {
+        guard let edit else { return }
+        library.append(edit.draft)
+        let index = library.looks.count - 1
+        library.use(index)
+        active = library.active
+        persist()
+        page = index
+        withAnimation(.spring(duration: 0.5, bounce: 0.05)) { self.edit = nil }
     }
 }
 
-/// Where a new look comes from: a copy of the one on screen, one of the
-/// themes, or a blank page. The copy leads, because it is what a student
-/// reaches for most often.
-private struct NewLookSheet: View {
-    /// The look a copy would be made from.
-    let copying: TodayStyle
-    /// Adds the chosen look to the library.
-    let add: (TodayStyle) -> Void
+/// A look being edited: the draft the editor changes, what it started as, and
+/// where it goes.
+private struct LookEdit: Equatable {
+    /// The look as it is being changed.
+    var draft: TodayStyle
+    /// The look as editing found it.
+    let original: TodayStyle
+    /// Its place in the library; `nil` for a look being added.
+    let index: Int?
+}
 
-    /// Closes this screen or sheet.
-    @Environment(\.dismiss) private var dismiss
-    /// Whether the interface is in light or dark mode.
-    @Environment(\.colorScheme) private var scheme
+/// A deleted look, kept while Annulla can bring it back.
+private struct RemovedLook: Equatable {
+    /// The look.
+    let look: TodayStyle
+    /// Where it was.
+    let index: Int
+    /// Which look was in use before it went.
+    let selection: Int
+    /// Tells two deletes of equal looks apart, so each gets its own countdown.
+    let id = UUID()
+}
 
-    /// The themes as a grid that fits as many per row as the sheet is wide.
-    private let columns = [GridItem(.adaptive(minimum: 104), spacing: 14)]
+/// Where the app half's editor was opened from.
+private enum AppEditorOrigin {
+    /// Straight after adding a look, from the question.
+    case adding
+    /// From the editor's ••• ▸ App.
+    case menu
+}
 
+/// The last card: nothing yet, and a way to add a look.
+private struct NewLookCard: View {
     /// The view's content.
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    Button { add(copying) } label: {
-                        HStack(spacing: 14) {
-                            swatch(copying)
-                                .frame(width: 64, height: 86)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("Copia questo stile")
-                                    .font(.headline)
-                                Text("Parti da com'è adesso e cambia quello che vuoi.")
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                                    .multilineTextAlignment(.leading)
-                            }
-                            Spacer(minLength: 0)
-                        }
-                        .padding(12)
-                        .frame(maxWidth: .infinity)
-                        .background(.quaternary.opacity(0.4), in: .rect(cornerRadius: 22))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("customize-new-duplicate")
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Temi")
-                            .font(.headline)
-                        LazyVGrid(columns: columns, spacing: 14) {
-                            ForEach(Array(TodayStyle.presets.enumerated()), id: \.offset) { index, preset in
-                                Button { add(preset) } label: {
-                                    VStack(spacing: 6) {
-                                        swatch(preset)
-                                            .frame(height: 132)
-                                        Text(preset.displayName(at: index))
-                                            .font(.caption)
-                                            .lineLimit(1)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityIdentifier("customize-new-preset-\(index)")
-                            }
-                        }
-                    }
-
-                    Button("Pagina vuota", systemImage: "square.dashed") { add(TodayStyle()) }
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .accessibilityIdentifier("customize-new-blank")
-                }
-                .padding(20)
-            }
-            .navigationTitle("Nuovo stile")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Annulla", role: .cancel) { dismiss() }
-                }
-            }
-        }
-    }
-
-    /// A look small enough to choose by: its background, its colour and the
-    /// shape of its date. Not the whole page — at this size the page is noise.
-    private func swatch(_ look: TodayStyle) -> some View {
-        TodayBackgroundView(style: look)
-            .overlay(alignment: .topLeading) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("21")
-                        .font(look.dateFont.font(size: 30, weight: look.dateWeight))
-                        .foregroundStyle(look.dateTint(scheme))
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(look.accent(scheme).opacity(0.3))
-                        .frame(height: 18)
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(look.accent(scheme).opacity(0.18))
-                        .frame(height: 18)
-                }
-                .padding(10)
-            }
-            .environment(\.colorScheme, look.appearance.colorScheme ?? scheme)
-            .clipShape(.rect(cornerRadius: 18, style: .continuous))
+        RoundedRectangle(cornerRadius: 48 * CustomizeOggi.cardScale, style: .continuous)
+            .fill(Color(white: 0.07))
+            .strokeBorder(.white.opacity(0.18), lineWidth: 1.5)
             .overlay {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(.quaternary, lineWidth: 1)
+                VStack(spacing: 12) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 28, weight: .light))
+                        .frame(width: 58, height: 58)
+                        .glassEffect(.regular, in: .circle)
+                    Text("Nuovo stile")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .foregroundStyle(.white.opacity(0.8))
             }
     }
 }
 
-/// How far the panel rests open.
-extension BentoPanel {
-    /// The panel's resting height: the page above stays visible and live.
-    static let small = PresentationDetent.fraction(0.46)
+/// A pan that begins only when it starts more up or down than sideways, so a
+/// card in a horizontal scroll view can be pulled up without taking the
+/// scroll view's swipes.
+struct VerticalPan: UIGestureRecognizerRepresentable {
+    /// How far the finger has moved down; negative is up.
+    let changed: (CGFloat) -> Void
+    /// The vertical speed the finger left at, in points per second.
+    let ended: (CGFloat) -> Void
+
+    /// The delegate that decides whether the pan begins.
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
+
+    /// A pan recogniser, with the coordinator as its delegate.
+    func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+        let pan = UIPanGestureRecognizer()
+        pan.delegate = context.coordinator
+        return pan
+    }
+
+    /// Reports the pan's movement and its end.
+    func handleUIGestureRecognizerAction(_ recognizer: UIPanGestureRecognizer, context: Context) {
+        switch recognizer.state {
+        case .began, .changed:
+            changed(recognizer.translation(in: recognizer.view).y)
+        case .ended, .cancelled, .failed:
+            ended(recognizer.velocity(in: recognizer.view).y)
+        default:
+            break
+        }
+    }
+
+    /// Lets the pan begin only when it starts vertical.
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        /// Whether the pan begins: only more up or down than sideways.
+        func gestureRecognizerShouldBegin(_ recognizer: UIGestureRecognizer) -> Bool {
+            guard let pan = recognizer as? UIPanGestureRecognizer else { return true }
+            let velocity = pan.velocity(in: pan.view)
+            return abs(velocity.y) > abs(velocity.x)
+        }
+    }
 }
 
 /// Scales a card about its centre until it covers the screen. A transform, not
@@ -670,5 +718,6 @@ private struct FillScreen: GeometryEffect {
 }
 
 #Preview("Nuovo stile") {
-    NewLookSheet(copying: TodayStyle.presets[3]) { _ in }
+    NewLookGallery(current: TodayStyle.presets[3]) { _ in }
+        .previewEnvironment()
 }

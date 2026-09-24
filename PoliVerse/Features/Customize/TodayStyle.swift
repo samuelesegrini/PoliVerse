@@ -183,6 +183,8 @@ nonisolated struct TodayStyle: Equatable, Sendable {
     var sections: [TodaySection] = TodaySection.defaultKinds.map(TodaySection.init(kind:))
     /// Which of Oggi's optional bar buttons show.
     var bar = TodayBarStyle()
+    /// What the rest of the app wears with the page: its tint, icon and tab bar.
+    var app = AppLook()
     /// What the student calls this look. Empty while it has no name, and the
     /// gallery calls it by its place instead.
     var name = "" {
@@ -233,9 +235,9 @@ nonisolated struct TodayStyle: Equatable, Sendable {
     }
 
     /// The accent of buttons, the selected tab and links across the app: the
-    /// Flavor's, so the whole app takes the look's colour.
+    /// Flavor's while the app is paired with the page, its own otherwise.
     func controlAccent(dark: Bool) -> Flavor.RGB {
-        flavor.accent(dark: dark, mode: appearance.flavorMode)
+        appFlavor.accent(dark: dark, mode: appearance.flavorMode)
     }
 
     /// The control accent as a SwiftUI colour.
@@ -516,6 +518,8 @@ nonisolated private struct StoredTodayStyle: Codable {
     var sections: Lenient<TodaySection>?
     /// Which of Oggi's bar controls show.
     var bar: TodayBarStyle?
+    /// What the rest of the app wears.
+    var app: AppLook?
     /// What the student called the look.
     var name: String?
 }
@@ -592,6 +596,7 @@ nonisolated extension TodayStyle: RawRepresentable {
         grain = (stored.grain ?? grain).clamped(to: 0...1)
         appearance = stored.appearance ?? appearance
         bar = stored.bar ?? bar
+        app = stored.app ?? app
         name = String((stored.name ?? name).prefix(Self.nameLimit))
 
         // Before Flavor a look had up to three colours: the date's wins, then
@@ -622,7 +627,7 @@ nonisolated extension TodayStyle: RawRepresentable {
                                       dateLayout: dateLayout, dateAlignment: dateAlignment, accessory: accessory,
                                       stickers: Lenient(stickers), stickerOutline: stickerOutline, accessoryText: accessoryText,
                                       photoIDs: photoIDs, paper: paper, grain: grain, appearance: appearance,
-                                      sections: Lenient(sections), bar: bar, name: name)
+                                      sections: Lenient(sections), bar: bar, app: app, name: name)
         // Sorted keys: the standard library's `==` for RawRepresentable types
         // compares `rawValue`, and unsorted JSON keys would make equal styles
         // unequal.

@@ -3,11 +3,12 @@ import XCTest
 /// The first run, which is the one screen every student sees exactly once and
 /// nobody ever looks at again while developing.
 ///
-/// Walked on the sample-data route: "Esplora con dati di esempio" needs no
-/// account and no network, and it is the same flow the account route takes
-/// once the sign-in step is behind it. The steps offered depend on what the
-/// flow knows — signed in, demo, WeBeep connected — so the walk follows
-/// whichever step is on screen rather than a fixed script.
+/// Walked on the sample-data route: "Continua con i dati di esempio", on the
+/// sign-in step, needs no account and no network, and it is the same journey
+/// the account route takes once the sign-in is behind it. The steps offered
+/// depend on what the journey knows — signed in, demo, notifications refused —
+/// so the walk follows whichever step is on screen rather than a fixed script:
+/// the sample data when offered, otherwise the way out, otherwise on.
 nonisolated final class OnboardingUITests: PoliVerseUITestCase {
     /// A fresh install: no account, onboarding not done, sample data off until
     /// the student picks it.
@@ -26,16 +27,34 @@ nonisolated final class OnboardingUITests: PoliVerseUITestCase {
         return app
     }
 
-    /// The welcome page offers both routes: an account, and a look around
-    /// without one. Neither may be missing — the second is the only way in for
-    /// a student who has not signed in yet.
+    /// The welcome page offers both routes: the questions, and straight to the
+    /// account for someone who has used the app before. Neither may be missing —
+    /// the second is how a reinstall skips what it already knows.
     @MainActor func testWelcomeOffersBothRoutes() {
         let app = freshInstall()
         app.launch()
 
-        require(app.buttons["onboarding-primary"].firstMatch, "Il benvenuto non offre l’accesso", timeout: 30)
-        require(app.buttons["onboarding-demo"].firstMatch, "Il benvenuto non offre i dati di esempio")
+        require(app.buttons["onboarding-primary"].firstMatch, "Il benvenuto non offre di iniziare", timeout: 30)
+        require(app.buttons["onboarding-signin"].firstMatch, "Il benvenuto non offre l’accesso diretto")
         shot(app, "onboarding-01-welcome")
+    }
+
+    /// One move through the journey: the sample data when the step offers it,
+    /// otherwise the way out, otherwise the step's own offer. The last step's
+    /// offer is what opens the app.
+    ///
+    /// - Returns: `false` when the step offered nothing to press.
+    @MainActor @discardableResult
+    private func takeStep(_ app: XCUIApplication, shotName: String? = nil) -> Bool {
+        let demo = app.buttons["onboarding-demo"].firstMatch
+        let skip = app.buttons["onboarding-skip"].firstMatch
+        let primary = app.buttons["onboarding-primary"].firstMatch
+        for (button, suffix) in [(demo, "demo"), (skip, "skip"), (primary, "go")] where button.exists && button.isHittable {
+            if let shotName { shot(app, "\(shotName)-\(suffix)") }
+            button.tap()
+            return true
+        }
+        return false
     }
 
     /// The whole flow, from the welcome page to the app, taking the offered
@@ -45,23 +64,12 @@ nonisolated final class OnboardingUITests: PoliVerseUITestCase {
         let app = freshInstall()
         app.launch()
 
-        tap(app.buttons["onboarding-demo"].firstMatch, "Il benvenuto non offre i dati di esempio", timeout: 30)
+        require(app.buttons["onboarding-primary"].firstMatch, "Il benvenuto non è comparso", timeout: 30)
 
-        // Each step: skip it if it can be skipped, otherwise take its offer.
-        // The last step's offer is what opens the app.
-        for step in 0..<8 {
+        for step in 0..<10 {
             settle()
             if app.buttons["today-customize"].firstMatch.exists { break }
-
-            let skip = app.buttons["onboarding-skip"].firstMatch
-            let primary = app.buttons["onboarding-primary"].firstMatch
-            if skip.exists && skip.isHittable {
-                shot(app, "onboarding-02-step\(step)-skip")
-                skip.tap()
-            } else if primary.exists && primary.isHittable {
-                shot(app, "onboarding-02-step\(step)-go")
-                primary.tap()
-            } else {
+            guard takeStep(app, shotName: "onboarding-02-step\(step)") else {
                 XCTFail("Il passo \(step) dell’onboarding non offre né un avanti né un più tardi")
                 return
             }
@@ -77,22 +85,29 @@ nonisolated final class OnboardingUITests: PoliVerseUITestCase {
     @MainActor func testOnboardingIsNotShownTwice() {
         let app = freshInstall()
         app.launch()
-        tap(app.buttons["onboarding-demo"].firstMatch, "Il benvenuto non offre i dati di esempio", timeout: 30)
+        require(app.buttons["onboarding-primary"].firstMatch, "Il benvenuto non è comparso", timeout: 30)
 
-        for _ in 0..<8 {
+        for _ in 0..<10 {
             settle()
             if app.buttons["today-customize"].firstMatch.exists { break }
-            let skip = app.buttons["onboarding-skip"].firstMatch
-            let primary = app.buttons["onboarding-primary"].firstMatch
-            if skip.exists && skip.isHittable { skip.tap() } else if primary.exists { primary.tap() }
+            takeStep(app)
         }
         require(app.buttons["today-customize"].firstMatch, "L’onboarding non è arrivato all’app", timeout: 30)
 
         app.terminate()
+        // Without the fresh-install flags: an argument outranks what the app
+        // stored, so relaunching with `-hasCompletedOnboarding NO` would test the
+        // argument, not the app.
+        if let flag = app.launchArguments.firstIndex(of: "-hasCompletedOnboarding") {
+            app.launchArguments.removeSubrange(flag...flag + 1)
+        }
+        if let flag = app.launchArguments.firstIndex(of: "-useMockData") {
+            app.launchArguments.removeSubrange(flag...flag + 1)
+        }
         app.launch()
         require(app.buttons["today-customize"].firstMatch,
                 "Il secondo avvio ha rimostrato l’onboarding", timeout: 30)
-        XCTAssertFalse(app.buttons["onboarding-demo"].firstMatch.exists,
+        XCTAssertFalse(app.buttons["onboarding-signin"].firstMatch.exists,
                        "Il benvenuto è tornato dopo che l’onboarding era finito")
     }
 

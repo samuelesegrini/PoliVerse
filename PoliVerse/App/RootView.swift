@@ -77,19 +77,30 @@ struct RootView: View {
             // already knows what this is — switching career, or coming back
             // — and gets the plain login screen instead.
             case .signedOut, .failed:
-                if onboarding.isComplete { LoginView() } else { OnboardingView() }
+                if onboarding.isComplete { LoginView() } else { JourneyView() }
             // The web sheet is already gone by the time the session reaches
             // here — CieID/SPID handed control back to this app, not to a
             // screen. Showing the plain login screen underneath made that
             // stretch (code exchange, then `/jaf/internal/user`) look like
             // the login had silently failed and gone back to the start.
+            //
+            // During the first run the journey stays up instead: its sign-in
+            // step says "Accesso in corso…" over the same landscape, and the
+            // career and WeBeep sheets follow it there.
             case .exchangingCode:
-                SigningInView()
+                if onboarding.isComplete { SigningInView() } else { JourneyView() }
+            // The journey's last card sits over the app, which is drawn under
+            // it from the last step so pulling the card down reveals the real
+            // thing. One ZStack either way, so the shell keeps its identity
+            // when the card goes and the journey is complete.
             case .signedIn:
-                if !onboarding.isComplete {
-                    OnboardingView()
-                } else {
-                    shellContent
+                ZStack {
+                    if onboarding.isComplete || onboarding.revealsApp {
+                        shellContent
+                    }
+                    if !onboarding.isComplete {
+                        JourneyView()
+                    }
                 }
             }
         }
@@ -284,7 +295,7 @@ struct RootView: View {
         // Selecting the search tab opens its field straight away, unless the
         // student turned that off in Impostazioni.
         .tabViewSearchActivation(searchOpensKeyboard ? .searchTabSelection : .automatic)
-        .modifier(MinimizeBehaviour(enabled: !hasSidebar))
+        .modifier(MinimizeBehaviour(enabled: !hasSidebar, behaviour: todayStyle.appTabBar))
     }
 }
 
@@ -342,13 +353,15 @@ nonisolated enum ShellSelection: Hashable, Sendable {
 private struct MinimizeBehaviour: ViewModifier {
     /// Whether there is a tab bar to minimise.
     let enabled: Bool
+    /// What the look in use asks of the bar.
+    let behaviour: TabBarBehaviour
 
     /// The view, with the behaviour or without it.
     ///
     /// - Parameter content: The tab view.
     /// - Returns: The tab view.
     func body(content: Content) -> some View {
-        if enabled { content.tabBarMinimizeBehavior(.onScrollDown) } else { content }
+        if enabled { content.tabBarMinimizeBehavior(behaviour.system) } else { content }
     }
 }
 

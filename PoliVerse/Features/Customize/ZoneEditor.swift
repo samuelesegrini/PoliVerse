@@ -49,6 +49,26 @@ enum CustomizePage: Hashable, Identifiable {
     }
 }
 
+extension View {
+    /// A panel page's title: inline, as a sheet this low has room for, but a
+    /// step larger than the system's, so each part of the look reads as a
+    /// place of its own. The navigation title stays for the back button.
+    ///
+    /// - Parameter title: The page's name.
+    /// - Returns: The page with its title.
+    func panelTitle(_ title: LocalizedStringKey) -> some View {
+        navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text(title)
+                        .font(.title3.bold())
+                        .accessibilityAddTraits(.isHeader)
+                }
+            }
+    }
+}
+
 /// The controls of one panel page: a curated set and one fine control.
 struct CustomizeControls: View {
     /// Which part of the look these controls set.
@@ -87,8 +107,7 @@ struct CustomizeControls: View {
         }
         // Changes reach the page as they are made: the back button is the
         // only way out, and the editor's Fine the only save.
-        .navigationTitle(page.title)
-        .navigationBarTitleDisplayMode(.inline)
+        .panelTitle(page.title)
     }
 
     // MARK: Flavor
@@ -266,12 +285,11 @@ struct CustomizeControls: View {
             .listRowBackground(Color.clear)
         }
         Section("Testo") {
-            Picker("Testo", selection: $style.textDesign) {
-                ForEach(TodayStyle.TextDesign.allCases) { design in
-                    Text(design.title).fontDesign(design.design).tag(design)
-                }
+            GlassSegmentedPicker("Testo", selection: $style.textDesign) { design in
+                Text(design.title).fontDesign(design.design)
             }
-            .pickerStyle(.segmented)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
         }
     }
 
@@ -295,10 +313,9 @@ struct CustomizeControls: View {
     @ViewBuilder
     private var accessoryControls: some View {
         Section {
-            Picker("Accanto alla data", selection: $style.accessory) {
-                ForEach(TodayAccessory.allCases) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented)
+            GlassSegmentedPicker("Accanto alla data", selection: $style.accessory) { Text($0.title) }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
             .accessibilityIdentifier("date-header-layout")
         } footer: {
             Text("Con un accessorio la data occupa metà della larghezza.")
@@ -491,12 +508,12 @@ struct CustomizeControls: View {
             }
             .scrollIndicators(.hidden)
 
-            Picker("Allineamento", selection: $style.dateAlignment) {
-                ForEach(DateAlignment.allCases) { alignment in
-                    Image(systemName: alignment.systemImage).tag(alignment)
-                }
+            GlassSegmentedPicker("Allineamento", selection: $style.dateAlignment) { alignment in
+                Label(alignment.title, systemImage: alignment.systemImage)
+                    .labelStyle(.iconOnly)
             }
-            .pickerStyle(.segmented)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
         }
     }
 
@@ -541,10 +558,9 @@ struct CustomizeControls: View {
             }
         }
         Section("Colore") {
-            Picker("Colore", selection: $style.dateColour) {
-                ForEach(TodayStyle.DateColour.allCases) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented)
+            GlassSegmentedPicker("Colore", selection: $style.dateColour) { Text($0.title) }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
         }
     }
 }

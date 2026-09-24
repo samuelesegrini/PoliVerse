@@ -78,4 +78,16 @@ struct LookLibraryTests {
         #expect(!removedLast)
         #expect(library.looks.count == 1)
     }
+    @Test("Annulla after a delete puts the look back where it was, in use as it was")
+    func restoreAfterDelete() {
+        var library = library(3, selection: 1)
+        let removed = library.looks[1], selection = library.selection
+        let didRemove = library.remove(at: 1)
+        #expect(didRemove)
+        library.restore(removed, at: 1, selection: selection)
+        #expect(library.looks.count == 3)
+        #expect(library.looks[1] == removed)
+        #expect(library.selection == 1)
+        #expect(library.active == removed)
+    }
 }

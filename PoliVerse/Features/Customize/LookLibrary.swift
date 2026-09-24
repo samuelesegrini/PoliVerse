@@ -69,6 +69,19 @@ nonisolated struct LookLibrary: Equatable, Sendable {
         looks[index].name = name
     }
 
+    /// Puts a removed look back where it was, and the look in use back with
+    /// it: how Annulla undoes a delete.
+    ///
+    /// - Parameters:
+    ///   - look: The look that was removed.
+    ///   - index: Where it was.
+    ///   - selection: Which look was in use before the delete.
+    mutating func restore(_ look: TodayStyle, at index: Int, selection: Int) {
+        let place = min(max(index, 0), looks.count)
+        looks.insert(look, at: place)
+        self.selection = min(max(selection, 0), looks.count - 1)
+    }
+
     /// Removes a look, keeping the one in use where it can; if that is the
     /// one removed, its neighbour takes over.
     @discardableResult

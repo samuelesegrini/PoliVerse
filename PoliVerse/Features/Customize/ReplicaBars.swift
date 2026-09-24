@@ -74,26 +74,48 @@ struct ReplicaAccessory: View {
     }
 }
 
-/// The tab bar as the app draws it, with Oggi selected.
+/// The tab bar as the app draws it: whole, or minimised to the selected tab
+/// the way it shrinks while a page scrolls.
 struct ReplicaTabBar: View {
+    /// Which tab is drawn as chosen: 0 Oggi, 1 Corsi, 2 Carriera.
+    var selected = 0
+    /// Drawn minimised: the selected tab alone, and search.
+    var minimized = false
+
+    /// The bar's tabs, in order.
+    private static let tabs: [(title: LocalizedStringKey, icon: String)] = [
+        ("Oggi", "calendar.day.timeline.left"), ("Corsi", "books.vertical"), ("Carriera", "graduationcap"),
+    ]
+
     /// The view's content.
     var body: some View {
         HStack(spacing: 10) {
-            HStack(spacing: 0) {
-                tab("Oggi", "calendar.day.timeline.left", selected: true)
-                tab("Corsi", "books.vertical", selected: false)
-                tab("Carriera", "graduationcap", selected: false)
+            if minimized {
+                Image(systemName: Self.tabs[selected].icon)
+                    .symbolVariant(.fill)
+                    .font(.system(size: 20))
+                    .foregroundStyle(.tint)
+                    .frame(width: 52, height: 52)
+                    .glassEffect(.regular, in: .circle)
+                Spacer(minLength: 0)
+            } else {
+                HStack(spacing: 0) {
+                    ForEach(Self.tabs.indices, id: \.self) { index in
+                        tab(Self.tabs[index].title, Self.tabs[index].icon, selected: index == selected)
+                    }
+                }
+                .padding(4)
+                .frame(height: 62)
+                .glassEffect(.regular, in: .capsule)
             }
-            .padding(4)
-            .frame(height: 62)
-            .glassEffect(.regular, in: .capsule)
 
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 20, weight: .medium))
-                .frame(width: 62, height: 62)
+                .frame(width: minimized ? 52 : 62, height: minimized ? 52 : 62)
                 .glassEffect(.regular, in: .circle)
         }
         .padding(.horizontal, 21)
+        .animation(.snappy, value: minimized)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }

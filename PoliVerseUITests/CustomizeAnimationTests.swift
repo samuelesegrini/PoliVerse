@@ -4,8 +4,9 @@ import XCTest
 /// step, so the whole process can be checked by eye after a change.
 ///
 /// Opens the gallery from Oggi, swipes to another look — which is what puts it
-/// in use — edits it, restores it, adds a look from a theme, taps a side card,
-/// and closes.
+/// in use — edits it on a draft, cancels and keeps, deletes a look and brings
+/// it back, adds one from a theme with its own app half, and closes by tapping
+/// the card.
 /// Every screenshot is attached to the test report; with
 /// `TEST_RUNNER_CUSTOMIZE_SHOTS` set to a folder on the Mac they are also
 /// written there.
@@ -27,6 +28,8 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
             "-usesNewInterface", "<true/>",
             "-appLayout", "tabs",
             "-ResetTodayStyle",
+            // Release notes already read, so a fresh install opens on Oggi.
+            "-lastSeenReleaseVersion", "999",
             "-AppleLanguages", "(it)",
             "-AppleLocale", "it_IT",
         ]
@@ -39,64 +42,73 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
 
         // Swiping is choosing: the look that comes to rest in the middle is
         // the one the app wears, with nothing to confirm.
-        let gallery = open(app)
+        _ = open(app)
         XCTAssertTrue(isCentred(card(app, 0), in: app))
         shot(app, "01-gallery")
         card(app, 0).swipeLeft()
         settle()
         shot(app, "02-swiped")
         XCTAssertTrue(isCentred(card(app, 1), in: app), "Swiping did not bring the next look to the middle")
-        gallery.tap()
+        // Tapping the middle card goes back to the app wearing it.
+        card(app, 1).tap()
         settle()
-        XCTAssertFalse(gallery.exists, "Chiudi did not close Personalizza")
+        XCTAssertFalse(card(app, 1).exists, "Tapping the middle card did not close Personalizza")
 
-        _ = open(app)
+        let edit = open(app)
         XCTAssertTrue(isCentred(card(app, 1), in: app), "The gallery did not open on the look swiped to")
 
-        // Tapping the middle card edits it in place: same surface, no cover.
-        card(app, 1).tap()
+        // Personalizza grows the card into the editor.
+        edit.tap()
         let done = app.buttons["customize-edit-done"]
-        XCTAssertTrue(done.waitForExistence(timeout: 5), "Tapping the middle card did not start editing")
+        XCTAssertTrue(done.waitForExistence(timeout: 5), "Personalizza did not open the editor")
         settle()
         shot(app, "03-editor")
 
-        // A zone on the page opens its page in the panel.
+        // A zone opens its own controls in a small sheet.
         zone(app, "date").tap()
         settle()
         shot(app, "04-zone")
         reveal(app.buttons["date-font-mono"].firstMatch, in: app).tap()
         settle()
         shot(app, "05-font")
-        back(app)
-        settle()
-        shot(app, "06-zone-closed")
-        XCTAssertTrue(done.exists, "Closing a page stopped editing")
+        closePanel(app)
+        XCTAssertTrue(done.exists, "Closing a panel stopped editing")
 
-        // Papers and decorations are one choice: a decoration from the same grid.
-        app.buttons["bento-paper"].tap()
+        // A sideways swipe is the next light.
+        app.scrollViews.firstMatch.swipeLeft()
         settle()
-        reveal(app.buttons["decoration-stripes"].firstMatch, in: app).tap()
-        settle()
-        shot(app, "06b-background")
-        back(app)
-        settle()
+        shot(app, "06-light")
 
-        // Changes are live and already in use: Ripristina is the one step back.
-        let restore = app.buttons["customize-restore"]
-        XCTAssertTrue(restore.exists, "Editing offered no way back to how the look was")
-        shot(app, "07-changed")
+        // Ripristina, in •••, goes back to where editing started.
+        app.buttons["customize-editor-more"].tap()
+        let restore = app.buttons["Ripristina"].firstMatch
+        XCTAssertTrue(restore.waitForExistence(timeout: 3))
+        XCTAssertTrue(restore.isEnabled, "Editing offered no way back to how the look was")
         restore.tap()
         settle()
-        XCTAssertFalse(restore.exists, "Ripristina did not put the look back")
-        shot(app, "07b-restored")
+        shot(app, "07-restored")
 
         done.tap()
         settle()
-        XCTAssertTrue(app.buttons["customize-edit"].waitForExistence(timeout: 5), "Fine did not return to the gallery")
+        XCTAssertTrue(edit.waitForExistence(timeout: 5), "Fine did not return to the gallery")
         shot(app, "08-gallery")
 
-        // A new look starts from something: here a theme, which lands beside
-        // the one in the middle and opens for editing.
+        // Up lifts the card and shows the trash; the delete can be taken back.
+        lift(card(app, 1))
+        let trash = app.buttons["customize-trash"]
+        XCTAssertTrue(trash.waitForExistence(timeout: 3) && trash.isHittable, "Pulling the card up showed no trash")
+        shot(app, "08b-lifted")
+        trash.tap()
+        let undo = app.buttons["customize-undo"]
+        XCTAssertTrue(undo.waitForExistence(timeout: 3), "Deleting offered no way back")
+        shot(app, "08c-deleted")
+        XCTAssertFalse(card(app, todayPresetCount - 1).exists, "The look was not deleted")
+        undo.tap()
+        settle()
+        XCTAssertTrue(card(app, todayPresetCount - 1).exists, "Annulla did not bring the look back")
+
+        // A new look starts from something: here a theme, which opens the
+        // editor; Aggiungi asks once about the app.
         app.buttons["customize-add"].tap()
         let preset = app.buttons["customize-new-preset-4"].firstMatch
         XCTAssertTrue(preset.waitForExistence(timeout: 5), "+ did not offer anything to start from")
@@ -106,20 +118,32 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         shot(app, "10-new-editing")
         done.tap()
+        let custom = app.buttons["customize-pair-custom"]
+        XCTAssertTrue(custom.waitForExistence(timeout: 5), "Adding did not ask about the app")
+        shot(app, "11-pair-question")
+        custom.tap()
+        let icon = app.buttons["app-option-icon"]
+        XCTAssertTrue(icon.waitForExistence(timeout: 5), "Personalizza l'app did not open the app half")
+        icon.tap()
+        app.buttons["app-icon-dark"].firstMatch.tap()
         settle()
-        XCTAssertTrue(card(app, todayPresetCount).waitForExistence(timeout: 3), "The new look was not kept")
+        shot(app, "12-app-icon")
+        app.buttons["app-done"].tap()
+        settle()
+        XCTAssertTrue(isCentred(card(app, todayPresetCount), in: app), "The new look did not come to the middle")
+        XCTAssertTrue(app.staticTexts["App su misura"].exists, "The new look's app is not its own")
+        shot(app, "13-added")
 
-        // A side card scrolls to the middle instead of opening.
+        // A side card scrolls to the middle instead of closing.
         card(app, 1).tap()
         settle()
-        shot(app, "11-side-tapped")
         XCTAssertTrue(isCentred(card(app, 1), in: app), "Tapping a side card did not bring it to the middle")
-        XCTAssertFalse(app.buttons["customize-edit-done"].exists, "Tapping a side card started editing")
+        XCTAssertTrue(edit.exists, "Tapping a side card left the gallery")
 
-        gallery.tap()
+        card(app, 1).tap()
         settle()
-        XCTAssertFalse(gallery.exists, "Chiudi did not close Personalizza")
-        shot(app, "12-closed")
+        XCTAssertFalse(edit.exists, "Tapping the middle card did not close Personalizza")
+        shot(app, "14-closed")
     }
 
     /// Every starter look, one screenshot each, to check them by eye.
@@ -137,58 +161,49 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         }
     }
 
-    /// Personalises every part of one look through the panel, then uses it.
+    /// Personalises every part of one look through its zones and •••, then uses it.
     @MainActor func testPersonaliseElements() throws {
         let app = makeApp()
         app.launch()
 
-        let gallery = open(app)
-        card(app, 0).tap()
+        let edit = open(app)
+        edit.tap()
         let done = app.buttons["customize-edit-done"]
         XCTAssertTrue(done.waitForExistence(timeout: 5))
         settle()
         shot(app, "30-editor")
 
-        // Flavor from a swatch.
-        app.buttons["bento-flavor"].tap()
+        // Flavor from a swatch, from the button bottom-left.
+        app.buttons["customize-editor-flavor"].tap()
         settle()
         reveal(app.buttons["flavor-#C2386F"].firstMatch, in: app).tap()
         settle()
         shot(app, "31-flavor")
-        back(app)
-        settle()
+        closePanel(app)
 
-        // Plotting paper with grain.
-        app.buttons["bento-paper"].tap()
-        settle()
+        // Plotting paper with grain, from •••.
+        menu(app, "Carta e motivo")
         app.buttons["paper-plot"].firstMatch.tap()
-        XCTAssertFalse(app.buttons["bento-decoration"].exists, "Decorations still have a page of their own")
         reveal(app.sliders["paper-grain"].firstMatch, in: app).adjust(toNormalizedSliderPosition: 0.5)
         settle()
         shot(app, "32-paper")
-        back(app)
-        settle()
+        closePanel(app)
 
-        // Glowing cards, tinted appearance, serif text.
-        app.buttons["bento-cards"].tap()
-        settle()
+        // Glowing cards, a tinted light, serif text.
+        menu(app, "Superficie delle schede")
         app.buttons["material-glow"].firstMatch.tap()
-        back(app)
+        closePanel(app)
+        app.scrollViews.firstMatch.swipeLeft()
         settle()
-        app.buttons["bento-appearance"].tap()
-        settle()
-        app.buttons["appearance-tinted"].firstMatch.tap()
+        menu(app, "Aspetto e testo")
         reveal(app.buttons["Con grazie"].firstMatch, in: app).tap()
         settle()
         shot(app, "33-appearance")
-        back(app)
-        settle()
+        closePanel(app)
 
         // A section's card: swipe to another form, turn it over, change the
         // surface and how much it shows.
-        app.buttons["bento-layout"].tap()
-        settle()
-        reveal(app.buttons["layout-section-upcoming"].firstMatch, in: app).tap()
+        zone(app, "section-upcoming").tap()
         settle()
         shot(app, "34-section-form")
         app.descendants(matching: .any)["form-list"].firstMatch.swipeLeft()
@@ -203,11 +218,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         shot(app, "34d-section-controls")
         app.buttons["form-done"].tap()
         settle()
-        // Out of the section's card, then out of Sezioni.
-        back(app)
-        settle()
-        back(app)
-        settle()
+        closePanel(app)
 
         // The bar: no profile button. Settings has no switch: it always stays.
         zone(app, "bar").tap()
@@ -215,8 +226,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         XCTAssertFalse(app.switches["Impostazioni"].exists, "Settings can still be hidden from the bar")
         app.switches["Profilo"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
         settle()
-        back(app)
-        settle()
+        closePanel(app)
 
         // A greeting of the student's own.
         zone(app, "greeting").tap()
@@ -228,11 +238,13 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         field.tap()
         field.typeText("Forza e coraggio\n")
         settle()
-        back(app)
-        settle()
+        closePanel(app)
 
         // Arranging: remove In arrivo, add Esami, drag it above the timetable.
-        app.buttons["bento-arrange"].tap()
+        app.buttons["customize-editor-more"].tap()
+        let arrange = app.buttons["Disponi le sezioni"].firstMatch
+        XCTAssertTrue(arrange.waitForExistence(timeout: 3))
+        arrange.tap()
         settle()
         shot(app, "35-arranging")
         app.buttons["section-remove-upcoming"].tap()
@@ -257,7 +269,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         // An accessory: a sticker from the keyboard, then swap to text.
         zone(app, "stickers").tap()
         settle()
-        app.segmentedControls["date-header-layout"].buttons["Sticker"].tap()
+        app.descendants(matching: .any)["date-header-layout"].buttons["Sticker"].firstMatch.tap()
         reveal(app.buttons["sticker-controls-add"].firstMatch, in: app).tap()
         let keyboard = app.textViews["sticker-keyboard"].firstMatch
         XCTAssertTrue(keyboard.waitForExistence(timeout: 5), "Adding a sticker showed no keyboard field")
@@ -266,8 +278,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         back(app)
         settle()
-        back(app)
-        settle()
+        closePanel(app)
         shot(app, "37-sticker")
         app.buttons["zone-stickers-swap"].firstMatch.tap()
         settle()
@@ -275,9 +286,9 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
 
         done.tap()
         settle()
-        XCTAssertTrue(gallery.waitForExistence(timeout: 5))
+        XCTAssertTrue(edit.waitForExistence(timeout: 5))
         shot(app, "39-gallery")
-        gallery.tap()
+        card(app, 0).tap()
         settle()
         shot(app, "40-app")
         XCTAssertFalse(app.buttons["bar-profile"].exists, "The bar still shows the profile button")
@@ -295,7 +306,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         return element
     }
 
-    /// Back from a page of Personalizza's panel to the bento.
+    /// Back from a page pushed inside a panel.
     @MainActor private func back(_ app: XCUIApplication) {
         let back = app.buttons["BackButton"].firstMatch
         XCTAssertTrue(back.waitForExistence(timeout: 3), "The panel page has no back button")
@@ -306,6 +317,32 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         app.buttons["zone-\(id)"].firstMatch
     }
 
+    /// Closes the open panel, back to the page.
+    @MainActor private func closePanel(_ app: XCUIApplication) {
+        let close = app.buttons["customize-panel-close"].firstMatch
+        XCTAssertTrue(close.waitForExistence(timeout: 3), "The panel has no close button")
+        close.tap()
+        settle()
+    }
+
+    /// Opens one of the editor's ••• items.
+    @MainActor private func menu(_ app: XCUIApplication, _ item: String) {
+        app.buttons["customize-editor-more"].tap()
+        let button = app.buttons[item].firstMatch
+        XCTAssertTrue(button.waitForExistence(timeout: 3), "••• has no \(item)")
+        button.tap()
+        settle()
+    }
+
+    /// Pulls a card up, slowly enough to be a drag rather than a flick.
+    @MainActor private func lift(_ card: XCUIElement) {
+        card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
+            .press(forDuration: 0.05,
+                   thenDragTo: card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)),
+                   withVelocity: .default, thenHoldForDuration: 0.2)
+        settle()
+    }
+
     /// In the single page, the panel steps aside for Personalizza and comes
     /// back when it closes.
     @MainActor func testSinglePage() throws {
@@ -313,21 +350,21 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         if let index = app.launchArguments.firstIndex(of: "tabs") { app.launchArguments[index] = "singlePage" }
         app.launch()
 
-        let cancel = open(app)
+        let edit = open(app)
         shot(app, "20-single-gallery")
         card(app, 0).swipeLeft()
         settle()
         XCTAssertTrue(isCentred(card(app, 1), in: app), "Swiping did not choose the next look")
         shot(app, "21-single-swiped")
-        cancel.tap()
+        card(app, 1).tap()
         settle()
-        XCTAssertFalse(cancel.exists, "Chiudi did not close Personalizza")
+        XCTAssertFalse(edit.exists, "Tapping the middle card did not close Personalizza")
 
         _ = open(app)
-        cancel.tap()
+        card(app, 1).tap()
         settle()
-        XCTAssertFalse(cancel.exists, "Chiudi did not close Personalizza")
-        shot(app, "22-single-cancelled")
+        XCTAssertFalse(edit.exists, "Tapping the middle card did not close Personalizza")
+        shot(app, "22-single-closed")
     }
 
     /// The places are reached from the tabs, and the profile from any root.
@@ -358,17 +395,17 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         shot(app, "63-calendar")
     }
 
-    /// Opens Personalizza from Oggi's bar; returns its Chiudi button.
+    /// Opens Personalizza from Oggi's bar; returns its Personalizza button.
     @MainActor private func open(_ app: XCUIApplication) -> XCUIElement {
         let customize = app.buttons["today-customize"].firstMatch
         XCTAssertTrue(customize.waitForExistence(timeout: 20))
         customize.tap()
-        let cancel = app.buttons["customize-cancel"]
-        let opened = cancel.waitForExistence(timeout: 5)
+        let edit = app.buttons["customize-edit"]
+        let opened = edit.waitForExistence(timeout: 5)
         if !opened { shot(app, "99-open-failed") }
         XCTAssertTrue(opened, "Personalizza did not open")
         settle()
-        return cancel
+        return edit
     }
 
     @MainActor private func card(_ app: XCUIApplication, _ index: Int) -> XCUIElement {

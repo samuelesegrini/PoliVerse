@@ -104,6 +104,15 @@ nonisolated enum DateAlignment: String, Codable, CaseIterable, Identifiable, Sen
     /// The alignment's identity, which is its raw value.
     var id: String { rawValue }
 
+    /// What the alignment is called, for assistive technologies.
+    var title: LocalizedStringKey {
+        switch self {
+        case .leading: "A sinistra"
+        case .center: "Al centro"
+        case .trailing: "A destra"
+        }
+    }
+
     /// The SF Symbol shown in the picker.
     var systemImage: String {
         switch self {
