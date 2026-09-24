@@ -76,7 +76,20 @@ nonisolated class PoliVerseUITestCase: XCTestCase {
     /// The tab bar button with that label; the labels are Italian because the
     /// app is launched in Italian.
     @MainActor func tabButton(_ app: XCUIApplication, _ title: String) -> XCUIElement {
-        app.buttons[title].firstMatch
+        // The tab bar's own button: pages have buttons named like the tabs
+        // too — the calendar's "Oggi", a place called "Carriera".
+        let inBar = app.tabBars.buttons[title].firstMatch
+        if inBar.waitForExistence(timeout: 3) { return inBar }
+        // Cerca opens on its field, which takes the tab bar's place until
+        // the search is closed.
+        if app.keyboards.firstMatch.exists {
+            for name in ["Chiudi", "Annulla", "Close", "Cancel"] where app.buttons[name].firstMatch.exists {
+                app.buttons[name].firstMatch.tap()
+                break
+            }
+            if inBar.waitForExistence(timeout: 3) { return inBar }
+        }
+        return app.buttons[title].firstMatch
     }
 
     /// Switches tab and waits for the tab's own screen to come up, which is

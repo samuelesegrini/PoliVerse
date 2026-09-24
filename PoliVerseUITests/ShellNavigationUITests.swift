@@ -96,12 +96,18 @@ nonisolated final class ShellNavigationUITests: PoliVerseUITestCase {
 
         // The panel opens at its peek detent, where only the first rows show;
         // a swipe on it brings the rest up before anything is tapped.
+        // Dragged up from where the peeking panel sits, as a thumb would:
+        // the first collection view on screen need not be the panel.
         let panel = app.collectionViews.firstMatch
-        if panel.waitForExistence(timeout: 15) { panel.swipeUp() }
+        _ = app.descendants(matching: .any)["panel-search"].firstMatch.waitForExistence(timeout: 15)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.89))
+            .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)))
         settle()
 
         for place in Self.places.prefix(3) {
-            let row = app.buttons["panel-\(place.id)"].firstMatch
+            // By its title: a navigation row in a list does not carry its
+            // identifier through to the accessibility tree.
+            let row = app.staticTexts[place.title].firstMatch
             require(row, "The panel does not list \(place.title)", timeout: 15)
             if !row.isHittable { panel.swipeUp() }
             row.tap()

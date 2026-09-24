@@ -41,9 +41,10 @@ nonisolated final class LifecycleUITests: PoliVerseUITestCase {
         XCUIDevice.shared.press(.home)
         settle(2)
         app.activate()
-        settle(2)
 
-        XCTAssertEqual(app.state, .runningForeground, "The app did not come back to the foreground")
+        // Waited for rather than slept on: activation returns before the
+        // system has the app in front again.
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15), "The app did not come back to the foreground")
         require(app.navigationBars["Calendario"], "Coming back from the background left the calendar")
         shot(app, "life-03-resumed")
     }

@@ -233,7 +233,7 @@ struct JourneyView: View {
             return
         }
         isMovingBack = back
-        DispatchQueue.main.async(execute: change)
+        Task { @MainActor in change() }
     }
 
     /// A swipe from left to right goes back, as it does everywhere else on iOS.

@@ -9,7 +9,7 @@ nonisolated final class CalendarAndRoomsUITests: PoliVerseUITestCase {
     @MainActor private func open(_ place: String, titled title: String, in app: XCUIApplication) {
         // The calendar opens from Oggi's bar; the other places are Cerca's.
         if place == "calendar" {
-            switchTab(app, to: "Oggi", expecting: "tab-today")
+            // Every test launches on Oggi, where the calendar's button is.
             tap(app.buttons["today-calendar"].firstMatch, "Oggi non ha il calendario")
         } else {
             switchTab(app, to: "Cerca", expecting: "tab-search")
@@ -35,7 +35,7 @@ nonisolated final class CalendarAndRoomsUITests: PoliVerseUITestCase {
         settle()
         shot(app, "calendar-02-three-weeks-on")
 
-        let today = app.buttons["Oggi"].firstMatch
+        let today = app.buttons["calendar-today"].firstMatch
         if today.exists {
             today.tap()
             settle()

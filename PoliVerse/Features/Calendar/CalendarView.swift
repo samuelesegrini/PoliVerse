@@ -91,6 +91,8 @@ struct CalendarView: View {
                         }
                     }
                     .disabled(calendar.isDateInToday(selectedDay))
+                    // Its own name: inside Oggi's tab, "Oggi" is also the tab.
+                    .accessibilityIdentifier("calendar-today")
                 }
             }
             .task { await agenda.load(around: .now) }

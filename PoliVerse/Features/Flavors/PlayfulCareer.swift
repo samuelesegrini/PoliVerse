@@ -181,8 +181,10 @@ struct PlayfulStanding: View {
     private func figures(_ palette: PlayfulPalette) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 0) {
-                (Text("\(book.earnedCFU)").font(.playful(28, relativeTo: .title))
-                 + Text(" / \(book.plannedCFU) CFU").font(.playful(15, relativeTo: .subheadline)))
+                HStack(alignment: .firstTextBaseline, spacing: 0) {
+                    Text("\(book.earnedCFU)").font(.playful(28, relativeTo: .title))
+                    Text(" / \(book.plannedCFU) CFU").font(.playful(15, relativeTo: .subheadline))
+                }
                 if book.plannedCFU > 0 {
                     Text("il \(Double(book.earnedCFU) / Double(book.plannedCFU), format: .percent.precision(.fractionLength(0))) del percorso")
                         .font(.caption)
@@ -192,9 +194,11 @@ struct PlayfulStanding: View {
             .accessibilityElement(children: .combine)
             if mean > 0 {
                 VStack(alignment: .leading, spacing: 0) {
-                    (Text((mean * 110 / 30).formatted(.number.precision(.fractionLength(1))))
-                        .font(.playful(28, relativeTo: .title))
-                     + Text(" / 110").font(.playful(15, relativeTo: .subheadline)))
+                    HStack(alignment: .firstTextBaseline, spacing: 0) {
+                        Text((mean * 110 / 30).formatted(.number.precision(.fractionLength(1))))
+                            .font(.playful(28, relativeTo: .title))
+                        Text(" / 110").font(.playful(15, relativeTo: .subheadline))
+                    }
                     HStack(spacing: 4) {
                         Text("base di laurea")
                         if let delta, delta != 0 {

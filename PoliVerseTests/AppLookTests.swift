@@ -72,7 +72,7 @@ struct AppLookTests {
         look.unpairApp()
         look.app.icon = .graphite
         look.app.tabBar = .stays
-        look.app.tint = try #require(Flavor(hex: "#5E8C61"))
+        look.app.tint = Flavor(hex: "#5E8C61")
         let restored = try #require(TodayStyle(rawValue: look.rawValue))
         #expect(restored.app == look.app)
 

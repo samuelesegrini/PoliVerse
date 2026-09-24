@@ -18,7 +18,7 @@ struct BlueprintSearchHero: View {
         VStack(alignment: .leading, spacing: 24) {
             NavigationLink(value: NewDestination.freeRooms) { plan }
                 .buttonStyle(.plain)
-                .accessibilityIdentifier("blueprint-free-rooms")
+                .accessibilityIdentifier("place-freeRooms")
             legend
         }
     }

@@ -25,7 +25,7 @@ struct PlayfulSearchHero: View {
         VStack(alignment: .leading, spacing: 22) {
             NavigationLink(value: NewDestination.freeRooms) { campusCard }
                 .buttonStyle(.plain)
-                .accessibilityIdentifier("playful-free-rooms")
+                .accessibilityIdentifier("place-freeRooms")
             teachers
         }
     }

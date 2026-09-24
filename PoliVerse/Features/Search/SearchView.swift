@@ -357,8 +357,12 @@ struct SearchView: View {
 
         if places != nil {
             switch style.special {
-            case .playful: PlayfulSearchHero()
-            case .blueprint: BlueprintSearchHero()
+            case .playful:
+                PlayfulSearchHero()
+                campusLinks
+            case .blueprint:
+                BlueprintSearchHero()
+                campusLinks
             case nil:
                 campusSection
                 teachersSection
@@ -482,6 +486,25 @@ struct SearchView: View {
                 .accessibilityIdentifier("place-rooms")
             }
         }
+    }
+
+    /// The rest of the campus beside a special Flavor's free-rooms card: the
+    /// map and every room, which its card does not lead to.
+    private var campusLinks: some View {
+        HStack(spacing: 10) {
+            NavigationLink(value: NewDestination.map) {
+                Label(NewDestination.map.title, systemImage: NewDestination.map.systemImage)
+                    .frame(maxWidth: .infinity, minHeight: 32)
+            }
+            .accessibilityIdentifier("place-map")
+            NavigationLink { RoomsView() } label: {
+                Label("Aule", systemImage: "building.2")
+                    .frame(maxWidth: .infinity, minHeight: 32)
+            }
+            .accessibilityIdentifier("place-rooms")
+        }
+        .buttonStyle(.bordered)
+        .font(.subheadline.weight(.semibold))
     }
 
     /// The student's teachers, each a way to their page.
