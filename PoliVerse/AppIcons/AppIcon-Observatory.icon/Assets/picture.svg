@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<clipPath id="m"><rect width="1024" height="1024" rx="228"/></clipPath>
+<mask id="or" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="7000" height="7000"><rect x="-3000" y="-3000" width="7000" height="7000" fill="#fff"/><path d="M279 512 A233 233 0 0 1 745 512 Z" fill="#000"/><circle cx="874.5" cy="562.7" r="92" fill="#000"/></mask>
+<mask id="op" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="7000" height="7000"><rect x="-3000" y="-3000" width="7000" height="7000" fill="#fff"/><g transform="rotate(-20 512 512)"><path d="M112 512 A400 120 0 0 0 912 512" fill="none" stroke="#000" stroke-width="90"/></g></mask>
+<linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2D5B8C"/><stop offset="0.42" stop-color="#9FB4C4"/><stop offset="0.68" stop-color="#F2A560"/><stop offset="1" stop-color="#E7C9A0"/></linearGradient>
+<linearGradient id="fr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F6F4F0"/><stop offset="1" stop-color="#D6D2CB"/></linearGradient>
+<radialGradient id="mt" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#F7EAD6"/><stop offset="0.6" stop-color="#BFA07C"/><stop offset="1" stop-color="#6E5A43"/></radialGradient>
+<radialGradient id="gl" cx="0.4" cy="0.35" r="0.7"><stop offset="0" stop-color="#4FA3E0"/><stop offset="0.45" stop-color="#3A3FB0"/><stop offset="0.7" stop-color="#5B2A9A"/><stop offset="1" stop-color="#07070F"/></radialGradient>
+<radialGradient id="mp" cx="0.36" cy="0.3" r="0.8"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#8FB6DD"/></radialGradient>
+<path id="tp" d="M600 390 a220 220 0 1 1 -0.1 0"/>
+<radialGradient id="os" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#2B1A08" stop-opacity="0.5"/><stop offset="0.8" stop-color="#2B1A08" stop-opacity="0.25"/><stop offset="1" stop-color="#2B1A08" stop-opacity="0"/></radialGradient>
+</defs>
+<g clip-path="url(#m)">
+<rect width="1024" height="1024" fill="url(#fr)"/><rect x="74" y="74" width="876" height="876" rx="170" fill="url(#sky)"/><rect x="74" y="74" width="876" height="876" rx="170" fill="none" stroke="#000000" stroke-opacity="0.12" stroke-width="8"/><circle cx="610" cy="632" r="340" fill="url(#os)"/><circle cx="600" cy="610" r="300" fill="url(#mt)"/><circle cx="600" cy="610" r="298" fill="none" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="5"/><circle cx="600" cy="610" r="250" fill="#1C1C1E"/><text font-family="SF Mono, Menlo, monospace" font-size="24" letter-spacing="4" fill="#8E8E93"><textPath href="#tp" xlink:href="#tp" startOffset="4%">ORBITA · 50MM f/2.0</textPath></text><circle cx="600" cy="610" r="200" fill="#0E0E10"/><circle cx="600" cy="610" r="176" fill="#2A2B30"/><circle cx="600" cy="610" r="160" fill="#111114"/><circle cx="600" cy="610" r="146" fill="url(#gl)"/><g transform="translate(600 610) scale(0.24) translate(-512 -512)"><g mask="url(#op)"><circle cx="512" cy="512" r="215" fill="url(#mp)"/></g><g transform="rotate(-20 512 512)"><g mask="url(#or)"><path d="M112 512 A400 120 0 1 1 912 512 A400 120 0 1 1 112 512 Z" fill="none" stroke="#F4F8FC" stroke-width="54"/></g></g><g transform="rotate(-20 512 512)"><g transform="translate(874.5 562.7)"><circle r="76" fill="#F2A93B"/></g></g></g><ellipse cx="548" cy="548" rx="44" ry="24" fill="#FFFFFF" fill-opacity="0.35" transform="rotate(-35 548 548)"/><circle cx="660" cy="680" r="10" fill="#FFFFFF" fill-opacity="0.35"/>
+</g>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<clipPath id="m"><rect width="1024" height="1024" rx="228"/></clipPath>
+<mask id="or" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="7000" height="7000"><rect x="-3000" y="-3000" width="7000" height="7000" fill="#fff"/><path d="M283 512 A229 229 0 0 1 741 512 Z" fill="#000"/><circle cx="874.5" cy="562.7" r="88" fill="#000"/></mask>
+<mask id="op" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="7000" height="7000"><rect x="-3000" y="-3000" width="7000" height="7000" fill="#fff"/><g transform="rotate(-20 512 512)"><path d="M112 512 A400 120 0 0 0 912 512" fill="none" stroke="#000" stroke-width="94"/></g></mask>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#DCE6F1"/></linearGradient>
+<radialGradient id="pl" cx="0.36" cy="0.3" r="0.8"><stop offset="0" stop-color="#4F95C6"/><stop offset="0.45" stop-color="#0F4A74"/><stop offset="1" stop-color="#00223A"/></radialGradient>
+<radialGradient id="mo" cx="0.34" cy="0.28" r="0.85"><stop offset="0" stop-color="#FFE7B4"/><stop offset="0.45" stop-color="#F2A93B"/><stop offset="1" stop-color="#A9650C"/></radialGradient>
+<filter id="b24" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="24"/></filter>
+</defs>
+<g clip-path="url(#m)">
+<rect width="1024" height="1024" fill="url(#bg)"/><ellipse cx="512" cy="800" rx="300" ry="60" fill="#0B2A48" fill-opacity="0.22" filter="url(#b24)"/><g mask="url(#op)"><circle cx="512" cy="512" r="215" fill="url(#pl)"/><ellipse cx="438" cy="410" rx="84" ry="44" fill="#FFFFFF" fill-opacity="0.3" transform="rotate(-32 438 410)"/></g><g transform="rotate(-20 512 512)"><g mask="url(#or)"><path d="M112 512 A400 120 0 1 1 912 512 A400 120 0 1 1 112 512 Z" fill="none" stroke="#0F4A74" stroke-width="66"/><path d="M112 512 A400 120 0 1 1 912 512 A400 120 0 1 1 112 512 Z" fill="none" stroke="#FFFFFF" stroke-width="46"/></g></g><g transform="rotate(-20 512 512)"><g transform="translate(874.5 562.7)"><circle r="70" fill="url(#mo)"/><ellipse cx="-24" cy="-28" rx="24" ry="14" fill="#FFFFFF" fill-opacity="0.75"/></g></g>
+</g>
+</svg>

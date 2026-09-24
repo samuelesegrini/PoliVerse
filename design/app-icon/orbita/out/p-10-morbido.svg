@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<clipPath id="m"><rect width="1024" height="1024" rx="228"/></clipPath>
+<mask id="or" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="7000" height="7000"><rect x="-3000" y="-3000" width="7000" height="7000" fill="#fff"/><path d="M268 512 A244 244 0 0 1 756 512 Z" fill="#000"/><circle cx="874.5" cy="562.7" r="92" fill="#000"/></mask>
+<mask id="op" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="7000" height="7000"><rect x="-3000" y="-3000" width="7000" height="7000" fill="#fff"/><g transform="rotate(-20 512 512)"><path d="M112 512 A400 120 0 0 0 912 512" fill="none" stroke="#000" stroke-width="102"/></g></mask>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF8F63"/><stop offset="1" stop-color="#FF4B2E"/></linearGradient>
+<pattern id="gr" width="42" height="42" patternUnits="userSpaceOnUse"><path d="M42 0H0V42" fill="none" stroke="#FFFFFF" stroke-opacity="0.09" stroke-width="2"/></pattern>
+<radialGradient id="pl" cx="0.38" cy="0.3" r="0.8"><stop offset="0" stop-color="#FFFFFF"/><stop offset="0.6" stop-color="#FFE5DE"/><stop offset="1" stop-color="#FFB09C"/></radialGradient>
+<linearGradient id="rb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF1EC"/><stop offset="1" stop-color="#FFB7A4"/></linearGradient>
+<radialGradient id="mo" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#FFB19E"/><stop offset="1" stop-color="#E83A20"/></radialGradient>
+<radialGradient id="ms" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#8A1A08" stop-opacity="0.45"/><stop offset="0.6" stop-color="#8A1A08" stop-opacity="0.23"/><stop offset="1" stop-color="#8A1A08" stop-opacity="0"/></radialGradient>
+</defs>
+<g clip-path="url(#m)">
+<rect width="1024" height="1024" fill="url(#bg)"/><rect width="1024" height="1024" fill="url(#gr)"/><ellipse cx="540" cy="800" rx="360" ry="110" fill="url(#ms)"/><g transform="rotate(-10 512 512)"><g mask="url(#op)"><circle cx="512" cy="512" r="230" fill="url(#pl)"/><circle cx="512" cy="512" r="226" fill="none" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="6"/><path d="M432 470 Q512 560 592 470" fill="none" stroke="#FF4B2E" stroke-width="46" stroke-linecap="round"/></g><g transform="rotate(-20 512 512)"><g mask="url(#or)"><path d="M112 512 A400 120 0 1 1 912 512 A400 120 0 1 1 112 512 Z" fill="none" stroke="url(#rb)" stroke-width="74"/><path d="M112 512 A400 120 0 1 1 912 512 A400 120 0 1 1 112 512 Z" fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="12" transform="translate(0 -20)"/></g></g><g transform="rotate(-20 512 512)"><g transform="translate(874.5 562.7)"><circle r="80" fill="url(#mo)"/><ellipse cx="-24" cy="-28" rx="24" ry="14" fill="#FFFFFF" fill-opacity="0.7"/></g></g></g>
+</g>
+</svg>

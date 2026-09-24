@@ -569,9 +569,9 @@
 		PV00000000000000000017 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-Dial AppIcon-Dial-Lavender AppIcon-Dial-Indigo AppIcon-Dial-Sky AppIcon-Dial-Mint AppIcon-Dial-Sage AppIcon-Dial-Mandarin AppIcon-Dial-Coral AppIcon-Dial-Raspberry AppIcon-Dial-Coffee AppIcon-Dial-Slate AppIcon-Dial-Graphite AppIcon-CloseUp AppIcon-CloseUp-Lavender AppIcon-CloseUp-Indigo AppIcon-CloseUp-Sky AppIcon-CloseUp-Mint AppIcon-CloseUp-Sage AppIcon-CloseUp-Mandarin AppIcon-CloseUp-Coral AppIcon-CloseUp-Raspberry AppIcon-CloseUp-Coffee AppIcon-CloseUp-Slate AppIcon-CloseUp-Graphite AppIcon-Neon AppIcon-Spectrum AppIcon-Leather AppIcon-Holographic AppIcon-Hyperspace AppIcon-Blueprint AppIcon-Circuit AppIcon-Heavens AppIcon-Observatory AppIcon-Soft AppIcon-Paper";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Config/PoliVerse.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -600,9 +600,9 @@
 		PV00000000000000000018 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-Dial AppIcon-Dial-Lavender AppIcon-Dial-Indigo AppIcon-Dial-Sky AppIcon-Dial-Mint AppIcon-Dial-Sage AppIcon-Dial-Mandarin AppIcon-Dial-Coral AppIcon-Dial-Raspberry AppIcon-Dial-Coffee AppIcon-Dial-Slate AppIcon-Dial-Graphite AppIcon-CloseUp AppIcon-CloseUp-Lavender AppIcon-CloseUp-Indigo AppIcon-CloseUp-Sky AppIcon-CloseUp-Mint AppIcon-CloseUp-Sage AppIcon-CloseUp-Mandarin AppIcon-CloseUp-Coral AppIcon-CloseUp-Raspberry AppIcon-CloseUp-Coffee AppIcon-CloseUp-Slate AppIcon-CloseUp-Graphite AppIcon-Neon AppIcon-Spectrum AppIcon-Leather AppIcon-Holographic AppIcon-Hyperspace AppIcon-Blueprint AppIcon-Circuit AppIcon-Heavens AppIcon-Observatory AppIcon-Soft AppIcon-Paper";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Config/PoliVerse.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

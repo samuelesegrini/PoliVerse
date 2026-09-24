@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<mask id="or" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="7000" height="7000"><rect x="-3000" y="-3000" width="7000" height="7000" fill="#fff"/><path d="M283 512 A229 229 0 0 1 741 512 Z" fill="#000"/><circle cx="874.5" cy="562.7" r="88" fill="#000"/></mask>
+<mask id="op" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="7000" height="7000"><rect x="-3000" y="-3000" width="7000" height="7000" fill="#fff"/><g transform="rotate(-20 512 512)"><path d="M112 512 A400 120 0 0 0 912 512" fill="none" stroke="#000" stroke-width="82"/></g></mask>
+</defs>
+<g mask="url(#op)"><circle cx="512" cy="512" r="215" fill="#2E6E99"/></g>
+</svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<radialGradient id="mo" cx="0.34" cy="0.28" r="0.85"><stop offset="0" stop-color="#FFE7B4"/><stop offset="0.45" stop-color="#F2A93B"/><stop offset="1" stop-color="#A9650C"/></radialGradient>
+</defs>
+<g transform="rotate(-30 380 760)"><g transform="translate(958.5 583.8)"><circle r="112" fill="url(#mo)"/><ellipse cx="-38" cy="-44" rx="40" ry="24" fill="#FFFFFF" fill-opacity="0.75"/></g></g>
+</svg>

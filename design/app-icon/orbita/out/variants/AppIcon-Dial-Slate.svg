@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<clipPath id="m"><rect width="1024" height="1024" rx="228"/></clipPath>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5B6472"/><stop offset="1" stop-color="#24282E"/></linearGradient>
+
+<radialGradient id="L2pl" cx="0.36" cy="0.3" r="0.8"><stop offset="0" stop-color="#9CD0F2"/><stop offset="0.42" stop-color="#2E6E99"/><stop offset="1" stop-color="#0A2640"/></radialGradient>
+
+<radialGradient id="L3mo" cx="0.34" cy="0.28" r="0.85"><stop offset="0" stop-color="#FFE7B4"/><stop offset="0.45" stop-color="#F2A93B"/><stop offset="1" stop-color="#A9650C"/></radialGradient>
+<radialGradient id="L3lg" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#F2A93B" stop-opacity="0.6"/><stop offset="0.6" stop-color="#F2A93B" stop-opacity="0.30"/><stop offset="1" stop-color="#F2A93B" stop-opacity="0"/></radialGradient>
+</defs>
+<g clip-path="url(#m)"><rect width="1024" height="1024" fill="url(#bg)"/>
+
+<circle cx="512" cy="512" r="360" fill="none" stroke="#1E4468" stroke-width="48"/><path d="M844.6 374.2 A360 360 0 0 1 823.8 692" fill="none" stroke="#FFFFFF" stroke-width="48" stroke-linecap="round"/><path d="M465 868.9 A360 360 0 0 1 200.2 692" fill="none" stroke="#8FB0CE" stroke-width="48" stroke-linecap="round"/><circle cx="512" cy="152" r="10" fill="#8FB0CE"/>
+
+<circle cx="512" cy="512" r="210" fill="url(#L2pl)"/><ellipse cx="440" cy="414" rx="80" ry="42" fill="#FFFFFF" fill-opacity="0.3" transform="rotate(-32 440 414)"/>
+
+<circle cx="865.4" cy="580.7" r="120" fill="url(#L3lg)"/><circle cx="865.4" cy="580.7" r="72" fill="url(#L3mo)" stroke="#0B2034" stroke-width="10"/><ellipse cx="842" cy="554" rx="24" ry="14" fill="#FFFFFF" fill-opacity="0.75"/>
+</g>
+</svg>

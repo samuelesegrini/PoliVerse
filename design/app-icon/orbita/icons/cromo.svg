@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<clipPath id="m"><rect width="1024" height="1024" rx="228"/></clipPath>
+<mask id="or" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="7000" height="7000"><rect x="-3000" y="-3000" width="7000" height="7000" fill="#fff"/><path d="M283 512 A229 229 0 0 1 741 512 Z" fill="#000"/><circle cx="874.5" cy="562.7" r="88" fill="#000"/></mask>
+<mask id="op" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="7000" height="7000"><rect x="-3000" y="-3000" width="7000" height="7000" fill="#fff"/><g transform="rotate(-20 512 512)"><path d="M112 512 A400 120 0 0 0 912 512" fill="none" stroke="#000" stroke-width="82"/></g></mask>
+<radialGradient id="bg" cx="0.5" cy="0.35" r="0.8"><stop offset="0" stop-color="#2A2A2C"/><stop offset="1" stop-color="#0B0B0C"/></radialGradient>
+<radialGradient id="pl" cx="0.35" cy="0.28" r="0.85"><stop offset="0" stop-color="#FFFFFF"/><stop offset="0.35" stop-color="#C4C4C4"/><stop offset="0.7" stop-color="#5A5A5A"/><stop offset="1" stop-color="#9A9A9A"/></radialGradient>
+<linearGradient id="cr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="0.45" stop-color="#8A8A8A"/><stop offset="0.55" stop-color="#E6E6E6"/><stop offset="1" stop-color="#7A7A7A"/></linearGradient>
+<radialGradient id="mo" cx="0.34" cy="0.28" r="0.85"><stop offset="0" stop-color="#FFE7B4"/><stop offset="0.45" stop-color="#F2A93B"/><stop offset="1" stop-color="#A9650C"/></radialGradient>
+</defs>
+<g clip-path="url(#m)">
+<rect width="1024" height="1024" fill="url(#bg)"/><g mask="url(#op)"><circle cx="512" cy="512" r="215" fill="url(#pl)"/></g><g transform="rotate(-20 512 512)"><g mask="url(#or)"><path d="M112 512 A400 120 0 1 1 912 512 A400 120 0 1 1 112 512 Z" fill="none" stroke="url(#cr)" stroke-width="54"/></g></g><g transform="rotate(-20 512 512)"><g transform="translate(874.5 562.7)"><circle r="76" fill="url(#mo)"/><ellipse cx="-26" cy="-31" rx="28" ry="17" fill="#FFFFFF" fill-opacity="0.75"/></g></g>
+</g>
+</svg>

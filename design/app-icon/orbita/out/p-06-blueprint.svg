@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<clipPath id="m"><rect width="1024" height="1024" rx="228"/></clipPath>
+<mask id="or" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="7000" height="7000"><rect x="-3000" y="-3000" width="7000" height="7000" fill="#fff"/><path d="M279 512 A233 233 0 0 1 745 512 Z" fill="#000"/><circle cx="874.5" cy="562.7" r="98" fill="#000"/></mask>
+<mask id="op" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="7000" height="7000"><rect x="-3000" y="-3000" width="7000" height="7000" fill="#fff"/><g transform="rotate(-20 512 512)"><path d="M112 512 A400 120 0 0 0 912 512" fill="none" stroke="#000" stroke-width="94"/></g></mask>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#12A8FF"/><stop offset="1" stop-color="#0A62E4"/></linearGradient>
+<linearGradient id="pf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D4E9FF"/><stop offset="1" stop-color="#5AA4F5"/></linearGradient>
+</defs>
+<g clip-path="url(#m)">
+<rect width="1024" height="1024" fill="url(#bg)"/><rect x="62" y="62" width="900" height="900" rx="178" fill="none" stroke="#FFFFFF" stroke-width="12"/><g stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="5" stroke-dasharray="18 14"><line x1="196" y1="110" x2="196" y2="914"/><line x1="828" y1="110" x2="828" y2="914"/><line x1="110" y1="196" x2="914" y2="196"/><line x1="110" y1="828" x2="914" y2="828"/><circle cx="512" cy="512" r="316" fill="none" stroke-opacity="0.4"/></g><g transform="translate(512 512) scale(0.9) translate(-512 -512)"><g mask="url(#op)"><circle cx="512" cy="512" r="215" fill="url(#pf)" stroke="#FFFFFF" stroke-width="12"/></g><g transform="rotate(-20 512 512)"><g mask="url(#or)"><path d="M112 512 A400 120 0 1 1 912 512 A400 120 0 1 1 112 512 Z" fill="none" stroke="#FFFFFF" stroke-width="70"/><path d="M112 512 A400 120 0 1 1 912 512 A400 120 0 1 1 112 512 Z" fill="none" stroke="#8CC4FA" stroke-width="46"/><path d="M112 512 A400 120 0 1 1 912 512 A400 120 0 1 1 112 512 Z" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-dasharray="1 24" stroke-linecap="round"/></g></g><g transform="rotate(-20 512 512)"><g transform="translate(874.5 562.7)"><circle r="80" fill="#FFD27A" stroke="#FFFFFF" stroke-width="12"/></g></g></g>
+</g>
+</svg>

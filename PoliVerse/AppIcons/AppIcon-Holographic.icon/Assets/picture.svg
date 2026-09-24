@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<clipPath id="m"><rect width="1024" height="1024" rx="228"/></clipPath>
+<mask id="or" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="7000" height="7000"><rect x="-3000" y="-3000" width="7000" height="7000" fill="#fff"/><path d="M274 512 A238 238 0 0 1 750 512 Z" fill="#000"/><circle cx="874.5" cy="562.7" r="90" fill="#000"/></mask>
+<mask id="op" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="7000" height="7000"><rect x="-3000" y="-3000" width="7000" height="7000" fill="#fff"/><g transform="rotate(-20 512 512)"><path d="M112 512 A400 120 0 0 0 912 512" fill="none" stroke="#000" stroke-width="86"/></g></mask>
+<linearGradient id="sh" x1="0" y1="0" x2="1" y2="1"><stop offset="0.3" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.85"/><stop offset="0.6" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>
+<clipPath id="cp"><circle cx="512" cy="512" r="215"/></clipPath>
+<radialGradient id="hb0" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#BFE8FF" stop-opacity="1"/><stop offset="0.6" stop-color="#BFE8FF" stop-opacity="0.50"/><stop offset="1" stop-color="#BFE8FF" stop-opacity="0"/></radialGradient>
+<radialGradient id="hb1" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#F2B8FF" stop-opacity="1"/><stop offset="0.6" stop-color="#F2B8FF" stop-opacity="0.50"/><stop offset="1" stop-color="#F2B8FF" stop-opacity="0"/></radialGradient>
+<radialGradient id="hb2" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#B3C2FF" stop-opacity="1"/><stop offset="0.6" stop-color="#B3C2FF" stop-opacity="0.50"/><stop offset="1" stop-color="#B3C2FF" stop-opacity="0"/></radialGradient>
+<radialGradient id="hb3" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#FFB8C6" stop-opacity="1"/><stop offset="0.6" stop-color="#FFB8C6" stop-opacity="0.50"/><stop offset="1" stop-color="#FFB8C6" stop-opacity="0"/></radialGradient>
+<radialGradient id="hb4" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#A6F0E6" stop-opacity="1"/><stop offset="0.6" stop-color="#A6F0E6" stop-opacity="0.50"/><stop offset="1" stop-color="#A6F0E6" stop-opacity="0"/></radialGradient>
+<radialGradient id="hb5" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#FFF3B8" stop-opacity="1"/><stop offset="0.6" stop-color="#FFF3B8" stop-opacity="0.50"/><stop offset="1" stop-color="#FFF3B8" stop-opacity="0"/></radialGradient>
+<g id="h"><rect width="1024" height="1024" fill="#EDF3FF"/><circle cx="200" cy="200" r="420" fill="url(#hb0)"/><circle cx="820" cy="180" r="392" fill="url(#hb1)"/><circle cx="860" cy="700" r="420" fill="url(#hb2)"/><circle cx="180" cy="820" r="420" fill="url(#hb3)"/><circle cx="520" cy="900" r="364" fill="url(#hb4)"/><circle cx="330" cy="560" r="280" fill="url(#hb5)"/><rect width="1024" height="1024" fill="url(#sh)"/></g>
+</defs>
+<g clip-path="url(#m)">
+<use href="#h" xlink:href="#h"/><rect x="52" y="52" width="920" height="920" rx="190" fill="none" stroke="#14101E" stroke-width="24"/><g mask="url(#op)"><g clip-path="url(#cp)"><g transform="rotate(180 512 512)"><use href="#h" xlink:href="#h"/></g></g><circle cx="512" cy="512" r="215" fill="none" stroke="#14101E" stroke-width="22"/></g><g transform="rotate(-20 512 512)"><g mask="url(#or)"><path d="M112 512 A400 120 0 1 1 912 512 A400 120 0 1 1 112 512 Z" fill="none" stroke="#14101E" stroke-width="62"/></g></g><g transform="rotate(-20 512 512)"><g transform="translate(874.5 562.7)"><circle r="78" fill="#14101E"/><ellipse cx="-22" cy="-26" rx="24" ry="14" fill="#FFFFFF" fill-opacity="0.55"/></g></g>
+</g>
+</svg>
