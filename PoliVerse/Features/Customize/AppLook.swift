@@ -21,6 +21,11 @@ nonisolated struct AppLook: Codable, Equatable, Hashable, Sendable {
     var icon = AppIconChoice.classic
     /// The tab bar's own behaviour, when unpaired.
     var tabBar = TabBarBehaviour.minimizes
+    /// The icon's shape. Chosen apart from its colour, and kept when the app
+    /// is paired again: pairing is about following the page's colour.
+    var iconStyle = AppIconStyle.orbit
+    /// The special icon worn in the Speciali shape, kept like the shape.
+    var special = SpecialIcon.neon
 
     /// Paired: the app follows the page.
     init() {}
@@ -35,17 +40,19 @@ nonisolated struct AppLook: Codable, Equatable, Hashable, Sendable {
         tint = try? container.decodeIfPresent(Flavor.self, forKey: .tint)
         icon = (try? container.decodeIfPresent(AppIconChoice.self, forKey: .icon)) ?? icon
         tabBar = (try? container.decodeIfPresent(TabBarBehaviour.self, forKey: .tabBar)) ?? tabBar
+        iconStyle = (try? container.decodeIfPresent(AppIconStyle.self, forKey: .iconStyle)) ?? iconStyle
+        special = (try? container.decodeIfPresent(SpecialIcon.self, forKey: .special)) ?? special
     }
 }
 
-/// The icons the app can wear on the Home Screen: the one it ships with, a
-/// dark and a light one, and one per Flavor swatch.
+/// The colours the dial and close-up icons come in: their own ground and
+/// one per Flavor swatch.
 ///
 /// Built by `scripts/build-alternate-icons.py`, which keeps the ids here and
 /// the asset names in step.
 nonisolated enum AppIconChoice: String, Codable, CaseIterable, Identifiable, Sendable {
-    /// The shipped icon, then a dark and a light ground.
-    case classic, dark, light
+    /// The shape's own ground.
+    case classic
     /// One per ``Flavor/swatches``, after Blu Politecnico, which is the classic.
     case lavender, indigo, sky, mint, sage, mandarin, coral, raspberry, coffee, slate, graphite
 
@@ -56,8 +63,6 @@ nonisolated enum AppIconChoice: String, Codable, CaseIterable, Identifiable, Sen
     var title: LocalizedStringKey {
         switch self {
         case .classic: "Classica"
-        case .dark: "Scura"
-        case .light: "Chiara"
         case .lavender: "Lavanda"
         case .indigo: "Indaco"
         case .sky: "Cielo"
@@ -72,18 +77,40 @@ nonisolated enum AppIconChoice: String, Codable, CaseIterable, Identifiable, Sen
         }
     }
 
-    /// The name the system knows the icon by; `nil` for the primary icon.
-    var alternateIconName: String? {
-        self == .classic ? nil : "AppIcon-\(rawValue.prefix(1).uppercased())\(rawValue.dropFirst())"
+    /// The name the system knows the icon by in a shape; `nil` for the primary icon.
+    ///
+    /// Orbita is the shipped icon alone; the dial and the close-up come in
+    /// their own ground and in every swatch. The special icons are not colours,
+    /// so their shape names none here.
+    func alternateIconName(in style: AppIconStyle) -> String? {
+        switch style {
+        case .orbit, .special: return nil
+        case .dial, .closeUp:
+            let base = "AppIcon-\(style.assetName)"
+            return self == .classic ? base : base + "-" + rawValue.prefix(1).uppercased() + rawValue.dropFirst()
+        }
     }
 
-    /// The small copy drawn inside the app, since an icon set is not an image.
-    var previewImage: String { "AppIconPreview-\(rawValue)" }
+    /// The small copy drawn inside the app, in a shape.
+    func previewImage(in style: AppIconStyle) -> String {
+        switch style {
+        case .orbit, .special: "AppIconPreview-classic"
+        case .dial, .closeUp: "AppIconPreview-\(style.rawValue)-\(rawValue)"
+        }
+    }
 
-    /// The swatch colour a Flavor icon is built on; `nil` for classic, dark and light.
+    /// The colours a shape comes in: none to pick for Orbita and the special icons.
+    static func choices(in style: AppIconStyle) -> [AppIconChoice] {
+        switch style {
+        case .orbit, .special: []
+        case .dial, .closeUp: allCases
+        }
+    }
+
+    /// The swatch colour a Flavor icon is built on; `nil` for classic.
     var swatch: Flavor.RGB? {
         let hex: String? = switch self {
-        case .classic, .dark, .light: nil
+        case .classic: nil
         case .lavender: "#7A6FE0"
         case .indigo: "#3B4BC8"
         case .sky: "#2E9BD6"
@@ -113,6 +140,75 @@ nonisolated enum AppIconChoice: String, Codable, CaseIterable, Identifiable, Sen
         }
         return candidates.min { distance($0.1, flavor.base) < distance($1.1, flavor.base) }?.0 ?? .classic
     }
+}
+
+/// The icon's shape: the planet in orbit, the day as a dial, or the planet close up.
+nonisolated enum AppIconStyle: String, Codable, CaseIterable, Identifiable, Sendable {
+    /// The shipped icon: the planet, its ring and the moon.
+    case orbit
+    /// The day as a dial, the moon on its rim (Giorno).
+    case dial
+    /// The planet close up, filling the corner (Vicino).
+    case closeUp
+    /// One of the special icons, each a picture of its own.
+    case special
+
+    /// The shape's identity, which is its raw value.
+    var id: String { rawValue }
+
+    /// What the shape is called in Personalizza.
+    var title: LocalizedStringKey {
+        switch self {
+        case .orbit: "Orbita"
+        case .dial: "Giorno"
+        case .closeUp: "Vicino"
+        case .special: "Speciali"
+        }
+    }
+
+    /// The part of the asset names that names the shape.
+    var assetName: String {
+        switch self {
+        case .orbit: ""
+        case .dial: "Dial"
+        case .closeUp: "CloseUp"
+        case .special: ""
+        }
+    }
+}
+
+/// The special icons: each its own picture rather than a colour of a shape.
+///
+/// Built by `scripts/build-alternate-icons.py` from `design/app-icon/orbita/premium`.
+nonisolated enum SpecialIcon: String, Codable, CaseIterable, Identifiable, Sendable {
+    case neon, spectrum, leather, holographic, hyperspace, blueprint
+    case circuit, heavens, observatory, soft, paper
+
+    /// The icon's identity, which is its raw value.
+    var id: String { rawValue }
+
+    /// What the icon is called in Personalizza.
+    var title: LocalizedStringKey {
+        switch self {
+        case .neon: "Neon"
+        case .spectrum: "Spettro"
+        case .leather: "Pelle"
+        case .holographic: "Olografico"
+        case .hyperspace: "Iperspazio"
+        case .blueprint: "Blueprint"
+        case .circuit: "Circuito"
+        case .heavens: "Cielo"
+        case .observatory: "Osservatorio"
+        case .soft: "Morbido"
+        case .paper: "Carta"
+        }
+    }
+
+    /// The name the system knows the icon by.
+    var alternateIconName: String { "AppIcon-" + rawValue.prefix(1).uppercased() + rawValue.dropFirst() }
+
+    /// The small copy drawn inside the app.
+    var previewImage: String { "AppIconPreview-special-\(rawValue)" }
 }
 
 /// How the tab bar behaves while a page scrolls.
@@ -168,9 +264,25 @@ nonisolated extension TodayStyle {
         app.tabBar = tabBar
     }
 
-    /// Puts the app back on the page, dropping its own choices.
+    /// The icon's shape, which the app keeps paired or not.
+    var appIconStyle: AppIconStyle { app.iconStyle }
+
+    /// The name the system knows the look's icon by.
+    var appIconName: String? {
+        appIconStyle == .special ? app.special.alternateIconName : appIcon.alternateIconName(in: appIconStyle)
+    }
+
+    /// The small copy of the look's icon drawn inside the app.
+    var appIconPreview: String {
+        appIconStyle == .special ? app.special.previewImage : appIcon.previewImage(in: appIconStyle)
+    }
+
+    /// Puts the app back on the page, dropping its own choices but the icon's shape.
     mutating func pairApp() {
+        let (style, special) = (app.iconStyle, app.special)
         app = AppLook()
+        app.iconStyle = style
+        app.special = special
     }
 }
 
@@ -182,11 +294,11 @@ enum AppIconSwitcher {
     /// the student with an alert of its own, so this runs once, when
     /// Personalizza closes, and never while swiping through looks.
     ///
-    /// - Parameter choice: The icon to wear.
-    static func apply(_ choice: AppIconChoice) async {
+    /// - Parameter name: The icon's name, `nil` for the primary icon.
+    static func apply(_ name: String?) async {
         let application = UIApplication.shared
         guard application.supportsAlternateIcons,
-              application.alternateIconName != choice.alternateIconName else { return }
-        try? await application.setAlternateIconName(choice.alternateIconName)
+              application.alternateIconName != name else { return }
+        try? await application.setAlternateIconName(name)
     }
 }

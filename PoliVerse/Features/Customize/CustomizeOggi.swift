@@ -481,7 +481,7 @@ struct CustomizeOggi: View {
         drop()
         removed = nil
         persist(pruning: true)
-        let icon = library.active.resolved.appIcon
+        let icon = library.active.resolved.appIconName
         withAnimation(Self.expand) {
             expanded = true
         } completion: {

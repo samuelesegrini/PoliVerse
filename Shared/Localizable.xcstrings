@@ -60,6 +60,96 @@
     " in %@" : {
 
     },
+    "Circuito" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Circuit"
+          }
+        }
+      }
+    },
+    "Iperspazio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hyperspace"
+          }
+        }
+      }
+    },
+    "Neon" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neon"
+          }
+        }
+      }
+    },
+    "Olografico" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Holographic"
+          }
+        }
+      }
+    },
+    "Orbita" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orbit"
+          }
+        }
+      }
+    },
+    "Osservatorio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Observatory"
+          }
+        }
+      }
+    },
+    "Pelle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leather"
+          }
+        }
+      }
+    },
+    "Spettro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spectrum"
+          }
+        }
+      }
+    },
+    "Vicino" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close up"
+          }
+        }
+      }
+    },
     "—" : {
       "localizations" : {
         "en" : {

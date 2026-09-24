@@ -27,9 +27,9 @@ struct AppLookTests {
         #expect(look.appFlavor == look.flavor)
         #expect(look.appIcon == .mint)
 
-        look.app.icon = .dark
+        look.app.icon = .graphite
         look.flavor = try #require(Flavor(hex: "#C2386F"))
-        #expect(look.appIcon == .dark, "An unpaired app followed the page's icon")
+        #expect(look.appIcon == .graphite, "An unpaired app followed the page's icon")
         #expect(look.appFlavor.hex == "#2FA88A", "An unpaired app followed the page's colour")
 
         let tint = try #require(Flavor(hex: "#3B4BC8"))
@@ -41,7 +41,7 @@ struct AppLookTests {
     func pairAgain() {
         var look = TodayStyle()
         look.unpairApp()
-        look.app.icon = .light
+        look.app.icon = .coral
         look.app.tabBar = .stays
         look.pairApp()
         #expect(look.app == AppLook())
@@ -57,13 +57,12 @@ struct AppLookTests {
         }
     }
 
-    @Test("Every icon has its asset names and a preview to draw")
+    @Test("Orbita is the shipped icon alone; the shapes name their colours")
     func assets() {
-        #expect(AppIconChoice.classic.alternateIconName == nil)
-        #expect(AppIconChoice.lavender.alternateIconName == "AppIcon-Lavender")
-        for choice in AppIconChoice.allCases {
-            #expect(UIImage(named: choice.previewImage) != nil, "No preview for \(choice.rawValue)")
-        }
+        #expect(AppIconChoice.lavender.alternateIconName(in: .orbit) == nil)
+        #expect(AppIconChoice.classic.alternateIconName(in: .dial) == "AppIcon-Dial")
+        #expect(AppIconChoice.lavender.alternateIconName(in: .closeUp) == "AppIcon-CloseUp-Lavender")
+        #expect(UIImage(named: "AppIconPreview-classic") != nil)
     }
 
     @Test("Round-trips through the stored look; an older look comes back paired")
@@ -79,5 +78,47 @@ struct AppLookTests {
         let older = try #require(TodayStyle(rawValue: ##"{"flavor":"#8A5A3C"}"##))
         #expect(older.app.paired)
         #expect(older.appIcon == .coffee)
+    }
+
+    @Test("Every shape and colour names an icon the app ships, and a preview it can draw")
+    func shapesNameShippedIcons() throws {
+        let plist = try #require(Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any])
+        let alternates = try #require(plist["CFBundleAlternateIcons"] as? [String: Any])
+        for style in AppIconStyle.allCases {
+            for choice in AppIconChoice.choices(in: style) {
+                if let name = choice.alternateIconName(in: style) {
+                    #expect(alternates[name] != nil, "\(name) is not in the app")
+                }
+                #expect(UIImage(named: choice.previewImage(in: style)) != nil,
+                        "\(choice.previewImage(in: style)) is missing")
+            }
+        }
+        for icon in SpecialIcon.allCases {
+            #expect(alternates[icon.alternateIconName] != nil, "\(icon.alternateIconName) is not in the app")
+            #expect(UIImage(named: icon.previewImage) != nil, "\(icon.previewImage) is missing")
+        }
+    }
+
+    @Test("A special icon is worn whatever the colour, and kept on pairing")
+    func specialIcon() {
+        var look = TodayStyle()
+        look.app.iconStyle = .special
+        look.app.special = .leather
+        #expect(look.appIconName == "AppIcon-Leather")
+        #expect(look.appIconPreview == "AppIconPreview-special-leather")
+        look.pairApp()
+        #expect(look.appIconName == "AppIcon-Leather")
+    }
+
+    @Test("Pairing again keeps the icon's shape, and the shape reaches the icon's name")
+    func shapeSurvivesPairing() {
+        var look = TodayStyle()
+        look.app.iconStyle = .dial
+        look.unpairApp()
+        look.app.icon = .mint
+        #expect(look.appIconName == "AppIcon-Dial-Mint")
+        look.pairApp()
+        #expect(look.app.iconStyle == .dial)
+        #expect(look.appIconName?.hasPrefix("AppIcon-Dial") == true)
     }
 }

@@ -189,7 +189,7 @@ struct AppPreview: View {
                 ForEach(0..<20, id: \.self) { index in
                     VStack(spacing: 6) {
                         if index == 5 {
-                            Image(look.appIcon.previewImage)
+                            Image(look.appIconPreview)
                                 .resizable()
                                 .frame(width: 64, height: 64)
                                 .clipShape(.rect(cornerRadius: 15, style: .continuous))

@@ -145,7 +145,7 @@ struct AppLookEditor: View {
                 .frame(width: 24, height: 24)
                 .overlay { Circle().strokeBorder(.white, lineWidth: 2) }
         case .icon:
-            Image(look.resolved.appIcon.previewImage)
+            Image(look.resolved.appIconPreview)
                 .resizable()
                 .frame(width: 28, height: 28)
                 .clipShape(.rect(cornerRadius: 7, style: .continuous))
@@ -240,12 +240,27 @@ struct AppLookEditor: View {
         }
     }
 
-    /// Every icon, the one in use ringed.
+    /// The icon's shape, then every colour it comes in, the one in use ringed.
     private var iconStrip: some View {
+        VStack(spacing: 10) {
+            GlassSegmentedPicker("Forma", selection: $look.app.iconStyle) { Text($0.title) }
+                .accessibilityIdentifier("app-icon-style")
+            switch look.appIconStyle {
+            case .orbit: EmptyView()
+            case .dial, .closeUp: iconColours
+            case .special: specialIcons
+            }
+        }
+    }
+
+    /// Every colour of the icon in its shape, the one in use ringed. The
+    /// shape alone does not unpair the app: a paired app keeps following
+    /// the page's colour, in the new shape.
+    private var iconColours: some View {
         ScrollViewReader { reader in
             ScrollView(.horizontal) {
                 HStack(spacing: 12) {
-                    ForEach(AppIconChoice.allCases) { choice in
+                    ForEach(AppIconChoice.choices(in: look.appIconStyle)) { choice in
                         let chosen = look.resolved.appIcon == choice
                         Button {
                             withAnimation(.snappy) {
@@ -254,7 +269,7 @@ struct AppLookEditor: View {
                             }
                         } label: {
                             VStack(spacing: 5) {
-                                Image(choice.previewImage)
+                                Image(choice.previewImage(in: look.appIconStyle))
                                     .resizable()
                                     .frame(width: 52, height: 52)
                                     .clipShape(.rect(cornerRadius: 12, style: .continuous))
@@ -280,6 +295,46 @@ struct AppLookEditor: View {
             .scrollIndicators(.hidden)
             // Opens on the icon in use, which a paired app may have far along.
             .onAppear { reader.scrollTo(look.resolved.appIcon, anchor: .center) }
+        }
+    }
+
+    /// Every special icon, the one in use ringed. Kept with the shape, so
+    /// picking one leaves the app paired.
+    private var specialIcons: some View {
+        ScrollViewReader { reader in
+            ScrollView(.horizontal) {
+                HStack(spacing: 12) {
+                    ForEach(SpecialIcon.allCases) { icon in
+                        let chosen = look.app.special == icon
+                        Button {
+                            withAnimation(.snappy) { look.app.special = icon }
+                        } label: {
+                            VStack(spacing: 5) {
+                                Image(icon.previewImage)
+                                    .resizable()
+                                    .frame(width: 52, height: 52)
+                                    .clipShape(.rect(cornerRadius: 12, style: .continuous))
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 15, style: .continuous)
+                                            .strokeBorder(chosen ? Color.white : .clear, lineWidth: 2.5)
+                                            .padding(-4)
+                                    }
+                                    .padding(4)
+                                Text(icon.title)
+                                    .font(.caption2)
+                                    .foregroundStyle(chosen ? .primary : .secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(chosen ? .isSelected : [])
+                        .accessibilityIdentifier("app-icon-special-\(icon.rawValue)")
+                        .id(icon)
+                    }
+                }
+                .padding(.horizontal, 4)
+            }
+            .scrollIndicators(.hidden)
+            .onAppear { reader.scrollTo(look.app.special, anchor: .center) }
         }
     }
 
