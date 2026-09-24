@@ -103,11 +103,9 @@ struct CoursesPage: View {
         let focus = spotlight(shown: shown, lessons: lessons)
         // The spotlight already shows the first lesson; what is left of the
         // day comes under it.
-        // A special Flavor leaves the day to Oggi and the lesson bar: Corsi
-        // is about what is new in the courses.
-        let later = style.special != nil ? []
-            : hero == .spotlight && focus?.lesson?.id == lessons.first?.event.id
-            ? Array(lessons.dropFirst()) : lessons
+        // The day is Oggi's, and the lesson under way rides above the tabs:
+        // Corsi answers what is new in the courses, so it lists no lessons.
+        let later: [(course: Course, event: AgendaEvent)] = []
 
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
@@ -382,13 +380,16 @@ struct CoursesPage: View {
         .padding(.top, 8)
     }
 
-    /// The course the spotlight is on: the lesson under way or next today, else
-    /// the next one this week, else the first favourite.
+    /// The course the spotlight is on: the one with the most that is new,
+    /// else the first favourite. Chosen by news rather than by the clock —
+    /// what is on now is Oggi's, and the lesson bar's above the tabs.
     private func spotlight(shown: [Course], lessons: [(course: Course, event: AgendaEvent)])
         -> (course: Course, lesson: AgendaEvent?)? {
-        if let first = lessons.first { return (first.course, first.event) }
-        if let next = nextLesson(after: now, in: shown) { return (next.course, next.event) }
-        guard let course = shown.first(where: \.isFavourite) ?? shown.first else { return nil }
+        let busiest = shown
+            .map { ($0, news(for: $0).total + recordings.toWatch(in: $0)) }
+            .filter { $0.1 > 0 }
+            .max { $0.1 < $1.1 }?.0
+        guard let course = busiest ?? shown.first(where: \.isFavourite) ?? shown.first else { return nil }
         return (course, nil)
     }
 
@@ -636,17 +637,6 @@ struct CoursesPage: View {
         TodayDigest.timetable(events: agenda.events, day: now)
             .filter { $0.kind == .lecture }
             .compactMap { event in list.first { matches(event, $0) }.map { ($0, event) } }
-    }
-
-    /// The first lesson still to start within a week, with the course it belongs to.
-    private func nextLesson(after moment: Date, in list: [Course]) -> (course: Course, event: AgendaEvent)? {
-        let horizon = moment.addingTimeInterval(7 * 86_400)
-        return agenda.events
-            .filter { $0.kind == .lecture && $0.start > moment && $0.start < horizon }
-            .sorted { $0.start < $1.start }
-            .lazy
-            .compactMap { event in list.first { matches(event, $0) }.map { ($0, event) } }
-            .first
     }
 }
 

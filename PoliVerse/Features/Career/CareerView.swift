@@ -29,6 +29,10 @@ struct CareerView: View {
     @State private var showingSimulator = false
     /// Whether the exam updates feed is presented.
     @State private var showingUpdates = false
+    /// Whether the Manifesto is presented.
+    @State private var showingManifesti = false
+    /// Whether the personal timetable is presented.
+    @State private var showingTimetable = false
     /// Which years are open. Nil until the student touches one, so the
     /// defaults below can depend on the data rather than on a first render.
     @State private var openYears: Set<String>?
@@ -69,6 +73,8 @@ struct CareerView: View {
                 .navigationDestination(isPresented: $showingPlan) { StudyPlanView() }
                 .navigationDestination(isPresented: $showingSimulator) { GradeSimulatorView() }
                 .navigationDestination(isPresented: $showingUpdates) { ExamUpdatesView() }
+                .navigationDestination(isPresented: $showingManifesti) { ManifestiView() }
+                .navigationDestination(isPresented: $showingTimetable) { PersonalTimetableView() }
                 .task { await career.load() }
                 .refreshable { await career.load(force: true) }
                 .sheet(item: $selectedExam) { ExamDetailView(exam: $0) }
@@ -97,7 +103,8 @@ struct CareerView: View {
                                               : StudyPlan(exams: career.libretto).weightedMean ?? 0,
                                           delta: career.meanDelta) { showingSimulator = true }
                         BlueprintPath(book: career.gradeBook, plan: { showingPlan = true },
-                                      simulate: { showingSimulator = true }, updates: { showingUpdates = true })
+                                      simulate: { showingSimulator = true }, updates: { showingUpdates = true },
+                                    catalogue: { showingManifesti = true })
                     }
                 } else if style.special == .playful {
                     PlayfulTickets(deadlines: CareerDeadline.all(in: career.sessions)) { selectedExam = $0 }
@@ -107,7 +114,8 @@ struct CareerView: View {
                                             : StudyPlan(exams: career.libretto).weightedMean ?? 0,
                                         delta: career.meanDelta) { showingSimulator = true }
                         PlayfulPath(book: career.gradeBook, plan: { showingPlan = true },
-                                    simulate: { showingSimulator = true }, updates: { showingUpdates = true })
+                                    simulate: { showingSimulator = true }, updates: { showingUpdates = true },
+                                    catalogue: { showingManifesti = true })
                     }
                 } else {
                     CareerNowCard(deadlines: CareerDeadline.all(in: career.sessions)) { selectedExam = $0 }
@@ -168,6 +176,12 @@ struct CareerView: View {
             Section {
                 Button("Piano di studi", systemImage: "list.bullet.rectangle") { showingPlan = true }
                 Button("Simulazione media", systemImage: "function") { showingSimulator = true }
+            }
+            // What the Politecnico offers, which is the path's business, not
+            // Cerca's: the catalogue and the timetable built from it.
+            Section("Offerta didattica") {
+                Button("Manifesto degli studi", systemImage: "books.vertical") { showingManifesti = true }
+                Button("Orario personalizzato", systemImage: "calendar.badge.plus") { showingTimetable = true }
             }
         } label: {
             // The badge is on the tab already; here it is only the hint that

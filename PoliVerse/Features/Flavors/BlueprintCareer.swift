@@ -212,6 +212,8 @@ struct BlueprintPath: View {
     let simulate: () -> Void
     /// Opens the exam news.
     let updates: () -> Void
+    /// Opens the Manifesto degli studi.
+    let catalogue: () -> Void
 
     /// The look in use.
     @Environment(\.look) private var style
@@ -252,6 +254,7 @@ struct BlueprintPath: View {
                 tool("PIANO", action: plan)
                 tool("SIMULA", action: simulate)
                 tool("NOVITÀ", action: updates)
+                tool("MANIFESTO", action: catalogue)
             }
             .overlay { Rectangle().strokeBorder(.white, lineWidth: 2) }
             .padding(.top, 6)

@@ -15,15 +15,31 @@ Aggiornato il 15/09/2026, dopo la revisione in `docs/newui-information-architect
 Dove questa sezione e le sezioni successive non coincidono, vale questa: il resto del documento
 è la ricerca da cui si è partiti.
 
-**Tab (4 + ricerca).** Oggi, Corsi, Carriera, Cerca. Calendario non è un tab: il giorno sta in
-Oggi (con il selettore del giorno sotto la data) e il calendario completo è il primo luogo di
-Cerca. L'elenco dei luoghi è uno solo, `NewDestination` (`PoliVerse/NewUI/Shared/NewDestination.swift`):
+**Una domanda per scheda** (aggiornato il 24/09/2026). Ogni informazione ha una sola casa; le
+altre schede ci portano con un collegamento, senza ripeterla.
+
+| Scheda | Domanda | Casa di |
+| --- | --- | --- |
+| Oggi | Cosa devo fare oggi, e adesso? | lezione in corso e orario del giorno, scadenze WeBeep, calendario completo (pulsante nella barra) |
+| Corsi | Cosa c'è di nuovo nei miei corsi? | in cima il corso con più novità (non quello della lezione), preferiti e tutti i corsi |
+| Carriera | Dove sono, e cosa scade? | iscrizioni e voti da decidere, media e libretto, piano di studi, simulazione, Manifesto e orario personalizzato («Offerta didattica») |
+| Cerca | Dov'è, chi è, dove lo trovo? | la ricerca, le ricerche recenti, Campus (aule libere, mappa, aule), i docenti, Notizie e Notifiche |
+
+La lezione in corso sopra le schede resta la sola presenza del «adesso» fuori da Oggi. I tipi di
+risultato di Cerca sono chip con il loro conteggio sopra i risultati, non una riga della pagina
+prima della ricerca.
+
+**Tab (4 + ricerca).** Oggi, Corsi, Carriera, Cerca. L'elenco dei luoghi è uno solo, `NewDestination`
+(`PoliVerse/Features/Shell/NewDestination.swift`); ogni luogo sta nella scheda della sua domanda e
+un ingresso da fuori (Siri, Controlli, notifiche) lo apre lì:
 
 | Luogo | Nei tab | Nella pagina unica |
 | --- | --- | --- |
-| Corsi (`WeBeepView`) | tab Corsi | riga del pannello |
-| Carriera (`CareerView`) | tab Carriera, con il badge delle novità | riga del pannello |
-| Calendario, Aule libere, Mappa, Piano di studi, Notizie, Notifiche | righe in cima a Cerca | righe del pannello |
+| Corsi | tab Corsi | riga del pannello |
+| Carriera | tab Carriera, con il badge delle novità | riga del pannello |
+| Calendario | dalla barra di Oggi | riga del pannello |
+| Piano di studi | dal menu di Carriera | riga del pannello |
+| Aule libere, Mappa, Notizie, Notifiche | righe di Cerca | righe del pannello |
 | Ricerca (`SearchView`) | tab Cerca | riga «Cerca» in cima al pannello |
 
 **Profilo da ogni root.** La foto nella barra di Oggi, Corsi, Carriera e Cerca apre Impostazioni

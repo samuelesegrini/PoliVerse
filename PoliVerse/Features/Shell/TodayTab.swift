@@ -22,7 +22,7 @@ struct TodayTab: View {
 
     /// The view's content.
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: Binding(get: { shell.todayPath }, set: { shell.todayPath = $0 })) {
             ScrollView {
                 DayTransition(day: shell.day) { day in
                     TodayLanding(day: day, style: style)
@@ -58,6 +58,8 @@ struct TodayTab: View {
             .dataStatusLine()
             .background(LookBackground(style: style).ignoresSafeArea())
             .todayBar()
+            // The calendar, from the bar or from outside the app.
+            .navigationDestination(for: NewDestination.self) { $0.screen }
             .toolbarVisibility(shell.singlePage ? .hidden : .automatic, for: .tabBar)
             .sheet(isPresented: Binding(get: { shell.showsPanel }, set: { _ in }),
                    onDismiss: shell.panelDidDismiss) {

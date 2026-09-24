@@ -41,6 +41,22 @@
         }
       }
     },
+    "%@ %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ %2$lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$lld"
+          }
+        }
+      }
+    },
     "%lld APPELLI" : {
       "localizations" : {
         "en" : {
@@ -499,6 +515,16 @@
         }
       }
     },
+    "Cerca anche in" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also search in"
+          }
+        }
+      }
+    },
     "Chiudono %@" : {
       "localizations" : {
         "en" : {
@@ -721,6 +747,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DAY"
+          }
+        }
+      }
+    },
+    "Gli insegnamenti di tutti i corsi di laurea" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The courses of every degree programme"
           }
         }
       }
@@ -1024,6 +1060,16 @@
         }
       }
     },
+    "MANIFESTO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CATALOGUE"
+          }
+        }
+      }
+    },
     "MEDIA" : {
       "localizations" : {
         "en" : {
@@ -1090,6 +1136,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "NEW"
+          }
+        }
+      }
+    },
+    "Offerta didattica" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Course offering"
           }
         }
       }
@@ -1380,6 +1436,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "FIND A FREE ROOM"
+          }
+        }
+      }
+    },
+    "Tutto %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All %lld"
           }
         }
       }

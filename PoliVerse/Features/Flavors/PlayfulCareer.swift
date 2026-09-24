@@ -222,6 +222,8 @@ struct PlayfulPath: View {
     let simulate: () -> Void
     /// Opens the exam news.
     let updates: () -> Void
+    /// Opens the Manifesto degli studi.
+    let catalogue: () -> Void
 
     /// The look in use.
     @Environment(\.look) private var style
@@ -275,6 +277,7 @@ struct PlayfulPath: View {
                 tool("Piano", symbol: "list.bullet.rectangle", action: plan)
                 tool("Simula", symbol: "function", action: simulate)
                 tool("Novità", symbol: "bell.badge", action: updates)
+                tool("Manifesto", symbol: "books.vertical", action: catalogue)
             }
         }
     }

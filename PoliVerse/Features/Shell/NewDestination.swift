@@ -1,12 +1,17 @@
 import SwiftUI
 
-/// The new interface's places besides Oggi, in one list both layouts use:
-/// the tabs show Corsi and Carriera and list the rest in Cerca, the single
-/// page lists them all in its panel. See `docs/information-architecture.md`.
+/// The new interface's places besides Oggi, in one list both layouts use.
+///
+/// Each place lives in the tab whose question it answers
+/// (`docs/information-architecture.md`, "una domanda per scheda"): Corsi and
+/// Carriera are tabs of their own; the calendar opens from Oggi, the study
+/// plan from Carriera, and the places and people — free rooms, the map, news,
+/// notifications — are listed in Cerca. The single page lists them all in its panel.
 nonisolated enum NewDestination: String, CaseIterable, Identifiable, Hashable, Sendable {
     /// The two places that are tabs of their own in the tab layout.
     case courses, career
-    /// The places Cerca lists in the tab layout.
+    /// The places pushed inside a tab: the calendar in Oggi, the study plan in
+    /// Carriera, the rest in Cerca.
     case calendar, freeRooms, map, studyPlan, news, notices
 
     /// The place's identity, which is its raw value.
@@ -24,10 +29,14 @@ nonisolated enum NewDestination: String, CaseIterable, Identifiable, Hashable, S
     var tab: Tab {
         switch self {
         case .courses: .courses
-        case .career: .career
-        case .calendar, .freeRooms, .map, .studyPlan, .news, .notices: .search
+        case .career, .studyPlan: .career
+        case .calendar: .today
+        case .freeRooms, .map, .news, .notices: .search
         }
     }
+
+    /// Whether the place is a tab itself, rather than a screen pushed inside one.
+    var isTab: Bool { self == .courses || self == .career }
 
     /// The places Cerca lists before a search, in order.
     static var inSearch: [NewDestination] { allCases.filter { $0.tab == .search } }

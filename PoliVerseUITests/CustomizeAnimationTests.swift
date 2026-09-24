@@ -387,12 +387,12 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         shot(app, "61-career")
 
         app.buttons["Cerca"].firstMatch.tap()
-        let calendar = app.buttons["place-calendar"].firstMatch
-        XCTAssertTrue(calendar.waitForExistence(timeout: 5), "Cerca does not list the calendar")
+        let rooms = app.buttons["place-freeRooms"].firstMatch
+        XCTAssertTrue(rooms.waitForExistence(timeout: 5), "Cerca does not list the free rooms")
         shot(app, "62-search")
-        calendar.tap()
-        XCTAssertTrue(app.navigationBars["Calendario"].waitForExistence(timeout: 5), "The calendar did not open from Cerca")
-        shot(app, "63-calendar")
+        rooms.tap()
+        XCTAssertTrue(app.navigationBars["Aule libere"].waitForExistence(timeout: 5), "Aule libere did not open from Cerca")
+        shot(app, "63-free-rooms")
     }
 
     /// Opens Personalizza from Oggi's bar; returns its Personalizza button.

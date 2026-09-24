@@ -13,7 +13,7 @@ nonisolated final class SearchUITests: PoliVerseUITestCase {
         switchTab(app, to: "Cerca", expecting: "tab-search")
 
         require(app.searchFields.firstMatch, "Cerca has no search field")
-        require(app.buttons["place-calendar"].firstMatch, "Cerca does not list the places before a search")
+        require(app.buttons["place-freeRooms"].firstMatch, "Cerca does not list the places before a search")
         shot(app, "search-01-places")
     }
 
@@ -80,6 +80,6 @@ nonisolated final class SearchUITests: PoliVerseUITestCase {
             field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 4))
         }
         settle()
-        require(app.buttons["place-calendar"].firstMatch, "Clearing the query did not bring the places back")
+        require(app.buttons["place-freeRooms"].firstMatch, "Clearing the query did not bring the places back")
     }
 }

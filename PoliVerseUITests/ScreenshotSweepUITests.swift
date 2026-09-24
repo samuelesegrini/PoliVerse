@@ -14,10 +14,8 @@ import XCTest
 ///     POLIVERSE_UI_SHOTS=/tmp/poliverse xcodebuild test -scheme PoliVerseUI …
 nonisolated final class ScreenshotSweepUITests: PoliVerseUITestCase {
     private static let places: [(id: String, title: String)] = [
-        ("calendar", "Calendario"),
         ("freeRooms", "Aule libere"),
         ("map", "Mappa"),
-        ("studyPlan", "Piano di studi"),
         ("news", "Notizie"),
         ("notices", "Notifiche"),
     ]

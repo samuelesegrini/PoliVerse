@@ -76,6 +76,12 @@ struct TodayBar: ViewModifier {
             }
         }
 
+        // The calendar opens from the day, where the question "when" lives.
+        ToolbarItem(placement: .topBarTrailing) {
+            Button("Calendario", systemImage: "calendar") { shell.todayPath.append(NewDestination.calendar) }
+                .accessibilityIdentifier("today-calendar")
+        }
+        ToolbarSpacer(.fixed, placement: .topBarTrailing)
         ToolbarItem(placement: .topBarTrailing) {
             Button("Personalizza", systemImage: "paintbrush") { shell.present { shell.isCustomizing = true } }
                 .accessibilityIdentifier("today-customize")

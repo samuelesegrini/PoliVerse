@@ -24,8 +24,14 @@ import XCTest
 nonisolated final class PerformanceTests: PoliVerseUITestCase {
     /// Opens a place from Cerca and waits for its screen.
     @MainActor private func open(_ place: String, titled title: String, in app: XCUIApplication) {
-        switchTab(app, to: "Cerca", expecting: "tab-search")
-        tap(app.buttons["place-\(place)"].firstMatch, "Cerca non elenca \(title)")
+        // The calendar opens from Oggi's bar; the other places are Cerca's.
+        if place == "calendar" {
+            switchTab(app, to: "Oggi", expecting: "tab-today")
+            tap(app.buttons["today-calendar"].firstMatch, "Oggi non ha il calendario")
+        } else {
+            switchTab(app, to: "Cerca", expecting: "tab-search")
+            tap(app.buttons["place-\(place)"].firstMatch, "Cerca non elenca \(title)")
+        }
         require(app.navigationBars[title], "\(title) non si è aperta", timeout: 20)
     }
 
@@ -128,13 +134,13 @@ nonisolated final class PerformanceTests: PoliVerseUITestCase {
             switchTab(app, to: "Corsi", expecting: "tab-courses")
             switchTab(app, to: "Carriera", expecting: "tab-career")
             switchTab(app, to: "Cerca", expecting: "tab-search")
-            let calendar = app.buttons["place-calendar"].firstMatch
+            switchTab(app, to: "Oggi", expecting: "tab-today")
+            let calendar = app.buttons["today-calendar"].firstMatch
             if calendar.waitForExistence(timeout: 10) {
                 calendar.tap()
                 _ = app.navigationBars["Calendario"].waitForExistence(timeout: 20)
                 goBack(app)
             }
-            switchTab(app, to: "Oggi", expecting: "tab-today")
         }
     }
 }

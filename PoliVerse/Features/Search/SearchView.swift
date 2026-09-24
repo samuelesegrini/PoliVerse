@@ -346,49 +346,37 @@ struct SearchView: View {
 
     // MARK: - Before a search
 
-    /// What is shown before a search: the places, the recent searches, and the kinds that can
-    /// be searched.
+    /// What is shown before a search. In the new interface: the searches
+    /// made lately, then the places and people that are Cerca's — the campus,
+    /// the teachers — and what comes from the Politecnico. The kinds of result
+    /// are chips over the results instead, with their counts, where they say
+    /// something. The current interface keeps its page of kinds and places.
     @ViewBuilder
     private var browseContent: some View {
         LookTitle("Cerca")
 
-        switch style.special {
-        case .playful: PlayfulSearchHero()
-        case .blueprint: BlueprintSearchHero()
-        case nil: EmptyView()
+        if places != nil {
+            switch style.special {
+            case .playful: PlayfulSearchHero()
+            case .blueprint: BlueprintSearchHero()
+            case nil:
+                campusSection
+                teachersSection
+            }
+            recentsSection
+            politecnicoSection
+        } else {
+            legacyBrowseContent
         }
+    }
 
+    /// The current interface's page before a search: the kinds, the recent
+    /// searches, and every place as a tile.
+    @ViewBuilder
+    private var legacyBrowseContent: some View {
         kindChips
 
-        if !recents.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                LookHeading("Recenti") {
-                    Button("Cancella") { withAnimation(.snappy) { storedRecents = "" } }
-                        .foregroundStyle(.secondary)
-                }
-                ScrollView(.horizontal) {
-                    GlassEffectContainer(spacing: 8) {
-                        HStack(spacing: 8) {
-                            ForEach(recents, id: \.self) { recent in
-                                Button { query = recent } label: {
-                                    Label(recent, systemImage: "clock.arrow.circlepath")
-                                        .font(.subheadline.weight(.medium))
-                                        .padding(.horizontal, 14)
-                                        .padding(.vertical, 9)
-                                        .contentShape(.capsule)
-                                }
-                                .buttonStyle(.plain)
-                                .glassEffect(.regular.interactive(), in: .capsule)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 2)
-                    }
-                }
-                .scrollIndicators(.hidden)
-                .padding(.horizontal, -20)
-            }
-        }
+        recentsSection
 
         VStack(alignment: .leading, spacing: 10) {
             LookHeading("Vai a")
@@ -439,6 +427,118 @@ struct SearchView: View {
         }
     }
 
+    /// The searches made lately, as chips that put the search back.
+    @ViewBuilder
+    private var recentsSection: some View {
+        if !recents.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                LookHeading("Recenti") {
+                    Button("Cancella") { withAnimation(.snappy) { storedRecents = "" } }
+                        .foregroundStyle(.secondary)
+                }
+                ScrollView(.horizontal) {
+                    GlassEffectContainer(spacing: 8) {
+                        HStack(spacing: 8) {
+                            ForEach(recents, id: \.self) { recent in
+                                Button { query = recent } label: {
+                                    Label(recent, systemImage: "clock.arrow.circlepath")
+                                        .font(.subheadline.weight(.medium))
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 9)
+                                        .contentShape(.capsule)
+                                }
+                                .buttonStyle(.plain)
+                                .glassEffect(.regular.interactive(), in: .capsule)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 2)
+                    }
+                }
+                .scrollIndicators(.hidden)
+                .padding(.horizontal, -20)
+            }
+        }
+    }
+
+    /// The campus: rooms free now, the map, and every room.
+    private var campusSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            LookHeading("Campus")
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                ForEach([NewDestination.freeRooms, .map]) { place in
+                    NavigationLink(value: place) {
+                        PlaceTile(title: Text(place.title), detail: Text(place.detail), symbol: place.systemImage,
+                                  colour: colour(for: place.systemImage))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("place-\(place.id)")
+                }
+                NavigationLink { RoomsView() } label: {
+                    PlaceTile(title: Text("Aule"), detail: Text("Tutte le aule del campus"), symbol: "building.2",
+                              colour: colour(for: "building.2"))
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("place-rooms")
+            }
+        }
+    }
+
+    /// The student's teachers, each a way to their page.
+    @ViewBuilder
+    private var teachersSection: some View {
+        let roster = Array(Teacher.roster(courses: courses.courses, sessions: career.sessions).prefix(8))
+        if !roster.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                LookHeading("I tuoi docenti")
+                ScrollView(.horizontal) {
+                    HStack(alignment: .top, spacing: 14) {
+                        ForEach(roster) { teacher in
+                            NavigationLink { TeacherDetailView(teacher: teacher) } label: {
+                                TeacherBadge(teacher: teacher)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
+                .scrollIndicators(.hidden)
+                .padding(.horizontal, -20)
+            }
+        }
+    }
+
+    /// What comes from the Politecnico: news, and the notifications addressed to the student.
+    private var politecnicoSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            LookHeading("Dal Politecnico")
+            VStack(spacing: 0) {
+                ForEach([NewDestination.news, .notices]) { place in
+                    NavigationLink(value: place) {
+                        HStack(spacing: 12) {
+                            CourseRowTile(symbol: place.systemImage, colour: colour(for: place.systemImage))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(place.title).font(.subheadline)
+                                Text(place.detail).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer(minLength: 8)
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(.vertical, 11)
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("place-\(place.id)")
+                    if place == .news { Divider().padding(.leading, 42) }
+                }
+            }
+            .padding(.horizontal, 16)
+            .lookCard()
+        }
+    }
+
     /// The kinds of result as glass chips: a tap narrows the search to that
     /// kind, and the token appears in the field.
     private var kindChips: some View {
@@ -476,6 +576,33 @@ struct SearchView: View {
         }
     }
 
+    /// The kinds that found something, as chips with their counts over the
+    /// results: Tutto, then each kind, a tap narrowing the search to it — the
+    /// token appears in the field, as it would chosen there.
+    private func resultChips(_ results: [(kind: Kind, items: [Result])]) -> some View {
+        let total = results.reduce(0) { $0 + $1.items.count }
+        return ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                LookChip(title: Text("Tutto \(total)"), isOn: tokens.isEmpty) {
+                    withAnimation(.snappy) { tokens = [] }
+                }
+                .accessibilityIdentifier("search-chip-all")
+                ForEach(results, id: \.kind) { group in
+                    let on = tokens.contains(group.kind)
+                    LookChip(title: Text("\(group.kind.title) \(group.items.count)"), isOn: on,
+                             systemImage: group.kind.symbol) {
+                        withAnimation(.snappy) { tokens = on ? [] : [group.kind] }
+                    }
+                    .accessibilityIdentifier("search-chip-\(group.kind.rawValue)")
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 2)
+        }
+        .scrollIndicators(.hidden)
+        .padding(.horizontal, -20)
+    }
+
     /// A colour of the look's ramp for a place, stable for its symbol.
     private func colour(for symbol: String) -> Flavor.RGB {
         FlavorRamp(style: style, scheme: scheme).colour(at: Double(TodayDigest.colourIndex(for: symbol)) / 7)
@@ -488,10 +615,37 @@ struct SearchView: View {
     @ViewBuilder
     private var resultsContent: some View {
         let results = results
+        if !results.isEmpty || !tokens.isEmpty {
+            resultChips(results)
+        }
         if results.isEmpty {
             ContentUnavailableView.search(text: trimmed)
                 .padding(.top, 40)
                 .accessibilityIdentifier("search-empty")
+            // The search only reads what the app holds: say where else the
+            // thing might be, rather than leaving a dead end.
+            VStack(alignment: .leading, spacing: 10) {
+                LookHeading("Cerca anche in")
+                NavigationLink { ManifestiView() } label: {
+                    HStack(spacing: 12) {
+                        CourseRowTile(symbol: "books.vertical", colour: colour(for: "books.vertical"))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Manifesto degli studi").font(.subheadline)
+                            Text("Gli insegnamenti di tutti i corsi di laurea").font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer(minLength: 8)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.vertical, 11)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 16)
+                .lookCard()
+                .accessibilityIdentifier("search-empty-manifesti")
+            }
         } else {
             if let hit = topHit(in: results) {
                 VStack(alignment: .leading, spacing: 10) {
@@ -742,6 +896,32 @@ struct PlaceTile: View {
         .contentShape(.rect)
         .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 26))
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// A teacher as a disc with their initials in their first course's colour,
+/// and their surname under it.
+private struct TeacherBadge: View {
+    /// The teacher.
+    let teacher: Teacher
+
+    /// The view's content.
+    var body: some View {
+        let colour = Theme.courseAccents[TodayDigest.colourIndex(for: teacher.courses.first?.name ?? teacher.name)]
+        let words = teacher.name.split(separator: " ")
+        VStack(spacing: 6) {
+            Text(words.prefix(2).compactMap(\.first).map(String.init).joined())
+                .font(.headline)
+                .foregroundStyle(Theme.onAccent)
+                .frame(width: 54, height: 54)
+                .background(colour, in: .circle)
+            Text(words.last.map(String.init) ?? teacher.name)
+                .font(.caption)
+                .lineLimit(1)
+                .frame(width: 70)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(teacher.name))
     }
 }
 

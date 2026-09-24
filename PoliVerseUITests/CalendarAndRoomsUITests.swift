@@ -3,12 +3,18 @@ import XCTest
 /// The two screens a student drives rather than reads: the calendar's week
 /// strip, and Aule libere's three filters.
 ///
-/// Both are behind Cerca, both have controls that change what is on screen,
+/// The calendar is behind Oggi's bar and Aule libere behind Cerca; both both have controls that change what is on screen,
 /// and neither is exercised by the navigation walk — that one only opens them.
 nonisolated final class CalendarAndRoomsUITests: PoliVerseUITestCase {
     @MainActor private func open(_ place: String, titled title: String, in app: XCUIApplication) {
-        switchTab(app, to: "Cerca", expecting: "tab-search")
-        tap(app.buttons["place-\(place)"].firstMatch, "Cerca non elenca \(title)")
+        // The calendar opens from Oggi's bar; the other places are Cerca's.
+        if place == "calendar" {
+            switchTab(app, to: "Oggi", expecting: "tab-today")
+            tap(app.buttons["today-calendar"].firstMatch, "Oggi non ha il calendario")
+        } else {
+            switchTab(app, to: "Cerca", expecting: "tab-search")
+            tap(app.buttons["place-\(place)"].firstMatch, "Cerca non elenca \(title)")
+        }
         require(app.navigationBars[title], "\(title) non si è aperta", timeout: 15)
     }
 

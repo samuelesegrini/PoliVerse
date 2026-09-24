@@ -36,9 +36,15 @@ nonisolated final class AccessibilityAuditUITests: PoliVerseUITestCase {
     /// otherwise only ever seen by eye.
     @MainActor func testPlacesPassAudit() throws {
         let app = launchOnToday()
-        switchTab(app, to: "Cerca", expecting: "tab-search")
+        // The calendar, from Oggi's bar.
+        tap(app.buttons["today-calendar"].firstMatch, "Oggi has no calendar button")
+        require(app.navigationBars["Calendario"], "Calendario did not open", timeout: 15)
+        settle()
+        try audit(app, named: "Calendario")
+        goBack(app)
 
-        for (id, title) in [("calendar", "Calendario"), ("freeRooms", "Aule libere"), ("news", "Notizie")] {
+        switchTab(app, to: "Cerca", expecting: "tab-search")
+        for (id, title) in [("freeRooms", "Aule libere"), ("map", "Mappa"), ("news", "Notizie")] {
             let row = app.buttons["place-\(id)"].firstMatch
             require(row, "Cerca does not list \(title)")
             row.tap()

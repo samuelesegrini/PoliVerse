@@ -35,8 +35,7 @@ nonisolated final class LifecycleUITests: PoliVerseUITestCase {
     /// than on Oggi with the screen they opened gone.
     @MainActor func testReturningFromTheBackgroundKeepsThePlace() {
         let app = launchOnToday()
-        switchTab(app, to: "Cerca", expecting: "tab-search")
-        tap(app.buttons["place-calendar"].firstMatch, "Cerca does not list the calendar")
+        tap(app.buttons["today-calendar"].firstMatch, "Oggi has no calendar button")
         require(app.navigationBars["Calendario"], "The calendar did not open", timeout: 15)
 
         XCUIDevice.shared.press(.home)

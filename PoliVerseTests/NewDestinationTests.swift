@@ -6,19 +6,20 @@ import Testing
 /// landing spot for every way in from outside.
 @Suite("New interface destinations")
 struct NewDestinationTests {
-    @Test("Both layouts reach the same places: tabs plus Cerca's list, or the panel")
+    @Test("Both layouts reach the same places: each tab's own, or the panel")
     func sameInBothLayouts() {
-        let tabs = Set(NewDestination.allCases.filter { $0.tab != .search })
-        let inSearch = Set(NewDestination.inSearch)
-        #expect(tabs.union(inSearch) == Set(NewDestination.panel))
-        #expect(tabs.isDisjoint(with: inSearch))
+        let tabs = Set(NewDestination.allCases.filter(\.isTab))
         #expect(tabs == [.courses, .career])
+        // Every place lives in exactly one tab, and the panel lists them all.
+        #expect(Set(NewDestination.allCases) == Set(NewDestination.panel))
     }
 
-    @Test("Cerca lists the places that are not tabs, the calendar first")
-    func searchList() {
-        #expect(NewDestination.inSearch.first == .calendar)
-        #expect(NewDestination.inSearch.allSatisfy { $0.tab == .search })
+    @Test("Each place lives in the tab whose question it answers")
+    func homes() {
+        #expect(NewDestination.calendar.tab == .today)
+        #expect(NewDestination.studyPlan.tab == .career)
+        #expect(NewDestination.inSearch == [.freeRooms, .map, .news, .notices])
+        #expect(NewDestination.inSearch.allSatisfy { $0.tab == .search && !$0.isTab })
     }
 
     @Test("Every way in from outside lands somewhere in the new interface")

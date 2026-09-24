@@ -22,6 +22,10 @@ final class ShellState {
     /// Cerca's pushed screens, so a way in from outside can open a place.
     /// Untyped: the screens pushed further in push courses and teachers.
     var searchPath = NavigationPath()
+    /// Oggi's pushed screens: the calendar opens here.
+    var todayPath = NavigationPath()
+    /// Carriera's pushed screens: the study plan opens here from outside.
+    var careerPath = NavigationPath()
     /// Whether Impostazioni is presented.
     var showingSettings = false
     /// Impostazioni's pushed pages; the profile opens it one page in.
@@ -148,7 +152,15 @@ final class ShellState {
             }
             sidebarPlace = nil
             selection = place.tab
-            searchPath = place.tab == .search ? NavigationPath([place]) : NavigationPath()
+            // Pushed onto the stack of the tab it lives in; a tab itself is
+            // just selected.
+            let pushed = place.isTab ? NavigationPath() : NavigationPath([place])
+            switch place.tab {
+            case .today: todayPath = pushed
+            case .career: careerPath = pushed
+            case .search: searchPath = pushed
+            case .courses: break
+            }
         }
     }
 }

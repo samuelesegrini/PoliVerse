@@ -7,17 +7,27 @@ import Testing
 @MainActor
 @Suite("New interface routing")
 struct ShellRoutingTests {
-    @Test("Tabs: a tab place selects its tab, a place in Cerca opens Cerca pushed to it")
+    @Test("Tabs: a tab place selects its tab, any other place opens its tab pushed to it")
     func tabs() {
         let shell = ShellState()
         shell.showingSettings = true
         shell.route(to: .destination(.career))
         #expect(shell.selection == .career)
+        #expect(shell.careerPath.isEmpty)
         #expect(!shell.showingSettings)
 
+        // The calendar lives in Oggi, the study plan in Carriera, the rest in Cerca.
         shell.route(to: .destination(.calendar))
+        #expect(shell.selection == .today)
+        #expect(shell.todayPath == NavigationPath([NewDestination.calendar]))
+
+        shell.route(to: .destination(.studyPlan))
+        #expect(shell.selection == .career)
+        #expect(shell.careerPath == NavigationPath([NewDestination.studyPlan]))
+
+        shell.route(to: .destination(.freeRooms))
         #expect(shell.selection == .search)
-        #expect(shell.searchPath == NavigationPath([NewDestination.calendar]))
+        #expect(shell.searchPath == NavigationPath([NewDestination.freeRooms]))
 
         shell.route(to: .search)
         #expect(shell.selection == .search)

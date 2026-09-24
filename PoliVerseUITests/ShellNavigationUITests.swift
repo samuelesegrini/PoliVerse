@@ -11,10 +11,8 @@ nonisolated final class ShellNavigationUITests: PoliVerseUITestCase {
     /// Mirrors `NewDestination.inSearch`, so a place added there without a
     /// screen fails here.
     private static let places: [(id: String, title: String)] = [
-        ("calendar", "Calendario"),
         ("freeRooms", "Aule libere"),
         ("map", "Mappa"),
-        ("studyPlan", "Piano di studi"),
         ("news", "Notizie"),
         ("notices", "Notifiche"),
     ]
@@ -36,6 +34,17 @@ nonisolated final class ShellNavigationUITests: PoliVerseUITestCase {
         XCTAssertTrue(
             app.buttons["today-customize"].firstMatch.waitForExistence(timeout: 10),
             "Coming back to Oggi lost its bar")
+    }
+
+    /// The calendar opens from Oggi's bar, where the day is, and comes back.
+    @MainActor func testCalendarOpensFromToday() {
+        let app = launchOnToday()
+        tap(app.buttons["today-calendar"].firstMatch, "Oggi has no calendar button")
+        XCTAssertTrue(app.navigationBars["Calendario"].waitForExistence(timeout: 15),
+                      "The calendar did not open from Oggi")
+        shot(app, "nav-today-calendar")
+        goBack(app)
+        require(app.buttons["today-customize"].firstMatch, "Going back did not return to Oggi")
     }
 
     /// Every place Cerca lists opens and comes back. One test rather than six,
