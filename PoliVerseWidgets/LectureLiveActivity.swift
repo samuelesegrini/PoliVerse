@@ -7,7 +7,7 @@ struct LectureLiveActivity: Widget {
     /// The declaration's content.
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: LectureActivityAttributes.self) { context in
-            LectureActivityView(context: context)
+            LectureActivityFamilyView(context: context)
                 .activityBackgroundTint(nil)
                 .activitySystemActionForegroundColor(nil)
         } dynamicIsland: { context in
@@ -47,6 +47,9 @@ struct LectureLiveActivity: Widget {
             }
             .keylineTint(.accentColor)
         }
+        // The same activity in the Watch's Smart Stack, drawn for the small
+        // family instead of the Lock Screen's banner squeezed onto a wrist.
+        .supplementalActivityFamilies([.small])
     }
 
     /// The Dynamic Island's countdown, or a word once the lecture is over.
@@ -67,6 +70,67 @@ struct LectureLiveActivity: Widget {
     /// countdown at all, since an activity gets no periodic refresh of its
     /// own.
     private func range(_ context: ActivityViewContext<LectureActivityAttributes>) -> ClosedRange<Date> {
+        let deadline = context.attributes.deadline(for: context.state.phase)
+        let from = context.state.phase == .upcoming
+            ? min(.now, deadline) : context.attributes.start
+        return from...max(from, deadline)
+    }
+}
+
+/// Picks the presentation for where the activity is being drawn.
+struct LectureActivityFamilyView: View {
+    /// The activity's attributes and current state.
+    let context: ActivityViewContext<LectureActivityAttributes>
+
+    /// Where the system is drawing the activity.
+    @Environment(\.activityFamily) private var family
+
+    /// The view's content.
+    var body: some View {
+        switch family {
+        case .small: LectureActivitySmallView(context: context)
+        default: LectureActivityView(context: context)
+        }
+    }
+}
+
+/// The small presentation, for the Watch's Smart Stack: the countdown first,
+/// because a glance at a wrist has room for one number, then what and where.
+struct LectureActivitySmallView: View {
+    /// The activity's attributes and current state.
+    let context: ActivityViewContext<LectureActivityAttributes>
+
+    /// The view's content.
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: context.attributes.symbol)
+                    .foregroundStyle(.tint)
+                if context.state.phase == .ended {
+                    Text(context.attributes.kind == .exam ? "Finito" : "Finita")
+                } else {
+                    Text(timerInterval: interval, countsDown: true)
+                        .monospacedDigit()
+                }
+            }
+            .font(.headline)
+            Text(context.attributes.title)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+            if let room = context.attributes.room {
+                Label(room, systemImage: "mappin.and.ellipse")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .accessibilityElement(children: .combine)
+    }
+
+    /// The span the countdown describes, as on the Lock Screen.
+    private var interval: ClosedRange<Date> {
         let deadline = context.attributes.deadline(for: context.state.phase)
         let from = context.state.phase == .upcoming
             ? min(.now, deadline) : context.attributes.start

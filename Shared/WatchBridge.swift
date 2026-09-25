@@ -2,6 +2,9 @@
 import Foundation
 import OSLog
 import WatchConnectivity
+#if os(watchOS)
+import WidgetKit
+#endif
 
 /// The link between the phone and the Watch.
 ///
@@ -9,10 +12,22 @@ import WatchConnectivity
 /// of what crosses and there is no third place to put that agreement. The
 /// phone calls ``send(_:)``; the Watch reads ``snapshot``.
 ///
-/// The transport is `updateApplicationContext`, which keeps exactly one value
-/// — the latest — and delivers it whenever the other side next runs. That is
-/// the right shape here: a snapshot of today is worthless the moment a newer
-/// one exists, so a queue of superseded days would only delay the current one.
+/// Two transports, for two kinds of urgency:
+///
+/// - `updateApplicationContext` keeps exactly one value — the latest — and
+///   delivers it whenever the Watch next runs. That is the right shape for a
+///   snapshot, which is worthless the moment a newer one exists.
+/// - `transferCurrentComplicationUserInfo` wakes the Watch now, but only when
+///   one of its complications is on the face, and only a limited number of
+///   times a day. It is spent only when what a wrist would see has changed:
+///   a complication showing yesterday's room is the one failure a student
+///   would actually notice.
+///
+/// The Watch can also ask. When it comes to the front holding a snapshot
+/// older than ``WatchSnapshot/staleAfter``, and the phone is in reach, it
+/// sends a message; iOS wakes the phone's app in the background if need be,
+/// the phone loads what is due and replies with a fresh snapshot. Nothing to
+/// tap: opening the app is the request.
 ///
 /// Everything fails quietly. An unpaired Watch, an app never installed on it,
 /// a session that will not activate: all of them mean the Watch shows what it
@@ -26,43 +41,130 @@ final class WatchBridge: NSObject {
     /// on the phone. `nil` until one arrives.
     private(set) var snapshot: WatchSnapshot?
 
+    /// Whether the Watch is waiting for the phone to answer a request.
+    private(set) var isRefreshing = false
+
+    /// Whether the other side can be messaged right now. On the Watch, the
+    /// phone is in reach and the session is up.
+    private(set) var isReachable = false
+
+    /// Tells one request from the next, so a request's time-out never ends a
+    /// later one.
+    private var request = 0
+
+    /// What the phone does when the Watch asks: load what is due and send.
+    private var answer: (@MainActor () async -> Void)?
+
     /// Diagnostic log for this type, under the `watch` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "watch")
 
-    /// Where the Watch keeps the last snapshot between launches.
-    ///
-    /// Its own container, not the app group: an app group is shared between
-    /// processes on one device, and the Watch is another device.
-    private let defaults = UserDefaults.standard
-
-    /// Creates the bridge and restores whatever was last received.
+    /// Creates the bridge and restores whatever was last kept.
     private override init() {
         super.init()
-        if let data = defaults.data(forKey: WatchSnapshot.cacheName) {
-            snapshot = try? JSONDecoder().decode(WatchSnapshot.self, from: data)
-        }
+        snapshot = WatchSnapshotStore.load()
     }
 
     /// Activates the session, if this device supports one.
     ///
-    /// Called from both sides at launch. Safe to call more than once: an
-    /// already-activated session ignores it.
+    /// Called from both sides at launch, and on the Watch again when the
+    /// system wakes the app for incoming data. Safe to call more than once:
+    /// an already-activated session ignores it.
     func start() {
         guard WCSession.isSupported() else {
             log.notice("no watch session on this device")
             return
         }
         let session = WCSession.default
+        guard session.activationState != .activated else { return }
         session.delegate = self
         session.activate()
+    }
+
+    /// Sets what the phone does when the Watch asks for a fresh snapshot.
+    ///
+    /// Set before ``start()``: a request can be what launched the app, and it
+    /// arrives as soon as the session is up.
+    ///
+    /// - Parameter answer: Loads what is due and sends the snapshot.
+    func answerRequests(with answer: @escaping @MainActor () async -> Void) {
+        self.answer = answer
+    }
+
+    /// Asks the phone for a fresh snapshot, when the one held is stale and the
+    /// phone is in reach.
+    ///
+    /// Called whenever the Watch app comes to the front and whenever the phone
+    /// comes into reach while it is there. Does nothing on the phone, while a
+    /// request is already out, or when the snapshot is recent enough.
+    ///
+    /// - Parameter date: The moment staleness is judged at.
+    func refreshIfStale(at date: Date = .now) {
+        #if os(watchOS)
+        guard !isRefreshing, WCSession.isSupported() else { return }
+        let session = WCSession.default
+        guard session.activationState == .activated, session.isReachable else { return }
+        if let snapshot, !snapshot.needsRefresh(at: date) { return }
+        isRefreshing = true
+        request += 1
+        let current = request
+        log.notice("asking the phone for a fresh snapshot")
+        // `@Sendable` spelled out: the class is main-actor isolated, and a
+        // closure inferred to be would trap when WatchConnectivity calls it
+        // on its own queue.
+        session.sendMessage([WatchSnapshot.requestKey: true], replyHandler: { @Sendable reply in
+            let data = reply[WatchSnapshot.payloadKey] as? Data
+            Task { @MainActor [weak self] in
+                if let data { self?.adopt(data) }
+                self?.finish(current)
+            }
+        }, errorHandler: { @Sendable error in
+            let reason = error.localizedDescription
+            Task { @MainActor [weak self] in
+                self?.log.notice("request failed: \(reason, privacy: .public)")
+                self?.finish(current)
+            }
+        })
+        // WatchConnectivity's own time-out is long; a wrist is not.
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(20))
+            self?.finish(current)
+        }
+        #endif
+    }
+
+    /// Ends a request, unless a later one has started since.
+    ///
+    /// - Parameter id: The request that ended.
+    private func finish(_ id: Int) {
+        guard id == request else { return }
+        isRefreshing = false
+    }
+
+    /// Answers a request from the Watch.
+    ///
+    /// - Returns: The snapshot to reply with, encoded, or `nil` when the phone
+    ///   has nothing to send.
+    private func respond() async -> Data? {
+        await answer?()
+        guard let snapshot else { return nil }
+        return try? JSONEncoder().encode(snapshot)
+    }
+
+    /// Whether the session still has data on its way in.
+    ///
+    /// A background wake for WatchConnectivity has to stay alive until this is
+    /// `false`, or the system suspends the app with the payload undelivered.
+    var hasContentPending: Bool {
+        WCSession.isSupported() && WCSession.default.hasContentPending
     }
 
     /// Sends a snapshot to the other side, replacing any not yet delivered.
     ///
     /// - Parameter snapshot: What the Watch should show.
     func send(_ snapshot: WatchSnapshot) {
+        let changed = self.snapshot?.content != snapshot.content
         self.snapshot = snapshot
-        store(snapshot)
+        WatchSnapshotStore.save(snapshot)
         guard WCSession.isSupported() else { return }
         let session = WCSession.default
         guard session.activationState == .activated else {
@@ -72,34 +174,46 @@ final class WatchBridge: NSObject {
             log.notice("watch session not activated; snapshot not sent")
             return
         }
+        #if os(iOS)
+        guard session.isPaired, session.isWatchAppInstalled else { return }
+        #endif
         do {
             let data = try JSONEncoder().encode(snapshot)
-            try session.updateApplicationContext([WatchSnapshot.payloadKey: data])
+            let payload = [WatchSnapshot.payloadKey: data]
+            try session.updateApplicationContext(payload)
+            #if os(iOS)
+            if changed, session.isComplicationEnabled, session.remainingComplicationUserInfoTransfers > 0 {
+                session.transferCurrentComplicationUserInfo(payload)
+                log.notice("complication transfer: \(session.remainingComplicationUserInfoTransfers, privacy: .public) left today")
+            }
+            #endif
             log.notice("snapshot sent: \(snapshot.entries.count, privacy: .public) entries")
         } catch {
             log.error("snapshot not sent: \(error.localizedDescription, privacy: .public)")
         }
     }
 
-    /// Keeps the snapshot for the next launch.
-    ///
-    /// - Parameter snapshot: The snapshot to keep.
-    private func store(_ snapshot: WatchSnapshot) {
-        guard let data = try? JSONEncoder().encode(snapshot) else { return }
-        defaults.set(data, forKey: WatchSnapshot.cacheName)
-    }
-
     /// Adopts a payload that arrived from the other side.
     ///
-    /// - Parameter data: The encoded snapshot, taken out of the context by the
-    ///   delegate — `[String: Any]` is not `Sendable` and does not cross.
+    /// - Parameter data: The encoded snapshot, taken out of the dictionary by
+    ///   the delegate — `[String: Any]` is not `Sendable` and does not cross.
     private func adopt(_ data: Data) {
         guard let received = try? JSONDecoder().decode(WatchSnapshot.self, from: data) else {
-            log.notice("watch context had nothing this build can read")
+            log.notice("watch payload had nothing this build can read")
             return
         }
+        // The context and the complication transfer can bring the same
+        // snapshot twice, and an older context can land after a newer
+        // transfer. Neither should reload the complications or roll them back.
+        if let snapshot, snapshot.sentAt >= received.sentAt { return }
         snapshot = received
-        store(received)
+        WatchSnapshotStore.save(received)
+        #if os(watchOS)
+        // The complications and the Smart Stack read the store, not this
+        // object: they are another process, and learn of the change only here.
+        WidgetCenter.shared.reloadAllTimelines()
+        WidgetCenter.shared.invalidateRelevance(ofKind: WatchWidgetKind.relevantLecture)
+        #endif
     }
 }
 
@@ -117,7 +231,9 @@ extension WatchBridge: WCSessionDelegate {
         // A context may already be waiting from before this launch. Only the
         // `Data` inside it crosses actors: `[String: Any]` is not `Sendable`.
         let data = session.receivedApplicationContext[WatchSnapshot.payloadKey] as? Data
+        let reachable = session.isReachable
         Task { @MainActor [weak self] in
+            self?.isReachable = reachable
             guard let data else { return }
             self?.adopt(data)
         }
@@ -130,12 +246,53 @@ extension WatchBridge: WCSessionDelegate {
     ///   - applicationContext: The payload.
     nonisolated func session(_ session: WCSession,
                              didReceiveApplicationContext applicationContext: [String: Any]) {
-        // `[String: Any]` is not `Sendable`; the payload inside it is `Data`,
-        // which is, so only that is carried across.
         let data = applicationContext[WatchSnapshot.payloadKey] as? Data
         Task { @MainActor [weak self] in
             guard let data else { return }
             self?.adopt(data)
+        }
+    }
+
+    /// Takes a snapshot sent for the complications.
+    ///
+    /// - Parameters:
+    ///   - session: The session.
+    ///   - userInfo: The payload.
+    nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
+        let data = userInfo[WatchSnapshot.payloadKey] as? Data
+        Task { @MainActor [weak self] in
+            guard let data else { return }
+            self?.adopt(data)
+        }
+    }
+
+    /// Answers the Watch asking for a fresh snapshot.
+    ///
+    /// - Parameters:
+    ///   - session: The session.
+    ///   - message: The request.
+    ///   - replyHandler: Sends the reply; must be called, or the Watch waits
+    ///     for its time-out.
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any],
+                             replyHandler: @escaping ([String: Any]) -> Void) {
+        let reply = Reply(replyHandler)
+        guard message[WatchSnapshot.requestKey] != nil else {
+            reply([:])
+            return
+        }
+        Task { @MainActor [weak self] in
+            let data = await self?.respond()
+            reply(data.map { [WatchSnapshot.payloadKey: $0] } ?? [:])
+        }
+    }
+
+    /// Follows whether the other side can be messaged.
+    ///
+    /// - Parameter session: The session.
+    nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
+        let reachable = session.isReachable
+        Task { @MainActor [weak self] in
+            self?.isReachable = reachable
         }
     }
 
@@ -152,5 +309,23 @@ extension WatchBridge: WCSessionDelegate {
         WCSession.default.activate()
     }
     #endif
+}
+/// A reply handler carried to the main actor and back.
+///
+/// WatchConnectivity's handler is not `Sendable`, but it is documented as
+/// safe to call from any thread, once; the box says so to the compiler.
+nonisolated private struct Reply: @unchecked Sendable {
+    /// The handler.
+    let send: ([String: Any]) -> Void
+
+    /// Wraps a handler.
+    ///
+    /// - Parameter send: The handler.
+    init(_ send: @escaping ([String: Any]) -> Void) { self.send = send }
+
+    /// Sends a reply.
+    ///
+    /// - Parameter message: The reply.
+    func callAsFunction(_ message: [String: Any]) { send(message) }
 }
 #endif

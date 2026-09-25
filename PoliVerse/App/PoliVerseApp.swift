@@ -209,6 +209,10 @@ struct PoliVerseApp: App {
             defer { PerfSignpost.end(interval) }
             await agenda.load(force: true)
             await career.load(force: true)
+            // The Watch hears of the refresh here or not at all: the view
+            // that sends it the day does not run while the app is in the
+            // background.
+            await WatchSync.send(agenda: agenda, career: career, session: session)
             // Not forced: the hourly window keeps a burst of background runs
             // from reading every course page each time.
             // Measured from the start of the task: iOS gives about 30 s in
@@ -222,6 +226,15 @@ struct PoliVerseApp: App {
             // saves still queued and the widget reload still gathering.
             await WidgetReloader.flush()
         }
+
+        // The Watch asks when what it holds has gone stale. iOS may launch the
+        // app in the background just to answer, with no window and so no view
+        // to bring the session up: both have to happen here, in the one place
+        // that runs on every launch.
+        WatchBridge.shared.answerRequests {
+            await WatchSync.answer(agenda: agenda, career: career, session: session)
+        }
+        WatchBridge.shared.start()
     }
 
     /// The declaration's content.
@@ -270,10 +283,6 @@ struct PoliVerseApp: App {
                 .task {
                     UNUserNotificationCenter.current().delegate = notificationRouter
                     await notifications.refreshAuthorization()
-                    // Brought up here for the same reason as the delegate
-                    // above: the session is per process, not per view, and
-                    // activating it from a view would do so on every rebuild.
-                    WatchBridge.shared.start()
                 }
                 // Asked for when the app leaves the screen, which is the
                 // moment iOS is deciding whether to grant one.

@@ -19,3 +19,15 @@ nonisolated enum WidgetKind: String, Sendable, CaseIterable {
     /// timetable changes.
     static let agenda: Set<WidgetKind> = [.today, .nextLecture, .career]
 }
+
+/// The Watch's widget kinds, named once for the Watch widget extension that
+/// declares them and the Watch app that reloads them.
+///
+/// Plain strings rather than ``WidgetKind`` cases: the two sets live on
+/// different devices and never reload one another.
+nonisolated enum WatchWidgetKind {
+    /// The complication: the lecture on now, or the next one.
+    static let nextLecture = "WatchNextLecture"
+    /// The Smart Stack card that surfaces each lecture as it comes up.
+    static let relevantLecture = "WatchRelevantLecture"
+}

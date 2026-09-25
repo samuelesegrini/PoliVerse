@@ -36,14 +36,24 @@ struct WatchSnapshotTests {
         #expect(snapshot.entries.map(\.isExam) == [false, true])
     }
 
-    @Test("Entries overlapping the day are on it, in order")
+    @Test("Entries overlapping the days sent are on them, in order")
     func day() {
         let snapshot = WatchSnapshotBuilder.build(
-            // Yesterday, this morning, this evening, tomorrow.
-            events: [event(1, -30), event(2, 2), event(3, -3), event(4, 30)],
+            // Yesterday, this morning, this evening, tomorrow, in four days.
+            events: [event(1, -30), event(2, 2), event(3, -3), event(4, 30), event(5, 96)],
             exams: [], day: noon, calendar: calendar)
-        #expect(snapshot.entries.map(\.id) == [3, 2])
+        #expect(snapshot.entries.map(\.id) == [3, 2, 4])
+        #expect(snapshot.entries(on: noon, calendar: calendar).map(\.id) == [3, 2])
         #expect(snapshot.covers(noon, calendar: calendar))
+    }
+
+    @Test("The days ahead are grouped, with today's finished entries left out")
+    func days() {
+        let snapshot = WatchSnapshotBuilder.build(
+            events: [event(1, -3), event(2, 2), event(3, 24)],
+            exams: [], day: noon, calendar: calendar)
+        let days = snapshot.days(from: noon, calendar: calendar)
+        #expect(days.map { $0.entries.map(\.id) } == [[2], [3]])
     }
 
     @Test("A lecture already under way at midnight still belongs to the day it runs into")
@@ -64,7 +74,18 @@ struct WatchSnapshotTests {
                     exam(4, 100, status: .graded(ExamGrade(value: 28, text: "28", passed: true, refusable: false))),
                     exam(5, 150)],
             day: noon, calendar: calendar)
-        #expect(snapshot.nextExamName == "Esame 5")
+        #expect(snapshot.nextExam?.name == "Esame 5")
+        #expect(snapshot.exams.map(\.id) == [5, 1])
+    }
+
+    @Test("At most three sittings, and enrolment is carried")
+    func examLimit() {
+        let snapshot = WatchSnapshotBuilder.build(
+            events: [],
+            exams: [exam(1, 10), exam(2, 20, status: .enrolled), exam(3, 30), exam(4, 40)],
+            day: noon, calendar: calendar)
+        #expect(snapshot.exams.map(\.id) == [1, 2, 3])
+        #expect(snapshot.exams.map(\.isEnrolled) == [false, true, false])
     }
 
     @Test("No results yet is no average, not a confident zero")
@@ -81,11 +102,12 @@ struct WatchSnapshotTests {
                                            career: some, calendar: calendar).mean == 27.4)
     }
 
-    @Test("A snapshot from another day says so")
+    @Test("A snapshot from beyond the days it was sent for says so")
     func staleDay() {
         let snapshot = WatchSnapshotBuilder.build(events: [], exams: [], day: noon,
                                                   calendar: calendar)
-        #expect(snapshot.covers(noon.addingTimeInterval(48 * 3600), calendar: calendar) == false)
+        #expect(snapshot.covers(noon.addingTimeInterval(48 * 3600), calendar: calendar))
+        #expect(snapshot.covers(noon.addingTimeInterval(72 * 3600), calendar: calendar) == false)
     }
 
     @Test("The current entry is the one under way, or the next one")
@@ -98,5 +120,42 @@ struct WatchSnapshotTests {
         #expect(snapshot.current(at: noon.addingTimeInterval(2 * 3600))?.id == 2)
         // Past everything, nothing.
         #expect(snapshot.current(at: noon.addingTimeInterval(20 * 3600)) == nil)
+    }
+
+    @Test("A complication's timeline changes at every start and end still ahead")
+    func changes() {
+        let snapshot = WatchSnapshotBuilder.build(
+            events: [event(1, -1), event(2, 1, lasting: 3600), event(3, 2)],
+            exams: [], day: noon, calendar: calendar)
+        let hour: TimeInterval = 3600
+        // Entry 1 ends as entry 2 starts: one change, not two.
+        #expect(snapshot.changes(after: noon) == [1, 2, 4].map { noon.addingTimeInterval($0 * hour) })
+    }
+
+    @Test("A complication's address names its entry and nothing else")
+    func url() throws {
+        let entry = try #require(WatchSnapshotBuilder.build(
+            events: [event(42, 1)], exams: [], day: noon, calendar: calendar).entries.first)
+        #expect(WatchSnapshot.Entry.id(from: entry.url) == 42)
+        #expect(WatchSnapshot.Entry.id(from: URL(string: "poliverse://entry/42")!) == nil)
+    }
+
+    @Test("A payload from an older phone still decodes, without the new fields")
+    func legacy() throws {
+        let json = #"{"day":0,"entries":[],"nextExamName":"Fisica","earnedCFU":12,"sentAt":0}"#
+        let snapshot = try JSONDecoder().decode(WatchSnapshot.self, from: Data(json.utf8))
+        #expect(snapshot.exams.isEmpty)
+        #expect(snapshot.earnedCFU == 12)
+        #expect(snapshot.plannedCFU == 0)
+    }
+
+    @Test("The Watch asks again after half an hour, or once the days sent have run out")
+    func staleness() {
+        let snapshot = WatchSnapshot(day: calendar.startOfDay(for: noon), entries: [], sentAt: noon)
+        #expect(snapshot.needsRefresh(at: noon.addingTimeInterval(10 * 60)) == false)
+        #expect(snapshot.needsRefresh(at: noon.addingTimeInterval(31 * 60)))
+        let later = WatchSnapshot(day: calendar.startOfDay(for: noon), entries: [],
+                                  sentAt: noon.addingTimeInterval(80 * 3600))
+        #expect(later.needsRefresh(at: noon.addingTimeInterval(80 * 3600)))
     }
 }

@@ -23,7 +23,7 @@ history is not carried forward.
 | Search | Across courses, agenda and exam sittings; results filtered by chips with their counts |
 | Personalizza | Flavors: classic ones built from a colour, and special ones (Giocherelloso, Blueprint) with their own page layouts. The app's tint, tab bar and icon follow the page or are set apart |
 | App icon | Orbita, plus the Giorno and Vicino shapes in every swatch colour and eleven special icons, all free. Built by `scripts/build-alternate-icons.py` |
-| Apple Watch | Today's lectures and the next exam, sent from the phone over WatchConnectivity. Builds against the watchOS SDK; not yet run on a device or a watchOS 26 simulator runtime |
+| Apple Watch | Pages for the lecture on now, the next three days, the sittings ahead and the career, sent from the phone over WatchConnectivity. Complications on every face family, a Smart Stack card per lecture (`RelevanceConfiguration`, by time and at school), the lecture Live Activity in the Watch's Smart Stack, and Double Tap. Run in the watchOS 27.2 simulator; not yet on a device |
 
 The app ships with **mock data on by default** so every screen renders without
 a network. Turn it off in Settings to use a real account.
