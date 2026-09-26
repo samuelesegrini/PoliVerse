@@ -68,12 +68,12 @@ struct SettingsSheet: View {
             }
             Picker(selection: Binding(get: { favouriteCampus }, set: { campus in
                 favouriteCampus = campus
-                freeRooms.campus = campus
+                if let main = rooms.mainCampus(inSite: campus) { freeRooms.campus = main }
             })) {
-                if favouriteCampus.isEmpty || !rooms.campuses.contains(favouriteCampus) {
+                if !rooms.sites.contains(favouriteCampus) {
                     Text("Nessuna").tag(favouriteCampus)
                 }
-                ForEach(rooms.campuses, id: \.self) { Text($0).tag($0) }
+                ForEach(rooms.sites, id: \.self) { Text($0).tag($0) }
             } label: {
                 Label("Sede preferita", systemImage: "building.2")
             }

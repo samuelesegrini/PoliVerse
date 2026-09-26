@@ -23,8 +23,13 @@ nonisolated struct Classroom: Identifiable, Sendable, Hashable, Codable {
     var buildingName: String?
     /// The floor's name, where the catalogue records one.
     var floorName: String?
-    /// The campus's name, once the campus catalogue is joined in.
+    /// The campus's name, once the campus catalogue is joined in. The service
+    /// names campuses by address — "Via Durando" — so this is where the room is,
+    /// not what a student calls the place.
     var campusName: String?
+    /// The site the campus belongs to — "Milano Bovisa", "Como" — once the site
+    /// catalogue is joined in.
+    var siteName: String?
     /// The building's street address, where recorded.
     var address: String?
     /// Seats reserved for wheelchair users, where the catalogue records any.

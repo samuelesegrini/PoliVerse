@@ -45,7 +45,7 @@ struct JourneyStudies: View {
         }
         .task {
             await rooms.load()
-            if favourite.isEmpty, let first = rooms.campuses.first { favourite = first }
+            if !rooms.sites.contains(favourite), let biggest = rooms.biggestSite { favourite = biggest }
         }
         .task { await programmes.prepare() }
         .sheet(isPresented: $choosingPlan) { StudyProgrammeSheet() }
@@ -93,17 +93,17 @@ struct JourneyStudies: View {
 
     // MARK: - Campus
 
-    /// One pill per campus, the favourite ticked.
+    /// One pill per site, the favourite ticked.
     @ViewBuilder
     private var campusSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             heading("La tua sede")
-            if rooms.campuses.isEmpty {
+            if rooms.sites.isEmpty {
                 JourneyCard(title: Text("Carico le sedi…"), detail: Text("Per le aule libere")) {
                     ProgressView().frame(width: 46, height: 46)
                 }
             }
-            ForEach(rooms.campuses, id: \.self) { campus in
+            ForEach(rooms.sites, id: \.self) { campus in
                 JourneyPill(isOn: favourite == campus, indicator: .check, action: {
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) { favourite = campus }
                 }) {
@@ -131,7 +131,7 @@ struct JourneyStudies: View {
     /// campus, and moves on.
     private func finish() {
         if programmes.programme?.isConfirmed == false { programmes.confirm() }
-        if !favourite.isEmpty { freeRooms.campus = favourite }
+        if let campus = rooms.mainCampus(inSite: favourite) { freeRooms.campus = campus }
         advance()
     }
 }

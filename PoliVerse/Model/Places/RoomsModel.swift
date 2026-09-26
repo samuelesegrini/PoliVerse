@@ -114,12 +114,15 @@ final class RoomsModel {
             async let buildingsTask = fetch("/spazi/edificio", as: [BuildingDTO].self)
             async let campusesTask = fetch("/spazi/campus", as: [CampusDTO].self)
             async let floorsTask = fetch("/spazi/piano", as: [FloorDTO].self)
+            // The sites only name the campuses' groups: without them the rooms still work.
+            async let sitesTask = try? fetch("/spazi/sede", as: [SiteDTO].self)
 
             let (rawRooms, rawBuildings, rawCampuses, rawFloors) =
                 try await (roomsTask, buildingsTask, campusesTask, floorsTask)
 
             let joined = await Self.join(
-                rooms: rawRooms, buildings: rawBuildings, campuses: rawCampuses, floors: rawFloors)
+                rooms: rawRooms, buildings: rawBuildings, campuses: rawCampuses, floors: rawFloors,
+                sites: await sitesTask ?? [])
 
             log.notice("rooms: \(rawRooms.count, privacy: .public) in catalogue, \(joined.rooms.count, privacy: .public) usable")
             adopt(joined.rooms, campuses: joined.campuses)
@@ -159,10 +162,12 @@ final class RoomsModel {
     ///   - rawBuildings: The building catalogue.
     ///   - rawCampuses: The campus catalogue.
     ///   - rawFloors: The floor catalogue.
+    ///   - rawSites: The site catalogue.
     /// - Returns: The joined rooms, sorted by code, with their campus list.
     @concurrent
     private static func join(rooms rawRooms: [ClassroomDTO], buildings rawBuildings: [BuildingDTO],
-                             campuses rawCampuses: [CampusDTO], floors rawFloors: [FloorDTO]) async -> Catalogue {
+                             campuses rawCampuses: [CampusDTO], floors rawFloors: [FloorDTO],
+                             sites rawSites: [SiteDTO]) async -> Catalogue {
         let buildings = Dictionary(
             rawBuildings.compactMap { dto -> (String, BuildingDTO)? in
                 dto.csie.map { ($0, dto) }
@@ -173,6 +178,20 @@ final class RoomsModel {
             rawCampuses.compactMap { dto -> (String, String)? in
                 guard let csic = dto.csic, let nome = dto.nome else { return nil }
                 return (csic, nome)
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let siteNames = Dictionary(
+            rawSites.compactMap { dto -> (String, String)? in
+                guard let csis = dto.csis, let nome = dto.nome else { return nil }
+                return (csis, nome)
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let campusSites = Dictionary(
+            rawCampuses.compactMap { dto -> (String, String)? in
+                guard let csic = dto.csic, let site = dto.csis.flatMap({ siteNames[$0] }) else { return nil }
+                return (csic, site)
             },
             uniquingKeysWith: { first, _ in first }
         )
@@ -190,6 +209,7 @@ final class RoomsModel {
             copy.buildingName = building?.nome
             copy.address = building?.fullAddress
             copy.campusName = building?.csic.flatMap { campusNames[$0] }
+            copy.siteName = building?.csic.flatMap { campusSites[$0] }
             copy.floorName = floorNames[room.floorCode]
             return copy
         }.sorted { $0.id < $1.id }

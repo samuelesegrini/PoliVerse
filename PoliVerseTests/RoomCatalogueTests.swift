@@ -12,16 +12,17 @@ import Testing
 @Suite("Room catalogue")
 @MainActor
 struct RoomCatalogueTests {
-    /// The four endpoints, keyed exactly as ``RoomsModel`` asks for them.
+    /// The five endpoints, keyed exactly as ``RoomsModel`` asks for them.
     private static func catalogue(
         rooms: String = "[]", buildings: String = "[]",
-        campuses: String = "[]", floors: String = "[]"
+        campuses: String = "[]", floors: String = "[]", sites: String = "[]"
     ) -> FixtureHTTP {
         FixtureHTTP([
             "/spazi/aula": Data(rooms.utf8),
             "/spazi/edificio": Data(buildings.utf8),
             "/spazi/campus": Data(campuses.utf8),
             "/spazi/piano": Data(floors.utf8),
+            "/spazi/sede": Data(sites.utf8),
         ])
     }
 
@@ -50,6 +51,25 @@ struct RoomCatalogueTests {
         #expect(room.buildingName == "Edificio 3")
         #expect(room.campusName == "Leonardo")
         #expect(room.floorName == "Piano terra")
+    }
+
+    /// The service names campuses by address; the site is what a student calls
+    /// the place, and what the favourite is chosen among.
+    @Test("A room knows its site, and a site opens on its biggest campus")
+    func joinsTheSite() async throws {
+        let http = Self.catalogue(
+            rooms: #"[{"sigla": "B1", "csie": "E1", "csip": "P0", "capienza": "80"}, {"sigla": "B2", "csie": "E1", "csip": "P0", "capienza": "80"}, {"sigla": "D1", "csie": "E2", "csip": "P0", "capienza": "40"}]"#,
+            buildings: #"[{"csie": "E1", "csic": "MIB01", "nome": "B"}, {"csie": "E2", "csic": "MIB02", "nome": "D"}]"#,
+            campuses: #"[{"csic": "MIB01", "csis": "MIB", "nome": "Via La Masa"}, {"csic": "MIB02", "csis": "MIB", "nome": "Via Durando"}]"#,
+            sites: #"[{"csis": "MIB", "nome": "Milano Bovisa"}]"#)
+        let rooms = model(http)
+
+        await rooms.load()
+
+        #expect(rooms.rooms.first?.siteName == "Milano Bovisa")
+        #expect(rooms.sites == ["Milano Bovisa"])
+        #expect(rooms.biggestSite == "Milano Bovisa")
+        #expect(rooms.mainCampus(inSite: "Milano Bovisa") == "Via La Masa")
     }
 
     /// Rooms the catalogue marks as fictitious or out of service are still in
@@ -119,8 +139,8 @@ struct RoomCatalogueTests {
         await rooms.load()
         await rooms.load()
 
-        // Four paths, once each.
-        #expect(await http.requests.count == 4)
+        // Five paths, once each.
+        #expect(await http.requests.count == 5)
     }
 
     @Test("A failure is reported and leaves the catalogue empty rather than wrong")

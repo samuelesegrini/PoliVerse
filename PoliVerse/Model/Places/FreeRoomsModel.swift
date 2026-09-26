@@ -210,7 +210,8 @@ final class FreeRoomsModel {
     func load(force: Bool = false) async {
         guard !skipsLoading else { return }
         await catalogue.load()
-        if campus == nil { campus = FavouriteCampus.resolve(FavouriteCampus.stored, among: catalogue.campuses) }
+        if campus == nil { campus = FavouriteCampus.resolve(FavouriteCampus.stored, among: catalogue.campuses,
+                                                                          mainCampus: catalogue.mainCampus(inSite:)) }
         publishWidgetCatalogue()
 
         let key = "\(PoliMiDate.queryString(day))|\(campus ?? "-")"
