@@ -163,6 +163,8 @@ struct JourneyView: View {
             JourneyPreview(advance: advance, change: back)
         case .signIn:
             JourneySignIn(advance: advance)
+        case .studies:
+            JourneyStudies(advance: advance)
         case .reminders:
             JourneyReminders(advance: advance)
         case .atmosphere:
@@ -177,7 +179,7 @@ struct JourneyView: View {
         switch step {
         case .welcome: .dawn
         case .intents, .preview: .meadow
-        case .signIn: .lake
+        case .signIn, .studies: .lake
         case .reminders: .sunset
         case .atmosphere, .ready: .flavor(style.flavor)
         }

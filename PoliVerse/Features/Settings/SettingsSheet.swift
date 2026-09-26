@@ -25,8 +25,73 @@ struct SettingsSheet: View {
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
     /// Whether opening Cerca brings the keyboard up.
     @AppStorage(SearchTabKeyboard.storageKey) private var searchOpensKeyboard = true
+    /// The shared ``StudyProgrammeModel``, from the environment.
+    @Environment(StudyProgrammeModel.self) private var programmes
+    /// The shared ``RoomsModel``, from the environment.
+    @Environment(RoomsModel.self) private var rooms
+    /// The shared ``FreeRoomsModel``, from the environment.
+    @Environment(FreeRoomsModel.self) private var freeRooms
+    /// The campus Aule libere opens on.
+    @AppStorage(FavouriteCampus.storageKey) private var favouriteCampus = ""
+    /// Whether the plan picker is up.
+    @State private var choosingPlan = false
     /// Whether the sign-out confirmation is presented.
     @State private var confirmingSignOut = false
+
+    /// The degree course and approved plan, and the favourite campus: what the
+    /// journey asked, changed later.
+    private var studiesSection: some View {
+        Section {
+            if !session.useMockData {
+                Button { choosingPlan = true } label: {
+                    LabeledContent {
+                        Text(programmes.programme?.planLabel ?? String(localized: "Da scegliere"))
+                            .lineLimit(1)
+                    } label: {
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Corso di studi e piano")
+                                if let degree = programmes.programme?.degreeLabel {
+                                    Text(degree)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+                            }
+                        } icon: {
+                            Image(systemName: "graduationcap")
+                        }
+                    }
+                }
+                .tint(.primary)
+                .accessibilityIdentifier("settings-programme")
+            }
+            Picker(selection: Binding(get: { favouriteCampus }, set: { campus in
+                favouriteCampus = campus
+                freeRooms.campus = campus
+            })) {
+                if favouriteCampus.isEmpty || !rooms.campuses.contains(favouriteCampus) {
+                    Text("Nessuna").tag(favouriteCampus)
+                }
+                ForEach(rooms.campuses, id: \.self) { Text($0).tag($0) }
+            } label: {
+                Label("Sede preferita", systemImage: "building.2")
+            }
+            .pickerStyle(.menu)
+            .accessibilityIdentifier("settings-campus")
+        } header: {
+            Text("I tuoi studi")
+        } footer: {
+            if session.useMockData {
+                Text("La sede è dove si aprono le aule libere.")
+            } else {
+                Text("Il piano approvato (PSPA) decide le schede dei corsi, il syllabus e l’orario personalizzato; la sede è dove si aprono le aule libere.")
+            }
+        }
+        .lookRow()
+        .task { await rooms.load() }
+        .sheet(isPresented: $choosingPlan) { StudyProgrammeSheet() }
+    }
 
     /// The view's content.
     var body: some View {
@@ -69,6 +134,8 @@ struct SettingsSheet: View {
                     }
                 }
                 .lookRow()
+
+                studiesSection
 
                 Section {
                     Picker(selection: $layout) {

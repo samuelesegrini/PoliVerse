@@ -60,12 +60,102 @@
     " in %@" : {
 
     },
+    "Carico le sedi…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading campuses…"
+          }
+        }
+      }
+    },
+    "Cerco il tuo piano…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finding your plan…"
+          }
+        }
+      }
+    },
     "Circuito" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Circuit"
+          }
+        }
+      }
+    },
+    "Corso di studi e piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Degree course and plan"
+          }
+        }
+      }
+    },
+    "Da scegliere" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not chosen"
+          }
+        }
+      }
+    },
+    "Dal libretto e dal Manifesto degli studi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From your transcript and the Manifesto degli studi"
+          }
+        }
+      }
+    },
+    "Dove _studi_" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where you _study_"
+          }
+        }
+      }
+    },
+    "I tuoi studi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your studies"
+          }
+        }
+      }
+    },
+    "Il piano approvato (PSPA) decide le schede dei corsi, il syllabus e l’orario personalizzato." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The approved plan (PSPA) decides the course pages, the syllabus and the personal timetable."
+          }
+        }
+      }
+    },
+    "Il piano approvato (PSPA) decide le schede dei corsi, il syllabus e l’orario personalizzato; la sede è dove si aprono le aule libere." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The approved plan (PSPA) decides the course pages, the syllabus and the personal timetable; the campus is where free classrooms open."
           }
         }
       }
@@ -80,12 +170,52 @@
         }
       }
     },
+    "La sede è dove si aprono le aule libere." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The campus is where free classrooms open."
+          }
+        }
+      }
+    },
+    "La tua sede" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your campus"
+          }
+        }
+      }
+    },
     "Neon" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Neon"
+          }
+        }
+      }
+    },
+    "Nessuna" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        }
+      }
+    },
+    "Non è il mio piano: scegli" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not my plan: choose"
           }
         }
       }
@@ -126,6 +256,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Leather"
+          }
+        }
+      }
+    },
+    "Per le aule libere" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For free classrooms"
+          }
+        }
+      }
+    },
+    "Scegli corso e piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose course and plan"
+          }
+        }
+      }
+    },
+    "Sede preferita" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favourite campus"
           }
         }
       }

@@ -29,18 +29,21 @@ struct JourneyFlowTests {
         #expect(!JourneyFlow.steps(in: .init(isSignedIn: true, notificationsDenied: true)).contains(.reminders))
     }
 
-    @Test("Signing in moves the journey on to the reminders")
-    func signInLeadsToReminders() {
-        #expect(JourneyFlow.next(after: .signIn, in: .init(isSignedIn: true)) == .reminders)
-        #expect(JourneyFlow.next(after: .signIn, in: .init(isSignedIn: true, isDemo: true)) == .atmosphere)
+    @Test("Signing in moves the journey on to the studies, then the reminders")
+    func signInLeadsToStudies() {
+        #expect(JourneyFlow.next(after: .signIn, in: .init(isSignedIn: true)) == .studies)
+        #expect(JourneyFlow.next(after: .signIn, in: .init(isSignedIn: true, isDemo: true)) == .studies)
+        #expect(JourneyFlow.next(after: .studies, in: .init(isSignedIn: true)) == .reminders)
+        #expect(JourneyFlow.next(after: .studies, in: .init(isSignedIn: true, isDemo: true)) == .atmosphere)
     }
 
     /// Signing in again over a live session has the identity provider replay the
     /// grant, so the account step is behind a one-way door once passed.
     @Test("No way back onto the sign-in once there is a session")
     func noBackOntoSignIn() {
-        #expect(!JourneyFlow.canGoBack(from: .reminders, in: .init(isSignedIn: true)))
-        #expect(!JourneyFlow.canGoBack(from: .atmosphere, in: .init(isSignedIn: true, isDemo: true)))
+        #expect(!JourneyFlow.canGoBack(from: .studies, in: .init(isSignedIn: true)))
+        #expect(!JourneyFlow.canGoBack(from: .studies, in: .init(isSignedIn: true, isDemo: true)))
+        #expect(JourneyFlow.canGoBack(from: .reminders, in: .init(isSignedIn: true)))
         #expect(JourneyFlow.canGoBack(from: .preview, in: .init()))
         #expect(JourneyFlow.canGoBack(from: .signIn, in: .init()))
     }

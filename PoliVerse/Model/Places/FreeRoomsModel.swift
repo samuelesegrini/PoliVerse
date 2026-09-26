@@ -52,8 +52,8 @@ final class FreeRoomsModel {
 
     /// The day being shown.
     var day: Date = .now
-    /// The campus being shown. Set to the catalogue's first campus on the first load when
-    /// nothing has been chosen.
+    /// The campus being shown. Set to the student's ``FavouriteCampus``, or else the
+    /// catalogue's first campus, on the first load when nothing has been chosen.
     var campus: String?
 
     /// Supplies the rooms to ask about, and the campus list.
@@ -210,7 +210,7 @@ final class FreeRoomsModel {
     func load(force: Bool = false) async {
         guard !skipsLoading else { return }
         await catalogue.load()
-        if campus == nil { campus = catalogue.campuses.first }
+        if campus == nil { campus = FavouriteCampus.resolve(FavouriteCampus.stored, among: catalogue.campuses) }
         publishWidgetCatalogue()
 
         let key = "\(PoliMiDate.queryString(day))|\(campus ?? "-")"
