@@ -100,6 +100,9 @@ what the rest of the app wears with it (``AppLook``) — the tint on every
 control, the Home Screen icon (``AppIconChoice``) and how the tab bar behaves
 (``TabBarBehaviour``). Paired, the app follows the page: the Flavor's accent,
 the icon nearest the Flavor, the usual bar. Any choice made by hand unpairs it.
+Orbita follows the Flavor's colour only in looks made since it came in colours
+(``AppLook/colouredOrbit``): a look saved before keeps the classic blue icon, so
+an update never changes anyone's Home Screen, until they pick Automatica again.
 
 > Note: The icon is set once, when Personalizza closes, never while swiping
 > through looks: the system tells the student about every change with an alert
