@@ -25,9 +25,21 @@ nonisolated struct AppLook: Codable, Equatable, Hashable, Sendable {
     var iconStyle = AppIconStyle.orbit
     /// The special icon worn in the Speciali shape, kept like the shape.
     var special = SpecialIcon.neon
+    /// Paired, Orbita takes the colour nearest the Flavor. Looks saved before
+    /// Orbita came in colours keep its classic blue, so updating the app never
+    /// changes anyone's icon, until Automatica is chosen again.
+    var colouredOrbit = true
 
     /// Paired: the app follows the page.
     init() {}
+
+    /// The app half of a look saved before it had one: paired, as it was, and
+    /// with Orbita in its classic blue.
+    static var saved: AppLook {
+        var app = AppLook()
+        app.colouredOrbit = false
+        return app
+    }
 
     /// Reads an app half, keeping the defaults for anything a stored look does not name.
     ///
@@ -41,6 +53,8 @@ nonisolated struct AppLook: Codable, Equatable, Hashable, Sendable {
         tabBar = (try? container.decodeIfPresent(TabBarBehaviour.self, forKey: .tabBar)) ?? tabBar
         iconStyle = (try? container.decodeIfPresent(AppIconStyle.self, forKey: .iconStyle)) ?? iconStyle
         special = (try? container.decodeIfPresent(SpecialIcon.self, forKey: .special)) ?? special
+        // Saved before Orbita came in colours: it stays blue.
+        colouredOrbit = (try? container.decodeIfPresent(Bool.self, forKey: .colouredOrbit)) ?? false
     }
 }
 
@@ -247,8 +261,13 @@ nonisolated extension TodayStyle {
     /// The colour the app is tinted from: the page's Flavor while paired.
     var appFlavor: Flavor { app.paired ? flavor : (app.tint ?? flavor) }
 
-    /// The icon the app wears: the one nearest the Flavor while paired.
-    var appIcon: AppIconChoice { app.paired ? .nearest(to: flavor) : app.icon }
+    /// The icon the app wears: the one nearest the Flavor while paired, but
+    /// Orbita's classic blue for a look saved before Orbita came in colours.
+    var appIcon: AppIconChoice {
+        guard app.paired else { return app.icon }
+        if app.iconStyle == .orbit && !app.colouredOrbit { return .classic }
+        return .nearest(to: flavor)
+    }
 
     /// How the tab bar behaves: the usual while paired.
     var appTabBar: TabBarBehaviour { app.paired ? .minimizes : app.tabBar }
@@ -280,7 +299,8 @@ nonisolated extension TodayStyle {
         appIconStyle == .special ? app.special.previewImage : appIcon.previewImage(in: appIconStyle)
     }
 
-    /// Puts the app back on the page, dropping its own choices but the icon's shape.
+    /// Puts the app back on the page, dropping its own choices but the icon's
+    /// shape. Chosen by hand, so Orbita follows the Flavor's colour from then on.
     mutating func pairApp() {
         let (style, special) = (app.iconStyle, app.special)
         app = AppLook()

@@ -81,7 +81,40 @@ struct AppLookTests {
 
         let older = try #require(TodayStyle(rawValue: ##"{"flavor":"#8A5A3C"}"##))
         #expect(older.app.paired)
-        #expect(older.appIcon == .coffee)
+        // Saved before Orbita came in colours: it keeps its classic blue.
+        #expect(older.appIcon == .classic)
+        #expect(older.appIconName == nil)
+    }
+
+    @Test("Only new looks wear Orbita in the Flavor's colour; a saved one keeps it blue until Automatica is chosen")
+    func colouredOrbitForNewLooks() throws {
+        let coffee = try #require(Flavor(hex: "#8A5A3C"))
+
+        // A new look, paired, in Orbita: the colour nearest the Flavor, kept through storage.
+        var fresh = TodayStyle()
+        fresh.flavor = coffee
+        #expect(fresh.appIconName == "AppIcon-Orbit-Coffee")
+        let stored = try #require(TodayStyle(rawValue: fresh.rawValue))
+        #expect(stored.appIconName == "AppIcon-Orbit-Coffee")
+
+        // Saved before: the same look keeps the shipped icon.
+        var saved = try #require(TodayStyle(rawValue: ##"{"flavor":"#8A5A3C","app":{"paired":true}}"##))
+        #expect(saved.appIconName == nil)
+        #expect(saved.appIconPreview == "AppIconPreview-classic")
+
+        // The other shapes always followed the Flavor, and still do.
+        saved.app.iconStyle = .dial
+        #expect(saved.appIcon == .coffee)
+        saved.app.iconStyle = .orbit
+
+        // Unpairing keeps what it wears: the blue.
+        var unpaired = saved
+        unpaired.unpairApp()
+        #expect(unpaired.app.icon == .classic)
+
+        // Choosing Automatica is choosing the colour.
+        saved.pairApp()
+        #expect(saved.appIconName == "AppIcon-Orbit-Coffee")
     }
 
     @Test("Every shape and colour names an icon the app ships, and a preview it can draw")

@@ -122,11 +122,12 @@ struct AppIconPicker: View {
     /// The icon nearest the Flavor, in the chosen shape: what a paired app wears.
     private var automatic: some View {
         let paired = look.app.paired
-        let nearest = AppIconChoice.nearest(to: look.resolved.flavor)
+        // Paired, what the app wears now; else what Automatica would give it.
+        let shown = paired ? look.resolved.appIcon : AppIconChoice.nearest(to: look.resolved.flavor)
         return Button {
             withAnimation(.snappy) { look.pairApp() }
         } label: {
-            IconChoice(image: nearest.previewImage(in: look.appIconStyle), title: Text("Automatica"), chosen: paired)
+            IconChoice(image: shown.previewImage(in: look.appIconStyle), title: Text("Automatica"), chosen: paired)
         }
         .buttonStyle(.plain)
         .accessibilityHint(Text("Segue il colore del Flavor."))
