@@ -151,8 +151,10 @@ content
 - ``LookEditor``
 - ``AppPairQuestion``
 - ``AppLookEditor``
+- ``LookPart``
+- ``LookTool``
+- ``LookToolView``
 - ``CustomizePage``
-- ``CustomizeControls``
 - ``SectionFormPicker``
 - ``TodayLanding``
 

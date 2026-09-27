@@ -102,6 +102,14 @@ nonisolated struct PlacedSticker: Codable, Equatable, Hashable, Sendable, Identi
     }
 }
 
+/// Telling an emoji sticker from an image one.
+nonisolated extension PlacedSticker.Content {
+    /// True for an emoji sticker.
+    var isEmoji: Bool {
+        if case .emoji = self { true } else { false }
+    }
+}
+
 /// Adding, changing and removing a look's stickers and photos.
 nonisolated extension TodayStyle {
     /// Beyond this the panel is a pile, not an arrangement.
