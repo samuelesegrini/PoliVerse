@@ -510,6 +510,16 @@
         }
       }
     },
+    "L'icona nei tuoi colori" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Icon in Your Colours"
+          }
+        }
+      }
+    },
     "La sede è dove si aprono le aule libere." : {
       "localizations" : {
         "en" : {
@@ -720,6 +730,16 @@
         }
       }
     },
+    "Orbita, Giorno e Vicino in dodici colori, o un'icona speciale. Con Automatica l'app prende quella più vicina al colore del tuo Flavor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orbita, Giorno and Vicino in twelve colours, or a special icon. With Automatic the app takes the one closest to your Flavor's colour."
+          }
+        }
+      }
+    },
     "Osservatorio" : {
       "localizations" : {
         "en" : {
@@ -756,6 +776,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "For free classrooms"
+          }
+        }
+      }
+    },
+    "Personalizza, tutto nuovo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizza, All New"
           }
         }
       }
@@ -1266,6 +1296,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Use “%@”"
+          }
+        }
+      }
+    },
+    "Vedi la pagina mentre la cambi, una parte alla volta: tema, colore, sfondo, data, saluto, schede e app. Gli sticker si trascinano sulla pagina, ogni modifica si annulla, e su iPad e Mac hai barra laterale e inspector. Lo stile vale in ogni schermata." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See the page as you change it, one part at a time: theme, colour, background, date, greeting, cards and app. Stickers drag right on the page, every change can be undone, and on iPad and Mac there's a sidebar and an inspector. Your style applies on every screen."
           }
         }
       }
@@ -8981,9 +9021,6 @@
         }
       }
     },
-    "Il colore, il carattere e il materiale che scegli per Oggi valgono adesso in ogni schermata: carriera, corsi, ricerca e impostazioni comprese." : {
-
-    },
     "Il docente non permette di scaricare questa registrazione. Si può guardare in streaming." : {
 
     },
@@ -14121,9 +14158,6 @@
 
     },
     "Personalizza l'app" : {
-
-    },
-    "Personalizza, su tutta l'app" : {
 
     },
     "Personalizzato" : {
