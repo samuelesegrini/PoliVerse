@@ -125,7 +125,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         let icon = app.buttons["app-option-icon"]
         XCTAssertTrue(icon.waitForExistence(timeout: 5), "Personalizza l'app did not open the app half")
         icon.tap()
-        // Orbita comes in one colour; Giorno in every one.
+        // Every shape comes in every colour; pick one of Giorno's.
         app.buttons["Giorno"].firstMatch.tap()
         app.buttons["app-icon-graphite"].firstMatch.tap()
         settle()

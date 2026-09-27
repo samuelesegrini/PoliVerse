@@ -60,6 +60,26 @@
     " in %@" : {
 
     },
+    "Automatica" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic"
+          }
+        }
+      }
+    },
+    "Automatico" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic"
+          }
+        }
+      }
+    },
     "Carico le sedi…" : {
       "localizations" : {
         "en" : {
@@ -166,6 +186,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hyperspace"
+          }
+        }
+      }
+    },
+    "L'app prende colore, icona e barra dal Flavor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The app takes its colour, icon and tab bar from the Flavor."
           }
         }
       }
@@ -286,6 +316,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Favourite campus"
+          }
+        }
+      }
+    },
+    "Segue il colore del Flavor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Follows the Flavor's colour."
           }
         }
       }
@@ -1849,9 +1889,6 @@
 
     },
     "Abbina all'app" : {
-
-    },
-    "Abbinata" : {
 
     },
     "Abbinata a Oggi" : {
@@ -4749,16 +4786,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Colore, carattere e materiale per tutta l'app; sfondo e adesivi per la tua giornata."
-          }
-        }
-      }
-    },
-    "Colore, icona e barra seguono Oggi, e cambiano quando cambi Flavor." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Colour, icon and tab bar follow Today, and change when you change Flavor."
           }
         }
       }
@@ -9405,9 +9432,6 @@
           }
         }
       }
-    },
-    "L'app ha scelte sue. Tocca Abbinata per farle seguire di nuovo Oggi." : {
-
     },
     "L’app non sta occupando spazio su questo dispositivo." : {
       "localizations" : {

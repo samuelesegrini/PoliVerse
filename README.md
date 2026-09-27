@@ -22,7 +22,7 @@ history is not carried forward.
 | Tabs | Oggi (with the calendar), Corsi, Carriera (with the study plan, Manifesto and custom timetable), Cerca (places, teachers, news) — see [docs/information-architecture.md](docs/information-architecture.md) |
 | Search | Across courses, agenda and exam sittings; results filtered by chips with their counts |
 | Personalizza | Flavors: classic ones built from a colour, and special ones (Giocherelloso, Blueprint) with their own page layouts. The app's tint, tab bar and icon follow the page or are set apart |
-| App icon | Orbita, plus the Giorno and Vicino shapes in every swatch colour and eleven special icons, all free. Built by `scripts/build-alternate-icons.py` |
+| App icon | Orbita, Giorno and Vicino, each in its own ground and every swatch colour, and eleven special icons, all free. Automatica follows the Flavor's colour. Built by `scripts/build-alternate-icons.py` |
 | Apple Watch | Today's lectures and the next exam, sent from the phone over WatchConnectivity. Builds against the watchOS SDK; not yet run on a device or a watchOS 26 simulator runtime |
 
 The app ships with **mock data on by default** so every screen renders without

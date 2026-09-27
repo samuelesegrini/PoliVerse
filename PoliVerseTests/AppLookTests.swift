@@ -57,9 +57,13 @@ struct AppLookTests {
         }
     }
 
-    @Test("Orbita is the shipped icon alone; the shapes name their colours")
+    @Test("Orbita's own ground is the shipped icon; every shape names its colours")
     func assets() {
-        #expect(AppIconChoice.lavender.alternateIconName(in: .orbit) == nil)
+        #expect(AppIconChoice.classic.alternateIconName(in: .orbit) == nil)
+        #expect(AppIconChoice.lavender.alternateIconName(in: .orbit) == "AppIcon-Orbit-Lavender")
+        #expect(AppIconChoice.lavender.previewImage(in: .orbit) == "AppIconPreview-orbit-lavender")
+        #expect(AppIconChoice.choices(in: .orbit) == AppIconChoice.allCases)
+        #expect(AppIconChoice.choices(in: .special).isEmpty)
         #expect(AppIconChoice.classic.alternateIconName(in: .dial) == "AppIcon-Dial")
         #expect(AppIconChoice.lavender.alternateIconName(in: .closeUp) == "AppIcon-CloseUp-Lavender")
         #expect(UIImage(named: "AppIconPreview-classic") != nil)
@@ -108,6 +112,17 @@ struct AppLookTests {
         #expect(look.appIconPreview == "AppIconPreview-special-leather")
         look.pairApp()
         #expect(look.appIconName == "AppIcon-Leather")
+    }
+
+    @Test("A paired Orbita wears the colour nearest the Flavor; the Politecnico's is the shipped icon")
+    func pairedOrbitFollowsFlavor() throws {
+        var look = TodayStyle()
+        look.app.iconStyle = .orbit
+        look.flavor = try #require(Flavor(hex: "#2FA88A"))
+        #expect(look.appIconName == "AppIcon-Orbit-Mint")
+        #expect(look.appIconPreview == "AppIconPreview-orbit-mint")
+        look.flavor = .polimi
+        #expect(look.appIconName == nil)
     }
 
     @Test("Pairing again keeps the icon's shape, and the shape reaches the icon's name")

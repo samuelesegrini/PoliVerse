@@ -5,6 +5,8 @@ Run `python3 scripts/build-alternate-icons.py` from the repository root after
 changing the layers in `design/app-icon/orbita` or the lists below. It writes,
 next to the primary `PoliVerse/AppIcons/AppIcon.icon`:
 
+- `AppIcon-Orbit-<Swatch>.icon`, Orbita in every swatch (its own ground is the
+  primary icon);
 - `AppIcon-Dial[-<Swatch>].icon` and `AppIcon-CloseUp[-<Swatch>].icon`, the
   Giorno and Vicino shapes in their own ground and in every swatch;
 - `AppIcon-<Name>.icon`, one per special icon.
@@ -89,12 +91,32 @@ def group(layer):
     }
 
 
+def swatch_ground(swatch):
+    """A swatch's ground, top and bottom: the colour lifted, then deepened."""
+    base = rgb(swatch)
+    return mix(base, (255, 255, 255), 0.12), mix(base, (0, 0, 0), 0.55)
+
+
+def orbit():
+    """Orbita in every swatch: the primary icon's own layers and groups, on the
+    swatch's ground, as the other shapes wear their colours."""
+    primary = json.loads((SOURCE / "icon.json").read_text())
+    for name, _, swatch in CHOICES:
+        target = FOLDER / f"AppIcon-Orbit-{name}.icon"
+        if target.exists():
+            shutil.rmtree(target)
+        shutil.copytree(SOURCE / "Assets", target / "Assets")
+        icon = dict(primary)
+        icon["fill-specializations"] = fills(*swatch_ground(swatch))
+        (target / "icon.json").write_text(json.dumps(icon, indent=2) + "\n")
+        print("wrote", target.relative_to(ROOT))
+
+
 def shapes():
     for shape, folder, layers, top, bottom in SHAPES:
         grounds = [("", rgb(top), rgb(bottom))]
         for name, _, swatch in CHOICES:
-            base = rgb(swatch)
-            grounds.append((f"-{name}", mix(base, (255, 255, 255), 0.12), mix(base, (0, 0, 0), 0.55)))
+            grounds.append((f"-{name}", *swatch_ground(swatch)))
         for suffix, top_colour, bottom_colour in grounds:
             target = FOLDER / f"AppIcon-{shape}{suffix}.icon"
             if target.exists():
@@ -153,5 +175,6 @@ def specials():
 
 
 if __name__ == "__main__":
+    orbit()
     shapes()
     specials()

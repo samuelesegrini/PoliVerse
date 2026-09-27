@@ -45,8 +45,8 @@ nonisolated struct AppLook: Codable, Equatable, Hashable, Sendable {
     }
 }
 
-/// The colours the dial and close-up icons come in: their own ground and
-/// one per Flavor swatch.
+/// The colours Orbita, the dial and the close-up come in: their own ground
+/// and one per Flavor swatch.
 ///
 /// Built by `scripts/build-alternate-icons.py`, which keeps the ids here and
 /// the asset names in step.
@@ -79,12 +79,14 @@ nonisolated enum AppIconChoice: String, Codable, CaseIterable, Identifiable, Sen
 
     /// The name the system knows the icon by in a shape; `nil` for the primary icon.
     ///
-    /// Orbita is the shipped icon alone; the dial and the close-up come in
-    /// their own ground and in every swatch. The special icons are not colours,
-    /// so their shape names none here.
+    /// Every shape comes in its own ground and in every swatch; Orbita's own
+    /// ground is the shipped icon. The special icons are not colours, so
+    /// their shape names none here.
     func alternateIconName(in style: AppIconStyle) -> String? {
         switch style {
-        case .orbit, .special: return nil
+        case .special: return nil
+        case .orbit:
+            return self == .classic ? nil : "AppIcon-Orbit-" + rawValue.prefix(1).uppercased() + rawValue.dropFirst()
         case .dial, .closeUp:
             let base = "AppIcon-\(style.assetName)"
             return self == .classic ? base : base + "-" + rawValue.prefix(1).uppercased() + rawValue.dropFirst()
@@ -94,16 +96,18 @@ nonisolated enum AppIconChoice: String, Codable, CaseIterable, Identifiable, Sen
     /// The small copy drawn inside the app, in a shape.
     func previewImage(in style: AppIconStyle) -> String {
         switch style {
-        case .orbit, .special: "AppIconPreview-classic"
+        case .special: "AppIconPreview-classic"
+        case .orbit: self == .classic ? "AppIconPreview-classic" : "AppIconPreview-orbit-\(rawValue)"
         case .dial, .closeUp: "AppIconPreview-\(style.rawValue)-\(rawValue)"
         }
     }
 
-    /// The colours a shape comes in: none to pick for Orbita and the special icons.
+    /// The colours a shape comes in: every one for the three shapes, none for
+    /// the special icons, which are pictures of their own.
     static func choices(in style: AppIconStyle) -> [AppIconChoice] {
         switch style {
-        case .orbit, .special: []
-        case .dial, .closeUp: allCases
+        case .special: []
+        case .orbit, .dial, .closeUp: allCases
         }
     }
 
@@ -169,7 +173,7 @@ nonisolated enum AppIconStyle: String, Codable, CaseIterable, Identifiable, Send
     /// The part of the asset names that names the shape.
     var assetName: String {
         switch self {
-        case .orbit: ""
+        case .orbit: "Orbit"
         case .dial: "Dial"
         case .closeUp: "CloseUp"
         case .special: ""
