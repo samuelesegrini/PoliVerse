@@ -97,4 +97,47 @@ struct TodayStickersTests {
         #expect(store.data(for: dropped) == nil)
         #expect(store.data(for: "missing") == nil)
     }
+
+    @Test("The selected sticker's actions size, turn, copy, raise and remove it")
+    func edits() throws {
+        var style = TodayStyle()
+        let first = try #require(style.addSticker(.emoji("🎓")))
+        let second = try #require(style.addSticker(.emoji("📚")))
+
+        style.edit(sticker: first.id, .bigger)
+        #expect(style.stickers[0].size == first.size + StickerEdit.sizeStep)
+        style.edit(sticker: first.id, .smaller)
+        style.edit(sticker: first.id, .smaller)
+        #expect(abs(style.stickers[0].size - (first.size - StickerEdit.sizeStep)) < 0.0001)
+
+        // Ruota goes round: past the last turn one way, back to the other.
+        style.updateSticker(first.id) { $0.rotation = PlacedSticker.rotations.upperBound }
+        style.edit(sticker: first.id, .turn)
+        #expect(style.stickers[0].rotation == PlacedSticker.rotations.lowerBound)
+
+        // The copy is selected, a little off the original so both show.
+        let copy = try #require(style.edit(sticker: first.id, .duplicate))
+        #expect(copy != first.id)
+        #expect(style.stickers.count == 3)
+        #expect(style.stickers.last?.content == first.content)
+        #expect(style.stickers.last?.x ?? 0 > style.stickers[0].x)
+
+        // In primo piano draws it last, over the others.
+        style.edit(sticker: first.id, .front)
+        #expect(style.stickers.last?.id == first.id)
+        #expect(style.stickers.first?.id == second.id)
+
+        #expect(style.edit(sticker: first.id, .remove) == nil)
+        #expect(!style.stickers.contains { $0.id == first.id })
+        #expect(style.edit(sticker: first.id, .bigger) == nil, "A sticker no longer there was still selected")
+    }
+
+    @Test("A full panel takes no copy, and keeps the sticker selected")
+    func fullPanel() throws {
+        var style = TodayStyle()
+        for _ in 0..<TodayStyle.maxStickers { style.addSticker(.emoji("⭐️")) }
+        let id = try #require(style.stickers.first?.id)
+        #expect(style.edit(sticker: id, .duplicate) == id)
+        #expect(style.stickers.count == TodayStyle.maxStickers)
+    }
 }
