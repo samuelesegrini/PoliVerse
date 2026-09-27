@@ -61,11 +61,15 @@ L'agenda si carica attorno al giorno mostrato.
 Spotlight, promemoria e banner dei dati di esempio. Nella nuova interfaccia `NewRoute` sceglie il
 tab, o apre il pannello della pagina unica sul luogo.
 
-**Personalizza.** Un solo punto di conferma per azione: nell'editor «Fine» salva lo stile, nella
+**Personalizza.** Un solo punto di conferma per azione: nell'editor ✓ salva lo stile, nella
 galleria ✓ lo usa, «Chiudi» lascia la pagina sullo stile che già usa (salvare proprio quello
-cambia subito la pagina). «Annulla» chiede prima di scartare modifiche.
-Le pagine del pannello tornano indietro con il pulsante di sistema e cambiano lo stile mentre si
-tocca; l'emoji keyboard degli sticker è una pagina del pannello, non uno sheet sopra. Uno stile
+cambia subito la pagina). ✕ chiede prima di scartare modifiche; ogni modifica si annulla e si
+ripete con le frecce accanto.
+L'editor tiene la pagina viva e piccola al centro e sotto le parti dello stile (Tema, Colore,
+Sfondo, Data, Saluto, Schede, App), ognuna con una miniatura di com'è ora. Una parte, o un tocco
+su quella parte dell'anteprima, apre i suoi strumenti sotto la pagina; la capsula in basso passa
+da una parte all'altra, con a sinistra il ripristino della sola parte e a destra il ritorno a
+tutte. Solo la scheda di una sezione e la tastiera degli sticker salgono in uno sheet. Uno stile
 si elimina tenendo premuta la sua scheda (resta sempre almeno uno stile).
 
 ### Glossario

@@ -1,21 +1,20 @@
 import SwiftUI
 
-/// Personalizza's editor: the page at full size, as the Lock Screen's editor
-/// shows the wallpaper.
+/// Personalizza's editor: the page live and small in the middle, the look's
+/// parts below it.
 ///
-/// Every part of the page is an outlined zone, and a tap opens that part's
-/// controls alone, in a small sheet that leaves the page live above it.
-/// Swiping sideways runs through the five fixed lights — the way a photo
-/// wallpaper swipes through its styles. The Flavor sits bottom-left, and
-/// everything without a zone of its own is behind •••: the app half, the paper,
-/// the cards, the sections, the name.
+/// Opening on the overview, every part is a card with a picture of what it is
+/// now; a card, or a tap on that part of the page, opens its tools under the
+/// page. A capsule at the bottom runs through the parts the way Safari's runs
+/// through tabs, with the part's reset on its left and the way back to every
+/// part on its right. The page stays live throughout, touches included: a tap
+/// on the date opens Data, stickers drag where they are.
 ///
-/// It edits a draft. Aggiungi or Fine keeps it, Annulla drops it, and
-/// Ripristina, in the menu, goes back to where editing started.
+/// It edits a draft. ✓ keeps it, ✕ drops it, and every change can be undone.
 struct LookEditor: View {
     /// The draft being edited.
     @Binding var look: TodayStyle
-    /// The look as editing found it, for Ripristina and for asking before Annulla.
+    /// The look as editing found it, for the resets and for asking before ✕.
     let original: TodayStyle
     /// True for a look being added: its button says Aggiungi.
     let isNew: Bool
@@ -32,39 +31,75 @@ struct LookEditor: View {
     @Environment(\.shell) private var shell
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
-    /// The part of the look whose controls are open, if any.
-    @State private var panel: CustomizePage?
-    /// Pages pushed inside the open panel, such as the sticker picker.
-    @State private var panelPath: [CustomizePage] = []
+    /// The part whose tools are open, or `nil` for the overview.
+    @State private var part: LookPart?
+    /// The tool each part last showed, so coming back finds it again.
+    @State private var tools: [LookPart: CustomizePage] = [:]
+    /// What is up in a sheet of its own: a section's card or the sticker picker.
+    @State private var sheet: CustomizePage?
     @State private var arranging = false
     @State private var renaming = false
     @State private var newName = ""
     @State private var confirmingCancel = false
-    /// The first-time hint about swiping, gone after a moment.
-    @State private var showsHint = true
-    /// A sideways swipe is under way. A zone is a button, and a button fires
-    /// on any release inside it, so the swipe that crossed it must not open it.
-    @State private var swiping = false
     /// Which page a special Flavor is previewed on.
     @State private var preview = SpecialPreview.today
+    /// Every change, to undo and redo.
+    @State private var history = EditHistory()
+    /// False while the card that opened the editor is still growing into it:
+    /// the page starts at full size and settles into the middle.
+    @State private var settled = false
 
-    /// The lights a swipe runs through, in order: the page's styles.
+    /// The lights the Luce tool runs through, in order: the page's styles.
     static let variants: [TodayAppearance] = [.system, .tinted, .contrast, .dark, .light]
+
+    /// The tools' height under the page, as a share of the screen's.
+    private static let toolsShare: CGFloat = 0.3
+    /// The editor's coordinate space, where the page finds the screen's middle.
+    private static let space = "look-editor"
 
     /// The light the page is drawn in: the look's own, or the system's.
     private var lit: ColorScheme { look.appearance.colorScheme ?? scheme }
 
     /// The view's content.
     var body: some View {
-        ZStack {
-            page
-            controls
+        GeometryReader { proxy in
+            // The whole screen: the host already reaches under the bars.
+            let screen = proxy.size
+            VStack(spacing: 0) {
+                topBar
+                    .padding(.horizontal, 16)
+                    .padding(.top, insets.top + 4)
+                    .opacity(settled ? 1 : 0)
+                page(screen: screen)
+                    .padding(.vertical, 12)
+                if !arranging {
+                    lower(screen: screen)
+                        .opacity(settled ? 1 : 0)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .frame(width: screen.width, height: screen.height, alignment: .top)
+            .coordinateSpace(.named(Self.space))
         }
-        .sheet(item: $panel) { root in
-            panelSheet(root)
+        .ignoresSafeArea()
+        .background(Color.black)
+        // The editor's own controls are always on black; the page keeps its own light.
+        .environment(\.colorScheme, .dark)
+        .tint(look.resolved.controlTint(.dark))
+        .animation(.snappy, value: part)
+        .animation(.snappy, value: arranging)
+        .sheet(item: $sheet) { page in
+            sheetContent(page)
         }
-        .onChange(of: arranging) { _, arranging in
-            if arranging { panel = nil }
+        .onChange(of: look) { old, _ in
+            history.record(old)
+        }
+        .onChange(of: look.special) { _, special in
+            // Crossing between a classic look and a special Flavor changes the parts.
+            if let part, !LookPart.parts(for: look).contains(part) {
+                self.part = special == nil ? .theme : .special
+            }
+            if special == nil { preview = .today }
         }
         .alert("Nome del Flavor", isPresented: $renaming) {
             TextField("Flavor", text: $newName)
@@ -76,24 +111,173 @@ struct LookEditor: View {
             Button("Scarta le modifiche", role: .destructive, action: cancel)
                 .accessibilityIdentifier("customize-editor-discard")
         }
-        .sensoryFeedback(.selection, trigger: look.appearance)
-        .task {
-            try? await Task.sleep(for: .seconds(2.5))
-            withAnimation(.easeOut) { showsHint = false }
+        .sensoryFeedback(.selection, trigger: part)
+        .sensoryFeedback(.impact(weight: .medium), trigger: arranging) { _, new in new }
+        .onAppear {
+            withAnimation(.smooth(duration: 0.45)) { settled = true }
         }
+    }
+
+    // MARK: - Top bar
+
+    /// ✕, undo and redo on the left; ••• and ✓ on the right. Arranging, only
+    /// the mode's name and Fine.
+    @ViewBuilder
+    private var topBar: some View {
+        HStack(spacing: 8) {
+            if arranging {
+                Spacer()
+                Text("Disponi").font(.headline)
+                Spacer()
+                Button("Fine") { arranging = false }
+                    .buttonStyle(.glassProminent)
+                    .accessibilityIdentifier("customize-arrange-done")
+            } else {
+                roundButton("Annulla", symbol: "xmark", id: "customize-editor-cancel") {
+                    if look == original { cancel() } else { confirmingCancel = true }
+                }
+                roundButton("Annulla modifica", symbol: "arrow.uturn.backward", id: "customize-editor-undo", action: undo)
+                    .disabled(!history.canUndo)
+                roundButton("Ripeti modifica", symbol: "arrow.uturn.forward", id: "customize-editor-redo", action: redo)
+                    .disabled(!history.canRedo)
+                Spacer()
+                Menu { menuItems } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.body.weight(.semibold))
+                        .frame(width: 30, height: 30)
+                }
+                .buttonStyle(.glass)
+                .buttonBorderShape(.circle)
+                .accessibilityLabel("Altro")
+                .accessibilityIdentifier("customize-editor-more")
+                Button(action: done) {
+                    Image(systemName: "checkmark")
+                        .font(.body.weight(.semibold))
+                        .frame(width: 30, height: 30)
+                }
+                .buttonStyle(.glassProminent)
+                .buttonBorderShape(.circle)
+                .accessibilityLabel(isNew ? "Aggiungi" : "Fine")
+                .accessibilityIdentifier("customize-edit-done")
+            }
+        }
+        .frame(height: 48)
+    }
+
+    /// A round glass button with a symbol.
+    private func roundButton(_ label: LocalizedStringKey, symbol: String, id: String,
+                             action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.body.weight(.semibold))
+                .frame(width: 30, height: 30)
+        }
+        .buttonStyle(.glass)
+        .buttonBorderShape(.circle)
+        .tint(.primary)
+        .accessibilityLabel(label)
+        .accessibilityIdentifier(id)
+    }
+
+    /// The look itself: its name, arranging its sections, starting over.
+    /// System menu items drop accessibility identifiers, so tests find these
+    /// by their labels.
+    @ViewBuilder
+    private var menuItems: some View {
+        Section {
+            Button("Rinomina", systemImage: "pencil", action: rename)
+            if look.special == nil {
+                Button("Disponi le sezioni", systemImage: "square.stack.3d.up") { arranging = true }
+            } else {
+                Button("Duplica come classico", systemImage: "square.on.square") { duplicateAsClassic() }
+            }
+        }
+        Section {
+            Button("Ripristina", systemImage: "arrow.uturn.backward") {
+                withAnimation(.snappy) { look = original }
+            }
+            .disabled(look == original)
+        }
+    }
+
+    /// Asks for a new name.
+    private func rename() {
+        newName = look.name
+        renaming = true
+    }
+
+    /// Goes back one change.
+    private func undo() {
+        guard let previous = history.undo(from: look) else { return }
+        withAnimation(.snappy) { look = previous }
+    }
+
+    /// Goes forward one change again.
+    private func redo() {
+        guard let next = history.redo(from: look) else { return }
+        withAnimation(.snappy) { look = next }
     }
 
     // MARK: - The page
 
-    /// The page being edited, or — for a special Flavor — another tab
-    /// wearing it, as the app will draw it.
-    @ViewBuilder
-    private var page: some View {
-        if look.special != nil, preview != .today {
-            otherPage
-        } else {
-            todayPage
+    /// The page as the app will show it, drawn at the screen's size and
+    /// scaled to the room left between the bar and the tools.
+    private func page(screen: CGSize) -> some View {
+        Color.clear
+            .overlay {
+                GeometryReader { room in
+                    let fit = min(room.size.height / screen.height, room.size.width / screen.width)
+                    // Before settling, the page covers the screen, where the card left it.
+                    let frame = room.frame(in: .named(Self.space))
+                    let toScreen = CGSize(width: screen.width / 2 - frame.midX, height: screen.height / 2 - frame.midY)
+                    livePage(screen: screen)
+                        .clipShape(.rect(cornerRadius: 48 * (settled ? 1 : 0), style: .continuous))
+                        .scaleEffect(settled ? fit : 1)
+                        .frame(width: room.size.width, height: room.size.height)
+                        .offset(settled ? .zero : toScreen)
+                        .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Laid out at full size, shown smaller: the page takes only the room of its scaled copy.
+            .zIndex(1)
+    }
+
+    /// The page at full size, live.
+    private func livePage(screen: CGSize) -> some View {
+        Group {
+            if look.special != nil, preview != .today {
+                otherPage
+            } else {
+                todayPage
+            }
         }
+        .frame(width: screen.width, height: screen.height, alignment: .top)
+        .background { LookBackground(style: look.resolved) }
+        .overlay(alignment: .bottom) {
+            if !shell.singlePage {
+                ReplicaTabBar()
+                    .padding(.bottom, max(insets.bottom - 13, 0))
+                    .allowsHitTesting(false)
+            }
+        }
+        .tint(look.resolved.controlTint(lit))
+        .environment(\.colorScheme, lit)
+    }
+
+    /// Oggi itself, live: every part a way into its tools, marked by nothing
+    /// but the page itself.
+    private var todayPage: some View {
+        ScrollView {
+            TodayLanding(day: shell.day, draft: $look, arranging: arranging, quiet: true,
+                         onAddSticker: { sheet = .stickerPicker }) { zone in
+                guard !arranging else { return }
+                open(zone)
+            }
+            .padding(.top, insets.top)
+            .padding(.bottom, 120)
+        }
+        .scrollIndicators(.hidden)
     }
 
     /// Corsi, Carriera or Cerca in the draft look: the real pages, drawn but
@@ -110,239 +294,222 @@ struct LookEditor: View {
             }
             .flavorPaper()
         }
-        .padding(.top, insets.top + 40)
-        .background { LookBackground(style: drawn).ignoresSafeArea() }
+        .padding(.top, insets.top)
         .environment(\.look, drawn)
-        .tint(drawn.controlTint(lit))
-        .environment(\.colorScheme, lit)
         .allowsHitTesting(false)
         .overlay {
             Color.clear
                 .contentShape(.rect)
-                .onTapGesture { open(.special) }
+                .onTapGesture { showTool(.special) }
                 .accessibilityLabel(Text("Regola il Flavor"))
                 .accessibilityAddTraits(.isButton)
         }
         .transition(.opacity)
     }
 
-    /// Oggi itself, live: zones outlined, each a way into its controls.
-    private var todayPage: some View {
-        ScrollView {
-            TodayLanding(day: shell.day, draft: $look, arranging: arranging,
-                         onAddSticker: { open(.accessory, then: .stickerPicker) }) { zone in
-                guard !arranging, !swiping else { return }
-                // A special Flavor has no classic parts to open: every zone is its panel.
-                open(look.special == nil ? CustomizePage(zone: zone) : .special)
+    // MARK: - Under the page
+
+    /// The overview, or the open part's tools and the capsule.
+    @ViewBuilder
+    private func lower(screen: CGSize) -> some View {
+        if let part {
+            VStack(spacing: 10) {
+                partTools(part)
+                    .frame(height: screen.height * Self.toolsShare)
+                switcher(part)
+                    .padding(.horizontal, 16)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, insets.top + 56)
-            .padding(.bottom, arranging ? 120 : 200)
+            .padding(.bottom, insets.bottom + 4)
+        } else {
+            overview
+                .padding(.horizontal, 16)
+                .padding(.bottom, insets.bottom + 8)
         }
-        .scrollIndicators(.hidden)
-        .background { LookBackground(style: look.resolved).ignoresSafeArea() }
-        .tint(look.resolved.controlTint(lit))
-        // The look's own light on the page alone: the controls over it keep
-        // theirs readable against whatever the page turns into.
-        .environment(\.colorScheme, lit)
-        .simultaneousGesture(variantSwipe)
-        .sensoryFeedback(.impact(weight: .medium), trigger: arranging) { _, new in new }
     }
 
-    /// A sideways swipe anywhere on the page steps to the next light.
-    private var variantSwipe: some Gesture {
-        DragGesture(minimumDistance: 30)
-            .onChanged { value in
-                if abs(value.translation.width) > abs(value.translation.height) { swiping = true }
-            }
-            .onEnded { value in
-                // Cleared a moment later: the zone's button hears the same release.
-                Task {
-                    try? await Task.sleep(for: .milliseconds(150))
-                    swiping = false
-                }
-                guard !arranging, panel == nil else { return }
-                let across = value.translation.width, down = value.translation.height
-                guard abs(across) > 70, abs(across) > abs(down) * 2 else { return }
-                step(across < 0 ? 1 : -1)
-            }
-    }
-
-    /// Moves to a neighbouring light, stopping at either end.
-    ///
-    /// - Parameter offset: 1 for the next, -1 for the previous.
-    private func step(_ offset: Int) {
-        guard look.special != .blueprint else { return }
-        let index = Self.variants.firstIndex(of: look.appearance) ?? 0
-        let next = min(max(index + offset, 0), Self.variants.count - 1)
-        guard next != index else { return }
-        withAnimation(.snappy) { look.appearance = Self.variants[next] }
-    }
-
-    // MARK: - Controls
-
-    /// The glass over the page: Annulla and Aggiungi or Fine at the top; the
-    /// Flavor, the light and ••• at the bottom.
-    private var controls: some View {
-        VStack(spacing: 0) {
-            HStack {
-                if !arranging {
-                    Button("Annulla") {
-                        if look == original { cancel() } else { confirmingCancel = true }
-                    }
-                    .buttonStyle(.glass)
-                    .tint(.primary)
-                    .accessibilityIdentifier("customize-editor-cancel")
-                }
-                Spacer()
-                if arranging {
-                    Text("Disponi").font(.headline)
-                    Spacer()
-                }
-                Button(arranging ? "Fine" : isNew ? "Aggiungi" : "Fine") {
-                    if arranging {
-                        withAnimation(.snappy) { arranging = false }
+    /// Every part at once: the look's name, then a card for each part.
+    private var overview: some View {
+        VStack(spacing: 12) {
+            Button(action: rename) {
+                HStack(spacing: 6) {
+                    if look.name.isEmpty {
+                        Text("Senza nome")
                     } else {
-                        done()
+                        Text(verbatim: look.name)
                     }
+                    Image(systemName: "pencil")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
                 }
-                .buttonStyle(.glassProminent)
-                .accessibilityIdentifier(arranging ? "customize-arrange-done" : "customize-edit-done")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.primary)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, insets.top + 4)
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Rinomina"))
+            .accessibilityValue(Text(verbatim: look.name))
+            .accessibilityIdentifier("customize-editor-name")
 
-            if showsHint, !arranging, look.special != .blueprint {
-                Text("Scorri di lato per cambiare la luce")
-                    .font(.footnote.weight(.semibold))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .glassEffect(.regular, in: .capsule)
-                    .padding(.top, 12)
-                    .transition(.opacity)
-                    .allowsHitTesting(false)
-            }
-
-            Spacer()
-
-            if !arranging {
-                HStack {
-                    Button { open(look.special == nil ? .flavor : .special) } label: {
-                        Circle()
-                            .fill(look.resolved.flavor.base.color)
-                            .frame(width: 26, height: 26)
-                            .overlay { Circle().strokeBorder(.white, lineWidth: 2) }
-                            .frame(width: 52, height: 52)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2), spacing: 8) {
+                ForEach(LookPart.parts(for: look)) { part in
+                    Button { show(part) } label: {
+                        LookPartCard(part: part, look: look)
                     }
                     .buttonStyle(.plain)
-                    .glassEffect(.regular.interactive(), in: .circle)
-                    .accessibilityLabel("Colore")
-                    .accessibilityIdentifier("customize-editor-flavor")
+                    .accessibilityIdentifier("customize-part-\(part.id)")
+                }
+            }
 
-                    Spacer()
-                    // Blueprint is always dark: there is no light to swipe through.
-                    if look.special != .blueprint { lightIndicator }
-                    Spacer()
+            Text("Oppure tocca una parte dell’anteprima.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+    }
 
-                    Menu { menuItems } label: {
-                        Image(systemName: "ellipsis")
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .frame(width: 52, height: 52)
+    /// The open part's tools: tabs when it has more than one, then the
+    /// controls of the one chosen.
+    @ViewBuilder
+    private func partTools(_ part: LookPart) -> some View {
+        switch part {
+        case .theme:
+            ThemePicker(look: $look)
+                .frame(maxHeight: .infinity, alignment: .top)
+        case .app:
+            // App has an editor of its own; the capsule opens it rather than this.
+            EmptyView()
+        default:
+            VStack(spacing: 8) {
+                if part.tools.count > 1 {
+                    GlassSegmentedPicker("Strumenti", selection: toolBinding(part), options: part.tools) { page in
+                        Text(page.title)
                     }
-                    .glassEffect(.regular.interactive(), in: .circle)
-                    .accessibilityLabel("Altro")
-                    .accessibilityIdentifier("customize-editor-more")
+                    .padding(.horizontal, 16)
+                    .accessibilityIdentifier("customize-tools")
                 }
-                .padding(.horizontal, 22)
-                .padding(.bottom, insets.bottom + 10)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                toolPage(tool(of: part))
+                    .id(tool(of: part))
+                    .scrollContentBackground(.hidden)
+                    .background(.white.opacity(0.06), in: .rect(cornerRadius: 28, style: .continuous))
+                    .clipShape(.rect(cornerRadius: 28, style: .continuous))
+                    .padding(.horizontal, 12)
             }
         }
-        // Readable on the page whatever its light: primary for the plain
-        // buttons, the look's accent in that light for Fine.
-        .environment(\.colorScheme, lit)
-        .tint(look.resolved.controlTint(lit))
-        .animation(.snappy, value: arranging)
     }
 
-    /// The light's name and a dot for each, as the Lock Screen names a photo's style.
-    private var lightIndicator: some View {
-        let index = Self.variants.firstIndex(of: look.appearance) ?? 0
-        return VStack(spacing: 6) {
-            Text(look.appearance.title)
-                .font(.subheadline.weight(.semibold))
-                .contentTransition(.opacity)
-            HStack(spacing: 6) {
-                ForEach(Self.variants.indices, id: \.self) { dot in
-                    Circle()
-                        .fill(dot == index ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
-                        .frame(width: 6, height: 6)
-                }
-            }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Luce")
-        .accessibilityValue(Text(look.appearance.title))
-        .accessibilityAdjustableAction { direction in
-            switch direction {
-            case .increment: step(1)
-            case .decrement: step(-1)
-            @unknown default: break
-            }
-        }
-        .accessibilityIdentifier("customize-light")
+    /// The tool a part shows: the one last chosen there, or its first.
+    private func tool(of part: LookPart) -> CustomizePage {
+        tools[part] ?? part.tools.first ?? .flavor
     }
 
-    /// Everything without a zone on the page: the app half first, then the
-    /// page's materials, its sections, and the look itself. System menu items
-    /// drop accessibility identifiers, so tests find these by their labels.
+    /// The tabs' selection for a part.
+    private func toolBinding(_ part: LookPart) -> Binding<CustomizePage> {
+        Binding { tool(of: part) } set: { tools[part] = $0 }
+    }
+
+    /// One page of controls. A page one of them opens — a section's card —
+    /// comes up in a sheet rather than inside the tools, which are too low for it.
     @ViewBuilder
-    private var menuItems: some View {
-        Button(action: openApp) {
-            Label("App", systemImage: "apps.iphone")
-            Text(look.app.paired ? "Abbinata a Oggi" : "Su misura")
-        }
-        if look.special != nil {
-            Section {
-                Button("Regola il Flavor", systemImage: "slider.horizontal.3") { open(.special) }
-                Button("Duplica come classico", systemImage: "square.on.square") { duplicateAsClassic() }
+    private func toolPage(_ page: CustomizePage) -> some View {
+        switch page {
+        case .special:
+            SpecialFlavorControls(style: $look, preview: $preview.animation(.snappy),
+                                  duplicateAsClassic: duplicateAsClassic)
+        default:
+            NavigationStack(path: Binding<[CustomizePage]> { [] } set: { pushed in
+                if let next = pushed.last { sheet = next }
+            }) {
+                CustomizeControls(page: page, style: $look, arranging: $arranging,
+                                  pickStickers: { sheet = .stickerPicker })
+                    .toolbar(.hidden, for: .navigationBar)
+                    .navigationDestination(for: CustomizePage.self) { _ in EmptyView() }
             }
+        }
+    }
+
+    /// The capsule: the part's reset on the left, every part's name in the
+    /// middle, the way back to all of them on the right.
+    private func switcher(_ current: LookPart) -> some View {
+        let reset = current.reset(look, to: original)
+        return HStack(spacing: 10) {
+            roundButton(current.resetTitle, symbol: "arrow.counterclockwise", id: "customize-part-reset") {
+                withAnimation(.snappy) { look = reset }
+            }
+            .disabled(reset == look)
+
+            ScrollViewReader { reader in
+                ScrollView(.horizontal) {
+                    HStack(spacing: 2) {
+                        ForEach(LookPart.parts(for: look)) { part in
+                            let chosen = part == current
+                            Button { show(part) } label: {
+                                Text(part.title)
+                                    .font(.subheadline.weight(chosen ? .semibold : .regular))
+                                    .foregroundStyle(chosen ? .primary : .secondary)
+                                    .padding(.horizontal, 12)
+                                    .frame(height: 38)
+                                    .background {
+                                        if chosen { Capsule().fill(.white.opacity(0.14)) }
+                                    }
+                                    .contentShape(.capsule)
+                            }
+                            .buttonStyle(.plain)
+                            .id(part)
+                            .accessibilityIdentifier("customize-switch-\(part.id)")
+                            .accessibilityAddTraits(chosen ? .isSelected : [])
+                        }
+                    }
+                    .padding(.horizontal, 5)
+                }
+                .scrollIndicators(.hidden)
+                .onAppear { reader.scrollTo(current, anchor: .center) }
+                .onChange(of: current) { _, part in
+                    withAnimation(.snappy) { reader.scrollTo(part, anchor: .center) }
+                }
+            }
+            .frame(height: 48)
+            .glassEffect(.regular, in: .capsule)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Parti del Flavor")
+
+            roundButton("Tutte le parti", symbol: "square.grid.2x2", id: "customize-parts") {
+                part = nil
+            }
+        }
+    }
+
+    // MARK: - Opening
+
+    /// Opens a part: its tools, or the app's own editor for App.
+    private func show(_ next: LookPart) {
+        if next == .app {
+            openApp()
         } else {
-            classicMenuItems
-        }
-        Section {
-            Button("Rinomina", systemImage: "pencil") {
-                newName = look.name
-                renaming = true
-            }
-            Button("Ripristina", systemImage: "arrow.uturn.backward") {
-                withAnimation(.snappy) { look = original }
-            }
-            .disabled(look == original)
+            part = next
         }
     }
 
-    /// A classic Flavor's parts that have no zone on the page.
-    @ViewBuilder
-    private var classicMenuItems: some View {
-        Section {
-            Button("Carta e motivo", systemImage: "doc.richtext") { open(.paper) }
-            Button("Superficie delle schede", systemImage: "square.on.square") { open(.cards) }
-            Button("Aspetto e testo", systemImage: "textformat") { open(.appearance) }
+    /// Opens a part on one of its tools.
+    private func showTool(_ page: CustomizePage) {
+        guard let owner = LookPart(page: page) else {
+            sheet = page
+            return
         }
-        Section {
-            Button("Disponi le sezioni", systemImage: "square.stack.3d.up") {
-                withAnimation(.snappy) { arranging = true }
-            }
-            Button("Sezioni", systemImage: "list.bullet") { open(.layout) }
+        tools[owner] = page
+        part = owner
+    }
+
+    /// Opens what a tap on the page means: its part's tools, or a section's card.
+    private func open(_ zone: TodayLanding.Zone) {
+        if let opening = LookPart.opening(zone, in: look) {
+            tools[opening.part] = opening.page
+            part = opening.part
+        } else if case .section(let kind) = zone {
+            sheet = .section(kind)
         }
     }
 
     /// Turns a special Flavor into a classic one that keeps the recipe's
     /// colours and typefaces, with every part of it the student's again.
     private func duplicateAsClassic() {
-        panel = nil
         // A classic Flavor has only Oggi to edit.
         preview = .today
         withAnimation(.snappy) {
@@ -350,56 +517,42 @@ struct LookEditor: View {
             look.special = nil
             look.specialSettings = SpecialSettings()
         }
+        part = .colour
     }
 
-    // MARK: - Panels
+    // MARK: - Sheets
 
-    /// Opens one part's controls, optionally with a page pushed on top.
-    ///
-    /// - Parameters:
-    ///   - page: The part.
-    ///   - next: A page to push over it straight away.
-    private func open(_ page: CustomizePage, then next: CustomizePage? = nil) {
-        panelPath = next.map { [$0] } ?? []
-        panel = page
-    }
-
-    /// One part's controls in a sheet: low enough that the page stays in sight
-    /// and live, taller for a section, whose forms are cards to swipe through.
-    private func panelSheet(_ root: CustomizePage) -> some View {
-        let isSection = if case .section = root { true } else { false }
-        return NavigationStack(path: $panelPath) {
-            panelPage(root)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(role: .close) { panel = nil }
-                            .accessibilityIdentifier("customize-panel-close")
-                    }
-                }
-                .navigationDestination(for: CustomizePage.self) { panelPage($0) }
-        }
-        .tint(look.resolved.controlTint(scheme))
-        .presentationDetents(isSection ? [.large] : [.medium, .large])
-        .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-        .presentationDragIndicator(.visible)
-    }
-
-    /// The controls for one part of the look.
+    /// A section's card, tall, since its forms are cards to swipe through;
+    /// or the sticker picker.
     @ViewBuilder
-    private func panelPage(_ page: CustomizePage) -> some View {
+    private func sheetContent(_ page: CustomizePage) -> some View {
         switch page {
         case .section(let kind):
-            SectionFormPicker(kind: kind, style: $look, close: { panel = nil })
-        case .special:
-            SpecialFlavorControls(style: $look, preview: $preview.animation(.snappy),
-                                  duplicateAsClassic: duplicateAsClassic)
-        case .stickerPicker:
-            StickerPicker(remaining: TodayStyle.maxStickers - look.stickers.count) { content in
-                withAnimation(.snappy) { _ = look.addSticker(content) }
+            NavigationStack {
+                SectionFormPicker(kind: kind, style: $look, close: { sheet = nil })
+                    .toolbar { closeItem }
             }
+            .tint(look.resolved.controlTint(scheme))
+            .presentationDetents([.large])
         default:
-            CustomizeControls(page: page, style: $look, arranging: $arranging,
-                              pickStickers: { panelPath.append(.stickerPicker) })
+            NavigationStack {
+                StickerPicker(remaining: TodayStyle.maxStickers - look.stickers.count) { content in
+                    withAnimation(.snappy) { _ = look.addSticker(content) }
+                }
+                .toolbar { closeItem }
+            }
+            .tint(look.resolved.controlTint(scheme))
+            .presentationDetents([.medium, .large])
+            .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            .presentationDragIndicator(.visible)
+        }
+    }
+
+    /// The close button of a sheet.
+    private var closeItem: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Button(role: .close) { sheet = nil }
+                .accessibilityIdentifier("customize-panel-close")
         }
     }
 }

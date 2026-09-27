@@ -214,7 +214,7 @@ struct StickerPicker: View {
             Spacer(minLength: 0)
         }
         .padding(20)
-        // Pushed in Personalizza's panel: back returns to the accessory page.
+        // In a sheet over Personalizza's editor, which it closes once full.
         .panelTitle("Aggiungi sticker")
     }
 }

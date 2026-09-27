@@ -60,6 +60,16 @@
     " in %@" : {
 
     },
+    "Annulla modifica" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo"
+          }
+        }
+      }
+    },
     "Automatica" : {
       "localizations" : {
         "en" : {
@@ -220,6 +230,16 @@
         }
       }
     },
+    "Nascosto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hidden"
+          }
+        }
+      }
+    },
     "Neon" : {
       "localizations" : {
         "en" : {
@@ -260,6 +280,16 @@
         }
       }
     },
+    "Oppure tocca una parte dell’anteprima." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Or tap a part of the preview."
+          }
+        }
+      }
+    },
     "Orbita" : {
       "localizations" : {
         "en" : {
@@ -276,6 +306,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Observatory"
+          }
+        }
+      }
+    },
+    "Parti del Flavor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flavor Parts"
           }
         }
       }
@@ -300,12 +340,112 @@
         }
       }
     },
+    "Ripeti modifica" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redo"
+          }
+        }
+      }
+    },
+    "Ripristina i colori" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Colours"
+          }
+        }
+      }
+    },
+    "Ripristina il Flavor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Flavor"
+          }
+        }
+      }
+    },
+    "Ripristina il tema" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Theme"
+          }
+        }
+      }
+    },
+    "Ripristina la data" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Date"
+          }
+        }
+      }
+    },
+    "Ripristina le schede" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Cards"
+          }
+        }
+      }
+    },
+    "Ripristina lo sfondo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Background"
+          }
+        }
+      }
+    },
+    "Ripristina l’app" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset App"
+          }
+        }
+      }
+    },
+    "Ripristina saluto e accessorio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Greeting and Accessory"
+          }
+        }
+      }
+    },
     "Scegli corso e piano" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose course and plan"
+          }
+        }
+      }
+    },
+    "Schede" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cards"
           }
         }
       }
@@ -330,12 +470,72 @@
         }
       }
     },
+    "Senza nome" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Untitled"
+          }
+        }
+      }
+    },
+    "Sfondo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background"
+          }
+        }
+      }
+    },
     "Spettro" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Spectrum"
+          }
+        }
+      }
+    },
+    "Strumenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tools"
+          }
+        }
+      }
+    },
+    "Tema" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Theme"
+          }
+        }
+      }
+    },
+    "Temi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Themes"
+          }
+        }
+      }
+    },
+    "Tutte le parti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Parts"
           }
         }
       }
@@ -1891,9 +2091,6 @@
     "Abbina all'app" : {
 
     },
-    "Abbinata a Oggi" : {
-
-    },
     "Accanto alla data" : {
       "localizations" : {
         "en" : {
@@ -3351,9 +3548,6 @@
         }
       }
     },
-    "Aspetto e testo" : {
-
-    },
     "Assente" : {
       "localizations" : {
         "en" : {
@@ -4150,9 +4344,6 @@
           }
         }
       }
-    },
-    "Carta e motivo" : {
-
     },
     "Carte e motivi" : {
 
@@ -10349,9 +10540,6 @@
     "Lo spazio condiviso è dove l’app lascia orario e carriera per i widget: senza, l’app funziona ma i widget restano vuoti." : {
 
     },
-    "Luce" : {
-
-    },
     "Luminoso" : {
       "localizations" : {
         "en" : {
@@ -15246,9 +15434,6 @@
     "Scorrendo, la barra si riduce alla scheda in cui sei." : {
 
     },
-    "Scorri di lato per cambiare la luce" : {
-
-    },
     "Scrivi" : {
 
     },
@@ -16385,9 +16570,6 @@
           }
         }
       }
-    },
-    "Superficie delle schede" : {
-
     },
     "Superficie e contenuto" : {
       "localizations" : {
