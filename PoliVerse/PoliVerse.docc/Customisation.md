@@ -77,9 +77,9 @@ look.
 | Step | Screen | What it does |
 |---|---|---|
 | Add | ``NewLookGallery`` | starting points: a copy, a photo's colours, a surprise, a blank page, then shelves of themes, Flavors and papers |
-| Edit | ``LookEditor`` | the page at full size on a draft; each outlined zone opens its own small sheet, a sideways swipe runs through five fixed lights, the rest is behind ••• |
+| Edit | ``LookEditor`` | the page live and small on a draft, with the look's parts (``LookPart``) around it: on iPhone a grid of them under the page and each part's tools in its place, on iPad and Mac a sidebar and an inspector; every change can be undone |
 | Ask | ``AppPairQuestion`` | once, when a look is added: pair the app with the page, or dress it separately |
-| App | ``AppLookEditor`` | the app half — colour, icon, tab bar — afterwards only from the editor's ••• ▸ App |
+| App | ``AppLookEditor`` | the app half — colour, icon, tab bar — straight after adding; afterwards it is the editor's App part |
 
 > Important: ``LookLibrary`` has one commit point per action — saving an edit
 > changes a look, using a look makes it the page's. The editor works on a
@@ -89,7 +89,7 @@ look.
 
 | Mode | What it does |
 |---|---|
-| **Editing** | each zone is outlined; a tap opens its controls |
+| **Editing** | quiet: the page as it is, each part a tap away from its tools |
 | **Arranging** | sections wiggle, lift and move; stickers follow a finger, a pinch and a twist |
 
 ### The app half

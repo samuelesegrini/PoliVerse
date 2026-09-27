@@ -304,6 +304,14 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         shot(app, "38-accessory-text")
         allParts(app)
 
+        // The app half is a part too: an icon by hand, on the Home Screen.
+        part(app, "app")
+        reveal(app.buttons["app-icon-lavender"].firstMatch, in: app).tap()
+        settle()
+        shot(app, "38b-app-icon")
+        XCTAssertTrue(app.buttons["customize-part-reset"].isEnabled, "Choosing an icon left App nothing to reset")
+        allParts(app)
+
         done.tap()
         settle()
         XCTAssertTrue(edit.waitForExistence(timeout: 5))
@@ -449,6 +457,16 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         shot(app, "73-wide-folded")
         toggle.tap()
+        settle()
+
+        // App: every tool in the inspector, the Home Screen beside it.
+        part(app, "app")
+        XCTAssertTrue(app.descendants(matching: .any)["customize-app-view"].firstMatch.exists, "App offers no Home Screen preview")
+        app.descendants(matching: .any)["customize-home-look"].buttons["Scura"].firstMatch.tap()
+        reveal(app.buttons["app-icon-lavender"].firstMatch, in: app).tap()
+        settle()
+        shot(app, "72b-wide-app")
+        app.descendants(matching: .any)["customize-app-view"].buttons["Oggi"].firstMatch.tap()
         settle()
 
         // A tap on the page opens its part.

@@ -5,6 +5,8 @@ import SwiftUI
 enum CustomizePage: Hashable, Identifiable {
     /// The parts of the look the bento offers a tile for.
     case flavor, paper, cards, appearance, widget, accessory, layout, greeting, bar
+    /// The app half: its Home Screen icon, its colour, its tab bar.
+    case appIcon, appTint, appBar
     /// A special Flavor's own knobs, in place of every classic part.
     case special
     /// One section of Oggi, with its form and surface.
@@ -45,6 +47,9 @@ enum CustomizePage: Hashable, Identifiable {
         case .layout: "Sezioni"
         case .greeting: "Saluto"
         case .bar: "Barra"
+        case .appIcon: "Icona"
+        case .appTint: "Colore"
+        case .appBar: "Barra"
         case .section(let kind): kind.title
         case .stickerPicker: "Aggiungi sticker"
         case .special: "Flavor"
@@ -103,6 +108,28 @@ struct CustomizeControls: View {
             case .layout: layoutControls
             case .greeting: greetingControls
             case .bar: barControls
+            case .appIcon:
+                Section {
+                    AppIconPicker(look: $style)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
+                } footer: {
+                    Text(style.app.paired ? "Automatica segue il colore del Flavor." : "Scelta a mano. Automatica la riabbina al Flavor.")
+                }
+            case .appTint:
+                Section {
+                    AppTintPicker(look: $style)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
+                } footer: {
+                    Text("Il colore dei pulsanti e dei collegamenti in tutta l’app.")
+                }
+            case .appBar:
+                Section {
+                    AppBarPicker(look: $style)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
+                }
             // A section's page is the card in ``SectionFormPicker``.
             case .section: EmptyView()
             case .stickerPicker: EmptyView()

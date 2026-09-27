@@ -55,8 +55,8 @@ struct CustomizeOggi: View {
     @State private var addingLook = false
     /// The question at the end of adding is up.
     @State private var askingApp = false
-    /// Where the app half's editor was opened from, while it is open.
-    @State private var appEditor: AppEditorOrigin?
+    /// The app half's editor is up, straight after adding a look.
+    @State private var customisingApp = false
     /// The app half as it was when its editor opened, for its Annulla.
     @State private var appBefore = AppLook()
 
@@ -110,11 +110,11 @@ struct CustomizeOggi: View {
                     .allowsHitTesting(!filled && edit == nil)
                 if let edit {
                     LookEditor(look: draft, original: edit.original, isNew: edit.index == nil, insets: insets,
-                               cancel: cancelEditing, done: finishEditing, openApp: openAppFromMenu)
+                               cancel: cancelEditing, done: finishEditing)
                         .transition(edit.index == nil ? .move(edge: .bottom) : .identity)
                         .zIndex(2)
                 }
-                if appEditor != nil {
+                if customisingApp {
                     AppLookEditor(look: draft, screen: screen, insets: insets, cancel: cancelApp, done: finishApp)
                         .transition(.move(edge: .bottom))
                         .zIndex(3)
@@ -552,29 +552,20 @@ struct CustomizeOggi: View {
     private func customiseApp() {
         askingApp = false
         appBefore = draft.wrappedValue.app
-        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { appEditor = .adding }
+        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { customisingApp = true }
     }
 
-    /// Opens the app half of the look being edited, from ••• ▸ App.
-    private func openAppFromMenu() {
-        appBefore = draft.wrappedValue.app
-        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { appEditor = .menu }
-    }
-
-    /// Puts the app half back. After adding, the question comes back too.
+    /// Puts the app half back, and asks the question again.
     private func cancelApp() {
         edit?.draft.app = appBefore
-        let origin = appEditor
-        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { appEditor = nil }
-        if origin == .adding { askingApp = true }
+        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { customisingApp = false }
+        askingApp = true
     }
 
-    /// Keeps the app half: after adding, that adds the look; from the menu it
-    /// returns to the editor, whose Fine saves it with the rest.
+    /// Keeps the app half and adds the look.
     private func finishApp() {
-        let origin = appEditor
-        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { appEditor = nil }
-        if origin == .adding { addNew() }
+        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { customisingApp = false }
+        addNew()
     }
 
     /// Adds the new look at the end and puts it in use: the editor slides
@@ -612,14 +603,6 @@ private struct RemovedLook: Equatable {
     let selection: Int
     /// Tells two deletes of equal looks apart, so each gets its own countdown.
     let id = UUID()
-}
-
-/// Where the app half's editor was opened from.
-private enum AppEditorOrigin {
-    /// Straight after adding a look, from the question.
-    case adding
-    /// From the editor's ••• ▸ App.
-    case menu
 }
 
 /// The last card: nothing yet, and a way to add a look.

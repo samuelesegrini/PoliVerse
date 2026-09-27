@@ -54,7 +54,7 @@ enum LookPart: String, CaseIterable, Identifiable {
     }
 
     /// The pages of controls the part gathers, in the order its tabs show
-    /// them. Tema has its own picker, and App its own editor.
+    /// them. Tema has its own picker.
     var tools: [CustomizePage] {
         switch self {
         case .colour: [.flavor, .appearance]
@@ -62,8 +62,9 @@ enum LookPart: String, CaseIterable, Identifiable {
         case .date: [.widget, .bar]
         case .greeting: [.greeting, .accessory]
         case .cards: [.cards, .layout]
+        case .app: [.appIcon, .appTint, .appBar]
         case .special: [.special]
-        case .theme, .app: []
+        case .theme: []
         }
     }
 

@@ -80,6 +80,16 @@
         }
       }
     },
+    "Aspetto della Home" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home Screen Look"
+          }
+        }
+      }
+    },
     "Automatica" : {
       "localizations" : {
         "en" : {
@@ -90,12 +100,32 @@
         }
       }
     },
+    "Automatica segue il colore del Flavor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic follows the Flavor's colour."
+          }
+        }
+      }
+    },
     "Automatico" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Automatic"
+          }
+        }
+      }
+    },
+    "Barra su iPhone" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tab Bar on iPhone"
           }
         }
       }
@@ -130,6 +160,36 @@
         }
       }
     },
+    "Colorata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tinted"
+          }
+        }
+      }
+    },
+    "Colore dell’app" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Colour"
+          }
+        }
+      }
+    },
+    "Come la vedi con le icone scure, colorate o trasparenti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How it looks with dark, tinted or clear icons."
+          }
+        }
+      }
+    },
     "Corso di studi e piano" : {
       "localizations" : {
         "en" : {
@@ -160,6 +220,16 @@
         }
       }
     },
+    "Dock" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock"
+          }
+        }
+      }
+    },
     "Dove _studi_" : {
       "localizations" : {
         "en" : {
@@ -186,6 +256,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your studies"
+          }
+        }
+      }
+    },
+    "Il colore dei pulsanti e dei collegamenti in tutta l’app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The colour of buttons and links across the app."
           }
         }
       }
@@ -360,6 +440,16 @@
         }
       }
     },
+    "Predefinita" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default"
+          }
+        }
+      }
+    },
     "Riduci la barra laterale" : {
       "localizations" : {
         "en" : {
@@ -470,12 +560,32 @@
         }
       }
     },
+    "Scelta a mano. Automatica la riabbina al Flavor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chosen by hand. Automatic pairs it with the Flavor again."
+          }
+        }
+      }
+    },
     "Schede" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cards"
+          }
+        }
+      }
+    },
+    "Schermata Home" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home Screen"
           }
         }
       }
@@ -540,6 +650,16 @@
         }
       }
     },
+    "Su iPad e Mac le sezioni stanno nella barra laterale." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On iPad and Mac the sections sit in the sidebar."
+          }
+        }
+      }
+    },
     "Tema" : {
       "localizations" : {
         "en" : {
@@ -556,6 +676,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Themes"
+          }
+        }
+      }
+    },
+    "Trasparente" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
           }
         }
       }
@@ -9664,12 +9794,12 @@
         }
       }
     },
-    "L'app prende colore, icona e barra da questo Flavor. Puoi cambiarli quando vuoi da ••• ▸ App." : {
+    "L'app prende colore, icona e barra da questo Flavor. Puoi cambiarli quando vuoi nella parte App." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The app takes its colour, icon and tab bar from this Flavor. Change them any time from ••• ▸ App."
+            "value" : "The app takes its colour, icon and tab bar from this Flavor. Change them any time in the App part."
           }
         }
       }

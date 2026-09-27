@@ -9,11 +9,16 @@ import SwiftUI
 /// Safari's runs through tabs, with the part's reset on its left and the way
 /// back to every part on its right.
 ///
+/// App is a part like the others: while its icon or colour is open, the page
+/// gives way to a Home Screen with the icon on it.
+///
 /// **iPad and Mac.** The parts are a sidebar on the left, which folds down to
 /// their pictures; the open part's tools are an inspector on the right, its
 /// reset at the bottom; the page sits between them, on the iPhone or at this
 /// screen's size. Standing up, the parts run in a row along the top and the
-/// inspector goes under the page.
+/// inspector goes under the page. For App the inspector holds every tool at
+/// once, and a switch under the page shows the Home Screen — the Dock on a
+/// Mac — or Oggi.
 ///
 /// The page stays live throughout, touches included: a tap on the date opens
 /// Data, stickers drag where they are. It edits a draft. ✓ keeps it, ✕ drops
@@ -31,8 +36,6 @@ struct LookEditor: View {
     let cancel: () -> Void
     /// Keeps the draft.
     let done: () -> Void
-    /// Opens the look's app half.
-    let openApp: () -> Void
 
     /// The environment's `shell`.
     @Environment(\.shell) private var shell
@@ -44,6 +47,10 @@ struct LookEditor: View {
     @AppStorage("lookEditorSidebarOpen") private var sidebarOpen = true
     /// What the page is previewed on, on iPad and Mac.
     @State private var device = PreviewDevice.screen
+    /// With App open on iPad and Mac, whether the Home Screen or Oggi is shown.
+    @State private var appView = AppView.home
+    /// How the Home Screen previewed for App draws its icons.
+    @State private var homeLook = AppPreview.HomeLook.light
     /// The part whose tools are open, or `nil` for the overview.
     @State private var part: LookPart?
     /// The tool each part last showed, so coming back finds it again.
@@ -78,6 +85,14 @@ struct LookEditor: View {
         case phone
         /// This screen: the iPad's, or the Mac's window.
         case screen
+    }
+
+    /// What App shows beside its tools on iPad and Mac.
+    enum AppView: Hashable {
+        /// The Home Screen, or the Mac's Dock, with the icon.
+        case home
+        /// Oggi, in the app's colour.
+        case today
     }
 
     /// A screen the page is drawn on: its size and safe area, its corners, and
@@ -155,7 +170,8 @@ struct LookEditor: View {
                 .padding(.horizontal, 16)
                 .padding(.top, insets.top + 4)
                 .opacity(settled ? 1 : 0)
-            page(on: Screen(size: screen, insets: insets, cornerRadius: 48, tabBar: !shell.singlePage), screen: screen)
+            page(on: Screen(size: screen, insets: insets, cornerRadius: 48, tabBar: !shell.singlePage), screen: screen,
+                 home: part == .app && tool(of: .app) != .appBar ? .homeScreen : nil)
                 .padding(.vertical, 12)
             if !arranging {
                 lower(screen: screen)
@@ -170,7 +186,7 @@ struct LookEditor: View {
     /// The part open beside the page: there is no overview here, so Tema
     /// until another is chosen.
     private var widePart: LookPart {
-        if let part, part != .app, LookPart.parts(for: look).contains(part) { return part }
+        if let part, LookPart.parts(for: look).contains(part) { return part }
         return .theme
     }
 
@@ -237,22 +253,45 @@ struct LookEditor: View {
     /// The page, and under it what it is previewed on.
     private func stage(screen: CGSize) -> some View {
         VStack(spacing: 12) {
-            page(on: previewScreen(screen), screen: screen)
+            page(on: previewScreen(screen), screen: screen, home: wideHome)
             if !arranging {
-                GlassSegmentedPicker("Anteprima su", selection: $device, options: [.phone, .screen]) { device in
-                    switch device {
-                    case .phone: Text(verbatim: "iPhone")
-                    case .screen: Text(verbatim: ProcessInfo.processInfo.isiOSAppOnMac ? "Mac" : "iPad")
+                HStack(spacing: 12) {
+                    if widePart == .app {
+                        GlassSegmentedPicker("Mostra", selection: $appView, options: [.home, .today]) { view in
+                            switch view {
+                            case .home: wideHome == .dock ? Text("Dock") : Text("Schermata Home")
+                            case .today: Text("Oggi")
+                            }
+                        }
+                        .frame(maxWidth: 280)
+                        .accessibilityIdentifier("customize-app-view")
+                        .transition(.opacity)
                     }
+                    GlassSegmentedPicker("Anteprima su", selection: $device, options: [.phone, .screen]) { device in
+                        switch device {
+                        case .phone: Text(verbatim: "iPhone")
+                        case .screen: Text(verbatim: Self.onMac ? "Mac" : "iPad")
+                        }
+                    }
+                    .frame(maxWidth: 260)
+                    .accessibilityIdentifier("customize-preview-device")
                 }
-                .frame(maxWidth: 260)
                 .opacity(settled ? 1 : 0)
-                .accessibilityIdentifier("customize-preview-device")
             }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// Whether this is the iPad app running on a Mac.
+    private static let onMac = ProcessInfo.processInfo.isiOSAppOnMac
+
+    /// What App shows in place of the page: the Home Screen, or on a Mac's
+    /// own screen its Dock; `nil` for the page.
+    private var wideHome: AppPreview.Mode? {
+        guard widePart == .app, appView == .home else { return nil }
+        return Self.onMac && device == .screen ? .dock : .homeScreen
     }
 
     /// The parts down the left, each with its picture; folded, only the pictures.
@@ -376,8 +415,14 @@ struct LookEditor: View {
             .padding(.top, 18)
             .padding(.bottom, 12)
 
-            partTools(part, boxed: false, themeColumns: themeColumns)
-                .frame(maxHeight: .infinity, alignment: .top)
+            Group {
+                if part == .app {
+                    appInspector
+                } else {
+                    partTools(part, boxed: false, themeColumns: themeColumns)
+                }
+            }
+            .frame(maxHeight: .infinity, alignment: .top)
 
             Button {
                 withAnimation(.snappy) { look = reset }
@@ -394,6 +439,60 @@ struct LookEditor: View {
         .background(.white.opacity(0.06), in: .rect(cornerRadius: 28, style: .continuous))
         .clipShape(.rect(cornerRadius: 28, style: .continuous))
         .accessibilityElement(children: .contain)
+    }
+
+    /// App's tools all at once, as the inspector has room for: the icon, how
+    /// the Home Screen draws it, the app's colour and the iPhone's tab bar.
+    /// Changing the icon shows the Home Screen; changing the bar, Oggi on an iPhone.
+    private var appInspector: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 26) {
+                inspectorGroup("Icona", note: look.app.paired
+                               ? "Automatica segue il colore del Flavor."
+                               : "Scelta a mano. Automatica la riabbina al Flavor.") {
+                    AppIconPicker(look: $look, layout: .grid(columns: 4))
+                }
+                inspectorGroup("Aspetto della Home", note: "Come la vedi con le icone scure, colorate o trasparenti.") {
+                    GlassSegmentedPicker("Aspetto della Home", selection: $homeLook) { Text($0.title) }
+                        .accessibilityIdentifier("customize-home-look")
+                }
+                inspectorGroup("Colore dell’app", note: "Il colore dei pulsanti e dei collegamenti in tutta l’app.") {
+                    AppTintPicker(look: $look, layout: .grid(columns: 6))
+                }
+                inspectorGroup("Barra su iPhone", note: "Su iPad e Mac le sezioni stanno nella barra laterale.") {
+                    AppBarPicker(look: $look)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 16)
+        }
+        .scrollIndicators(.hidden)
+        .onChange(of: look.app.iconStyle) { appView = .home }
+        .onChange(of: look.app.icon) { appView = .home }
+        .onChange(of: look.app.special) { appView = .home }
+        .onChange(of: homeLook) { appView = .home }
+        .onChange(of: look.app.tabBar) {
+            appView = .today
+            device = .phone
+        }
+    }
+
+    /// One group of the inspector: its name, its controls, a line under them.
+    private func inspectorGroup<Content: View>(_ title: LocalizedStringKey, note: LocalizedStringKey?,
+                                               @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .accessibilityAddTraits(.isHeader)
+            content()
+            if let note {
+                Text(note)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 
     // MARK: - Top bar
@@ -537,7 +636,8 @@ struct LookEditor: View {
     /// - Parameters:
     ///   - target: The screen the page is drawn on.
     ///   - screen: The editor's own screen, which the page covers before settling.
-    private func page(on target: Screen, screen: CGSize) -> some View {
+    ///   - home: For App, the Home Screen or Dock drawn in the page's place.
+    private func page(on target: Screen, screen: CGSize, home: AppPreview.Mode? = nil) -> some View {
         Color.clear
             .overlay {
                 GeometryReader { room in
@@ -547,12 +647,20 @@ struct LookEditor: View {
                     let cover = max(screen.width / size.width, screen.height / size.height)
                     let frame = room.frame(in: .named(Self.space))
                     let toScreen = CGSize(width: screen.width / 2 - frame.midX, height: screen.height / 2 - frame.midY)
-                    livePage(on: target)
-                        .clipShape(.rect(cornerRadius: target.cornerRadius * (settled ? 1 : 0), style: .continuous))
-                        .scaleEffect(settled ? fit : cover)
-                        .frame(width: room.size.width, height: room.size.height)
-                        .offset(settled ? .zero : toScreen)
-                        .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
+                    Group {
+                        if let home {
+                            AppPreview(look: look, mode: home, homeLook: homeLook, screen: target.size, insets: target.insets)
+                                .transition(.opacity)
+                        } else {
+                            livePage(on: target)
+                                .transition(.opacity)
+                        }
+                    }
+                    .clipShape(.rect(cornerRadius: target.cornerRadius * (settled ? 1 : 0), style: .continuous))
+                    .scaleEffect(settled ? fit : cover)
+                    .frame(width: room.size.width, height: room.size.height)
+                    .offset(settled ? .zero : toScreen)
+                    .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -679,9 +787,6 @@ struct LookEditor: View {
         case .theme:
             ThemePicker(look: $look, columns: themeColumns)
                 .frame(maxHeight: .infinity, alignment: .top)
-        case .app:
-            // App has an editor of its own; the capsule opens it rather than this.
-            EmptyView()
         default:
             VStack(spacing: 8) {
                 if part.tools.count > 1 {
@@ -784,13 +889,9 @@ struct LookEditor: View {
 
     // MARK: - Opening
 
-    /// Opens a part: its tools, or the app's own editor for App.
+    /// Opens a part's tools.
     private func show(_ next: LookPart) {
-        if next == .app {
-            openApp()
-        } else {
-            part = next
-        }
+        part = next
     }
 
     /// Opens a part on one of its tools.

@@ -10,8 +10,7 @@ import UIKit
 /// it as it changes. Choosing any of them by hand unpairs it, and from then on
 /// the app keeps its own.
 ///
-/// Asked once, when a look is added; afterwards only from the editor's
-/// ••• ▸ App.
+/// Asked once, when a look is added; afterwards it is the editor's App part.
 nonisolated struct AppLook: Codable, Equatable, Hashable, Sendable {
     /// The app takes its tint, icon and bar from the page.
     var paired = true
