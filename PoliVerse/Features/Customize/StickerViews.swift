@@ -132,6 +132,10 @@ private struct StickerItem: View {
 
     /// How much smaller the page is drawn, which the handle makes up for.
     @Environment(\.previewScale) private var previewScale
+    /// In the stickers' task, the selected sticker shows its actions above it.
+    @Environment(\.stickerMenu) private var stickerMenu
+    /// Which page of the actions shows: the first three, or the other three.
+    @State private var menuPage = 0
     /// The gesture's live value while it is in progress.
     @GestureState private var drag = CGSize.zero
     /// The gesture's live value while it is in progress.
@@ -178,6 +182,14 @@ private struct StickerItem: View {
             .overlay {
                 if selected { handleView(side: side, angle: angle) }
             }
+            .overlay(alignment: .top) {
+                if selected && stickerMenu {
+                    actionMenu
+                        .fixedSize()
+                        .offset(y: -(44 + 14) / previewScale)
+                        .transition(.opacity)
+                }
+            }
             .position(x: panel.width * sticker.x + drag.width, y: panel.height * sticker.y + drag.height)
             .gesture(movable ? gestures : nil)
             .onTapGesture { if movable && !arranging { onSelect() } }
@@ -215,6 +227,54 @@ private struct StickerItem: View {
             Button(StickerEdit.front.title, systemImage: StickerEdit.front.systemImage) { onEdit(.front) }
         }
         Button(StickerEdit.remove.title, systemImage: StickerEdit.remove.systemImage, role: .destructive) { onEdit(.remove) }
+    }
+
+    /// The selected sticker's actions above it, in two pages as the edit menu
+    /// shows them: copy, bring forward, remove; then size and turn.
+    private var actionMenu: some View {
+        let scale = 1 / previewScale
+        let first: [StickerEdit] = [.duplicate, .front, .remove]
+        let second: [StickerEdit] = [.bigger, .smaller, .turn]
+        return HStack(spacing: 0) {
+            if menuPage == 1 {
+                pageButton("chevron.left", label: "Indietro") { menuPage = 0 }
+            }
+            ForEach(menuPage == 0 ? first : second, id: \.self) { edit in
+                Button { onEdit(edit) } label: {
+                    Image(systemName: edit.systemImage)
+                        .font(.system(size: 16 * scale, weight: .semibold))
+                        .foregroundStyle(edit == .remove ? Color.red : .white)
+                        .frame(width: 44 * scale, height: 40 * scale)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .disabled(edit == .duplicate && full)
+                .opacity(edit == .duplicate && full ? 0.4 : 1)
+                .accessibilityLabel(Text(edit.title))
+                .accessibilityIdentifier("sticker-\(edit)")
+            }
+            if menuPage == 0 {
+                pageButton("chevron.right", label: "Altre azioni") { menuPage = 1 }
+                    .accessibilityIdentifier("sticker-more")
+            }
+        }
+        .padding(.horizontal, 4 * scale)
+        .background(Color(white: 0.17), in: .capsule)
+        .shadow(color: .black.opacity(0.3), radius: 8 * scale, y: 3 * scale)
+    }
+
+    /// The arrow that turns the menu's page.
+    private func pageButton(_ symbol: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        let scale = 1 / previewScale
+        return Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 14 * scale, weight: .bold))
+                .foregroundStyle(.secondary)
+                .frame(width: 32 * scale, height: 40 * scale)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(label))
     }
 
     /// Moves the sticker by a fraction of the panel, for assistive technologies.
@@ -348,6 +408,8 @@ struct StickerPicker: View {
     let remaining: Int
     /// Adds one picked sticker to the look.
     let onPick: (PlacedSticker.Content) -> Void
+    /// Closes itself once the panel is full; docked in the editor, it stays.
+    var closesWhenFull = true
     /// Where picked images are saved.
     private let store = StickerStore.shared
     /// Closes this screen or sheet.
@@ -373,7 +435,7 @@ struct StickerPicker: View {
                 }
                 picked += 1
                 onPick(content)
-                if picked >= remaining { dismiss() }
+                if picked >= remaining, closesWhenFull { dismiss() }
             }
             .frame(height: 56)
             .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 16))
