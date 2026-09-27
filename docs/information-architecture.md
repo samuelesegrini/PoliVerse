@@ -65,9 +65,10 @@ tab, o apre il pannello della pagina unica sul luogo.
 galleria ✓ lo usa, «Chiudi» lascia la pagina sullo stile che già usa (salvare proprio quello
 cambia subito la pagina). ✕ chiede prima di scartare modifiche; ogni modifica si annulla e si
 ripete con le frecce accanto. Su iPhone ••• offre Rinomina (il nome si scrive nella panoramica),
-Ripristina tutto ed Elimina Flavor…; sticker, saluto personale e testo accanto alla data si
+Ripristina tutto ed Elimina Flavor…; sticker, saluto personale, testo accanto alla data e sezioni si
 modificano in un'attività a sé: la pagina si ingrandisce sulla sua testa, una barra con Annulla e
-Fine la nomina e in basso resta ciò che serve (la tastiera degli sticker, o il campo di testo).
+Fine la nomina e in basso resta ciò che serve (la tastiera degli sticker, il campo di testo, o l'elenco delle sezioni, con la pagina
+spostata sulle schede).
 La capsula in basso si trascina di lato per cambiare parte e in su per tornare a tutte.
 L'editor tiene la pagina viva e piccola al centro e sotto le parti dello stile (Tema, Colore,
 Sfondo, Data, Saluto, Schede, App), ognuna con una miniatura di com'è ora. Una parte, o un tocco

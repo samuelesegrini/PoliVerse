@@ -654,19 +654,27 @@ struct LookToolView: View {
     /// settings a tap away, dragged to reorder. Then Oggi's bar buttons.
     private var sections: some View {
         VStack(alignment: .leading, spacing: 14) {
-            VStack(spacing: 0) {
-                ForEach(Array(sectionKinds.enumerated()), id: \.element) { index, kind in
-                    sectionRow(kind)
-                    if index < sectionKinds.count - 1 {
-                        Divider().padding(.leading, 48)
+            if let enterMode {
+                // On iPhone, what is on the page in order; the list is a task of its own.
+                sectionsSummary
+                Button("Modifica", systemImage: "list.bullet") { enterMode(.sections) }
+                    .buttonStyle(.glass)
+                    .accessibilityIdentifier("sections-edit")
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(sectionKinds.enumerated()), id: \.element) { index, kind in
+                        sectionRow(kind)
+                        if index < sectionKinds.count - 1 {
+                            Divider().padding(.leading, 48)
+                        }
                     }
                 }
-            }
-            .background(Color(white: 0.11), in: .rect(cornerRadius: 14, style: .continuous))
+                .background(Color(white: 0.11), in: .rect(cornerRadius: 14, style: .continuous))
 
-            Text("Trascina ≡ per riordinare. Tocca una sezione per le sue opzioni.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                Text("Trascina ≡ per riordinare. Tocca una sezione per le sue opzioni.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
 
             Button("Disponi sulla pagina", systemImage: "square.stack.3d.up") {
                 withAnimation(.snappy) { arranging = true }
@@ -690,6 +698,30 @@ struct LookToolView: View {
         }
         .padding(.horizontal, layout == .strip ? 18 : 0)
         .padding(.vertical, 4)
+    }
+
+    /// The sections on the page in order, each its symbol and name.
+    private var sectionsSummary: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                ForEach(Array(look.visibleSections.enumerated()), id: \.element.id) { index, section in
+                    HStack(spacing: 6) {
+                        Text(verbatim: "\(index + 1)")
+                            .font(.caption.weight(.bold).monospacedDigit())
+                            .foregroundStyle(.secondary)
+                        Image(systemName: section.kind.systemImage)
+                        Text(section.kind.title)
+                    }
+                    .font(.subheadline)
+                    .padding(.horizontal, 12)
+                    .frame(minHeight: 36)
+                    .background(Color(white: 0.11), in: .capsule)
+                }
+            }
+        }
+        .scrollIndicators(.hidden)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("Sulla pagina, in ordine"))
     }
 
     /// The kinds of section, those on the page first in their order, then the rest.
@@ -720,7 +752,7 @@ struct LookToolView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(kind.title)
                                 .foregroundStyle(shown ? .primary : .secondary)
-                            summary(section, shown: shown)
+                            ((shown ? section?.summary : nil) ?? Text("Nascosta"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
@@ -749,8 +781,8 @@ struct LookToolView: View {
                 .labelsHidden()
                 .disabled(onlyOne)
             }
-            if open, let section {
-                sectionSettings(section)
+            if open {
+                SectionSettings(kind: kind, look: $look)
                     .padding(.leading, 32)
                     .transition(.opacity)
             }
@@ -768,52 +800,6 @@ struct LookToolView: View {
         .accessibilityIdentifier("layout-section-\(kind.rawValue)")
         .accessibilityAction(named: "Sposta su") { withAnimation(.snappy) { look.moveSection(kind, by: -1) } }
         .accessibilityAction(named: "Sposta giù") { withAnimation(.snappy) { look.moveSection(kind, by: 1) } }
-    }
-
-    /// What a section is set to, in a line: its form, how many entries, how dense, its surface.
-    private func summary(_ section: TodaySection?, shown: Bool) -> Text {
-        guard let section, shown else { return Text("Nascosta") }
-        var parts = [Text(section.form.title)]
-        if section.kind.listsItems { parts.append(Text("\(section.itemLimit) elementi")) }
-        if section.density == .compact { parts.append(Text("compatta")) }
-        if let material = section.material { parts.append(Text(material.title)) }
-        return parts.dropFirst().reduce(parts[0]) { line, part in Text("\(line) · \(part)") }
-    }
-
-    /// One section's settings: its form, how many entries, density, its own
-    /// surface, and whether it takes the date's colour.
-    @ViewBuilder
-    private func sectionSettings(_ section: TodaySection) -> some View {
-        let kind = section.kind
-        if kind.forms.count > 1 {
-            GlassSegmentedPicker("Forma", selection: Binding { section.form } set: { form in
-                withAnimation(.snappy) { look.updateSection(kind) { $0.form = form } }
-            }, options: kind.forms) { form in
-                Label(form.title, systemImage: form.systemImage).labelStyle(.titleOnly)
-            }
-        }
-        if kind.listsItems {
-            Stepper(value: Binding { section.itemLimit } set: { limit in
-                withAnimation(.snappy) { look.updateSection(kind) { $0.itemLimit = limit } }
-            }, in: TodaySection.itemLimits) {
-                Text("Elementi: \(section.itemLimit)")
-            }
-        }
-        Toggle("Compatta", isOn: Binding { section.density == .compact } set: { compact in
-            withAnimation(.snappy) { look.updateSection(kind) { $0.density = compact ? .compact : .comfortable } }
-        })
-        Toggle("Nel colore della data", isOn: Binding { section.tinted } set: { tinted in
-            withAnimation(.snappy) { look.updateSection(kind) { $0.tinted = tinted } }
-        })
-        Picker("Superficie", selection: Binding { section.material } set: { material in
-            withAnimation(.snappy) { look.updateSection(kind) { $0.material = material } }
-        }) {
-            Text("Come le altre").tag(TodayMaterial?.none)
-            ForEach(TodayMaterial.allCases) { material in
-                Text(material.title).tag(Optional(material))
-            }
-        }
-        .pickerStyle(.menu)
     }
 
     // MARK: - App

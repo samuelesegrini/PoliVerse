@@ -211,10 +211,12 @@ struct LookEditor: View {
             .opacity(settled ? 1 : 0)
             page(on: Screen(size: screen, insets: insets, cornerRadius: 48, tabBar: !shell.singlePage), screen: screen,
                  home: part == .app && tool(of: .app) != .appBar && mode == nil ? .homeScreen : nil,
-                 zoomed: mode != nil)
+                 zoomed: mode != nil,
+                 // The sections' task looks past the header, at the cards.
+                 skip: mode == .sections ? insets.top + 240 : 0)
                 .padding(.vertical, 12)
             if let mode {
-                modeDock(mode)
+                modeDock(mode, screen: screen)
                     .padding(.bottom, insets.bottom)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             } else if !arranging {
@@ -227,7 +229,7 @@ struct LookEditor: View {
 
     /// What a task docks at the bottom.
     @ViewBuilder
-    private func modeDock(_ mode: EditorMode) -> some View {
+    private func modeDock(_ mode: EditorMode, screen: CGSize) -> some View {
         switch mode {
         case .stickers:
             StickerDock(look: $look, adding: $addingSticker)
@@ -237,14 +239,26 @@ struct LookEditor: View {
         case .besideText:
             TypingDock(text: $look.accessoryText, prompt: "Tutto pronto?", limit: TodayStyle.accessoryTextLimit,
                        note: "Nel carattere della data e nel tuo colore.", submit: finishMode)
+        case .sections:
+            SectionTaskDock(look: $look)
+                .frame(height: screen.height * 0.42)
         }
     }
 
     /// Starts a task, remembering the look to go back to.
     private func enter(_ next: EditorMode) {
         modeSnapshot = look
-        part = .greeting
-        tools[.greeting] = next == .greeting ? .greeting : .beside
+        switch next {
+        case .sections:
+            part = .cards
+            tools[.cards] = .sections
+        case .greeting:
+            part = .greeting
+            tools[.greeting] = .greeting
+        case .stickers, .besideText:
+            part = .greeting
+            tools[.greeting] = .beside
+        }
         addingSticker = next == .stickers && look.stickers.isEmpty
         withAnimation(.snappy) { mode = next }
     }
@@ -861,7 +875,9 @@ struct LookEditor: View {
     ///   - screen: The editor's own screen, which the page covers before settling.
     ///   - home: For App, the Home Screen or Dock drawn in the page's place.
     ///   - zoomed: During a task: the page nearly as wide as the screen, its top in view.
-    private func page(on target: Screen, screen: CGSize, home: AppPreview.Mode? = nil, zoomed: Bool = false) -> some View {
+    ///   - skip: Zoomed, how much of the page's top, at full size, to scroll past.
+    private func page(on target: Screen, screen: CGSize, home: AppPreview.Mode? = nil, zoomed: Bool = false,
+                      skip: CGFloat = 0) -> some View {
         Color.clear
             .overlay {
                 GeometryReader { room in
@@ -889,6 +905,7 @@ struct LookEditor: View {
                     // Zoomed, the page hangs from the top of the room, its header in view.
                     .scaleEffect(settled ? fit : cover, anchor: zoomed ? .top : .center)
                     .frame(width: room.size.width, height: room.size.height, alignment: zoomed ? .top : .center)
+                    .offset(y: zoomed ? -skip * fit : 0)
                     .offset(settled ? .zero : toScreen)
                     .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
                 }

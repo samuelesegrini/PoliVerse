@@ -600,6 +600,16 @@
         }
       }
     },
+    "Nascondi la sezione" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Section"
+          }
+        }
+      }
+    },
     "Nascosta" : {
       "localizations" : {
         "en" : {
@@ -1136,6 +1146,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On iPad and Mac the sections sit in the sidebar."
+          }
+        }
+      }
+    },
+    "Sulla pagina, in ordine" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On the page, in order"
           }
         }
       }

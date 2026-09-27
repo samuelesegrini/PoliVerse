@@ -302,6 +302,21 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         app.buttons["customize-arrange-done"].tap()
         settle()
 
+        // On iPhone the sections are also a task: the page zooms onto its
+        // cards over their list, and a row opens its settings.
+        if !isWide {
+            reveal(app.buttons["sections-edit"].firstMatch, in: app, tool: "sections", sideways: false).tap()
+            let exams = app.buttons["section-task-exams"].firstMatch
+            XCTAssertTrue(exams.waitForExistence(timeout: 3), "The sections' task does not list Esami")
+            shot(app, "36b-sections-task")
+            exams.tap()
+            XCTAssertTrue(app.descendants(matching: .any)["section-form"].firstMatch.waitForExistence(timeout: 3),
+                          "A section's settings show no forms")
+            app.buttons["section-task-back"].tap()
+            app.buttons["customize-mode-done"].tap()
+            settle()
+        }
+
         // An accessory: a sticker from the keyboard, then text instead.
         // With none yet, choosing stickers opens the keyboard straight away.
         part(app, "greeting")

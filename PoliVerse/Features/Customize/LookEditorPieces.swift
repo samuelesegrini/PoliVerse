@@ -10,6 +10,8 @@ enum EditorMode: Hashable {
     case greeting
     /// Writing the few words beside the date.
     case besideText
+    /// Ordering the sections, showing and hiding them, and their settings.
+    case sections
 
     /// What the bar calls the task.
     var title: LocalizedStringKey {
@@ -17,6 +19,7 @@ enum EditorMode: Hashable {
         case .stickers: "Sticker"
         case .greeting: "Il tuo saluto"
         case .besideText: "Accanto alla data"
+        case .sections: "Sezioni"
         }
     }
 }
