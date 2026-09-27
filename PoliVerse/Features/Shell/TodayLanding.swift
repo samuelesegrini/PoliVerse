@@ -49,6 +49,11 @@ struct TodayLanding: View {
     private let draft: Binding<TodayStyle>?
     /// True in Personalizza's arranging mode, where sections wiggle and move.
     private let arranging: Bool
+    /// Zones without outlines or badges: the page drawn exactly as the app
+    /// shows it, each part still a way into its controls.
+    private let quiet: Bool
+    /// The sticker selected on a quiet page, where stickers drag straight away.
+    private let selection: Binding<UUID?>?
     /// Opens a zone's controls.
     private let onEdit: (Zone) -> Void
     /// Opens the sticker picker.
@@ -67,31 +72,45 @@ struct TodayLanding: View {
         self.style = style.resolved
         draft = nil
         arranging = false
+        quiet = false
+        selection = nil
         onEdit = { _ in }
         onAddSticker = {}
     }
 
     /// The page in Personalizza, changing the look being edited.
-    init(day: Date, draft: Binding<TodayStyle>, arranging: Bool, onAddSticker: @escaping () -> Void,
-         onEdit: @escaping (Zone) -> Void) {
+    ///
+    /// - Parameters:
+    ///   - quiet: Draws the zones without outlines or badges, and lets the
+    ///     stickers drag straight away.
+    ///   - selection: The sticker selected on a quiet page.
+    init(day: Date, draft: Binding<TodayStyle>, arranging: Bool, quiet: Bool = false,
+         selection: Binding<UUID?>? = nil,
+         onAddSticker: @escaping () -> Void, onEdit: @escaping (Zone) -> Void) {
         self.day = day
         style = draft.wrappedValue.resolved
         self.draft = draft
         self.arranging = arranging
+        self.quiet = quiet
+        self.selection = selection
         self.onAddSticker = onAddSticker
         self.onEdit = onEdit
     }
 
     /// True in Personalizza, in either of its modes.
     private var editing: Bool { draft != nil }
+    /// Editing with the zones marked out: room around each, and a place for
+    /// what the page does not show yet.
+    private var marked: Bool { editing && !quiet }
 
     /// The view's content.
     var body: some View {
-        VStack(alignment: .leading, spacing: editing ? 28 : 24) {
+        VStack(alignment: .leading, spacing: marked ? 28 : 24) {
             if editing {
                 zone(.bar) {
                     ReplicaNavigationBar(student: session.student, day: day, bar: style.bar)
-                        .padding(.horizontal, -16)
+                        // Quiet, the bar spans the page as the system's does.
+                        .padding(.horizontal, quiet ? -20 : -16)
                         .tint(style.controlTint(scheme))
                 }
             }
@@ -118,7 +137,7 @@ struct TodayLanding: View {
             }
         }
         .padding(.horizontal, 20)
-        .padding(.top, editing ? 16 : 12)
+        .padding(.top, marked ? 16 : 12)
         .animation(.snappy, value: style)
     }
 
@@ -128,7 +147,7 @@ struct TodayLanding: View {
     @ViewBuilder
     private var header: some View {
         // Editing, an empty right half invites an accessory.
-        if style.accessory != .none || (editing && !arranging) {
+        if style.accessory != .none || (marked && !arranging) {
             // Half and half: the date shrinks to its column rather than
             // pushing the stickers out.
             HStack(alignment: .center, spacing: 12) {
@@ -148,9 +167,22 @@ struct TodayLanding: View {
                                 style: style,
                                 editing: editing,
                                 arranging: arranging,
+                                movable: quiet && !arranging,
+                                selected: selection?.wrappedValue,
                                 onChange: { id, change in draft?.wrappedValue.updateSticker(id, change) },
                                 onRemove: { id in draft?.wrappedValue.removeSticker(id) },
-                                onAdd: onAddSticker)
+                                onAdd: onAddSticker,
+                                onSelect: { id in
+                                    selection?.wrappedValue = id
+                                    onEdit(.stickers)
+                                },
+                                onEdit: { id, edit in
+                                    withAnimation(.snappy) {
+                                        // The sticker selected afterwards: the copy, or none once removed.
+                                        let next = draft?.wrappedValue.edit(sticker: id, edit) ?? nil
+                                        selection?.wrappedValue = next
+                                    }
+                                })
                         }
                     }
                     .frame(height: 150)
@@ -167,8 +199,8 @@ struct TodayLanding: View {
     /// - Parameter dateScale: How much to shrink the date by when it shares the row with an accessory.
     /// - Returns: The column.
     private func titles(dateScale: CGFloat) -> some View {
-        VStack(alignment: style.dateAlignment.horizontal, spacing: editing ? 20 : 8) {
-            if style.showsGreeting || editing {
+        VStack(alignment: style.dateAlignment.horizontal, spacing: marked ? 20 : 8) {
+            if style.showsGreeting || marked {
                 zone(.greeting, remove: style.showsGreeting ? { draft?.wrappedValue.showsGreeting = false } : nil) {
                     Text(style.greeting.text(for: day, firstName: session.student?.firstName, custom: style.customGreeting))
                         .font(.headline)
@@ -322,6 +354,29 @@ struct TodayLanding: View {
                 .padding(10)
                 .background { outline }
                 .padding(-10)
+        } else if quiet, zone == .stickers {
+            // Not a button: the stickers inside take their own drags and taps,
+            // and a tap between them opens the zone and lets go of the selection.
+            content()
+                .contentShape(.rect)
+                .onTapGesture {
+                    selection?.wrappedValue = nil
+                    onEdit(zone)
+                }
+                .pointerHighlight()
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel(Text(zone.title))
+                .accessibilityIdentifier("zone-\(zone.id)")
+        } else if quiet {
+            Button { onEdit(zone) } label: {
+                content().contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            // With a pointer, on iPad and Mac, the part under it lights up.
+            .pointerHighlight()
+            .accessibilityLabel(Text(zone.title))
+            .accessibilityHint("Modifica")
+            .accessibilityIdentifier("zone-\(zone.id)")
         } else {
             Button { onEdit(zone) } label: {
                 content()

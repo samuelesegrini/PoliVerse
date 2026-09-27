@@ -919,17 +919,17 @@ private struct TourCard: View {
         .padding(.bottom, 16)
     }
 
-    /// Oggi and Personalizza carry the look's paper and decoration; the rest
-    /// do not, because in the app they do not either — the look travels by
-    /// colour, type and material, and the page's own ground is Oggi's alone.
-    /// A tour that decorated every card would be promising something the app
-    /// does not do.
+    /// Oggi carries the look's paper and decoration; the rest do not, because
+    /// in the app they do not either — the look travels by colour, type and
+    /// material, and the page's own ground is Oggi's alone. A tour that
+    /// decorated every card would be promising something the app does not do.
+    /// Personalizza is on black, as its editor is, with the page inside it.
     @ViewBuilder
     private var ground: some View {
-        if screen.kind == .today || screen.kind == .look {
-            TodayBackgroundView(style: style)
-        } else {
-            Color(.systemBackground)
+        switch screen.kind {
+        case .today: TodayBackgroundView(style: style)
+        case .look: Color.black
+        default: Color(.systemBackground)
         }
     }
 
@@ -1407,32 +1407,69 @@ private struct TourRooms: View {
     }
 }
 
-/// Personalizza as the app opens it: the look's own page on top, and the
-/// real Bento panel under it — the same tiles, drawn by the same code — at
-/// full size, scaled into the card.
+/// Personalizza as the app opens it: its bar, the look's page live and small
+/// in the middle, and under it a card for each part of the look, each with a
+/// picture of what it is now — the editor's own cards, drawn by the same code,
+/// at an iPhone's width and scaled into the card.
 private struct TourLook: View {
     /// The look in use, which supplies the colours, typeface and material.
     @Environment(\.look) private var style
 
+    /// The width the editor is drawn at, an iPhone's.
+    private static let width = LookScreen.reference.width
+
     /// The view's content.
     var body: some View {
         GeometryReader { proxy in
-            let scale: CGFloat = 0.56
-            let width = proxy.size.width / scale
-            VStack(spacing: 0) {
-                DateHeader(day: .now, style: style, size: 44)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 18)
-                BentoPanel(style: .constant(style), path: .constant([]),
-                           arranging: .constant(false), detent: .constant(.large))
-                    .frame(height: proxy.size.height / scale)
-                    .background(.background, in: .rect(cornerRadius: 30))
+            let scale = proxy.size.width / Self.width
+            let height = proxy.size.height / scale
+            VStack(spacing: 14) {
+                bar
+                // What room the bar and the cards leave, for the page.
+                let pageHeight = max(120, height - 44 - 4 * 66 - 3 * 8 - 14 * 3 - 32)
+                LookScreen(look: style, scale: pageHeight / LookScreen.reference.height, cornerRadius: 48)
+                    .shadow(color: .black.opacity(0.4), radius: 16, y: 6)
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2), spacing: 8) {
+                    ForEach(LookPart.parts(for: style)) { part in
+                        LookPartCard(part: part, look: style)
+                    }
+                }
             }
-            .frame(width: width, alignment: .top)
+            .padding(16)
+            .frame(width: Self.width, height: height, alignment: .top)
+            .background(Color.black)
+            .environment(\.colorScheme, .dark)
             .scaleEffect(scale, anchor: .topLeading)
         }
         .allowsHitTesting(false)
+    }
+
+    /// The editor's bar: ✕ and undo and redo on the left, ••• and ✓ on the right.
+    private var bar: some View {
+        HStack(spacing: 8) {
+            round("xmark")
+            HStack(spacing: 0) {
+                Image(systemName: "arrow.uturn.backward").frame(width: 38, height: 40)
+                Image(systemName: "arrow.uturn.forward").frame(width: 38, height: 40)
+            }
+            .foregroundStyle(.secondary)
+            .background(.white.opacity(0.1), in: .capsule)
+            Spacer()
+            round("ellipsis")
+            Image(systemName: "checkmark")
+                .frame(width: 40, height: 40)
+                .foregroundStyle(.white)
+                .background(style.controlTint(.dark), in: .circle)
+        }
+        .font(.body.weight(.semibold))
+        .frame(height: 44)
+    }
+
+    /// One of the bar's round buttons.
+    private func round(_ symbol: String) -> some View {
+        Image(systemName: symbol)
+            .frame(width: 40, height: 40)
+            .background(.white.opacity(0.1), in: .circle)
     }
 }
 

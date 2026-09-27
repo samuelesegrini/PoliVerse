@@ -45,6 +45,18 @@ extension Image {
     }
 }
 
+extension SensoryFeedback {
+    /// Picking something up: a medium impact on iPhone; the Mac's trackpad has no
+    /// impact, so it gives its alignment tick instead.
+    static var lift: SensoryFeedback {
+        #if os(iOS)
+        .impact(weight: .medium)
+        #else
+        .alignment
+        #endif
+    }
+}
+
 extension EnvironmentValues {
     /// Closes the detail this view is shown in, when it is shown beside the page rather
     /// than in a sheet; `nil` in a sheet, where the view dismisses itself.
@@ -88,6 +100,18 @@ extension View {
         }
         #else
         sheet(item: item, content: content)
+        #endif
+    }
+
+    /// Lights the view up under an iPad pointer. The Mac draws its own hover states on
+    /// controls, and has no hover effect to ask for.
+    ///
+    /// - Returns: The view, with the effect on iPhone and iPad.
+    func pointerHighlight() -> some View {
+        #if os(iOS)
+        hoverEffect(.highlight)
+        #else
+        self
         #endif
     }
 

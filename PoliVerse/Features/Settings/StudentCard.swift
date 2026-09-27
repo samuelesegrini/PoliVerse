@@ -57,7 +57,7 @@ struct StudentCard: View {
         }
         .buttonStyle(CardPressStyle())
         .simultaneousGesture(tiltGesture)
-        .sensoryFeedback(.impact(weight: .medium), trigger: showsBack)
+        .sensoryFeedback(.lift, trigger: showsBack)
         .onAppear {
             if startsFlipped { angle = 180 }
             if fixedLight == nil, !reduceMotion { motion.start() }

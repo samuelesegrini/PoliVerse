@@ -629,7 +629,8 @@ nonisolated extension TodayStyle: RawRepresentable {
         grain = (stored.grain ?? grain).clamped(to: 0...1)
         appearance = stored.appearance ?? appearance
         bar = stored.bar ?? bar
-        app = stored.app ?? app
+        // A look saved without an app half keeps Orbita blue, as it was.
+        app = stored.app ?? .saved
         name = String((stored.name ?? name).prefix(Self.nameLimit))
         special = stored.special.flatMap(SpecialFlavor.init(rawValue:))
         specialSettings = stored.specialSettings ?? specialSettings

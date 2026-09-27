@@ -73,8 +73,11 @@ nonisolated enum ReleaseNotes {
             headline: "Il Politecnico come lo vuoi tu.",
             items: [
                 .init(symbol: "paintbrush.fill",
-                      title: "Personalizza, su tutta l'app",
-                      detail: "Il colore, il carattere e il materiale che scegli per Oggi valgono adesso in ogni schermata: carriera, corsi, ricerca e impostazioni comprese."),
+                      title: "Personalizza, tutto nuovo",
+                      detail: "Vedi la pagina mentre la cambi, una parte alla volta: tema, colore, sfondo, data, saluto, schede e app. Gli sticker si trascinano sulla pagina, ogni modifica si annulla, e su iPad e Mac hai barra laterale e inspector. Lo stile vale in ogni schermata."),
+                .init(symbol: "apps.iphone",
+                      title: "L'icona nei tuoi colori",
+                      detail: "Orbita, Giorno e Vicino in dodici colori, o un'icona speciale. Con Automatica l'app prende quella più vicina al colore del tuo Flavor."),
                 .init(symbol: "calendar.badge.plus",
                       title: "Orario personalizzato",
                       detail: "Scegli gli insegnamenti che segui e l'app ne ricava l'orario della settimana, con aule e indirizzi, prima che il piano arrivi in agenda."),

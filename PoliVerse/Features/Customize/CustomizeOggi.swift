@@ -55,8 +55,8 @@ struct CustomizeOggi: View {
     @State private var addingLook = false
     /// The question at the end of adding is up.
     @State private var askingApp = false
-    /// Where the app half's editor was opened from, while it is open.
-    @State private var appEditor: AppEditorOrigin?
+    /// The app half's editor is up, straight after adding a look.
+    @State private var customisingApp = false
     /// The app half as it was when its editor opened, for its Annulla.
     @State private var appBefore = AppLook()
 
@@ -95,36 +95,7 @@ struct CustomizeOggi: View {
     /// The view's content.
     var body: some View {
         GeometryReader { proxy in
-            // The cards stand for the whole screen, status bar and home
-            // indicator included, so they are measured without the safe area.
-            let insets = proxy.safeAreaInsets
-            let screen = CGSize(width: proxy.size.width + insets.leading + insets.trailing,
-                                height: proxy.size.height + insets.top + insets.bottom)
-            let card = CGSize(width: screen.width * Self.cardScale, height: screen.height * Self.cardScale)
-            ZStack {
-                Color.black
-                    .opacity(expanded ? 0 : 1)
-                carousel(screen: screen, insets: insets, card: card)
-                chrome(screen: screen, insets: insets, card: card)
-                    .opacity(filled || edit != nil ? 0 : 1)
-                    .allowsHitTesting(!filled && edit == nil)
-                if let edit {
-                    LookEditor(look: draft, original: edit.original, isNew: edit.index == nil, insets: insets,
-                               cancel: cancelEditing, done: finishEditing, openApp: openAppFromMenu)
-                        .transition(edit.index == nil ? .move(edge: .bottom) : .identity)
-                        .zIndex(2)
-                }
-                if appEditor != nil {
-                    AppLookEditor(look: draft, screen: screen, insets: insets, cancel: cancelApp, done: finishApp)
-                        .transition(.move(edge: .bottom))
-                        .zIndex(3)
-                }
-            }
-            .frame(width: screen.width, height: screen.height)
-            // Takes every touch while it is up, growing back included, so none
-            // reaches the app underneath.
-            .contentShape(.rect)
-            .ignoresSafeArea()
+            stage(proxy)
         }
         .onAppear {
             withAnimation(Self.expand) { expanded = false }
@@ -137,7 +108,48 @@ struct CustomizeOggi: View {
                 .presentationDetents([.height(500)])
                 .interactiveDismissDisabled()
         }
-        .sensoryFeedback(.impact(weight: .medium), trigger: lifted) { _, new in new }
+        .sensoryFeedback(.lift, trigger: lifted) { _, new in new }
+    }
+
+    /// Everything over the app while Personalizza is up, measured from the reader.
+    ///
+    /// - Parameter proxy: The reader's geometry.
+    /// - Returns: The gallery, its chrome and the editors.
+    @ViewBuilder
+    private func stage(_ proxy: GeometryProxy) -> some View {
+        // The cards stand for the whole screen, status bar and home
+        // indicator included, so they are measured without the safe area.
+        let insets = proxy.safeAreaInsets
+        let screen = CGSize(width: proxy.size.width + insets.leading + insets.trailing,
+                            height: proxy.size.height + insets.top + insets.bottom)
+        let card = CGSize(width: screen.width * Self.cardScale, height: screen.height * Self.cardScale)
+        ZStack {
+            Color.black
+                .opacity(expanded ? 0 : 1)
+            carousel(screen: screen, insets: insets, card: card)
+            chrome(screen: screen, insets: insets, card: card)
+                .opacity(filled || edit != nil ? 0 : 1)
+                .allowsHitTesting(!filled && edit == nil)
+            if let edit {
+                // Built apart: the same ternary inline, over method references,
+                // crashes the macOS type checker.
+                let deletion: (() -> Void)? = edit.index != nil && library.canRemove ? { deleteEditing() } : nil
+                LookEditor(look: draft, original: edit.original, isNew: edit.index == nil, insets: insets,
+                           cancel: { cancelEditing() }, done: { finishEditing() }, delete: deletion)
+                    .transition(edit.index == nil ? .move(edge: .bottom) : .identity)
+                    .zIndex(2)
+            }
+            if customisingApp {
+                AppLookEditor(look: draft, screen: screen, insets: insets, cancel: cancelApp, done: finishApp)
+                    .transition(.move(edge: .bottom))
+                    .zIndex(3)
+            }
+        }
+        .frame(width: screen.width, height: screen.height)
+        // Takes every touch while it is up, growing back included, so none
+        // reaches the app underneath.
+        .contentShape(.rect)
+        .ignoresSafeArea()
     }
 
     // MARK: - Gallery
@@ -525,6 +537,18 @@ struct CustomizeOggi: View {
         }
     }
 
+    /// Deletes the look being edited from the editor's menu: the editor goes,
+    /// the card shrinks back into the gallery and leaves it, with Annulla offered.
+    private func deleteEditing() {
+        guard let index = edit?.index else { return }
+        edit = nil
+        withAnimation(Self.expand) {
+            filling = false
+        } completion: {
+            delete(index)
+        }
+    }
+
     /// Keeps the draft: a saved look is written back; a new one asks about the app first.
     private func finishEditing() {
         guard let edit else { return }
@@ -552,29 +576,20 @@ struct CustomizeOggi: View {
     private func customiseApp() {
         askingApp = false
         appBefore = draft.wrappedValue.app
-        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { appEditor = .adding }
+        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { customisingApp = true }
     }
 
-    /// Opens the app half of the look being edited, from ••• ▸ App.
-    private func openAppFromMenu() {
-        appBefore = draft.wrappedValue.app
-        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { appEditor = .menu }
-    }
-
-    /// Puts the app half back. After adding, the question comes back too.
+    /// Puts the app half back, and asks the question again.
     private func cancelApp() {
         edit?.draft.app = appBefore
-        let origin = appEditor
-        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { appEditor = nil }
-        if origin == .adding { askingApp = true }
+        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { customisingApp = false }
+        askingApp = true
     }
 
-    /// Keeps the app half: after adding, that adds the look; from the menu it
-    /// returns to the editor, whose Fine saves it with the rest.
+    /// Keeps the app half and adds the look.
     private func finishApp() {
-        let origin = appEditor
-        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { appEditor = nil }
-        if origin == .adding { addNew() }
+        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { customisingApp = false }
+        addNew()
     }
 
     /// Adds the new look at the end and puts it in use: the editor slides
@@ -612,14 +627,6 @@ private struct RemovedLook: Equatable {
     let selection: Int
     /// Tells two deletes of equal looks apart, so each gets its own countdown.
     let id = UUID()
-}
-
-/// Where the app half's editor was opened from.
-private enum AppEditorOrigin {
-    /// Straight after adding a look, from the question.
-    case adding
-    /// From the editor's ••• ▸ App.
-    case menu
 }
 
 /// The last card: nothing yet, and a way to add a look.

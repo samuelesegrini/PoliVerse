@@ -1,12 +1,14 @@
 import SwiftUI
 
 /// The app half of a look, edited the way the Home Screen is next to a Lock
-/// Screen: the app drawn as a card on black, and four round buttons under it —
-/// Abbinata, Colore, Icona, Barra — each opening its choices in a strip.
+/// Screen: the app drawn as a card on black, and three round buttons under it —
+/// Icona, Colore, Barra — each showing its choices in a strip. One is always
+/// open, Icona first, with the Home Screen drawn above it.
 ///
-/// Choosing anything by hand unpairs the app from the page; Abbinata pairs it
-/// again and drops those choices. Reached once straight after adding a look,
-/// and afterwards only from the editor's ••• ▸ App.
+/// Choosing anything by hand unpairs the app from the page; Automatica, first
+/// among the icons and the colours, pairs it again and drops those choices.
+/// Reached once straight after adding a look, from ``AppPairQuestion``;
+/// afterwards the app half is a part of the editor like any other.
 struct AppLookEditor: View {
     /// The draft whose app half is edited.
     @Binding var look: TodayStyle
@@ -19,19 +21,15 @@ struct AppLookEditor: View {
     /// Keeps the app half.
     let done: () -> Void
 
-    /// The environment's `self`.
-    @Environment(\.self) private var environment
-    /// The choice whose strip is open, if any.
-    @State private var option: Option?
+    /// The choice whose strip is open.
+    @State private var option = Option.icon
 
-    /// The four buttons under the preview.
+    /// The three buttons under the preview.
     enum Option: String, CaseIterable, Identifiable {
-        /// Following the page, or not.
-        case pair
-        /// The app's colour.
-        case tint
         /// The Home Screen icon.
         case icon
+        /// The app's colour.
+        case tint
         /// The tab bar's behaviour.
         case bar
 
@@ -41,9 +39,8 @@ struct AppLookEditor: View {
         /// What the button is called.
         var title: LocalizedStringKey {
             switch self {
-            case .pair: "Abbinata"
-            case .tint: "Colore"
             case .icon: "Icona"
+            case .tint: "Colore"
             case .bar: "Barra"
             }
         }
@@ -74,12 +71,11 @@ struct AppLookEditor: View {
                     .animation(.snappy, value: option)
                     .accessibilityIdentifier("app-preview")
                 Spacer(minLength: 0)
-                if let option {
-                    strip(option)
-                        .padding(.horizontal, 12)
-                        .padding(.bottom, 14)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
+                strip(option)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 14)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .id(option)
                 buttons
                     .padding(.bottom, insets.bottom + 10)
             }
@@ -108,12 +104,12 @@ struct AppLookEditor: View {
 
     // MARK: - Buttons
 
-    /// The four round buttons: Abbinata lit while paired, the others while their strip is open.
+    /// The three round buttons, the one whose strip is open lit.
     private var buttons: some View {
         HStack(spacing: 18) {
             ForEach(Option.allCases) { option in
-                let on = option == .pair ? look.app.paired : self.option == option
-                Button { choose(option) } label: {
+                let on = self.option == option
+                Button { self.option = option } label: {
                     VStack(spacing: 6) {
                         glyph(option)
                             .frame(width: 56, height: 56)
@@ -132,13 +128,10 @@ struct AppLookEditor: View {
         }
     }
 
-    /// What each round button shows: the link, the colour, the icon itself, the bar.
+    /// What each round button shows: the icon itself, the colour, the bar.
     @ViewBuilder
     private func glyph(_ option: Option) -> some View {
         switch option {
-        case .pair:
-            Image(systemName: look.app.paired ? "link" : "link.badge.plus")
-                .font(.title3.weight(.semibold))
         case .tint:
             Circle()
                 .fill(look.resolved.controlTint(.dark))
@@ -155,210 +148,20 @@ struct AppLookEditor: View {
         }
     }
 
-    /// Opens or closes a button's strip; Abbinata also pairs the app again.
-    ///
-    /// - Parameter option: The button tapped.
-    private func choose(_ option: Option) {
-        if option == .pair, !look.app.paired {
-            withAnimation(.snappy) { look.pairApp() }
-        }
-        self.option = self.option == option ? nil : option
-    }
-
     // MARK: - Strips
 
     /// One button's choices, on glass above the buttons.
-    @ViewBuilder
     private func strip(_ option: Option) -> some View {
         Group {
             switch option {
-            case .pair:
-                Text(look.app.paired
-                     ? "Colore, icona e barra seguono Oggi, e cambiano quando cambi Flavor."
-                     : "L'app ha scelte sue. Tocca Abbinata per farle seguire di nuovo Oggi.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 6)
-            case .tint:
-                tintStrip
-            case .icon:
-                iconStrip
-            case .bar:
-                VStack(spacing: 8) {
-                    GlassSegmentedPicker("Barra", selection: tabBarBinding) { Text($0.title) }
-                        .accessibilityIdentifier("app-tab-bar")
-                    Text(look.appTabBar == .minimizes
-                         ? "Scorrendo, la barra si riduce alla scheda in cui sei."
-                         : "La barra resta intera anche mentre scorri.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
+            case .tint: AppTintPicker(look: $look)
+            case .icon: AppIconPicker(look: $look)
+            case .bar: AppBarPicker(look: $look)
             }
         }
         .padding(12)
         .frame(maxWidth: .infinity)
         .glassEffect(.regular, in: .rect(cornerRadius: 26))
-    }
-
-    /// The swatches, and the system picker for any other colour.
-    private var tintStrip: some View {
-        ScrollViewReader { reader in
-            ScrollView(.horizontal) {
-                HStack(spacing: 12) {
-                    ColorPicker("Altro colore", selection: tintBinding, supportsOpacity: false)
-                        .labelsHidden()
-                    ForEach(Flavor.swatches) { swatch in
-                        let chosen = !look.app.paired && look.app.tint?.hex == swatch.flavor.hex
-                        Button {
-                            withAnimation(.snappy) {
-                                look.unpairApp()
-                                look.app.tint = swatch.flavor
-                            }
-                        } label: {
-                            Circle()
-                                .fill(swatch.flavor.base.color)
-                                .frame(width: 34, height: 34)
-                                .overlay {
-                                    if chosen { Circle().strokeBorder(.white, lineWidth: 3).padding(-4) }
-                                }
-                                .padding(4)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(Text(swatch.name))
-                        .accessibilityAddTraits(chosen ? .isSelected : [])
-                        .accessibilityIdentifier("app-tint-\(swatch.flavor.hex)")
-                        .id(swatch.flavor.hex)
-                    }
-                }
-                .padding(.horizontal, 4)
-            }
-            .scrollIndicators(.hidden)
-            .onAppear {
-                if !look.app.paired, let hex = look.app.tint?.hex { reader.scrollTo(hex, anchor: .center) }
-            }
-        }
-    }
-
-    /// The icon's shape, then every colour it comes in, the one in use ringed.
-    private var iconStrip: some View {
-        VStack(spacing: 10) {
-            GlassSegmentedPicker("Forma", selection: $look.app.iconStyle) { Text($0.title) }
-                .accessibilityIdentifier("app-icon-style")
-            switch look.appIconStyle {
-            case .orbit: EmptyView()
-            case .dial, .closeUp: iconColours
-            case .special: specialIcons
-            }
-        }
-    }
-
-    /// Every colour of the icon in its shape, the one in use ringed. The
-    /// shape alone does not unpair the app: a paired app keeps following
-    /// the page's colour, in the new shape.
-    private var iconColours: some View {
-        ScrollViewReader { reader in
-            ScrollView(.horizontal) {
-                HStack(spacing: 12) {
-                    ForEach(AppIconChoice.choices(in: look.appIconStyle)) { choice in
-                        let chosen = look.resolved.appIcon == choice
-                        Button {
-                            withAnimation(.snappy) {
-                                look.unpairApp()
-                                look.app.icon = choice
-                            }
-                        } label: {
-                            VStack(spacing: 5) {
-                                Image(choice.previewImage(in: look.appIconStyle))
-                                    .resizable()
-                                    .frame(width: 52, height: 52)
-                                    .clipShape(.rect(cornerRadius: 12, style: .continuous))
-                                    .overlay {
-                                        RoundedRectangle(cornerRadius: 15, style: .continuous)
-                                            .strokeBorder(chosen ? Color.white : .clear, lineWidth: 2.5)
-                                            .padding(-4)
-                                    }
-                                    .padding(4)
-                                Text(choice.title)
-                                    .font(.caption2)
-                                    .foregroundStyle(chosen ? .primary : .secondary)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityAddTraits(chosen ? .isSelected : [])
-                        .accessibilityIdentifier("app-icon-\(choice.rawValue)")
-                        .id(choice)
-                    }
-                }
-                .padding(.horizontal, 4)
-            }
-            .scrollIndicators(.hidden)
-            // Opens on the icon in use, which a paired app may have far along.
-            .onAppear { reader.scrollTo(look.resolved.appIcon, anchor: .center) }
-        }
-    }
-
-    /// Every special icon, the one in use ringed. Kept with the shape, so
-    /// picking one leaves the app paired.
-    private var specialIcons: some View {
-        ScrollViewReader { reader in
-            ScrollView(.horizontal) {
-                HStack(spacing: 12) {
-                    ForEach(SpecialIcon.allCases) { icon in
-                        let chosen = look.app.special == icon
-                        Button {
-                            withAnimation(.snappy) { look.app.special = icon }
-                        } label: {
-                            VStack(spacing: 5) {
-                                Image(icon.previewImage)
-                                    .resizable()
-                                    .frame(width: 52, height: 52)
-                                    .clipShape(.rect(cornerRadius: 12, style: .continuous))
-                                    .overlay {
-                                        RoundedRectangle(cornerRadius: 15, style: .continuous)
-                                            .strokeBorder(chosen ? Color.white : .clear, lineWidth: 2.5)
-                                            .padding(-4)
-                                    }
-                                    .padding(4)
-                                Text(icon.title)
-                                    .font(.caption2)
-                                    .foregroundStyle(chosen ? .primary : .secondary)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityAddTraits(chosen ? .isSelected : [])
-                        .accessibilityIdentifier("app-icon-special-\(icon.rawValue)")
-                        .id(icon)
-                    }
-                }
-                .padding(.horizontal, 4)
-            }
-            .scrollIndicators(.hidden)
-            .onAppear { reader.scrollTo(look.app.special, anchor: .center) }
-        }
-    }
-
-    /// The app's colour for the system picker; picking one unpairs the app.
-    private var tintBinding: Binding<Color> {
-        Binding {
-            look.resolved.appFlavor.base.color
-        } set: { colour in
-            let resolved = colour.resolve(in: environment)
-            look.unpairApp()
-            look.app.tint = Flavor(red: Double(resolved.red), green: Double(resolved.green), blue: Double(resolved.blue))
-        }
-    }
-
-    /// The tab bar's behaviour; choosing one unpairs the app.
-    private var tabBarBinding: Binding<TabBarBehaviour> {
-        Binding {
-            look.appTabBar
-        } set: { behaviour in
-            withAnimation(.snappy) {
-                look.unpairApp()
-                look.app.tabBar = behaviour
-            }
-        }
     }
 }
 
@@ -387,7 +190,7 @@ struct AppPairQuestion: View {
                     AppPreview(look: paired).screenScaled(scale, size: LookScreen.reference)
                 }
             }
-            Text("L'app prende colore, icona e barra da questo Flavor. Puoi cambiarli quando vuoi da ••• ▸ App.")
+            Text("L'app prende colore, icona e barra da questo Flavor. Puoi cambiarli quando vuoi nella parte App.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

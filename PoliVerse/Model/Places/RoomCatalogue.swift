@@ -57,6 +57,35 @@ extension RoomCatalogue {
     }
 }
 
+extension RoomCatalogue {
+    /// The sites the rooms are in — "Milano Città Studi", "Como" — sorted: the
+    /// places a student names, where ``campuses`` are addresses. A room whose
+    /// site is unknown stands in with its campus.
+    var sites: [String] {
+        Array(Set(rooms.compactMap { $0.siteName ?? $0.campusName })).sorted()
+    }
+
+    /// The site with the most rooms: the likeliest guess before the student says.
+    var biggestSite: String? {
+        var counts: [String: Int] = [:]
+        for room in rooms { if let site = room.siteName ?? room.campusName { counts[site, default: 0] += 1 } }
+        return counts.max { $0.value < $1.value || ($0.value == $1.value && $0.key > $1.key) }?.key
+    }
+
+    /// The campus of a site with the most rooms: where its free rooms are
+    /// looked for first.
+    ///
+    /// - Parameter site: A name from ``sites``.
+    /// - Returns: A name from ``campuses``, or `nil` when the site has no rooms.
+    func mainCampus(inSite site: String) -> String? {
+        var counts: [String: Int] = [:]
+        for room in rooms where (room.siteName ?? room.campusName) == site {
+            if let campus = room.campusName { counts[campus, default: 0] += 1 }
+        }
+        return counts.max { $0.value < $1.value || ($0.value == $1.value && $0.key > $1.key) }?.key
+    }
+}
+
 extension RoomAvailability {
     func load() async { await load(force: false) }
 }

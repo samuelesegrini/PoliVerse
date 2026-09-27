@@ -45,9 +45,10 @@ is bigger, the way iCloud's bar steps from dark to light.
 
 - ``TodayMaterial`` for the cards, a typeface for the date and a design for the
   other text;
-- a ``TodaySheet`` — either a paper texture or a decoration in the Flavor's
-  colour, **never both**, because two settings that only ever read as one
-  question should be asked once;
+- a ``TodayPaper`` to print the page on, and a ``TodayBackground`` pattern in
+  the Flavor's colour over it — Personalizza's Sfondo sets them apart, as
+  Carta and Motivo, and ``TodaySheet`` still reads them as one for the older
+  pickers;
 - ``TodayAppearance``, which decides how the app is lit.
 
 Beside the date sits a ``TodayAccessory``: nothing, stickers placed by hand, a
@@ -77,9 +78,9 @@ look.
 | Step | Screen | What it does |
 |---|---|---|
 | Add | ``NewLookGallery`` | starting points: a copy, a photo's colours, a surprise, a blank page, then shelves of themes, Flavors and papers |
-| Edit | ``LookEditor`` | the page at full size on a draft; each outlined zone opens its own small sheet, a sideways swipe runs through five fixed lights, the rest is behind ••• |
+| Edit | ``LookEditor`` | the page live and small on a draft, with the look's parts (``LookPart``) around it: on iPhone a grid of them under the page and each part's tools (``LookTool``) in tabs, on iPad and Mac a sidebar and an inspector stacking them; every change can be undone |
 | Ask | ``AppPairQuestion`` | once, when a look is added: pair the app with the page, or dress it separately |
-| App | ``AppLookEditor`` | the app half — colour, icon, tab bar — afterwards only from the editor's ••• ▸ App |
+| App | ``AppLookEditor`` | the app half — colour, icon, tab bar — straight after adding; afterwards it is the editor's App part |
 
 > Important: ``LookLibrary`` has one commit point per action — saving an edit
 > changes a look, using a look makes it the page's. The editor works on a
@@ -89,7 +90,7 @@ look.
 
 | Mode | What it does |
 |---|---|
-| **Editing** | each zone is outlined; a tap opens its controls |
+| **Editing** | quiet: the page as it is, each part a tap away from its tools; stickers drag straight away, and a tap selects one, with a handle that sizes and turns it |
 | **Arranging** | sections wiggle, lift and move; stickers follow a finger, a pinch and a twist |
 
 ### The app half
@@ -99,6 +100,9 @@ what the rest of the app wears with it (``AppLook``) — the tint on every
 control, the Home Screen icon (``AppIconChoice``) and how the tab bar behaves
 (``TabBarBehaviour``). Paired, the app follows the page: the Flavor's accent,
 the icon nearest the Flavor, the usual bar. Any choice made by hand unpairs it.
+Orbita follows the Flavor's colour only in looks made since it came in colours
+(``AppLook/colouredOrbit``): a look saved before keeps the classic blue icon, so
+an update never changes anyone's Home Screen, until they pick Automatica again.
 
 > Note: The icon is set once, when Personalizza closes, never while swiping
 > through looks: the system tells the student about every change with an alert
@@ -147,8 +151,10 @@ content
 - ``LookEditor``
 - ``AppPairQuestion``
 - ``AppLookEditor``
+- ``LookPart``
+- ``LookTool``
+- ``LookToolView``
 - ``CustomizePage``
-- ``CustomizeControls``
 - ``SectionFormPicker``
 - ``TodayLanding``
 

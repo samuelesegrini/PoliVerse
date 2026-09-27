@@ -72,6 +72,20 @@ nonisolated struct PlacedSticker: Codable, Equatable, Hashable, Sendable, Identi
         self.content = content
     }
 
+    /// A new sticker placed, sized and turned like another.
+    ///
+    /// - Parameters:
+    ///   - id: Its identity.
+    ///   - content: What the sticker is.
+    ///   - other: The sticker whose place, size and turn it takes.
+    init(id: UUID, content: Content, placedLike other: PlacedSticker) {
+        self.init(id: id, content: content)
+        x = other.x
+        y = other.y
+        size = other.size
+        rotation = other.rotation
+    }
+
     /// The range a sticker's size is clamped to.
     static let sizes = 0.2...0.9
     /// The range a sticker's turn is clamped to, in degrees.
@@ -85,6 +99,14 @@ nonisolated struct PlacedSticker: Codable, Equatable, Hashable, Sendable, Identi
         sticker.size = size.clamped(to: Self.sizes)
         sticker.rotation = rotation.clamped(to: Self.rotations)
         return sticker
+    }
+}
+
+/// Telling an emoji sticker from an image one.
+nonisolated extension PlacedSticker.Content {
+    /// True for an emoji sticker.
+    var isEmoji: Bool {
+        if case .emoji = self { true } else { false }
     }
 }
 
@@ -139,6 +161,46 @@ nonisolated extension TodayStyle {
     /// - Parameter id: Which sticker.
     mutating func removeSticker(_ id: UUID) {
         stickers.removeAll { $0.id == id }
+    }
+
+    /// Does one of the selected sticker's actions.
+    ///
+    /// - Parameters:
+    ///   - id: Which sticker.
+    ///   - edit: What to do to it.
+    /// - Returns: The sticker selected afterwards: the copy after a duplicate,
+    ///   none after a remove, else the same one.
+    @discardableResult
+    mutating func edit(sticker id: UUID, _ edit: StickerEdit) -> UUID? {
+        guard let index = stickers.firstIndex(where: { $0.id == id }) else { return nil }
+        switch edit {
+        case .smaller:
+            updateSticker(id) { $0.size -= StickerEdit.sizeStep }
+        case .bigger:
+            updateSticker(id) { $0.size += StickerEdit.sizeStep }
+        case .turn:
+            // Past the last turn one way, round to the other.
+            updateSticker(id) {
+                $0.rotation = $0.rotation + StickerEdit.turnStep > PlacedSticker.rotations.upperBound
+                    ? PlacedSticker.rotations.lowerBound
+                    : $0.rotation + StickerEdit.turnStep
+            }
+        case .duplicate:
+            guard stickers.count < Self.maxStickers else { return id }
+            // A little down and to the right, so both show.
+            var copy = PlacedSticker(id: UUID(), content: stickers[index].content, placedLike: stickers[index])
+            copy.x += 0.12
+            copy.y += 0.1
+            stickers.append(copy.clamped())
+            return copy.id
+        case .front:
+            let sticker = stickers.remove(at: index)
+            stickers.append(sticker)
+        case .remove:
+            removeSticker(id)
+            return nil
+        }
+        return id
     }
 
     /// Beyond this the stack hides more than it shows.
@@ -221,4 +283,14 @@ nonisolated extension Comparable {
     func clamped(to range: ClosedRange<Self>) -> Self {
         min(max(self, range.lowerBound), range.upperBound)
     }
+}
+
+/// What can be done to the sticker selected on the page, beyond dragging it.
+nonisolated enum StickerEdit: CaseIterable, Sendable {
+    case smaller, bigger, turn, duplicate, front, remove
+
+    /// How much Più grande and Più piccolo change the size.
+    static let sizeStep = 0.08
+    /// How far Ruota turns, in degrees.
+    static let turnStep = 10.0
 }

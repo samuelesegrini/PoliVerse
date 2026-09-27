@@ -60,6 +60,1266 @@
     " in %@" : {
 
     },
+    "Accento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accent"
+          }
+        }
+      }
+    },
+    "Altri colori" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More Colours"
+          }
+        }
+      }
+    },
+    "Annulla modifica" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo"
+          }
+        }
+      }
+    },
+    "Anteprima su" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview On"
+          }
+        }
+      }
+    },
+    "Aspetto della Home" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home Screen Look"
+          }
+        }
+      }
+    },
+    "Automatica" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic"
+          }
+        }
+      }
+    },
+    "Automatica segue il colore del Flavor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic follows the Flavor's colour."
+          }
+        }
+      }
+    },
+    "Automatico" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic"
+          }
+        }
+      }
+    },
+    "Automatico: segue il Flavor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic: follows the Flavor"
+          }
+        }
+      }
+    },
+    "Barra di Oggi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's Bar"
+          }
+        }
+      }
+    },
+    "Barra su iPhone" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tab Bar on iPhone"
+          }
+        }
+      }
+    },
+    "Carico le sedi…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading campuses…"
+          }
+        }
+      }
+    },
+    "Cerco il tuo piano…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finding your plan…"
+          }
+        }
+      }
+    },
+    "Circuito" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Circuit"
+          }
+        }
+      }
+    },
+    "Colorata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tinted"
+          }
+        }
+      }
+    },
+    "Colore %lld, riga %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour %lld, row %lld"
+          }
+        }
+      }
+    },
+    "Colore della data" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date Colour"
+          }
+        }
+      }
+    },
+    "Colore dell’app" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Colour"
+          }
+        }
+      }
+    },
+    "Colore d’accento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accent Colour"
+          }
+        }
+      }
+    },
+    "Colore principale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Main Colour"
+          }
+        }
+      }
+    },
+    "Come la vedi con le icone scure, colorate o trasparenti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How it looks with dark, tinted or clear icons."
+          }
+        }
+      }
+    },
+    "Come le altre" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Like the Others"
+          }
+        }
+      }
+    },
+    "compatta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "compact"
+          }
+        }
+      }
+    },
+    "Corso di studi e piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Degree course and plan"
+          }
+        }
+      }
+    },
+    "Da scegliere" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not chosen"
+          }
+        }
+      }
+    },
+    "Dal libretto e dal Manifesto degli studi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From your transcript and the Manifesto degli studi"
+          }
+        }
+      }
+    },
+    "Dimensioni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Size"
+          }
+        }
+      }
+    },
+    "Dock" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock"
+          }
+        }
+      }
+    },
+    "Dove _studi_" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where you _study_"
+          }
+        }
+      }
+    },
+    "Duplica" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicate"
+          }
+        }
+      }
+    },
+    "Elementi: %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Items: %lld"
+          }
+        }
+      }
+    },
+    "Elimina Flavor…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Flavor…"
+          }
+        }
+      }
+    },
+    "Eliminare il Flavor?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete the Flavor?"
+          }
+        }
+      }
+    },
+    "Espandi la barra laterale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand Sidebar"
+          }
+        }
+      }
+    },
+    "Forma della data" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date Layout"
+          }
+        }
+      }
+    },
+    "I tuoi studi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your studies"
+          }
+        }
+      }
+    },
+    "Il colore dei pulsanti e dei collegamenti in tutta l’app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The colour of buttons and links across the app."
+          }
+        }
+      }
+    },
+    "Il Flavor torna com’era quando hai aperto Personalizza." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Flavor goes back to how it was when you opened Personalizza."
+          }
+        }
+      }
+    },
+    "Il mio Flavor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My Flavor"
+          }
+        }
+      }
+    },
+    "Il piano approvato (PSPA) decide le schede dei corsi, il syllabus e l’orario personalizzato." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The approved plan (PSPA) decides the course pages, the syllabus and the personal timetable."
+          }
+        }
+      }
+    },
+    "Il piano approvato (PSPA) decide le schede dei corsi, il syllabus e l’orario personalizzato; la sede è dove si aprono le aule libere." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The approved plan (PSPA) decides the course pages, the syllabus and the personal timetable; the campus is where free classrooms open."
+          }
+        }
+      }
+    },
+    "Il resto del testo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Rest of the Text"
+          }
+        }
+      }
+    },
+    "Il tuo saluto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Greeting"
+          }
+        }
+      }
+    },
+    "Iperspazio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hyperspace"
+          }
+        }
+      }
+    },
+    "L'app prende colore, icona e barra dal Flavor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The app takes its colour, icon and tab bar from the Flavor."
+          }
+        }
+      }
+    },
+    "L'icona nei tuoi colori" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Icon in Your Colours"
+          }
+        }
+      }
+    },
+    "La sede è dove si aprono le aule libere." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The campus is where free classrooms open."
+          }
+        }
+      }
+    },
+    "La tua sede" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your campus"
+          }
+        }
+      }
+    },
+    "Le modifiche a questo Flavor non verranno salvate." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The changes to this Flavor won't be saved."
+          }
+        }
+      }
+    },
+    "Lo trovi di nuovo per qualche secondo, con Annulla nella galleria." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For a few seconds you can bring it back with Undo in the gallery."
+          }
+        }
+      }
+    },
+    "Luce" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light"
+          }
+        }
+      }
+    },
+    "Modifica gli sticker" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Stickers"
+          }
+        }
+      }
+    },
+    "Modifica il testo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Text"
+          }
+        }
+      }
+    },
+    "Modificato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edited"
+          }
+        }
+      }
+    },
+    "Motivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pattern"
+          }
+        }
+      }
+    },
+    "Nascondi la sezione" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Section"
+          }
+        }
+      }
+    },
+    "Nascosta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hidden"
+          }
+        }
+      }
+    },
+    "Nascosto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hidden"
+          }
+        }
+      }
+    },
+    "Nel carattere della data e nel tuo colore." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In the date's typeface and your colour."
+          }
+        }
+      }
+    },
+    "Nel colore della data" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In the Date's Colour"
+          }
+        }
+      }
+    },
+    "Neon" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neon"
+          }
+        }
+      }
+    },
+    "Nessun saluto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Greeting"
+          }
+        }
+      }
+    },
+    "Nessuna" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        }
+      }
+    },
+    "Non è il mio piano: scegli" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not my plan: choose"
+          }
+        }
+      }
+    },
+    "Olografico" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Holographic"
+          }
+        }
+      }
+    },
+    "Oppure tocca una parte dell’anteprima." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Or tap a part of the preview."
+          }
+        }
+      }
+    },
+    "Orbita" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orbit"
+          }
+        }
+      }
+    },
+    "Orbita, Giorno e Vicino in dodici colori, o un'icona speciale. Con Automatica l'app prende quella più vicina al colore del tuo Flavor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orbita, Giorno and Vicino in twelve colours, or a special icon. With Automatic the app takes the one closest to your Flavor's colour."
+          }
+        }
+      }
+    },
+    "Osservatorio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Observatory"
+          }
+        }
+      }
+    },
+    "Parti del Flavor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flavor Parts"
+          }
+        }
+      }
+    },
+    "Pelle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leather"
+          }
+        }
+      }
+    },
+    "Per le aule libere" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For free classrooms"
+          }
+        }
+      }
+    },
+    "Personalizza, tutto nuovo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizza, All New"
+          }
+        }
+      }
+    },
+    "Più" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More"
+          }
+        }
+      }
+    },
+    "Più grande" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bigger"
+          }
+        }
+      }
+    },
+    "Più piccolo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smaller"
+          }
+        }
+      }
+    },
+    "Porta in primo piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bring to Front"
+          }
+        }
+      }
+    },
+    "Predefinita" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default"
+          }
+        }
+      }
+    },
+    "Principale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Main"
+          }
+        }
+      }
+    },
+    "Principale e accento vengono dai suoi colori." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The main and accent colours come from its colours."
+          }
+        }
+      }
+    },
+    "Riduci la barra laterale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse Sidebar"
+          }
+        }
+      }
+    },
+    "Ripeti modifica" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redo"
+          }
+        }
+      }
+    },
+    "Ripristina i colori" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Colours"
+          }
+        }
+      }
+    },
+    "Ripristina il Flavor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Flavor"
+          }
+        }
+      }
+    },
+    "Ripristina il tema" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Theme"
+          }
+        }
+      }
+    },
+    "Ripristina la data" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Date"
+          }
+        }
+      }
+    },
+    "Ripristina le schede" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Cards"
+          }
+        }
+      }
+    },
+    "Ripristina lo sfondo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Background"
+          }
+        }
+      }
+    },
+    "Ripristina l’app" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset App"
+          }
+        }
+      }
+    },
+    "Ripristina saluto e accessorio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Greeting and Accessory"
+          }
+        }
+      }
+    },
+    "Ripristina tutto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset All"
+          }
+        }
+      }
+    },
+    "Ruota" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rotate"
+          }
+        }
+      }
+    },
+    "Scarta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discard"
+          }
+        }
+      }
+    },
+    "Scartare le modifiche a “%@”?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discard the changes to “%@”?"
+          }
+        }
+      }
+    },
+    "Scegli corso e piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose course and plan"
+          }
+        }
+      }
+    },
+    "Scegli una foto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a Photo"
+          }
+        }
+      }
+    },
+    "Scelta a mano. Automatica la riabbina al Flavor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chosen by hand. Automatic pairs it with the Flavor again."
+          }
+        }
+      }
+    },
+    "Schede" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cards"
+          }
+        }
+      }
+    },
+    "Schermata Home" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home Screen"
+          }
+        }
+      }
+    },
+    "Sede preferita" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favourite campus"
+          }
+        }
+      }
+    },
+    "Segue il colore del Flavor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Follows the Flavor's colour."
+          }
+        }
+      }
+    },
+    "Senza nome" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Untitled"
+          }
+        }
+      }
+    },
+    "Sfondo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background"
+          }
+        }
+      }
+    },
+    "Solo i colori" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only the Colours"
+          }
+        }
+      }
+    },
+    "Solo la data" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only the Date"
+          }
+        }
+      }
+    },
+    "Solo lo sfondo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only the Background"
+          }
+        }
+      }
+    },
+    "Sopra la data, al posto del saluto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Above the date, in place of the greeting."
+          }
+        }
+      }
+    },
+    "Spettro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spectrum"
+          }
+        }
+      }
+    },
+    "Sposta a destra" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move right"
+          }
+        }
+      }
+    },
+    "Sposta a sinistra" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move left"
+          }
+        }
+      }
+    },
+    "Strumenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tools"
+          }
+        }
+      }
+    },
+    "Su iPad e Mac le sezioni stanno nella barra laterale." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On iPad and Mac the sections sit in the sidebar."
+          }
+        }
+      }
+    },
+    "Sulla pagina, in ordine" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On the page, in order"
+          }
+        }
+      }
+    },
+    "Tema" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Theme"
+          }
+        }
+      }
+    },
+    "Temi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Themes"
+          }
+        }
+      }
+    },
+    "Tieni premuto sulla pagina per spostarli, ingrandirli e ruotarli." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touch and hold the page to move, resize and rotate them."
+          }
+        }
+      }
+    },
+    "Tinto colora lo sfondo; Contrasto rende testo e bordi più netti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tinted colours the background; Contrast makes text and edges sharper."
+          }
+        }
+      }
+    },
+    "Trascina ≡ per riordinare. Tocca una sezione per le sue opzioni." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag ≡ to reorder. Tap a section for its options."
+          }
+        }
+      }
+    },
+    "Trascinali sulla pagina; toccane uno per le sue azioni e la maniglia che lo ingrandisce e lo ruota." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag them on the page; tap one for its actions and the handle that resizes and turns it."
+          }
+        }
+      }
+    },
+    "Trascinali sulla pagina; toccane uno per sceglierlo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag them on the page; tap one to select it."
+          }
+        }
+      }
+    },
+    "Trascinalo sulla pagina; la maniglia sull’angolo lo ingrandisce e lo ruota." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag it on the page; the handle on its corner resizes and turns it."
+          }
+        }
+      }
+    },
+    "Trasparente" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
+          }
+        }
+      }
+    },
+    "Tutte le parti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Parts"
+          }
+        }
+      }
+    },
+    "Usa “%@”" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use “%@”"
+          }
+        }
+      }
+    },
+    "Vedi la pagina mentre la cambi, una parte alla volta: tema, colore, sfondo, data, saluto, schede e app. Gli sticker si trascinano sulla pagina, ogni modifica si annulla, e su iPad e Mac hai barra laterale e inspector. Lo stile vale in ogni schermata." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See the page as you change it, one part at a time: theme, colour, background, date, greeting, cards and app. Stickers drag right on the page, every change can be undone, and on iPad and Mac there's a sidebar and an inspector. Your style applies on every screen."
+          }
+        }
+      }
+    },
+    "Vicino" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close up"
+          }
+        }
+      }
+    },
     "—" : {
       "localizations" : {
         "en" : {
@@ -1601,12 +2861,6 @@
     "Abbina all'app" : {
 
     },
-    "Abbinata" : {
-
-    },
-    "Abbinata a Oggi" : {
-
-    },
     "Accanto alla data" : {
       "localizations" : {
         "en" : {
@@ -2499,9 +3753,6 @@
     "Annulla il download" : {
 
     },
-    "Annullare le modifiche?" : {
-
-    },
     "Annunci, avvisi e soluzioni" : {
       "localizations" : {
         "en" : {
@@ -3084,9 +4335,6 @@
           }
         }
       }
-    },
-    "Aspetto e testo" : {
-
     },
     "Assente" : {
       "localizations" : {
@@ -3900,9 +5148,6 @@
         }
       }
     },
-    "Carta e motivo" : {
-
-    },
     "Carte e motivi" : {
 
     },
@@ -4542,16 +5787,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Colore, carattere e materiale per tutta l'app; sfondo e adesivi per la tua giornata."
-          }
-        }
-      }
-    },
-    "Colore, icona e barra seguono Oggi, e cambiano quando cambi Flavor." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Colour, icon and tab bar follow Today, and change when you change Flavor."
           }
         }
       }
@@ -5996,9 +7231,6 @@
           }
         }
       }
-    },
-    "Disponi le sezioni" : {
-
     },
     "Disponi sulla pagina" : {
       "localizations" : {
@@ -7847,9 +9079,6 @@
         }
       }
     },
-    "Il colore, il carattere e il materiale che scegli per Oggi valgono adesso in ogni schermata: carriera, corsi, ricerca e impostazioni comprese." : {
-
-    },
     "Il docente non permette di scaricare questa registrazione. Si può guardare in streaming." : {
 
     },
@@ -9227,9 +10456,6 @@
         }
       }
     },
-    "L'app ha scelte sue. Tocca Abbinata per farle seguire di nuovo Oggi." : {
-
-    },
     "L’app non sta occupando spazio su questo dispositivo." : {
       "localizations" : {
         "en" : {
@@ -9240,12 +10466,12 @@
         }
       }
     },
-    "L'app prende colore, icona e barra da questo Flavor. Puoi cambiarli quando vuoi da ••• ▸ App." : {
+    "L'app prende colore, icona e barra da questo Flavor. Puoi cambiarli quando vuoi nella parte App." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The app takes its colour, icon and tab bar from this Flavor. Change them any time from ••• ▸ App."
+            "value" : "The app takes its colour, icon and tab bar from this Flavor. Change them any time in the App part."
           }
         }
       }
@@ -10147,9 +11373,6 @@
       }
     },
     "Lo spazio condiviso è dove l’app lascia orario e carriera per i widget: senza, l’app funziona ma i widget restano vuoti." : {
-
-    },
-    "Luce" : {
 
     },
     "Luminoso" : {
@@ -13088,9 +14311,6 @@
     "Personalizza l'app" : {
 
     },
-    "Personalizza, su tutta l'app" : {
-
-    },
     "Personalizzato" : {
       "localizations" : {
         "en" : {
@@ -15138,9 +16358,6 @@
     "Scorrendo, la barra si riduce alla scheda in cui sei." : {
 
     },
-    "Scorri di lato per cambiare la luce" : {
-
-    },
     "Scrivi" : {
 
     },
@@ -16291,9 +17508,6 @@
         }
       }
     },
-    "Superficie delle schede" : {
-
-    },
     "Superficie e contenuto" : {
       "localizations" : {
         "en" : {
@@ -16477,16 +17691,6 @@
     },
     "tieni premuto per esplorare" : {
 
-    },
-    "Tieni premuto sulla pagina per spostarli, ingrandirli e ruotarli." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Touch and hold the page to move, resize and rotate them."
-          }
-        }
-      }
     },
     "Tinta" : {
       "localizations" : {

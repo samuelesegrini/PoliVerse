@@ -12,8 +12,7 @@ import UIKit
 /// it as it changes. Choosing any of them by hand unpairs it, and from then on
 /// the app keeps its own.
 ///
-/// Asked once, when a look is added; afterwards only from the editor's
-/// ••• ▸ App.
+/// Asked once, when a look is added; afterwards it is the editor's App part.
 nonisolated struct AppLook: Codable, Equatable, Hashable, Sendable {
     /// The app takes its tint, icon and bar from the page.
     var paired = true
@@ -28,9 +27,21 @@ nonisolated struct AppLook: Codable, Equatable, Hashable, Sendable {
     var iconStyle = AppIconStyle.orbit
     /// The special icon worn in the Speciali shape, kept like the shape.
     var special = SpecialIcon.neon
+    /// Paired, Orbita takes the colour nearest the Flavor. Looks saved before
+    /// Orbita came in colours keep its classic blue, so updating the app never
+    /// changes anyone's icon, until Automatica is chosen again.
+    var colouredOrbit = true
 
     /// Paired: the app follows the page.
     init() {}
+
+    /// The app half of a look saved before it had one: paired, as it was, and
+    /// with Orbita in its classic blue.
+    static var saved: AppLook {
+        var app = AppLook()
+        app.colouredOrbit = false
+        return app
+    }
 
     /// Reads an app half, keeping the defaults for anything a stored look does not name.
     ///
@@ -44,11 +55,13 @@ nonisolated struct AppLook: Codable, Equatable, Hashable, Sendable {
         tabBar = (try? container.decodeIfPresent(TabBarBehaviour.self, forKey: .tabBar)) ?? tabBar
         iconStyle = (try? container.decodeIfPresent(AppIconStyle.self, forKey: .iconStyle)) ?? iconStyle
         special = (try? container.decodeIfPresent(SpecialIcon.self, forKey: .special)) ?? special
+        // Saved before Orbita came in colours: it stays blue.
+        colouredOrbit = (try? container.decodeIfPresent(Bool.self, forKey: .colouredOrbit)) ?? false
     }
 }
 
-/// The colours the dial and close-up icons come in: their own ground and
-/// one per Flavor swatch.
+/// The colours Orbita, the dial and the close-up come in: their own ground
+/// and one per Flavor swatch.
 ///
 /// Built by `scripts/build-alternate-icons.py`, which keeps the ids here and
 /// the asset names in step.
@@ -81,12 +94,14 @@ nonisolated enum AppIconChoice: String, Codable, CaseIterable, Identifiable, Sen
 
     /// The name the system knows the icon by in a shape; `nil` for the primary icon.
     ///
-    /// Orbita is the shipped icon alone; the dial and the close-up come in
-    /// their own ground and in every swatch. The special icons are not colours,
-    /// so their shape names none here.
+    /// Every shape comes in its own ground and in every swatch; Orbita's own
+    /// ground is the shipped icon. The special icons are not colours, so
+    /// their shape names none here.
     func alternateIconName(in style: AppIconStyle) -> String? {
         switch style {
-        case .orbit, .special: return nil
+        case .special: return nil
+        case .orbit:
+            return self == .classic ? nil : "AppIcon-Orbit-" + rawValue.prefix(1).uppercased() + rawValue.dropFirst()
         case .dial, .closeUp:
             let base = "AppIcon-\(style.assetName)"
             return self == .classic ? base : base + "-" + rawValue.prefix(1).uppercased() + rawValue.dropFirst()
@@ -96,16 +111,18 @@ nonisolated enum AppIconChoice: String, Codable, CaseIterable, Identifiable, Sen
     /// The small copy drawn inside the app, in a shape.
     func previewImage(in style: AppIconStyle) -> String {
         switch style {
-        case .orbit, .special: "AppIconPreview-classic"
+        case .special: "AppIconPreview-classic"
+        case .orbit: self == .classic ? "AppIconPreview-classic" : "AppIconPreview-orbit-\(rawValue)"
         case .dial, .closeUp: "AppIconPreview-\(style.rawValue)-\(rawValue)"
         }
     }
 
-    /// The colours a shape comes in: none to pick for Orbita and the special icons.
+    /// The colours a shape comes in: every one for the three shapes, none for
+    /// the special icons, which are pictures of their own.
     static func choices(in style: AppIconStyle) -> [AppIconChoice] {
         switch style {
-        case .orbit, .special: []
-        case .dial, .closeUp: allCases
+        case .special: []
+        case .orbit, .dial, .closeUp: allCases
         }
     }
 
@@ -171,7 +188,7 @@ nonisolated enum AppIconStyle: String, Codable, CaseIterable, Identifiable, Send
     /// The part of the asset names that names the shape.
     var assetName: String {
         switch self {
-        case .orbit: ""
+        case .orbit: "Orbit"
         case .dial: "Dial"
         case .closeUp: "CloseUp"
         case .special: ""
@@ -248,8 +265,13 @@ nonisolated extension TodayStyle {
     /// The colour the app is tinted from: the page's Flavor while paired.
     var appFlavor: Flavor { app.paired ? flavor : (app.tint ?? flavor) }
 
-    /// The icon the app wears: the one nearest the Flavor while paired.
-    var appIcon: AppIconChoice { app.paired ? .nearest(to: flavor) : app.icon }
+    /// The icon the app wears: the one nearest the Flavor while paired, but
+    /// Orbita's classic blue for a look saved before Orbita came in colours.
+    var appIcon: AppIconChoice {
+        guard app.paired else { return app.icon }
+        if app.iconStyle == .orbit && !app.colouredOrbit { return .classic }
+        return .nearest(to: flavor)
+    }
 
     /// How the tab bar behaves: the usual while paired.
     var appTabBar: TabBarBehaviour { app.paired ? .minimizes : app.tabBar }
@@ -281,7 +303,8 @@ nonisolated extension TodayStyle {
         appIconStyle == .special ? app.special.previewImage : appIcon.previewImage(in: appIconStyle)
     }
 
-    /// Puts the app back on the page, dropping its own choices but the icon's shape.
+    /// Puts the app back on the page, dropping its own choices but the icon's
+    /// shape. Chosen by hand, so Orbita follows the Flavor's colour from then on.
     mutating func pairApp() {
         let (style, special) = (app.iconStyle, app.special)
         app = AppLook()

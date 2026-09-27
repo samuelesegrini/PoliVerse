@@ -33,7 +33,7 @@ struct NewLookGallery: View {
                     shelf("Speciali", "Cambiano tutta l’app, pagina per pagina. Ne regoli poche cose.") {
                         rail {
                             ForEach(SpecialFlavor.allCases) { special in
-                                tile(specialLook(special), caption: Text(special.title), width: Self.specialWidth,
+                                tile(.starting(special), caption: Text(special.title), width: Self.specialWidth,
                                      id: "customize-new-special-\(special.rawValue)")
                             }
                         }
@@ -111,7 +111,7 @@ struct NewLookGallery: View {
                 .accessibilityIdentifier("customize-new-duplicate")
             PhotosPicker(selection: $photoItem, matching: .images) { WayLabel(title: "Da una foto", symbol: "photo") }
                 .accessibilityIdentifier("customize-new-photo")
-            Button { pick(surprise) } label: { WayLabel(title: "Casuale", symbol: "shuffle") }
+            Button { pick(.surprise()) } label: { WayLabel(title: "Casuale", symbol: "shuffle") }
                 .accessibilityIdentifier("customize-new-shuffle")
             Button { pick(TodayStyle()) } label: { WayLabel(title: "Vuota", symbol: "square.dashed") }
                 .accessibilityIdentifier("customize-new-blank")
@@ -170,28 +170,10 @@ struct NewLookGallery: View {
         Array(TodayStyle.presets.dropFirst().filter { $0.name != current.name }.prefix(3))
     }
 
-    /// A special Flavor at its starting knobs, named after it.
-    private func specialLook(_ special: SpecialFlavor) -> TodayStyle {
-        var look = TodayStyle()
-        look.special = special
-        look.name = String(localized: special.name)
-        return look
-    }
-
     /// The look in use, as a new look beside it.
     private var copy: TodayStyle {
         var look = current
         look.name = current.name.isEmpty ? "" : String("\(current.name) 2".prefix(TodayStyle.nameLimit))
-        return look
-    }
-
-    /// A theme's page in a random colour, light and typeface.
-    private var surprise: TodayStyle {
-        var look = TodayStyle.presets.randomElement() ?? TodayStyle()
-        look.name = ""
-        look.flavor = Flavor.swatches.randomElement()?.flavor ?? look.flavor
-        look.appearance = LookEditor.variants.randomElement() ?? look.appearance
-        look.dateFont = TodayStyle.DateFont.allCases.randomElement() ?? look.dateFont
         return look
     }
 

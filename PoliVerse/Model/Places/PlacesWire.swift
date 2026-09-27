@@ -86,6 +86,17 @@ nonisolated struct BuildingDTO: Decodable, Sendable {
     }
 }
 
+/// One site as the maps service's site catalogue sends it: a city, or a campus
+/// within Milan, grouping several addresses.
+nonisolated struct SiteDTO: Decodable, Sendable {
+    /// The site code, which campuses refer to.
+    let csis: String?
+    /// The site's name, for example "Milano Bovisa" or "Como".
+    let nome: String?
+    /// Whether the catalogue publishes this site.
+    let visibile: String?
+}
+
 /// One campus as the maps service's campus catalogue sends it.
 nonisolated struct CampusDTO: Decodable, Sendable {
     /// The campus code, which buildings refer to.

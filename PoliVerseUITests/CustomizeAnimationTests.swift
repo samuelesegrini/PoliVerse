@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 
 /// Walks Personalizza from start to finish and keeps a screenshot of every
@@ -64,29 +65,54 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         shot(app, "03-editor")
 
-        // A zone opens its own controls in a small sheet.
+        // A zone opens its part's tools under the page.
         zone(app, "date").tap()
         settle()
         shot(app, "04-zone")
-        reveal(app.buttons["date-font-mono"].firstMatch, in: app).tap()
+        reveal(app.buttons["date-font-mono"].firstMatch, in: app, tool: "typeface").tap()
         settle()
         shot(app, "05-font")
-        closePanel(app)
-        XCTAssertTrue(done.exists, "Closing a panel stopped editing")
 
-        // A sideways swipe is the next light.
-        app.scrollViews.firstMatch.swipeLeft()
+        // The capsule runs to another part; Colore's second tool is the light.
+        switchTo(app, "colour")
+        tool(app, "Luce")
+        reveal(app.buttons["appearance-dark"].firstMatch, in: app, tool: "light").tap()
         settle()
         shot(app, "06-light")
 
-        // Ripristina, in •••, goes back to where editing started.
-        app.buttons["customize-editor-more"].tap()
-        let restore = app.buttons["Ripristina"].firstMatch
-        XCTAssertTrue(restore.waitForExistence(timeout: 3))
-        XCTAssertTrue(restore.isEnabled, "Editing offered no way back to how the look was")
-        restore.tap()
+        // Undo takes the light back, redo brings it again.
+        let undo = app.buttons["customize-editor-undo"]
+        XCTAssertTrue(undo.isEnabled, "A change left nothing to undo")
+        undo.tap()
+        XCTAssertTrue(app.buttons["customize-editor-redo"].isEnabled, "Undoing left nothing to redo")
+        app.buttons["customize-editor-redo"].tap()
         settle()
-        shot(app, "07-restored")
+
+        // The part's own reset.
+        app.buttons["customize-part-reset"].tap()
+        settle()
+
+        // Tema: the whole page in one go.
+        switchTo(app, "theme")
+        app.buttons["theme-preset-3"].firstMatch.tap()
+        settle()
+        shot(app, "06b-theme")
+        allParts(app)
+        shot(app, "06c-parts")
+        XCTAssertTrue(done.exists, "Going back to the parts stopped editing")
+
+        // Ripristina tutto, in •••, goes back to where editing started. The
+        // iPad's bar has no •••: each part resets in the inspector.
+        if !isWide {
+            app.buttons["customize-editor-more"].tap()
+            let restore = app.buttons["Ripristina tutto"].firstMatch
+            XCTAssertTrue(restore.waitForExistence(timeout: 3))
+            XCTAssertTrue(restore.isEnabled, "Editing offered no way back to how the look was")
+            XCTAssertTrue(app.buttons["Elimina Flavor…"].firstMatch.exists, "••• offers no way to delete the look")
+            restore.tap()
+            settle()
+            shot(app, "07-restored")
+        }
 
         done.tap()
         settle()
@@ -99,11 +125,11 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         XCTAssertTrue(trash.waitForExistence(timeout: 3) && trash.isHittable, "Pulling the card up showed no trash")
         shot(app, "08b-lifted")
         trash.tap()
-        let undo = app.buttons["customize-undo"]
-        XCTAssertTrue(undo.waitForExistence(timeout: 3), "Deleting offered no way back")
+        let undoDelete = app.buttons["customize-undo"]
+        XCTAssertTrue(undoDelete.waitForExistence(timeout: 3), "Deleting offered no way back")
         shot(app, "08c-deleted")
         XCTAssertFalse(card(app, todayPresetCount - 1).exists, "The look was not deleted")
-        undo.tap()
+        undoDelete.tap()
         settle()
         XCTAssertTrue(card(app, todayPresetCount - 1).exists, "Annulla did not bring the look back")
 
@@ -125,7 +151,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         let icon = app.buttons["app-option-icon"]
         XCTAssertTrue(icon.waitForExistence(timeout: 5), "Personalizza l'app did not open the app half")
         icon.tap()
-        // Orbita comes in one colour; Giorno in every one.
+        // Every shape comes in every colour; pick one of Giorno's.
         app.buttons["Giorno"].firstMatch.tap()
         app.buttons["app-icon-graphite"].firstMatch.tap()
         settle()
@@ -163,7 +189,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         }
     }
 
-    /// Personalises every part of one look through its zones and •••, then uses it.
+    /// Personalises every part of one look through its cards, its zones and •••, then uses it.
     @MainActor func testPersonaliseElements() throws {
         let app = makeApp()
         app.launch()
@@ -175,33 +201,38 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         shot(app, "30-editor")
 
-        // Flavor from a swatch, from the button bottom-left.
-        app.buttons["customize-editor-flavor"].tap()
-        settle()
-        reveal(app.buttons["flavor-#C2386F"].firstMatch, in: app).tap()
+        // Flavor from a swatch, from its card.
+        part(app, "colour")
+        reveal(app.buttons["swatch-#C2386F"].firstMatch, in: app, tool: "main").tap()
         settle()
         shot(app, "31-flavor")
-        closePanel(app)
+        allParts(app)
 
-        // Plotting paper with grain, from •••.
-        menu(app, "Carta e motivo")
-        app.buttons["paper-plot"].firstMatch.tap()
-        reveal(app.sliders["paper-grain"].firstMatch, in: app).adjust(toNormalizedSliderPosition: 0.5)
+        // Plotting paper with grain.
+        part(app, "background")
+        reveal(app.buttons["paper-plot"].firstMatch, in: app, tool: "paper").tap()
+        // A pattern over the paper, as the design allows.
+        tool(app, "Motivo")
+        reveal(app.buttons["motif-dots"].firstMatch, in: app, tool: "motif").tap()
+        tool(app, "Grana")
+        let grain = app.descendants(matching: .any)["paper-grain"].firstMatch
+        XCTAssertTrue(grain.waitForExistence(timeout: 3), "Sfondo has no grain ruler")
+        grain.swipeLeft()
         settle()
         shot(app, "32-paper")
-        closePanel(app)
 
-        // Glowing cards, a tinted light, serif text.
-        menu(app, "Superficie delle schede")
-        app.buttons["material-glow"].firstMatch.tap()
-        closePanel(app)
-        app.scrollViews.firstMatch.swipeLeft()
-        settle()
-        menu(app, "Aspetto e testo")
-        reveal(app.buttons["Con grazie"].firstMatch, in: app).tap()
+        // Glowing cards, then a tinted light and serif text, through the capsule.
+        switchTo(app, "cards")
+        reveal(app.buttons["material-glow"].firstMatch, in: app, tool: "surface").tap()
+        switchTo(app, "colour")
+        tool(app, "Luce")
+        reveal(app.buttons["appearance-tinted"].firstMatch, in: app, tool: "light").tap()
+        switchTo(app, "date")
+        tool(app, "Carattere")
+        reveal(app.buttons["Con grazie"].firstMatch, in: app, tool: "typeface").tap()
         settle()
         shot(app, "33-appearance")
-        closePanel(app)
+        allParts(app)
 
         // A section's card: swipe to another form, turn it over, change the
         // surface and how much it shows.
@@ -220,31 +251,34 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         shot(app, "34d-section-controls")
         app.buttons["form-done"].tap()
         settle()
-        closePanel(app)
+        closeSheet(app)
 
-        // The bar: no profile button. Settings has no switch: it always stays.
+        // The bar, at the end of Sezioni: no profile button. Settings has no switch: it always stays.
         zone(app, "bar").tap()
         settle()
         XCTAssertFalse(app.switches["Impostazioni"].exists, "Settings can still be hidden from the bar")
-        app.switches["Profilo"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        reveal(app.switches["Profilo"].firstMatch, in: app, tool: "sections", sideways: false)
+            .coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
         settle()
-        closePanel(app)
 
         // A greeting of the student's own.
         zone(app, "greeting").tap()
         settle()
-        let custom = reveal(app.buttons["greeting-custom"].firstMatch, in: app)
+        let custom = reveal(app.buttons["greeting-custom"].firstMatch, in: app, tool: "greeting")
         custom.tap()
-        let field = app.textFields.firstMatch
+        // On iPhone writing is a task of its own, its field docked over the keyboard.
+        let field = isWide ? app.textFields.firstMatch : app.textFields["customize-mode-field"].firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 3), "Choosing a custom greeting showed no field")
-        field.tap()
+        if isWide { field.tap() }
+        shot(app, "34e-greeting-task")
         field.typeText("Forza e coraggio\n")
         settle()
-        closePanel(app)
+        allParts(app)
 
-        // Arranging: remove In arrivo, add Esami, drag it above the timetable.
-        app.buttons["customize-editor-more"].tap()
-        let arrange = app.buttons["Disponi le sezioni"].firstMatch
+        // Arranging, from Sezioni: remove In arrivo, add Esami, drag it above the timetable.
+        switchTo(app, "cards")
+        tool(app, "Sezioni")
+        let arrange = reveal(app.buttons["customize-editor-arrange"].firstMatch, in: app, tool: "sections", sideways: false)
         XCTAssertTrue(arrange.waitForExistence(timeout: 3))
         arrange.tap()
         settle()
@@ -268,23 +302,83 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         app.buttons["customize-arrange-done"].tap()
         settle()
 
-        // An accessory: a sticker from the keyboard, then swap to text.
-        zone(app, "stickers").tap()
-        settle()
+        // On iPhone the sections are also a task: the page zooms onto its
+        // cards over their list, and a row opens its settings.
+        if !isWide {
+            reveal(app.buttons["sections-edit"].firstMatch, in: app, tool: "sections", sideways: false).tap()
+            let exams = app.buttons["section-task-exams"].firstMatch
+            XCTAssertTrue(exams.waitForExistence(timeout: 3), "The sections' task does not list Esami")
+            shot(app, "36b-sections-task")
+            exams.tap()
+            XCTAssertTrue(app.descendants(matching: .any)["section-form"].firstMatch.waitForExistence(timeout: 3),
+                          "A section's settings show no forms")
+            app.buttons["section-task-back"].tap()
+            app.buttons["customize-mode-done"].tap()
+            settle()
+        }
+
+        // An accessory: a sticker from the keyboard, then text instead.
+        // With none yet, choosing stickers opens the keyboard straight away.
+        part(app, "greeting")
+        tool(app, "Accanto alla data")
         app.descendants(matching: .any)["date-header-layout"].buttons["Sticker"].firstMatch.tap()
-        reveal(app.buttons["sticker-controls-add"].firstMatch, in: app).tap()
         let keyboard = app.textViews["sticker-keyboard"].firstMatch
         XCTAssertTrue(keyboard.waitForExistence(timeout: 5), "Adding a sticker showed no keyboard field")
         settle()
         keyboard.typeText("🎓")
         settle()
-        back(app)
-        settle()
-        closePanel(app)
         shot(app, "37-sticker")
-        app.buttons["zone-stickers-swap"].firstMatch.tap()
+        if isWide {
+            closeSheet(app)
+        } else {
+            // The stickers' task: the keyboard docked under the zoomed page, then Fine.
+            app.buttons["sticker-keyboard-done"].tap()
+            app.buttons["customize-mode-done"].tap()
+            settle()
+        }
+
+        // On the page a sticker drags straight away; a tap selects it, with its actions.
+        let sticker = app.buttons["page-sticker"].firstMatch
+        XCTAssertTrue(sticker.waitForExistence(timeout: 3), "The sticker is not on the page")
+        let before = sticker.frame.midX
+        sticker.press(forDuration: 0.1, thenDragTo: sticker.coordinate(withNormalizedOffset: CGVector(dx: -1, dy: 0.5)))
         settle()
+        XCTAssertNotEqual(sticker.frame.midX, before, accuracy: 2, "Dragging the sticker on the page did not move it")
+        sticker.tap()
+        if !isWide {
+            // On iPhone the tap starts the stickers' task, the actions above the sticker in two pages.
+            let more = app.buttons["sticker-more"].firstMatch
+            XCTAssertTrue(more.waitForExistence(timeout: 3), "Tapping the sticker showed no actions above it")
+            more.tap()
+        }
+        let bigger = app.buttons["sticker-bigger"].firstMatch
+        XCTAssertTrue(bigger.waitForExistence(timeout: 3), "Tapping the sticker did not select it")
+        bigger.tap()
+        settle()
+        shot(app, "37b-sticker-selected")
+        if !isWide {
+            app.buttons["customize-mode-done"].tap()
+            settle()
+        }
+        app.descendants(matching: .any)["date-header-layout"].buttons["Testo"].firstMatch.tap()
+        settle()
+        if !isWide {
+            // With no words yet, Testo starts their task.
+            let words = app.textFields["customize-mode-field"].firstMatch
+            XCTAssertTrue(words.waitForExistence(timeout: 3), "Choosing text beside the date showed no field")
+            words.typeText("Si parte\n")
+            settle()
+        }
         shot(app, "38-accessory-text")
+        allParts(app)
+
+        // The app half is a part too: an icon by hand, on the Home Screen.
+        part(app, "app")
+        reveal(app.buttons["app-icon-lavender"].firstMatch, in: app, tool: "appIcon").tap()
+        settle()
+        shot(app, "38b-app-icon")
+        XCTAssertTrue(app.buttons["customize-part-reset"].isEnabled, "Choosing an icon left App nothing to reset")
+        allParts(app)
 
         done.tap()
         settle()
@@ -297,42 +391,79 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         XCTAssertTrue(app.buttons["bar-settings"].exists, "The bar lost the settings button")
     }
 
-    /// Scrolls the open panel page until the element can be tapped.
+    /// Scrolls a tool until the element can be tapped: sideways along its
+    /// row first, as the tools under the page scroll, then down, as the
+    /// inspector and the longer tools do.
+    ///
+    /// - Parameters:
+    ///   - element: What to bring into reach.
+    ///   - app: The app.
+    ///   - tool: The tool it is in, by its id; none scrolls the first scroll view.
+    ///   - sideways: Whether to try along the row first.
     @discardableResult
-    @MainActor private func reveal(_ element: XCUIElement, in app: XCUIApplication) -> XCUIElement {
+    @MainActor private func reveal(_ element: XCUIElement, in app: XCUIApplication, tool: String? = nil,
+                                   sideways: Bool = true) -> XCUIElement {
+        let container = tool.map { app.descendants(matching: .any)["tool-\($0)"].firstMatch } ?? app.scrollViews.firstMatch
         var attempts = 0
-        while !element.isHittable && attempts < 8 {
-            app.collectionViews.firstMatch.swipeUp()
+        while !element.isHittable && attempts < 10 {
+            if sideways && attempts < 5 {
+                container.swipeLeft()
+            } else {
+                container.swipeUp()
+            }
             attempts += 1
         }
         return element
-    }
-
-    /// Back from a page pushed inside a panel.
-    @MainActor private func back(_ app: XCUIApplication) {
-        let back = app.buttons["BackButton"].firstMatch
-        XCTAssertTrue(back.waitForExistence(timeout: 3), "The panel page has no back button")
-        back.tap()
     }
 
     @MainActor private func zone(_ app: XCUIApplication, _ id: String) -> XCUIElement {
         app.buttons["zone-\(id)"].firstMatch
     }
 
-    /// Closes the open panel, back to the page.
-    @MainActor private func closePanel(_ app: XCUIApplication) {
-        let close = app.buttons["customize-panel-close"].firstMatch
-        XCTAssertTrue(close.waitForExistence(timeout: 3), "The panel has no close button")
-        close.tap()
+    /// Opens a part from its card in the overview.
+    @MainActor private func part(_ app: XCUIApplication, _ id: String) {
+        let card = app.buttons["customize-part-\(id)"].firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 3), "The overview has no card for \(id)")
+        card.tap()
         settle()
     }
 
-    /// Opens one of the editor's ••• items.
-    @MainActor private func menu(_ app: XCUIApplication, _ item: String) {
-        app.buttons["customize-editor-more"].tap()
-        let button = app.buttons[item].firstMatch
-        XCTAssertTrue(button.waitForExistence(timeout: 3), "••• has no \(item)")
-        button.tap()
+    /// Picks one of the open part's tools by its tab.
+    @MainActor private func tool(_ app: XCUIApplication, _ title: String) {
+        let tab = app.descendants(matching: .any)["customize-tools"].buttons[title].firstMatch
+        XCTAssertTrue(tab.waitForExistence(timeout: 3), "The part has no \(title) tool")
+        tab.tap()
+        settle()
+    }
+
+    /// Goes back from a part's tools to every part. On iPad every part is
+    /// always in the sidebar, so there is nowhere to go back to.
+    @MainActor private func allParts(_ app: XCUIApplication) {
+        guard !isWide else { return }
+        let grid = app.buttons["customize-parts"].firstMatch
+        XCTAssertTrue(grid.waitForExistence(timeout: 3), "The part has no way back to the others")
+        grid.tap()
+        settle()
+    }
+
+    /// Goes to another part: through the capsule on iPhone, the sidebar on iPad.
+    @MainActor private func switchTo(_ app: XCUIApplication, _ id: String) {
+        if isWide {
+            part(app, id)
+        } else {
+            app.buttons["customize-switch-\(id)"].firstMatch.tap()
+            settle()
+        }
+    }
+
+    /// Whether the editor is the iPad's, with a sidebar and an inspector.
+    @MainActor private var isWide: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+
+    /// Closes the sheet over the editor: a section's card or the sticker picker.
+    @MainActor private func closeSheet(_ app: XCUIApplication) {
+        let close = app.buttons["customize-panel-close"].firstMatch
+        XCTAssertTrue(close.waitForExistence(timeout: 3), "The sheet has no close button")
+        close.tap()
         settle()
     }
 
@@ -367,6 +498,74 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         XCTAssertFalse(edit.exists, "Tapping the middle card did not close Personalizza")
         shot(app, "22-single-closed")
+    }
+
+    /// On iPad the parts are a sidebar and the tools an inspector beside the
+    /// page, which can be previewed on an iPhone; standing up, the parts run
+    /// along the top.
+    @MainActor func testWideEditor() throws {
+        try XCTSkipUnless(isWide, "The wide editor is for iPad and Mac")
+        let app = makeApp()
+        app.launch()
+        XCUIDevice.shared.orientation = .landscapeLeft
+
+        let edit = open(app)
+        edit.tap()
+        let done = app.buttons["customize-edit-done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5), "Personalizza did not open the editor")
+        settle()
+        shot(app, "70-wide")
+        XCTAssertTrue(app.buttons["customize-part-theme"].firstMatch.isSelected, "The editor did not open on Tema")
+
+        // A part from the sidebar, its tools in the inspector, then its reset.
+        part(app, "date")
+        reveal(app.buttons["date-font-mono"].firstMatch, in: app, tool: "typeface").tap()
+        settle()
+        shot(app, "71-wide-date")
+        let reset = app.buttons["customize-part-reset"]
+        XCTAssertTrue(reset.isEnabled, "A change left the part nothing to reset")
+        reset.tap()
+        settle()
+        XCTAssertFalse(reset.isEnabled, "Resetting the part left it changed")
+
+        // The page on a Mac's window, then on an iPhone.
+        app.descendants(matching: .any)["customize-preview-device"].buttons["Mac"].firstMatch.tap()
+        settle()
+        shot(app, "71b-wide-mac")
+        app.descendants(matching: .any)["customize-preview-device"].buttons["iPhone"].firstMatch.tap()
+        settle()
+        shot(app, "72-wide-iphone")
+
+        // The sidebar folds to the parts' pictures, and opens again.
+        let toggle = app.buttons["customize-sidebar-toggle"]
+        toggle.tap()
+        settle()
+        shot(app, "73-wide-folded")
+        toggle.tap()
+        settle()
+
+        // App: every tool in the inspector, the Home Screen beside it.
+        part(app, "app")
+        XCTAssertTrue(app.descendants(matching: .any)["customize-app-view"].firstMatch.exists, "App offers no Home Screen preview")
+        app.descendants(matching: .any)["customize-home-look"].buttons["Scura"].firstMatch.tap()
+        reveal(app.buttons["app-icon-lavender"].firstMatch, in: app, tool: "appIcon").tap()
+        settle()
+        shot(app, "72b-wide-app")
+        app.descendants(matching: .any)["customize-app-view"].buttons["Oggi"].firstMatch.tap()
+        settle()
+
+        // A tap on the page opens its part.
+        zone(app, "greeting").tap()
+        settle()
+        XCTAssertTrue(app.buttons["customize-part-greeting"].firstMatch.isSelected, "Tapping the greeting did not open Saluto")
+
+        XCUIDevice.shared.orientation = .portrait
+        settle()
+        shot(app, "74-wide-portrait")
+
+        done.tap()
+        settle()
+        XCTAssertTrue(edit.waitForExistence(timeout: 5), "Fine did not return to the gallery")
     }
 
     /// The places are reached from the tabs, and the profile from any root.
