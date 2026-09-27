@@ -74,7 +74,7 @@ struct LookScreen: View {
 }
 
 /// What the rest of the app looks like in a look: the Corsi tab, or the Home
-/// Screen with the look's icon on it.
+/// Screen — or a Mac's Dock — with the look's icon on it.
 struct AppPreview: View {
     /// What the preview shows.
     enum Mode: Equatable {
@@ -82,6 +82,43 @@ struct AppPreview: View {
         case app
         /// The Home Screen, for the icon.
         case homeScreen
+        /// A Mac's desktop, with the icon in the Dock.
+        case dock
+    }
+
+    /// How the Home Screen draws its icons, as the system lets the student choose.
+    enum HomeLook: String, CaseIterable, Identifiable, Hashable {
+        /// The icons as drawn.
+        case light
+        /// Darkened, on a dimmed wallpaper.
+        case dark
+        /// In one colour.
+        case tinted
+        /// Clear glass.
+        case clear
+
+        /// The choice's identity, which is its raw value.
+        var id: String { rawValue }
+
+        /// What the choice is called.
+        var title: LocalizedStringKey {
+            switch self {
+            case .light: "Predefinita"
+            case .dark: "Scura"
+            case .tinted: "Colorata"
+            case .clear: "Trasparente"
+            }
+        }
+
+        /// How much the wallpaper is dimmed behind the icons.
+        var shade: Double {
+            switch self {
+            case .light: 0
+            case .dark: 0.5
+            case .tinted: 0.55
+            case .clear: 0.2
+            }
+        }
     }
 
     /// The look whose app half is drawn.
@@ -90,17 +127,20 @@ struct AppPreview: View {
     var mode = Mode.app
     /// Shows the tab bar minimised, when the look lets it minimise.
     var showsMinimizedBar = false
+    /// How the Home Screen draws its icons.
+    var homeLook = HomeLook.light
     /// The screen it stands for.
     var screen = LookScreen.reference
     /// The screen's safe area.
     var insets = LookScreen.referenceInsets
 
     /// A preview of a look's app half, drawn with its special Flavor applied.
-    init(look: TodayStyle, mode: Mode = .app, showsMinimizedBar: Bool = false,
+    init(look: TodayStyle, mode: Mode = .app, showsMinimizedBar: Bool = false, homeLook: HomeLook = .light,
          screen: CGSize = LookScreen.reference, insets: EdgeInsets = LookScreen.referenceInsets) {
         self.look = look.resolved
         self.mode = mode
         self.showsMinimizedBar = showsMinimizedBar
+        self.homeLook = homeLook
         self.screen = screen
         self.insets = insets
     }
@@ -121,6 +161,7 @@ struct AppPreview: View {
             switch mode {
             case .app: coursesPage
             case .homeScreen: homeScreen
+            case .dock: dock
             }
         }
         .frame(width: screen.width, height: screen.height)
@@ -177,28 +218,50 @@ struct AppPreview: View {
         .environment(\.colorScheme, lit)
     }
 
-    /// A Home Screen on a wallpaper in the app's colour, with the look's icon
-    /// among the others.
-    private var homeScreen: some View {
+    /// A wallpaper in the app's colour, dimmed as the Home Screen's look asks.
+    private var wallpaper: some View {
         let (hue, saturation, _) = look.appFlavor.base.hsb
         let top = Flavor.RGB(hue: hue + 0.04, saturation: saturation * 0.55, brightness: 0.88)
         let bottom = Flavor.RGB(hue: hue - 0.04, saturation: min(saturation * 1.1, 1), brightness: 0.32)
+        return LinearGradient(colors: [top.color, bottom.color], startPoint: .top, endPoint: .bottom)
+            .overlay { Color.black.opacity(homeLook.shade) }
+    }
+
+    /// The look's icon, drawn as the Home Screen's look draws it.
+    private func icon(side: CGFloat) -> some View {
+        Image(look.appIconPreview)
+            .resizable()
+            .frame(width: side, height: side)
+            .modifier(HomeIconLook(look: homeLook))
+            .clipShape(.rect(cornerRadius: side * 0.234, style: .continuous))
+            .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
+    }
+
+    /// Another app's place: a plain tile in the Home Screen's look.
+    private func otherApp(side: CGFloat) -> some View {
+        let shape = RoundedRectangle(cornerRadius: side * 0.234, style: .continuous)
+        return shape
+            .fill(homeLook.otherAppFill)
+            .overlay {
+                if homeLook == .clear { shape.strokeBorder(.white.opacity(0.45), lineWidth: 0.5) }
+            }
+            .frame(width: side, height: side)
+    }
+
+    /// A Home Screen on a wallpaper in the app's colour, with the look's icon
+    /// among the others: four across on an iPhone, six on an iPad.
+    private var homeScreen: some View {
+        let columns = screen.width > 600 ? 6 : 4
         return ZStack(alignment: .top) {
-            LinearGradient(colors: [top.color, bottom.color], startPoint: .top, endPoint: .bottom)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 22) {
-                ForEach(0..<20, id: \.self) { index in
+            wallpaper
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: columns), spacing: 22) {
+                ForEach(0..<(columns * 5), id: \.self) { index in
                     VStack(spacing: 6) {
                         if index == 5 {
-                            Image(look.appIconPreview)
-                                .resizable()
-                                .frame(width: 64, height: 64)
-                                .clipShape(.rect(cornerRadius: 15, style: .continuous))
-                                .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
+                            icon(side: 64)
                             Text(verbatim: "PoliVerse")
                         } else {
-                            RoundedRectangle(cornerRadius: 15, style: .continuous)
-                                .fill(.white.opacity(0.22))
-                                .frame(width: 64, height: 64)
+                            otherApp(side: 64)
                             Text(verbatim: " ")
                         }
                     }
@@ -210,17 +273,96 @@ struct AppPreview: View {
             .padding(.top, insets.top + 28)
             HStack {
                 ForEach(0..<4, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: 15, style: .continuous)
-                        .fill(.white.opacity(0.22))
-                        .frame(width: 62, height: 62)
+                    otherApp(side: 62)
                         .frame(maxWidth: .infinity)
                 }
             }
             .frame(height: 92)
+            .frame(maxWidth: columns > 4 ? 420 : .infinity)
             .background(.white.opacity(0.18), in: .rect(cornerRadius: 36, style: .continuous))
             .padding(.horizontal, 12)
             .frame(maxHeight: .infinity, alignment: .bottom)
             .padding(.bottom, 14)
+        }
+    }
+
+    /// A Mac's desktop: the menu bar at the top and the Dock at the bottom,
+    /// the look's icon in it.
+    private var dock: some View {
+        ZStack {
+            wallpaper
+            VStack(spacing: 0) {
+                HStack(spacing: 16) {
+                    Image(systemName: "apple.logo")
+                    Text(verbatim: "PoliVerse").fontWeight(.bold)
+                    Spacer()
+                }
+                .font(.caption)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .frame(height: 26)
+                .background(.black.opacity(0.18))
+                Spacer()
+                HStack(spacing: 10) {
+                    ForEach(0..<9, id: \.self) { index in
+                        if index == 3 {
+                            icon(side: 56)
+                        } else {
+                            otherApp(side: 56)
+                        }
+                    }
+                }
+                .padding(10)
+                .background(.white.opacity(0.22), in: .rect(cornerRadius: 24, style: .continuous))
+                .padding(.bottom, 10)
+            }
+        }
+    }
+}
+
+extension AppPreview.HomeLook {
+    /// Another app's tile in this look.
+    fileprivate var otherAppFill: Color {
+        switch self {
+        case .light: .white.opacity(0.22)
+        case .dark: Color(white: 0.1).opacity(0.75)
+        case .tinted: HomeIconLook.tint.opacity(0.28)
+        case .clear: .white.opacity(0.2)
+        }
+    }
+}
+
+/// An icon as the Home Screen's look draws it: darkened, in one colour, or
+/// clear. The system derives these from the icon; this is an impression of it.
+private struct HomeIconLook: ViewModifier {
+    /// The Home Screen's look.
+    let look: AppPreview.HomeLook
+
+    /// The colour tinted icons take.
+    static let tint = Color(red: 0x8F / 255, green: 0xD9 / 255, blue: 0xCC / 255)
+
+    /// The icon, drawn in the look.
+    func body(content: Content) -> some View {
+        switch look {
+        case .light:
+            content
+        case .dark:
+            content
+                .colorMultiply(Color(white: 0.72))
+                .contrast(1.08)
+        case .tinted:
+            content
+                .grayscale(1)
+                .contrast(1.15)
+                .colorMultiply(Color(white: 0.9))
+                .overlay { Self.tint.opacity(0.55) }
+        case .clear:
+            content
+                .grayscale(1)
+                .brightness(0.18)
+                .contrast(0.85)
+                .opacity(0.9)
+                .overlay { Color.white.opacity(0.12) }
         }
     }
 }
