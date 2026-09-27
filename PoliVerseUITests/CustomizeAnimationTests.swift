@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 
 /// Walks Personalizza from start to finish and keeps a screenshot of every
@@ -73,7 +74,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         shot(app, "05-font")
 
         // The capsule runs to another part; Colore's second tool is the light.
-        app.buttons["customize-switch-colour"].firstMatch.tap()
+        switchTo(app, "colour")
         tool(app, "Aspetto")
         reveal(app.buttons["appearance-dark"].firstMatch, in: app).tap()
         settle()
@@ -92,7 +93,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
 
         // Tema: the whole page in one go.
-        app.buttons["customize-switch-theme"].firstMatch.tap()
+        switchTo(app, "theme")
         app.buttons["theme-preset-3"].firstMatch.tap()
         settle()
         shot(app, "06b-theme")
@@ -211,9 +212,9 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         shot(app, "32-paper")
 
         // Glowing cards, then a tinted light and serif text, through the capsule.
-        app.buttons["customize-switch-cards"].firstMatch.tap()
+        switchTo(app, "cards")
         reveal(app.buttons["material-glow"].firstMatch, in: app).tap()
-        app.buttons["customize-switch-colour"].firstMatch.tap()
+        switchTo(app, "colour")
         tool(app, "Aspetto")
         reveal(app.buttons["appearance-tinted"].firstMatch, in: app).tap()
         reveal(app.buttons["Con grazie"].firstMatch, in: app).tap()
@@ -345,13 +346,28 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
     }
 
-    /// Goes back from a part's tools to every part.
+    /// Goes back from a part's tools to every part. On iPad every part is
+    /// always in the sidebar, so there is nowhere to go back to.
     @MainActor private func allParts(_ app: XCUIApplication) {
+        guard !isWide else { return }
         let grid = app.buttons["customize-parts"].firstMatch
         XCTAssertTrue(grid.waitForExistence(timeout: 3), "The part has no way back to the others")
         grid.tap()
         settle()
     }
+
+    /// Goes to another part: through the capsule on iPhone, the sidebar on iPad.
+    @MainActor private func switchTo(_ app: XCUIApplication, _ id: String) {
+        if isWide {
+            part(app, id)
+        } else {
+            app.buttons["customize-switch-\(id)"].firstMatch.tap()
+            settle()
+        }
+    }
+
+    /// Whether the editor is the iPad's, with a sidebar and an inspector.
+    @MainActor private var isWide: Bool { UIDevice.current.userInterfaceIdiom == .pad }
 
     /// Closes the sheet over the editor: a section's card or the sticker picker.
     @MainActor private func closeSheet(_ app: XCUIApplication) {
@@ -392,6 +408,61 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         XCTAssertFalse(edit.exists, "Tapping the middle card did not close Personalizza")
         shot(app, "22-single-closed")
+    }
+
+    /// On iPad the parts are a sidebar and the tools an inspector beside the
+    /// page, which can be previewed on an iPhone; standing up, the parts run
+    /// along the top.
+    @MainActor func testWideEditor() throws {
+        try XCTSkipUnless(isWide, "The wide editor is for iPad and Mac")
+        let app = makeApp()
+        app.launch()
+        XCUIDevice.shared.orientation = .landscapeLeft
+
+        let edit = open(app)
+        edit.tap()
+        let done = app.buttons["customize-edit-done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5), "Personalizza did not open the editor")
+        settle()
+        shot(app, "70-wide")
+        XCTAssertTrue(app.buttons["customize-part-theme"].firstMatch.isSelected, "The editor did not open on Tema")
+
+        // A part from the sidebar, its tools in the inspector, then its reset.
+        part(app, "date")
+        reveal(app.buttons["date-font-mono"].firstMatch, in: app).tap()
+        settle()
+        shot(app, "71-wide-date")
+        let reset = app.buttons["customize-part-reset"]
+        XCTAssertTrue(reset.isEnabled, "A change left the part nothing to reset")
+        reset.tap()
+        settle()
+        XCTAssertFalse(reset.isEnabled, "Resetting the part left it changed")
+
+        // The page on an iPhone.
+        app.descendants(matching: .any)["customize-preview-device"].buttons["iPhone"].firstMatch.tap()
+        settle()
+        shot(app, "72-wide-iphone")
+
+        // The sidebar folds to the parts' pictures, and opens again.
+        let toggle = app.buttons["customize-sidebar-toggle"]
+        toggle.tap()
+        settle()
+        shot(app, "73-wide-folded")
+        toggle.tap()
+        settle()
+
+        // A tap on the page opens its part.
+        zone(app, "greeting").tap()
+        settle()
+        XCTAssertTrue(app.buttons["customize-part-greeting"].firstMatch.isSelected, "Tapping the greeting did not open Saluto")
+
+        XCUIDevice.shared.orientation = .portrait
+        settle()
+        shot(app, "74-wide-portrait")
+
+        done.tap()
+        settle()
+        XCTAssertTrue(edit.waitForExistence(timeout: 5), "Fine did not return to the gallery")
     }
 
     /// The places are reached from the tabs, and the profile from any root.

@@ -338,6 +338,8 @@ struct TodayLanding: View {
                 content().contentShape(.rect)
             }
             .buttonStyle(.plain)
+            // With a pointer, on iPad and Mac, the part under it lights up.
+            .hoverEffect(.highlight)
             .accessibilityLabel(Text(zone.title))
             .accessibilityHint("Modifica")
             .accessibilityIdentifier("zone-\(zone.id)")
