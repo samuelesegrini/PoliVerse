@@ -299,6 +299,20 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         closeSheet(app)
         shot(app, "37-sticker")
+
+        // On the page a sticker drags straight away; a tap selects it, with its actions.
+        let sticker = app.buttons["page-sticker"].firstMatch
+        XCTAssertTrue(sticker.waitForExistence(timeout: 3), "The sticker is not on the page")
+        let before = sticker.frame.midX
+        sticker.press(forDuration: 0.1, thenDragTo: sticker.coordinate(withNormalizedOffset: CGVector(dx: -1, dy: 0.5)))
+        settle()
+        XCTAssertNotEqual(sticker.frame.midX, before, accuracy: 2, "Dragging the sticker on the page did not move it")
+        sticker.tap()
+        let bigger = app.buttons["sticker-bigger"].firstMatch
+        XCTAssertTrue(bigger.waitForExistence(timeout: 3), "Tapping the sticker did not select it")
+        bigger.tap()
+        settle()
+        shot(app, "37b-sticker-selected")
         app.descendants(matching: .any)["date-header-layout"].buttons["Testo"].firstMatch.tap()
         settle()
         shot(app, "38-accessory-text")

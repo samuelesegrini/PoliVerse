@@ -57,6 +57,9 @@ struct LookEditor: View {
     @State private var tools: [LookPart: CustomizePage] = [:]
     /// What is up in a sheet of its own: a section's card or the sticker picker.
     @State private var sheet: CustomizePage?
+    /// The sticker selected on the page: ringed, with its handle, its actions
+    /// in Saluto's Accessorio and on the keyboard.
+    @State private var selectedSticker: UUID?
     @State private var arranging = false
     @State private var renaming = false
     @State private var newName = ""
@@ -137,6 +140,14 @@ struct LookEditor: View {
         .onChange(of: look) { old, _ in
             history.record(old)
         }
+        // The selection goes with the stickers' tool, and with the sticker.
+        .onChange(of: stickerToolOpen) { _, open in
+            if !open { selectedSticker = nil }
+        }
+        .onChange(of: look.stickers) { _, stickers in
+            if let id = selectedSticker, !stickers.contains(where: { $0.id == id }) { selectedSticker = nil }
+        }
+        .background { stickerKeys }
         .onChange(of: look.special) { _, special in
             // Crossing between a classic look and a special Flavor changes the parts.
             if let part, !LookPart.parts(for: look).contains(part) {
@@ -495,6 +506,64 @@ struct LookEditor: View {
         }
     }
 
+    // MARK: - The selected sticker
+
+    /// Whether the stickers' tool is what is open: Saluto, on Accessorio, with stickers beside the date.
+    private var stickerToolOpen: Bool {
+        let open = sizeClass == .regular ? widePart : part
+        return open == .greeting && tool(of: .greeting) == .accessory && look.accessory == .stickers && !arranging
+    }
+
+    /// The selected sticker from a keyboard: the arrows move it, + and −
+    /// size it, R turns it, ⌫ removes it and ⌘D copies it. Invisible
+    /// buttons, there only while a sticker is selected.
+    @ViewBuilder
+    private var stickerKeys: some View {
+        if let id = selectedSticker {
+            Group {
+                Button("Sposta a sinistra") { nudge(id, x: -0.04) }
+                    .keyboardShortcut(.leftArrow, modifiers: [])
+                Button("Sposta a destra") { nudge(id, x: 0.04) }
+                    .keyboardShortcut(.rightArrow, modifiers: [])
+                Button("Sposta su") { nudge(id, y: -0.04) }
+                    .keyboardShortcut(.upArrow, modifiers: [])
+                Button("Sposta giù") { nudge(id, y: 0.04) }
+                    .keyboardShortcut(.downArrow, modifiers: [])
+                Button(StickerEdit.bigger.title) { editSticker(id, .bigger) }
+                    .keyboardShortcut("+", modifiers: [])
+                // + without Shift, on most keyboards.
+                Button(StickerEdit.bigger.title) { editSticker(id, .bigger) }
+                    .keyboardShortcut("=", modifiers: [])
+                Button(StickerEdit.smaller.title) { editSticker(id, .smaller) }
+                    .keyboardShortcut("-", modifiers: [])
+                Button(StickerEdit.turn.title) { editSticker(id, .turn) }
+                    .keyboardShortcut("r", modifiers: [])
+                Button(StickerEdit.remove.title) { editSticker(id, .remove) }
+                    .keyboardShortcut(.delete, modifiers: [])
+                Button(StickerEdit.duplicate.title) { editSticker(id, .duplicate) }
+                    .keyboardShortcut("d", modifiers: .command)
+            }
+            .opacity(0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+    }
+
+    /// Moves a sticker by a fraction of its panel.
+    private func nudge(_ id: UUID, x: Double = 0, y: Double = 0) {
+        withAnimation(.snappy) {
+            look.updateSticker(id) {
+                $0.x += x
+                $0.y += y
+            }
+        }
+    }
+
+    /// Does one of a sticker's actions, and selects what comes after it.
+    private func editSticker(_ id: UUID, _ edit: StickerEdit) {
+        withAnimation(.snappy) { selectedSticker = look.edit(sticker: id, edit) }
+    }
+
     // MARK: - Top bar
 
     /// ✕, undo and redo on the left; ••• and ✓ on the right; on iPad and Mac
@@ -656,6 +725,8 @@ struct LookEditor: View {
                                 .transition(.opacity)
                         }
                     }
+                    // Handles on the page stay a finger's size however small it is drawn.
+                    .environment(\.previewScale, settled ? fit : cover)
                     .clipShape(.rect(cornerRadius: target.cornerRadius * (settled ? 1 : 0), style: .continuous))
                     .scaleEffect(settled ? fit : cover)
                     .frame(width: room.size.width, height: room.size.height)
@@ -694,7 +765,7 @@ struct LookEditor: View {
     /// but the page itself.
     private func todayPage(insets: EdgeInsets) -> some View {
         ScrollView {
-            TodayLanding(day: shell.day, draft: $look, arranging: arranging, quiet: true,
+            TodayLanding(day: shell.day, draft: $look, arranging: arranging, quiet: true, selection: $selectedSticker,
                          onAddSticker: { sheet = .stickerPicker }) { zone in
                 guard !arranging else { return }
                 open(zone)
@@ -829,6 +900,7 @@ struct LookEditor: View {
                 if let next = pushed.last { sheet = next }
             }) {
                 CustomizeControls(page: page, style: $look, arranging: $arranging,
+                                  selectedSticker: $selectedSticker,
                                   pickStickers: { sheet = .stickerPicker })
                     .toolbar(.hidden, for: .navigationBar)
                     .navigationDestination(for: CustomizePage.self) { _ in EmptyView() }

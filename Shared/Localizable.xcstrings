@@ -240,6 +240,16 @@
         }
       }
     },
+    "Duplica" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicate"
+          }
+        }
+      }
+    },
     "Espandi la barra laterale" : {
       "localizations" : {
         "en" : {
@@ -440,6 +450,36 @@
         }
       }
     },
+    "Più grande" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bigger"
+          }
+        }
+      }
+    },
+    "Più piccolo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smaller"
+          }
+        }
+      }
+    },
+    "Porta in primo piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bring to Front"
+          }
+        }
+      }
+    },
     "Predefinita" : {
       "localizations" : {
         "en" : {
@@ -550,6 +590,16 @@
         }
       }
     },
+    "Ruota" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rotate"
+          }
+        }
+      }
+    },
     "Scegli corso e piano" : {
       "localizations" : {
         "en" : {
@@ -640,6 +690,36 @@
         }
       }
     },
+    "Sposta a destra" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move right"
+          }
+        }
+      }
+    },
+    "Sposta a sinistra" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move left"
+          }
+        }
+      }
+    },
+    "Sticker selezionato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selected Sticker"
+          }
+        }
+      }
+    },
     "Strumenti" : {
       "localizations" : {
         "en" : {
@@ -676,6 +756,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Themes"
+          }
+        }
+      }
+    },
+    "Trascinali sulla pagina; toccane uno per sceglierlo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag them on the page; tap one to select it."
+          }
+        }
+      }
+    },
+    "Trascinalo sulla pagina; la maniglia sull’angolo lo ingrandisce e lo ruota." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag it on the page; the handle on its corner resizes and turns it."
           }
         }
       }
@@ -16914,16 +17014,6 @@
     },
     "tieni premuto per esplorare" : {
 
-    },
-    "Tieni premuto sulla pagina per spostarli, ingrandirli e ruotarli." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Touch and hold the page to move, resize and rotate them."
-          }
-        }
-      }
     },
     "Tinta" : {
       "localizations" : {

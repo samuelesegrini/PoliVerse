@@ -85,6 +85,8 @@ struct CustomizeControls: View {
     @Binding var style: TodayStyle
     /// Whether the page above is in arranging mode.
     @Binding var arranging: Bool
+    /// The sticker selected on the page, whose actions the stickers' page shows.
+    var selectedSticker: Binding<UUID?> = .constant(nil)
     /// Opens the sticker picker.
     var pickStickers: () -> Void = {}
 
@@ -356,14 +358,52 @@ struct CustomizeControls: View {
         case .none:
             EmptyView()
         case .stickers:
+            if let id = selectedSticker.wrappedValue, style.stickers.contains(where: { $0.id == id }) {
+                Section {
+                    HStack(spacing: 8) {
+                        ForEach(StickerEdit.allCases, id: \.self) { edit in
+                            Button {
+                                withAnimation(.snappy) { selectedSticker.wrappedValue = style.edit(sticker: id, edit) }
+                            } label: {
+                                Label(edit.title, systemImage: edit.systemImage)
+                                    .labelStyle(.iconOnly)
+                                    .font(.body.weight(.semibold))
+                                    .frame(maxWidth: .infinity, minHeight: 40)
+                            }
+                            .buttonStyle(.glass)
+                            .tint(edit == .remove ? .red : .primary)
+                            .disabled(edit == .duplicate && style.stickers.count >= TodayStyle.maxStickers)
+                            .accessibilityIdentifier("sticker-\(edit)")
+                        }
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                } header: {
+                    Text("Sticker selezionato")
+                } footer: {
+                    Text("Trascinalo sulla pagina; la maniglia sull’angolo lo ingrandisce e lo ruota.")
+                }
+            }
             Section {
                 ForEach(style.stickers) { sticker in
-                    HStack(spacing: 12) {
-                        StickerContentView(content: sticker.content)
-                            .frame(width: 36, height: 36)
-                        Text(sticker.content.isEmoji ? "Emoji" : "Sticker")
-                            .foregroundStyle(.secondary)
+                    let chosen = selectedSticker.wrappedValue == sticker.id
+                    Button {
+                        selectedSticker.wrappedValue = chosen ? nil : sticker.id
+                    } label: {
+                        HStack(spacing: 12) {
+                            StickerContentView(content: sticker.content)
+                                .frame(width: 36, height: 36)
+                            Text(sticker.content.isEmoji ? "Emoji" : "Sticker")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            if chosen {
+                                Image(systemName: "checkmark").foregroundStyle(.tint)
+                            }
+                        }
+                        .contentShape(.rect)
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(chosen ? .isSelected : [])
                 }
                 .onDelete { offsets in
                     let ids = offsets.map { style.stickers[$0].id }
@@ -376,7 +416,7 @@ struct CustomizeControls: View {
             } header: {
                 Text("Sticker")
             } footer: {
-                Text("Tieni premuto sulla pagina per spostarli, ingrandirli e ruotarli.")
+                Text("Trascinali sulla pagina; toccane uno per sceglierlo.")
             }
         case .text:
             Section {

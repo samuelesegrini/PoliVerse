@@ -144,12 +144,20 @@ struct TodayAccessoryView: View {
     var editing = false
     /// In Personalizza's arranging mode, where stickers move.
     var arranging = false
+    /// In Personalizza's page, where stickers drag straight away and a tap selects one.
+    var movable = false
+    /// The sticker selected on the page, if any.
+    var selected: UUID?
     /// Records a change to one sticker.
     var onChange: (UUID, (inout PlacedSticker) -> Void) -> Void = { _, _ in }
     /// Takes one sticker away.
     var onRemove: (UUID) -> Void = { _ in }
     /// Opens the sticker picker.
     var onAdd: () -> Void = {}
+    /// Selects a sticker.
+    var onSelect: (UUID) -> Void = { _ in }
+    /// Does one of a sticker's actions.
+    var onEdit: (UUID, StickerEdit) -> Void = { _, _ in }
 
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
@@ -161,8 +169,9 @@ struct TodayAccessoryView: View {
             case .none:
                 EmptyView()
             case .stickers:
-                StickerPanel(stickers: style.stickers, editing: editing, arranging: arranging, outline: style.stickerOutline,
-                             onChange: onChange, onRemove: onRemove, onAdd: onAdd)
+                StickerPanel(stickers: style.stickers, editing: editing, arranging: arranging, movable: movable,
+                             selected: selected, outline: style.stickerOutline,
+                             onChange: onChange, onRemove: onRemove, onAdd: onAdd, onSelect: onSelect, onEdit: onEdit)
             case .text:
                 Text(style.accessoryText.isEmpty ? String(localized: "Tutto pronto?") : style.accessoryText)
                     .font(style.dateFont.font(size: 34, weight: max(style.dateWeight, 0.5)))

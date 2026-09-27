@@ -52,6 +52,8 @@ struct TodayLanding: View {
     /// Zones without outlines or badges: the page drawn exactly as the app
     /// shows it, each part still a way into its controls.
     private let quiet: Bool
+    /// The sticker selected on a quiet page, where stickers drag straight away.
+    private let selection: Binding<UUID?>?
     /// Opens a zone's controls.
     private let onEdit: (Zone) -> Void
     /// Opens the sticker picker.
@@ -71,20 +73,26 @@ struct TodayLanding: View {
         draft = nil
         arranging = false
         quiet = false
+        selection = nil
         onEdit = { _ in }
         onAddSticker = {}
     }
 
     /// The page in Personalizza, changing the look being edited.
     ///
-    /// - Parameter quiet: Draws the zones without outlines or badges.
+    /// - Parameters:
+    ///   - quiet: Draws the zones without outlines or badges, and lets the
+    ///     stickers drag straight away.
+    ///   - selection: The sticker selected on a quiet page.
     init(day: Date, draft: Binding<TodayStyle>, arranging: Bool, quiet: Bool = false,
+         selection: Binding<UUID?>? = nil,
          onAddSticker: @escaping () -> Void, onEdit: @escaping (Zone) -> Void) {
         self.day = day
         style = draft.wrappedValue.resolved
         self.draft = draft
         self.arranging = arranging
         self.quiet = quiet
+        self.selection = selection
         self.onAddSticker = onAddSticker
         self.onEdit = onEdit
     }
@@ -159,9 +167,22 @@ struct TodayLanding: View {
                                 style: style,
                                 editing: editing,
                                 arranging: arranging,
+                                movable: quiet && !arranging,
+                                selected: selection?.wrappedValue,
                                 onChange: { id, change in draft?.wrappedValue.updateSticker(id, change) },
                                 onRemove: { id in draft?.wrappedValue.removeSticker(id) },
-                                onAdd: onAddSticker)
+                                onAdd: onAddSticker,
+                                onSelect: { id in
+                                    selection?.wrappedValue = id
+                                    onEdit(.stickers)
+                                },
+                                onEdit: { id, edit in
+                                    withAnimation(.snappy) {
+                                        // The sticker selected afterwards: the copy, or none once removed.
+                                        let next = draft?.wrappedValue.edit(sticker: id, edit) ?? nil
+                                        selection?.wrappedValue = next
+                                    }
+                                })
                         }
                     }
                     .frame(height: 150)
@@ -333,6 +354,19 @@ struct TodayLanding: View {
                 .padding(10)
                 .background { outline }
                 .padding(-10)
+        } else if quiet, zone == .stickers {
+            // Not a button: the stickers inside take their own drags and taps,
+            // and a tap between them opens the zone and lets go of the selection.
+            content()
+                .contentShape(.rect)
+                .onTapGesture {
+                    selection?.wrappedValue = nil
+                    onEdit(zone)
+                }
+                .hoverEffect(.highlight)
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel(Text(zone.title))
+                .accessibilityIdentifier("zone-\(zone.id)")
         } else if quiet {
             Button { onEdit(zone) } label: {
                 content().contentShape(.rect)

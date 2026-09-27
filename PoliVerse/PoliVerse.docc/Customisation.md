@@ -89,7 +89,7 @@ look.
 
 | Mode | What it does |
 |---|---|
-| **Editing** | quiet: the page as it is, each part a tap away from its tools |
+| **Editing** | quiet: the page as it is, each part a tap away from its tools; stickers drag straight away, and a tap selects one, with a handle that sizes and turns it |
 | **Arranging** | sections wiggle, lift and move; stickers follow a finger, a pinch and a twist |
 
 ### The app half
