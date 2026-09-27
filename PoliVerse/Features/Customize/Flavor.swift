@@ -167,6 +167,9 @@ nonisolated struct Flavor: Equatable, Hashable, Sendable {
         set { extraOverride = newValue }
     }
 
+    /// Whether Accent follows Main rather than being set by hand.
+    var accentIsDerived: Bool { accentOverride == nil }
+
     /// Accent and Extra back to the ones Main suggests.
     mutating func resetDerived() {
         accentOverride = nil

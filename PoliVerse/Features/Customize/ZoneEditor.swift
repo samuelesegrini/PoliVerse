@@ -5,8 +5,6 @@ import SwiftUI
 enum CustomizePage: Hashable, Identifiable {
     /// The parts of the look the bento offers a tile for.
     case flavor, paper, cards, appearance, widget, accessory, layout, greeting, bar
-    /// The app half: its Home Screen icon, its colour, its tab bar.
-    case appIcon, appTint, appBar
     /// A special Flavor's own knobs, in place of every classic part.
     case special
     /// One section of Oggi, with its form and surface.
@@ -47,9 +45,6 @@ enum CustomizePage: Hashable, Identifiable {
         case .layout: "Sezioni"
         case .greeting: "Saluto"
         case .bar: "Barra"
-        case .appIcon: "Icona"
-        case .appTint: "Colore"
-        case .appBar: "Barra"
         case .section(let kind): kind.title
         case .stickerPicker: "Aggiungi sticker"
         case .special: "Flavor"
@@ -85,8 +80,6 @@ struct CustomizeControls: View {
     @Binding var style: TodayStyle
     /// Whether the page above is in arranging mode.
     @Binding var arranging: Bool
-    /// The sticker selected on the page, whose actions the stickers' page shows.
-    var selectedSticker: Binding<UUID?> = .constant(nil)
     /// Opens the sticker picker.
     var pickStickers: () -> Void = {}
 
@@ -110,28 +103,6 @@ struct CustomizeControls: View {
             case .layout: layoutControls
             case .greeting: greetingControls
             case .bar: barControls
-            case .appIcon:
-                Section {
-                    AppIconPicker(look: $style)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
-                } footer: {
-                    Text(style.app.paired ? "Automatica segue il colore del Flavor." : "Scelta a mano. Automatica la riabbina al Flavor.")
-                }
-            case .appTint:
-                Section {
-                    AppTintPicker(look: $style)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
-                } footer: {
-                    Text("Il colore dei pulsanti e dei collegamenti in tutta l’app.")
-                }
-            case .appBar:
-                Section {
-                    AppBarPicker(look: $style)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
-                }
             // A section's page is the card in ``SectionFormPicker``.
             case .section: EmptyView()
             case .stickerPicker: EmptyView()
@@ -358,52 +329,14 @@ struct CustomizeControls: View {
         case .none:
             EmptyView()
         case .stickers:
-            if let id = selectedSticker.wrappedValue, style.stickers.contains(where: { $0.id == id }) {
-                Section {
-                    HStack(spacing: 8) {
-                        ForEach(StickerEdit.allCases, id: \.self) { edit in
-                            Button {
-                                withAnimation(.snappy) { selectedSticker.wrappedValue = style.edit(sticker: id, edit) }
-                            } label: {
-                                Label(edit.title, systemImage: edit.systemImage)
-                                    .labelStyle(.iconOnly)
-                                    .font(.body.weight(.semibold))
-                                    .frame(maxWidth: .infinity, minHeight: 40)
-                            }
-                            .buttonStyle(.glass)
-                            .tint(edit == .remove ? .red : .primary)
-                            .disabled(edit == .duplicate && style.stickers.count >= TodayStyle.maxStickers)
-                            .accessibilityIdentifier("sticker-\(edit)")
-                        }
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
-                } header: {
-                    Text("Sticker selezionato")
-                } footer: {
-                    Text("Trascinalo sulla pagina; la maniglia sull’angolo lo ingrandisce e lo ruota.")
-                }
-            }
             Section {
                 ForEach(style.stickers) { sticker in
-                    let chosen = selectedSticker.wrappedValue == sticker.id
-                    Button {
-                        selectedSticker.wrappedValue = chosen ? nil : sticker.id
-                    } label: {
-                        HStack(spacing: 12) {
-                            StickerContentView(content: sticker.content)
-                                .frame(width: 36, height: 36)
-                            Text(sticker.content.isEmoji ? "Emoji" : "Sticker")
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            if chosen {
-                                Image(systemName: "checkmark").foregroundStyle(.tint)
-                            }
-                        }
-                        .contentShape(.rect)
+                    HStack(spacing: 12) {
+                        StickerContentView(content: sticker.content)
+                            .frame(width: 36, height: 36)
+                        Text(sticker.content.isEmoji ? "Emoji" : "Sticker")
+                            .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(chosen ? .isSelected : [])
                 }
                 .onDelete { offsets in
                     let ids = offsets.map { style.stickers[$0].id }
@@ -416,7 +349,7 @@ struct CustomizeControls: View {
             } header: {
                 Text("Sticker")
             } footer: {
-                Text("Trascinali sulla pagina; toccane uno per sceglierlo.")
+                Text("Tieni premuto sulla pagina per spostarli, ingrandirli e ruotarli.")
             }
         case .text:
             Section {

@@ -3,8 +3,8 @@ import SwiftUI
 /// A part of a look, as Personalizza's editor offers them: a card each in the
 /// overview, a name each in the capsule at the bottom.
 ///
-/// A part gathers the pages of controls that change the same thing on the
-/// page, and resets on its own: Ripristina il saluto leaves the colours as they are.
+/// A part gathers the tools that change the same thing on the page, and
+/// resets on its own: Ripristina il saluto leaves the colours as they are.
 enum LookPart: String, CaseIterable, Identifiable {
     /// A classic look's parts, in the order the overview shows them.
     case theme, colour, background, date, greeting, cards, app
@@ -53,27 +53,19 @@ enum LookPart: String, CaseIterable, Identifiable {
         }
     }
 
-    /// The pages of controls the part gathers, in the order its tabs show
-    /// them. Tema has its own picker.
-    var tools: [CustomizePage] {
+    /// The tools the part gathers, in the order its tabs show them on iPhone
+    /// and the inspector stacks them on iPad and Mac.
+    var tools: [LookTool] {
         switch self {
-        case .colour: [.flavor, .appearance]
-        case .background: [.paper]
-        case .date: [.widget, .bar]
-        case .greeting: [.greeting, .accessory]
-        case .cards: [.cards, .layout]
+        case .theme: [.classics, .specials, .photo]
+        case .colour: [.main, .accent, .light]
+        case .background: [.paper, .motif, .grain]
+        case .date: [.typeface, .dimensions, .dateColour, .dateShape]
+        case .greeting: [.greeting, .beside]
+        case .cards: [.surface, .sections]
         case .app: [.appIcon, .appTint, .appBar]
         case .special: [.special]
-        case .theme: []
         }
-    }
-
-    /// The part a page of controls belongs to, if any.
-    ///
-    /// - Parameter page: The page.
-    init?(page: CustomizePage) {
-        guard let part = Self.allCases.first(where: { $0.tools.contains(page) }) else { return nil }
-        self = part
     }
 
     /// The part a zone tapped on the page opens, and which of its tools.
@@ -81,14 +73,15 @@ enum LookPart: String, CaseIterable, Identifiable {
     /// - Parameters:
     ///   - zone: The zone tapped.
     ///   - look: The look being edited: on a special Flavor every zone is its knobs.
-    /// - Returns: The part and the page, or `nil` for a section, which opens its own card.
-    static func opening(_ zone: TodayLanding.Zone, in look: TodayStyle) -> (part: LookPart, page: CustomizePage)? {
+    /// - Returns: The part and the tool, or `nil` for a section, which opens its own card.
+    static func opening(_ zone: TodayLanding.Zone, in look: TodayStyle) -> (part: LookPart, tool: LookTool)? {
         if look.special != nil { return (.special, .special) }
         switch zone {
-        case .bar: return (.date, .bar)
-        case .date: return (.date, .widget)
+        // Oggi's bar buttons sit with the page's other pieces, at the end of Sezioni.
+        case .bar: return (.cards, .sections)
+        case .date: return (.date, .typeface)
         case .greeting: return (.greeting, .greeting)
-        case .stickers: return (.greeting, .accessory)
+        case .stickers: return (.greeting, .beside)
         case .background: return (.background, .paper)
         case .section: return nil
         }
@@ -111,7 +104,6 @@ enum LookPart: String, CaseIterable, Identifiable {
         case .colour:
             next.flavor = original.flavor
             next.appearance = original.appearance
-            next.textDesign = original.textDesign
         case .background:
             next.background = original.background
             next.paper = original.paper
@@ -123,7 +115,7 @@ enum LookPart: String, CaseIterable, Identifiable {
             next.dateColour = original.dateColour
             next.dateLayout = original.dateLayout
             next.dateAlignment = original.dateAlignment
-            next.bar = original.bar
+            next.textDesign = original.textDesign
         case .greeting:
             next.showsGreeting = original.showsGreeting
             next.greeting = original.greeting
@@ -136,6 +128,7 @@ enum LookPart: String, CaseIterable, Identifiable {
         case .cards:
             next.material = original.material
             next.sections = original.sections
+            next.bar = original.bar
         case .app:
             next.app = original.app
         case .special:
@@ -144,6 +137,74 @@ enum LookPart: String, CaseIterable, Identifiable {
         }
         return next
     }
+}
+
+/// One tool of a part: what a tab shows on iPhone, and a group of the
+/// inspector on iPad and Mac.
+enum LookTool: String, CaseIterable, Identifiable {
+    /// Tema: the classic themes, the special Flavors, the colours of a photo.
+    case classics, specials, photo
+    /// Colore: the main colour, the accent, the light.
+    case main, accent, light
+    /// Sfondo: the paper, the pattern over it, the grain.
+    case paper, motif, grain
+    /// Data: the typeface, the size and weight, the colour, the layout.
+    case typeface, dimensions, dateColour, dateShape
+    /// Saluto: the greeting, and what sits beside the date.
+    case greeting, beside
+    /// Schede: the cards' surface, and the sections.
+    case surface, sections
+    /// App: the icon, the colour, the tab bar.
+    case appIcon, appTint, appBar
+    /// A special Flavor's knobs.
+    case special
+
+    /// The tool's identity, for accessibility identifiers.
+    var id: String { rawValue }
+
+    /// What the tool's tab is called.
+    var title: LocalizedStringKey {
+        switch self {
+        case .classics: "Classici"
+        case .specials: "Speciali"
+        case .photo: "Da una foto"
+        case .main: "Principale"
+        case .accent: "Accento"
+        case .light: "Luce"
+        case .paper: "Carta"
+        case .motif: "Motivo"
+        case .grain: "Grana"
+        case .typeface: "Carattere"
+        case .dimensions: "Dimensioni"
+        case .dateColour: "Colore"
+        case .dateShape: "Forma"
+        case .greeting: "Saluto"
+        case .beside: "Accanto alla data"
+        case .surface: "Superficie"
+        case .sections: "Sezioni"
+        case .appIcon: "Icona"
+        case .appTint: "Colore"
+        case .appBar: "Barra"
+        case .special: "Flavor"
+        }
+    }
+
+    /// The part the tool belongs to.
+    var part: LookPart {
+        LookPart.allCases.first { $0.tools.contains(self) } ?? .theme
+    }
+}
+
+/// What of a theme to take, from its menu: everything, or one part of it.
+enum ThemeSlice: CaseIterable {
+    /// The whole page.
+    case all
+    /// Its colours and light.
+    case colours
+    /// Its paper, pattern and grain.
+    case background
+    /// Its date: typeface, size, weight, colour.
+    case date
 }
 
 extension TodayStyle {
@@ -158,6 +219,33 @@ extension TodayStyle {
         next.app = app
         let themeNames = Set(Self.presets.map(\.name) + SpecialFlavor.allCases.map { String(localized: $0.name) })
         if !name.isEmpty, !themeNames.contains(name) { next.name = name }
+        return next
+    }
+
+    /// This look taking one part of a theme, as the theme's menu offers.
+    ///
+    /// - Parameters:
+    ///   - theme: The theme.
+    ///   - slice: What to take from it.
+    /// - Returns: The look with that part of the theme.
+    func wearing(_ theme: TodayStyle, only slice: ThemeSlice) -> TodayStyle {
+        var next = self
+        switch slice {
+        case .all:
+            return wearing(theme)
+        case .colours:
+            next.flavor = theme.flavor
+            next.appearance = theme.appearance
+        case .background:
+            next.paper = theme.paper
+            next.background = theme.background
+            next.grain = theme.grain
+        case .date:
+            next.dateFont = theme.dateFont
+            next.dateSize = theme.dateSize
+            next.dateWeight = theme.dateWeight
+            next.dateColour = theme.dateColour
+        }
         return next
     }
 

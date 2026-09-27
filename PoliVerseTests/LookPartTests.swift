@@ -32,12 +32,14 @@ struct LookPartTests {
     @Test("Every tool belongs to one part, and a zone opens the part it shows")
     func tools() {
         for part in LookPart.allCases {
-            for page in part.tools {
-                #expect(LookPart(page: page) == part)
+            for tool in part.tools {
+                #expect(tool.part == part)
             }
         }
+        #expect(Set(LookPart.allCases.flatMap(\.tools)).count == LookTool.allCases.count, "A tool belongs to no part, or to two")
         #expect(LookPart.opening(.date, in: TodayStyle())?.part == .date)
-        #expect(LookPart.opening(.stickers, in: TodayStyle())?.page == .accessory)
+        #expect(LookPart.opening(.stickers, in: TodayStyle())?.tool == .beside)
+        #expect(LookPart.opening(.bar, in: TodayStyle())?.tool == .sections)
         #expect(LookPart.opening(.section(.upcoming), in: TodayStyle()) == nil)
         #expect(LookPart.opening(.date, in: .starting(.blueprint))?.part == .special)
     }
@@ -54,7 +56,6 @@ struct LookPartTests {
 
         let date = LookPart.date.reset(look, to: original)
         #expect(date.dateFont == original.dateFont)
-        #expect(date.bar == original.bar)
         #expect(date.flavor == look.flavor)
 
         let background = LookPart.background.reset(look, to: original)
@@ -66,6 +67,7 @@ struct LookPartTests {
         #expect(greeting.accessory == original.accessory)
 
         #expect(LookPart.cards.reset(look, to: original).material == original.material)
+        #expect(LookPart.cards.reset(look, to: original).bar == original.bar, "Oggi's bar buttons live in Sezioni")
         #expect(LookPart.app.reset(look, to: original).app == original.app)
 
         // Tema puts back the page, but not the app.
@@ -137,5 +139,27 @@ struct LookPartTests {
         look.material = .glow
         history.record(old)
         #expect(!history.canRedo)
+    }
+
+    @Test("A theme's menu takes one part of it and leaves the rest")
+    func slices() throws {
+        let theme = try #require(TodayStyle.presets.first { $0.dateFont != TodayStyle().dateFont && $0.flavor != TodayStyle().flavor })
+        let look = TodayStyle()
+
+        let colours = look.wearing(theme, only: .colours)
+        #expect(colours.flavor == theme.flavor)
+        #expect(colours.appearance == theme.appearance)
+        #expect(colours.dateFont == look.dateFont)
+
+        let date = look.wearing(theme, only: .date)
+        #expect(date.dateFont == theme.dateFont)
+        #expect(date.flavor == look.flavor)
+
+        let background = look.wearing(theme, only: .background)
+        #expect(background.paper == theme.paper)
+        #expect(background.background == theme.background)
+        #expect(background.sections == look.sections)
+
+        #expect(look.wearing(theme, only: .all) == look.wearing(theme))
     }
 }
