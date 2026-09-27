@@ -60,6 +60,9 @@ struct LookEditor: View {
     @FocusState private var nameFocused: Bool
     /// A text field in the tools has the keyboard: the stickers' keys stand down.
     @State private var typingInTools = false
+    /// Where the keyboard's top edge is while it is up. The editor reaches
+    /// under every bar, the keyboard's included, so it makes room itself.
+    @State private var keyboardTop: CGFloat?
     /// With App open on iPad and Mac, whether the Home Screen or Oggi is shown.
     @State private var appView = AppView.home
     /// How the Home Screen previewed for App draws its icons.
@@ -171,6 +174,13 @@ struct LookEditor: View {
             if let id = selectedSticker, !stickers.contains(where: { $0.id == id }) { selectedSticker = nil }
         }
         .background { stickerKeys }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) { note in
+            guard let frame = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+            withAnimation(.snappy) { keyboardTop = frame.minY }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            withAnimation(.snappy) { keyboardTop = nil }
+        }
         .onChange(of: look.special) { _, special in
             // Crossing between a classic look and a special Flavor changes the parts.
             if let part, !LookPart.parts(for: look).contains(part) {
@@ -225,6 +235,15 @@ struct LookEditor: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        // The keyboard pushes what is under the page up; the page gives up the room.
+        .padding(.bottom, keyboardOverlap(screen))
+    }
+
+    /// How far the keyboard reaches over the bottom of the screen, beyond the
+    /// home indicator's room the bottom controls already leave.
+    private func keyboardOverlap(_ screen: CGSize) -> CGFloat {
+        guard let keyboardTop else { return 0 }
+        return max(0, screen.height - keyboardTop - insets.bottom)
     }
 
     /// What a task docks at the bottom.
@@ -338,7 +357,7 @@ struct LookEditor: View {
                     }
                 }
                 .padding(.horizontal, 12)
-                .padding(.bottom, max(insets.bottom, 12))
+                .padding(.bottom, max(insets.bottom, 12) + keyboardOverlap(screen))
             } else {
                 VStack(spacing: 0) {
                     if !arranging {
@@ -355,7 +374,7 @@ struct LookEditor: View {
                     }
                 }
                 .padding(.horizontal, 12)
-                .padding(.bottom, max(insets.bottom, 12))
+                .padding(.bottom, max(insets.bottom, 12) + keyboardOverlap(screen))
             }
         }
     }
