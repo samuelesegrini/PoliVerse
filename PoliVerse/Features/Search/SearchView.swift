@@ -284,13 +284,17 @@ struct SearchView: View {
             // The page's own title says "Cerca": the bar keeps it only as the
             // back button's label.
             .navigationBarTitleDisplayMode(.inline)
+            #if os(iOS)
             .toolbar { ToolbarItem(placement: .principal) { Text(verbatim: "") } }
+            #endif
             // Donated so the screen can be handed off and offered as a
             // suggestion. The query travels with it; nothing else does.
             .userActivity(SpotlightIndex.activityType) { activity in
                 activity.title = trimmed.isEmpty ? "Cerca in PoliVerse" : "Cerca “\(trimmed)”"
                 activity.isEligibleForHandoff = true
+                #if os(iOS)
                 activity.isEligibleForPrediction = true
+                #endif
                 activity.userInfo = ["query": trimmed]
             }
             .navigationDestination(for: Course.self) { CourseDetailView(course: $0) }

@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 // The seven steps of ``JourneyView``. Each is only its content: the card, the
 // landscape and the back button belong to the journey.

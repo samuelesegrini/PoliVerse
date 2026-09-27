@@ -15,6 +15,8 @@ struct EventDetailView: View {
     @Environment(\.locale) private var locale
     /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
+    /// Closes the inspector this detail sits in on the Mac.
+    @Environment(\.closeDetail) private var closeDetail
 
     /// The colour for this entry's kind.
     private var accent: Color {
@@ -71,9 +73,11 @@ struct EventDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 // The header names the event: the bar only closes the sheet.
+                #if os(iOS)
                 ToolbarItem(placement: .principal) { Text(verbatim: "") }
+                #endif
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Chiudi", systemImage: "xmark") { dismiss() }
+                    Button("Chiudi", systemImage: "xmark") { if let closeDetail { closeDetail() } else { dismiss() } }
                 }
             }
         }

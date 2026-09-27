@@ -11,7 +11,7 @@ struct FloorPlanView: View {
     let room: Classroom
     /// The fetched plan, or `nil` before it has loaded.
     /// `true` when the plan could not be fetched.
-    @State private var image: UIImage?
+    @State private var image: PlatformImage?
     @State private var failed = false
     @State private var fullScreen = false
     @State private var loadedURL: URL?
@@ -23,7 +23,7 @@ struct FloorPlanView: View {
                 Group {
                     if let image {
                         Button { fullScreen = true } label: {
-                            Image(uiImage: image).resizable().scaledToFit()
+                            Image(platformImage: image).resizable().scaledToFit()
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Pianta dell'aula \(room.id)")
@@ -31,9 +31,16 @@ struct FloorPlanView: View {
                         // Presented from the row, not from the `Section`: a
                         // presentation on the section took the sheet holding
                         // the aula down with it instead of covering it.
+                        #if os(iOS)
                         .fullScreenCover(isPresented: $fullScreen) {
                             FloorPlanFullScreen(image: image, title: room.id)
                         }
+                        #else
+                        .sheet(isPresented: $fullScreen) {
+                            FloorPlanFullScreen(image: image, title: room.id)
+                                .frame(minWidth: 800, minHeight: 600)
+                        }
+                        #endif
                     } else {
                         ProgressView().frame(maxWidth: .infinity, minHeight: 120)
                     }
@@ -60,8 +67,12 @@ struct FloorPlanView: View {
         do {
             let (data, response) = try await URLSession.shared.data(from: url)
             guard (response as? HTTPURLResponse)?.statusCode ?? 200 == 200,
-                  let decoded = UIImage(data: data) else { failed = true; return }
+                  let decoded = PlatformImage(data: data) else { failed = true; return }
+            #if os(iOS)
             image = await decoded.byPreparingForDisplay() ?? decoded
+            #else
+            image = decoded
+            #endif
             loadedURL = url
         } catch {
             // Removed rather than left as a broken frame: a plan that will not
@@ -74,7 +85,7 @@ struct FloorPlanView: View {
 /// A floor plan over the whole screen: pinch, pan, double tap.
 private struct FloorPlanFullScreen: View {
     /// The plan to show.
-    let image: UIImage
+    let image: PlatformImage
     /// The room's name, shown in the bar.
     let title: String
     /// Closes this screen or sheet.
@@ -101,6 +112,7 @@ private struct FloorPlanFullScreen: View {
     }
 }
 
+#if os(iOS)
 /// `UIScrollView` zooming, because it is the one that feels right: the zoom
 /// follows the fingers, pans with inertia and bounces at the limits. A
 /// `MagnifyGesture` over a SwiftUI `ScrollView` competed with the scroll
@@ -236,6 +248,54 @@ final class FittingScrollView: UIScrollView {
         contentInset = UIEdgeInsets(top: y, left: x, bottom: y, right: x)
     }
 }
+
+#else
+/// The Mac's zooming plan: `NSScrollView` magnification, which follows the trackpad's
+/// pinch and scrolls with inertia.
+struct ZoomingImageView: NSViewRepresentable {
+    /// The plan.
+    let image: NSImage
+    /// Changing it fits the plan to the window again.
+    let resetToken: Int
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSScrollView()
+        scrollView.allowsMagnification = true
+        scrollView.minMagnification = 0.2
+        scrollView.maxMagnification = 6
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = true
+        scrollView.backgroundColor = .white
+        let imageView = NSImageView(image: image)
+        imageView.frame = NSRect(origin: .zero, size: image.size)
+        imageView.imageScaling = .scaleProportionallyUpOrDown
+        scrollView.documentView = imageView
+        DispatchQueue.main.async { Self.fit(scrollView) }
+        return scrollView
+    }
+
+    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        if context.coordinator.resetToken != resetToken {
+            context.coordinator.resetToken = resetToken
+            Self.fit(scrollView)
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(resetToken: resetToken) }
+
+    /// Remembers the last reset, so only a new one refits.
+    final class Coordinator {
+        var resetToken: Int
+        init(resetToken: Int) { self.resetToken = resetToken }
+    }
+
+    /// Fits the whole plan in the visible area.
+    private static func fit(_ scrollView: NSScrollView) {
+        guard let document = scrollView.documentView else { return }
+        scrollView.magnify(toFit: document.bounds)
+    }
+}
+#endif
 
 /// A day at a glance: busy bands over a free track.
 ///

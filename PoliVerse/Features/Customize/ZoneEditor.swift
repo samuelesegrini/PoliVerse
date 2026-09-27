@@ -157,7 +157,7 @@ struct CustomizeControls: View {
                 guard let item else { return }
                 Task {
                     if let data = try? await item.loadTransferable(type: Data.self),
-                       let image = UIImage(data: data),
+                       let image = PlatformImage(data: data),
                        let flavor = Flavor.extract(from: image.samplePixels()) {
                         withAnimation(.snappy) { style.flavor = flavor }
                     }
@@ -380,7 +380,7 @@ struct CustomizeControls: View {
                     Task {
                         for item in items {
                             if let data = try? await item.loadTransferable(type: Data.self),
-                               let resized = UIImage(data: data)?.resizedJPEG(maxSide: 900),
+                               let resized = PlatformImage(data: data)?.resizedJPEG(maxSide: 900),
                                let id = try? StickerStore.shared.save(resized) {
                                 withAnimation(.snappy) { style.addPhoto(id) }
                             }
@@ -418,7 +418,9 @@ struct CustomizeControls: View {
         } header: {
             Text("Sulla pagina")
         }
+        #if os(iOS)
         .environment(\.editMode, .constant(.active))
+        #endif
         Section("Forma e superficie di ogni sezione") {
             ForEach(style.visibleSections) { section in
                 NavigationLink(value: CustomizePage.section(section.kind)) {
@@ -860,10 +862,19 @@ private extension PlacedSticker.Content {
 }
 
 /// Reading a photo's colours, to take a Flavor from it.
-extension UIImage {
+extension PlatformImage {
+    /// The image's bitmap.
+    private var bitmap: CGImage? {
+        #if os(iOS)
+        cgImage
+        #else
+        cgImage(forProposedRect: nil, context: nil, hints: nil)
+        #endif
+    }
+
     /// A small grid of the image's colours, for picking a Flavor from it.
     func samplePixels(side: Int = 40) -> [Flavor.RGB] {
-        guard let cgImage else { return [] }
+        guard let cgImage = bitmap else { return [] }
         var bytes = [UInt8](repeating: 0, count: side * side * 4)
         let drawn = bytes.withUnsafeMutableBytes { buffer -> Bool in
             guard let context = CGContext(data: buffer.baseAddress, width: side, height: side, bitsPerComponent: 8,
@@ -884,8 +895,20 @@ extension UIImage {
     func resizedJPEG(maxSide: CGFloat) -> Data? {
         let scale = min(1, maxSide / max(size.width, size.height))
         let target = CGSize(width: size.width * scale, height: size.height * scale)
+        #if os(iOS)
         return UIGraphicsImageRenderer(size: target).jpegData(withCompressionQuality: 0.85) { _ in
             draw(in: CGRect(origin: .zero, size: target))
         }
+        #else
+        guard let cgImage = bitmap,
+              let context = CGContext(data: nil, width: Int(target.width), height: Int(target.height),
+                                      bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                      bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return nil }
+        context.interpolationQuality = .high
+        context.draw(cgImage, in: CGRect(origin: .zero, size: target))
+        guard let scaled = context.makeImage() else { return nil }
+        return NSBitmapImageRep(cgImage: scaled).representation(using: .jpeg, properties: [.compressionFactor: 0.85])
+        #endif
     }
 }

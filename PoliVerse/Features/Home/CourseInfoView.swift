@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 /// The facts of a course, drawn as the course page is: its numbers in the
 /// look's typeface, who teaches it and how to reach them, how the exam works,
@@ -383,7 +382,7 @@ struct CourseInfoView: View {
     ///
     /// - Parameter text: The code to copy.
     private func copy(_ text: String) {
-        UIPasteboard.general.string = text
+        Clipboard.copy(text)
         withAnimation(.snappy) { copied = text }
         Task {
             try? await Task.sleep(for: .seconds(2))

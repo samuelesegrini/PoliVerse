@@ -1,5 +1,7 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 
 /// The other half of a look: what the rest of the app wears with the page.
 ///
@@ -229,6 +231,7 @@ nonisolated enum TabBarBehaviour: String, Codable, CaseIterable, Identifiable, S
         }
     }
 
+    #if os(iOS)
     /// The behaviour as the tab view takes it.
     var system: TabBarMinimizeBehavior {
         switch self {
@@ -236,6 +239,7 @@ nonisolated enum TabBarBehaviour: String, Codable, CaseIterable, Identifiable, S
         case .stays: .never
         }
     }
+    #endif
 }
 
 // MARK: - The look's app half, resolved
@@ -296,9 +300,12 @@ enum AppIconSwitcher {
     ///
     /// - Parameter name: The icon's name, `nil` for the primary icon.
     static func apply(_ name: String?) async {
+        // The Mac has no alternate app icons: the Dock shows the one in the bundle.
+        #if os(iOS)
         let application = UIApplication.shared
         guard application.supportsAlternateIcons,
               application.alternateIconName != name else { return }
         try? await application.setAlternateIconName(name)
+        #endif
     }
 }

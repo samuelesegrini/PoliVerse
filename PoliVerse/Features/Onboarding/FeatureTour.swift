@@ -540,7 +540,11 @@ final class TourDrive: NSObject {
     func start() {
         guard link == nil else { return }
         last = 0
+        #if os(iOS)
         let link = CADisplayLink(target: self, selector: #selector(frame(_:)))
+        #else
+        guard let link = NSScreen.main?.displayLink(target: self, selector: #selector(frame(_:))) else { return }
+        #endif
         // The drift is slow and even, which is exactly the case a variable
         // refresh rate gets wrong on its own: asked for nothing in particular
         // it will settle the display low and the movement will show its steps.
@@ -709,10 +713,17 @@ private struct TourBackdrop: View {
     private func accent(ofCard index: Int) -> (red: Double, green: Double, blue: Double) {
         let wrapped = ((index % screens.count) + screens.count) % screens.count
         let color = screens[wrapped].accent(style: style, scheme: scheme)
+        #if os(iOS)
         let traits = UITraitCollection(userInterfaceStyle: scheme == .dark ? .dark : .light)
         var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
         UIColor(color).resolvedColor(with: traits).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
         return (Double(red), Double(green), Double(blue))
+        #else
+        var environment = EnvironmentValues()
+        environment.colorScheme = scheme
+        let resolved = color.resolve(in: environment)
+        return (Double(resolved.red), Double(resolved.green), Double(resolved.blue))
+        #endif
     }
 }
 

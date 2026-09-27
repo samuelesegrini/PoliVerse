@@ -23,6 +23,8 @@ struct ExamDetailView: View {
     @Environment(\.locale) private var locale
     /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
+    /// Closes the inspector this detail sits in on the Mac.
+    @Environment(\.closeDetail) private var closeDetail
     /// The shared ``CareerModel``, from the environment.
     @Environment(CareerModel.self) private var career
     /// The shared ``CourseModel``, from the environment.
@@ -109,9 +111,11 @@ struct ExamDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 // The header names the course: the bar only closes the sheet.
+                #if os(iOS)
                 ToolbarItem(placement: .principal) { Text(verbatim: "") }
+                #endif
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Chiudi", systemImage: "xmark") { dismiss() }
+                    Button("Chiudi", systemImage: "xmark") { if let closeDetail { closeDetail() } else { dismiss() } }
                 }
             }
         }

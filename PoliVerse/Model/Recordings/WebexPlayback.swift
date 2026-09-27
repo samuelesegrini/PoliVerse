@@ -1,5 +1,9 @@
 import OSLog
+#if os(iOS)
 import UIKit
+#else
+import AppKit
+#endif
 @preconcurrency import WebKit
 
 /// Finds where a Webex recording streams, by letting Webex's own page ask.
@@ -171,6 +175,12 @@ final class WebexPlayback: NSObject, WKNavigationDelegate, WKScriptMessageHandle
     /// touches it but WebKit runs it as a visible page.
     private func attachToWindow() {
         guard webView.superview == nil else { return }
+        #if os(macOS)
+        guard let content = (NSApp.keyWindow ?? NSApp.windows.first)?.contentView else { return }
+        webView.frame = content.bounds
+        webView.setAccessibilityElement(false)
+        content.addSubview(webView, positioned: .below, relativeTo: nil)
+        #else
         let window = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .first { $0.activationState == .foregroundActive }?.keyWindow
@@ -179,6 +189,7 @@ final class WebexPlayback: NSObject, WKNavigationDelegate, WKScriptMessageHandle
         webView.isUserInteractionEnabled = false
         webView.accessibilityElementsHidden = true
         window.insertSubview(webView, at: 0)
+        #endif
     }
 
     // MARK: - Messages

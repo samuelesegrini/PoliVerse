@@ -1,5 +1,6 @@
 import AVKit
 import OSLog
+#if os(iOS)
 import UIKit
 
 /// Plays a lecture recording in the system player.
@@ -205,3 +206,144 @@ final class RecordingPlayer: NSObject, AVPlayerViewControllerDelegate {
         return top
     }
 }
+#else
+import AppKit
+
+/// Plays a lecture recording in a window of its own.
+///
+/// The Mac's version: `AVPlayerView` in a regular window, so the recording can sit
+/// beside the course's materials. Picture in Picture comes from the player's own
+/// controls. Closing the window stops the recording and reports where it stopped.
+@MainActor
+final class RecordingPlayer: NSObject, NSWindowDelegate {
+    /// The one player: a second recording replaces the first.
+    static let shared = RecordingPlayer()
+
+    /// Diagnostic log for this type, under the `recordings` category.
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "recordings")
+    /// The window showing the player.
+    private var window: NSWindow?
+    /// The player in the window.
+    private var player: AVPlayer?
+    /// Hears where the player is, every few seconds and once more on closing.
+    private var onProgress: ((_ position: Double, _ duration: Double, _ final: Bool) -> Void)?
+    /// The periodic time observer on the player.
+    private var timeObserver: Any?
+    /// Waits for the item to be ready before seeking to the resume point.
+    private var readiness: NSKeyValueObservation?
+
+    /// Plays a recording from its Webex stream.
+    ///
+    /// - Parameters:
+    ///   - stream: What Webex answered, with the HLS address.
+    ///   - recording: The recording, for the window's title.
+    ///   - cookies: Webex's cookies, sent with the media requests.
+    ///   - startAt: Where to start, in seconds, or `nil` for the beginning.
+    ///   - onProgress: Hears the position and length every five seconds, and once
+    ///     more, marked final, when the window closes.
+    func play(
+        _ stream: WebexStream, recording: Recording, cookies: [HTTPCookie], startAt: Double? = nil,
+        onProgress: @escaping (_ position: Double, _ duration: Double, _ final: Bool) -> Void = { _, _, _ in }
+    ) {
+        guard let address = stream.hlsURL else { return }
+        play(address, recording: recording, cookies: cookies,
+             duration: stream.duration.map { Double($0.components.seconds) } ?? 0,
+             startAt: startAt, onProgress: onProgress)
+    }
+
+    /// Plays a recording from an address: Webex's HLS, or a file saved on the Mac.
+    ///
+    /// - Parameters:
+    ///   - address: What to play.
+    ///   - recording: The recording, for the window's title.
+    ///   - cookies: Cookies for the media requests; none for a file.
+    ///   - duration: The length in seconds when known, until the player measures it.
+    ///   - startAt: Where to start, in seconds, or `nil` for the beginning.
+    ///   - onProgress: Hears the position and length every five seconds, and once
+    ///     more, marked final, when the window closes.
+    func play(
+        _ address: URL, recording: Recording, cookies: [HTTPCookie] = [], duration: Double = 0,
+        startAt: Double? = nil,
+        onProgress: @escaping (_ position: Double, _ duration: Double, _ final: Bool) -> Void = { _, _, _ in }
+    ) {
+        stop()
+        let asset = address.isFileURL
+            ? AVURLAsset(url: address)
+            : AVURLAsset(url: address, options: [AVURLAssetHTTPCookiesKey: cookies])
+        let item = AVPlayerItem(asset: asset)
+        let player = AVPlayer(playerItem: item)
+        let fallbackDuration = duration
+        self.onProgress = onProgress
+        self.player = player
+        timeObserver = player.addPeriodicTimeObserver(
+            forInterval: CMTime(seconds: 5, preferredTimescale: 1), queue: .main
+        ) { [weak self, weak item] time in
+            MainActor.assumeIsolated {
+                let duration = item?.duration.seconds ?? .nan
+                self?.onProgress?(time.seconds, duration.isFinite ? duration : fallbackDuration, false)
+            }
+        }
+
+        let view = AVPlayerView()
+        view.player = player
+        view.allowsPictureInPicturePlayback = true
+        view.showsFullScreenToggleButton = true
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 960, height: 540),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+            backing: .buffered, defer: false)
+        window.title = recording.topic ?? recording.form.title
+        window.subtitle = recording.courseTitle.capitalized
+        window.contentView = view
+        window.contentAspectRatio = NSSize(width: 16, height: 9)
+        window.isReleasedWhenClosed = false
+        window.delegate = self
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        self.window = window
+
+        if let startAt, startAt > 0 {
+            // A seek before the item is ready is dropped, so wait for it.
+            readiness = item.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
+                guard item.status == .readyToPlay else { return }
+                Task { @MainActor in
+                    self?.readiness = nil
+                    await player.seek(to: CMTime(seconds: startAt, preferredTimescale: 600))
+                    player.play()
+                }
+            }
+        } else {
+            player.play()
+        }
+        log.info("Playing transfer \(recording.transferID, privacy: .public)")
+    }
+
+    /// Stops whatever is playing, reports where it stopped, and closes the window.
+    func stop() {
+        if let player {
+            player.pause()
+            let duration = player.currentItem?.duration.seconds ?? .nan
+            onProgress?(player.currentTime().seconds, duration.isFinite ? duration : 0, true)
+            if let timeObserver { player.removeTimeObserver(timeObserver) }
+        }
+        timeObserver = nil
+        readiness = nil
+        onProgress = nil
+        player = nil
+        let closing = window
+        window = nil
+        closing?.delegate = nil
+        closing?.close()
+    }
+
+    /// Closing the window stops the recording.
+    nonisolated func windowWillClose(_ notification: Notification) {
+        MainActor.assumeIsolated {
+            guard window != nil else { return }
+            window?.delegate = nil
+            window = nil
+            stop()
+        }
+    }
+}
+#endif

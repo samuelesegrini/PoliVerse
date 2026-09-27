@@ -1,3 +1,5 @@
+// ActivityKit and the Lock Screen families are iPhone and iPad only.
+#if os(iOS)
 import ActivityKit
 import SwiftUI
 import WidgetKit
@@ -212,3 +214,4 @@ struct LectureActivityView: View {
         return from...max(from, deadline)
     }
 }
+#endif

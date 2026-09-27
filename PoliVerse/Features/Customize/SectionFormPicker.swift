@@ -128,8 +128,11 @@ struct SectionFormPicker: View {
         .rotation3DEffect(.degrees(flipped ? 180 : 0), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
     }
 
-    /// The forms as pages to swipe through, with the stepper under them.
-    private var front: some View {
+    /// The forms as pages: swiped through on iPhone, and one at a time on the Mac, where
+    /// the stepper under them turns the page.
+    @ViewBuilder
+    private var pages: some View {
+        #if os(iOS)
         TabView(selection: $page) {
             ForEach(forms) { form in
                 SectionPageCard(kind: kind, form: form, style: style, day: shell.day)
@@ -139,6 +142,18 @@ struct SectionFormPicker: View {
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
+        #else
+        SectionPageCard(kind: kind, form: page, style: style, day: shell.day)
+            .padding(.bottom, 2)
+            .id(page)
+            .transition(.opacity)
+            .accessibilityIdentifier("form-\(page.rawValue)")
+        #endif
+    }
+
+    /// The forms as pages to swipe through, with the stepper under them.
+    private var front: some View {
+        pages
         .frame(height: 340)
         .overlay(alignment: .bottom) {
             if forms.count > 1 {

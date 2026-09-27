@@ -60,96 +60,6 @@
     " in %@" : {
 
     },
-    "Circuito" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Circuit"
-          }
-        }
-      }
-    },
-    "Iperspazio" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hyperspace"
-          }
-        }
-      }
-    },
-    "Neon" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Neon"
-          }
-        }
-      }
-    },
-    "Olografico" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Holographic"
-          }
-        }
-      }
-    },
-    "Orbita" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Orbit"
-          }
-        }
-      }
-    },
-    "Osservatorio" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Observatory"
-          }
-        }
-      }
-    },
-    "Pelle" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leather"
-          }
-        }
-      }
-    },
-    "Spettro" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Spectrum"
-          }
-        }
-      }
-    },
-    "Vicino" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Close up"
-          }
-        }
-      }
-    },
     "—" : {
       "localizations" : {
         "en" : {
@@ -1740,6 +1650,9 @@
         }
       }
     },
+    "Accedi a PoliVerse per vedere qui le lezioni, gli esami e le novità." : {
+
+    },
     "Accedi a WeBeep" : {
       "localizations" : {
         "en" : {
@@ -2134,6 +2047,9 @@
         }
       }
     },
+    "Aggiungi a Calendario" : {
+
+    },
     "Aggiungi ai preferiti" : {
       "localizations" : {
         "en" : {
@@ -2229,6 +2145,12 @@
       }
     },
     "Al centro" : {
+
+    },
+    "all'inizio" : {
+
+    },
+    "alla fine" : {
 
     },
     "Alle" : {
@@ -2463,6 +2385,9 @@
           }
         }
       }
+    },
+    "Anche in Impostazioni di Sistema › Generali › Elementi di login." : {
+
     },
     "Anche questa è fatta." : {
       "localizations" : {
@@ -2835,6 +2760,9 @@
         }
       }
     },
+    "Apri" : {
+
+    },
     "APRI →" : {
       "localizations" : {
         "en" : {
@@ -2844,6 +2772,9 @@
           }
         }
       }
+    },
+    "Apri all'accesso al Mac" : {
+
     },
     "Apri App Store" : {
       "localizations" : {
@@ -2967,7 +2898,7 @@
         }
       }
     },
-    "Apri PoliVerse sull'iPhone: l'orario arriva da lì." : {
+    "Apri PoliVerse" : {
 
     },
     "Apri su WeBeep" : {
@@ -3270,6 +3201,9 @@
         }
       }
     },
+    "Aula e minuti" : {
+
+    },
     "Aula libera" : {
       "localizations" : {
         "en" : {
@@ -3341,6 +3275,9 @@
           }
         }
       }
+    },
+    "Aule libere, Mappa e Cerca" : {
+
     },
     "Aule non disponibili" : {
       "localizations" : {
@@ -3438,6 +3375,9 @@
           }
         }
       }
+    },
+    "Barra dei menu" : {
+
     },
     "base di laurea" : {
       "localizations" : {
@@ -3564,6 +3504,9 @@
           }
         }
       }
+    },
+    "Buona giornata, %@!" : {
+
     },
     "Buona giornata!" : {
       "localizations" : {
@@ -3799,6 +3742,9 @@
           }
         }
       }
+    },
+    "Campus e studio" : {
+
     },
     "Campus ed edifici" : {
       "localizations" : {
@@ -4151,9 +4097,6 @@
         }
       }
     },
-    "Chiara" : {
-
-    },
     "Chiaro" : {
       "localizations" : {
         "en" : {
@@ -4306,6 +4249,16 @@
     },
     "Circa una volta all’ora, quando iOS lo concede, l’app aggiorna orario, carriera e novità di WeBeep in circa trenta secondi, poi riprogramma i promemoria e aggiorna i widget. iOS decide quando: con Risparmio energetico o l’aggiornamento disattivato, non succede." : {
 
+    },
+    "Circuito" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Circuit"
+          }
+        }
+      }
     },
     "Classica" : {
 
@@ -6164,6 +6117,9 @@
         }
       }
     },
+    "Dove" : {
+
+    },
     "Download in corso" : {
 
     },
@@ -6852,6 +6808,9 @@
     "Etichette" : {
 
     },
+    "Evento" : {
+
+    },
     "EXTRA" : {
       "localizations" : {
         "en" : {
@@ -7332,6 +7291,9 @@
         }
       }
     },
+    "Generale" : {
+
+    },
     "Gessetto" : {
       "localizations" : {
         "en" : {
@@ -7439,6 +7401,12 @@
           }
         }
       }
+    },
+    "Giorno precedente" : {
+
+    },
+    "Giorno successivo" : {
+
     },
     "Gira la scheda" : {
       "localizations" : {
@@ -8543,6 +8511,9 @@
         }
       }
     },
+    "In aggiornamento…" : {
+
+    },
     "In arrivo" : {
       "localizations" : {
         "en" : {
@@ -9020,6 +8991,16 @@
         }
       }
     },
+    "Iperspazio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hyperspace"
+          }
+        }
+      }
+    },
     "Irraggiungibile" : {
 
     },
@@ -9364,6 +9345,9 @@
           }
         }
       }
+    },
+    "La lezione in corso e le prossime scadenze, a un clic." : {
+
     },
     "La media, prima del voto" : {
       "localizations" : {
@@ -10748,6 +10732,9 @@
         }
       }
     },
+    "Mostra in Mappa" : {
+
+    },
     "Mostra la pagina del Politecnico" : {
       "localizations" : {
         "en" : {
@@ -10821,6 +10808,12 @@
           }
         }
       }
+    },
+    "Mostra nel Finder" : {
+
+    },
+    "Mostra PoliVerse nella barra dei menu" : {
+
     },
     "Mostra tutti (%lld)" : {
       "localizations" : {
@@ -10952,6 +10945,9 @@
         }
       }
     },
+    "Nel pannello" : {
+
+    },
     "Nel tuo colore" : {
       "localizations" : {
         "en" : {
@@ -10974,6 +10970,19 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nell'agenda ufficiale"
+          }
+        }
+      }
+    },
+    "Nella barra" : {
+
+    },
+    "Neon" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neon"
           }
         }
       }
@@ -11078,9 +11087,6 @@
       }
     },
     "Nessun corso qui" : {
-
-    },
-    "Nessun dato ancora." : {
 
     },
     "Nessun dato di carriera" : {
@@ -11403,6 +11409,9 @@
         }
       }
     },
+    "Nessuna novità." : {
+
+    },
     "Nessuna prenotazione" : {
       "localizations" : {
         "en" : {
@@ -11499,6 +11508,9 @@
         }
       }
     },
+    "Nessuna scadenza in vista." : {
+
+    },
     "Nessuna scheda" : {
       "localizations" : {
         "en" : {
@@ -11558,6 +11570,9 @@
         }
       }
     },
+    "Niente icona nel Dock; la finestra si apre dal pannello." : {
+
+    },
     "Niente in arrivo" : {
       "localizations" : {
         "en" : {
@@ -11567,6 +11582,9 @@
           }
         }
       }
+    },
+    "Niente in calendario per questo giorno." : {
+
     },
     "Niente in programma" : {
       "localizations" : {
@@ -11583,9 +11601,6 @@
           }
         }
       }
-    },
-    "Niente in programma." : {
-
     },
     "Niente tracciamento" : {
       "localizations" : {
@@ -12159,6 +12174,9 @@
         }
       }
     },
+    "Novità nei corsi" : {
+
+    },
     "Novità sugli esami" : {
       "localizations" : {
         "en" : {
@@ -12259,6 +12277,9 @@
           }
         }
       }
+    },
+    "Nuovo su WeBeep" : {
+
     },
     "Obbligatorio" : {
       "localizations" : {
@@ -12528,6 +12549,16 @@
         }
       }
     },
+    "Olografico" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Holographic"
+          }
+        }
+      }
+    },
     "Onde" : {
       "localizations" : {
         "en" : {
@@ -12674,6 +12705,16 @@
         }
       }
     },
+    "Orbita" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orbit"
+          }
+        }
+      }
+    },
     "Ordinato" : {
       "localizations" : {
         "en" : {
@@ -12746,6 +12787,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Guest"
+          }
+        }
+      }
+    },
+    "Osservatorio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Observatory"
           }
         }
       }
@@ -12844,6 +12895,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "PDF"
+          }
+        }
+      }
+    },
+    "Pelle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leather"
           }
         }
       }
@@ -13228,6 +13289,9 @@
         }
       }
     },
+    "Poi oggi" : {
+
+    },
     "Politecnico" : {
       "localizations" : {
         "en" : {
@@ -13308,6 +13372,9 @@
           }
         }
       }
+    },
+    "PoliVerse non può scrivere nel Calendario. Consentilo in Impostazioni di Sistema › Privacy e sicurezza › Calendari." : {
+
     },
     "PoliVerse ti avvisa l'ultimo giorno utile per iscriverti, se i promemoria sugli appelli sono attivi." : {
 
@@ -13401,6 +13468,9 @@
           }
         }
       }
+    },
+    "Premi fn-E per le emoji" : {
+
     },
     "Presentazioni" : {
       "localizations" : {
@@ -13828,6 +13898,9 @@
         }
       }
     },
+    "Prossimo esame e carriera" : {
+
+    },
     "Prova i voti che verranno" : {
 
     },
@@ -13979,6 +14052,9 @@
           }
         }
       }
+    },
+    "Quando" : {
+
     },
     "Quando cambia qualcosa nei tuoi appelli — un'aula, un esito, un appello spostato — lo trovi qui." : {
       "localizations" : {
@@ -15124,9 +15200,6 @@
         }
       }
     },
-    "Scura" : {
-
-    },
     "Scuro" : {
       "localizations" : {
         "en" : {
@@ -15863,6 +15936,9 @@
         }
       }
     },
+    "Solo icona" : {
+
+    },
     "Solo in questo orario" : {
       "localizations" : {
         "en" : {
@@ -15894,6 +15970,9 @@
           }
         }
       }
+    },
+    "Solo nella barra dei menu" : {
+
     },
     "Sovrapposizioni" : {
       "localizations" : {
@@ -15973,6 +16052,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Weight"
+          }
+        }
+      }
+    },
+    "Spettro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spectrum"
           }
         }
       }
@@ -17066,6 +17155,9 @@
         }
       }
     },
+    "Vai" : {
+
+    },
     "Vai a" : {
 
     },
@@ -17219,6 +17311,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Travel"
+          }
+        }
+      }
+    },
+    "Vicino" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close up"
           }
         }
       }

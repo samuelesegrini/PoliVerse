@@ -16,7 +16,10 @@ struct PoliVerseWidgetBundle: WidgetBundle {
         TodayWidget()
         CareerWidget()
         FreeRoomsWidget()
+        // A Mac cannot run Live Activities; the iPhone's appear in its menu bar.
+        #if os(iOS)
         LectureLiveActivity()
+        #endif
         FreeRoomsControl()
         TimetableControl()
         CareerControl()

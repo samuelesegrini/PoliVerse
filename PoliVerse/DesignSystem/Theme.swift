@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 /// The colours the whole app draws with.
 ///
@@ -65,10 +68,17 @@ enum Theme {
     private static func adaptive(
         light: (Double, Double, Double), dark: (Double, Double, Double)
     ) -> Color {
+        #if os(iOS)
         Color(UIColor { traits in
             let c = traits.userInterfaceStyle == .dark ? dark : light
             return UIColor(red: c.0, green: c.1, blue: c.2, alpha: 1)
         })
+        #else
+        Color(NSColor(name: nil) { appearance in
+            let c = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? dark : light
+            return NSColor(srgbRed: c.0, green: c.1, blue: c.2, alpha: 1)
+        })
+        #endif
     }
 
     /// The label colour for text sitting on a filled accent surface.
@@ -76,11 +86,19 @@ enum Theme {
     /// The accents invert between modes — dark navy on white, light blue on black — so a
     /// fixed white label works in light mode and scores about 2.3:1 in dark. Near-black on
     /// the lighter dark-mode accent gives roughly 9:1.
+    #if os(iOS)
     static let onAccent = Color(UIColor { traits in
         traits.userInterfaceStyle == .dark
             ? UIColor(white: 0.08, alpha: 1)
             : .white
     })
+    #else
+    static let onAccent = Color(NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            ? NSColor(white: 0.08, alpha: 1)
+            : .white
+    })
+    #endif
 
     /// The accent a course keeps between launches, from its ``Course/colorSeed``.
     ///

@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 /// The first run: a full-screen landscape that passes from dawn to the colour the
 /// student picks, asking what the app is for before it asks for the account.

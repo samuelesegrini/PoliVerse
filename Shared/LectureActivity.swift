@@ -2,7 +2,7 @@
 // well. The attributes are a Live Activity's contract and have no meaning
 // without the framework, so the whole file steps aside on a platform that
 // cannot host one.
-#if canImport(ActivityKit)
+#if os(iOS)
 import ActivityKit
 import Foundation
 

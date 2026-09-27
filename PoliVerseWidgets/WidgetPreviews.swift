@@ -1,3 +1,5 @@
+// ActivityKit and the Lock Screen families are iPhone and iPad only.
+#if os(iOS)
 import ActivityKit
 import SwiftUI
 import WidgetKit
@@ -263,3 +265,4 @@ private let previewLecture = LectureActivityAttributes(
     .labelStyle(.titleAndIcon)
     .padding()
 }
+#endif

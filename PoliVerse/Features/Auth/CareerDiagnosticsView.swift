@@ -1,6 +1,5 @@
 #if DEBUG
 import SwiftUI
-import UIKit
 
 /// What the career services actually send, for finding the degree course
 /// and plan codes of a matricola.
@@ -59,7 +58,7 @@ struct CareerDiagnosticsView: View {
                                : PayloadInspector.mask(session.student?.matricola ?? "—"))
                 Toggle(String("Mostra i valori"), isOn: $showValues)
                 Button(copied ? String("Copiato") : String("Copia il report")) {
-                    UIPasteboard.general.string = report
+                    Clipboard.copy(report)
                     copied = true
                 }
                 .disabled(payloads.isEmpty)

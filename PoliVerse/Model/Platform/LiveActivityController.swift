@@ -1,3 +1,4 @@
+#if os(iOS)
 import ActivityKit
 import Foundation
 import Observation
@@ -288,3 +289,64 @@ final class LiveActivityController {
         return canStart(event, at: date)
     }
 }
+#else
+import Foundation
+import Observation
+
+/// The Mac's stand-in for the lecture Live Activity.
+///
+/// A Mac app cannot start a Live Activity; the iPhone's own already appear in the Mac
+/// menu bar. The stand-in keeps the same surface so the screens compile unchanged, and
+/// ``canStart(_:at:)`` answers `false`, so they never offer it.
+@Observable
+final class LiveActivityController {
+    /// Always `nil`: nothing is ever showing.
+    private(set) var currentEventID: Int?
+    /// Always `nil`: nothing is ever attempted.
+    private(set) var errorMessage: String?
+
+    /// Always `false`.
+    var isAvailable: Bool { false }
+
+    /// Always `false`.
+    ///
+    /// - Parameter event: Ignored.
+    /// - Returns: `false`.
+    func isShowing(_ event: AgendaEvent) -> Bool { false }
+
+    /// Always `false`.
+    ///
+    /// - Parameter exam: Ignored.
+    /// - Returns: `false`.
+    func isShowing(_ exam: ExamSession) -> Bool { false }
+
+    /// Does nothing.
+    ///
+    /// - Parameter event: Ignored.
+    func start(for event: AgendaEvent) {}
+
+    /// Does nothing.
+    ///
+    /// - Parameter exam: Ignored.
+    func start(for exam: ExamSession) {}
+
+    /// Does nothing.
+    func end() {}
+
+    /// Always `false`, so no screen offers the activity on the Mac.
+    ///
+    /// - Parameters:
+    ///   - event: Ignored.
+    ///   - date: Ignored.
+    /// - Returns: `false`.
+    nonisolated static func canStart(_ event: AgendaEvent, at date: Date = .now) -> Bool { false }
+
+    /// Always `false`, so no screen offers the activity on the Mac.
+    ///
+    /// - Parameters:
+    ///   - exam: Ignored.
+    ///   - date: Ignored.
+    /// - Returns: `false`.
+    nonisolated static func canStart(_ exam: ExamSession, at date: Date = .now) -> Bool { false }
+}
+#endif

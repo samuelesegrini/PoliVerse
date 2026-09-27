@@ -109,3 +109,25 @@ Adding a screen means adding an identifier to its root and a row to
   XCTest, which is where `XCUIApplication` lives.
 - A network test stubs `URLProtocol` and keys its answers by something unique
   to the test, so the suite stays parallel.
+
+## The Mac app
+
+The unit tests run on iOS; the Mac shares the same code and adds only its own
+screens (`PoliVerse/Features/Mac`). To look at those without a screen recorder,
+a Debug build takes these launch arguments:
+
+| Argument | What it does |
+| --- | --- |
+| `-MacSnapshots` | Renders the main window, each section (routed as the Vai menu does), the menu bar panel and Settings to PNGs in `~/Library/Containers/segrini.samuele.PoliVerse/Data/Downloads/PoliVerse Snapshots`, with a `views.txt` of the view tree |
+| `-OggiDayOffset N` / `-OggiDaysBack N` | Opens Oggi N days ahead or back; the sample agenda covers the current week only |
+| `-NowDemo` | A lecture in progress, for the now card and the menu bar |
+| `-lastSeenReleaseVersion 2.0` | Skips the Novità sheet |
+
+```
+xcodebuild -scheme PoliVerse -destination 'platform=macOS' build
+PoliVerse.app/Contents/MacOS/PoliVerse -MacSnapshots -NowDemo -lastSeenReleaseVersion 2.0
+```
+
+The capture does not draw Liquid Glass or vibrant sidebar rows; `views.txt`
+shows they are there.
+

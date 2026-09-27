@@ -100,7 +100,7 @@ struct ExamUpdatesView: View {
         .navigationTitle("Novità esami")
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await career.load(force: true) }
-        .sheet(item: $selectedExam) { ExamDetailView(exam: $0) }
+        .detailPresentation(item: $selectedExam) { ExamDetailView(exam: $0) }
         .onAppear {
             // Once per visit: coming back to the tab must not clear the dots
             // of a screen still open.

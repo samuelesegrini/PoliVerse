@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		PV00000000000000000049 /* PoliVerseWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = PV00000000000000000041 /* PoliVerseWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		PV00000000000000000069 /* PoliVerseWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = PV00000000000000000061 /* PoliVerseWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		PV00000000000000000069 /* PoliVerseWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = PV00000000000000000061 /* PoliVerseWatch.app */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		PV00000000000000000079 /* PoliVerseWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = PV00000000000000000070 /* PoliVerseWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -509,6 +509,7 @@
 		};
 		PV00000000000000000068 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			platformFilter = ios;
 			target = PV00000000000000000063 /* PoliVerseWatch */;
 			targetProxy = PV0000000000000000006B /* PBXContainerItemProxy */;
 		};
@@ -649,16 +650,21 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-Dial AppIcon-Dial-Lavender AppIcon-Dial-Indigo AppIcon-Dial-Sky AppIcon-Dial-Mint AppIcon-Dial-Sage AppIcon-Dial-Mandarin AppIcon-Dial-Coral AppIcon-Dial-Raspberry AppIcon-Dial-Coffee AppIcon-Dial-Slate AppIcon-Dial-Graphite AppIcon-CloseUp AppIcon-CloseUp-Lavender AppIcon-CloseUp-Indigo AppIcon-CloseUp-Sky AppIcon-CloseUp-Mint AppIcon-CloseUp-Sage AppIcon-CloseUp-Mandarin AppIcon-CloseUp-Coral AppIcon-CloseUp-Raspberry AppIcon-CloseUp-Coffee AppIcon-CloseUp-Slate AppIcon-CloseUp-Graphite AppIcon-Neon AppIcon-Spectrum AppIcon-Leather AppIcon-Holographic AppIcon-Hyperspace AppIcon-Blueprint AppIcon-Circuit AppIcon-Heavens AppIcon-Observatory AppIcon-Soft AppIcon-Paper";
+				"ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES[sdk=macosx*]" = "";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/PoliVerse.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = Config/PoliVerseMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"PoliVerse/Preview Content\"";
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "PoliVerse tiene le lezioni del tuo orario personalizzato in un calendario apposito e lo aggiorna quando l'orario cambia.";
+				INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription = "PoliVerse aggiunge al Calendario gli appelli e le scadenze che scegli, senza leggere gli altri eventi.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -667,9 +673,18 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = segrini.samuele.PoliVerse;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -680,16 +695,21 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-Dial AppIcon-Dial-Lavender AppIcon-Dial-Indigo AppIcon-Dial-Sky AppIcon-Dial-Mint AppIcon-Dial-Sage AppIcon-Dial-Mandarin AppIcon-Dial-Coral AppIcon-Dial-Raspberry AppIcon-Dial-Coffee AppIcon-Dial-Slate AppIcon-Dial-Graphite AppIcon-CloseUp AppIcon-CloseUp-Lavender AppIcon-CloseUp-Indigo AppIcon-CloseUp-Sky AppIcon-CloseUp-Mint AppIcon-CloseUp-Sage AppIcon-CloseUp-Mandarin AppIcon-CloseUp-Coral AppIcon-CloseUp-Raspberry AppIcon-CloseUp-Coffee AppIcon-CloseUp-Slate AppIcon-CloseUp-Graphite AppIcon-Neon AppIcon-Spectrum AppIcon-Leather AppIcon-Holographic AppIcon-Hyperspace AppIcon-Blueprint AppIcon-Circuit AppIcon-Heavens AppIcon-Observatory AppIcon-Soft AppIcon-Paper";
+				"ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES[sdk=macosx*]" = "";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/PoliVerse.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = Config/PoliVerseMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"PoliVerse/Preview Content\"";
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "PoliVerse tiene le lezioni del tuo orario personalizzato in un calendario apposito e lo aggiorna quando l'orario cambia.";
+				INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription = "PoliVerse aggiunge al Calendario gli appelli e le scadenze che scegli, senza leggere gli altri eventi.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -698,9 +718,18 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = segrini.samuele.PoliVerse;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -747,8 +776,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = Config/PoliVerseWidgets.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = Config/PoliVerseWidgetsMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Config/PoliVerseWidgets-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = PoliVerse;
@@ -759,10 +790,20 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = segrini.samuele.PoliVerse.Widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
 				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -778,8 +819,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = Config/PoliVerseWidgets.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = Config/PoliVerseWidgetsMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Config/PoliVerseWidgets-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = PoliVerse;
@@ -790,10 +833,20 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = segrini.samuele.PoliVerse.Widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
 				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;

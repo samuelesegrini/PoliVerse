@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 /// The first run: what the app is, then the account, then the handful of
 /// settings that are worth asking for once rather than leaving to be

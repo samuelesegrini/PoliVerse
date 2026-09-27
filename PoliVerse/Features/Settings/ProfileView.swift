@@ -191,7 +191,7 @@ struct ProfileView: View {
     ///
     /// - Parameter value: The code to copy.
     private func copy(_ value: String) {
-        UIPasteboard.general.string = value
+        Clipboard.copy(value)
         withAnimation(.snappy) { copied = value }
         Task {
             try? await Task.sleep(for: .seconds(1.5))

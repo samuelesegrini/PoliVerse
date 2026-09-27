@@ -271,8 +271,12 @@ extension View {
     /// because a `listRowBackground` set here, on the `List`, does not reach
     /// the rows.
     func lookList() -> some View {
+        #if os(iOS)
         listStyle(.insetGrouped)
             .listSectionSpacing(18)
+        #else
+        listStyle(.inset)
+        #endif
     }
 
     /// The look's material behind a row, for the rows a list builds in its own

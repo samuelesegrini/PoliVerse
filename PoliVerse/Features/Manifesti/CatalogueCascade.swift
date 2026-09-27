@@ -82,7 +82,11 @@ struct CatalogueCascade: View {
                     }
                 }
             }
+            #if os(iOS)
             .pickerStyle(.navigationLink)
+            #else
+            .pickerStyle(.menu)
+            #endif
         }
     }
 

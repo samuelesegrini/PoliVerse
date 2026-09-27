@@ -72,7 +72,9 @@ struct BentoPanel: View {
                 .padding(12)
             }
             .onGeometryChange(for: CGFloat.self) { $0.size.width - 24 } action: { width = $0 }
+            #if os(iOS)
             .toolbarVisibility(.hidden, for: .navigationBar)
+            #endif
             .navigationDestination(for: CustomizePage.self) { page in
                 if case .section(let kind) = page {
                     SectionFormPicker(kind: kind, style: $style,

@@ -108,8 +108,10 @@ struct PanelContent: View {
             .contentMargins(.top, 6, for: .scrollContent)
             // Fixed until full height, so a drag in the list moves the sheet.
             .scrollDisabled(!isFull)
+            #if os(iOS)
             .toolbar(.hidden, for: .navigationBar)
             .containerBackground(.clear, for: .navigation)
+            #endif
             .navigationDestination(for: NewRoute.self) { route in
                 switch route {
                 case .today: EmptyView()

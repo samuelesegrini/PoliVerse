@@ -1,4 +1,6 @@
+#if os(iOS)
 import CoreMotion
+#endif
 import SwiftUI
 
 // The student's card at the top of the profile: the Politecnico's facade on
@@ -395,7 +397,7 @@ private struct PolitecnicoMark: View {
     /// The view's content.
     var body: some View {
         Group {
-            if UIImage(named: shape.asset) != nil {
+            if PlatformImage(named: shape.asset) != nil {
                 pressed(Image(shape.asset).renderingMode(.template).resizable().scaledToFit())
                     .frame(height: height)
             } else {
@@ -531,6 +533,7 @@ private final class CardMotion {
     /// Left–right and forward–back, each from -1 to 1.
     private(set) var tilt: CGSize = .zero
 
+    #if os(iOS)
     /// The motion source, shared by every card on screen.
     private static let manager = CMMotionManager()
 
@@ -554,6 +557,13 @@ private final class CardMotion {
     func stop() {
         Self.manager.stopDeviceMotionUpdates()
     }
+    #else
+    /// Does nothing: a Mac does not tilt, so the glint stays where it is.
+    func start() {}
+
+    /// Does nothing.
+    func stop() {}
+    #endif
 }
 
 // MARK: - Previews

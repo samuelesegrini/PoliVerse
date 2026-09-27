@@ -33,10 +33,17 @@ extension Font {
     ///   - bold: Bold rather than medium.
     ///   - relativeTo: The text style it scales with.
     /// - Returns: The font.
+    #if os(iOS)
     static func blueprint(_ size: CGFloat, bold: Bool = false, relativeTo style: UIFont.TextStyle = .body) -> Font {
         let base = UIFont.monospacedSystemFont(ofSize: size, weight: bold ? .bold : .medium)
         return Font(UIFontMetrics(forTextStyle: style).scaledFont(for: base))
     }
+    #else
+    static func blueprint(_ size: CGFloat, bold: Bool = false, relativeTo style: NSFont.TextStyle = .body) -> Font {
+        // The Mac has no Dynamic Type to scale with, so the size is taken as given.
+        .system(size: size, weight: bold ? .bold : .medium, design: .monospaced)
+    }
+    #endif
 }
 
 /// The page itself: blue paper squared in white, a heavier line every fifth square.

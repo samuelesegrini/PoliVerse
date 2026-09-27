@@ -22,6 +22,19 @@ struct TodayTab: View {
 
     /// The view's content.
     var body: some View {
+        #if os(macOS)
+        // The Mac has room for the day in two columns; see ``MacTodayView``.
+        NavigationStack(path: Binding(get: { shell.todayPath }, set: { shell.todayPath = $0 })) {
+            MacTodayView()
+                .navigationDestination(for: NewDestination.self) { $0.screen }
+        }
+        #else
+        iPhoneBody
+        #endif
+    }
+
+    /// Oggi on iPhone and iPad.
+    private var iPhoneBody: some View {
         NavigationStack(path: Binding(get: { shell.todayPath }, set: { shell.todayPath = $0 })) {
             ScrollView {
                 DayTransition(day: shell.day) { day in
@@ -60,7 +73,9 @@ struct TodayTab: View {
             .todayBar()
             // The calendar, from the bar or from outside the app.
             .navigationDestination(for: NewDestination.self) { $0.screen }
+            #if os(iOS)
             .toolbarVisibility(shell.singlePage ? .hidden : .automatic, for: .tabBar)
+            #endif
             .sheet(isPresented: Binding(get: { shell.showsPanel }, set: { _ in }),
                    onDismiss: shell.panelDidDismiss) {
                 SinglePagePanel()

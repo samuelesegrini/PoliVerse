@@ -110,8 +110,12 @@ struct NextLectureWidget: Widget {
         }
         .configurationDisplayName("Prossima lezione")
         .description("Quando e dove inizia la prossima lezione.")
+        #if os(iOS)
         .supportedFamilies([.systemSmall, .systemMedium,
                             .accessoryRectangular, .accessoryInline, .accessoryCircular])
+        #else
+        .supportedFamilies([.systemSmall, .systemMedium])
+        #endif
     }
 }
 
@@ -125,9 +129,11 @@ struct NextLectureView: View {
     /// The view's content.
     var body: some View {
         switch family {
+        #if os(iOS)
         case .accessoryInline: inline
         case .accessoryCircular: circular
         case .accessoryRectangular: rectangular
+        #endif
         case .systemMedium: medium
         default: small
         }

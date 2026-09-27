@@ -108,8 +108,14 @@ struct CurrentClassButton: View {
 extension View {
     /// Shows the accessory only while there is a class.
     func currentClassAccessory(_ current: CurrentClass?) -> some View {
+        // The Mac has no tab bar to hang it from: there the current class lives in
+        // the menu bar and in the Oggi page itself.
+        #if os(iOS)
         tabViewBottomAccessory(isEnabled: current != nil) {
             if let current { CurrentClassButton(current: current) }
         }
+        #else
+        self
+        #endif
     }
 }

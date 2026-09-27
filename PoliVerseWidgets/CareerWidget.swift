@@ -89,7 +89,12 @@ struct CareerWidget: Widget {
         }
         .configurationDisplayName("Carriera")
         .description("Media, CFU e prossimo appello.")
+        #if os(iOS)
         .supportedFamilies([.systemSmall, .accessoryRectangular, .accessoryCircular])
+        #else
+        // The Mac has no Lock Screen, so no accessory families.
+        .supportedFamilies([.systemSmall])
+        #endif
     }
 }
 
@@ -103,8 +108,10 @@ struct CareerView: View {
     /// The view's content.
     var body: some View {
         switch family {
+        #if os(iOS)
         case .accessoryCircular: circular
         case .accessoryRectangular: rectangular
+        #endif
         default: small
         }
     }

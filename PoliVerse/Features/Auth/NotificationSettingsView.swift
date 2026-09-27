@@ -15,6 +15,13 @@ import UserNotifications
 ///    *not when* — each kind with its icon and a line saying when it arrives,
 ///    so a toggle is never a bare word the reader has to interpret.
 struct NotificationSettingsView: View {
+    /// Where the system keeps this app's notification switch.
+    #if os(iOS)
+    private static let settingsURL = UIApplication.openSettingsURLString
+    #else
+    private static let settingsURL = "x-apple.systempreferences:com.apple.Notifications-Settings.extension"
+    #endif
+
     /// The shared ``NotificationModel``, from the environment.
     @Environment(NotificationModel.self) private var notifications
     /// The shared ``AgendaModel``, from the environment.
@@ -83,7 +90,7 @@ struct NotificationSettingsView: View {
                         // Asking again does nothing: the system remembers a
                         // refusal, so the only route left is Settings.
                         Button {
-                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                            if let url = URL(string: Self.settingsURL) {
                                 openURL(url)
                             }
                         } label: {

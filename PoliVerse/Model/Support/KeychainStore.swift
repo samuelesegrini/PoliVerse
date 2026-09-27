@@ -25,6 +25,10 @@ nonisolated enum KeychainStore {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
+            // The data-protection keychain on the Mac too: without it macOS files the
+            // item in the old file-based keychain, where the accessibility class above
+            // means nothing. Ignored on iOS, where it is the only keychain.
+            kSecUseDataProtectionKeychain as String: true,
         ]
         let attributes: [String: Any] = [
             kSecValueData as String: data,
@@ -53,6 +57,10 @@ nonisolated enum KeychainStore {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
+            // The data-protection keychain on the Mac too: without it macOS files the
+            // item in the old file-based keychain, where the accessibility class above
+            // means nothing. Ignored on iOS, where it is the only keychain.
+            kSecUseDataProtectionKeychain as String: true,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne,
         ]
@@ -69,6 +77,10 @@ nonisolated enum KeychainStore {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
+            // The data-protection keychain on the Mac too: without it macOS files the
+            // item in the old file-based keychain, where the accessibility class above
+            // means nothing. Ignored on iOS, where it is the only keychain.
+            kSecUseDataProtectionKeychain as String: true,
         ]
         SecItemDelete(query as CFDictionary)
     }

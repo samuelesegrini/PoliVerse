@@ -18,6 +18,8 @@ enum WatchSync {
     ///   - career: The sittings.
     ///   - session: The account, for the career figures and the sample switch.
     static func send(agenda: AgendaModel, career: CareerModel, session: Session) {
+        // The Mac has no Watch to talk to: WatchConnectivity is not on macOS.
+        #if canImport(WatchConnectivity)
         guard !session.useMockData else { return }
         let figures = session.student.flatMap {
             OfflineStore.shared.load(CareerSnapshot.self,
@@ -26,6 +28,7 @@ enum WatchSync {
         }
         WatchBridge.shared.send(WatchSnapshotBuilder.build(
             events: agenda.events, exams: career.sessions, day: .now, career: figures))
+        #endif
     }
 
     /// Answers the Watch asking for a fresh snapshot: loads what is due, then

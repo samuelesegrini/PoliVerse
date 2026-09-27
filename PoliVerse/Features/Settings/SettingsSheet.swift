@@ -70,6 +70,8 @@ struct SettingsSheet: View {
                 }
                 .lookRow()
 
+                // The Mac has one layout, the sidebar, and no keyboard to bring up.
+                #if os(iOS)
                 Section {
                     Picker(selection: $layout) {
                         ForEach(AppLayout.allCases) { option in
@@ -97,6 +99,7 @@ struct SettingsSheet: View {
                     }
                     .lookRow()
                 }
+                #endif
 
                 Section {
                     NavigationLink {
@@ -155,12 +158,15 @@ struct SettingsSheet: View {
                 case .profile: ProfileView()
                 }
             }
+            // On the Mac this is the Settings window, which closes like any window.
+            #if os(iOS)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Chiudi", systemImage: "xmark") { dismiss() }
                         .accessibilityIdentifier("settings-close")
                 }
             }
+            #endif
             .confirmationDialog("Uscire dall’account?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
                 Button("Esci", role: .destructive) {
                     Task { await session.login.signOut() }

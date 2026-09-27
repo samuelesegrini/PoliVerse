@@ -77,7 +77,7 @@ struct CareerView: View {
                 .navigationDestination(isPresented: $showingTimetable) { PersonalTimetableView() }
                 .task { await career.load() }
                 .refreshable { await career.load(force: true) }
-                .sheet(item: $selectedExam) { ExamDetailView(exam: $0) }
+                .detailPresentation(item: $selectedExam) { ExamDetailView(exam: $0) }
         }
     }
 

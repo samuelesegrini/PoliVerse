@@ -1,5 +1,7 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 
 /// The panel beside the date: the look's stickers where the student put them.
 ///
@@ -138,7 +140,7 @@ struct StickerContentView: View {
                 .lineLimit(1)
         case .image(let id):
             if let image = StickerImages.image(for: id) {
-                Image(uiImage: image)
+                Image(platformImage: image)
                     .resizable()
                     .aspectRatio(contentMode: fill ? .fill : .fit)
             } else {
@@ -155,15 +157,15 @@ struct StickerContentView: View {
 /// draws them, and decoding a multi-resolution image each time would stutter.
 enum StickerImages {
     /// Decoded images by sticker id, dropped under memory pressure.
-    private static let cache = NSCache<NSString, UIImage>()
+    private static let cache = NSCache<NSString, PlatformImage>()
 
     /// A sticker's image, decoded once and kept.
     ///
     /// - Parameter id: The sticker's id in ``StickerStore``.
     /// - Returns: The image, or `nil` when there is none to decode.
-    static func image(for id: String) -> UIImage? {
+    static func image(for id: String) -> PlatformImage? {
         if let cached = cache.object(forKey: id as NSString) { return cached }
-        guard let data = StickerStore.shared.data(for: id), let image = UIImage(data: data) else { return nil }
+        guard let data = StickerStore.shared.data(for: id), let image = PlatformImage(data: data) else { return nil }
         cache.setObject(image, forKey: id as NSString)
         return image
     }
@@ -219,6 +221,7 @@ struct StickerPicker: View {
     }
 }
 
+#if os(iOS)
 /// A text view that opens on the emoji keyboard and accepts adaptive image
 /// glyphs, turning whatever lands in it into sticker picks, then emptying.
 private struct StickerKeyboard: UIViewRepresentable {
@@ -310,6 +313,48 @@ final class EmojiTextView: UITextView {
         UITextInputMode.activeInputModes.first { $0.primaryLanguage == "emoji" } ?? super.textInputMode
     }
 }
+
+#else
+/// The Mac's picker: a field that takes emoji from the Character Viewer (Modifica ›
+/// Emoji e simboli, or fn-E), turning each into a sticker pick, then emptying.
+private struct StickerKeyboard: View {
+    /// What the field put in, before anything is saved.
+    enum Pick {
+        /// An emoji typed or picked.
+        case emoji(String)
+        /// A sticker's image. Never produced on the Mac.
+        case image(Data)
+    }
+
+    /// Called for each thing the field puts in.
+    let onPick: (Pick) -> Void
+    /// What the field holds.
+    @State private var text = ""
+    /// Whether the field has focus.
+    @FocusState private var focused: Bool
+
+    /// The field.
+    var body: some View {
+        TextField("Emoji", text: $text, prompt: Text("Premi fn-E per le emoji"))
+            .textFieldStyle(.plain)
+            .font(.system(size: 28))
+            .multilineTextAlignment(.center)
+            .focused($focused)
+            .accessibilityIdentifier("sticker-keyboard")
+            .onAppear {
+                focused = true
+                NSApp.orderFrontCharacterPalette(nil)
+            }
+            .onChange(of: text) { _, value in
+                guard !value.isEmpty else { return }
+                let picks = value.filter(\.isStickerEmoji).map { Pick.emoji(String($0)) }
+                text = ""
+                picks.forEach(onPick)
+            }
+    }
+}
+
+#endif
 
 /// Which characters count as stickers.
 private extension Character {

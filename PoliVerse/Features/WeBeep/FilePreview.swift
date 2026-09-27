@@ -1,4 +1,5 @@
 import SwiftUI
+#if os(iOS)
 import QuickLook
 
 /// QuickLook preview for a downloaded file.
@@ -63,3 +64,47 @@ struct FilePreview: UIViewControllerRepresentable {
         }
     }
 }
+#else
+import Quartz
+
+/// Quick Look preview for a downloaded file, in a sheet sized for the Mac.
+struct FilePreview: View {
+    /// The downloaded file to preview.
+    let url: URL
+    /// Closes this sheet.
+    @Environment(\.dismiss) private var dismiss
+
+    /// The preview with a bar to close it or open the file in its own app.
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text(url.lastPathComponent).font(.headline).lineLimit(1)
+                Spacer()
+                Button("Apri") { NSWorkspace.shared.open(url) }
+                Button("Mostra nel Finder") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+                Button("Fine") { dismiss() }.keyboardShortcut(.defaultAction)
+            }
+            .padding(12)
+            Divider()
+            QuickLookView(url: url)
+        }
+        .frame(minWidth: 640, idealWidth: 820, minHeight: 560, idealHeight: 900)
+    }
+}
+
+/// AppKit's Quick Look view.
+private struct QuickLookView: NSViewRepresentable {
+    /// The file to show.
+    let url: URL
+
+    func makeNSView(context: Context) -> QLPreviewView {
+        let view = QLPreviewView(frame: .zero, style: .normal) ?? QLPreviewView()
+        view.previewItem = url as NSURL
+        return view
+    }
+
+    func updateNSView(_ view: QLPreviewView, context: Context) {
+        view.previewItem = url as NSURL
+    }
+}
+#endif

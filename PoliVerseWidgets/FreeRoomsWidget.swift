@@ -252,7 +252,11 @@ struct FreeRoomsWidget: Widget {
         }
         .configurationDisplayName("Aule libere")
         .description("Le aule libere adesso, nella sede che scegli.")
+        #if os(iOS)
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular])
+        #else
+        .supportedFamilies([.systemSmall, .systemMedium])
+        #endif
     }
 }
 
@@ -269,7 +273,9 @@ struct FreeRoomsWidgetView: View {
     /// The view's content.
     var body: some View {
         switch family {
+        #if os(iOS)
         case .accessoryRectangular: rectangular
+        #endif
         default: home
         }
     }

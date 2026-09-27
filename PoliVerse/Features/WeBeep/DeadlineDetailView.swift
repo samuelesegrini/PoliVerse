@@ -16,6 +16,8 @@ struct DeadlineDetailView: View {
     @Environment(\.openURL) private var openURL
     /// Closes this screen or sheet.
     @Environment(\.dismiss) private var dismiss
+    /// Closes the inspector this detail sits in on the Mac.
+    @Environment(\.closeDetail) private var closeDetail
 
     /// Whether the system's event editor is up.
     @State private var addingToCalendar = false
@@ -42,9 +44,11 @@ struct DeadlineDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 // The header names the deadline: the bar only closes the sheet.
+                #if os(iOS)
                 ToolbarItem(placement: .principal) { Text(verbatim: "") }
+                #endif
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Chiudi", systemImage: "xmark") { dismiss() }
+                    Button("Chiudi", systemImage: "xmark") { if let closeDetail { closeDetail() } else { dismiss() } }
                 }
             }
             .sheet(isPresented: $addingToCalendar) {

@@ -73,6 +73,18 @@ struct PoliVerseApp: App {
     /// Whether the app is on screen, in the foreground or in the background.
     @Environment(\.scenePhase) private var scenePhase
 
+    /// The main window's scene identity, which the menu bar item opens.
+    static let mainWindowID = "main"
+
+    #if os(macOS)
+    /// Keeps the app alive with no window, and applies the Dock setting.
+    @NSApplicationDelegateAdaptor(MacAppDelegate.self) private var appDelegate
+    /// Whether the menu bar item is in the menu bar. Not `@AppStorage`: the status item
+    /// saves its own position to user defaults, and an `@AppStorage` here would rebuild
+    /// the scenes on every such save, which moves the item again, forever.
+    @State private var menuBarItem = MenuBarItemState()
+    #endif
+
     /// Builds every service and wires them together.
     ///
     /// MetricKit collection starts first, because a report already waiting is delivered to
@@ -231,129 +243,179 @@ struct PoliVerseApp: App {
         // app in the background just to answer, with no window and so no view
         // to bring the session up: both have to happen here, in the one place
         // that runs on every launch.
+        #if canImport(WatchConnectivity)
         WatchBridge.shared.answerRequests {
             await WatchSync.answer(agenda: agenda, career: career, session: session)
         }
         WatchBridge.shared.start()
+        #endif
     }
 
     /// The declaration's content.
     var body: some Scene {
-        WindowGroup {
-            RootView()
-                .environment(session)
-                .environment(courses)
-                .environment(agenda)
-                .environment(career)
-                .environment(updates)
-                .environment(weBeep)
-                .environment(recordings)
-                .environment(RecordingDownloads.shared)
-                .environment(cieID)
-                .environment(downloads)
-                .environment(rooms)
-                .environment(notices)
-                .environment(news)
-                .environment(freeRooms)
-                .environment(facilities)
-                .environment(campusMap)
-                .environment(careers)
-                .environment(notifications)
-                .environment(manifesti)
-                .environment(personalTimetable)
-                .environment(programmes)
-                .environment(network)
-                .environment(pending)
-                .environment(liveActivity)
-                .environment(freshness)
-                .environment(status)
-                .environment(onboarding)
-                .environment(whatsNew)
-                .environment(spid)
-                .environment(loginMemory)
-                // CieID hands control back through the app's URL scheme. Route it to
-                // the router, which passes it to whichever login web view is
-                // on screen so the session can continue where it left off.
-                .onOpenURL { url in
-                    if cieID.handle(url) { return }
-                    AppDestination(url: url)?.send()
-                }
-                // Set once, here: a delegate assigned from a view would be
-                // replaced every time that view was rebuilt.
-                .task {
-                    UNUserNotificationCenter.current().delegate = notificationRouter
-                    await notifications.refreshAuthorization()
-                }
-                // Asked for when the app leaves the screen, which is the
-                // moment iOS is deciding whether to grant one.
-                .onChange(of: scenePhase) { _, phase in
-                    if phase == .background {
-                        background.schedule()
-                        Task { await WidgetReloader.appDidEnterBackground() }
-                    }
-                    if phase == .active {
-                        Task {
-                            await pending.flush()
-                            // Not forced: `LoadWindow` makes a return from the
-                            // app switcher free and a return after lunch one
-                            // round trip. Forcing here would turn every glance
-                            // at the multitasking view into five requests.
-                            //
-                            // Skipped mid-login: CieID (and the SPID/eIDAS
-                            // providers) hand control back by backgrounding
-                            // this app and then foregrounding it, which lands
-                            // right here *before* `completeLogin` has finished
-                            // exchanging the code. Revalidating now would race
-                            // it — every service needing the OAuth token fails
-                            // with no account yet to blame it on, and the
-                            // resulting "Aggiornamento non riuscito per 4
-                            // servizi" stuck around until the next foreground
-                            // even once sign-in actually succeeded. The
-                            // `session.state` watcher below covers the real
-                            // post-login revalidate instead.
-                            if session.state != .exchangingCode {
-                                await freshness.revalidate()
-                            }
-                            await personalTimetable.refreshIfStale()
-                            await freeRooms.refreshForWidgetIfNeeded()
-                        }
-                    }
-                }
-                // The moment signal returns is the moment to send what was
-                // queued — not the next time the user happens to open a tab.
-                .onChange(of: network.isOnline) { _, online in
-                    if online {
-                        Task {
-                            await pending.flush()
-                            // Forced, unlike the foreground path: whatever is
-                            // on screen was fetched before the outage, and the
-                            // window has no way of knowing that.
-                            await freshness.revalidate(force: true)
-                        }
-                    }
-                }
-                // The queue is per matricola, so switching career must show
-                // that career's waiting changes rather than the last one's.
-                .onChange(of: session.student?.matricola) { _, _ in
-                    pending.refresh()
-                }
-                // The one guaranteed moment a login (or career switch) has
-                // just finished: token in hand, the account confirmed by
-                // `/jaf/internal/user`. Forced, because this is the pass that
-                // is supposed to fill an empty screen with Orario, Carriera,
-                // Avvisi and Notizie right after signing in — a gentle run
-                // here could still be joined to whatever the scene-phase
-                // handler skipped above, and end up doing nothing.
-                .onChange(of: session.state) { _, newValue in
-                    if case .signedIn = newValue {
-                        Task { await freshness.revalidate(force: true) }
-                    }
-                }
+        #if os(macOS)
+        Window("PoliVerse", id: Self.mainWindowID) {
+            rootContent
+        }
+        .defaultSize(width: 1280, height: 840)
+        // Opens at launch even when the last session ended with it closed; the menu bar
+        // item alone is not a first impression.
+        .defaultLaunchBehavior(.presented)
+        .windowToolbarStyle(.unified)
+        .commands { PoliVerseCommands(freshness: freshness) }
+        // A saved lecture that finished downloading while the app was not running:
+        // iOS relaunches it to hand the file over, and waits for the move.
+        .backgroundTask(.urlSession(RecordingDownloads.sessionIdentifier)) {
+            await RecordingDownloads.shared.backgroundEventsDelivered()
+        }
+
+        // The class now and what is next, one click away in the menu bar.
+        MenuBarExtra(isInserted: $menuBarItem.isInserted) {
+            #if DEBUG
+            let _ = MacSnapshots.panel = { AnyView(withModels(LookedScene { MenuBarPanel() })) }
+            #endif
+            withModels(LookedScene { MenuBarPanel() })
+        } label: {
+            withModels(MenuBarLabel())
+        }
+        .menuBarExtraStyle(.window)
+
+        Settings {
+            withModels(LookedScene { MacSettingsView() })
+                .environment(menuBarItem)
+        }
+        #else
+        WindowGroup(id: Self.mainWindowID) {
+            rootContent
         }
         // A saved lecture that finished downloading while the app was not running:
         // iOS relaunches it to hand the file over, and waits for the move.
         .backgroundTask(.urlSession(RecordingDownloads.sessionIdentifier)) {
             await RecordingDownloads.shared.backgroundEventsDelivered()
         }
+        #endif
+    }
+
+    /// The app's root, with every service in its environment and the app-wide duties
+    /// that follow the scene's phase.
+    private var rootContent: some View {
+        withModels(RootView())
+            // CieID hands control back through the app's URL scheme. Route it to
+            // the router, which passes it to whichever login web view is
+            // on screen so the session can continue where it left off.
+            .onOpenURL { url in
+                if cieID.handle(url) { return }
+                AppDestination(url: url)?.send()
+            }
+            // Set once, here: a delegate assigned from a view would be
+            // replaced every time that view was rebuilt.
+            .task {
+                UNUserNotificationCenter.current().delegate = notificationRouter
+                await notifications.refreshAuthorization()
+            }
+            // Asked for when the app leaves the screen, which is the
+            // moment iOS is deciding whether to grant one.
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .background {
+                    background.schedule()
+                    Task { await WidgetReloader.appDidEnterBackground() }
+                }
+                if phase == .active {
+                    Task {
+                        await pending.flush()
+                        // Not forced: `LoadWindow` makes a return from the
+                        // app switcher free and a return after lunch one
+                        // round trip. Forcing here would turn every glance
+                        // at the multitasking view into five requests.
+                        //
+                        // Skipped mid-login: CieID (and the SPID/eIDAS
+                        // providers) hand control back by backgrounding
+                        // this app and then foregrounding it, which lands
+                        // right here *before* `completeLogin` has finished
+                        // exchanging the code. Revalidating now would race
+                        // it — every service needing the OAuth token fails
+                        // with no account yet to blame it on, and the
+                        // resulting "Aggiornamento non riuscito per 4
+                        // servizi" stuck around until the next foreground
+                        // even once sign-in actually succeeded. The
+                        // `session.state` watcher below covers the real
+                        // post-login revalidate instead.
+                        if session.state != .exchangingCode {
+                            await freshness.revalidate()
+                        }
+                        await personalTimetable.refreshIfStale()
+                        await freeRooms.refreshForWidgetIfNeeded()
+                    }
+                }
+            }
+            // The moment signal returns is the moment to send what was
+            // queued — not the next time the user happens to open a tab.
+            .onChange(of: network.isOnline) { _, online in
+                if online {
+                    Task {
+                        await pending.flush()
+                        // Forced, unlike the foreground path: whatever is
+                        // on screen was fetched before the outage, and the
+                        // window has no way of knowing that.
+                        await freshness.revalidate(force: true)
+                    }
+                }
+            }
+            // The queue is per matricola, so switching career must show
+            // that career's waiting changes rather than the last one's.
+            .onChange(of: session.student?.matricola) { _, _ in
+                pending.refresh()
+            }
+            // The one guaranteed moment a login (or career switch) has
+            // just finished: token in hand, the account confirmed by
+            // `/jaf/internal/user`. Forced, because this is the pass that
+            // is supposed to fill an empty screen with Orario, Carriera,
+            // Avvisi and Notizie right after signing in — a gentle run
+            // here could still be joined to whatever the scene-phase
+            // handler skipped above, and end up doing nothing.
+            .onChange(of: session.state) { _, newValue in
+                if case .signedIn = newValue {
+                    Task { await freshness.revalidate(force: true) }
+                }
+            }
+    }
+
+    /// A view with every service in its environment, so each scene — the window, the
+    /// menu bar panel, Settings — reads the same models.
+    ///
+    /// - Parameter content: The scene's root view.
+    /// - Returns: The view with the services.
+    private func withModels<Content: View>(_ content: Content) -> some View {
+        content
+            .environment(session)
+            .environment(courses)
+            .environment(agenda)
+            .environment(career)
+            .environment(updates)
+            .environment(weBeep)
+            .environment(recordings)
+            .environment(RecordingDownloads.shared)
+            .environment(cieID)
+            .environment(downloads)
+            .environment(rooms)
+            .environment(notices)
+            .environment(news)
+            .environment(freeRooms)
+            .environment(facilities)
+            .environment(campusMap)
+            .environment(careers)
+            .environment(notifications)
+            .environment(manifesti)
+            .environment(personalTimetable)
+            .environment(programmes)
+            .environment(network)
+            .environment(pending)
+            .environment(liveActivity)
+            .environment(freshness)
+            .environment(status)
+            .environment(onboarding)
+            .environment(whatsNew)
+            .environment(spid)
+            .environment(loginMemory)
     }
 }

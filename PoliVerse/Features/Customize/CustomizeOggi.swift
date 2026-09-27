@@ -643,6 +643,23 @@ private struct NewLookCard: View {
     }
 }
 
+#if os(macOS)
+/// The Mac's lift gesture: a plain drag, since a pointer has no competing swipe to
+/// give way to.
+struct VerticalPan: Gesture {
+    /// How far the pointer has moved down; negative is up.
+    let changed: (CGFloat) -> Void
+    /// The vertical speed the pointer left at, in points per second.
+    let ended: (CGFloat) -> Void
+
+    /// The drag.
+    var body: some Gesture {
+        DragGesture(minimumDistance: 8)
+            .onChanged { changed($0.translation.height) }
+            .onEnded { ended($0.velocity.height) }
+    }
+}
+#else
 /// A pan that begins only when it starts more up or down than sideways, so a
 /// card in a horizontal scroll view can be pulled up without taking the
 /// scroll view's swipes.
@@ -684,6 +701,7 @@ struct VerticalPan: UIGestureRecognizerRepresentable {
         }
     }
 }
+#endif
 
 /// Scales a card about its centre until it covers the screen. A transform, not
 /// a new frame: the card's content keeps its layout all the way.

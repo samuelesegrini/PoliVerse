@@ -45,8 +45,13 @@ extension View {
     /// The profile at the leading edge of a root screen's bar: the same way
     /// in from every root.
     func profileButton() -> some View {
+        // On the Mac the profile sits at the foot of the sidebar instead.
+        #if os(iOS)
         toolbar {
             ToolbarItem(placement: .topBarLeading) { ProfileBarButton() }
         }
+        #else
+        self
+        #endif
     }
 }

@@ -28,6 +28,10 @@ struct RootView: View {
     @Environment(\.colorScheme) private var scheme
     @AppStorage(SearchTabKeyboard.storageKey) private var searchOpensKeyboard = true
     @State private var layoutChangePending = false
+    #if os(macOS)
+    /// Opens the Settings window, which stands in for the iPhone's settings sheet.
+    @Environment(\.openSettings) private var openSettings
+    #endif
     /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
     /// The shared ``UpdateFeed``, from the environment.
@@ -40,7 +44,13 @@ struct RootView: View {
 
     /// Whether the shell draws a sidebar: regular width, and not the single
     /// page, which is one page with a panel and has no bar to widen.
-    private var hasSidebar: Bool { sizeClass == .regular && !shell.singlePage }
+    private var hasSidebar: Bool {
+        #if os(macOS)
+        true
+        #else
+        sizeClass == .regular && !shell.singlePage
+        #endif
+    }
 
     /// What the tab view has selected: one of the four tabs, or, at regular
     /// width, one of the places in the sidebar.
@@ -148,7 +158,12 @@ struct RootView: View {
                 if shell.isCustomizing { CustomizeOggi() }
             }
             .onAppear {
+                // The Mac has one layout: the sidebar. The single page is a phone's.
+                #if os(macOS)
+                shell.singlePage = false
+                #else
                 shell.singlePage = layout == .singlePage
+                #endif
                 #if DEBUG
                 // `-OpenPlace calendar` opens a place at launch, for trying it out.
                 if let raw = UserDefaults.standard.string(forKey: "OpenPlace"),
@@ -165,19 +180,27 @@ struct RootView: View {
                     show(new)
                 }
             }
+            #if os(iOS)
             .sheet(isPresented: $shell.showingSettings, onDismiss: {
                 shell.settingsPath = []
                 guard layoutChangePending else { return }
                 layoutChangePending = false
                 show(layout)
             }) { SettingsSheet() }
-            .sheet(item: $shell.detail) { detail in
-                switch detail {
-                case .event(let event): EventDetailView(event: event)
-                case .exam(let exam): ExamDetailView(exam: exam)
-                case .deadline(let deadline): DeadlineDetailView(deadline: deadline)
-                }
+            #else
+            // The Mac has a Settings window: a request for the sheet opens it instead,
+            // on the profile when that is what was asked for.
+            .onChange(of: shell.showingSettings) { _, showing in
+                guard showing else { return }
+                shell.showingSettings = false
+                openSettings()
             }
+            #endif
+            // On the Mac the detail is an inspector on the page's column; see
+            // ``MacSidebarShell``.
+            #if os(iOS)
+            .sheet(item: $shell.detail) { $0.view }
+            #endif
             // What changed in this update, once. Only past the first run:
             // during onboarding there is nothing for it to be new against.
             .sheet(isPresented: Binding(get: { !whatsNew.showing.isEmpty },
@@ -198,10 +221,13 @@ struct RootView: View {
     ///
     /// - Parameter layout: The layout to show.
     private func show(_ layout: AppLayout) {
+        // The Mac has one layout, the sidebar.
+        #if os(iOS)
         if layout == .singlePage { shell.selection = .today }
         withAnimation(.spring(duration: 0.5, bounce: 0.12)) {
             shell.singlePage = layout == .singlePage
         }
+        #endif
     }
 
     /// The four tabs: Oggi, Corsi, Carriera and Cerca — and, at regular width,
@@ -213,38 +239,7 @@ struct RootView: View {
     /// become a section of the sidebar; at compact width nothing changes, so
     /// the iPhone keeps its four tabs rather than growing a "More" tab.
     private var tabs: some View {
-        TabView(selection: $tabSelection) {
-            Tab("Oggi", systemImage: "calendar.day.timeline.left", value: ShellSelection.tab(.today)) {
-                TodayTab().accessibilityIdentifier("tab-today")
-            }
-            Tab(NewDestination.courses.title, systemImage: NewDestination.courses.systemImage,
-                value: ShellSelection.tab(.courses)) {
-                CoursesTab().accessibilityIdentifier("tab-courses")
-            }
-            Tab(NewDestination.career.title, systemImage: NewDestination.career.systemImage,
-                value: ShellSelection.tab(.career)) {
-                CareerTab().accessibilityIdentifier("tab-career")
-            }
-            // What changed since the feed was last opened, one per fact.
-            .badge(feed.unreadCount)
-            if hasSidebar {
-                TabSection("Altro") {
-                    ForEach(NewDestination.inSearch) { place in
-                        Tab(place.title, systemImage: place.systemImage, value: ShellSelection.place(place)) {
-                            SidebarPlace(place: place)
-                        }
-                    }
-                }
-            }
-            Tab(value: ShellSelection.tab(.search), role: .search) {
-                SearchTab().accessibilityIdentifier("tab-search")
-            }
-
-        }
-        // Applied only at regular width: `.sidebarAdaptable` on an iPhone
-        // still draws a tab bar, but pushes anything past the fifth tab into a
-        // "More" tab, and the compact layout should keep its four.
-        .modifier(SidebarStyle(enabled: hasSidebar))
+        navigation
         // A tap on a tab or a sidebar row, into the shell.
         .onChange(of: tabSelection) { _, selection in
             switch selection {
@@ -300,6 +295,47 @@ struct RootView: View {
         // student turned that off in Impostazioni.
         .tabViewSearchActivation(searchOpensKeyboard ? .searchTabSelection : .automatic)
         .modifier(MinimizeBehaviour(enabled: !hasSidebar, behaviour: todayStyle.resolved.appTabBar))
+    }
+
+    /// The places, as a tab view on iPhone and iPad and as a sidebar on the Mac.
+    @ViewBuilder
+    private var navigation: some View {
+        #if os(macOS)
+        MacSidebarShell(selection: $tabSelection, unread: feed.unreadCount)
+        #else
+        TabView(selection: $tabSelection) {
+            Tab("Oggi", systemImage: "calendar.day.timeline.left", value: ShellSelection.tab(.today)) {
+                TodayTab().accessibilityIdentifier("tab-today")
+            }
+            Tab(NewDestination.courses.title, systemImage: NewDestination.courses.systemImage,
+                value: ShellSelection.tab(.courses)) {
+                CoursesTab().accessibilityIdentifier("tab-courses")
+            }
+            Tab(NewDestination.career.title, systemImage: NewDestination.career.systemImage,
+                value: ShellSelection.tab(.career)) {
+                CareerTab().accessibilityIdentifier("tab-career")
+            }
+            // What changed since the feed was last opened, one per fact.
+            .badge(feed.unreadCount)
+            if hasSidebar {
+                TabSection("Altro") {
+                    ForEach(NewDestination.inSearch) { place in
+                        Tab(place.title, systemImage: place.systemImage, value: ShellSelection.place(place)) {
+                            SidebarPlace(place: place)
+                        }
+                    }
+                }
+            }
+            Tab(value: ShellSelection.tab(.search), role: .search) {
+                SearchTab().accessibilityIdentifier("tab-search")
+            }
+
+        }
+        // Applied only at regular width: `.sidebarAdaptable` on an iPhone
+        // still draws a tab bar, but pushes anything past the fifth tab into a
+        // "More" tab, and the compact layout should keep its four.
+        .modifier(SidebarStyle(enabled: hasSidebar))
+        #endif
     }
 }
 
@@ -365,7 +401,11 @@ private struct MinimizeBehaviour: ViewModifier {
     /// - Parameter content: The tab view.
     /// - Returns: The tab view.
     func body(content: Content) -> some View {
+        #if os(iOS)
         if enabled { content.tabBarMinimizeBehavior(behaviour.system) } else { content }
+        #else
+        content
+        #endif
     }
 }
 
@@ -388,7 +428,7 @@ private struct SidebarStyle: ViewModifier {
 
 /// A place as a sidebar item: its own navigation stack, since it is a root
 /// here rather than a screen pushed inside Cerca's.
-private struct SidebarPlace: View {
+struct SidebarPlace: View {
     /// The place to show.
     let place: NewDestination
 
@@ -400,5 +440,17 @@ private struct SidebarPlace: View {
                 .dataStatusLine()
         }
         .accessibilityIdentifier("sidebar-\(place.rawValue)")
+    }
+}
+
+extension TodayDetail {
+    /// The detail's screen: a lecture, a sitting or a deadline.
+    @MainActor @ViewBuilder
+    var view: some View {
+        switch self {
+        case .event(let event): EventDetailView(event: event)
+        case .exam(let exam): ExamDetailView(exam: exam)
+        case .deadline(let deadline): DeadlineDetailView(deadline: deadline)
+        }
     }
 }

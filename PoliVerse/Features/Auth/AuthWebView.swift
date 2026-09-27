@@ -25,7 +25,7 @@ nonisolated enum AuthWebViewDecision {
 ///
 /// See ``CieIDBridge`` for why the hand-off has to be intercepted rather than
 /// simply allowed.
-struct AuthWebView: UIViewRepresentable {
+struct AuthWebView {
     /// The page the sign-in begins on.
     let startURL: URL
     /// Carries a CieID return back into this web view, so the session continues where it left
@@ -67,7 +67,7 @@ struct AuthWebView: UIViewRepresentable {
     ///
     /// - Parameter context: The representable's context.
     /// - Returns: The web view, loading ``startURL``.
-    func makeUIView(context: Context) -> WKWebView {
+    func makeWebView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         // A persistent store of this app's own, so the 13.7 MB of JavaScript
         // and CSS the Servizi Online SPA weighs is cached between logins
@@ -116,7 +116,7 @@ struct AuthWebView: UIViewRepresentable {
     /// - Parameters:
     ///   - webView: The web view to update.
     ///   - context: The representable's context.
-    func updateUIView(_ webView: WKWebView, context: Context) {
+    func updateWebView(_ webView: WKWebView, context: Context) {
         // A pending URL means CieID just handed control back. Loading it into
         // *this* web view is the whole point — it already holds the session the
         // IdP established.
@@ -261,6 +261,9 @@ struct AuthWebView: UIViewRepresentable {
             // CIE hand-off must be caught before the web view follows it. Allow
             // it even once and iOS opens CieID without `sourceApp`, and the
             // authenticated session comes back in Safari instead of here.
+            // The Mac has no CieID app: the identity provider's desktop flow
+            // runs in this web view, so the navigation is left alone there.
+            #if os(iOS)
             if CieIDBridge.isHandoffToCieID(url) {
                 log.debug("Intercepting CIE hand-off")
                 cancelledDeliberately = true
@@ -268,6 +271,7 @@ struct AuthWebView: UIViewRepresentable {
                 if !opened { onCieIDMissing() }
                 return .cancel
             }
+            #endif
 
             switch decide(url) {
             case .allow:
@@ -376,3 +380,15 @@ struct AuthWebView: UIViewRepresentable {
         }
     }
 }
+
+#if os(iOS)
+extension AuthWebView: UIViewRepresentable {
+    func makeUIView(context: Context) -> WKWebView { makeWebView(context: context) }
+    func updateUIView(_ webView: WKWebView, context: Context) { updateWebView(webView, context: context) }
+}
+#else
+extension AuthWebView: NSViewRepresentable {
+    func makeNSView(context: Context) -> WKWebView { makeWebView(context: context) }
+    func updateNSView(_ webView: WKWebView, context: Context) { updateWebView(webView, context: context) }
+}
+#endif

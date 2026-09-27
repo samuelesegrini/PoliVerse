@@ -89,7 +89,7 @@ struct NewLookGallery: View {
             guard let item else { return }
             Task {
                 if let data = try? await item.loadTransferable(type: Data.self),
-                   let image = UIImage(data: data),
+                   let image = PlatformImage(data: data),
                    let flavor = Flavor.extract(from: image.samplePixels()) {
                     var look = TodayStyle()
                     look.flavor = flavor

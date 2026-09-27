@@ -496,7 +496,7 @@ struct ConnectionsView: View {
                     Label("Condividi rapporto", systemImage: "square.and.arrow.up")
                 }
                 Button {
-                    UIPasteboard.general.string = report
+                    Clipboard.copy(report)
                 } label: {
                     Label("Copia rapporto", systemImage: "doc.on.doc")
                 }

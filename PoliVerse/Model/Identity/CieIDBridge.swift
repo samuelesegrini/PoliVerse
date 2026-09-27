@@ -1,5 +1,4 @@
 import Foundation
-import UIKit
 
 /// Keeps “Entra con CIE” inside PoliVerse rather than losing the session to Safari.
 ///

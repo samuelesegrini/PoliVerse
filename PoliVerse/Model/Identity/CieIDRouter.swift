@@ -1,7 +1,11 @@
 import Foundation
 import Observation
 import OSLog
+#if os(iOS)
 import UIKit
+#else
+import AppKit
+#endif
 
 /// Carries the URL the CieID app hands back to whichever sign-in web view started
 /// the flow.
@@ -83,6 +87,12 @@ final class CieIDRouter {
             log.error("Could not build the CieID hand-off URL")
             return false
         }
+        #if os(macOS)
+        // CieID is an iPhone app; on the Mac the identity provider's own desktop
+        // flow runs in the web view instead, so there is nothing to hand off to.
+        _ = handoff
+        return false
+        #else
         log.info("Handing off to CieID for path=\(url.path, privacy: .public)")
         isAwaitingCieID = true
         let opened = await UIApplication.shared.open(handoff)
@@ -91,11 +101,16 @@ final class CieIDRouter {
             log.error("CieID app did not accept the URL — probably not installed")
         }
         return opened
+        #endif
     }
 
     /// Opens CieID's App Store page.
     @MainActor
     func openAppStore() {
+        #if os(macOS)
+        NSWorkspace.shared.open(CieIDBridge.appStoreURL)
+        #else
         UIApplication.shared.open(CieIDBridge.appStoreURL)
+        #endif
     }
 }

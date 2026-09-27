@@ -1,5 +1,7 @@
 import Foundation
+#if os(iOS)
 import UIKit
+#endif
 import UserNotifications
 
 /// Reads the live services and the system into a ``DiagnosticsSnapshot``.
@@ -57,7 +59,7 @@ struct DiagnosticsCollector {
             generatedAt: .now,
             device: .init(
                 appVersion: Bundle.main.appVersion,
-                system: "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)",
+                system: Self.systemDescription,
                 model: Self.modelIdentifier,
                 language: Locale.preferredLanguages.first ?? Locale.current.identifier,
                 lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled,
@@ -92,7 +94,7 @@ struct DiagnosticsCollector {
             probes: probes,
             pending: .init(queued: pending.count, abandoned: pending.failed.map(\.label)),
             background: .init(
-                refreshPermission: Self.label(for: UIApplication.shared.backgroundRefreshStatus),
+                refreshPermission: Self.refreshPermission,
                 lastRun: log.lastBackgroundRefresh,
                 notifications: Self.label(for: notifications.authorization),
                 scheduledReminders: notifications.scheduled.count,
@@ -148,6 +150,26 @@ struct DiagnosticsCollector {
         }
     }
 
+    /// The operating system's name and version.
+    static var systemDescription: String {
+        #if os(iOS)
+        "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)"
+        #else
+        "macOS \(ProcessInfo.processInfo.operatingSystemVersionString)"
+        #endif
+    }
+
+    /// Whether the system lets the app refresh in the background, in words. The Mac has
+    /// no such switch, so it always answers that it is allowed.
+    static var refreshPermission: String {
+        #if os(iOS)
+        label(for: UIApplication.shared.backgroundRefreshStatus)
+        #else
+        String(localized: "Consentito")
+        #endif
+    }
+
+    #if os(iOS)
     /// A background-refresh permission in words.
     ///
     /// - Parameter status: What iOS reports.
@@ -160,6 +182,7 @@ struct DiagnosticsCollector {
         @unknown default: String(localized: "Sconosciuto")
         }
     }
+    #endif
 
     /// A notification permission in words.
     ///

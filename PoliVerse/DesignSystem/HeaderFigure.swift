@@ -228,6 +228,9 @@ private struct CollapsingTitle: ViewModifier {
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
+            // The Mac's toolbar already shows the navigation title; a second one in
+            // the middle would sit in an empty glass capsule.
+            #if os(iOS)
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text(title)
@@ -236,5 +239,6 @@ private struct CollapsingTitle: ViewModifier {
                         .accessibilityHidden(!inBar)
                 }
             }
+            #endif
     }
 }

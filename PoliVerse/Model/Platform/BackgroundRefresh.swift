@@ -1,4 +1,6 @@
+#if os(iOS)
 import BackgroundTasks
+#endif
 import Foundation
 import OSLog
 
@@ -20,6 +22,7 @@ final class BackgroundRefresh {
     /// Diagnostic log for this type, under the `background` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "background")
 
+#if os(iOS)
     /// Registers the refresh handler.
     ///
     /// Must be called once at launch, before the app finishes launching; registering
@@ -97,4 +100,40 @@ final class BackgroundRefresh {
             work.cancel()
         }
     }
+#else
+    /// The scheduler the Mac uses in place of `BGTaskScheduler`, which macOS does not
+    /// have. It runs the refresh every half hour, give or take, whenever the system is
+    /// idle enough to allow it.
+    private var scheduler: NSBackgroundActivityScheduler?
+
+    /// Registers the refresh and starts the periodic run.
+    ///
+    /// On the Mac the app is usually running, often only in the menu bar, so the refresh
+    /// keeps the menu bar panel current rather than warming a closed app.
+    ///
+    /// - Parameter refresh: The work to perform when macOS grants a run.
+    func register(refresh: @escaping @Sendable () async -> Void) {
+        let scheduler = NSBackgroundActivityScheduler(identifier: Self.taskIdentifier)
+        scheduler.repeats = true
+        scheduler.interval = 30 * 60
+        scheduler.tolerance = 5 * 60
+        scheduler.qualityOfService = .utility
+        scheduler.schedule { completion in
+            Task { @MainActor in
+                DiagnosticsLog.shared.backgroundRefreshStarted()
+                await refresh()
+                DiagnosticsLog.shared.backgroundRefreshFinished(completed: true)
+                completion(.finished)
+            }
+        }
+        self.scheduler = scheduler
+        log.notice("Background refresh registered")
+    }
+
+    /// Does nothing on the Mac: the scheduler set up by ``register(refresh:)`` repeats by
+    /// itself.
+    ///
+    /// - Parameter interval: Ignored.
+    func schedule(after interval: TimeInterval = 3600) {}
+#endif
 }
