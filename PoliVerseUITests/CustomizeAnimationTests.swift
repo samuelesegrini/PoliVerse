@@ -69,14 +69,14 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         zone(app, "date").tap()
         settle()
         shot(app, "04-zone")
-        reveal(app.buttons["date-font-mono"].firstMatch, in: app).tap()
+        reveal(app.buttons["date-font-mono"].firstMatch, in: app, tool: "typeface").tap()
         settle()
         shot(app, "05-font")
 
         // The capsule runs to another part; Colore's second tool is the light.
         switchTo(app, "colour")
-        tool(app, "Aspetto")
-        reveal(app.buttons["appearance-dark"].firstMatch, in: app).tap()
+        tool(app, "Luce")
+        reveal(app.buttons["appearance-dark"].firstMatch, in: app, tool: "light").tap()
         settle()
         shot(app, "06-light")
 
@@ -199,25 +199,33 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
 
         // Flavor from a swatch, from its card.
         part(app, "colour")
-        reveal(app.buttons["flavor-#C2386F"].firstMatch, in: app).tap()
+        reveal(app.buttons["swatch-#C2386F"].firstMatch, in: app, tool: "main").tap()
         settle()
         shot(app, "31-flavor")
         allParts(app)
 
         // Plotting paper with grain.
         part(app, "background")
-        reveal(app.buttons["paper-plot"].firstMatch, in: app).tap()
-        reveal(app.sliders["paper-grain"].firstMatch, in: app).adjust(toNormalizedSliderPosition: 0.5)
+        reveal(app.buttons["paper-plot"].firstMatch, in: app, tool: "paper").tap()
+        // A pattern over the paper, as the design allows.
+        tool(app, "Motivo")
+        reveal(app.buttons["motif-dots"].firstMatch, in: app, tool: "motif").tap()
+        tool(app, "Grana")
+        let grain = app.descendants(matching: .any)["paper-grain"].firstMatch
+        XCTAssertTrue(grain.waitForExistence(timeout: 3), "Sfondo has no grain ruler")
+        grain.swipeLeft()
         settle()
         shot(app, "32-paper")
 
         // Glowing cards, then a tinted light and serif text, through the capsule.
         switchTo(app, "cards")
-        reveal(app.buttons["material-glow"].firstMatch, in: app).tap()
+        reveal(app.buttons["material-glow"].firstMatch, in: app, tool: "surface").tap()
         switchTo(app, "colour")
-        tool(app, "Aspetto")
-        reveal(app.buttons["appearance-tinted"].firstMatch, in: app).tap()
-        reveal(app.buttons["Con grazie"].firstMatch, in: app).tap()
+        tool(app, "Luce")
+        reveal(app.buttons["appearance-tinted"].firstMatch, in: app, tool: "light").tap()
+        switchTo(app, "date")
+        tool(app, "Carattere")
+        reveal(app.buttons["Con grazie"].firstMatch, in: app, tool: "typeface").tap()
         settle()
         shot(app, "33-appearance")
         allParts(app)
@@ -241,18 +249,18 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         closeSheet(app)
 
-        // The bar, in Data: no profile button. Settings has no switch: it always stays.
+        // The bar, at the end of Sezioni: no profile button. Settings has no switch: it always stays.
         zone(app, "bar").tap()
         settle()
         XCTAssertFalse(app.switches["Impostazioni"].exists, "Settings can still be hidden from the bar")
-        reveal(app.switches["Profilo"].firstMatch, in: app)
+        reveal(app.switches["Profilo"].firstMatch, in: app, tool: "sections", sideways: false)
             .coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
         settle()
 
         // A greeting of the student's own.
         zone(app, "greeting").tap()
         settle()
-        let custom = reveal(app.buttons["greeting-custom"].firstMatch, in: app)
+        let custom = reveal(app.buttons["greeting-custom"].firstMatch, in: app, tool: "greeting")
         custom.tap()
         let field = app.textFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 3), "Choosing a custom greeting showed no field")
@@ -288,10 +296,10 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
 
         // An accessory: a sticker from the keyboard, then text instead.
+        // With none yet, choosing stickers opens the keyboard straight away.
         part(app, "greeting")
-        tool(app, "Accessorio")
+        tool(app, "Accanto alla data")
         app.descendants(matching: .any)["date-header-layout"].buttons["Sticker"].firstMatch.tap()
-        reveal(app.buttons["sticker-controls-add"].firstMatch, in: app).tap()
         let keyboard = app.textViews["sticker-keyboard"].firstMatch
         XCTAssertTrue(keyboard.waitForExistence(timeout: 5), "Adding a sticker showed no keyboard field")
         settle()
@@ -320,7 +328,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
 
         // The app half is a part too: an icon by hand, on the Home Screen.
         part(app, "app")
-        reveal(app.buttons["app-icon-lavender"].firstMatch, in: app).tap()
+        reveal(app.buttons["app-icon-lavender"].firstMatch, in: app, tool: "appIcon").tap()
         settle()
         shot(app, "38b-app-icon")
         XCTAssertTrue(app.buttons["customize-part-reset"].isEnabled, "Choosing an icon left App nothing to reset")
@@ -337,12 +345,26 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         XCTAssertTrue(app.buttons["bar-settings"].exists, "The bar lost the settings button")
     }
 
-    /// Scrolls the open tools until the element can be tapped.
+    /// Scrolls a tool until the element can be tapped: sideways along its
+    /// row first, as the tools under the page scroll, then down, as the
+    /// inspector and the longer tools do.
+    ///
+    /// - Parameters:
+    ///   - element: What to bring into reach.
+    ///   - app: The app.
+    ///   - tool: The tool it is in, by its id; none scrolls the first scroll view.
+    ///   - sideways: Whether to try along the row first.
     @discardableResult
-    @MainActor private func reveal(_ element: XCUIElement, in app: XCUIApplication) -> XCUIElement {
+    @MainActor private func reveal(_ element: XCUIElement, in app: XCUIApplication, tool: String? = nil,
+                                   sideways: Bool = true) -> XCUIElement {
+        let container = tool.map { app.descendants(matching: .any)["tool-\($0)"].firstMatch } ?? app.scrollViews.firstMatch
         var attempts = 0
-        while !element.isHittable && attempts < 8 {
-            app.collectionViews.firstMatch.swipeUp()
+        while !element.isHittable && attempts < 10 {
+            if sideways && attempts < 5 {
+                container.swipeLeft()
+            } else {
+                container.swipeUp()
+            }
             attempts += 1
         }
         return element
@@ -451,7 +473,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
 
         // A part from the sidebar, its tools in the inspector, then its reset.
         part(app, "date")
-        reveal(app.buttons["date-font-mono"].firstMatch, in: app).tap()
+        reveal(app.buttons["date-font-mono"].firstMatch, in: app, tool: "typeface").tap()
         settle()
         shot(app, "71-wide-date")
         let reset = app.buttons["customize-part-reset"]
@@ -477,7 +499,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         part(app, "app")
         XCTAssertTrue(app.descendants(matching: .any)["customize-app-view"].firstMatch.exists, "App offers no Home Screen preview")
         app.descendants(matching: .any)["customize-home-look"].buttons["Scura"].firstMatch.tap()
-        reveal(app.buttons["app-icon-lavender"].firstMatch, in: app).tap()
+        reveal(app.buttons["app-icon-lavender"].firstMatch, in: app, tool: "appIcon").tap()
         settle()
         shot(app, "72b-wide-app")
         app.descendants(matching: .any)["customize-app-view"].buttons["Oggi"].firstMatch.tap()

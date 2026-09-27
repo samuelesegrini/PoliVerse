@@ -67,7 +67,8 @@ cambia subito la pagina). ✕ chiede prima di scartare modifiche; ogni modifica 
 ripete con le frecce accanto.
 L'editor tiene la pagina viva e piccola al centro e sotto le parti dello stile (Tema, Colore,
 Sfondo, Data, Saluto, Schede, App), ognuna con una miniatura di com'è ora. Una parte, o un tocco
-su quella parte dell'anteprima, apre i suoi strumenti sotto la pagina; la capsula in basso passa
+su quella parte dell'anteprima, apre i suoi strumenti sotto la pagina (una scheda per strumento:
+riquadri, gettoni, righelli, campioni di colore, carte del saluto); la capsula in basso passa
 da una parte all'altra, con a sinistra il ripristino della sola parte e a destra il ritorno a
 tutte. Su iPad e Mac le parti sono una barra laterale a sinistra (si riduce alle sole miniature),
 gli strumenti un inspector a destra con il ripristino in fondo, e la pagina si vede sull'iPhone o

@@ -61,9 +61,10 @@ nonisolated enum TodayBackground: String, Codable, CaseIterable, Identifiable, S
     }
 }
 
-/// What the page is printed on: either a paper texture or a decoration in the
-/// Flavor's colour, never both. Two separate settings only ever read as one
-/// question — what does the page look like — so the app asks it once.
+/// What the page is printed on, as the older pickers ask it: a paper texture
+/// or a decoration in the Flavor's colour. Personalizza's editor sets the two
+/// apart, as Carta and Motivo, so a page can have both: the pattern is drawn
+/// over the paper.
 nonisolated enum TodaySheet: Hashable, Sendable, Identifiable {
     /// A paper texture, with no decoration over it.
     case paper(TodayPaper)
@@ -96,8 +97,8 @@ nonisolated enum TodaySheet: Hashable, Sendable, Identifiable {
 
 /// The page's sheet, read and written as one setting.
 nonisolated extension TodayStyle {
-    /// The page's sheet. Setting one clears the other: a look saved with both
-    /// shows its decoration, which is the one drawn on top.
+    /// The page's sheet, for the older pickers. Setting one clears the other;
+    /// a look with both reads as its decoration, the one drawn on top.
     var sheet: TodaySheet {
         get { background == .plain ? .paper(paper) : .decoration(background) }
         set {

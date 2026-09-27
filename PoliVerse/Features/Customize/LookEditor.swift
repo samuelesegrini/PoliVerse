@@ -54,7 +54,7 @@ struct LookEditor: View {
     /// The part whose tools are open, or `nil` for the overview.
     @State private var part: LookPart?
     /// The tool each part last showed, so coming back finds it again.
-    @State private var tools: [LookPart: CustomizePage] = [:]
+    @State private var tools: [LookPart: LookTool] = [:]
     /// What is up in a sheet of its own: a section's card or the sticker picker.
     @State private var sheet: CustomizePage?
     /// The sticker selected on the page: ringed, with its handle, its actions
@@ -232,7 +232,7 @@ struct LookEditor: View {
                     }
                     stage(screen: screen)
                     if !arranging {
-                        inspector(themeColumns: 3)
+                        inspector
                             .frame(width: Self.inspectorWidth)
                             .opacity(settled ? 1 : 0)
                             .transition(.move(edge: .trailing).combined(with: .opacity))
@@ -249,7 +249,7 @@ struct LookEditor: View {
                     }
                     stage(screen: screen)
                     if !arranging {
-                        inspector(themeColumns: 0)
+                        inspector
                             .frame(height: screen.height * 0.4)
                             .opacity(settled ? 1 : 0)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -409,7 +409,7 @@ struct LookEditor: View {
     }
 
     /// The open part's name and value, its tools, and its reset at the bottom.
-    private func inspector(themeColumns: Int) -> some View {
+    private var inspector: some View {
         let part = widePart
         let reset = part.reset(look, to: original)
         return VStack(alignment: .leading, spacing: 0) {
@@ -427,10 +427,27 @@ struct LookEditor: View {
             .padding(.bottom, 12)
 
             Group {
-                if part == .app {
+                switch part {
+                case .app:
                     appInspector
-                } else {
-                    partTools(part, boxed: false, themeColumns: themeColumns)
+                case .special:
+                    SpecialFlavorControls(style: $look, preview: $preview.animation(.snappy),
+                                          duplicateAsClassic: duplicateAsClassic)
+                        .scrollContentBackground(.hidden)
+                default:
+                    // Every tool of the part at once, as the design stacks them.
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 26) {
+                            ForEach(part.tools) { tool in
+                                ToolGroup(title: tool.inspectorTitle, note: tool.note) {
+                                    toolView(tool, layout: .inspector)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 16)
+                    }
+                    .scrollIndicators(.hidden)
                 }
             }
             .frame(maxHeight: .infinity, alignment: .top)
@@ -511,7 +528,9 @@ struct LookEditor: View {
     /// Whether the stickers' tool is what is open: Saluto, on Accessorio, with stickers beside the date.
     private var stickerToolOpen: Bool {
         let open = sizeClass == .regular ? widePart : part
-        return open == .greeting && tool(of: .greeting) == .accessory && look.accessory == .stickers && !arranging
+        // The inspector shows every tool of the part at once.
+        let beside = sizeClass == .regular || tool(of: .greeting) == .beside
+        return open == .greeting && beside && look.accessory == .stickers && !arranging
     }
 
     /// The selected sticker from a keyboard: the arrows move it, + and −
@@ -796,7 +815,7 @@ struct LookEditor: View {
         .overlay {
             Color.clear
                 .contentShape(.rect)
-                .onTapGesture { showTool(.special) }
+                .onTapGesture { part = .special }
                 .accessibilityLabel(Text("Regola il Flavor"))
                 .accessibilityAddTraits(.isButton)
         }
@@ -844,68 +863,51 @@ struct LookEditor: View {
         }
     }
 
-    /// The open part's tools: tabs when it has more than one, then the
-    /// controls of the one chosen.
-    ///
-    /// - Parameters:
-    ///   - part: The part.
-    ///   - boxed: Sets the controls on a panel of their own, as under the
-    ///     page on iPhone; the inspector is one already.
-    ///   - themeColumns: Columns of themes, or 0 for a row.
+    /// The open part's tools under the page: a tab for each, then the one chosen.
     @ViewBuilder
-    private func partTools(_ part: LookPart, boxed: Bool = true, themeColumns: Int = 0) -> some View {
-        switch part {
-        case .theme:
-            ThemePicker(look: $look, columns: themeColumns)
-                .frame(maxHeight: .infinity, alignment: .top)
-        default:
-            VStack(spacing: 8) {
-                if part.tools.count > 1 {
-                    GlassSegmentedPicker("Strumenti", selection: toolBinding(part), options: part.tools) { page in
-                        Text(page.title)
-                    }
-                    .padding(.horizontal, 16)
-                    .accessibilityIdentifier("customize-tools")
+    private func partTools(_ part: LookPart) -> some View {
+        let current = tool(of: part)
+        VStack(spacing: 8) {
+            if part.tools.count > 1 {
+                GlassSegmentedPicker("Strumenti", selection: toolBinding(part), options: part.tools) { tool in
+                    Text(tool.title)
                 }
-                toolPage(tool(of: part))
-                    .id(tool(of: part))
-                    .scrollContentBackground(.hidden)
-                    .background(.white.opacity(boxed ? 0.06 : 0), in: .rect(cornerRadius: 28, style: .continuous))
-                    .clipShape(.rect(cornerRadius: boxed ? 28 : 0, style: .continuous))
-                    .padding(.horizontal, boxed ? 12 : 0)
+                .padding(.horizontal, 16)
+                .accessibilityIdentifier("customize-tools")
             }
+            Group {
+                if current == .special {
+                    SpecialFlavorControls(style: $look, preview: $preview.animation(.snappy),
+                                          duplicateAsClassic: duplicateAsClassic)
+                        .scrollContentBackground(.hidden)
+                } else {
+                    ScrollView {
+                        toolView(current, layout: .strip)
+                            .padding(.vertical, 6)
+                    }
+                    .scrollIndicators(.hidden)
+                }
+            }
+            .id(current)
+            .frame(maxHeight: .infinity, alignment: .top)
+            .transition(.opacity)
         }
+    }
+
+    /// One tool's controls.
+    private func toolView(_ tool: LookTool, layout: ToolLayout) -> some View {
+        LookToolView(tool: tool, look: $look, layout: layout, selectedSticker: $selectedSticker,
+                     homeLook: $homeLook, arranging: $arranging, pickStickers: { sheet = .stickerPicker })
     }
 
     /// The tool a part shows: the one last chosen there, or its first.
-    private func tool(of part: LookPart) -> CustomizePage {
-        tools[part] ?? part.tools.first ?? .flavor
+    private func tool(of part: LookPart) -> LookTool {
+        tools[part] ?? part.tools.first ?? .classics
     }
 
     /// The tabs' selection for a part.
-    private func toolBinding(_ part: LookPart) -> Binding<CustomizePage> {
+    private func toolBinding(_ part: LookPart) -> Binding<LookTool> {
         Binding { tool(of: part) } set: { tools[part] = $0 }
-    }
-
-    /// One page of controls. A page one of them opens — a section's card —
-    /// comes up in a sheet rather than inside the tools, which are too low for it.
-    @ViewBuilder
-    private func toolPage(_ page: CustomizePage) -> some View {
-        switch page {
-        case .special:
-            SpecialFlavorControls(style: $look, preview: $preview.animation(.snappy),
-                                  duplicateAsClassic: duplicateAsClassic)
-        default:
-            NavigationStack(path: Binding<[CustomizePage]> { [] } set: { pushed in
-                if let next = pushed.last { sheet = next }
-            }) {
-                CustomizeControls(page: page, style: $look, arranging: $arranging,
-                                  selectedSticker: $selectedSticker,
-                                  pickStickers: { sheet = .stickerPicker })
-                    .toolbar(.hidden, for: .navigationBar)
-                    .navigationDestination(for: CustomizePage.self) { _ in EmptyView() }
-            }
-        }
     }
 
     /// The capsule: the part's reset on the left, every part's name in the
@@ -966,20 +968,10 @@ struct LookEditor: View {
         part = next
     }
 
-    /// Opens a part on one of its tools.
-    private func showTool(_ page: CustomizePage) {
-        guard let owner = LookPart(page: page) else {
-            sheet = page
-            return
-        }
-        tools[owner] = page
-        part = owner
-    }
-
     /// Opens what a tap on the page means: its part's tools, or a section's card.
     private func open(_ zone: TodayLanding.Zone) {
         if let opening = LookPart.opening(zone, in: look) {
-            tools[opening.part] = opening.page
+            tools[opening.part] = opening.tool
             part = opening.part
         } else if case .section(let kind) = zone {
             sheet = .section(kind)

@@ -43,7 +43,7 @@ struct LookPartValue: View {
         case .theme:
             if look.name.isEmpty { Text("Senza nome") } else { Text(verbatim: look.name) }
         case .colour: Text(verbatim: look.resolved.flavor.name)
-        case .background: Text(look.sheet.title)
+        case .background: Text("\(Text(look.paper.title)) · \(Text(look.background.title))")
         case .date: Text(look.dateFont.title)
         case .greeting:
             if look.showsGreeting { Text(look.greeting.title) } else { Text("Nascosto") }
@@ -100,20 +100,22 @@ struct LookPartThumbnail: View {
                 .frame(width: side, height: side)
                 .background(.white.opacity(0.1))
         case .colour:
-            // The Flavor's three colours, overlapping.
-            ZStack {
-                ForEach(Array([drawn.flavor.extraColour, drawn.flavor.accentColour, drawn.flavor.base].enumerated()), id: \.offset) { index, colour in
-                    Circle()
-                        .fill(colour.color)
-                        .frame(width: 22 * zoom, height: 22 * zoom)
-                        .overlay { Circle().strokeBorder(.white.opacity(0.9), lineWidth: 1.5) }
-                        .offset(x: CGFloat(index - 1) * -9 * zoom, y: CGFloat(index - 1) * (index == 1 ? 6 : -3) * zoom)
-                }
+            // Main and Accent, as cones side by side.
+            HStack(spacing: -8 * zoom) {
+                ConeSwatch(colour: drawn.flavor.base, side: 24 * zoom)
+                ConeSwatch(colour: drawn.flavor.accentColour, side: 24 * zoom)
+                    .overlay { Circle().strokeBorder(Color(white: 0.17), lineWidth: 1.5) }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(.white.opacity(0.1))
+            .background(Color(white: 0.17))
         case .background:
-            PaperTile(sheet: look.sheet, style: look, showsTitle: false)
+            // The page's paper with its pattern, and its corner folded.
+            TodayBackgroundView(style: drawn)
+                .overlay(alignment: .bottomTrailing) {
+                    Triangle()
+                        .fill(drawn.flavor.ground(dark: lit == .dark, mode: drawn.appearance.flavorMode).mixed(with: .black, 0.18).color)
+                        .frame(width: 14 * zoom, height: 14 * zoom)
+                }
                 .environment(\.colorScheme, lit)
         case .date:
             Text(shell.day, format: .dateTime.day())
@@ -150,128 +152,93 @@ struct LookPartThumbnail: View {
     }
 }
 
-/// Tema: the whole page in one go, from a classic theme, a special Flavor or
-/// the colours of a photo. The look keeps its app, and the name the student gave it.
-struct ThemePicker: View {
+/// One theme on Tema's shelf: the top of the page it makes, ringed when the
+/// look wears it. A long press, or a secondary click, offers to take only
+/// part of it: its colours, its background or its date.
+struct ThemeTile: View {
     /// The look being edited.
     @Binding var look: TodayStyle
+    /// The theme.
+    let theme: TodayStyle
+    /// What it is called.
+    let caption: Text
+    /// Marks a special Flavor, which changes the whole app.
+    var special = false
 
-    /// Which themes are on the shelf.
-    enum Shelf: Hashable {
-        case classics, specials
-    }
-
-    /// Columns of themes in a grid that scrolls down, or 0 for one row that
-    /// scrolls sideways under the page.
-    private let columns: Int
-    @State private var shelf: Shelf
-    @State private var photoItem: PhotosPickerItem?
-
-    /// A theme's width on the shelf.
-    private static let width: CGFloat = 76
-
-    /// A picker over the look's themes, open on the kind the look is now.
-    ///
-    /// - Parameters:
-    ///   - look: The look being edited.
-    ///   - columns: Columns of themes in a grid, as the inspector has room
-    ///     for; 0 for a single row.
-    init(look: Binding<TodayStyle>, columns: Int = 0) {
-        _look = look
-        self.columns = columns
-        _shelf = State(initialValue: look.wrappedValue.special == nil ? .classics : .specials)
-    }
+    /// The tile's size, the top of a page.
+    static let size = CGSize(width: 72, height: 108)
 
     /// The view's content.
     var body: some View {
-        VStack(spacing: 14) {
-            HStack(spacing: 10) {
-                GlassSegmentedPicker("Temi", selection: $shelf, options: [.classics, .specials]) { shelf in
-                    switch shelf {
-                    case .classics: Text("Classici")
-                    case .specials: Text("Speciali")
-                    }
-                }
-                PhotosPicker(selection: $photoItem, matching: .images) {
-                    Label("Da una foto", systemImage: "photo")
-                        .font(.subheadline.weight(.semibold))
-                        .labelStyle(.iconOnly)
-                        .frame(width: 30, height: 30)
-                }
-                .buttonStyle(.glass)
-                .buttonBorderShape(.circle)
-                .accessibilityLabel("Da una foto")
-                .accessibilityIdentifier("theme-photo")
-            }
-            .padding(.horizontal, 16)
-
-            if columns > 0 {
-                ScrollView {
-                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(Self.width), spacing: 10), count: columns),
-                              alignment: .leading, spacing: 12) {
-                        tiles
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
-                }
-                .scrollIndicators(.hidden)
-            } else {
-                ScrollView(.horizontal) {
-                    LazyHStack(alignment: .top, spacing: 8) { tiles }
-                        .padding(.horizontal, 16)
-                }
-                .scrollIndicators(.hidden)
-            }
-        }
-        .onChange(of: photoItem) { _, item in
-            guard let item else { return }
-            Task {
-                if let data = try? await item.loadTransferable(type: Data.self),
-                   let image = UIImage(data: data),
-                   let flavor = Flavor.extract(from: image.samplePixels()) {
-                    withAnimation(.snappy) {
-                        look.flavor = flavor
-                        // A special Flavor keeps its own page: only the colour comes from the photo.
-                        if look.special == nil {
-                            look.appearance = .tinted
-                            look.background = .mesh
+        let chosen = look.wearing(theme) == look
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        Button {
+            withAnimation(.snappy) { look = look.wearing(theme) }
+        } label: {
+            VStack(spacing: 7) {
+                LookScreen(look: theme, scale: Self.size.width / LookScreen.reference.width, cornerRadius: 0)
+                    .frame(width: Self.size.width, height: Self.size.height, alignment: .top)
+                    .clipShape(shape)
+                    .overlay(alignment: .topTrailing) {
+                        if special {
+                            Image(systemName: "sparkle")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 20, height: 20)
+                                .background(.black.opacity(0.55), in: .circle)
+                                .padding(6)
                         }
                     }
-                }
-                photoItem = nil
+                    .chosenRing(chosen, in: shape)
+                caption
+                    .font(.caption.weight(chosen ? .semibold : .regular))
+                    .foregroundStyle(chosen ? .primary : .secondary)
+                    .lineLimit(1)
+                    .frame(width: Self.size.width + 4)
             }
+            // The page inside takes no touches of its own: the tile is the target.
+            .contentShape(.rect)
         }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button("Usa “\(caption)”", systemImage: "checkmark.circle") { take(.all) }
+            if theme.special == nil {
+                Button("Solo i colori", systemImage: "paintpalette") { take(.colours) }
+                Button("Solo lo sfondo", systemImage: "square.dashed") { take(.background) }
+                Button("Solo la data", systemImage: "textformat.size") { take(.date) }
+            }
+        } preview: {
+            LookScreen(look: theme, scale: 0.5, cornerRadius: 48)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(caption)
+        .accessibilityAddTraits(chosen ? [.isButton, .isSelected] : .isButton)
     }
 
-    /// The shelf's themes, Casuale first among the classics.
-    @ViewBuilder
-    private var tiles: some View {
-        switch shelf {
-        case .classics:
-            surprise
-                // In a row, Casuale stands apart from the themes.
-                .padding(.trailing, columns > 0 ? 0 : 8)
-            ForEach(Array(TodayStyle.presets.enumerated()), id: \.offset) { index, theme in
-                tile(theme, caption: Text(theme.displayName(at: index)), id: "theme-preset-\(index)")
-            }
-        case .specials:
-            ForEach(SpecialFlavor.allCases) { special in
-                tile(.starting(special), caption: Text(special.title), id: "theme-special-\(special.rawValue)")
-            }
-        }
+    /// Takes the theme, or one part of it.
+    private func take(_ slice: ThemeSlice) {
+        withAnimation(.snappy) { look = look.wearing(theme, only: slice) }
     }
+}
 
-    /// Casuale: a theme's page in a random colour, light and typeface.
-    private var surprise: some View {
+/// Casuale: a theme's page in a random colour, light and typeface, set apart
+/// at the start of the classics.
+struct SurpriseTile: View {
+    /// The look being edited.
+    @Binding var look: TodayStyle
+
+    /// The view's content.
+    var body: some View {
         Button {
             withAnimation(.snappy) { look = look.wearing(.surprise()) }
         } label: {
-            VStack(spacing: 6) {
+            VStack(spacing: 7) {
                 Image(systemName: "shuffle")
                     .font(.title2)
-                    .foregroundStyle(.tint)
-                    .frame(width: Self.width, height: Self.width * LookScreen.reference.height / LookScreen.reference.width)
-                    .background(.white.opacity(0.08), in: .rect(cornerRadius: 12, style: .continuous))
+                    .foregroundStyle(.white)
+                    .frame(width: ThemeTile.size.width, height: ThemeTile.size.height)
+                    .background(Color(white: 0.11), in: .rect(cornerRadius: 16, style: .continuous))
+                    .chosenRing(false, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 Text("Casuale")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -279,34 +246,20 @@ struct ThemePicker: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(Text("Casuale"))
         .accessibilityIdentifier("theme-surprise")
     }
+}
 
-    /// One theme: the page exactly as it will be, ringed when the look wears it.
-    private func tile(_ theme: TodayStyle, caption: Text, id: String) -> some View {
-        let chosen = look.wearing(theme) == look
-        return Button {
-            withAnimation(.snappy) { look = look.wearing(theme) }
-        } label: {
-            VStack(spacing: 6) {
-                LookScreen(look: theme, scale: Self.width / LookScreen.reference.width, cornerRadius: 60)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(chosen ? AnyShapeStyle(.tint) : AnyShapeStyle(.clear), lineWidth: 2.5)
-                            .padding(-4)
-                    }
-                caption
-                    .font(.caption.weight(chosen ? .semibold : .regular))
-                    .foregroundStyle(chosen ? .primary : .secondary)
-                    .lineLimit(1)
-                    .frame(width: Self.width)
-            }
-            .padding(.top, 4)
-            // The page inside takes no touches of its own: the tile is the target.
-            .contentShape(.rect)
+/// The folded corner of a page: the lower right half of a square.
+private struct Triangle: Shape {
+    /// The fold's outline.
+    func path(in rect: CGRect) -> Path {
+        Path { path in
+            path.move(to: CGPoint(x: rect.maxX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+            path.closeSubpath()
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier(id)
-        .accessibilityAddTraits(chosen ? .isSelected : [])
     }
 }

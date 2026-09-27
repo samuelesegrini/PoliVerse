@@ -45,9 +45,10 @@ is bigger, the way iCloud's bar steps from dark to light.
 
 - ``TodayMaterial`` for the cards, a typeface for the date and a design for the
   other text;
-- a ``TodaySheet`` — either a paper texture or a decoration in the Flavor's
-  colour, **never both**, because two settings that only ever read as one
-  question should be asked once;
+- a ``TodayPaper`` to print the page on, and a ``TodayBackground`` pattern in
+  the Flavor's colour over it — Personalizza's Sfondo sets them apart, as
+  Carta and Motivo, and ``TodaySheet`` still reads them as one for the older
+  pickers;
 - ``TodayAppearance``, which decides how the app is lit.
 
 Beside the date sits a ``TodayAccessory``: nothing, stickers placed by hand, a
@@ -77,7 +78,7 @@ look.
 | Step | Screen | What it does |
 |---|---|---|
 | Add | ``NewLookGallery`` | starting points: a copy, a photo's colours, a surprise, a blank page, then shelves of themes, Flavors and papers |
-| Edit | ``LookEditor`` | the page live and small on a draft, with the look's parts (``LookPart``) around it: on iPhone a grid of them under the page and each part's tools in its place, on iPad and Mac a sidebar and an inspector; every change can be undone |
+| Edit | ``LookEditor`` | the page live and small on a draft, with the look's parts (``LookPart``) around it: on iPhone a grid of them under the page and each part's tools (``LookTool``) in tabs, on iPad and Mac a sidebar and an inspector stacking them; every change can be undone |
 | Ask | ``AppPairQuestion`` | once, when a look is added: pair the app with the page, or dress it separately |
 | App | ``AppLookEditor`` | the app half — colour, icon, tab bar — straight after adding; afterwards it is the editor's App part |
 

@@ -60,6 +60,26 @@
     " in %@" : {
 
     },
+    "Accento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accent"
+          }
+        }
+      }
+    },
+    "Altri colori" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More Colours"
+          }
+        }
+      }
+    },
     "Annulla modifica" : {
       "localizations" : {
         "en" : {
@@ -120,6 +140,26 @@
         }
       }
     },
+    "Automatico: segue il Flavor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic: follows the Flavor"
+          }
+        }
+      }
+    },
+    "Barra di Oggi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's Bar"
+          }
+        }
+      }
+    },
     "Barra su iPhone" : {
       "localizations" : {
         "en" : {
@@ -170,6 +210,26 @@
         }
       }
     },
+    "Colore %lld, riga %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour %lld, row %lld"
+          }
+        }
+      }
+    },
+    "Colore della data" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date Colour"
+          }
+        }
+      }
+    },
     "Colore dell’app" : {
       "localizations" : {
         "en" : {
@@ -180,12 +240,52 @@
         }
       }
     },
+    "Colore d’accento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accent Colour"
+          }
+        }
+      }
+    },
+    "Colore principale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Main Colour"
+          }
+        }
+      }
+    },
     "Come la vedi con le icone scure, colorate o trasparenti." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "How it looks with dark, tinted or clear icons."
+          }
+        }
+      }
+    },
+    "Come le altre" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Like the Others"
+          }
+        }
+      }
+    },
+    "compatta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "compact"
           }
         }
       }
@@ -220,6 +320,16 @@
         }
       }
     },
+    "Dimensioni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Size"
+          }
+        }
+      }
+    },
     "Dock" : {
       "localizations" : {
         "en" : {
@@ -250,12 +360,32 @@
         }
       }
     },
+    "Elementi: %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Items: %lld"
+          }
+        }
+      }
+    },
     "Espandi la barra laterale" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Expand Sidebar"
+          }
+        }
+      }
+    },
+    "Forma della data" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date Layout"
           }
         }
       }
@@ -300,6 +430,16 @@
         }
       }
     },
+    "Il resto del testo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Rest of the Text"
+          }
+        }
+      }
+    },
     "Iperspazio" : {
       "localizations" : {
         "en" : {
@@ -340,6 +480,36 @@
         }
       }
     },
+    "Luce" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light"
+          }
+        }
+      }
+    },
+    "Motivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pattern"
+          }
+        }
+      }
+    },
+    "Nascosta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hidden"
+          }
+        }
+      }
+    },
     "Nascosto" : {
       "localizations" : {
         "en" : {
@@ -350,12 +520,32 @@
         }
       }
     },
+    "Nel colore della data" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In the Date's Colour"
+          }
+        }
+      }
+    },
     "Neon" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Neon"
+          }
+        }
+      }
+    },
+    "Nessun saluto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Greeting"
           }
         }
       }
@@ -450,6 +640,16 @@
         }
       }
     },
+    "Più" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More"
+          }
+        }
+      }
+    },
     "Più grande" : {
       "localizations" : {
         "en" : {
@@ -486,6 +686,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Default"
+          }
+        }
+      }
+    },
+    "Principale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Main"
+          }
+        }
+      }
+    },
+    "Principale e accento vengono dai suoi colori." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The main and accent colours come from its colours."
           }
         }
       }
@@ -610,6 +830,16 @@
         }
       }
     },
+    "Scegli una foto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a Photo"
+          }
+        }
+      }
+    },
     "Scelta a mano. Automatica la riabbina al Flavor." : {
       "localizations" : {
         "en" : {
@@ -680,6 +910,36 @@
         }
       }
     },
+    "Solo i colori" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only the Colours"
+          }
+        }
+      }
+    },
+    "Solo la data" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only the Date"
+          }
+        }
+      }
+    },
+    "Solo lo sfondo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only the Background"
+          }
+        }
+      }
+    },
     "Spettro" : {
       "localizations" : {
         "en" : {
@@ -706,16 +966,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Move left"
-          }
-        }
-      }
-    },
-    "Sticker selezionato" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selected Sticker"
           }
         }
       }
@@ -760,6 +1010,36 @@
         }
       }
     },
+    "Tieni premuto sulla pagina per spostarli, ingrandirli e ruotarli." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touch and hold the page to move, resize and rotate them."
+          }
+        }
+      }
+    },
+    "Tinto colora lo sfondo; Contrasto rende testo e bordi più netti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tinted colours the background; Contrast makes text and edges sharper."
+          }
+        }
+      }
+    },
+    "Trascina ≡ per riordinare. Tocca una sezione per le sue opzioni." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag ≡ to reorder. Tap a section for its options."
+          }
+        }
+      }
+    },
     "Trascinali sulla pagina; toccane uno per sceglierlo." : {
       "localizations" : {
         "en" : {
@@ -796,6 +1076,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All Parts"
+          }
+        }
+      }
+    },
+    "Usa “%@”" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use “%@”"
           }
         }
       }
