@@ -101,14 +101,18 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         shot(app, "06c-parts")
         XCTAssertTrue(done.exists, "Going back to the parts stopped editing")
 
-        // Ripristina, in •••, goes back to where editing started.
-        app.buttons["customize-editor-more"].tap()
-        let restore = app.buttons["Ripristina"].firstMatch
-        XCTAssertTrue(restore.waitForExistence(timeout: 3))
-        XCTAssertTrue(restore.isEnabled, "Editing offered no way back to how the look was")
-        restore.tap()
-        settle()
-        shot(app, "07-restored")
+        // Ripristina tutto, in •••, goes back to where editing started. The
+        // iPad's bar has no •••: each part resets in the inspector.
+        if !isWide {
+            app.buttons["customize-editor-more"].tap()
+            let restore = app.buttons["Ripristina tutto"].firstMatch
+            XCTAssertTrue(restore.waitForExistence(timeout: 3))
+            XCTAssertTrue(restore.isEnabled, "Editing offered no way back to how the look was")
+            XCTAssertTrue(app.buttons["Elimina Flavor…"].firstMatch.exists, "••• offers no way to delete the look")
+            restore.tap()
+            settle()
+            shot(app, "07-restored")
+        }
 
         done.tap()
         settle()
@@ -262,16 +266,19 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         let custom = reveal(app.buttons["greeting-custom"].firstMatch, in: app, tool: "greeting")
         custom.tap()
-        let field = app.textFields.firstMatch
+        // On iPhone writing is a task of its own, its field docked over the keyboard.
+        let field = isWide ? app.textFields.firstMatch : app.textFields["customize-mode-field"].firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 3), "Choosing a custom greeting showed no field")
-        field.tap()
+        if isWide { field.tap() }
+        shot(app, "34e-greeting-task")
         field.typeText("Forza e coraggio\n")
         settle()
         allParts(app)
 
-        // Arranging: remove In arrivo, add Esami, drag it above the timetable.
-        app.buttons["customize-editor-more"].tap()
-        let arrange = app.buttons["Disponi le sezioni"].firstMatch
+        // Arranging, from Sezioni: remove In arrivo, add Esami, drag it above the timetable.
+        switchTo(app, "cards")
+        tool(app, "Sezioni")
+        let arrange = reveal(app.buttons["customize-editor-arrange"].firstMatch, in: app, tool: "sections", sideways: false)
         XCTAssertTrue(arrange.waitForExistence(timeout: 3))
         arrange.tap()
         settle()
@@ -305,8 +312,15 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         keyboard.typeText("🎓")
         settle()
-        closeSheet(app)
         shot(app, "37-sticker")
+        if isWide {
+            closeSheet(app)
+        } else {
+            // The stickers' task: the keyboard docked under the zoomed page, then Fine.
+            app.buttons["sticker-keyboard-done"].tap()
+            app.buttons["customize-mode-done"].tap()
+            settle()
+        }
 
         // On the page a sticker drags straight away; a tap selects it, with its actions.
         let sticker = app.buttons["page-sticker"].firstMatch
@@ -316,13 +330,30 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         XCTAssertNotEqual(sticker.frame.midX, before, accuracy: 2, "Dragging the sticker on the page did not move it")
         sticker.tap()
+        if !isWide {
+            // On iPhone the tap starts the stickers' task, the actions above the sticker in two pages.
+            let more = app.buttons["sticker-more"].firstMatch
+            XCTAssertTrue(more.waitForExistence(timeout: 3), "Tapping the sticker showed no actions above it")
+            more.tap()
+        }
         let bigger = app.buttons["sticker-bigger"].firstMatch
         XCTAssertTrue(bigger.waitForExistence(timeout: 3), "Tapping the sticker did not select it")
         bigger.tap()
         settle()
         shot(app, "37b-sticker-selected")
+        if !isWide {
+            app.buttons["customize-mode-done"].tap()
+            settle()
+        }
         app.descendants(matching: .any)["date-header-layout"].buttons["Testo"].firstMatch.tap()
         settle()
+        if !isWide {
+            // With no words yet, Testo starts their task.
+            let words = app.textFields["customize-mode-field"].firstMatch
+            XCTAssertTrue(words.waitForExistence(timeout: 3), "Choosing text beside the date showed no field")
+            words.typeText("Si parte\n")
+            settle()
+        }
         shot(app, "38-accessory-text")
         allParts(app)
 
@@ -482,7 +513,10 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         settle()
         XCTAssertFalse(reset.isEnabled, "Resetting the part left it changed")
 
-        // The page on an iPhone.
+        // The page on a Mac's window, then on an iPhone.
+        app.descendants(matching: .any)["customize-preview-device"].buttons["Mac"].firstMatch.tap()
+        settle()
+        shot(app, "71b-wide-mac")
         app.descendants(matching: .any)["customize-preview-device"].buttons["iPhone"].firstMatch.tap()
         settle()
         shot(app, "72-wide-iphone")

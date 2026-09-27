@@ -370,6 +370,26 @@
         }
       }
     },
+    "Elimina Flavor…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Flavor…"
+          }
+        }
+      }
+    },
+    "Eliminare il Flavor?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete the Flavor?"
+          }
+        }
+      }
+    },
     "Espandi la barra laterale" : {
       "localizations" : {
         "en" : {
@@ -410,6 +430,26 @@
         }
       }
     },
+    "Il Flavor torna com’era quando hai aperto Personalizza." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Flavor goes back to how it was when you opened Personalizza."
+          }
+        }
+      }
+    },
+    "Il mio Flavor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My Flavor"
+          }
+        }
+      }
+    },
     "Il piano approvato (PSPA) decide le schede dei corsi, il syllabus e l’orario personalizzato." : {
       "localizations" : {
         "en" : {
@@ -436,6 +476,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The Rest of the Text"
+          }
+        }
+      }
+    },
+    "Il tuo saluto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Greeting"
           }
         }
       }
@@ -480,12 +530,62 @@
         }
       }
     },
+    "Le modifiche a questo Flavor non verranno salvate." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The changes to this Flavor won't be saved."
+          }
+        }
+      }
+    },
+    "Lo trovi di nuovo per qualche secondo, con Annulla nella galleria." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For a few seconds you can bring it back with Undo in the gallery."
+          }
+        }
+      }
+    },
     "Luce" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Light"
+          }
+        }
+      }
+    },
+    "Modifica gli sticker" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Stickers"
+          }
+        }
+      }
+    },
+    "Modifica il testo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Text"
+          }
+        }
+      }
+    },
+    "Modificato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edited"
           }
         }
       }
@@ -516,6 +616,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hidden"
+          }
+        }
+      }
+    },
+    "Nel carattere della data e nel tuo colore." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In the date's typeface and your colour."
           }
         }
       }
@@ -810,12 +920,42 @@
         }
       }
     },
+    "Ripristina tutto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset All"
+          }
+        }
+      }
+    },
     "Ruota" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rotate"
+          }
+        }
+      }
+    },
+    "Scarta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discard"
+          }
+        }
+      }
+    },
+    "Scartare le modifiche a “%@”?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discard the changes to “%@”?"
           }
         }
       }
@@ -940,6 +1080,16 @@
         }
       }
     },
+    "Sopra la data, al posto del saluto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Above the date, in place of the greeting."
+          }
+        }
+      }
+    },
     "Spettro" : {
       "localizations" : {
         "en" : {
@@ -1036,6 +1186,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drag ≡ to reorder. Tap a section for its options."
+          }
+        }
+      }
+    },
+    "Trascinali sulla pagina; toccane uno per le sue azioni e la maniglia che lo ingrandisce e lo ruota." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag them on the page; tap one for its actions and the handle that resizes and turns it."
           }
         }
       }
@@ -3516,9 +3676,6 @@
       }
     },
     "Annulla il download" : {
-
-    },
-    "Annullare le modifiche?" : {
 
     },
     "Annunci, avvisi e soluzioni" : {
@@ -6971,9 +7128,6 @@
           }
         }
       }
-    },
-    "Disponi le sezioni" : {
-
     },
     "Disponi sulla pagina" : {
       "localizations" : {

@@ -64,15 +64,20 @@ tab, o apre il pannello della pagina unica sul luogo.
 **Personalizza.** Un solo punto di conferma per azione: nell'editor ✓ salva lo stile, nella
 galleria ✓ lo usa, «Chiudi» lascia la pagina sullo stile che già usa (salvare proprio quello
 cambia subito la pagina). ✕ chiede prima di scartare modifiche; ogni modifica si annulla e si
-ripete con le frecce accanto.
+ripete con le frecce accanto. Su iPhone ••• offre Rinomina (il nome si scrive nella panoramica),
+Ripristina tutto ed Elimina Flavor…; sticker, saluto personale e testo accanto alla data si
+modificano in un'attività a sé: la pagina si ingrandisce sulla sua testa, una barra con Annulla e
+Fine la nomina e in basso resta ciò che serve (la tastiera degli sticker, o il campo di testo).
+La capsula in basso si trascina di lato per cambiare parte e in su per tornare a tutte.
 L'editor tiene la pagina viva e piccola al centro e sotto le parti dello stile (Tema, Colore,
 Sfondo, Data, Saluto, Schede, App), ognuna con una miniatura di com'è ora. Una parte, o un tocco
 su quella parte dell'anteprima, apre i suoi strumenti sotto la pagina (una scheda per strumento:
 riquadri, gettoni, righelli, campioni di colore, carte del saluto); la capsula in basso passa
 da una parte all'altra, con a sinistra il ripristino della sola parte e a destra il ritorno a
 tutte. Su iPad e Mac le parti sono una barra laterale a sinistra (si riduce alle sole miniature),
-gli strumenti un inspector a destra con il ripristino in fondo, e la pagina si vede sull'iPhone o
-alla misura dello schermo; in verticale le parti corrono in alto e l'inspector va sotto la pagina.
+gli strumenti un inspector a destra con il ripristino in fondo, e la pagina si vede su iPhone,
+iPad o Mac; il nome si scrive in Tema su iPad e nella barra degli strumenti su Mac, che ha
+Annulla e Fine per esteso; in verticale le parti corrono in alto e l'inspector va sotto la pagina.
 ⌘Z e ⇧⌘Z annullano e ripetono. Gli sticker si trascinano direttamente sull'anteprima, da
 qualsiasi parte; toccandone uno lo si sceglie, con una maniglia sull'angolo che lo ingrandisce e lo
 ruota, e le sue azioni in Saluto ▸ Accessorio, nel menu contestuale e da tastiera. Solo la scheda di una sezione e la tastiera degli sticker salgono

@@ -41,6 +41,12 @@ struct LookToolView: View {
     @Binding var arranging: Bool
     /// Opens the sticker keyboard.
     let pickStickers: () -> Void
+    /// Starts one of the iPhone's tasks: writing a greeting or the words beside
+    /// the date, or placing the stickers. `nil` where the tools edit in place,
+    /// as the inspector does.
+    var enterMode: ((EditorMode) -> Void)?
+    /// Set while one of the tools' text fields has the keyboard.
+    var typing: Binding<Bool> = .constant(false)
 
     /// The environment's `shell`.
     @Environment(\.shell) private var shell
@@ -50,6 +56,8 @@ struct LookToolView: View {
     @State private var photoItems: [PhotosPickerItem] = []
     /// The section whose settings are open in Sezioni.
     @State private var openSection: TodaySection.Kind?
+    /// One of the text fields has the keyboard.
+    @FocusState private var fieldFocused: Bool
 
     /// The look as drawn.
     private var drawn: TodayStyle { look.resolved }
@@ -349,10 +357,16 @@ struct LookToolView: View {
         VStack(alignment: .leading, spacing: 10) {
             ToolRow(layout: layout, minimum: 96, spacing: 12) {
                 ForEach(GreetingStyle.allCases) { style in
-                    PageCard(look: look, title: Text(style.title), chosen: look.showsGreeting && look.greeting == style) {
+                    let chosen = look.showsGreeting && look.greeting == style
+                    PageCard(look: look, title: Text(style.title), chosen: chosen) {
                         withAnimation(.snappy) {
                             look.showsGreeting = true
                             look.greeting = style
+                        }
+                        // The student's own words are written in their task: straight
+                        // away when there are none yet, else on a second tap.
+                        if style == .custom, let enterMode, chosen || look.customGreeting.isEmpty {
+                            enterMode(.greeting)
                         }
                     } face: {
                         VStack(alignment: .leading, spacing: 0) {
@@ -379,7 +393,7 @@ struct LookToolView: View {
                 }
                 .accessibilityIdentifier("greeting-none")
             }
-            if look.showsGreeting && look.greeting == .custom {
+            if enterMode == nil && look.showsGreeting && look.greeting == .custom {
                 limitedField("Scrivi il tuo saluto", text: $look.customGreeting, limit: TodayStyle.customGreetingLimit)
                     .accessibilityIdentifier("greeting-field")
             }
@@ -392,6 +406,8 @@ struct LookToolView: View {
             TextField(prompt, text: text)
                 .textInputAutocapitalization(.sentences)
                 .submitLabel(.done)
+                .focused($fieldFocused)
+                .onChange(of: fieldFocused) { _, focused in typing.wrappedValue = focused }
             Text(verbatim: "\(text.wrappedValue.count)/\(limit)")
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
@@ -408,9 +424,17 @@ struct LookToolView: View {
         VStack(alignment: .leading, spacing: 12) {
             ToolRow(layout: layout, minimum: 96, spacing: 12) {
                 ForEach(TodayAccessory.allCases) { accessory in
-                    PageCard(look: look, title: Text(accessory.title), chosen: look.accessory == accessory) {
+                    let chosen = look.accessory == accessory
+                    PageCard(look: look, title: Text(accessory.title), chosen: chosen) {
                         withAnimation(.snappy) { look.accessory = accessory }
-                        if accessory == .stickers && look.stickers.isEmpty { pickStickers() }
+                        if let enterMode {
+                            // Stickers and words have a task of their own: straight away
+                            // when there is nothing yet, else on a second tap.
+                            if accessory == .stickers && (chosen || look.stickers.isEmpty) { enterMode(.stickers) }
+                            if accessory == .text && (chosen || look.accessoryText.isEmpty) { enterMode(.besideText) }
+                        } else if accessory == .stickers && look.stickers.isEmpty {
+                            pickStickers()
+                        }
                     } face: {
                         besideFace(accessory)
                     }
@@ -421,13 +445,35 @@ struct LookToolView: View {
 
             switch look.accessory {
             case .none: EmptyView()
-            case .stickers: stickerControls
+            case .stickers:
+                if let enterMode {
+                    taskButton("Modifica gli sticker", symbol: "hand.draw") { enterMode(.stickers) }
+                        .accessibilityIdentifier("sticker-edit")
+                } else {
+                    stickerControls
+                }
             case .text:
-                limitedField("Tutto pronto?", text: $look.accessoryText, limit: TodayStyle.accessoryTextLimit)
-                    .accessibilityIdentifier("accessory-text")
+                if let enterMode {
+                    taskButton("Modifica il testo", symbol: "character.cursor.ibeam") { enterMode(.besideText) }
+                        .accessibilityIdentifier("accessory-text-edit")
+                } else {
+                    limitedField("Tutto pronto?", text: $look.accessoryText, limit: TodayStyle.accessoryTextLimit)
+                        .accessibilityIdentifier("accessory-text")
+                }
             case .photos: photoControls
             }
         }
+    }
+
+    /// A button that starts one of the iPhone's tasks.
+    private func taskButton(_ title: LocalizedStringKey, symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: symbol)
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: 44)
+        }
+        .buttonStyle(.glass)
+        .padding(.horizontal, 18)
     }
 
     /// What a card of the beside tool shows: the date, and beside it the accessory.
@@ -496,7 +542,7 @@ struct LookToolView: View {
                                 }
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel(Text(sticker.content.isEmoji ? "Emoji" : "Sticker"))
+                        .accessibilityLabel(sticker.content.isEmoji ? Text("Emoji") : Text("Sticker"))
                         .accessibilityAddTraits(chosen ? .isSelected : [])
                     }
                     Button(action: pickStickers) {

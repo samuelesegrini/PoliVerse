@@ -36,6 +36,8 @@ struct LookEditor: View {
     let cancel: () -> Void
     /// Keeps the draft.
     let done: () -> Void
+    /// Deletes the look, for one already saved that is not the last.
+    var delete: (() -> Void)?
 
     /// The environment's `shell`.
     @Environment(\.shell) private var shell
@@ -45,8 +47,19 @@ struct LookEditor: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     /// The sidebar shows each part's name and value, not only its picture.
     @AppStorage("lookEditorSidebarOpen") private var sidebarOpen = true
-    /// What the page is previewed on, on iPad and Mac.
-    @State private var device = PreviewDevice.screen
+    /// What the page is previewed on, on iPad and Mac: this kind of screen to begin with.
+    @State private var device = LookEditor.onMac ? PreviewDevice.mac : .pad
+    /// The iPhone task under way, if any.
+    @State private var mode: EditorMode?
+    /// The look as the task found it, for its Annulla.
+    @State private var modeSnapshot: TodayStyle?
+    /// The stickers' task has the keyboard open to add more.
+    @State private var addingSticker = false
+    @State private var confirmingDelete = false
+    /// The name field in the overview, which Rinomina puts the cursor in.
+    @FocusState private var nameFocused: Bool
+    /// A text field in the tools has the keyboard: the stickers' keys stand down.
+    @State private var typingInTools = false
     /// With App open on iPad and Mac, whether the Home Screen or Oggi is shown.
     @State private var appView = AppView.home
     /// How the Home Screen previewed for App draws its icons.
@@ -61,8 +74,6 @@ struct LookEditor: View {
     /// in Saluto's Accessorio and on the keyboard.
     @State private var selectedSticker: UUID?
     @State private var arranging = false
-    @State private var renaming = false
-    @State private var newName = ""
     @State private var confirmingCancel = false
     /// Which page a special Flavor is previewed on.
     @State private var preview = SpecialPreview.today
@@ -83,11 +94,22 @@ struct LookEditor: View {
     private static let inspectorWidth: CGFloat = 340
 
     /// What the page is previewed on, on iPad and Mac.
-    enum PreviewDevice: Hashable {
+    enum PreviewDevice: Hashable, CaseIterable {
         /// An iPhone, as most students will see it.
         case phone
-        /// This screen: the iPad's, or the Mac's window.
-        case screen
+        /// An iPad, lying down.
+        case pad
+        /// A Mac's window.
+        case mac
+
+        /// What the switch calls it.
+        var title: String {
+            switch self {
+            case .phone: "iPhone"
+            case .pad: "iPad"
+            case .mac: "Mac"
+            }
+        }
     }
 
     /// What App shows beside its tools on iPad and Mac.
@@ -134,6 +156,7 @@ struct LookEditor: View {
         .animation(.snappy, value: arranging)
         .animation(.snappy, value: sidebarOpen)
         .animation(.snappy, value: device)
+        .animation(.snappy, value: mode)
         .sheet(item: $sheet) { page in
             sheetContent(page)
         }
@@ -155,15 +178,14 @@ struct LookEditor: View {
             }
             if special == nil { preview = .today }
         }
-        .alert("Nome del Flavor", isPresented: $renaming) {
-            TextField("Flavor", text: $newName)
-                .accessibilityIdentifier("customize-name-field")
+        .modifier(DiscardQuestion(onMac: Self.onMac && sizeClass == .regular, isPresented: $confirmingCancel,
+                                  name: look.name, discard: cancel))
+        .confirmationDialog("Eliminare il Flavor?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+            Button("Elimina Flavor", role: .destructive) { delete?() }
+                .accessibilityIdentifier("customize-editor-delete-confirm")
             Button("Annulla", role: .cancel) {}
-            Button("Salva") { look.name = newName.trimmingCharacters(in: .whitespaces) }
-        }
-        .confirmationDialog("Annullare le modifiche?", isPresented: $confirmingCancel, titleVisibility: .visible) {
-            Button("Scarta le modifiche", role: .destructive, action: cancel)
-                .accessibilityIdentifier("customize-editor-discard")
+        } message: {
+            Text("Lo trovi di nuovo per qualche secondo, con Annulla nella galleria.")
         }
         .sensoryFeedback(.selection, trigger: part)
         .sensoryFeedback(.impact(weight: .medium), trigger: arranging) { _, new in new }
@@ -177,18 +199,74 @@ struct LookEditor: View {
     /// The bar, the page, and under it the overview or the open part.
     private func compact(screen: CGSize) -> some View {
         VStack(spacing: 0) {
-            topBar(showsName: false)
-                .padding(.horizontal, 16)
-                .padding(.top, insets.top + 4)
-                .opacity(settled ? 1 : 0)
+            Group {
+                if let mode {
+                    ModeBar(mode: mode, cancel: cancelMode, done: finishMode)
+                } else {
+                    topBar
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, insets.top + 4)
+            .opacity(settled ? 1 : 0)
             page(on: Screen(size: screen, insets: insets, cornerRadius: 48, tabBar: !shell.singlePage), screen: screen,
-                 home: part == .app && tool(of: .app) != .appBar ? .homeScreen : nil)
+                 home: part == .app && tool(of: .app) != .appBar && mode == nil ? .homeScreen : nil,
+                 zoomed: mode != nil)
                 .padding(.vertical, 12)
-            if !arranging {
+            if let mode {
+                modeDock(mode)
+                    .padding(.bottom, insets.bottom)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else if !arranging {
                 lower(screen: screen)
                     .opacity(settled ? 1 : 0)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
+        }
+    }
+
+    /// What a task docks at the bottom.
+    @ViewBuilder
+    private func modeDock(_ mode: EditorMode) -> some View {
+        switch mode {
+        case .stickers:
+            StickerDock(look: $look, adding: $addingSticker)
+        case .greeting:
+            TypingDock(text: $look.customGreeting, prompt: "Scrivi il tuo saluto", limit: TodayStyle.customGreetingLimit,
+                       note: "Sopra la data, al posto del saluto.", submit: finishMode)
+        case .besideText:
+            TypingDock(text: $look.accessoryText, prompt: "Tutto pronto?", limit: TodayStyle.accessoryTextLimit,
+                       note: "Nel carattere della data e nel tuo colore.", submit: finishMode)
+        }
+    }
+
+    /// Starts a task, remembering the look to go back to.
+    private func enter(_ next: EditorMode) {
+        modeSnapshot = look
+        part = .greeting
+        tools[.greeting] = next == .greeting ? .greeting : .beside
+        addingSticker = next == .stickers && look.stickers.isEmpty
+        withAnimation(.snappy) { mode = next }
+    }
+
+    /// Leaves the task, putting the look back as it began.
+    private func cancelMode() {
+        if let modeSnapshot { withAnimation(.snappy) { look = modeSnapshot } }
+        endMode()
+    }
+
+    /// Leaves the task, keeping what it changed.
+    private func finishMode() {
+        endMode()
+    }
+
+    /// Clears what the task kept.
+    private func endMode() {
+        withAnimation(.snappy) {
+            mode = nil
+            modeSnapshot = nil
+            addingSticker = false
+            selectedSticker = nil
         }
     }
 
@@ -206,9 +284,14 @@ struct LookEditor: View {
         switch device {
         case .phone:
             Screen(size: LookScreen.reference, insets: LookScreen.referenceInsets, cornerRadius: 48, tabBar: !shell.singlePage)
-        case .screen:
+        case .pad:
             // A sidebar rather than a tab bar at this width.
-            Screen(size: screen, insets: insets, cornerRadius: 24, tabBar: false)
+            Screen(size: CGSize(width: 1194, height: 834), insets: EdgeInsets(top: 24, leading: 0, bottom: 20, trailing: 0),
+                   cornerRadius: 18, tabBar: false)
+        case .mac:
+            // Under the window's title bar.
+            Screen(size: CGSize(width: 1280, height: 800), insets: EdgeInsets(top: 28, leading: 0, bottom: 0, trailing: 0),
+                   cornerRadius: 10, tabBar: false)
         }
     }
 
@@ -218,7 +301,9 @@ struct LookEditor: View {
     private func wide(screen: CGSize) -> some View {
         let landscape = screen.width > screen.height
         return VStack(spacing: 0) {
-            topBar(showsName: true)
+            Group {
+                if Self.onMac { macBar } else { padBar }
+            }
                 .padding(.horizontal, 20)
                 .padding(.top, insets.top + 8)
                 .padding(.bottom, 4)
@@ -278,13 +363,10 @@ struct LookEditor: View {
                         .accessibilityIdentifier("customize-app-view")
                         .transition(.opacity)
                     }
-                    GlassSegmentedPicker("Anteprima su", selection: $device, options: [.phone, .screen]) { device in
-                        switch device {
-                        case .phone: Text(verbatim: "iPhone")
-                        case .screen: Text(verbatim: Self.onMac ? "Mac" : "iPad")
-                        }
+                    GlassSegmentedPicker("Anteprima su", selection: $device, options: PreviewDevice.allCases) { device in
+                        Text(verbatim: device.title)
                     }
-                    .frame(maxWidth: 260)
+                    .frame(maxWidth: 300)
                     .accessibilityIdentifier("customize-preview-device")
                 }
                 .opacity(settled ? 1 : 0)
@@ -296,13 +378,13 @@ struct LookEditor: View {
     }
 
     /// Whether this is the iPad app running on a Mac.
-    private static let onMac = ProcessInfo.processInfo.isiOSAppOnMac
+    static let onMac = ProcessInfo.processInfo.isiOSAppOnMac
 
     /// What App shows in place of the page: the Home Screen, or on a Mac's
     /// own screen its Dock; `nil` for the page.
     private var wideHome: AppPreview.Mode? {
         guard widePart == .app, appView == .home else { return nil }
-        return Self.onMac && device == .screen ? .dock : .homeScreen
+        return device == .mac ? .dock : .homeScreen
     }
 
     /// The parts down the left, each with its picture; folded, only the pictures.
@@ -438,6 +520,10 @@ struct LookEditor: View {
                     // Every tool of the part at once, as the design stacks them.
                     ScrollView {
                         VStack(alignment: .leading, spacing: 26) {
+                            // On iPad the name is set here; a Mac has it in the toolbar.
+                            if part == .theme && !Self.onMac {
+                                ToolGroup(title: "Nome") { nameField }
+                            }
                             ForEach(part.tools) { tool in
                                 ToolGroup(title: tool.inspectorTitle, note: tool.note) {
                                     toolView(tool, layout: .inspector)
@@ -538,7 +624,8 @@ struct LookEditor: View {
     /// buttons, there only while a sticker is selected.
     @ViewBuilder
     private var stickerKeys: some View {
-        if let id = selectedSticker {
+        // Letters and arrows belong to a text field while one is being typed in.
+        if let id = selectedSticker, !nameFocused, !typingInTools, mode != .greeting, mode != .besideText {
             Group {
                 Button("Sposta a sinistra") { nudge(id, x: -0.04) }
                     .keyboardShortcut(.leftArrow, modifiers: [])
@@ -585,34 +672,52 @@ struct LookEditor: View {
 
     // MARK: - Top bar
 
-    /// ✕, undo and redo on the left; ••• and ✓ on the right; on iPad and Mac
-    /// the look's name between them. Arranging, only the mode's name and Fine.
-    ///
-    /// - Parameter showsName: Puts the look's name in the middle.
-    private func topBar(showsName: Bool) -> some View {
+    /// Arranging the sections on the page: the task's name and Fine.
+    private var arrangingBar: some View {
+        HStack {
+            Spacer()
+            Text("Disponi").font(.headline)
+            Spacer()
+            Button("Fine") { arranging = false }
+                .buttonStyle(.glassProminent)
+                .accessibilityIdentifier("customize-arrange-done")
+        }
+    }
+
+    /// Leaves, asking first if anything changed.
+    private func askCancel() {
+        if look == original { cancel() } else { confirmingCancel = true }
+    }
+
+    /// The undo and redo capsule.
+    private var undoRedo: some View {
+        UndoRedoCapsule(canUndo: history.canUndo, canRedo: history.canRedo, undo: undo, redo: redo)
+    }
+
+    /// ✓: keeps the draft.
+    private var doneButton: some View {
+        Button(action: done) {
+            Image(systemName: "checkmark")
+                .font(.body.weight(.semibold))
+                .frame(width: 30, height: 30)
+        }
+        .buttonStyle(.glassProminent)
+        .buttonBorderShape(.circle)
+        .keyboardShortcut(.return, modifiers: .command)
+        .accessibilityLabel(isNew ? Text("Aggiungi") : Text("Fine"))
+        .accessibilityIdentifier("customize-edit-done")
+    }
+
+    /// The iPhone's bar: ✕ and undo and redo on the left, ••• and ✓ on the right.
+    @ViewBuilder
+    private var topBar: some View {
         HStack(spacing: 8) {
             if arranging {
-                Spacer()
-                Text("Disponi").font(.headline)
-                Spacer()
-                Button("Fine") { arranging = false }
-                    .buttonStyle(.glassProminent)
-                    .accessibilityIdentifier("customize-arrange-done")
+                arrangingBar
             } else {
-                roundButton("Annulla", symbol: "xmark", id: "customize-editor-cancel", shortcut: .cancelAction) {
-                    if look == original { cancel() } else { confirmingCancel = true }
-                }
-                roundButton("Annulla modifica", symbol: "arrow.uturn.backward", id: "customize-editor-undo",
-                            shortcut: KeyboardShortcut("z", modifiers: .command), action: undo)
-                    .disabled(!history.canUndo)
-                roundButton("Ripeti modifica", symbol: "arrow.uturn.forward", id: "customize-editor-redo",
-                            shortcut: KeyboardShortcut("z", modifiers: [.command, .shift]), action: redo)
-                    .disabled(!history.canRedo)
+                roundButton("Annulla", symbol: "xmark", id: "customize-editor-cancel", shortcut: .cancelAction, action: askCancel)
+                undoRedo
                 Spacer()
-                if showsName {
-                    nameButton(font: .headline)
-                    Spacer()
-                }
                 Menu { menuItems } label: {
                     Image(systemName: "ellipsis")
                         .font(.body.weight(.semibold))
@@ -620,21 +725,76 @@ struct LookEditor: View {
                 }
                 .buttonStyle(.glass)
                 .buttonBorderShape(.circle)
-                .accessibilityLabel("Altro")
+                .accessibilityLabel("Altre azioni")
                 .accessibilityIdentifier("customize-editor-more")
-                Button(action: done) {
-                    Image(systemName: "checkmark")
-                        .font(.body.weight(.semibold))
-                        .frame(width: 30, height: 30)
-                }
-                .buttonStyle(.glassProminent)
-                .buttonBorderShape(.circle)
-                .keyboardShortcut(.return, modifiers: .command)
-                .accessibilityLabel(isNew ? "Aggiungi" : "Fine")
-                .accessibilityIdentifier("customize-edit-done")
+                doneButton
             }
         }
         .frame(height: 48)
+    }
+
+    /// The iPad's bar: ✕ and undo and redo on the left, the look's name in
+    /// the middle, ✓ on the right. The name is set in Tema.
+    private var padBar: some View {
+        ZStack {
+            if arranging {
+                arrangingBar
+            } else {
+                Group {
+                    if look.name.isEmpty { Text("Senza nome") } else { Text(verbatim: look.name) }
+                }
+                .font(.headline)
+                .lineLimit(1)
+                .frame(maxWidth: 360)
+                HStack(spacing: 8) {
+                    roundButton("Annulla", symbol: "xmark", id: "customize-editor-cancel", shortcut: .cancelAction, action: askCancel)
+                    undoRedo
+                    Spacer()
+                    doneButton
+                }
+            }
+        }
+        .frame(height: 48)
+    }
+
+    /// A Mac's toolbar: the name to type in and whether it has changed on the
+    /// left; undo and redo, Annulla and Fine on the right.
+    private var macBar: some View {
+        HStack(spacing: 12) {
+            if arranging {
+                arrangingBar
+            } else {
+                nameField
+                    .frame(width: 240)
+                (look == original ? Text("Flavor") : Text("Modificato"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                undoRedo
+                Button("Annulla", action: askCancel)
+                    .buttonStyle(.glass)
+                    .keyboardShortcut(.cancelAction)
+                    .accessibilityIdentifier("customize-editor-cancel")
+                Button(action: done) { isNew ? Text("Aggiungi") : Text("Fine") }
+                    .buttonStyle(.glassProminent)
+                    .keyboardShortcut(.return, modifiers: .command)
+                    .accessibilityIdentifier("customize-edit-done")
+            }
+        }
+        .frame(height: 48)
+    }
+
+    /// The look's name, typed in place.
+    private var nameField: some View {
+        TextField("Il mio Flavor", text: Binding { look.name } set: { look.name = String($0.prefix(TodayStyle.nameLimit)) })
+            .font(.headline)
+            .submitLabel(.done)
+            .focused($nameFocused)
+            .padding(.horizontal, 12)
+            .frame(minHeight: 40)
+            .background(Color(white: 0.11), in: .rect(cornerRadius: 12, style: .continuous))
+            .accessibilityLabel(Text("Nome del Flavor"))
+            .accessibilityIdentifier("customize-name-field")
     }
 
     /// A round glass button with a symbol.
@@ -654,54 +814,29 @@ struct LookEditor: View {
         .accessibilityIdentifier(id)
     }
 
-    /// The look's name, which a tap renames.
-    private func nameButton(font: Font) -> some View {
-        Button(action: rename) {
-            HStack(spacing: 6) {
-                if look.name.isEmpty {
-                    Text("Senza nome")
-                } else {
-                    Text(verbatim: look.name)
-                }
-                Image(systemName: "pencil")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-            .font(font)
-            .foregroundStyle(.primary)
-            .lineLimit(1)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text("Rinomina"))
-        .accessibilityValue(Text(verbatim: look.name))
-        .accessibilityIdentifier("customize-editor-name")
-    }
-
-    /// The look itself: its name, arranging its sections, starting over.
-    /// System menu items drop accessibility identifiers, so tests find these
-    /// by their labels.
+    /// The look itself: its name, starting over, deleting it. System menu
+    /// items drop accessibility identifiers, so tests find these by their labels.
     @ViewBuilder
     private var menuItems: some View {
         Section {
             Button("Rinomina", systemImage: "pencil", action: rename)
-            if look.special == nil {
-                Button("Disponi le sezioni", systemImage: "square.stack.3d.up") { arranging = true }
-            } else {
-                Button("Duplica come classico", systemImage: "square.on.square") { duplicateAsClassic() }
-            }
-        }
-        Section {
-            Button("Ripristina", systemImage: "arrow.uturn.backward") {
+            Button("Ripristina tutto", systemImage: "arrow.uturn.backward") {
                 withAnimation(.snappy) { look = original }
             }
             .disabled(look == original)
         }
+        if delete != nil {
+            Button("Elimina Flavor…", systemImage: "trash", role: .destructive) { confirmingDelete = true }
+        }
     }
 
-    /// Asks for a new name.
+    /// Goes to the overview with the cursor in the name.
     private func rename() {
-        newName = look.name
-        renaming = true
+        withAnimation(.snappy) { part = nil }
+        Task {
+            try? await Task.sleep(for: .milliseconds(350))
+            nameFocused = true
+        }
     }
 
     /// Goes back one change.
@@ -725,12 +860,15 @@ struct LookEditor: View {
     ///   - target: The screen the page is drawn on.
     ///   - screen: The editor's own screen, which the page covers before settling.
     ///   - home: For App, the Home Screen or Dock drawn in the page's place.
-    private func page(on target: Screen, screen: CGSize, home: AppPreview.Mode? = nil) -> some View {
+    ///   - zoomed: During a task: the page nearly as wide as the screen, its top in view.
+    private func page(on target: Screen, screen: CGSize, home: AppPreview.Mode? = nil, zoomed: Bool = false) -> some View {
         Color.clear
             .overlay {
                 GeometryReader { room in
                     let size = target.size
-                    let fit = min(room.size.height / size.height, room.size.width / size.width)
+                    let fit = zoomed
+                        ? room.size.width * 0.92 / size.width
+                        : min(room.size.height / size.height, room.size.width / size.width)
                     // Before settling, the page covers the screen, where the card left it.
                     let cover = max(screen.width / size.width, screen.height / size.height)
                     let frame = room.frame(in: .named(Self.space))
@@ -746,12 +884,17 @@ struct LookEditor: View {
                     }
                     // Handles on the page stay a finger's size however small it is drawn.
                     .environment(\.previewScale, settled ? fit : cover)
+                    .environment(\.stickerMenu, mode == .stickers)
                     .clipShape(.rect(cornerRadius: target.cornerRadius * (settled ? 1 : 0), style: .continuous))
-                    .scaleEffect(settled ? fit : cover)
-                    .frame(width: room.size.width, height: room.size.height)
+                    // Zoomed, the page hangs from the top of the room, its header in view.
+                    .scaleEffect(settled ? fit : cover, anchor: zoomed ? .top : .center)
+                    .frame(width: room.size.width, height: room.size.height, alignment: zoomed ? .top : .center)
                     .offset(settled ? .zero : toScreen)
                     .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
                 }
+                // Zoomed, what hangs below the room is cut off; otherwise the page
+                // is free to cover the screen as it settles.
+                .mask { Rectangle().padding(zoomed ? 0 : -4000) }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             // Laid out at full size, shown smaller: the page takes only the room of its scaled copy.
@@ -845,7 +988,7 @@ struct LookEditor: View {
     /// Every part at once: the look's name, then a card for each part.
     private var overview: some View {
         VStack(spacing: 12) {
-            nameButton(font: .title3.weight(.semibold))
+            nameField
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2), spacing: 8) {
                 ForEach(LookPart.parts(for: look)) { part in
@@ -897,7 +1040,8 @@ struct LookEditor: View {
     /// One tool's controls.
     private func toolView(_ tool: LookTool, layout: ToolLayout) -> some View {
         LookToolView(tool: tool, look: $look, layout: layout, selectedSticker: $selectedSticker,
-                     homeLook: $homeLook, arranging: $arranging, pickStickers: { sheet = .stickerPicker })
+                     homeLook: $homeLook, arranging: $arranging, pickStickers: { sheet = .stickerPicker },
+                     enterMode: layout == .strip ? { enter($0) } : nil, typing: $typingInTools)
     }
 
     /// The tool a part shows: the one last chosen there, or its first.
@@ -920,40 +1064,9 @@ struct LookEditor: View {
             }
             .disabled(reset == look)
 
-            ScrollViewReader { reader in
-                ScrollView(.horizontal) {
-                    HStack(spacing: 2) {
-                        ForEach(LookPart.parts(for: look)) { part in
-                            let chosen = part == current
-                            Button { show(part) } label: {
-                                Text(part.title)
-                                    .font(.subheadline.weight(chosen ? .semibold : .regular))
-                                    .foregroundStyle(chosen ? .primary : .secondary)
-                                    .padding(.horizontal, 12)
-                                    .frame(height: 38)
-                                    .background {
-                                        if chosen { Capsule().fill(.white.opacity(0.14)) }
-                                    }
-                                    .contentShape(.capsule)
-                            }
-                            .buttonStyle(.plain)
-                            .id(part)
-                            .accessibilityIdentifier("customize-switch-\(part.id)")
-                            .accessibilityAddTraits(chosen ? .isSelected : [])
-                        }
-                    }
-                    .padding(.horizontal, 5)
-                }
-                .scrollIndicators(.hidden)
-                .onAppear { reader.scrollTo(current, anchor: .center) }
-                .onChange(of: current) { _, part in
-                    withAnimation(.snappy) { reader.scrollTo(part, anchor: .center) }
-                }
+            PartCapsule(parts: LookPart.parts(for: look), current: current, pick: show) {
+                withAnimation(.snappy) { part = nil }
             }
-            .frame(height: 48)
-            .glassEffect(.regular, in: .capsule)
-            .accessibilityElement(children: .contain)
-            .accessibilityLabel("Parti del Flavor")
 
             roundButton("Tutte le parti", symbol: "square.grid.2x2", id: "customize-parts") {
                 part = nil
@@ -970,6 +1083,13 @@ struct LookEditor: View {
 
     /// Opens what a tap on the page means: its part's tools, or a section's card.
     private func open(_ zone: TodayLanding.Zone) {
+        // During a task the page only selects stickers: nothing else opens.
+        guard mode == nil else { return }
+        // A sticker tapped on the iPhone starts the stickers' task, with it selected.
+        if zone == .stickers, selectedSticker != nil, sizeClass != .regular, look.special == nil {
+            enter(.stickers)
+            return
+        }
         if let opening = LookPart.opening(zone, in: look) {
             tools[opening.part] = opening.tool
             part = opening.part

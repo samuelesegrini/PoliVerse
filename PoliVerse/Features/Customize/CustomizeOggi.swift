@@ -110,7 +110,8 @@ struct CustomizeOggi: View {
                     .allowsHitTesting(!filled && edit == nil)
                 if let edit {
                     LookEditor(look: draft, original: edit.original, isNew: edit.index == nil, insets: insets,
-                               cancel: cancelEditing, done: finishEditing)
+                               cancel: cancelEditing, done: finishEditing,
+                               delete: edit.index != nil && library.canRemove ? deleteEditing : nil)
                         .transition(edit.index == nil ? .move(edge: .bottom) : .identity)
                         .zIndex(2)
                 }
@@ -522,6 +523,18 @@ struct CustomizeOggi: View {
         } else {
             self.edit = nil
             withAnimation(Self.expand) { filling = false }
+        }
+    }
+
+    /// Deletes the look being edited from the editor's menu: the editor goes,
+    /// the card shrinks back into the gallery and leaves it, with Annulla offered.
+    private func deleteEditing() {
+        guard let index = edit?.index else { return }
+        edit = nil
+        withAnimation(Self.expand) {
+            filling = false
+        } completion: {
+            delete(index)
         }
     }
 
