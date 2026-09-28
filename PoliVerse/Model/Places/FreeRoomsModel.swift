@@ -332,7 +332,7 @@ final class FreeRoomsModel {
             .contains { $0.kind == WidgetKind.freeRooms.rawValue } ?? false
         guard installed else { return }
         if let campus = FreeRoomsSnapshot.lastCampus ?? campus,
-           let cached = OfflineStore.shared.load(
+           let cached = await OfflineStore.shared.loaded(
                FreeRoomsSnapshot.self, as: FreeRoomsSnapshot.cacheName, account: campus),
            cached.value.covers(.now) {
             return

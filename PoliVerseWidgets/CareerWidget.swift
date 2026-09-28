@@ -70,7 +70,7 @@ enum WidgetCareer {
     /// - Returns: The snapshot, or `nil` when signed out or nothing has been written.
     static func load() -> (value: CareerSnapshot, age: TimeInterval)? {
         guard let matricola = SharedAccount.matricola,
-              let slot = OfflineStore(groupIdentifier: OfflineStore.groupIdentifier)
+              let slot = OfflineStore.shared
                   .load(CareerSnapshot.self, as: CareerSnapshot.cacheName, account: matricola)
         else { return nil }
         return (slot.value, slot.age)

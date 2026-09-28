@@ -63,6 +63,9 @@ struct CourseMaterialsView: View {
     /// The view's content.
     var body: some View {
         let kinds = kinds
+        // Once per pass: the list and the empty-state overlay both need it, and
+        // a search filters every file by name.
+        let sections = sections
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 24) {
                 if query.isEmpty, !needsLogin {

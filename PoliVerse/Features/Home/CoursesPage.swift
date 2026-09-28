@@ -474,7 +474,7 @@ struct CoursesPage: View {
 
     /// What is unread in a course, counted by kind.
     private func news(for course: Course) -> CourseHubBadges {
-        CourseHubBadges(items: FeedItem.items(from: feed.recent, for: course), seenAt: feed.seenAt)
+        CourseHubBadges(items: feed.recentItems(for: course), seenAt: feed.seenAt)
     }
 
     /// A heading and what belongs under it, spaced as Oggi's sections are.
@@ -622,9 +622,8 @@ struct CoursesPage: View {
     /// - Parameter course: The course.
     /// - Returns: The earliest such lesson, or `nil` when there is none.
     private func nextLecture(of course: Course) -> AgendaEvent? {
-        agenda.events.lazy
-            .filter { $0.kind == .lecture && $0.end > now && matches($0, course) }
-            .min { $0.start < $1.start }
+        agenda.events(matchingCourse: course.name)
+            .first { $0.kind == .lecture && $0.end > now }
     }
 
     /// Today's lessons still to finish, each with the course it belongs to.
@@ -634,7 +633,7 @@ struct CoursesPage: View {
 
     /// Every lesson today, finished ones too, each with the course it belongs to.
     private func todaysTimetable(in list: [Course]) -> [(course: Course, event: AgendaEvent)] {
-        TodayDigest.timetable(events: agenda.events, day: now)
+        TodayDigest.timetable(events: agenda.events(on: now), day: now)
             .filter { $0.kind == .lecture }
             .compactMap { event in list.first { matches(event, $0) }.map { ($0, event) } }
     }

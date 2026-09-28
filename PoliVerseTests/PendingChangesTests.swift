@@ -139,6 +139,7 @@ struct PendingChangesTests {
         store.flush()
 
         let second = queue(store: store)
+        await second.refresh()
 
         #expect(second.count == 1)
     }
@@ -153,6 +154,7 @@ struct PendingChangesTests {
         store.flush()
 
         let theirs = queue(matricola: "222", store: store)
+        await theirs.refresh()
 
         #expect(theirs.count == 0)
     }

@@ -111,7 +111,7 @@ struct MenuBarLabel: View {
     @State private var now = Date.now
 
     var body: some View {
-        let current = CurrentClass.forAccessory(from: agenda.events, now: now)
+        let current = CurrentClass.forAccessory(from: agenda.events(on: now), now: now)
         Group {
             if let text = text(for: current, at: now) {
                 Text("\(Image(systemName: "graduationcap")) \(text)")
@@ -181,14 +181,13 @@ struct MenuBarPanel: View {
 
     @ViewBuilder
     private func content(now: Date) -> some View {
-        let current = CurrentClass.forAccessory(from: agenda.events, now: now)
+        let current = CurrentClass.forAccessory(from: agenda.events(on: now), now: now)
         if !hidden.contains(.now), let current {
             nowCard(current, now: now)
         }
         if !hidden.contains(.laterToday) {
-            let later = agenda.events
-                .filter { calendar.isDate($0.start, inSameDayAs: now) && $0.start > now && $0.id != current?.event.id }
-                .sorted { $0.start < $1.start }
+            let later = agenda.events(on: now)
+                .filter { $0.start > now && $0.id != current?.event.id }
                 .prefix(3)
             if !later.isEmpty {
                 PanelSection("Poi oggi") {

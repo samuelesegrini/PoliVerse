@@ -7,10 +7,10 @@ import Foundation
 /// means every widget agrees on *whose* records those are and how stale they
 /// are allowed to look.
 enum WidgetAgenda {
-    /// The app group's offline store, where the app writes the agenda.
-    private static var store: OfflineStore {
-        OfflineStore(groupIdentifier: OfflineStore.groupIdentifier)
-    }
+    /// The app group's offline store, where the app writes the agenda. The shared
+    /// instance, so a timeline does not build a store — and check for records to
+    /// migrate — on every read.
+    private static var store: OfflineStore { .shared }
 
     /// Whether anyone is signed in. Distinct from an empty agenda: "accedi"
     /// and "niente in programma" are different answers and a widget that shows

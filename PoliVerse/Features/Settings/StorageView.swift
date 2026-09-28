@@ -22,6 +22,8 @@ import SwiftUI
 struct DataStorageView: View {
     /// The shared ``DataStatus``, from the environment.
     @Environment(DataStatus.self) private var status
+    /// The downloaded materials, which forget their files when they are removed here.
+    @Environment(FileDownloadModel.self) private var downloads
     /// The shared ``FreshnessCoordinator``, from the environment.
     @Environment(FreshnessCoordinator.self) private var freshness
     /// Whether the interface is in light or dark mode.
@@ -174,7 +176,7 @@ struct DataStorageView: View {
         .confirmationDialog("Eliminare tutti i materiali scaricati?",
                             isPresented: $confirmingMaterials, titleVisibility: .visible) {
             Button("Elimina", role: .destructive) {
-                FileDownloadModel.clearStorage()
+                downloads.removeAll()
                 Task { await measure() }
             }
         } message: {
@@ -533,11 +535,17 @@ private struct ServiceFreshnessRow: View {
 /// empty store as "Zero KB", which reads as a fault rather than as a store
 /// with nothing in it.
 func formattedBytes(_ count: Int) -> String {
+    byteFormatter.string(fromByteCount: Int64(count))
+}
+
+/// The formatter behind ``formattedBytes(_:)``, built once: it is called from view
+/// bodies, several times a pass.
+private let byteFormatter: ByteCountFormatter = {
     let formatter = ByteCountFormatter()
     formatter.countStyle = .file
     formatter.allowsNonnumericFormatting = false
-    return formatter.string(fromByteCount: Int64(count))
-}
+    return formatter
+}()
 
 // MARK: - Previews
 

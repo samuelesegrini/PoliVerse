@@ -20,8 +20,21 @@ struct DayStrip: View {
     private let cellWidth: CGFloat = 50
 
     /// Two months either side of today, which is as far as a timetable reaches.
-    private var days: [Date] {
-        let today = calendar.startOfDay(for: .now)
+    ///
+    /// Worked out once, when the strip opens: the body runs again for every day
+    /// that scrolls under the highlight, and 121 calendar sums each time is work
+    /// the answer never needed.
+    @State private var days = DayStrip.span(around: .now)
+    /// The strip's width, which centres the first and last day under the highlight.
+    @State private var width: CGFloat = 0
+
+    /// Two months either side of a day.
+    ///
+    /// - Parameter now: The day in the middle.
+    /// - Returns: The days, in order.
+    private static func span(around now: Date) -> [Date] {
+        let calendar = PoliMiDate.romeCalendar
+        let today = calendar.startOfDay(for: now)
         return (-60...60).compactMap { calendar.date(byAdding: .day, value: $0, to: today) }
     }
 
@@ -43,35 +56,37 @@ struct DayStrip: View {
             }
             .padding(.horizontal, 18)
 
-            GeometryReader { proxy in
-                ZStack {
-                    // The fixed highlight; the days pass underneath it.
-                    Capsule()
-                        .fill(.tint)
-                        .frame(width: cellWidth - 6, height: 62)
+            ZStack {
+                // The fixed highlight; the days pass underneath it.
+                Capsule()
+                    .fill(.tint)
+                    .frame(width: cellWidth - 6, height: 62)
 
-                    ScrollView(.horizontal) {
-                        LazyHStack(spacing: 0) {
-                            ForEach(days, id: \.self) { date in
-                                cell(date)
-                            }
+                ScrollView(.horizontal) {
+                    LazyHStack(spacing: 0) {
+                        ForEach(days, id: \.self) { date in
+                            cell(date)
                         }
-                        .scrollTargetLayout()
                     }
-                    .scrollIndicators(.hidden)
-                    .scrollTargetBehavior(.viewAligned)
-                    .scrollPosition(id: $centred, anchor: .center)
-                    // Room for the first and last day to reach the middle.
-                    .contentMargins(.horizontal, (proxy.size.width - cellWidth) / 2, for: .scrollContent)
-                    .mask {
-                        LinearGradient(stops: [
-                            .init(color: .clear, location: 0), .init(color: .black, location: 0.15),
-                            .init(color: .black, location: 0.85), .init(color: .clear, location: 1),
-                        ], startPoint: .leading, endPoint: .trailing)
-                    }
+                    .scrollTargetLayout()
+                }
+                .scrollIndicators(.hidden)
+                .scrollTargetBehavior(.viewAligned)
+                .scrollPosition(id: $centred, anchor: .center)
+                // Room for the first and last day to reach the middle.
+                .contentMargins(.horizontal, max(width - cellWidth, 0) / 2, for: .scrollContent)
+                .mask {
+                    LinearGradient(stops: [
+                        .init(color: .clear, location: 0), .init(color: .black, location: 0.15),
+                        .init(color: .black, location: 0.85), .init(color: .clear, location: 1),
+                    ], startPoint: .leading, endPoint: .trailing)
                 }
             }
+            .frame(maxWidth: .infinity)
             .frame(height: 64)
+            // The width alone, and only when it changes — not a reader wrapped
+            // around the whole scroll view.
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         }
         .padding(.vertical, 12)
         .sensoryFeedback(.selection, trigger: centred)

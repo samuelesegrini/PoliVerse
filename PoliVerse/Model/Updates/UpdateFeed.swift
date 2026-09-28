@@ -16,7 +16,9 @@ import OSLog
 @Observable
 final class UpdateFeed {
     /// The recorded updates for the account on screen, newest first.
-    private(set) var updates: [ExamUpdate] = []
+    private(set) var updates: [ExamUpdate] = [] {
+        didSet { memo = Memo() }
+    }
     /// WeBeep assignment deadlines still ahead, soonest first.
     private(set) var deadlines: [AssignmentDeadline] = []
     /// Handed whatever a record found for the first time, with its delivery already decided.
@@ -61,16 +63,69 @@ final class UpdateFeed {
     /// The last fortnight's updates: what changed since the student last looked, which is
     /// the reason most visits happen.
     var recent: [ExamUpdate] {
-        updates.filter { $0.detectedAt > clock().addingTimeInterval(-14 * 86400) }
+        let cutoff = clock().addingTimeInterval(-14 * 86400)
+        return updates.filter { $0.detectedAt > cutoff }
     }
+
+    /// Every update as feed rows, newest first.
+    ///
+    /// Worked out once per change of ``updates`` rather than on every read: folding
+    /// marks and refusal windows compares every sighting with every other, and the
+    /// tab badge, the course cards and the feed all ask on each body pass.
+    var items: [FeedItem] {
+        let current = updates
+        if let cached = memo.all { return cached }
+        let built = FeedItem.items(from: current)
+        memo.all = built
+        return built
+    }
+
+    /// ``recent`` as feed rows. Cached like ``items``, and worked out afresh at most
+    /// once an hour, which is as fine as a fortnight's window needs.
+    var recentItems: [FeedItem] {
+        _ = updates
+        let hour = Int(clock().timeIntervalSinceReferenceDate / 3600)
+        if memo.hour != hour { memo = Memo(all: memo.all, hour: hour) }
+        if let cached = memo.recent { return cached }
+        let built = FeedItem.items(from: recent)
+        memo.recent = built
+        return built
+    }
+
+    /// One course's rows from ``recent``, cached like ``recentItems``.
+    ///
+    /// - Parameter course: The course.
+    /// - Returns: The rows, as ``FeedItem/items(from:for:)`` builds them.
+    func recentItems(for course: Course) -> [FeedItem] {
+        _ = recentItems
+        if let cached = memo.byCourse[course.id] { return cached }
+        let built = FeedItem.items(from: recent, for: course)
+        memo.byCourse[course.id] = built
+        return built
+    }
+
+    /// Derived rows, kept until ``updates`` changes or the hour turns.
+    private struct Memo {
+        var all: [FeedItem]?
+        var hour: Int?
+        var recent: [FeedItem]?
+        var byCourse: [String: [FeedItem]] = [:]
+    }
+
+    /// See ``Memo``. Not observed: views depend on ``updates``, which every accessor
+    /// reads before consulting it.
+    @ObservationIgnored private var memo = Memo()
 
     /// When the student last opened the full feed, for this account. `nil` when they never
     /// have.
     private(set) var seenAt: Date?
 
+    /// The shown account's log as last read or written. See ``load(_:)``.
+    @ObservationIgnored private var held: ExamUpdateLog?
+
     /// How many facts in the last fortnight the student has not seen — counted as facts
     /// rather than sightings, so a mark and its refusal window count once.
-    var unreadCount: Int { FeedItem.unreadCount(FeedItem.items(from: recent), seenAt: seenAt) }
+    var unreadCount: Int { FeedItem.unreadCount(recentItems, seenAt: seenAt) }
 
     /// Records that the student has opened the full feed, in memory and in the log.
     func markSeen() {
@@ -78,7 +133,7 @@ final class UpdateFeed {
         guard let account else { return }
         var log = load(account) ?? ExamUpdateLog()
         log.seenAt = seenAt
-        offline.save(log, as: ExamUpdateLog.name, account: account)
+        save(log, account: account)
     }
 
     /// Puts one account's feed on screen, reading it from the log.
@@ -90,7 +145,9 @@ final class UpdateFeed {
     func show(account: String?) {
         guard account != self.account else { return }
         self.account = account
+        held = nil
         let log = load(account)
+        held = log
         seenAt = log?.seenAt
         updates = log?.updates ?? []
         deadlines = Self.upcoming(log, now: clock())
@@ -103,6 +160,7 @@ final class UpdateFeed {
     ///   - upcoming: The deadlines to show.
     func showSample(_ sample: [ExamUpdate], deadlines upcoming: [AssignmentDeadline] = []) {
         account = nil
+        held = nil
         updates = sample
         deadlines = upcoming
         seenAt = nil
@@ -261,7 +319,7 @@ final class UpdateFeed {
             history.unseen(found), history: history.updates,
             preferences: .stored, now: now)
         let added = history.record(decided, state: history.state ?? ExamWatchState(), now: now)
-        offline.save(history, as: ExamUpdateLog.name, account: account)
+        save(history, account: account)
         guard isShown else { return }
         updates = history.updates
         deadlines = Self.upcoming(history, now: now)
@@ -276,8 +334,25 @@ final class UpdateFeed {
     ///
     /// - Parameter account: The matricola, or `nil`.
     /// - Returns: The log, or `nil` when there is none.
+    ///
+    /// The shown account's log comes from memory once ``show(account:)`` has read it:
+    /// every write goes through ``save(_:account:)``, so the copy is never behind the
+    /// file, and opening the feed or recording a pass no longer reads the file back on
+    /// the main actor.
     private func load(_ account: String?) -> ExamUpdateLog? {
-        offline.load(ExamUpdateLog.self, as: ExamUpdateLog.name, account: account)?.value
+        if let account, account == self.account, let held { return held }
+        return offline.load(ExamUpdateLog.self, as: ExamUpdateLog.name, account: account)?.value
+    }
+
+    /// Writes one account's log, keeping the in-memory copy in step when it is the
+    /// shown account's.
+    ///
+    /// - Parameters:
+    ///   - log: The log to store.
+    ///   - account: Whose log it is.
+    private func save(_ log: ExamUpdateLog, account: String) {
+        offline.save(log, as: ExamUpdateLog.name, account: account)
+        if account == self.account { held = log }
     }
 
     /// The student's sittings of a course around now: the last one taken within

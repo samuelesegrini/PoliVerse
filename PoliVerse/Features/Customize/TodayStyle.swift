@@ -1,4 +1,5 @@
 import SwiftUI
+import Synchronization
 
 /// How the Oggi page looks: the student's choices from Personalizza.
 ///
@@ -604,6 +605,24 @@ nonisolated extension TodayStyle: RawRepresentable {
     /// - Parameter rawValue: The JSON.
     /// - Returns: `nil` when it is not a stored look.
     init?(rawValue: String) {
+        // `@AppStorage` decodes on every read, and the root view reads the look
+        // several times per body pass: the same string decodes to the same look.
+        if let hit = Self.lastDecoded.withLock({ $0 }), hit.raw == rawValue {
+            self = hit.style
+            return
+        }
+        guard let decoded = TodayStyle(decoding: rawValue) else { return nil }
+        Self.lastDecoded.withLock { $0 = (rawValue, decoded) }
+        self = decoded
+    }
+
+    /// The last string decoded and what it decoded to.
+    private static let lastDecoded = Mutex<(raw: String, style: TodayStyle)?>(nil)
+
+    /// Reads a look from its stored string, carrying over what older versions wrote.
+    ///
+    /// - Parameter rawValue: The JSON.
+    private init?(decoding rawValue: String) {
         guard let data = rawValue.data(using: .utf8),
               let stored = try? JSONDecoder().decode(StoredTodayStyle.self, from: data) else { return nil }
         let legacy = try? JSONDecoder().decode(LegacyTodayStyle.self, from: data)

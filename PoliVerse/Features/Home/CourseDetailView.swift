@@ -57,16 +57,11 @@ struct CourseDetailView: View {
     /// agenda carries a display title, not `c_insegn_piano` — so matching is by
     /// normalised name. Imperfect, but the alternative is showing nothing.
     private var lectures: [AgendaEvent] {
-        let target = course.name.lowercased()
-        return agenda.events
-            .filter { $0.end > .now }
-            .filter { event in
-                let title = event.title.lowercased()
-                return title.contains(target) || target.contains(title)
-            }
-            .sorted { $0.start < $1.start }
-            .prefix(4)
-            .map { $0 }
+        let now = Date.now
+        return Array(agenda.events(matchingCourse: course.name)
+            .lazy
+            .filter { $0.end > now }
+            .prefix(4))
     }
 
     /// The course's sittings, earliest first, with undated ones last.
@@ -87,7 +82,7 @@ struct CourseDetailView: View {
         let sittings = examSessions
         let upcoming = sittings.filter { $0.grade == nil && ($0.date ?? .distantPast) > .now }
         let past = sittings.filter { $0.grade != nil }.reversed().map { $0 }
-        let news = FeedItem.items(from: feed.recent, for: course)
+        let news = feed.recentItems(for: course)
         let lectures = lectures
 
         ScrollView {
@@ -298,7 +293,7 @@ struct CourseDetailView: View {
 
     /// The parts of the course, with what is new in each.
     private var parts: some View {
-        let badges = CourseHubBadges(items: FeedItem.items(from: feed.recent, for: course), seenAt: feed.seenAt)
+        let badges = CourseHubBadges(items: feed.recentItems(for: course), seenAt: feed.seenAt)
         return VStack(spacing: 0) {
             NavigationLink { CourseForumsView(course: course, kind: .announcements) } label: {
                 row(symbol: "megaphone", title: String(localized: "Avvisi"), trailing: newCount(badges.announcements),

@@ -52,7 +52,7 @@ struct LookScreen: View {
         .overlay(alignment: .bottom) {
             if !shell.singlePage {
                 VStack(spacing: 8) {
-                    if look.wantsCurrentClassAccessory, let current = CurrentClass.forAccessory(from: agenda.events, now: .now) {
+                    if look.wantsCurrentClassAccessory, let current = CurrentClass.forAccessory(from: agenda.events(on: .now), now: .now) {
                         ReplicaAccessory(current: current)
                     }
                     ReplicaTabBar()

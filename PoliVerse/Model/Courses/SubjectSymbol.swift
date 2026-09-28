@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 
 /// Chooses an SF Symbol for a course from the words in its name.
 ///
@@ -51,7 +52,14 @@ nonisolated enum SubjectSymbol {
     /// - Parameter courseName: The course's name.
     /// - Returns: The first matching rule's symbol, or ``fallback``.
     static func symbol(for courseName: String) -> String {
+        if let hit = chosen.withLock({ $0[courseName] }) { return hit }
         let folded = courseName.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
-        return rules.first { rule in rule.stems.contains { folded.contains($0) } }?.symbol ?? fallback
+        let symbol = rules.first { rule in rule.stems.contains { folded.contains($0) } }?.symbol ?? fallback
+        chosen.withLock { $0[courseName] = symbol }
+        return symbol
     }
+
+    /// Symbols already chosen, by course name. Rows ask for theirs on every body pass,
+    /// and a student has a few dozen courses at most, so the map stays small.
+    private static let chosen = Mutex<[String: String]>([:])
 }

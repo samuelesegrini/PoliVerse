@@ -124,8 +124,10 @@ final class CareerModel {
     ///   - account: The other career's matricola.
     ///   - store: Where to read from.
     /// - Returns: The teachings, or `nil` when that career has no record on this device.
-    static func cachedLibretto(account: String, store: OfflineStore = .shared) -> [LibrettoExam]? {
-        store.load(CareerSource.Payload.self, as: CareerSource.id, account: account)?
+    ///   Read and decoded off the main actor: the whole career record is decoded to
+    ///   reach the libretto.
+    static func cachedLibretto(account: String, store: OfflineStore = .shared) async -> [LibrettoExam]? {
+        await store.loaded(CareerSource.Payload.self, as: CareerSource.id, account: account)?
             .value.libretto
     }
 

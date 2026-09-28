@@ -60,7 +60,9 @@ final class PendingChanges {
         self.account = account
         self.network = network
         self.store = store
-        refresh()
+        // Not read here: this runs while the app builds its models, before the
+        // first frame. The count arrives a moment later, still at launch.
+        Task { await refresh() }
     }
 
     /// Supplies how a queued change is delivered, and what to tell afterwards.
@@ -77,15 +79,24 @@ final class PendingChanges {
         self.confirm = confirm
     }
 
-    /// Re-reads how many changes are waiting and which were abandoned.
+    /// Re-reads how many changes are waiting and which were abandoned, off the main
+    /// actor.
     ///
     /// Called at init as well as after a flush, so a change abandoned in a previous
-    /// session is reported at launch rather than waiting for the next flush.
-    func refresh() {
-        let queue = queue()
+    /// session is reported at launch rather than waiting for the next flush. A read
+    /// overtaken by a change made meanwhile, or by a switch of account, is dropped.
+    func refresh() async {
+        let matricola = account.matricola
+        let edit = edits
+        let queue = await ActionQueue.read(store: store, account: matricola)
+        guard edit == edits, matricola == account.matricola else { return }
         count = queue.pending.count
         failed = queue.abandoned
     }
+
+    /// Counts the changes made through this object, so ``refresh()`` can tell that
+    /// what it read is older than what is on screen.
+    @ObservationIgnored private var edits = 0
 
     /// Opens the queue file for the current account. Each call re-reads from disk.
     private func queue() -> ActionQueue {
@@ -98,6 +109,7 @@ final class PendingChanges {
     func record(_ action: PendingAction) {
         var queue = queue()
         queue.enqueue(action)
+        edits += 1
         count = queue.pending.count
         log.notice("queued: \(action.label, privacy: .public) (\(self.count, privacy: .public) in attesa)")
     }
@@ -114,8 +126,10 @@ final class PendingChanges {
     /// behind it.
     func flush() async {
         guard !isFlushing, network.isOnline, account.matricola != nil else { return }
-        var queue = queue()
-        guard !queue.isEmpty else { return }
+        // Read without blocking: a flush runs on every foregrounding, and an
+        // empty queue — the usual case — should cost the main actor nothing.
+        var queue = await ActionQueue.read(store: store, account: account.matricola)
+        guard !queue.isEmpty, !isFlushing else { return }
 
         isFlushing = true
         defer { isFlushing = false }
@@ -135,6 +149,7 @@ final class PendingChanges {
             }
         }
 
+        edits += 1
         count = queue.pending.count
         failed = queue.abandoned
         if !failed.isEmpty {
@@ -154,7 +169,9 @@ final class PendingChanges {
             queue.enqueue(action)
         }
         queue.clearAbandoned()
-        refresh()
+        edits += 1
+        count = queue.pending.count
+        failed = queue.abandoned
         await flush()
     }
 
@@ -163,6 +180,7 @@ final class PendingChanges {
     func acknowledgeFailures() {
         var queue = queue()
         queue.clearAbandoned()
+        edits += 1
         failed = []
         count = queue.pending.count
     }

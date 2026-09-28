@@ -171,7 +171,7 @@ struct CareerModelTests {
                      as: CareerSource.id, account: "999")
         offline.flush()
 
-        let other = CareerModel.cachedLibretto(account: "999", store: offline)
+        let other = await CareerModel.cachedLibretto(account: "999", store: offline)
 
         #expect(other?.isEmpty == false)
     }

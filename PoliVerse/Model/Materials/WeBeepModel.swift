@@ -223,7 +223,7 @@ final class WeBeepModel {
 
         // Last known listing first, so the screen has content before the
         // request and keeps it if the request fails.
-        restoreMaterials(for: course)
+        await restoreMaterials(for: course)
 
         if session.useMockData || api == nil {
             sections = WeBeepSection.samples(for: course)
@@ -455,14 +455,22 @@ final class WeBeepModel {
 
     /// Puts a course's cached listing into ``sections``, if there is one for this account.
     ///
+    /// The file is read and decoded off the main actor; the slot is re-read after the
+    /// read, since a save may have replaced it meanwhile.
+    ///
     /// - Parameter course: The course.
-    private func restoreMaterials(for course: Course) {
+    private func restoreMaterials(for course: Course) async {
         var slot = materialSlots[course.id]
             ?? CachedSlot<[WeBeepSection]>(name: slotName(for: course))
-        if let cached = slot.restore(for: session.student?.matricola) {
+        let claim = slot.claimRestore(for: session.student?.matricola)
+        materialSlots[course.id] = slot
+        guard let claim else { return }
+        let entry = await claim.read()
+        guard var current = materialSlots[course.id] else { return }
+        if let cached = current.finish(claim, with: entry) {
             sections = cached
         }
-        materialSlots[course.id] = slot
+        materialSlots[course.id] = current
     }
 
     /// Stores the current ``sections`` as this course's listing. Nothing is written under

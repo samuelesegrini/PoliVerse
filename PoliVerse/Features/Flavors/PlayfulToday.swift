@@ -38,9 +38,9 @@ struct PlayfulToday: View {
         let palette = PlayfulPalette(style, scheme: scheme)
         TimelineView(.everyMinute) { context in
             let now = context.date
-            let lessons = TodayDigest.timetable(events: agenda.events, day: day)
+            let lessons = TodayDigest.timetable(events: agenda.events(on: day), day: day)
             let isToday = calendar.isDate(day, inSameDayAs: now)
-            let current = isToday ? CurrentClass.pick(from: agenda.events, now: now) : nil
+            let current = isToday ? CurrentClass.pick(from: agenda.events(on: now), now: now) : nil
             let next = isToday ? current?.event : lessons.first
             let later = lessons.filter { lesson in
                 guard let next else { return !isToday || lesson.end > now }

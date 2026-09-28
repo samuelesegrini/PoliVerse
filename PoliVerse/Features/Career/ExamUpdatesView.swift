@@ -23,7 +23,7 @@ struct ExamUpdatesView: View {
     /// The bell, and how many are still to read.
     private var hero: some View {
         let ramp = FlavorRamp(style: style, scheme: scheme)
-        let unread = FeedItem.items(from: feed.updates).filter { $0.isUnread(since: seenBefore) }.count
+        let unread = feed.items.filter { $0.isUnread(since: seenBefore) }.count
         return CoursePageHero(
             tiles: [HeroTile(id: "bell", symbol: "bell.badge", colour: ramp.colour(at: 0.3))],
             placeholder: HeroTile(id: "empty", symbol: "bell.badge", colour: ramp.neutral),
@@ -36,7 +36,7 @@ struct ExamUpdatesView: View {
     /// The feed grouped by the day each update was noticed, newest day and newest update first.
     private var days: [(Date, [FeedItem])] {
         let calendar = PoliMiDate.romeCalendar
-        return Dictionary(grouping: FeedItem.items(from: feed.updates)) {
+        return Dictionary(grouping: feed.items) {
             calendar.startOfDay(for: $0.update.detectedAt)
         }
         .sorted { $0.key > $1.key }

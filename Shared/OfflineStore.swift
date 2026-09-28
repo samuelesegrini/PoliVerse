@@ -69,7 +69,11 @@ nonisolated final class OfflineStore: Sendable {
         self.directory = directory ?? Self.applicationSupportDirectory
         try? FileManager.default.createDirectory(
             at: self.directory, withIntermediateDirectories: true)
-        if let legacy { migrate(from: legacy) }
+        // On the write queue rather than here: the shared store is first touched
+        // while the app builds its models, and a directory listing plus a check
+        // per file does not belong before the first frame. Every read waits for
+        // the queue, so none can run ahead of the copy.
+        if let legacy { Self.writes.async { self.migrate(from: legacy) } }
     }
 
     /// Creates a store in the app group's container, falling back to Application
@@ -103,10 +107,11 @@ nonisolated final class OfflineStore: Sendable {
     /// file already present, since that file was written by this build and is the
     /// newer of the two.
     ///
+    /// Runs on the write queue.
+    ///
     /// - Parameter legacy: The directory to copy from. Ignored when it is the store's
     ///   own directory.
     private func migrate(from legacy: URL) {
-        flush()
         guard legacy != directory,
               let files = try? FileManager.default.contentsOfDirectory(
                 at: legacy, includingPropertiesForKeys: nil)
@@ -228,6 +233,41 @@ nonisolated final class OfflineStore: Sendable {
     ) -> Entry<Value>? {
         guard let account, !account.isEmpty else { return nil }
         flush()
+        return read(type, as: name, account: account)
+    }
+
+    /// Reads one record for one account without holding up the caller.
+    ///
+    /// The same read as ``load(_:as:account:)``, but it waits for pending writes by
+    /// suspending rather than blocking, and reads and decodes on a background
+    /// executor. A main-actor model restoring its copy therefore never stalls a frame
+    /// on the disk or on the write queue — the "blocked on the system" hang of
+    /// WWDC26's *Profile, fix, and verify*.
+    ///
+    /// - Parameters:
+    ///   - type: The shape to decode.
+    ///   - name: The record name.
+    ///   - account: The matricola. A `nil` or empty account returns `nil`.
+    /// - Returns: The record with its age, or `nil` when there is no usable file.
+    @concurrent
+    func loaded<Value: Codable & Sendable>(
+        _ type: Value.Type, as name: String, account: String?
+    ) async -> Entry<Value>? {
+        guard let account, !account.isEmpty else { return nil }
+        // Waited for at the caller's urgency, not the queue's: the queue runs at
+        // utility, and at launch an unboosted wait behind it measured close to a
+        // second on `agenda.load`. `flush()` never had the problem, because a
+        // synchronous wait donates the waiter's priority to the queue.
+        await withCheckedContinuation { continuation in
+            Self.writes.async(qos: .userInitiated, flags: .enforceQoS) { continuation.resume() }
+        }
+        return read(type, as: name, account: account)
+    }
+
+    /// Reads and decodes one record, assuming the write queue has drained.
+    private func read<Value: Codable & Sendable>(
+        _ type: Value.Type, as name: String, account: String
+    ) -> Entry<Value>? {
         guard let data = try? Data(contentsOf: url(name, account: account)) else { return nil }
         // A shape change between releases must discard rather than crash or
         // half-decode.
@@ -375,6 +415,58 @@ nonisolated struct CachedSlot<Value: Codable & Sendable>: Sendable {
         return entry.value
     }
 
+    /// A restore claimed by ``claimRestore(for:)``, to be read off the caller's actor.
+    struct Claim: Sendable {
+        /// The account being restored.
+        fileprivate let account: String
+        /// The slot's save count when the claim was made.
+        fileprivate let saves: Int
+        /// The record name.
+        fileprivate let name: String
+        /// Where the record lives.
+        fileprivate let store: OfflineStore
+
+        /// Reads the record without blocking the caller.
+        ///
+        /// - Returns: The record with its age, or `nil` when there is none.
+        func read() async -> OfflineStore.Entry<Value>? {
+            await store.loaded(Value.self, as: name, account: account)
+        }
+    }
+
+    /// How many times ``save(_:for:)`` has run, so a restore that finishes after a
+    /// fresher save can tell it lost the race.
+    private var saves = 0
+
+    /// Marks an account as restored and hands back what is needed to read its copy
+    /// asynchronously — the non-blocking form of ``restore(for:)``.
+    ///
+    /// Split in two because a model cannot hold its slot `inout` across a suspension:
+    /// claim, `await` ``Claim/read()``, then ``finish(_:with:)``.
+    ///
+    /// - Parameter account: The matricola to restore for.
+    /// - Returns: The claim, or `nil` when there is nothing to restore: the account is
+    ///   empty or has already been restored.
+    mutating func claimRestore(for account: String?) -> Claim? {
+        guard let account, !account.isEmpty, account != restoredFor else { return nil }
+        restoredFor = account
+        return Claim(account: account, saves: saves, name: name, store: store)
+    }
+
+    /// Adopts what a claimed restore read, unless the slot moved on meanwhile.
+    ///
+    /// - Parameters:
+    ///   - claim: The claim the read was made under.
+    ///   - entry: What ``Claim/read()`` returned.
+    /// - Returns: The stored value, or `nil` when there was none, or when a save or
+    ///   another account's restore happened during the read — putting the disk copy
+    ///   back then would overwrite something fresher.
+    mutating func finish(_ claim: Claim, with entry: OfflineStore.Entry<Value>?) -> Value? {
+        guard let entry, claim.saves == saves, claim.account == restoredFor else { return nil }
+        age = entry.age
+        return entry.value
+    }
+
     /// Stores a value and marks this account as restored, so a later
     /// ``restore(for:)`` does not overwrite it.
     ///
@@ -386,6 +478,7 @@ nonisolated struct CachedSlot<Value: Codable & Sendable>: Sendable {
         store.save(value, as: name, account: account)
         restoredFor = account
         age = 0
+        saves += 1
     }
 }
 

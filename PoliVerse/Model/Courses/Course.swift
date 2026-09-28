@@ -205,7 +205,18 @@ extension Course {
     /// The six-digit Politecnico teaching code, taken from ``code`` or ``id``, or `nil`
     /// when neither is one.
     nonisolated var teachingCode: String? {
-        [code, id].compactMap { $0 }.first { $0.range(of: "^[0-9]{6}$", options: .regularExpression) != nil }
+        [code, id].compactMap { $0 }.first(where: Self.isTeachingCode)
+    }
+
+    /// Whether a code has the shape of a teaching code: exactly six ASCII digits.
+    ///
+    /// A byte check rather than a regular expression: course cards and the feed ask it
+    /// for every course and every update on every body pass.
+    ///
+    /// - Parameter code: The code to test.
+    /// - Returns: `true` for six digits and nothing else.
+    nonisolated static func isTeachingCode(_ code: String) -> Bool {
+        code.utf8.count == 6 && code.utf8.allSatisfy { $0 >= 0x30 && $0 <= 0x39 }
     }
 
     /// The academic year a date falls in, as `"2025/26"`.

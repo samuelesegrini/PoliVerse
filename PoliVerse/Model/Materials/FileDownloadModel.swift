@@ -28,6 +28,15 @@ final class FileDownloadModel {
     /// The known status per ``WeBeepFile/id``.
     private(set) var statuses: [String: Status] = [:]
 
+    /// The file names in each course's folder, by sanitised course id, listed once off
+    /// the main actor.
+    ///
+    /// ``status(for:)`` is asked for every file of a course on every body pass, and
+    /// used to answer with a `createDirectory` and a `fileExists` each time.
+    private var onDisk: [String: Set<String>] = [:]
+    /// Course folders being listed, so a body pass does not start a second listing.
+    @ObservationIgnored private var listing: Set<String> = []
+
     /// Diagnostic log for this type, under the `download` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "download")
     /// The session downloads are issued through.
@@ -47,8 +56,48 @@ final class FileDownloadModel {
     ///   disk, and ``Status/idle`` otherwise.
     func status(for file: WeBeepFile) -> Status {
         if let known = statuses[file.id] { return known }
-        if let existing = existingFile(for: file) { return .downloaded(existing) }
-        return .idle
+        let course = sanitised(file.courseID)
+        guard let names = onDisk[course] else {
+            // Idle until the folder has been listed; the listing updates the
+            // row a moment later.
+            list(course)
+            return .idle
+        }
+        let name = sanitised(file.name)
+        guard names.contains(name), let folder = folder(for: course) else { return .idle }
+        return .downloaded(folder.appendingPathComponent(name))
+    }
+
+    /// Lists one course's folder in the background and records what is there.
+    ///
+    /// - Parameter course: The sanitised course id.
+    private func list(_ course: String) {
+        guard !listing.contains(course), let folder = folder(for: course) else { return }
+        listing.insert(course)
+        Task {
+            let names = await Self.names(in: folder)
+            onDisk[course] = names
+            listing.remove(course)
+        }
+    }
+
+    /// The names of the files in a folder, read on a background executor.
+    ///
+    /// - Parameter folder: The folder.
+    /// - Returns: The names, empty when the folder does not exist.
+    @concurrent
+    private nonisolated static func names(in folder: URL) async -> Set<String> {
+        Set((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? [])
+    }
+
+    /// One course's folder, without creating it.
+    ///
+    /// - Parameter course: The sanitised course id.
+    /// - Returns: The folder, or `nil` when Application Support cannot be located.
+    private func folder(for course: String) -> URL? {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("WeBeep", isDirectory: true)
+            .appendingPathComponent(course, isDirectory: true)
     }
 
     /// Where a file lives once downloaded, creating the folder if needed.
@@ -59,13 +108,7 @@ final class FileDownloadModel {
     /// - Parameter file: The file.
     /// - Returns: The location, or `nil` when Application Support cannot be located.
     private func destination(for file: WeBeepFile) -> URL? {
-        guard let base = FileManager.default.urls(
-            for: .applicationSupportDirectory, in: .userDomainMask
-        ).first else { return nil }
-
-        let folder = base
-            .appendingPathComponent("WeBeep", isDirectory: true)
-            .appendingPathComponent(sanitised(file.courseID), isDirectory: true)
+        guard let folder = folder(for: sanitised(file.courseID)) else { return nil }
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         return folder.appendingPathComponent(sanitised(file.name))
     }
@@ -75,7 +118,8 @@ final class FileDownloadModel {
     /// - Parameter file: The file.
     /// - Returns: The location, or `nil` when there is no copy.
     private func existingFile(for file: WeBeepFile) -> URL? {
-        guard let destination = destination(for: file),
+        guard let destination = folder(for: sanitised(file.courseID))?
+                .appendingPathComponent(sanitised(file.name)),
               FileManager.default.fileExists(atPath: destination.path) else { return nil }
         return destination
     }
@@ -144,6 +188,7 @@ final class FileDownloadModel {
             try? mutable.setResourceValues(resourceValues)
 
             statuses[file.id] = .downloaded(destination)
+            onDisk[sanitised(file.courseID)]?.insert(sanitised(file.name))
             log.info("Downloaded \(file.name, privacy: .public)")
             return destination
         } catch {
@@ -161,6 +206,14 @@ final class FileDownloadModel {
             try? FileManager.default.removeItem(at: existing)
         }
         statuses[file.id] = .idle
+        onDisk[sanitised(file.courseID)]?.remove(sanitised(file.name))
+    }
+
+    /// Removes every downloaded file and forgets what was known about them.
+    func removeAll() {
+        Self.clearStorage()
+        statuses = [:]
+        onDisk = [:]
     }
 
     /// Total size of the downloaded materials, in bytes, as Impostazioni reports it. Zero

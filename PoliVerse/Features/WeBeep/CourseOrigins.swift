@@ -94,9 +94,10 @@ struct CourseOrigins {
         await courses.load()
         await careers.load()
         let current = student?.matricola
-        let others = careers.careers.filter { $0.matricola != current }.compactMap { other in
-            CareerModel.cachedLibretto(account: other.matricola).map {
-                EnrolmentOrigin.Plan(matricola: other.matricola, isCurrent: false, libretto: $0)
+        var others: [EnrolmentOrigin.Plan] = []
+        for other in careers.careers where other.matricola != current {
+            if let libretto = await CareerModel.cachedLibretto(account: other.matricola) {
+                others.append(EnrolmentOrigin.Plan(matricola: other.matricola, isCurrent: false, libretto: libretto))
             }
         }
         otherPlans(others)

@@ -154,10 +154,9 @@ struct FreeRoomsProvider: AppIntentTimelineProvider {
         configured ?? FreeRoomsSnapshot.lastCampus ?? FreeRoomsSnapshot.knownCampuses.first
     }
 
-    /// The app group's offline store, where the app writes the snapshots.
-    nonisolated private static var store: OfflineStore {
-        OfflineStore(groupIdentifier: OfflineStore.groupIdentifier)
-    }
+    /// The app group's offline store, where the app writes the snapshots. The shared
+    /// instance, so a timeline does not build a store on every read.
+    nonisolated private static var store: OfflineStore { .shared }
 
     /// Today's snapshot for a campus.
     ///
@@ -205,7 +204,7 @@ struct FreeRoomsProvider: AppIntentTimelineProvider {
     private func entry(at date: Date, campus: String?) -> FreeRoomsEntry {
         let name = Self.campus(campus)
         guard let name,
-              let slot = OfflineStore(groupIdentifier: OfflineStore.groupIdentifier)
+              let slot = Self.store
                   .load(FreeRoomsSnapshot.self, as: FreeRoomsSnapshot.cacheName, account: name)
         else {
             return FreeRoomsEntry(date: date, campus: campus, free: [], total: 0, state: .noData)

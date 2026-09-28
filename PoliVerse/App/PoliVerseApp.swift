@@ -367,7 +367,7 @@ struct PoliVerseApp: App {
             // The queue is per matricola, so switching career must show
             // that career's waiting changes rather than the last one's.
             .onChange(of: session.student?.matricola) { _, _ in
-                pending.refresh()
+                Task { await pending.refresh() }
             }
             // The one guaranteed moment a login (or career switch) has
             // just finished: token in hand, the account confirmed by

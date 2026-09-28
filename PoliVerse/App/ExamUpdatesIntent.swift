@@ -26,8 +26,8 @@ struct ExamUpdatesIntent: AppIntent {
             return .result(dialog: "Accedi a PoliVerse per vedere le novità sui tuoi esami.")
         }
         // No log yet is not "signed out": it is simply no news.
-        let updates = OfflineStore.shared
-            .load(ExamUpdateLog.self, as: ExamUpdateLog.name, account: matricola)?.value.updates ?? []
+        let updates = await OfflineStore.shared
+            .loaded(ExamUpdateLog.self, as: ExamUpdateLog.name, account: matricola)?.value.updates ?? []
         return .result(dialog: IntentDialog(stringLiteral: ExamUpdatesSummary.spoken(updates, now: .now)))
     }
 }
@@ -53,8 +53,8 @@ struct NextExamIntent: AppIntent {
         guard let matricola = SharedAccount.matricola else {
             return .result(dialog: "Accedi a PoliVerse per vedere i tuoi appelli.")
         }
-        let snapshot = OfflineStore.shared
-            .load(CareerSnapshot.self, as: CareerSnapshot.cacheName, account: matricola)?.value
+        let snapshot = await OfflineStore.shared
+            .loaded(CareerSnapshot.self, as: CareerSnapshot.cacheName, account: matricola)?.value
         return .result(dialog: IntentDialog(stringLiteral: NextExamSummary.spoken(snapshot, now: .now)))
     }
 }

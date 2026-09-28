@@ -153,7 +153,7 @@ struct MacCoursesView: View {
 
     /// What is unread in a course.
     private func unread(in course: Course) -> Int {
-        let badges = CourseHubBadges(items: FeedItem.items(from: feed.recent, for: course), seenAt: feed.seenAt)
+        let badges = CourseHubBadges(items: feed.recentItems(for: course), seenAt: feed.seenAt)
         return badges.announcements + badges.materials + badges.exams
     }
 

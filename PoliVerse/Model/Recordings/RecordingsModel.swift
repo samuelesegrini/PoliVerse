@@ -169,7 +169,7 @@ final class RecordingsModel {
     ///   - entry: The course's WeBeep "Registrazioni" link, asked for only when recman
     ///     is to be read.
     func load(_ course: Course, force: Bool = false, entry: () async -> URL?) async {
-        restoreIfNeeded()
+        await restoreIfNeeded()
         if account.isSample {
             recordings = Self.samples()
             phase = .idle
@@ -350,7 +350,11 @@ final class RecordingsModel {
 
     /// Puts the offline copy on screen once per account, and forgets another account's
     /// data.
-    private func restoreIfNeeded() {
+    ///
+    /// The three records are read and decoded together off the main actor. What they
+    /// hold is adopted only if the account is still the one they were read for and
+    /// nothing fresher arrived during the read.
+    private func restoreIfNeeded() async {
         let key = account.isSample ? "mock" : account.matricola
         guard key != heldFor else { return }
         heldFor = key
@@ -362,14 +366,22 @@ final class RecordingsModel {
         progress = [:]
         phase = .idle
         guard let matricola = account.matricola, !account.isSample else { return }
-        if let entry = offline.load([Recording].self, as: Self.recordName, account: matricola) {
-            recordings = entry.value
+        let offline = offline
+        async let savedRecordings = offline.loaded([Recording].self, as: Self.recordName, account: matricola)
+        async let savedProgress = offline.loaded([RecordingProgress].self, as: Self.progressName, account: matricola)
+        async let savedAddresses = offline.loaded([String: URL].self, as: Self.addressesName, account: matricola)
+        let (stored, storedProgress, storedAddresses) = await (savedRecordings, savedProgress, savedAddresses)
+        // Another account, or a reset, while the files were being read.
+        guard heldFor == key else { return }
+        if let stored, recordings.isEmpty {
+            recordings = stored.value
         }
-        if let entry = offline.load([RecordingProgress].self, as: Self.progressName, account: matricola) {
-            progress = Dictionary(entry.value.map { ($0.transferID, $0) }, uniquingKeysWith: { first, _ in first })
+        if let storedProgress, progress.isEmpty {
+            progress = Dictionary(storedProgress.value.map { ($0.transferID, $0) },
+                                  uniquingKeysWith: { first, _ in first })
         }
-        if let entry = offline.load([String: URL].self, as: Self.addressesName, account: matricola) {
-            webexAddresses = Dictionary(entry.value.compactMap { key, value in Int(key).map { ($0, value) } },
+        if let storedAddresses, webexAddresses.isEmpty {
+            webexAddresses = Dictionary(storedAddresses.value.compactMap { key, value in Int(key).map { ($0, value) } },
                                         uniquingKeysWith: { first, _ in first })
         }
     }

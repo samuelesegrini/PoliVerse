@@ -16,7 +16,7 @@ struct SinglePagePanel: View {
     /// The class now, unless Oggi already shows it as a section.
     private var current: CurrentClass? {
         guard style.wantsCurrentClassAccessory else { return nil }
-        return CurrentClass.forAccessory(from: agenda.events, now: now)
+        return CurrentClass.forAccessory(from: agenda.events(on: now), now: now)
     }
 
     /// The height the panel rests at: enough for the search row and nothing more.

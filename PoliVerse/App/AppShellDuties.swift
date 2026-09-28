@@ -74,7 +74,7 @@ struct AppShellDuties: ViewModifier {
             // because it answers the same question: what has actually changed
             // in the timetable and the sittings.
             .task(id: watchKey) {
-                WatchSync.send(agenda: agenda, career: career, session: session)
+                await WatchSync.send(agenda: agenda, career: career, session: session)
             }
             // Reminders follow the timetable: lectures move and exams are
             // withdrawn, and a reminder for a lecture that no longer exists is

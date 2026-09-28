@@ -34,14 +34,12 @@ struct MacTodayView: View {
 
     /// The day's lectures, exams and deadlines, in order.
     private var dayEvents: [AgendaEvent] {
-        agenda.events
-            .filter { calendar.isDate($0.start, inSameDayAs: day) }
-            .sorted { $0.start < $1.start }
+        agenda.events(on: day)
     }
 
     /// The class in progress or next today, when the day on show is today.
     private var current: CurrentClass? {
-        isToday ? CurrentClass.forAccessory(from: agenda.events, now: now) : nil
+        isToday ? CurrentClass.forAccessory(from: agenda.events(on: now), now: now) : nil
     }
 
     var body: some View {

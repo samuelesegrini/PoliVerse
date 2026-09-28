@@ -73,8 +73,8 @@ struct NextLectureIntent: AppIntent {
         guard let matricola = SharedAccount.matricola else {
             return .result(dialog: "Accedi a PoliVerse per vedere il tuo orario.")
         }
-        let events = OfflineStore.shared
-            .load([AgendaEvent].self, as: "agenda", account: matricola)?.value ?? []
+        let events = await OfflineStore.shared
+            .loaded([AgendaEvent].self, as: "agenda", account: matricola)?.value ?? []
         let next = events
             .filter { $0.kind == .lecture && $0.start >= .now }
             .filter { $0.title.localizedCaseInsensitiveContains(course.name)
@@ -118,8 +118,8 @@ struct RoomFreeIntent: AppIntent {
     /// - Throws: Nothing in practice.
     func perform() async throws -> some IntentResult & ProvidesDialog {
         guard let matricola = SharedAccount.matricola,
-              let snapshot = OfflineStore.shared
-                  .load(FreeRoomsSnapshot.self, as: FreeRoomsSnapshot.cacheName, account: matricola)?.value,
+              let snapshot = await OfflineStore.shared
+                  .loaded(FreeRoomsSnapshot.self, as: FreeRoomsSnapshot.cacheName, account: matricola)?.value,
               snapshot.covers(.now),
               let booked = snapshot.rooms.first(where: { $0.id == room.id })
         else {

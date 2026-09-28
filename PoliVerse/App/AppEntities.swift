@@ -61,7 +61,7 @@ struct CourseEntityQuery: EntityStringQuery {
     /// - Returns: The matching courses, in the index's own order.
     func entities(for identifiers: [CourseEntity.ID]) async throws -> [CourseEntity] {
         let wanted = Set(identifiers)
-        return EntityIndex.load(account: SharedAccount.matricola)
+        return await EntityIndex.loaded(account: SharedAccount.matricola)
             .courses.filter { wanted.contains($0.id) }.map(CourseEntity.init)
     }
 
@@ -70,7 +70,7 @@ struct CourseEntityQuery: EntityStringQuery {
     /// - Parameter string: The words to match.
     /// - Returns: The matching courses.
     func entities(matching string: String) async throws -> [CourseEntity] {
-        EntityIndex.load(account: SharedAccount.matricola).courses
+        await EntityIndex.loaded(account: SharedAccount.matricola).courses
             .filter { $0.name.localizedCaseInsensitiveContains(string)
                 || ($0.code?.localizedCaseInsensitiveContains(string) ?? false) }
             .map(CourseEntity.init)
@@ -80,7 +80,7 @@ struct CourseEntityQuery: EntityStringQuery {
     ///
     /// - Returns: The courses.
     func suggestedEntities() async throws -> [CourseEntity] {
-        EntityIndex.load(account: SharedAccount.matricola).courses.map(CourseEntity.init)
+        await EntityIndex.loaded(account: SharedAccount.matricola).courses.map(CourseEntity.init)
     }
 }
 
@@ -132,7 +132,7 @@ struct ExamEntityQuery: EntityStringQuery {
     /// - Returns: The matching sittings.
     func entities(for identifiers: [ExamEntity.ID]) async throws -> [ExamEntity] {
         let wanted = Set(identifiers)
-        return EntityIndex.load(account: SharedAccount.matricola)
+        return await EntityIndex.loaded(account: SharedAccount.matricola)
             .exams.filter { wanted.contains($0.id) }.map(ExamEntity.init)
     }
 
@@ -141,7 +141,7 @@ struct ExamEntityQuery: EntityStringQuery {
     /// - Parameter string: The words to match.
     /// - Returns: The matching sittings.
     func entities(matching string: String) async throws -> [ExamEntity] {
-        EntityIndex.load(account: SharedAccount.matricola).exams
+        await EntityIndex.loaded(account: SharedAccount.matricola).exams
             .filter { $0.courseName.localizedCaseInsensitiveContains(string)
                 || $0.courseCode.localizedCaseInsensitiveContains(string) }
             .map(ExamEntity.init)
@@ -152,7 +152,7 @@ struct ExamEntityQuery: EntityStringQuery {
     ///
     /// - Returns: The sittings.
     func suggestedEntities() async throws -> [ExamEntity] {
-        EntityIndex.load(account: SharedAccount.matricola).exams
+        await EntityIndex.loaded(account: SharedAccount.matricola).exams
             .filter { ($0.date ?? .distantPast) >= .now }
             .sorted { ($0.date ?? .distantFuture) < ($1.date ?? .distantFuture) }
             .map(ExamEntity.init)
@@ -207,7 +207,7 @@ struct RoomEntityQuery: EntityStringQuery {
     /// - Returns: The matching rooms.
     func entities(for identifiers: [RoomEntity.ID]) async throws -> [RoomEntity] {
         let wanted = Set(identifiers)
-        return EntityIndex.load(account: SharedAccount.matricola)
+        return await EntityIndex.loaded(account: SharedAccount.matricola)
             .rooms.filter { wanted.contains($0.id) }.map(RoomEntity.init)
     }
 
@@ -216,7 +216,7 @@ struct RoomEntityQuery: EntityStringQuery {
     /// - Parameter string: The words to match.
     /// - Returns: The matching rooms.
     func entities(matching string: String) async throws -> [RoomEntity] {
-        EntityIndex.load(account: SharedAccount.matricola).rooms
+        await EntityIndex.loaded(account: SharedAccount.matricola).rooms
             .filter { $0.name.localizedCaseInsensitiveContains(string)
                 || ($0.building?.localizedCaseInsensitiveContains(string) ?? false) }
             .map(RoomEntity.init)

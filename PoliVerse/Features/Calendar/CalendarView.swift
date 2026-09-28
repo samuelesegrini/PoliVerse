@@ -155,7 +155,7 @@ struct CalendarView: View {
     private func dayCell(_ day: Date) -> some View {
         let isSelected = calendar.isDate(day, inSameDayAs: selectedDay)
         let isToday = calendar.isDateInToday(day)
-        let hasEvents = !agenda.events(on: day).filter(filter.matches).isEmpty
+        let hasEvents = agenda.events(on: day).contains(where: filter.matches)
 
         return Button {
             withAnimation(.snappy(duration: 0.2)) { selectedDay = day }
@@ -257,7 +257,7 @@ struct CalendarView: View {
 
     /// The month and year of the week on screen.
     private var monthTitle: String {
-        guard let last = weekDays.last else { return "" }
+        guard let last = calendar.date(byAdding: .day, value: 6, to: weekStart) else { return "" }
         // A week can straddle two months; say so rather than picking one.
         if calendar.isDate(weekStart, equalTo: last, toGranularity: .month) {
             return weekStart.formatted(.dateTime.month(.wide).year().locale(locale)).capitalized

@@ -341,7 +341,8 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         let sticker = app.buttons["page-sticker"].firstMatch
         XCTAssertTrue(sticker.waitForExistence(timeout: 3), "The sticker is not on the page")
         let before = sticker.frame.midX
-        sticker.press(forDuration: 0.1, thenDragTo: sticker.coordinate(withNormalizedOffset: CGVector(dx: -1, dy: 0.5)))
+        sticker.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            .press(forDuration: 0.1, thenDragTo: sticker.coordinate(withNormalizedOffset: CGVector(dx: -1, dy: 0.5)))
         settle()
         XCTAssertNotEqual(sticker.frame.midX, before, accuracy: 2, "Dragging the sticker on the page did not move it")
         sticker.tap()

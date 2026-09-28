@@ -106,11 +106,28 @@ nonisolated struct ActionQueue: Sendable {
     ///   - store: Where the queue file lives.
     ///   - account: The matricola to key the file by, or `nil` when signed out.
     init(store: OfflineStore = .shared, account: String?) {
+        self.init(store: store, account: account,
+                  contents: store.load(Contents.self, as: "queue", account: account)?.value)
+    }
+
+    /// Builds the queue from contents already read.
+    private init(store: OfflineStore, account: String?, contents: Contents?) {
         self.store = store
         self.account = account
-        let contents = store.load(Contents.self, as: "queue", account: account)?.value
         entries = contents?.entries ?? []
         abandoned = contents?.abandoned ?? []
+    }
+
+    /// Reads the queue for one account without blocking the caller, for the passes
+    /// that only need to know what is waiting.
+    ///
+    /// - Parameters:
+    ///   - store: Where the queue file lives.
+    ///   - account: The matricola to key the file by, or `nil` when signed out.
+    /// - Returns: The queue as it is on disk once pending writes have landed.
+    static func read(store: OfflineStore = .shared, account: String?) async -> ActionQueue {
+        let contents = await store.loaded(Contents.self, as: "queue", account: account)?.value
+        return ActionQueue(store: store, account: account, contents: contents)
     }
 
     /// Merges what is on disk into this instance, keeping locally held attempt

@@ -80,7 +80,9 @@ nonisolated enum PartialExams {
     /// - Parameter folded: Text already passed through ``fold(_:)``.
     /// - Returns: `true` on a match.
     private static func matches(_ folded: String) -> Bool {
-        folded.range(of: mention, options: .regularExpression) != nil
+        // Compiled once: the course page asks on every body pass.
+        guard let regex = RegexCache.regex(mention) else { return false }
+        return regex.firstMatch(in: folded, range: NSRange(folded.startIndex..., in: folded)) != nil
     }
 
     /// Folds text to ignore case and diacritics, then lower-cases it.

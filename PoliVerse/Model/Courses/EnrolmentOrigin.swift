@@ -150,11 +150,18 @@ enum EnrolmentOverrides {
     /// - Returns: The corrections by ``Course/id``. Empty when none are stored or they
     ///   will not decode.
     static func all() -> [String: EnrolmentOrigin.Override] {
-        guard let data = UserDefaults.standard.data(forKey: key),
-              let decoded = try? JSONDecoder().decode([String: EnrolmentOrigin.Override].self, from: data)
+        guard let data = UserDefaults.standard.data(forKey: key) else { return [:] }
+        // The Corsi page asks every time it is rebuilt, which is far more often
+        // than the corrections change: the same bytes decode to the same map.
+        if let last, last.data == data { return last.value }
+        guard let decoded = try? JSONDecoder().decode([String: EnrolmentOrigin.Override].self, from: data)
         else { return [:] }
+        last = (data, decoded)
         return decoded
     }
+
+    /// The bytes last decoded and what they decoded to. See ``all()``.
+    private static var last: (data: Data, value: [String: EnrolmentOrigin.Override])?
 
     /// Records or removes one correction.
     ///

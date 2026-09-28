@@ -181,27 +181,9 @@ final class Store<S: Source> {
         guard let matricola = account.matricola, !account.isSample,
               matricola != restoredFor else { return }
         restoredFor = matricola
-        guard let entry = await Self.read(S.id, account: matricola, from: offline) else { return }
+        guard let entry = await offline.loaded(S.Value.self, as: S.id, account: matricola)
+        else { return }
         value = source.adjust(entry.value)
         age = entry.age
-    }
-
-    /// Decodes one offline entry on a background executor.
-    ///
-    /// ``OfflineStore/load(_:as:account:)`` blocks on its write queue and then
-    /// decodes synchronously, which a foreground revalidation does for several
-    /// services in succession.
-    ///
-    /// - Parameters:
-    ///   - name: The record name, ``Source/id``.
-    ///   - account: The matricola the record is keyed by.
-    ///   - offline: The store to read from.
-    /// - Returns: The decoded entry with its age, or `nil` when there is no usable
-    ///   record.
-    @concurrent
-    private nonisolated static func read(
-        _ name: String, account: String, from offline: OfflineStore
-    ) async -> OfflineStore.Entry<S.Value>? {
-        offline.load(S.Value.self, as: name, account: account)
     }
 }

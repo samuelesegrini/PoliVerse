@@ -69,10 +69,10 @@ nonisolated struct FeedItem: Identifiable, Sendable, Equatable {
     static func items(from updates: [ExamUpdate], for course: Course) -> [FeedItem] {
         let codes = Set([course.id, course.code, course.teachingCode].compactMap { $0 })
         let name = MutedCourse.key(course.name)
-        let isTeachingCode = { (code: String) in code.range(of: "^[0-9]{6}$", options: .regularExpression) != nil }
+        let courseIsCoded = course.teachingCode != nil
         return items(from: updates.filter { update in
             if codes.contains(update.courseCode) { return true }
-            let bothCoded = isTeachingCode(update.courseCode) && course.teachingCode != nil
+            let bothCoded = courseIsCoded && Course.isTeachingCode(update.courseCode)
             return !bothCoded && MutedCourse.key(update.courseName) == name
         })
     }

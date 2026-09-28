@@ -35,12 +35,9 @@ struct CourseCard: View {
 
     /// Matched by name, as on the course page: the agenda carries no code.
     private var nextLecture: AgendaEvent? {
-        let target = course.name.lowercased()
-        return agenda.events
-            .lazy
-            .filter { $0.kind == .lecture && $0.end > .now }
-            .filter { let title = $0.title.lowercased(); return title.contains(target) || target.contains(title) }
-            .min { $0.start < $1.start }
+        let now = Date.now
+        return agenda.events(matchingCourse: course.name)
+            .first { $0.kind == .lecture && $0.end > now }
     }
 
     /// The soonest sitting of this course still ahead, or `nil` when there is none.
@@ -50,7 +47,7 @@ struct CourseCard: View {
 
     /// The unread counts for this course, from the update feed.
     private var badges: CourseHubBadges {
-        CourseHubBadges(items: FeedItem.items(from: feed.recent, for: course), seenAt: feed.seenAt)
+        CourseHubBadges(items: feed.recentItems(for: course), seenAt: feed.seenAt)
     }
 
     /// "AR" for "Architetture dei Calcolatori": skips the short joining words.

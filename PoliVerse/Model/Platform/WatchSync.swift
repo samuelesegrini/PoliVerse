@@ -17,14 +17,15 @@ enum WatchSync {
     ///   - agenda: The timetable.
     ///   - career: The sittings.
     ///   - session: The account, for the career figures and the sample switch.
-    static func send(agenda: AgendaModel, career: CareerModel, session: Session) {
+    static func send(agenda: AgendaModel, career: CareerModel, session: Session) async {
         // The Mac has no Watch to talk to: WatchConnectivity is not on macOS.
         #if canImport(WatchConnectivity)
         guard !session.useMockData else { return }
-        let figures = session.student.flatMap {
-            OfflineStore.shared.load(CareerSnapshot.self,
-                                     as: CareerSnapshot.cacheName,
-                                     account: $0.matricola)?.value
+        // Read off the main actor: this runs whenever the timetable changes.
+        var figures: CareerSnapshot?
+        if let matricola = session.student?.matricola {
+            figures = await OfflineStore.shared.loaded(
+                CareerSnapshot.self, as: CareerSnapshot.cacheName, account: matricola)?.value
         }
         WatchBridge.shared.send(WatchSnapshotBuilder.build(
             events: agenda.events, exams: career.sessions, day: .now, career: figures))
@@ -48,6 +49,6 @@ enum WatchSync {
         async let lectures: Void = agenda.load()
         async let sittings: Void = career.load()
         _ = await (lectures, sittings)
-        send(agenda: agenda, career: career, session: session)
+        await send(agenda: agenda, career: career, session: session)
     }
 }

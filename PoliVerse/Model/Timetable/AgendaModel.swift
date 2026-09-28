@@ -33,7 +33,10 @@ final class AgendaModel {
     /// Everything on the agenda for the loaded window, official and personal, in time
     /// order. Setting it rebuilds the per-day index.
     private(set) var events: [AgendaEvent] = [] {
-        didSet { eventsByDay = Self.index(events) }
+        didSet {
+            eventsByDay = Self.index(events)
+            eventsByTitle = Self.titleIndex(events)
+        }
     }
     /// ``events`` grouped by Rome day and sorted, rebuilt whenever they change.
     ///
@@ -42,6 +45,12 @@ final class AgendaModel {
     ///
     /// See `docs/metrickit-performance.md` §3.2.
     private var eventsByDay: [Date: [AgendaEvent]] = [:]
+    /// ``events`` grouped by lowercased title, each group in time order.
+    ///
+    /// Courses find their lessons by name, since the agenda carries no teaching code.
+    /// Matching against a few dozen distinct titles once per card is far cheaper than
+    /// lowercasing every event for every card on every body pass.
+    private var eventsByTitle: [String: [AgendaEvent]] = [:]
     /// What the Politecnico's agenda sent, without personal lessons.
     ///
     /// ``TimetableHandover`` compares against this rather than ``events``, or personal
@@ -104,9 +113,14 @@ final class AgendaModel {
     /// Puts the last known timetable on screen before any request answers.
     ///
     /// Called from ``load(around:force:)`` rather than from `init()`, where the matricola
-    /// is not known yet. Does nothing after the first restore for an account.
-    private func restoreCache() {
-        guard let cached = slot.restore(for: account.matricola) else { return }
+    /// is not known yet. Does nothing after the first restore for an account. The file
+    /// is read and decoded off the main actor.
+    private func restoreCache() async {
+        // Sample data never reads the student's copy: it would flash their real
+        // timetable before the samples replaced it.
+        guard !account.isSample, let claim = slot.claimRestore(for: account.matricola) else { return }
+        let entry = await claim.read()
+        guard let cached = slot.finish(claim, with: entry) else { return }
         officialEvents = TimetableMerge.officialOnly(cached)
         rebuild()
         age = slot.age
@@ -139,7 +153,7 @@ final class AgendaModel {
         let from = calendar.date(byAdding: lookBehind, to: date) ?? date
         let to = calendar.date(byAdding: lookAhead, to: date) ?? date
 
-        restoreCache()
+        await restoreCache()
 
         if account.isSample {
             loadedRange = from...to
@@ -321,6 +335,30 @@ final class AgendaModel {
     nonisolated static func index(_ events: [AgendaEvent]) -> [Date: [AgendaEvent]] {
         let calendar = PoliMiDate.romeCalendar
         return Dictionary(grouping: events) { calendar.startOfDay(for: $0.start) }
+            .mapValues { $0.sorted { $0.start < $1.start } }
+    }
+
+    /// Everything on the agenda that belongs to a course, matched by name, in time
+    /// order.
+    ///
+    /// A title matches when it contains the course's name or is contained in it — the
+    /// same normalised match the course cards and the course page have always used.
+    ///
+    /// - Parameter name: The course's name.
+    /// - Returns: The matching entries, earliest first.
+    func events(matchingCourse name: String) -> [AgendaEvent] {
+        let target = name.lowercased()
+        let groups = eventsByTitle.filter { title, _ in title.contains(target) || target.contains(title) }
+        if groups.count == 1, let only = groups.first { return only.value }
+        return groups.values.flatMap { $0 }.sorted { $0.start < $1.start }
+    }
+
+    /// Groups events by lowercased title and sorts each group in time order.
+    ///
+    /// - Parameter events: The entries to index.
+    /// - Returns: The entries by title.
+    nonisolated static func titleIndex(_ events: [AgendaEvent]) -> [String: [AgendaEvent]] {
+        Dictionary(grouping: events) { $0.title.lowercased() }
             .mapValues { $0.sorted { $0.start < $1.start } }
     }
 

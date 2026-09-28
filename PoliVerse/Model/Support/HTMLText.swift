@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 
 /// Renders the HTML fragments these endpoints send as readable text.
 ///
@@ -117,6 +118,23 @@ nonisolated enum HTMLText {
     /// - Returns: The attributed text, with whitespace collapsed to HTML's rules and
     ///   block boundaries rendered as line breaks.
     static func attributed(_ html: String) -> AttributedString {
+        if let hit = rendered.withLock({ $0[html] }) { return hit }
+        let built = build(html)
+        rendered.withLock { cache in
+            if cache.count >= renderedLimit { cache.removeAll(keepingCapacity: true) }
+            cache[html] = built
+        }
+        return built
+    }
+
+    /// Fragments already rendered, since ``attributed(_:)`` is called from a view's
+    /// body and a detail screen's body runs again on every change around it.
+    private static let rendered = Mutex<[String: AttributedString]>([:])
+    /// How many fragments to keep before the cache is emptied.
+    private static let renderedLimit = 64
+
+    /// Renders a fragment. See ``attributed(_:)``.
+    private static func build(_ html: String) -> AttributedString {
         let source = markBlocks(stripNonContent(html))
         var builder = Builder()
         var style = Style()

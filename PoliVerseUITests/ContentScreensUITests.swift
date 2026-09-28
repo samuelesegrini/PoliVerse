@@ -34,11 +34,18 @@ nonisolated final class ContentScreensUITests: PoliVerseUITestCase {
         let app = launchOnToday()
         switchTab(app, to: "Carriera", expecting: "tab-career")
 
-        let sections = app.segmentedControls["Sezione"].firstMatch
-        require(sections, "Carriera has no section picker", timeout: 15)
+        // The picker sits under "Cosa scade", the standing card and the path,
+        // below the fold on an iPhone. iOS 27 exposes a segmented picker's
+        // segments as buttons rather than as a segmented control named after
+        // its label, so the segments are what is looked for.
+        let first = app.buttons["Libretto"].firstMatch
+        for _ in 0..<4 where !first.waitForExistence(timeout: 2) {
+            app.swipeUp()
+        }
+        require(first, "Carriera has no section picker", timeout: 15)
 
         for section in ["Libretto", "Appelli"] {
-            let button = sections.buttons[section]
+            let button = app.buttons[section].firstMatch
             require(button, "Carriera has no \(section) section")
             button.tap()
             settle()

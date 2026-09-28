@@ -90,12 +90,16 @@ nonisolated final class PerformanceTests: PoliVerseUITestCase {
         }
     }
 
-    /// Hitches while scrolling Corsi, the longest list in the app: one row per
-    /// course, each drawing its own colour and star.
+    /// Hitches while scrolling Corsi, the longest list in the app: one card per
+    /// course, each drawing its own colour and next lesson.
+    ///
+    /// Corsi is a scroll view of cards, not a `List`: looking for a collection
+    /// view found nothing, and the test failed before measuring anything.
     @MainActor func testCoursesScrollHitches() {
         let app = launchOnToday()
         switchTab(app, to: "Corsi", expecting: "tab-courses")
-        let list = app.collectionViews.firstMatch
+        let tagged = app.scrollViews.matching(identifier: "tab-courses").firstMatch
+        let list = tagged.waitForExistence(timeout: 5) ? tagged : app.scrollViews.firstMatch
         require(list, "Corsi non ha una lista da scorrere", timeout: 20)
 
         let options = XCTMeasureOptions()

@@ -81,7 +81,7 @@ struct RootView: View {
     /// The class now, except on Oggi when the page already shows it.
     private var current: CurrentClass? {
         guard todayStyle.resolved.wantsCurrentClassAccessory || shell.selection != .today else { return nil }
-        return CurrentClass.forAccessory(from: agenda.events, now: now)
+        return CurrentClass.forAccessory(from: agenda.events(on: now), now: now)
     }
 
     /// The view's content.

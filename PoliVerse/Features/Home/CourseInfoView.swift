@@ -282,7 +282,7 @@ struct CourseInfoView: View {
                       detail: [event.start.formatted(.dateTime.hour().minute().locale(locale)), event.roomLabel]
                         .compactMap { $0 }.joined(separator: " · "))
             }
-        let results = PartialExams.resultsFiles(FeedItem.items(from: feed.recent, for: course).map(\.update))
+        let results = PartialExams.resultsFiles(feed.recentItems(for: course).map(\.update))
             .map { update in
                 Dated(id: "results-\(update.id)", date: update.detectedAt, symbol: "tablecells",
                       title: update.newValue ?? String(localized: "Risultati"),

@@ -997,6 +997,123 @@ signpost.
 
 ---
 
+## 5. Second pass, after WWDC26 (2026-09-28)
+
+Phases 1 and 2 above had landed: `PerformanceMonitor` on the new
+`MetricManager`, `StateReporting` by tab, `trackLaunchTask` around session
+restore, `PerfSignpost`, `@concurrent` decoding, `OfflineStore` writes on a
+queue, `WidgetReloader`, the per-day agenda index. The deployment target is now
+iOS 27 / macOS 27 (watchOS 26), so the legacy `MXMetricManager` path described
+in §1.1 was never needed and is not in the code.
+
+This pass followed four WWDC26 sessions:
+[Profile, fix, and verify (268)](https://developer.apple.com/videos/play/wwdc2026/268/),
+the [SwiftUI Group Lab (8120)](https://developer.apple.com/videos/play/wwdc2026/8120/),
+[Dive into lazy stacks and scrolling (321)](https://developer.apple.com/videos/play/wwdc2026/321/) and
+[Meet the new MetricKit (222)](https://developer.apple.com/videos/play/wwdc2026/222/).
+
+### 5.1 Blocked on the system: offline reads (268)
+
+Writes had moved to a queue, but every **read** still called `flush()` — a
+`DispatchQueue.sync` behind whatever encode was pending — then read and decoded
+the file on the caller, which was almost always the main actor. That is the
+session's third hang class: a thread waiting, not computing.
+
+| Change | Where |
+| --- | --- |
+| `OfflineStore.loaded(_:as:account:)`: `@concurrent`, waits with `flushed()`, reads off the caller | `Shared/OfflineStore.swift` |
+| `CachedSlot.claimRestore` / `Claim.read()` / `finish(_:with:)`: a restore split around the suspension, which drops a read overtaken by a save | same |
+| Legacy-folder migration moved onto the write queue instead of running when `OfflineStore.shared` is first touched in `App.init` | same |
+| Agenda, WeBeep materials, recordings (three files read together), free-rooms widget check, other careers' libretti, the Watch snapshot, App Intents and entity queries read with `loaded` | the models, `WatchSync`, `AppEntities`, `*Intent*.swift` |
+| `Store` uses `loaded` instead of its own `@concurrent` wrapper | `Model/Store/Store.swift` |
+| `UpdateFeed` keeps the shown account's log in memory; opening the feed and recording a pass no longer read it back | `Model/Updates/UpdateFeed.swift` |
+| `PendingChanges` reads the queue asynchronously at init, on account change and on flush (every foregrounding) | `Model/Sync/PendingChanges.swift`, `ActionQueue.read` |
+| Widgets use `OfflineStore.shared` instead of building a store per read | `PoliVerseWidgets/` |
+
+Still synchronous, deliberately: sign-out's `clear(account:)`, Impostazioni's
+"clear all", `PendingChanges.record` / `acknowledgeFailures` (one small file on
+a tap), and the widget timeline providers (no UI thread to protect).
+
+### 5.2 Views that recomputed on every pass (8120, 321)
+
+The group lab's rule — `body` does no filtering, sorting or string work;
+dependencies are scoped — against what the static survey found:
+
+| Finding | Fix |
+| --- | --- |
+| `CurrentClass` and `TodayDigest.timetable` filtered and sorted **every** event, from `RootView` (every pass), Oggi's sections, the flavors, the Mac views | they are handed `agenda.events(on:)`, the day index |
+| Course cards, Corsi rows and the course page lowercased every event's title per course to find its lessons | `AgendaModel.events(matchingCourse:)` over a title index built when `events` changes |
+| `FeedItem.items` (quadratic: each sighting against every other) rebuilt for the tab badge, every course card and the updates screen, twice | `UpdateFeed.items`, `recentItems`, `recentItems(for:)`, cached until `updates` changes or the hour turns |
+| A regular expression compiled per call in `Course.teachingCode`, `FeedItem.items(from:for:)`, `PartialExams` | a byte check; `RegexCache` |
+| `FileDownloadModel.status(for:)` did `createDirectory` + `fileExists` for every file of the materials screen, every pass | each course folder listed once off the main actor; kept in step by download, delete and "remove all" |
+| `@AppStorage` look decoded (two `JSONDecoder`s) three times per `RootView` pass | `TodayStyle(rawValue:)` remembers the last string it decoded |
+| `EnrolmentOverrides.all()` decoded on every `CoursesPage` init | remembers the last bytes it decoded |
+| `RichText` parsed its HTML on every pass | `HTMLText.attributed` caches by fragment |
+| `ByteCountFormatter` built per call, `SubjectSymbol` folded per row | built once; chosen symbols cached by name |
+| `DayStrip` rebuilt 121 dates on every scrolled day, inside a `GeometryReader` wrapping the scroll view | dates built once in `@State`; the width from `onGeometryChange` |
+| Calendar week strip filtered a day into an array to test `isEmpty`; `weekDays` built twice | `contains(where:)`; the last day computed directly |
+
+Looked at and left alone:
+
+- **Lazy containers.** The long lists are already `List` or `LazyVStack`
+  (News, Notices, the updates feed, materials, the calendar day). Corsi and the
+  course page are `VStack`s of a bounded number of cards; their rows were
+  expensive because of the scans above, not because they were eager.
+- **Rows with a variable view count** (`if … { Divider() }`) sit inside a
+  plain `VStack` card, not directly in a lazy container, so identity is not
+  resolved per row.
+- **`GeometryReader`** elsewhere sits in backgrounds for bars and scales, or
+  lays out a whole screen from its size (`LookEditor`): the pattern the lab
+  calls fine.
+- **`AnyView`**: only in the DEBUG Mac snapshot hook.
+- **Existentials (268).** `any Account`, `any HTTP` and the other protocol
+  properties are held by models and read once per load; no view body or row
+  touches one. Nothing for Top Functions to find, so nothing converted.
+
+### 5.3 Measured
+
+`PoliVersePerformance` on the iPhone 17 Pro simulator, Release, sample data,
+`main` (e8c6453) against this pass. Launch was run as three interleaved rounds
+of five, so both builds saw the same machine load.
+
+| Test | `main` | This pass |
+| --- | --- | --- |
+| `testAgendaLoad`, `agenda.load` signpost | 3.3 ms mean (2.8–3.9) | **0.4 ms** mean (0.40–0.45) |
+| `testLaunch`, first frame responsive, median of 15 | 3.824 s | 3.768 s — no change beyond noise |
+| `testTabSwitchingCost`, CPU time per round of the four tabs | 2.460 s | 2.440 s — flat |
+| `testTabSwitchingCost`, instructions retired | 12.17 G | 12.22 G — flat |
+
+What the numbers say, and do not:
+
+- **The first attempt regressed `agenda.load` to 894 ms.** `loaded` waited for
+  the write queue with a plain `async` at the queue's utility QoS; at launch the
+  wait sat behind other work for most of a second. The blocking `flush()` never
+  showed this because a synchronous wait donates the caller's priority. The
+  wait is now enqueued at `.userInitiated` with `.enforceQoS`. Part of the
+  remaining gain is that sample data no longer reads the student's agenda copy
+  at all.
+- **Sample data hides most of 5.2.** It has a handful of courses and updates,
+  so the per-card scans cost little either way; the tab-switch numbers are
+  flat because the work removed was small *in this data set*. A real account
+  with a full timetable and a term's worth of updates is where they show.
+- **The hitch tests measure nothing on the simulator.** `XCTHitchMetric`
+  records no samples there; the three hitch tests pass without a number. They
+  need a device.
+- `testCoursesScrollHitches` failed on `main` before measuring: it looked for a
+  collection view, and Corsi is a scroll view of cards. It now finds the scroll
+  view. `CustomizeAnimationTests` did not compile (`press(forDuration:thenDragTo:)`
+  was given a coordinate), which stopped the whole UI test target building; the
+  drag now starts from the sticker's coordinate.
+- `ContentScreensUITests.testCareerSectionsEachShowSomething` looked for
+  `segmentedControls["Sezione"]`, which iOS 27 does not expose, and never
+  scrolled to the picker, which now sits below the fold. It looks for the
+  Libretto and Appelli segments and scrolls to them.
+
+Still to do on a device, per Phase 0: the three hitch tests, a Swift Concurrency
+trace of a foreground revalidation on a real account, and a System Trace of
+opening a course's materials, compared against `main` with Instruments 27's Run
+Comparison.
+
 ## Not verified, in one place
 
 - Whether registering both `MXMetricManager` and `MetricManager` duplicates

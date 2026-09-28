@@ -87,4 +87,17 @@ nonisolated struct EntityIndex: Codable, Sendable, Equatable {
         guard let account else { return .empty }
         return store.load(EntityIndex.self, as: cacheName, account: account)?.value ?? .empty
     }
+
+    /// The index the app has last written for an account, read without blocking the
+    /// caller — for the entity queries, which the system may run while the app is on
+    /// screen.
+    ///
+    /// - Parameters:
+    ///   - account: The matricola the record is filed under.
+    ///   - store: The store to read from. Defaults to the shared one.
+    /// - Returns: The index, or ``empty`` when none has been written.
+    static func loaded(account: String?, store: OfflineStore = .shared) async -> EntityIndex {
+        guard let account else { return .empty }
+        return await store.loaded(EntityIndex.self, as: cacheName, account: account)?.value ?? .empty
+    }
 }

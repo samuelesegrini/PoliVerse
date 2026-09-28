@@ -62,9 +62,11 @@ struct NoticesView: View {
 
     /// The notices, newest first, with a button to mark them all read.
     private var list: some View {
-        List {
+        // Counted once: it filters every notice.
+        let unread = notices.unreadCount
+        return List {
             Section {
-                PageHero(symbol: "megaphone", title: Text("Notifiche"), summary: notices.unreadCount > 0 ? Text("\(notices.unreadCount) da leggere") : Text("Tutto letto"))
+                PageHero(symbol: "megaphone", title: Text("Notifiche"), summary: unread > 0 ? Text("\(unread) da leggere") : Text("Tutto letto"))
                     .listHeader()
             }
             Section {

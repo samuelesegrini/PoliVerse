@@ -59,7 +59,7 @@ struct TodaySectionView: View {
         let entries = entries(now: .now)
         if section.kind.hasCourseColours && section.courseColours && !collapsed
             && section.form == .list && !entries.isEmpty {
-            let lessons = TodayDigest.timetable(events: agenda.events, day: day)
+            let lessons = TodayDigest.timetable(events: agenda.events(on: day), day: day)
             // Each lesson its own card in its course's colour.
             VStack(spacing: compact ? 6 : 8) {
                 ForEach(lessons) { lesson in
@@ -189,7 +189,7 @@ struct TodaySectionView: View {
     private func entries(now: Date) -> [TodayEntry] {
         switch section.kind {
         case .currentClass:
-            guard let current = CurrentClass.forAccessory(from: agenda.events, now: now) else { return [] }
+            guard let current = CurrentClass.forAccessory(from: agenda.events(on: now), now: now) else { return [] }
             let when = current.isOngoing
                 ? String(localized: "fino alle \(current.event.end.formatted(.dateTime.hour().minute().locale(locale)))")
                 : current.event.start.formatted(.dateTime.hour().minute().locale(locale))
@@ -209,7 +209,7 @@ struct TodaySectionView: View {
                                date: item.date, opens: item.opens)
                 }
         case .timetable:
-            return TodayDigest.timetable(events: agenda.events, day: day).map { event in
+            return TodayDigest.timetable(events: agenda.events(on: day), day: day).map { event in
                 // The subject's own symbol, as the exam pages and the course
                 // tiles draw it: on a day of five rows, one clock five times
                 // over tells the reader nothing the hour beside it does not.
