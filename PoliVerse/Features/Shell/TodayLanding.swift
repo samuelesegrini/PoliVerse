@@ -113,6 +113,10 @@ struct TodayLanding: View {
                         .padding(.horizontal, quiet ? -20 : -16)
                         .tint(style.controlTint(scheme))
                 }
+                // Quiet, the page sits where ``LookScreen`` draws it — the bar
+                // at the top, the page 22 points under it — so Personalizza's
+                // card hands over to the editor without a jump.
+                .padding(.bottom, quiet ? -2 : 0)
             }
 
             switch style.special {
@@ -137,7 +141,7 @@ struct TodayLanding: View {
             }
         }
         .padding(.horizontal, 20)
-        .padding(.top, marked ? 16 : 12)
+        .padding(.top, marked ? 16 : quiet ? 0 : 12)
         .animation(.snappy, value: style)
     }
 

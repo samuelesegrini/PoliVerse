@@ -48,7 +48,7 @@ struct LookEditor: View {
     /// The sidebar shows each part's name and value, not only its picture.
     @AppStorage("lookEditorSidebarOpen") private var sidebarOpen = true
     /// What the page is previewed on, on iPad and Mac: this kind of screen to begin with.
-    @State private var device = LookEditor.onMac ? PreviewDevice.mac : .pad
+    @State private var device = LookEditor.ownDevice
     /// The iPhone task under way, if any.
     @State private var mode: EditorMode?
     /// The look as the task found it, for its Annulla.
@@ -89,8 +89,8 @@ struct LookEditor: View {
     /// The lights the Luce tool runs through, in order: the page's styles.
     static let variants: [TodayAppearance] = [.system, .tinted, .contrast, .dark, .light]
 
-    /// The tools' height under the page, as a share of the screen's.
-    private static let toolsShare: CGFloat = 0.3
+    /// The most of the screen the overview or a part's tools take under the page.
+    private static let lowerShare: CGFloat = 0.46
     /// The editor's coordinate space, where the page finds the screen's middle.
     private static let space = "look-editor"
     /// The inspector's width beside the page.
@@ -141,7 +141,7 @@ struct LookEditor: View {
             // The whole screen: the host already reaches under the bars.
             let screen = proxy.size
             Group {
-                if sizeClass == .regular {
+                if isWide {
                     wide(screen: screen)
                 } else {
                     compact(screen: screen)
@@ -191,10 +191,12 @@ struct LookEditor: View {
             }
             if special == nil { preview = .today }
         }
-        .modifier(DiscardQuestion(onMac: Self.onMac && sizeClass == .regular, isPresented: $confirmingCancel,
-                                  name: look.name, discard: cancel))
+        .modifier(DiscardQuestion(onMac: Self.onMac && isWide, isPresented: $confirmingCancel,
+                                  name: look.name, discard: { leave(then: cancel) }))
         .confirmationDialog("Eliminare il Flavor?", isPresented: $confirmingDelete, titleVisibility: .visible) {
-            Button("Elimina Flavor", role: .destructive) { delete?() }
+            Button("Elimina Flavor", role: .destructive) {
+                if let delete { leave(then: delete) }
+            }
                 .accessibilityIdentifier("customize-editor-delete-confirm")
             Button("Annulla", role: .cancel) {}
         } message: {
@@ -221,7 +223,7 @@ struct LookEditor: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, insets.top + 4)
-            .opacity(settled ? 1 : 0)
+            .opacity(arrived ? 1 : 0)
             page(on: Screen(size: screen, insets: insets, cornerRadius: 48, tabBar: !shell.singlePage), screen: screen,
                  home: part == .app && tool(of: .app) != .appBar && mode == nil ? .homeScreen : nil,
                  zoomed: mode != nil,
@@ -234,12 +236,16 @@ struct LookEditor: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             } else if !arranging {
                 lower(screen: screen)
-                    .opacity(settled ? 1 : 0)
+                    .opacity(arrived ? 1 : 0)
+                    // Typing the name, the controls rise over the page rather
+                    // than squeezing it: it keeps its size.
+                    .offset(y: -keyboardOverlap(screen))
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        // The keyboard pushes what is under the page up; the page gives up the room.
-        .padding(.bottom, keyboardOverlap(screen))
+        // In a task the keyboard is part of it: the dock sits on it, and the
+        // page, sized by its width, only shows less of itself.
+        .padding(.bottom, mode != nil ? keyboardOverlap(screen) : 0)
     }
 
     /// How far the keyboard reaches over the bottom of the screen, beyond the
@@ -321,13 +327,18 @@ struct LookEditor: View {
         case .phone:
             Screen(size: LookScreen.reference, insets: LookScreen.referenceInsets, cornerRadius: 48, tabBar: !shell.singlePage)
         case .pad:
-            // A sidebar rather than a tab bar at this width.
-            Screen(size: CGSize(width: 1194, height: 834), insets: EdgeInsets(top: 24, leading: 0, bottom: 20, trailing: 0),
-                   cornerRadius: 18, tabBar: false)
+            // On an iPad, this one, as it is held; elsewhere one lying down. A
+            // sidebar rather than a tab bar at this width.
+            Self.onPad
+                ? Screen(size: screen, insets: insets, cornerRadius: 18, tabBar: false)
+                : Screen(size: CGSize(width: 1194, height: 834), insets: EdgeInsets(top: 24, leading: 0, bottom: 20, trailing: 0),
+                         cornerRadius: 18, tabBar: false)
         case .mac:
-            // Under the window's title bar.
-            Screen(size: CGSize(width: 1280, height: 800), insets: EdgeInsets(top: 28, leading: 0, bottom: 0, trailing: 0),
-                   cornerRadius: 10, tabBar: false)
+            // On a Mac, this window; elsewhere a laptop's, under its title bar.
+            Self.onMac
+                ? Screen(size: screen, insets: insets, cornerRadius: 10, tabBar: false)
+                : Screen(size: CGSize(width: 1280, height: 800), insets: EdgeInsets(top: 28, leading: 0, bottom: 0, trailing: 0),
+                         cornerRadius: 10, tabBar: false)
         }
     }
 
@@ -343,41 +354,45 @@ struct LookEditor: View {
                 .padding(.horizontal, 20)
                 .padding(.top, insets.top + 8)
                 .padding(.bottom, 4)
-                .opacity(settled ? 1 : 0)
+                .opacity(arrived ? 1 : 0)
             if landscape {
                 HStack(spacing: 0) {
                     if !arranging {
                         sidebar
-                            .opacity(settled ? 1 : 0)
+                            .opacity(arrived ? 1 : 0)
                             .transition(.move(edge: .leading).combined(with: .opacity))
                     }
                     stage(screen: screen)
                     if !arranging {
                         inspector
+                            // The keyboard shortens the inspector alone, not the page.
+                            .padding(.bottom, keyboardOverlap(screen))
                             .frame(width: Self.inspectorWidth)
-                            .opacity(settled ? 1 : 0)
+                            .opacity(arrived ? 1 : 0)
                             .transition(.move(edge: .trailing).combined(with: .opacity))
                     }
                 }
                 .padding(.horizontal, 12)
-                .padding(.bottom, max(insets.bottom, 12) + keyboardOverlap(screen))
+                .padding(.bottom, max(insets.bottom, 12))
             } else {
                 VStack(spacing: 0) {
                     if !arranging {
                         partRow
-                            .opacity(settled ? 1 : 0)
+                            .opacity(arrived ? 1 : 0)
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
                     stage(screen: screen)
                     if !arranging {
                         inspector
                             .frame(height: screen.height * 0.4)
-                            .opacity(settled ? 1 : 0)
+                            // Rises over the page with the keyboard, which keeps its size.
+                            .offset(y: -keyboardOverlap(screen))
+                            .opacity(arrived ? 1 : 0)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
                 .padding(.horizontal, 12)
-                .padding(.bottom, max(insets.bottom, 12) + keyboardOverlap(screen))
+                .padding(.bottom, max(insets.bottom, 12))
             }
         }
     }
@@ -405,7 +420,7 @@ struct LookEditor: View {
                     .frame(maxWidth: 300)
                     .accessibilityIdentifier("customize-preview-device")
                 }
-                .opacity(settled ? 1 : 0)
+                .opacity(arrived ? 1 : 0)
             }
         }
         .padding(.horizontal, 20)
@@ -414,7 +429,56 @@ struct LookEditor: View {
     }
 
     /// Whether this is the iPad app running on a Mac.
-    static let onMac = ProcessInfo.processInfo.isiOSAppOnMac
+    static let onMac: Bool = {
+        #if os(macOS)
+        true
+        #else
+        ProcessInfo.processInfo.isiOSAppOnMac
+        #endif
+    }()
+
+    /// Whether this is an iPad, and not the iPad app on a Mac.
+    static let onPad: Bool = {
+        #if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .pad && !ProcessInfo.processInfo.isiOSAppOnMac
+        #else
+        false
+        #endif
+    }()
+
+    /// This kind of device, which the preview starts on and hands back on leaving.
+    static let ownDevice: PreviewDevice = onMac ? .mac : onPad ? .pad : .phone
+
+    /// The iPad and Mac layout: the sidebar, the page and the inspector. A Mac's
+    /// window has it whatever its width, and has no size class to say so.
+    private var isWide: Bool { sizeClass == .regular || Self.onMac }
+
+    /// Whether the page is in its place and the controls are showing. A new
+    /// look slides up with the page already small; an edit starts from the
+    /// card that grew to cover the screen, and settles.
+    private var arrived: Bool { settled || isNew }
+
+    /// Leaves the editor: an edit grows its page back to cover the screen, so
+    /// the gallery's card can shrink from it, and then goes; a new look just goes.
+    ///
+    /// - Parameter action: Cancelling, keeping or deleting, once the page is back.
+    private func leave(then action: @escaping () -> Void) {
+        guard !isNew else {
+            action()
+            return
+        }
+        withAnimation(.smooth(duration: 0.35)) {
+            // Back to this device's Oggi, which the card shows, as the page grows.
+            mode = nil
+            if !isWide { part = nil }
+            appView = .today
+            preview = .today
+            device = Self.ownDevice
+            settled = false
+        } completion: {
+            action()
+        }
+    }
 
     /// What App shows in place of the page: the Home Screen, or on a Mac's
     /// own screen its Dock; `nil` for the page.
@@ -649,9 +713,9 @@ struct LookEditor: View {
 
     /// Whether the stickers' tool is what is open: Saluto, on Accessorio, with stickers beside the date.
     private var stickerToolOpen: Bool {
-        let open = sizeClass == .regular ? widePart : part
+        let open = isWide ? widePart : part
         // The inspector shows every tool of the part at once.
-        let beside = sizeClass == .regular || tool(of: .greeting) == .beside
+        let beside = isWide || tool(of: .greeting) == .beside
         return open == .greeting && beside && look.accessory == .stickers && !arranging
     }
 
@@ -722,7 +786,7 @@ struct LookEditor: View {
 
     /// Leaves, asking first if anything changed.
     private func askCancel() {
-        if look == original { cancel() } else { confirmingCancel = true }
+        if look == original { leave(then: cancel) } else { confirmingCancel = true }
     }
 
     /// The undo and redo capsule.
@@ -732,7 +796,7 @@ struct LookEditor: View {
 
     /// ✓: keeps the draft.
     private var doneButton: some View {
-        Button(action: done) {
+        Button { leave(then: done) } label: {
             Image(systemName: "checkmark")
                 .font(.body.weight(.semibold))
                 .frame(width: 30, height: 30)
@@ -811,7 +875,7 @@ struct LookEditor: View {
                     .buttonStyle(.glass)
                     .keyboardShortcut(.cancelAction)
                     .accessibilityIdentifier("customize-editor-cancel")
-                Button(action: done) { isNew ? Text("Aggiungi") : Text("Fine") }
+                Button { leave(then: done) } label: { isNew ? Text("Aggiungi") : Text("Fine") }
                     .buttonStyle(.glassProminent)
                     .keyboardShortcut(.return, modifiers: .command)
                     .accessibilityIdentifier("customize-edit-done")
@@ -921,14 +985,14 @@ struct LookEditor: View {
                         }
                     }
                     // Handles on the page stay a finger's size however small it is drawn.
-                    .environment(\.previewScale, settled ? fit : cover)
+                    .environment(\.previewScale, arrived ? fit : cover)
                     .environment(\.stickerMenu, mode == .stickers)
-                    .clipShape(.rect(cornerRadius: target.cornerRadius * (settled ? 1 : 0), style: .continuous))
+                    .clipShape(.rect(cornerRadius: target.cornerRadius * (arrived ? 1 : 0), style: .continuous))
                     // Zoomed, the page hangs from the top of the room, its header in view.
-                    .scaleEffect(settled ? fit : cover, anchor: zoomed ? .top : .center)
+                    .scaleEffect(arrived ? fit : cover, anchor: zoomed ? .top : .center)
                     .frame(width: room.size.width, height: room.size.height, alignment: zoomed ? .top : .center)
                     .offset(y: zoomed ? -skip * fit : 0)
-                    .offset(settled ? .zero : toScreen)
+                    .offset(arrived ? .zero : toScreen)
                     .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
                 }
                 // Zoomed, what hangs below the room is cut off; otherwise the page
@@ -1009,19 +1073,29 @@ struct LookEditor: View {
     /// The overview, or the open part's tools and the capsule.
     @ViewBuilder
     private func lower(screen: CGSize) -> some View {
-        if let part {
-            VStack(spacing: 10) {
-                partTools(part)
-                    .frame(height: screen.height * Self.toolsShare)
-                switcher(part)
-                    .padding(.horizontal, 16)
+        // One height for the overview and every part, so the page keeps its
+        // size while the student moves between them.
+        let height = min(390, screen.height * Self.lowerShare)
+        Group {
+            if let part {
+                VStack(spacing: 10) {
+                    partTools(part)
+                        .frame(maxHeight: .infinity)
+                    switcher(part)
+                        .padding(.horizontal, 16)
+                }
+            } else {
+                // On a small phone the cards scroll rather than squeeze the page.
+                ScrollView {
+                    overview
+                        .padding(.horizontal, 16)
+                }
+                .scrollBounceBehavior(.basedOnSize)
+                .scrollIndicators(.hidden)
             }
-            .padding(.bottom, insets.bottom + 4)
-        } else {
-            overview
-                .padding(.horizontal, 16)
-                .padding(.bottom, insets.bottom + 8)
         }
+        .frame(height: height)
+        .padding(.bottom, insets.bottom + 4)
     }
 
     /// Every part at once: the look's name, then a card for each part.
@@ -1125,7 +1199,7 @@ struct LookEditor: View {
         // During a task the page only selects stickers: nothing else opens.
         guard mode == nil else { return }
         // A sticker tapped on the iPhone starts the stickers' task, with it selected.
-        if zone == .stickers, selectedSticker != nil, sizeClass != .regular, look.special == nil {
+        if zone == .stickers, selectedSticker != nil, !isWide, look.special == nil {
             enter(.stickers)
             return
         }
