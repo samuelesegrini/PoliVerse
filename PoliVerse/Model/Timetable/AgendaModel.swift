@@ -36,51 +36,55 @@ final class AgendaModel {
         didSet {
             eventsByDay = Self.index(events)
             eventsByTitle = Self.titleIndex(events)
-            let day = PoliMiDate.romeCalendar.startOfDay(for: .now)
-            let slice = DaySlice(day: day, events: eventsByDay[day] ?? [])
-            // Only on a change: the app's shell reads it, and paging the
-            // calendar past the fetched month replaces ``events`` week after
-            // week without touching today.
-            if slice != today { today = slice }
+            refreshSlices()
         }
-    }
-
-    /// One day's entries, with the day they belong to.
-    struct DaySlice: Equatable {
-        /// The start of the day, in Rome.
-        let day: Date
-        /// The entries, in time order.
-        let events: [AgendaEvent]
-    }
-
-    /// Today's entries, as of the last change of ``events``.
-    ///
-    /// Views that are always on screen — the shell's class-now accessory — read this
-    /// rather than ``events(on:)``, which depends on the whole index and so redrew the
-    /// shell for every week the calendar loaded.
-    private(set) var today = DaySlice(day: .distantPast, events: [])
-
-    /// The entries of the day a moment falls in, from ``today`` when it is that day.
-    ///
-    /// - Parameter now: The moment.
-    /// - Returns: The day's entries, in time order.
-    func eventsToday(now: Date) -> [AgendaEvent] {
-        let day = PoliMiDate.romeCalendar.startOfDay(for: now)
-        return day == today.day ? today.events : events(on: now)
     }
     /// ``events`` grouped by Rome day and sorted, rebuilt whenever they change.
     ///
     /// The week strip asks for each of its seven days on every body pass, so one pass on
-    /// write is cheaper than seven filters and sorts on read.
+    /// write is cheaper than seven filters and sorts on read. Not observed: views read a
+    /// day through ``events(on:)``, which hands them that day's ``Slice``.
     ///
-    /// See `docs/metrickit-performance.md` §3.2.
-    private var eventsByDay: [Date: [AgendaEvent]] = [:]
+    /// See `docs/metrickit-performance.md` §3.2 and §5.5.
+    @ObservationIgnored private var eventsByDay: [Date: [AgendaEvent]] = [:]
     /// ``events`` grouped by lowercased title, each group in time order.
     ///
     /// Courses find their lessons by name, since the agenda carries no teaching code.
-    /// Matching against a few dozen distinct titles once per card is far cheaper than
-    /// lowercasing every event for every card on every body pass.
-    private var eventsByTitle: [String: [AgendaEvent]] = [:]
+    /// Matching against a few dozen distinct titles once per course is far cheaper than
+    /// lowercasing every event for every card on every body pass. Not observed, like
+    /// ``eventsByDay``.
+    @ObservationIgnored private var eventsByTitle: [String: [AgendaEvent]] = [:]
+
+    /// One day's or one course's entries, observed on their own.
+    ///
+    /// Observation tracks whole properties. With the indexes observed, replacing
+    /// ``events`` — which paging the calendar past the fetched month does week after
+    /// week — invalidated every view that read any day or any course: Oggi under the
+    /// calendar, the Corsi cards in their tab, the shell's accessory. A view now
+    /// depends on the one slice it read, and a slice is reassigned only when its
+    /// entries change.
+    @Observable
+    final class Slice {
+        /// The entries, in time order.
+        fileprivate(set) var events: [AgendaEvent] = []
+    }
+    /// The slice of every day asked for so far, by start of day.
+    @ObservationIgnored private var daySlices: [Date: Slice] = [:]
+    /// The slice of every course asked for so far, by lowercased name.
+    @ObservationIgnored private var courseSlices: [String: Slice] = [:]
+
+    /// Brings every slice handed out so far in step with the indexes, touching only
+    /// those whose entries changed.
+    private func refreshSlices() {
+        for (day, slice) in daySlices {
+            let fresh = eventsByDay[day] ?? []
+            if slice.events != fresh { slice.events = fresh }
+        }
+        for (target, slice) in courseSlices {
+            let fresh = matching(target)
+            if slice.events != fresh { slice.events = fresh }
+        }
+    }
     /// What the Politecnico's agenda sent, without personal lessons.
     ///
     /// ``TimetableHandover`` compares against this rather than ``events``, or personal
@@ -355,7 +359,12 @@ final class AgendaModel {
     /// - Parameter day: Any moment in the day.
     /// - Returns: The entries, from the index. Empty for a day outside the held span.
     func events(on day: Date) -> [AgendaEvent] {
-        eventsByDay[PoliMiDate.romeCalendar.startOfDay(for: day)] ?? []
+        let key = PoliMiDate.romeCalendar.startOfDay(for: day)
+        if let slice = daySlices[key] { return slice.events }
+        let slice = Slice()
+        slice.events = eventsByDay[key] ?? []
+        daySlices[key] = slice
+        return slice.events
     }
 
     /// Groups events by Rome day and sorts each day in time order.
@@ -378,6 +387,19 @@ final class AgendaModel {
     /// - Returns: The matching entries, earliest first.
     func events(matchingCourse name: String) -> [AgendaEvent] {
         let target = name.lowercased()
+        if let slice = courseSlices[target] { return slice.events }
+        let slice = Slice()
+        slice.events = matching(target)
+        courseSlices[target] = slice
+        return slice.events
+    }
+
+    /// The entries whose lowercased title contains a lowercased course name, or is
+    /// contained in it.
+    ///
+    /// - Parameter target: The lowercased course name.
+    /// - Returns: The matching entries, earliest first.
+    private func matching(_ target: String) -> [AgendaEvent] {
         let groups = eventsByTitle.filter { title, _ in title.contains(target) || target.contains(title) }
         if groups.count == 1, let only = groups.first { return only.value }
         return groups.values.flatMap { $0 }.sorted { $0.start < $1.start }
@@ -396,7 +418,9 @@ final class AgendaModel {
     ///
     /// - Returns: The starts of those days, in Rome.
     func daysWithEvents() -> Set<Date> {
-        Set(eventsByDay.keys)
+        // Read through ``events`` so a view asking stays observing: the index is not.
+        _ = events
+        return Set(eventsByDay.keys)
     }
 
     /// The lectures on one day, which is what a timetable shows.

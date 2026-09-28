@@ -91,19 +91,25 @@ struct NonBlockingReadsTests {
         #expect(index.count == 2)
     }
 
-    /// The shell reads today's slice so that paging the calendar, which
-    /// replaces the agenda week after week, does not redraw it each time.
-    @Test("Today's slice matches the day index, and a far load changes it once at most")
+    /// Paging the calendar replaces the agenda week after week; a view that
+    /// read one day must see that day's entries, and nothing but that day.
+    @Test("A day read through its slice follows the index, and a far load leaves an empty day empty")
     @MainActor
-    func todaySlice() async {
+    func daySlices() async {
         let agenda = AgendaModel(account: StubAccount(matricola: "111", isSample: true, http: FixtureHTTP([:])))
         await agenda.load(around: .now)
-        #expect(agenda.eventsToday(now: .now) == agenda.events(on: .now))
+        let today = agenda.events(on: .now)
+        #expect(today == AgendaModel.index(agenda.events)[PoliMiDate.romeCalendar.startOfDay(for: .now)] ?? [])
 
+        // A window four months out no longer holds today.
         await agenda.ensureLoaded(covering: .now.addingTimeInterval(120 * 86400))
-        let settled = agenda.today
-        await agenda.ensureLoaded(covering: .now.addingTimeInterval(240 * 86400))
-        #expect(agenda.today == settled)
+        #expect(agenda.events(on: .now).isEmpty)
+        // A day first asked for now is filled from the index like any other.
+        let far = Date.now.addingTimeInterval(120 * 86400)
+        #expect(agenda.events(on: far) == AgendaModel.index(agenda.events)[PoliMiDate.romeCalendar.startOfDay(for: far)] ?? [])
+
+        await agenda.load(around: .now, force: true)
+        #expect(agenda.events(on: .now) == today)
     }
 
     // MARK: Teaching codes, without a regular expression
@@ -130,6 +136,22 @@ struct NonBlockingReadsTests {
         #expect(TodayStyle(rawValue: bold.rawValue) == bold)
         #expect(TodayStyle(rawValue: plain.rawValue) == plain)
         #expect(TodayStyle(rawValue: "not json") == nil)
+    }
+
+    @Test("Looks compare by what they store, without encoding them")
+    func lookEquality() {
+        let plain = TodayStyle()
+        var named = plain
+        named.name = "Mio"
+        var outlined = plain
+        outlined.stickerOutline.toggle()
+
+        #expect(plain == TodayStyle())
+        #expect(plain != named)
+        #expect(plain != outlined)
+        // What is stored and read back is the same look.
+        #expect(TodayStyle(rawValue: named.rawValue) == named)
+        #expect(TodayStyle(rawValue: outlined.rawValue) == outlined)
     }
 
     // MARK: UpdateFeed, rows kept until the log changes

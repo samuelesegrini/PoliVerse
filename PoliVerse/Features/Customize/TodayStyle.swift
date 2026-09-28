@@ -598,6 +598,33 @@ nonisolated extension Lenient: Encodable where Element: Encodable {
     }
 }
 
+extension TodayStyle {
+    /// Whether two looks are the same look.
+    ///
+    /// Written out because declaring `Equatable` alone did not synthesise it: the
+    /// standard library's `==` for `RawRepresentable` types satisfied the requirement
+    /// instead, so every comparison encoded both looks to JSON. SwiftUI compares the
+    /// look — an environment value — on every update, and paging the calendar spent
+    /// its time there.
+    ///
+    /// Compares what ``rawValue`` stores, and nothing it leaves out: the special
+    /// Flavor's settings count only when there is a special Flavor.
+    nonisolated static func == (lhs: TodayStyle, rhs: TodayStyle) -> Bool {
+        lhs.flavor == rhs.flavor && lhs.material == rhs.material && lhs.textDesign == rhs.textDesign
+            && lhs.dateFont == rhs.dateFont && lhs.dateWeight == rhs.dateWeight && lhs.dateSize == rhs.dateSize
+            && lhs.dateColour == rhs.dateColour && lhs.showsGreeting == rhs.showsGreeting
+            && lhs.background == rhs.background && lhs.greeting == rhs.greeting
+            && lhs.customGreeting == rhs.customGreeting && lhs.dateLayout == rhs.dateLayout
+            && lhs.dateAlignment == rhs.dateAlignment && lhs.accessory == rhs.accessory
+            && lhs.stickers == rhs.stickers && lhs.stickerOutline == rhs.stickerOutline
+            && lhs.accessoryText == rhs.accessoryText && lhs.photoIDs == rhs.photoIDs
+            && lhs.paper == rhs.paper && lhs.grain == rhs.grain && lhs.appearance == rhs.appearance
+            && lhs.sections == rhs.sections && lhs.bar == rhs.bar && lhs.app == rhs.app
+            && lhs.name == rhs.name && lhs.special == rhs.special
+            && (lhs.special == nil || lhs.specialSettings == rhs.specialSettings)
+    }
+}
+
 /// The look as the JSON string `@AppStorage` keeps it in.
 nonisolated extension TodayStyle: RawRepresentable {
     /// Reads a look from its stored string, carrying over what older versions wrote.
@@ -685,9 +712,8 @@ nonisolated extension TodayStyle: RawRepresentable {
                                       sections: Lenient(sections), bar: bar, app: app, name: name,
                                       special: special?.rawValue,
                                       specialSettings: special == nil ? nil : specialSettings)
-        // Sorted keys: the standard library's `==` for RawRepresentable types
-        // compares `rawValue`, and unsorted JSON keys would make equal styles
-        // unequal.
+        // Sorted keys: the same look is always stored as the same string, so a
+        // save that changes nothing writes nothing new.
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         return (try? String(data: encoder.encode(stored), encoding: .utf8)) ?? "{}"

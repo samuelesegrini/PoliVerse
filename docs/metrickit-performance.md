@@ -1127,18 +1127,27 @@ iPhone 12 Pro, iOS 27.2, Release, sample data, `main` against this pass.
   they changed; an `@Observable` property notifies on every assignment, so an
   empty queue that stayed empty redrew everything showing the count, inside the
   launch window. It assigns on a change only.
-- **The shell no longer depends on the whole agenda.** `RootView` read
-  `events(on:)` and keyed a task on `events.count`, so every week the calendar
-  loaded past the fetched month redrew the shell that holds every tab. It reads
-  `AgendaModel.today`, which is reassigned only when today's entries change.
-- **Calendar paging still hitches, on `main` and here alike** — about one
-  hitch per week turned, 12–20 ms/s, above Apple's 10 ms/s line. The shell
-  redraw was not the cause. Instruments could not attach to the Release build on
-  the phone (`xctrace --attach` finds no process, and a system-wide recording
-  collides with XCTest's own hitch tracing and keeps under two seconds), so the
-  cause is not yet known. Next step: *Product › Profile* from Xcode with the
-  Animation Hitches template while paging by hand, then Run Comparison against
-  this table.
+- **Observation was too coarse for the agenda.** Paging the calendar past the
+  fetched month replaces `events`, and every view that read any day or any
+  course depended on the whole index: Oggi under the calendar, the Corsi cards
+  in their tab, the shell's class-now accessory. `AgendaModel` now hands out one
+  small `@Observable` `Slice` per day and per course, reassigned only when its
+  entries change, and the indexes themselves are not observed. A Time Profiler
+  pass of the calendar paging on the simulator (Instruments attaches there,
+  with `--device <simulator>`) showed Oggi's page re-evaluating on every flip
+  before, and not after.
+- **`TodayStyle` compared by encoding itself to JSON.** It declared `Equatable`
+  without `==`, so the standard library's `RawRepresentable` `==` won over the
+  synthesised one and every comparison encoded both looks. SwiftUI compares the
+  look, an environment value, on every update. It now has a memberwise `==`.
+- **Calendar paging: what is left is SwiftUI's own work.** After both fixes the
+  app's code is under 1% of the main thread while paging; the rest is layout
+  and rendering of the calendar page itself (the glass buttons and chips, the
+  animated day list). Main-thread samples on the simulator moved from 4,096 to
+  about 3,930 per run, so most of the hitch is not app code. The device A/B of
+  this last change could not run: the iPhone dropped off. Rerun
+  `testCalendarWeekPagingHitches` on it, `main` against this branch, to close
+  it.
 - The Swift Concurrency and System Trace passes need the same Xcode-launched
   profile, and a signed-in account to exercise the offline cache and the
   network; sample data skips both.
