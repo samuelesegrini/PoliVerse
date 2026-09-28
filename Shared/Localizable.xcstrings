@@ -18882,6 +18882,66 @@
           }
         }
       }
+    },
+    "Disattivati nelle impostazioni di sistema" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turned off in system settings"
+          }
+        }
+      }
+    },
+    "Non ancora attivati" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not turned on yet"
+          }
+        }
+      }
+    },
+    "lezioni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lectures"
+          }
+        }
+      }
+    },
+    "scadenze" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "deadlines"
+          }
+        }
+      }
+    },
+    "iscrizioni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "enrolments"
+          }
+        }
+      }
+    },
+    "Nessun promemoria attivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No reminders on"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

@@ -240,31 +240,57 @@ struct PoliVerseCommands: Commands {
 
 // MARK: - Settings
 
-/// The Mac's Settings window: the iPhone's settings under Generale, and the menu bar
-/// item's own pane.
+/// The Mac's Settings window: the same sidebar as the iPad's Impostazioni, with the
+/// pages the Mac has — Dati and WeBeep as rows, and the menu bar item's own pane.
 struct MacSettingsView: View {
     var body: some View {
-        TabView {
-            Tab("Generale", systemImage: "gearshape") {
-                SettingsSheet()
+        SettingsSplitView()
+            .frame(width: 760, height: 560)
+    }
+}
+
+/// Settings › Generale › Avvio: whether the app opens when the Mac starts. In
+/// Generale rather than Barra dei menu, because it holds whether or not the menu
+/// bar item is shown.
+struct LoginItemSection: View {
+    @State private var opensAtLogin = LoginItem.isEnabled
+    @State private var loginError: String?
+
+    var body: some View {
+        Section {
+            Toggle(isOn: $opensAtLogin) {
+                Text("Apri all'accesso al Mac")
+                Text("Anche in Impostazioni di Sistema › Generali › Elementi di login.")
             }
-            Tab("Barra dei menu", systemImage: "menubar.rectangle") {
-                MenuBarSettingsPane()
+            .onChange(of: opensAtLogin) { _, enabled in
+                do {
+                    try LoginItem.set(enabled)
+                    loginError = nil
+                } catch {
+                    loginError = error.localizedDescription
+                    opensAtLogin = LoginItem.isEnabled
+                }
             }
+            if let loginError {
+                Text(loginError).font(.caption).foregroundStyle(.red)
+            }
+        } header: {
+            Text("Avvio")
+        } footer: {
+            Text("Cosa mostra la barra dei menu, e se l'app resta fuori dal Dock, si sceglie in Barra dei menu.")
         }
-        .frame(width: 640, height: 620)
+        .lookRow()
+        .onAppear { opensAtLogin = LoginItem.isEnabled }
     }
 }
 
 /// Settings › Barra dei menu: whether the item shows, what it says, what the panel
-/// holds, and how the app starts.
+/// holds, and whether the app keeps its Dock icon.
 struct MenuBarSettingsPane: View {
     @Environment(MenuBarItemState.self) private var menuBarItem
     @AppStorage(MenuBarSettings.labelKey) private var label: MenuBarSettings.Label = .roomAndMinutes
     @AppStorage(MenuBarSettings.sectionsKey) private var hiddenSections = ""
     @AppStorage(DockPolicy.storageKey) private var dockHidden = false
-    @State private var opensAtLogin = LoginItem.isEnabled
-    @State private var loginError: String?
 
     var body: some View {
         @Bindable var menuBarItem = menuBarItem
@@ -288,22 +314,6 @@ struct MenuBarSettingsPane: View {
             }
             .disabled(!shown)
             Section {
-                Toggle(isOn: $opensAtLogin) {
-                    Text("Apri all'accesso al Mac")
-                    Text("Anche in Impostazioni di Sistema › Generali › Elementi di login.")
-                }
-                .onChange(of: opensAtLogin) { _, enabled in
-                    do {
-                        try LoginItem.set(enabled)
-                        loginError = nil
-                    } catch {
-                        loginError = error.localizedDescription
-                        opensAtLogin = LoginItem.isEnabled
-                    }
-                }
-                if let loginError {
-                    Text(loginError).font(.caption).foregroundStyle(.red)
-                }
                 Toggle(isOn: $dockHidden) {
                     Text("Solo nella barra dei menu")
                     Text("Niente icona nel Dock; la finestra si apre dal pannello.")
@@ -313,7 +323,7 @@ struct MenuBarSettingsPane: View {
             }
         }
         .formStyle(.grouped)
-        .onAppear { opensAtLogin = LoginItem.isEnabled }
+        .navigationTitle("Barra dei menu")
         // Hiding the item while the Dock icon is hidden would leave no way back in.
         .onChange(of: menuBarItem.isInserted) { _, shown in
             if !shown && dockHidden {

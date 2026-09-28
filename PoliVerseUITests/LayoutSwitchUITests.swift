@@ -35,7 +35,7 @@ nonisolated final class LayoutSwitchUITests: PoliVerseUITestCase {
     }
 
     /// Opens Impostazioni from whichever bar this layout has, picks a layout
-    /// from the menu, and leaves the sheet to close itself.
+    /// from its pictures, and leaves the sheet to close itself.
     @MainActor private func choose(_ layout: String, in app: XCUIApplication) {
         let profile = app.buttons["bar-profile"].firstMatch
         let settings = app.buttons["bar-settings"].firstMatch
@@ -47,8 +47,8 @@ nonisolated final class LayoutSwitchUITests: PoliVerseUITestCase {
         }
         require(app.descendants(matching: .any)["settings-list"].firstMatch, "Impostazioni did not open")
 
-        tap(app.buttons["settings-layout"].firstMatch, "Impostazioni has no layout picker")
-        tap(app.buttons[layout].firstMatch, "The layout menu does not offer \(layout)")
+        require(app.descendants(matching: .any)["settings-layout"].firstMatch, "Impostazioni has no layout picker")
+        tap(app.buttons[layout].firstMatch, "The layout picker does not offer \(layout)")
         settle(2)
     }
 }

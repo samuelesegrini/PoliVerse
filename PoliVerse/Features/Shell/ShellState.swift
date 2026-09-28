@@ -60,8 +60,26 @@ final class ShellState {
     /// The lesson or sitting an Oggi row opened.
     var detail: TodayDetail?
 
-    /// A page Impostazioni can be opened straight onto.
-    enum SettingsPage: Hashable { case profile }
+    /// A page of Impostazioni: pushed one page in on a phone, selected in the
+    /// sidebar on an iPad and on the Mac. Impostazioni can be opened straight
+    /// onto any of them.
+    enum SettingsPage: Hashable {
+        /// Who is signed in: photo, codes, careers, sign-in.
+        case profile
+        /// The studies and the layout — the settings a phone shows inline on
+        /// the first page.
+        case general
+        /// Promemoria.
+        case reminders
+        /// Dati e archiviazione.
+        case data
+        /// WeBeep e diagnostica.
+        case weBeep
+        /// The menu bar item's own pane; the Mac's alone.
+        case menuBar
+        /// Version, what is new, the welcome again.
+        case about
+    }
 
     /// Impostazioni, opened on the profile.
     func openProfile() {
