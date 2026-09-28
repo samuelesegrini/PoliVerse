@@ -66,7 +66,7 @@ struct AppLookTests {
         #expect(AppIconChoice.choices(in: .special).isEmpty)
         #expect(AppIconChoice.classic.alternateIconName(in: .dial) == "AppIcon-Dial")
         #expect(AppIconChoice.lavender.alternateIconName(in: .closeUp) == "AppIcon-CloseUp-Lavender")
-        #expect(UIImage(named: "AppIconPreview-classic") != nil)
+        #expect(UIImage(named: "AppIconPreview-orbit-classic") != nil)
     }
 
     @Test("Round-trips through the stored look; an older look comes back paired")
@@ -100,7 +100,7 @@ struct AppLookTests {
         // Saved before: the same look keeps the shipped icon.
         var saved = try #require(TodayStyle(rawValue: ##"{"flavor":"#8A5A3C","app":{"paired":true}}"##))
         #expect(saved.appIconName == nil)
-        #expect(saved.appIconPreview == "AppIconPreview-classic")
+        #expect(saved.appIconPreview == "AppIconPreview-orbit-classic")
 
         // The other shapes always followed the Flavor, and still do.
         saved.app.iconStyle = .dial

@@ -111,8 +111,8 @@ nonisolated enum AppIconChoice: String, Codable, CaseIterable, Identifiable, Sen
     /// The small copy drawn inside the app, in a shape.
     func previewImage(in style: AppIconStyle) -> String {
         switch style {
-        case .special: "AppIconPreview-classic"
-        case .orbit: self == .classic ? "AppIconPreview-classic" : "AppIconPreview-orbit-\(rawValue)"
+        // The special icons are pictures of their own; this is only a fallback.
+        case .special, .orbit: "AppIconPreview-orbit-\(rawValue)"
         case .dial, .closeUp: "AppIconPreview-\(style.rawValue)-\(rawValue)"
         }
     }
