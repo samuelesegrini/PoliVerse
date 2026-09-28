@@ -83,6 +83,9 @@ struct PoliVerseApp: App {
     /// saves its own position to user defaults, and an `@AppStorage` here would rebuild
     /// the scenes on every such save, which moves the item again, forever.
     @State private var menuBarItem = MenuBarItemState()
+    /// The one shell every scene reads: the window routes with it, and Settings,
+    /// a window of its own, opens on the page the window asked for.
+    @State private var shell = ShellState()
     #endif
 
     /// Builds every service and wires them together.
@@ -417,5 +420,9 @@ struct PoliVerseApp: App {
             .environment(whatsNew)
             .environment(spid)
             .environment(loginMemory)
+            #if os(macOS)
+            // On iOS each window's ``RootView`` keeps its own.
+            .environment(\.shell, shell)
+            #endif
     }
 }

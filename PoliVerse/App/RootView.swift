@@ -18,9 +18,19 @@ struct RootView: View {
     /// The shared ``WhatsNewState``, from the environment.
     @Environment(WhatsNewState.self) private var whatsNew
 
-    /// Which tab or panel row is showing, and the panel's own state.
-    /// Which layout the student chose: the tab bar, or the single page.
+    #if os(macOS)
+    /// Which page the sidebar shows, and what Settings should open on.
+    ///
+    /// Owned by the app on the Mac and handed to every scene, because
+    /// Settings is a window of its own: with a shell of its own it never saw
+    /// the profile the avatar asked for.
+    @Environment(\.shell) private var shell
+    #else
+    /// Which tab or panel row is showing, and the panel's own state. One per
+    /// window, so two iPad windows can show different tabs.
     @State private var shell = ShellState()
+    #endif
+    /// Which layout the student chose: the tab bar, or the single page.
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
     /// The look in use sets the colour of the app's controls.
     @AppStorage(TodayStyle.storageKey) private var todayStyle = TodayStyle()
