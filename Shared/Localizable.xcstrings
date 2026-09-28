@@ -381,6 +381,26 @@
         }
       }
     },
+    "%@–%@" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@–%2$@"
+          }
+        }
+      }
+    },
+    "%@, %@" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
     "%@: %@" : {
       "localizations" : {
         "en" : {
@@ -1532,6 +1552,12 @@
         }
       }
     },
+    "18" : {
+
+    },
+    "30" : {
+
+    },
     "30 min" : {
       "localizations" : {
         "en" : {
@@ -1994,6 +2020,12 @@
           }
         }
       }
+    },
+    "Aggiornamento dall'iPhone" : {
+
+    },
+    "Aggiornamento dall'iPhone…" : {
+
     },
     "Aggiornamento in background" : {
 
@@ -2951,6 +2983,9 @@
     "Apri PoliVerse" : {
 
     },
+    "Apri PoliVerse sull'iPhone per aggiornare l'orario." : {
+
+    },
     "Apri su WeBeep" : {
 
     },
@@ -3506,6 +3541,9 @@
           }
         }
       }
+    },
+    "Base di laurea %@" : {
+
     },
     "Base su 110" : {
 
@@ -4241,6 +4279,9 @@
           }
         }
       }
+    },
+    "Chiedo all'iPhone…" : {
+
     },
     "Chiudi" : {
       "localizations" : {
@@ -5812,6 +5853,9 @@
         }
       }
     },
+    "Dall'iPhone %@" : {
+
+    },
     "dall'ultimo esame" : {
 
     },
@@ -6932,6 +6976,9 @@
         }
       }
     },
+    "Esame in corso" : {
+
+    },
     "Esame non ancora sostenuto" : {
 
     },
@@ -7306,6 +7353,9 @@
     "finisce alle %@" : {
 
     },
+    "Finisce alle %@" : {
+
+    },
     "Finita" : {
       "localizations" : {
         "en" : {
@@ -7318,6 +7368,16 @@
     },
     "Finito" : {
 
+    },
+    "fino %@ · %@" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "fino %1$@ · %2$@"
+          }
+        }
+      }
     },
     "Fino a tre, impilate come stampe." : {
       "extractionState" : "stale",
@@ -7674,6 +7734,9 @@
           }
         }
       }
+    },
+    "Giornata" : {
+
     },
     "Giornata libera" : {
       "localizations" : {
@@ -9432,6 +9495,9 @@
     "Iscritti" : {
 
     },
+    "Iscritto" : {
+
+    },
     "Iscriviti da Carriera" : {
       "localizations" : {
         "en" : {
@@ -9789,6 +9855,9 @@
       }
     },
     "La lezione in corso e le prossime scadenze, a un clic." : {
+
+    },
+    "La lezione in corso o la prossima, con l'aula." : {
 
     },
     "La media, prima del voto" : {
@@ -10204,6 +10273,9 @@
 
     },
     "Le iscrizioni si gestiscono dai Servizi Online." : {
+
+    },
+    "Le lezioni dei prossimi giorni sono finite." : {
 
     },
     "Le lezioni del giorno appena apri l'app, con l'aula e quanto manca. Sulla schermata di blocco e in Centro di Controllo, se vuoi." : {
@@ -11669,6 +11741,9 @@
     "Nessun corso qui" : {
 
     },
+    "Nessun dato ancora" : {
+
+    },
     "Nessun dato di carriera" : {
       "localizations" : {
         "en" : {
@@ -12202,6 +12277,9 @@
         }
       }
     },
+    "Niente in programma nei prossimi giorni." : {
+
+    },
     "Niente tracciamento" : {
       "localizations" : {
         "en" : {
@@ -12476,6 +12554,9 @@
           }
         }
       }
+    },
+    "Non più in programma" : {
+
     },
     "Non previste" : {
       "localizations" : {
@@ -13132,6 +13213,9 @@
           }
         }
       }
+    },
+    "Ogni lezione nello Smart Stack, quando sta per iniziare." : {
+
     },
     "Ogni sezione può averne uno suo." : {
       "extractionState" : "stale",
@@ -17554,6 +17638,9 @@
         }
       }
     },
+    "Tieni l'iPhone vicino, o apri PoliVerse lì: l'orario arriva da lì." : {
+
+    },
     "tieni premuto per esplorare" : {
 
     },
@@ -17735,6 +17822,9 @@
       }
     },
     "Torna alla media attuale" : {
+
+    },
+    "Tra" : {
 
     },
     "Tra %lld giorni" : {
