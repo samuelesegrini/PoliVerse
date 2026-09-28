@@ -210,6 +210,39 @@ code does: if any source was copied verbatim from PoliFemo, myPoliFile, webeep-s
 or the CieID SDK, check that project's licence and comply with it. There are no
 package dependencies, so there is nothing else to attribute.
 
+## EU law, one regulation at a time
+
+Italy is in the EU, so all of these apply wherever PoliVerse ships. For each law,
+the question is whether PoliVerse falls under it at all. Most of these laws hinge
+on two facts: **no personal data reaches the developer**, and **the app is free
+with no monetisation**. Change either, and several rows below change with it.
+
+| Law | Applies? | Why | Action |
+| --- | --- | --- | --- |
+| **GDPR** (2016/679) | Barely, as things stand | Everything is processed on the student's device, for the student. The developer receives nothing, so for the app's core function the developer is probably not a controller. That changes the moment personal data reaches you: a diagnostics report or a support email makes you the controller for that data, with an art. 13 notice, a retention period and data-subject rights. | The privacy policy (item 1) doubles as the art. 13 notice. Say how long you keep support email and diagnostics, and give a contact. Never add a server holding student data without a DPIA (art. 35). |
+| GDPR: data about other people | Handled | Results files (other students), teacher contacts (public staff data), recordings (voices and faces) are read on the device and minimised (`ResultsFileReader`, no chat or participant list). | Keep it that way. Don't add sharing or indexing of other people's rows. |
+| **ePrivacy** art. 5(3) | No consent needed | Storing on the device (Keychain, cache, `UserDefaults`) is "strictly necessary" for the service the user asked for. Nothing tracks the user, fingerprints the device or reports home. | None. No consent banner. Adding analytics or a crash SDK changes this. |
+| **Digital Services Act** | Trader status only | PoliVerse is not an intermediary: it hosts no one's content for others. The one DSA duty that touches it goes through Apple's trader declaration (item 5). | Declare non-trader. |
+| **AI Act** (2024/1689) | Minimal | `NoticeSummary` uses Apple's on-device model to summarise a notice. Apple is the provider and carries the Art. 50(2) marking duty. For deployers, Art. 50(4) covers only text published "to inform the public on matters of public interest", and a private summary shown to one student is not that. It is not high-risk either: Annex III §3 covers AI that grades, admits or monitors students, and this does none of those. | Good practice: change the label "Riassunto sul dispositivo" to say it is *generated automatically*, e.g. "Riassunto generato automaticamente sul dispositivo". The UI already keeps the original notice underneath. |
+| **Cyber Resilience Act** (2024/2847) | Probably not, while free | It covers products "made available on the market in the course of a commercial activity". A free app with no ads, no in-app purchases and no data collection, from an individual, sits outside that. Recital 15 counts even donations above your costs as commercial. | If you add payment, ads, sponsorship or donations beyond costs, you are in scope. Vulnerability and incident reporting has applied since **11 Sept 2026** (ENISA's single reporting platform); the full essential requirements apply from **11 Dec 2027**. Check the Commission's July 2026 guidance before monetising. |
+| **European Accessibility Act** (2019/882) | No | It covers listed consumer services (e-commerce, banking, transport, e-books, communications). A student companion app is not one of them, and service microenterprises are exempt anyway. | None required. The app's automated accessibility audits are good practice regardless. |
+| **Database right** (96/9/EC; Italy L. 633/1941 art. 102-bis/ter) | Low risk as built | The Manifesto degli studi, course pages, room catalogue and floor plans are PoliMi databases. A lawful user may extract insubstantial parts (art. 102-ter), which is what the app does: on demand, from each student's device. What the right forbids is repeated, systematic extraction that substitutes for the original. | Never build a server that mirrors the catalogue or re-hosts the floor plans. |
+| **Copyright** (course material) | Low | Offline copies of WeBeep files and recordings are the student's own copies under their own access. The Share button in `CourseMaterialsView.swift:134` and `MacCoursesView.swift:375` lets a user pass a lecturer's file on, which is the user's own act. | Acceptable. Don't build any feature that redistributes material between users. |
+| **Consumer law** (Digital Content Directive 2019/770) | No | It applies when the consumer pays a price or provides personal data to the trader. Neither happens. | Changes if you monetise. |
+| **DMA, NIS2, P2B** | No | These regulate gatekeepers, essential entities and platforms respectively. P2B actually protects you in dealings with Apple. | None. |
+
+**Bottom line for the EU:** as built, PoliVerse is in unusually good shape, because
+it has no server, no tracking and no money. The regulations that bite (GDPR as
+controller, CRA, consumer law) switch on only if you add one of those. The EU
+actions for this release are the privacy policy (item 1), the DSA declaration
+(item 5) and the AI-summary label.
+
+**Limits of this check:** I could not read the text of the Commission's July 2026
+CRA guidance or `polimi.it` from here (both blocked by this network), so the CRA row
+relies on the Regulation and summaries of that guidance. A lawyer, or a university
+legal clinic, can confirm the GDPR controller point, which is the one most worth
+confirming.
+
 ## Checklist
 
 | # | Item | Effort | Blocks submission? |
@@ -223,6 +256,7 @@ package dependencies, so there is nothing else to attribute.
 | 7 | Hold back recording downloads until authorised | small | risk |
 | 8 | Make personal values in logs private | 15 min | no |
 | 9 | `ITSAppUsesNonExemptEncryption = NO` | 1 min | no |
+| 11 | Label AI summaries as generated automatically (AI Act, good practice) | 5 min | no |
 | 10 | Check licences of any copied code | review | no |
 
 ## Open questions only PoliMi can answer
@@ -241,4 +275,9 @@ package dependencies, so there is nothing else to attribute.
 - [PoliMi Regolamento trattamento dati e ICT, D.R. 6751/2025](https://www.normativa.polimi.it/fileadmin/user_upload/regolamenti/privacy_e_sicurezza/REGOLAMENTO_trattamento_dati_e_ICT__marzo2025.pdf), as quoted in [academic-intelligence-layer.md](academic-intelligence-layer.md) §18
 - [PoliMi Linee guida comunicazione](https://www.normativa.polimi.it/fileadmin/user_upload/regolamenti/linee_guida/Linee_Guida_Comunicazione.pdf) and [Brand manual](https://www.polimi.it/fileadmin/user_upload/Il-Politecnico/brand/Politecnico_di_Milano_Brand_manual.pdf). Read through search summaries: `polimi.it` is blocked from the network this was written on, so confirm the logo rules in the PDFs.
 - [PoliMi distance-learning privacy notice](https://www.polimi.it/en/the-politecnico/communication/privacy/distance-learning)
+- [EDPB Guidelines 2/2023 on Art. 5(3) ePrivacy](https://www.edpb.europa.eu/system/files/2024-10/edpb_guidelines_202302_technical_scope_art_53_eprivacydirective_v2_en_0.pdf)
+- [Cyber Resilience Act](https://digital-strategy.ec.europa.eu/en/policies/cyber-resilience-act); [Commission CRA guidance](https://digital-strategy.ec.europa.eu/en/library/commission-publishes-new-guidance-support-timely-cyber-resilience-act-implementation)
+- [AI Act Art. 50 FAQ](https://digital-strategy.ec.europa.eu/en/faqs/transparency-obligations-under-article-50-ai-act)
+- [European Accessibility Act](https://commission.europa.eu/strategy-and-policy/policies/justice-and-fundamental-rights/disability/european-accessibility-act-eaa_en)
+- [EU database protection](https://digital-strategy.ec.europa.eu/en/policies/protection-databases)
 - [myPoliFile on the App Store](https://apps.apple.com/us/app/mypolifile/id1585538793) — precedent for an unofficial WeBeep client
