@@ -48,7 +48,14 @@ nonisolated final class OfflineStore: Sendable {
     ///
     /// A widget runs in its own process, shares no Keychain and cannot sign in, so what
     /// the app writes has to land somewhere both can see.
+    #if os(macOS)
+    // On the Mac a sandboxed app gets a `group.` container only when its
+    // provisioning profile authorises it, which a personal team's does not; the
+    // Team ID prefix is the Mac's own form and needs nothing registered.
+    static let groupIdentifier = "8CHF29UD9Q.segrini.samuele.PoliVerse"
+    #else
     static let groupIdentifier = "group.segrini.samuele.PoliVerse"
+    #endif
 
     /// The store every service uses, backed by the app group.
     static let shared = OfflineStore(groupIdentifier: groupIdentifier)

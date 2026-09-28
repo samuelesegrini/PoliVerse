@@ -103,6 +103,42 @@ extension View {
         #endif
     }
 
+    /// Search for a screen that is pushed onto another: the system field on iPhone and
+    /// iPad, and a field of the screen's own at its top on the Mac.
+    ///
+    /// On the Mac every `searchable` in a window lands in the one window toolbar, and a
+    /// toolbar holds a single search field: a pushed screen with its own field over a
+    /// root that has one (Aule over Cerca, Materiali over Corsi) made AppKit throw.
+    ///
+    /// - Parameters:
+    ///   - text: What the field holds.
+    ///   - prompt: The placeholder.
+    /// - Returns: The view with its search field.
+    func nestedSearchable(text: Binding<String>, prompt: LocalizedStringKey) -> some View {
+        #if os(macOS)
+        safeAreaInset(edge: .top, spacing: 0) {
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                TextField(prompt, text: text)
+                    .textFieldStyle(.plain)
+                if !text.wrappedValue.isEmpty {
+                    Button("Cancella", systemImage: "xmark.circle.fill") { text.wrappedValue = "" }
+                        .labelStyle(.iconOnly)
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 10)
+            .frame(height: 30)
+            .background(.quaternary.opacity(0.6), in: .capsule)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 8)
+        }
+        #else
+        searchable(text: text, prompt: Text(prompt))
+        #endif
+    }
+
     /// Lights the view up under an iPad pointer. The Mac draws its own hover states on
     /// controls, and has no hover effect to ask for.
     ///

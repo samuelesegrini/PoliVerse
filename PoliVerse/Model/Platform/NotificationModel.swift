@@ -139,6 +139,9 @@ final class NotificationModel {
         content.userInfo = ["kind": item.kind.rawValue]
         // Only what is genuinely imminent pierces Focus. Marking
         // everything urgent is how an app gets silenced altogether.
+        // Piercing Focus also needs the time-sensitive entitlement, which a
+        // personal development team cannot provision; until the app is signed
+        // by a paid team these arrive as ordinary notifications.
         content.interruptionLevel = item.isTimeSensitive ? .timeSensitive : .active
         if let relevance = item.relevance { content.relevanceScore = relevance }
 

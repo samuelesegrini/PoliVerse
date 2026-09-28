@@ -20,6 +20,13 @@ struct MacCoursesView: View {
     @State private var page: Page = .materials
     /// Whether the WeBeep sign-in sheet is up.
     @State private var showingLogin = false
+    /// What the search field holds, which filters the materials.
+    ///
+    /// Kept here rather than in the table: the table is rebuilt for each course, and a
+    /// window toolbar can hold one search field only, so a field owned by the table
+    /// was briefly there twice while one course replaced another, which AppKit
+    /// refuses with an exception.
+    @State private var query = ""
 
     /// The two halves of a course.
     enum Page: String, CaseIterable, Identifiable {
@@ -64,6 +71,19 @@ struct MacCoursesView: View {
         .navigationTitle(selected?.name ?? String(localized: "Corsi"))
         .navigationSubtitle(selected.map { "\($0.teacher) · \($0.cfu) CFU" } ?? "")
         .navigationDestination(for: Course.self) { CourseDetailView(course: $0) }
+        .searchable(text: $query, placement: .toolbar, prompt: "Cerca nei materiali")
+        // A search is always of the materials, so typing brings them forward.
+        .onChange(of: query) { _, text in if !text.isEmpty { page = .materials } }
+        .onChange(of: selectedID) { query = "" }
+        #if DEBUG
+        .onAppear {
+            MacSnapshots.nextCourse = {
+                let ids = visible.map(\.id)
+                guard let current = selectedID, let index = ids.firstIndex(of: current) else { return }
+                selectedID = ids[(index + 1) % ids.count]
+            }
+        }
+        #endif
         .task { await courses.load() }
         .onChange(of: visible.map(\.id), initial: true) { _, ids in
             guard selectedID == nil || !ids.contains(selectedID!) else { return }
@@ -145,7 +165,7 @@ struct MacCoursesView: View {
             header(course)
             switch page {
             case .materials:
-                MacMaterialsTable(course: course)
+                MacMaterialsTable(course: course, query: query)
             case .course:
                 CourseDetailView(course: course)
             }
@@ -203,6 +223,8 @@ struct MacCoursesView: View {
 struct MacMaterialsTable: View {
     /// The course whose files these are.
     let course: Course
+    /// What the Corsi page's search field holds.
+    let query: String
 
     @Environment(Session.self) private var session
     @Environment(WeBeepModel.self) private var weBeep
@@ -210,7 +232,6 @@ struct MacMaterialsTable: View {
 
     @State private var selection = Set<MaterialRow.ID>()
     @State private var sortOrder = [KeyPathComparator(\MaterialRow.modifiedAt, order: .reverse)]
-    @State private var query = ""
     /// The file Quick Look is showing.
     @State private var quickLook: URL?
 
@@ -287,7 +308,6 @@ struct MacMaterialsTable: View {
             Divider()
             footer
         }
-        .searchable(text: $query, placement: .toolbar, prompt: "Cerca nei materiali")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button("Quick Look", systemImage: "eye") {
