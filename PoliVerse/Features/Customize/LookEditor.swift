@@ -38,6 +38,9 @@ struct LookEditor: View {
     let done: () -> Void
     /// Deletes the look, for one already saved that is not the last.
     var delete: (() -> Void)?
+    /// Where the gallery's card of the look is, for an edit: the page moves
+    /// from there into its place on opening, and back there on leaving.
+    var origin: CGRect?
 
     /// The environment's `shell`.
     @Environment(\.shell) private var shell
@@ -151,7 +154,8 @@ struct LookEditor: View {
             .coordinateSpace(.named(Self.space))
         }
         .ignoresSafeArea()
-        .background(Color.black)
+        // The gallery shows through while the page moves between its card and its place.
+        .background(Color.black.opacity(arrived ? 1 : 0).ignoresSafeArea())
         // The editor's own controls are always on black; the page keeps its own light.
         .environment(\.colorScheme, .dark)
         .tint(look.resolved.controlTint(.dark))
@@ -454,12 +458,12 @@ struct LookEditor: View {
     private var isWide: Bool { sizeClass == .regular || Self.onMac }
 
     /// Whether the page is in its place and the controls are showing. A new
-    /// look slides up with the page already small; an edit starts from the
-    /// card that grew to cover the screen, and settles.
+    /// look slides up with the page already small; an edit starts on the
+    /// gallery's card, and settles into its place.
     private var arrived: Bool { settled || isNew }
 
-    /// Leaves the editor: an edit grows its page back to cover the screen, so
-    /// the gallery's card can shrink from it, and then goes; a new look just goes.
+    /// Leaves the editor: an edit moves its page back onto the gallery's card,
+    /// and then goes; a new look just goes.
     ///
     /// - Parameter action: Cancelling, keeping or deleting, once the page is back.
     private func leave(then action: @escaping () -> Void) {
@@ -468,7 +472,7 @@ struct LookEditor: View {
             return
         }
         withAnimation(.smooth(duration: 0.35)) {
-            // Back to this device's Oggi, which the card shows, as the page grows.
+            // Back to this device's Oggi, which the card shows, as the page returns to it.
             mode = nil
             if !isWide { part = nil }
             appView = .today
@@ -971,10 +975,15 @@ struct LookEditor: View {
                     let fit = zoomed
                         ? room.size.width * 0.92 / size.width
                         : min(room.size.height / size.height, room.size.width / size.width)
-                    // Before settling, the page covers the screen, where the card left it.
-                    let cover = max(screen.width / size.width, screen.height / size.height)
+                    // Before arriving and after leaving, the page is on the gallery's
+                    // card, where the look was; without a card, it covers the screen.
                     let frame = room.frame(in: .named(Self.space))
-                    let toScreen = CGSize(width: screen.width / 2 - frame.midX, height: screen.height / 2 - frame.midY)
+                    let away = origin ?? CGRect(origin: .zero, size: screen)
+                    let cover = origin.map { $0.width / size.width }
+                        ?? max(screen.width / size.width, screen.height / size.height)
+                    let toScreen = CGSize(width: away.midX - frame.midX, height: away.midY - frame.midY)
+                    // The card's corners, as ``LookScreen`` draws them before scaling.
+                    let awayRadius: CGFloat = origin == nil ? 0 : 48
                     Group {
                         if let home {
                             AppPreview(look: look, mode: home, homeLook: homeLook, screen: target.size, insets: target.insets)
@@ -987,7 +996,7 @@ struct LookEditor: View {
                     // Handles on the page stay a finger's size however small it is drawn.
                     .environment(\.previewScale, arrived ? fit : cover)
                     .environment(\.stickerMenu, mode == .stickers)
-                    .clipShape(.rect(cornerRadius: target.cornerRadius * (arrived ? 1 : 0), style: .continuous))
+                    .clipShape(.rect(cornerRadius: arrived ? target.cornerRadius : awayRadius, style: .continuous))
                     // Zoomed, the page hangs from the top of the room, its header in view.
                     .scaleEffect(arrived ? fit : cover, anchor: zoomed ? .top : .center)
                     .frame(width: room.size.width, height: room.size.height, alignment: zoomed ? .top : .center)

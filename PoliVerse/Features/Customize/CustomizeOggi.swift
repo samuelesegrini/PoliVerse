@@ -11,8 +11,10 @@ import SwiftUI
 /// immediate, with Annulla offered for a few seconds. With one look left the
 /// card only stretches: the page always needs one.
 ///
-/// **Editing.** Personalizza grows the middle card to full size and hands it to
-/// ``LookEditor``, which works on a draft: Fine keeps it, Annulla drops it.
+/// **Editing.** Personalizza hands the middle card to ``LookEditor``: its page
+/// moves from the card straight into the editor, and back onto the card on
+/// leaving, never covering the screen. The editor works on a draft: Fine keeps
+/// it, Annulla drops it.
 ///
 /// **Adding.** The + button, or the empty card, opens ``NewLookGallery``;
 /// picking a starting point opens the editor on it, and Aggiungi asks once what
@@ -37,8 +39,6 @@ struct CustomizeOggi: View {
     @State private var page: Int?
     /// The middle card covers the screen, on opening and on closing.
     @State private var expanded = true
-    /// The middle card covers the screen for editing.
-    @State private var filling = false
     /// How far the middle card has been pulled up; negative is up.
     @State private var lift: CGFloat = 0
     /// The middle card rests lifted, with the trash showing.
@@ -85,7 +85,7 @@ struct CustomizeOggi: View {
     private var onNewCard: Bool { middle >= library.looks.count }
 
     /// Full size: covering the screen on the way in and out, and for editing.
-    private var filled: Bool { expanded || filling }
+    private var filled: Bool { expanded }
 
     /// The draft the editors change.
     private var draft: Binding<TodayStyle> {
@@ -134,8 +134,12 @@ struct CustomizeOggi: View {
                 // Built apart: the same ternary inline, over method references,
                 // crashes the macOS type checker.
                 let deletion: (() -> Void)? = edit.index != nil && library.canRemove ? { deleteEditing() } : nil
+                // The middle card's place, which an edit's page starts from and goes back to.
+                let origin = CGRect(x: (screen.width - card.width) / 2, y: (screen.height - card.height) / 2,
+                                    width: card.width, height: card.height)
                 LookEditor(look: draft, original: edit.original, isNew: edit.index == nil, insets: insets,
-                           cancel: { cancelEditing() }, done: { finishEditing() }, delete: deletion)
+                           cancel: { cancelEditing() }, done: { finishEditing() }, delete: deletion,
+                           origin: edit.index == nil ? nil : origin)
                     .transition(edit.index == nil ? .move(edge: .bottom) : .identity)
                     .zIndex(2)
             }
@@ -178,6 +182,9 @@ struct CustomizeOggi: View {
                             .offset(x: (closing.map { index >= $0 } ?? false) ? card.width + 18 : 0)
                             .modifier(FillScreen(progress: isMiddle && filled ? 1 : 0, screen: screen))
                             .opacity(isMiddle || !filled ? 1 : 0)
+                            // The card being edited is the editor's page now,
+                            // which leaves from here and comes back here.
+                            .opacity(edit?.index == index ? 0 : 1)
                             .zIndex(isMiddle ? 1 : 0)
                             .id(index)
                     }
@@ -504,14 +511,13 @@ struct CustomizeOggi: View {
 
     // MARK: - Editing
 
-    /// Grows the middle card to full size, then hands it to the editor.
+    /// Hands the middle card to the editor, whose page moves from the card's
+    /// place into its own, never covering the screen on the way.
     private func beginEditing() {
         guard library.looks.indices.contains(middle) else { return }
         let index = middle, look = library.looks[index]
         drop()
-        withAnimation(Self.expand) {
-            filling = true
-        } completion: {
+        withAnimation(.smooth(duration: 0.3)) {
             edit = LookEdit(draft: look, original: look, index: index)
         }
     }
@@ -532,21 +538,17 @@ struct CustomizeOggi: View {
         if edit.index == nil {
             withAnimation(.spring(duration: 0.45, bounce: 0.05)) { self.edit = nil }
         } else {
-            self.edit = nil
-            withAnimation(Self.expand) { filling = false }
+            // The editor has already put its page back on the card.
+            withAnimation(.smooth(duration: 0.25)) { self.edit = nil }
         }
     }
 
-    /// Deletes the look being edited from the editor's menu: the editor goes,
-    /// the card shrinks back into the gallery and leaves it, with Annulla offered.
+    /// Deletes the look being edited from the editor's menu: its page is back
+    /// on the card, which leaves the gallery, with Annulla offered.
     private func deleteEditing() {
         guard let index = edit?.index else { return }
         edit = nil
-        withAnimation(Self.expand) {
-            filling = false
-        } completion: {
-            delete(index)
-        }
+        delete(index)
     }
 
     /// Keeps the draft: a saved look is written back; a new one asks about the app first.
@@ -559,8 +561,8 @@ struct CustomizeOggi: View {
         library.save(edit.draft, at: index)
         if index == library.selection { active = library.active }
         persist()
-        self.edit = nil
-        withAnimation(Self.expand) { filling = false }
+        // The editor has already put its page back on the card.
+        withAnimation(.smooth(duration: 0.25)) { self.edit = nil }
     }
 
     // MARK: - The app half
