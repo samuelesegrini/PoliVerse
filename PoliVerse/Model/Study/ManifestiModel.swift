@@ -130,7 +130,7 @@ final class ManifestiModel {
             return
         }
         results = ManifestoParser.searchResults(html)
-        log.notice("manifesti: \(self.results.count, privacy: .public) insegnamenti per «\(trimmed, privacy: .public)»")
+        log.notice("manifesti: \(self.results.count, privacy: .public) insegnamenti per «\(trimmed, privacy: .private)»")
     }
 
     // MARK: - A student's own teaching

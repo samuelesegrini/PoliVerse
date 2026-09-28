@@ -247,14 +247,39 @@ nonisolated final class PoliMiAPI: Sendable {
         do {
             return try await BackgroundJSON.decode(T.self, from: data, iso8601Dates: true)
         } catch {
-            // Log a slice of the body: when an endpoint moves, the shape often
-            // moves with it, and guessing from the decoding error alone is
-            // hopeless.
-            let preview = String(data: data.prefix(1200), encoding: .utf8) ?? "<binary>"
-            log.error("Decoding \(String(describing: T.self)) failed: \(error)")
-            log.error("Body was: \(preview, privacy: .public)")
+            // Log where the decoding broke: when an endpoint moves, the shape
+            // moves with it, and the key path names the field that did. Never
+            // the body — a career or a timetable that fails to decode would
+            // put the student's marks in the system log.
+            log.error("""
+                Decoding \(String(describing: T.self), privacy: .public) failed \
+                at \(Self.codingPath(of: error), privacy: .public) \
+                (\(data.count, privacy: .public) bytes): \(error)
+                """)
             throw APIError.decoding(error)
         }
+    }
+
+    /// Where in a payload a decoding error happened, as keys and indices only.
+    ///
+    /// Values never appear, so the result is safe to log in the clear.
+    ///
+    /// - Parameter error: The error decoding threw.
+    /// - Returns: A path like `insegn.[3].appelliEsame`, `root`, or `-` for an
+    ///   error that is not a decoding error.
+    private static func codingPath(of error: any Error) -> String {
+        guard let decoding = error as? DecodingError else { return "-" }
+        let keys: [any CodingKey]
+        switch decoding {
+        case .typeMismatch(_, let context), .valueNotFound(_, let context), .dataCorrupted(let context):
+            keys = context.codingPath
+        case .keyNotFound(let key, let context):
+            keys = context.codingPath + [key]
+        @unknown default:
+            keys = []
+        }
+        guard !keys.isEmpty else { return "root" }
+        return keys.map { key in key.intValue.map { "[\($0)]" } ?? key.stringValue }.joined(separator: ".")
     }
 
     /// Sends a request and returns its body, handling retries and the 401 cases.

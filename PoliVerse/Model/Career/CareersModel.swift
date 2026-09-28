@@ -90,7 +90,7 @@ final class CareersModel {
             log.notice("careers payload shape: \(JSONShape.describe(data), privacy: .public)")
             #endif
             careers = try await BackgroundJSON.decode(CareersResponse.self, from: data).careers
-            log.notice("careers: \(self.careers.count, privacy: .public) — \(self.careers.map { "\($0.matricola) \($0.status ?? "?")" }.joined(separator: ", "), privacy: .public)")
+            log.notice("careers: \(self.careers.count, privacy: .public) — \(self.careers.map { "\($0.matricola) \($0.status ?? "?")" }.joined(separator: ", "), privacy: .private(mask: .hash))")
         } catch {
             log.error("Careers list failed: \(error.localizedDescription)")
             errorMessage = userFacingMessage(error)
@@ -132,7 +132,7 @@ final class CareersModel {
                 host: .app,
                 path: "/v1/careers/favorite/\(career.matricola)",
                 method: "PUT"))
-            log.notice("favourite career set to \(career.matricola, privacy: .public)")
+            log.notice("favourite career set to \(career.matricola, privacy: .private(mask: .hash))")
         } catch {
             log.error("Could not set favourite career: \(error.localizedDescription)")
         }

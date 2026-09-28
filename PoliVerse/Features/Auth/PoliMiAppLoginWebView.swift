@@ -261,7 +261,7 @@ struct PoliMiAppLoginWebView: View {
         let authorize = PoliMiOAuth.authorizationURL(
             params: oauthParams, state: state, flow: flow)
         if let matricola = flow.matricola {
-            log.notice("Authorizing for matricola \(matricola, privacy: .public) (\(oauthParams.scope.split(separator: " ").count, privacy: .public) scopes)")
+            log.notice("Authorizing for matricola \(matricola, privacy: .private(mask: .hash)) (\(oauthParams.scope.split(separator: " ").count, privacy: .public) scopes)")
         } else {
             log.notice("Handing the official app an authorize flow (\(oauthParams.scope.split(separator: " ").count, privacy: .public) scopes)")
         }

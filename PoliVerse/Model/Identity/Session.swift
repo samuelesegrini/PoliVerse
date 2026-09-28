@@ -160,8 +160,9 @@ final class Session {
     func loadProfile() async {
         do {
             let data = try await api.send(APIRequest(host: .app, path: "/jaf/internal/profiles"))
-            let raw = String(data: data.prefix(500), encoding: .utf8) ?? "<binary>"
-            log.notice("profiles payload: \(raw, privacy: .public)")
+            // The size, never the body: the payload names the student. The
+            // profile chosen from it is logged below.
+            log.notice("profiles payload: \(data.count, privacy: .public) bytes")
 
             if let list = try? JSONDecoder().decode([PoliMiProfileDTO].self, from: data) {
                 directory.dProfile = list.compactMap(\.dprofile).first

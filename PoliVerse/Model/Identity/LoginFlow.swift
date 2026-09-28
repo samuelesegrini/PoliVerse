@@ -181,7 +181,7 @@ final class LoginFlow {
     /// - Parameter matricola: The enrolment to land on.
     func beginCareerRelogin(matricola: String) async {
         pendingMatricola = matricola
-        log.notice("Signing out to re-authenticate on matricola \(matricola, privacy: .public)")
+        log.notice("Signing out to re-authenticate on matricola \(matricola, privacy: .private(mask: .hash))")
         await signOut()
     }
 
@@ -208,7 +208,7 @@ final class LoginFlow {
             await session.signIn(dto.toStudent())
             session.serviceAuthorizationFailed = false
             await session.loadProfile()
-            log.notice("Now on matricola \(dto.matricola, privacy: .public)")
+            log.notice("Now on matricola \(dto.matricola, privacy: .private(mask: .hash))")
         } catch {
             log.error("Career switch could not read the user: \(error.localizedDescription)")
         }

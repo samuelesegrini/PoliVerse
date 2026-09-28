@@ -68,6 +68,19 @@ in the label as Diagnostics, not linked to the user.
 
 ### 2. No privacy manifest — upload rejected with ITMS-91053
 
+**Fixed.** `PrivacyInfo.xcprivacy` is now in `PoliVerse/`, `PoliVerseWidgets/`,
+`PoliVerseWatch/` and `PoliVerseWatchWidgets/`, and the synchronised groups copy
+each into its own bundle. None goes in `Shared/`, which every target compiles: two
+manifests in one bundle collide at build time. The app declares `CA92.1` and `1C8F.1`
+(user defaults), `C617.1` (file timestamps) and `54BD.1` (active keyboards); the
+extensions declare only the two user-defaults reasons, since they compile only
+`Shared/`, whose app-group suite falls back to `.standard`. There is no tracking and
+no collected data. The codes were checked against Apple's
+`NSPrivacyAccessedAPIType` reference on 2026-09-28. Add a declaration whenever new
+code touches a listed API.
+
+What follows is the original finding.
+
 No `PrivacyInfo.xcprivacy` exists in any target. Since May 2024, App Store Connect
 rejects the upload when the code uses a required-reason API without declaring it.
 The code uses:
@@ -83,6 +96,16 @@ Add one manifest to each target: app, widgets, Watch app and Watch widgets. Set
 codes against Apple's current list when you add them.
 
 ### 3. PoliMi logo, seal and building photo — Guidelines 5.2.1 and 4.1
+
+**Fixed.** The `PolimiLogo`, `PolimiSeal` and `PolitecnicoFacade` assets are deleted.
+So is the code's fallback, a portico seal beside "POLITECNICO MILANO 1863" set in
+type, which was a look-alike of the ateneo's mark in its own right. The card now
+carries PoliVerse's mark: the app icon's orbit (planet, ring and moon) drawn as a
+line (`OrbitMark` in `StudentCard.swift`) beside the name "PoliVerse", with a large
+faint orbit on a navy ground where the photo stood. "Non è un documento ufficiale"
+stays on the back.
+
+What follows is the original finding.
 
 `StudentCard.swift` draws `PolimiLogo`, `PolimiSeal` and `PolitecnicoFacade` on a
 card styled like a student ID. That is three problems:
@@ -185,6 +208,18 @@ downloads until the PoliMi reply in item 6 covers them.
 
 ### 8. Personal data in the system log
 
+**Fixed.** The matricola is now logged as `.private(mask: .hash)` in `LoginFlow`,
+`CareersModel` and `PoliMiAppLoginWebView`, so a log can still tell two accounts
+apart without saying which. The profiles payload is logged by size only. The
+Manifesto search text is `.private`. A second leak turned up in the same pass:
+`PoliMiAPI.send(_:as:)` logged up to 1,200 bytes of any response body that failed
+to decode, publicly, which for a career payload means marks. It now logs the
+decoding error's key path (keys and indices, never values) and the byte count.
+The 401 bodies stay public: they are the gateway's error messages, which
+[polimi-auth.md](polimi-auth.md) relies on for diagnosis.
+
+What follows is the original finding.
+
 The repo's own rule is to log "forme, mai valori" (shapes, never values). Three
 lines break it by marking personal values `privacy: .public`, which puts them in
 the unified log in the clear and into any sysdiagnose:
@@ -248,13 +283,13 @@ confirming.
 | # | Item | Effort | Blocks submission? |
 | --- | --- | --- | --- |
 | 1 | Privacy policy (App Store Connect + in-app link) | hours | yes |
-| 2 | `PrivacyInfo.xcprivacy` in each target | 1 h | yes (upload) |
-| 3 | Remove PoliMi logo, seal and facade photo | 1 h | likely rejection |
+| 2 | `PrivacyInfo.xcprivacy` in each target | done | — |
+| 3 | Remove PoliMi logo, seal and facade photo | done | — |
 | 4 | Review notes + demo-mode explanation | 30 min | likely rejection |
 | 5 | Declare DSA trader status | 10 min | yes, in the EU |
 | 6 | Ask PoliMi for permission | email + waiting | not at first, but it is the long-term risk |
 | 7 | Hold back recording downloads until authorised | small | risk |
-| 8 | Make personal values in logs private | 15 min | no |
+| 8 | Make personal values in logs private | done | — |
 | 9 | `ITSAppUsesNonExemptEncryption = NO` | 1 min | no |
 | 11 | Label AI summaries as generated automatically (AI Act, good practice) | 5 min | no |
 | 10 | Check licences of any copied code | review | no |

@@ -3,10 +3,14 @@ import CoreMotion
 #endif
 import SwiftUI
 
-// The student's card at the top of the profile: the Politecnico's facade on
-// the front with the logo, the name and the matricola heat-pressed into it in
-// silver foil, and on the back the contact's QR code with the logo pressed
+// The student's card at the top of the profile: PoliVerse's orbit on the
+// front, with the mark, the name and the matricola heat-pressed into it in
+// silver foil, and on the back the contact's QR code with the orbit pressed
 // blind into the card.
+//
+// It carries PoliVerse's mark, never the Politecnico's: the ateneo's name,
+// logo, seal and buildings are its own, and a card that bore them would pass
+// for a document the ateneo issued. See `docs/legal-readiness.md`.
 //
 // It behaves as the object it draws. A tap turns it over, lifting it off the
 // page on the way; a drag tilts it; and the foil and the sheen follow the
@@ -194,12 +198,12 @@ private enum StudentCardMetrics {
     static let aspect: CGFloat = 85.6 / 53.98
     /// The card's corner radius.
     static let radius: CGFloat = 24
-    /// The Politecnico's blue at its deepest, under the white text.
+    /// A deep navy, under the white text.
     static let navy = Color(red: 0.055, green: 0.137, blue: 0.337)
 }
 
-/// The front: the facade, the logo and the name pressed into foil, the
-/// student's name and course, and the matricola.
+/// The front: a large faint orbit, the mark and the name pressed into foil,
+/// the student's name and course, and the matricola.
 private struct StudentCardFront: View {
     /// The student, or `nil` for a guest.
     let student: Student?
@@ -214,12 +218,22 @@ private struct StudentCardFront: View {
             let width = proxy.size.width
             let navy = StudentCardMetrics.navy
             ZStack {
-                Image("PolitecnicoFacade")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: width, height: proxy.size.height)
-                    .clipped()
-                    .accessibilityHidden(true)
+                ZStack {
+                    RadialGradient(colors: [Color(red: 0.15, green: 0.29, blue: 0.62),
+                                            Color(red: 0.08, green: 0.19, blue: 0.44),
+                                            Color(red: 0.04, green: 0.11, blue: 0.29)],
+                                   center: UnitPoint(x: 0.75, y: 0.3), startRadius: 0, endRadius: width * 0.9)
+                    // The orbit drawn large and off the edge, where the facade
+                    // used to stand: the card's ground, not its subject.
+                    OrbitMark()
+                        .stroke(.white.opacity(0.1),
+                                style: StrokeStyle(lineWidth: width * 0.008, lineCap: .round, lineJoin: .round))
+                        .frame(width: width * 0.95, height: width * 0.95)
+                        .offset(x: width * 0.3, y: width * 0.02)
+                }
+                .frame(width: width, height: proxy.size.height)
+                .clipped()
+                .accessibilityHidden(true)
                 LinearGradient(
                     stops: [
                         // Deep behind the logo, so the silver reads against it.
@@ -232,7 +246,7 @@ private struct StudentCardFront: View {
                 FoilFrame(light: light, width: width)
 
                 VStack(alignment: .leading, spacing: 0) {
-                    PolitecnicoMark(style: .foil(light), shape: .lockup, height: width * 0.13)
+                    PoliVerseMark(style: .foil(light), shape: .lockup, height: width * 0.13)
                     Spacer(minLength: 0)
                     HStack(alignment: .lastTextBaseline, spacing: 12) {
                         VStack(alignment: .leading, spacing: 3) {
@@ -265,7 +279,7 @@ private struct StudentCardFront: View {
     }
 }
 
-/// The back: the logo pressed blind into the card, the contact's QR code, and
+/// The back: the orbit pressed blind into the card, the contact's QR code, and
 /// the codes the student is asked for.
 private struct StudentCardBack: View {
     /// The student, or `nil` for a guest.
@@ -285,7 +299,7 @@ private struct StudentCardBack: View {
                                         Color(red: 0.08, green: 0.19, blue: 0.44),
                                         Color(red: 0.04, green: 0.11, blue: 0.29)],
                                center: UnitPoint(x: 0.3, y: 0.2), startRadius: 0, endRadius: width * 0.9)
-                PolitecnicoMark(style: .blind, shape: .seal, height: height * 0.95)
+                PoliVerseMark(style: .blind, shape: .seal, height: height * 0.95)
                     .offset(x: -width * 0.12, y: height * 0.08)
                 // Over the seal, so the frame runs across the impression.
                 FoilFrame(light: light, width: width)
@@ -354,15 +368,13 @@ private struct FoilFrame: View {
     }
 }
 
-// MARK: - The logo
+// MARK: - The mark
 
-/// The Politecnico's logo, pressed into the card.
+/// PoliVerse's mark, pressed into the card.
 ///
-/// Drawn from the asset catalog's template images — `PolimiLogo`, the seal
-/// with the name beside it, and `PolimiSeal`, the seal alone — so the foil
-/// fills the mark itself. A build without them falls back to a placeholder
-/// seal, with the name set in type beside it on the front.
-private struct PolitecnicoMark: View {
+/// The orbit from the app icon — a planet, its ring and a moon — drawn as a
+/// line so the foil fills the stroke. The front sets the name beside it.
+private struct PoliVerseMark: View {
     /// How the mark is pressed.
     enum Style {
         /// In silver foil, lit from `light`.
@@ -371,46 +383,32 @@ private struct PolitecnicoMark: View {
         case blind
     }
 
-    /// Which form of the logo.
+    /// Which form of the mark.
     enum Shape {
-        /// The seal with "Politecnico Milano 1863" beside it, for the front.
+        /// The orbit with "PoliVerse" beside it, for the front.
         case lockup
-        /// The seal alone, for the back.
+        /// The orbit alone, for the back.
         case seal
-
-        /// The asset's name.
-        var asset: String {
-            switch self {
-            case .lockup: "PolimiLogo"
-            case .seal: "PolimiSeal"
-            }
-        }
     }
 
     /// How the mark is pressed.
     let style: Style
-    /// Which form of the logo.
+    /// Which form of the mark.
     let shape: Shape
-    /// The mark's height, in points; the width follows the logo's proportions.
+    /// The mark's height, in points.
     let height: CGFloat
 
     /// The view's content.
     var body: some View {
-        Group {
-            if PlatformImage(named: shape.asset) != nil {
-                pressed(Image(shape.asset).renderingMode(.template).resizable().scaledToFit())
-                    .frame(height: height)
-            } else {
-                HStack(spacing: height * 0.2) {
-                    pressed(PlaceholderSeal().stroke(style: StrokeStyle(lineWidth: height * 0.04, lineCap: .round,
-                                                                       lineJoin: .round)))
-                        .frame(width: height, height: height)
-                    if shape == .lockup {
-                        pressed(Text(verbatim: "POLITECNICO\nMILANO 1863")
-                            .font(.system(size: height * 0.26, weight: .bold))
-                            .lineSpacing(1))
-                    }
-                }
+        HStack(spacing: height * 0.2) {
+            // The orbit is wide rather than tall: beside the name it gets the
+            // width to fill the height; alone, a square keeps it inside the card.
+            pressed(OrbitMark().stroke(style: StrokeStyle(lineWidth: height * 0.05, lineCap: .round,
+                                                          lineJoin: .round)))
+                .frame(width: shape == .lockup ? height * 1.8 : height, height: height)
+            if shape == .lockup {
+                pressed(Text(verbatim: "PoliVerse")
+                    .font(.system(size: height * 0.42, weight: .bold)))
             }
         }
         .accessibilityHidden(true)
@@ -432,20 +430,75 @@ private struct PolitecnicoMark: View {
     }
 }
 
-/// A seal standing in for the logo: two rings and a portico of columns.
-nonisolated private struct PlaceholderSeal: Shape {
-    /// The seal's outline in `rect`.
+/// The app icon's orbit as a line drawing: a planet, a ring tilted across it,
+/// and a moon on the ring.
+///
+/// Proportions come from `design/app-icon/orbita/layers`, on the icon's
+/// 1024-point canvas: planet radius 215, ring 400 × 120 turned 20° anticlockwise,
+/// moon radius 76 on the ring's near side. The ring's far half is hidden where
+/// the planet stands in front of it, and the ring breaks around the moon, so the
+/// line reads as depth rather than as three shapes laid over one another.
+nonisolated private struct OrbitMark: Shape {
+    /// The planet's radius on the icon's canvas.
+    private static let planet: CGFloat = 215
+    /// The ring's half-axes on the icon's canvas.
+    private static let ring = CGSize(width: 400, height: 120)
+    /// The moon's radius on the icon's canvas.
+    private static let moon: CGFloat = 76
+    /// Where on the ring the moon sits, as the ellipse's parameter angle.
+    private static let moonAngle: CGFloat = 0.4363
+    /// The ring's tilt, anticlockwise on screen.
+    private static let tilt: CGFloat = -20 * .pi / 180
+    /// How many points the ring is drawn with.
+    private static let steps = 240
+
+    /// The mark's outline in `rect`, centred and scaled to fit.
     func path(in rect: CGRect) -> Path {
-        let s = min(rect.width, rect.height) / 64
-        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: rect.minX + x * s, y: rect.minY + y * s) }
-        var path = Path()
-        path.addEllipse(in: CGRect(origin: p(2, 2), size: CGSize(width: 60 * s, height: 60 * s)))
-        path.addEllipse(in: CGRect(origin: p(7, 7), size: CGSize(width: 50 * s, height: 50 * s)))
-        path.move(to: p(18, 27)); path.addLine(to: p(32, 19)); path.addLine(to: p(46, 27))
-        for x in [21, 27, 37, 43] as [CGFloat] {
-            path.move(to: p(x, 29)); path.addLine(to: p(x, 42))
+        // Once tilted, the drawing spans about 812 × 430 points of the canvas,
+        // from the ring's far tip to the moon's edge, and sits 28 points right of
+        // the planet's centre. Fit that, not the whole canvas, with a little room.
+        let s = min(rect.width / 880, rect.height / 470)
+        let centre = CGPoint(x: rect.midX - 28 * s, y: rect.midY)
+
+        /// A point on the tilted canvas, relative to the planet's centre.
+        func place(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+            let c = cos(Self.tilt), n = sin(Self.tilt)
+            return CGPoint(x: centre.x + (x * c - y * n) * s, y: centre.y + (x * n + y * c) * s)
         }
-        path.move(to: p(17, 45)); path.addLine(to: p(47, 45))
+
+        let moonCentre = CGPoint(x: Self.ring.width * cos(Self.moonAngle),
+                                 y: Self.ring.height * sin(Self.moonAngle))
+        let gap = Self.moon * 1.35
+
+        var path = Path()
+        path.addEllipse(in: CGRect(x: centre.x - Self.planet * s, y: centre.y - Self.planet * s,
+                                   width: Self.planet * 2 * s, height: Self.planet * 2 * s))
+
+        // The ring, point by point, lifting the pen where it passes behind the
+        // planet or under the moon.
+        var drawing = false
+        for step in 0...Self.steps {
+            let t = CGFloat(step) / CGFloat(Self.steps) * 2 * .pi
+            let x = Self.ring.width * cos(t)
+            let y = Self.ring.height * sin(t)
+            // Negative y is the far half, which the planet hides.
+            let behindPlanet = y < 0 && x * x + y * y < Self.planet * Self.planet
+            let underMoon = hypot(x - moonCentre.x, y - moonCentre.y) < gap
+            if behindPlanet || underMoon {
+                drawing = false
+                continue
+            }
+            if drawing {
+                path.addLine(to: place(x, y))
+            } else {
+                path.move(to: place(x, y))
+                drawing = true
+            }
+        }
+
+        let moon = place(moonCentre.x, moonCentre.y)
+        path.addEllipse(in: CGRect(x: moon.x - Self.moon * s, y: moon.y - Self.moon * s,
+                                   width: Self.moon * 2 * s, height: Self.moon * 2 * s))
         return path
     }
 }
