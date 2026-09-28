@@ -1109,10 +1109,39 @@ What the numbers say, and do not:
   scrolled to the picker, which now sits below the fold. It looks for the
   Libretto and Appelli segments and scrolls to them.
 
-Still to do on a device, per Phase 0: the three hitch tests, a Swift Concurrency
-trace of a foreground revalidation on a real account, and a System Trace of
-opening a course's materials, compared against `main` with Instruments 27's Run
-Comparison.
+### 5.4 Measured on a device
+
+iPhone 12 Pro, iOS 27.2, Release, sample data, `main` against this pass.
+
+| Test | `main` | This pass |
+| --- | --- | --- |
+| `agenda.load` signpost | 0.7 ms | 0.5 ms |
+| Launch, first frame responsive (interleaved rounds) | 0.972 s | 0.955 s |
+| Corsi scroll, hitch ratio | 9.6 ms/s | 8.2 ms/s |
+| Oggi scroll, hitch ratio | 16.3 ms/s | 15.6 ms/s |
+| Calendar week paging, hitch ratio (three runs each) | 12.5 / 16.3 / 17.0 ms/s | 13.3 / 15.1 / 19.6 ms/s |
+| Tab switching, CPU time | 1.91 s | 1.94 s |
+
+- **Launch regressed by 13 ms before it improved.** `PendingChanges` now reads
+  its queue just after launch and assigned `count` and `failed` whether or not
+  they changed; an `@Observable` property notifies on every assignment, so an
+  empty queue that stayed empty redrew everything showing the count, inside the
+  launch window. It assigns on a change only.
+- **The shell no longer depends on the whole agenda.** `RootView` read
+  `events(on:)` and keyed a task on `events.count`, so every week the calendar
+  loaded past the fetched month redrew the shell that holds every tab. It reads
+  `AgendaModel.today`, which is reassigned only when today's entries change.
+- **Calendar paging still hitches, on `main` and here alike** — about one
+  hitch per week turned, 12–20 ms/s, above Apple's 10 ms/s line. The shell
+  redraw was not the cause. Instruments could not attach to the Release build on
+  the phone (`xctrace --attach` finds no process, and a system-wide recording
+  collides with XCTest's own hitch tracing and keeps under two seconds), so the
+  cause is not yet known. Next step: *Product › Profile* from Xcode with the
+  Animation Hitches template while paging by hand, then Run Comparison against
+  this table.
+- The Swift Concurrency and System Trace passes need the same Xcode-launched
+  profile, and a signed-in account to exercise the offline cache and the
+  network; sample data skips both.
 
 ## Not verified, in one place
 

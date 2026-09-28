@@ -36,7 +36,37 @@ final class AgendaModel {
         didSet {
             eventsByDay = Self.index(events)
             eventsByTitle = Self.titleIndex(events)
+            let day = PoliMiDate.romeCalendar.startOfDay(for: .now)
+            let slice = DaySlice(day: day, events: eventsByDay[day] ?? [])
+            // Only on a change: the app's shell reads it, and paging the
+            // calendar past the fetched month replaces ``events`` week after
+            // week without touching today.
+            if slice != today { today = slice }
         }
+    }
+
+    /// One day's entries, with the day they belong to.
+    struct DaySlice: Equatable {
+        /// The start of the day, in Rome.
+        let day: Date
+        /// The entries, in time order.
+        let events: [AgendaEvent]
+    }
+
+    /// Today's entries, as of the last change of ``events``.
+    ///
+    /// Views that are always on screen — the shell's class-now accessory — read this
+    /// rather than ``events(on:)``, which depends on the whole index and so redrew the
+    /// shell for every week the calendar loaded.
+    private(set) var today = DaySlice(day: .distantPast, events: [])
+
+    /// The entries of the day a moment falls in, from ``today`` when it is that day.
+    ///
+    /// - Parameter now: The moment.
+    /// - Returns: The day's entries, in time order.
+    func eventsToday(now: Date) -> [AgendaEvent] {
+        let day = PoliMiDate.romeCalendar.startOfDay(for: now)
+        return day == today.day ? today.events : events(on: now)
     }
     /// ``events`` grouped by Rome day and sorted, rebuilt whenever they change.
     ///

@@ -90,8 +90,11 @@ final class PendingChanges {
         let edit = edits
         let queue = await ActionQueue.read(store: store, account: matricola)
         guard edit == edits, matricola == account.matricola else { return }
-        count = queue.pending.count
-        failed = queue.abandoned
+        // Assigned only on a change: an observed property notifies on every
+        // assignment, and this runs just after launch, where an empty queue
+        // stayed empty and still redrew everything that shows the count.
+        if count != queue.pending.count { count = queue.pending.count }
+        if failed != queue.abandoned { failed = queue.abandoned }
     }
 
     /// Counts the changes made through this object, so ``refresh()`` can tell that

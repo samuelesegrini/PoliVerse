@@ -81,7 +81,7 @@ struct RootView: View {
     /// The class now, except on Oggi when the page already shows it.
     private var current: CurrentClass? {
         guard todayStyle.resolved.wantsCurrentClassAccessory || shell.selection != .today else { return nil }
-        return CurrentClass.forAccessory(from: agenda.events(on: now), now: now)
+        return CurrentClass.forAccessory(from: agenda.eventsToday(now: now), now: now)
     }
 
     /// The view's content.
@@ -280,9 +280,9 @@ struct RootView: View {
         .task(id: shell.day) { await agenda.ensureLoaded(covering: shell.day) }
         // Wakes at the next start or end of a lesson today rather than every
         // minute: between lessons nothing on the accessory can change.
-        .task(id: agenda.events.count) {
+        .task(id: agenda.today) {
             while !Task.isCancelled {
-                let wait = CurrentClass.nextChange(in: agenda.events, after: .now).timeIntervalSinceNow
+                let wait = CurrentClass.nextChange(in: agenda.eventsToday(now: .now), after: .now).timeIntervalSinceNow
                 try? await Task.sleep(for: .seconds(max(wait, 1)))
                 now = .now
             }

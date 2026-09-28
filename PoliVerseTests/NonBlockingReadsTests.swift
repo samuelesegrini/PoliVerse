@@ -91,6 +91,21 @@ struct NonBlockingReadsTests {
         #expect(index.count == 2)
     }
 
+    /// The shell reads today's slice so that paging the calendar, which
+    /// replaces the agenda week after week, does not redraw it each time.
+    @Test("Today's slice matches the day index, and a far load changes it once at most")
+    @MainActor
+    func todaySlice() async {
+        let agenda = AgendaModel(account: StubAccount(matricola: "111", isSample: true, http: FixtureHTTP([:])))
+        await agenda.load(around: .now)
+        #expect(agenda.eventsToday(now: .now) == agenda.events(on: .now))
+
+        await agenda.ensureLoaded(covering: .now.addingTimeInterval(120 * 86400))
+        let settled = agenda.today
+        await agenda.ensureLoaded(covering: .now.addingTimeInterval(240 * 86400))
+        #expect(agenda.today == settled)
+    }
+
     // MARK: Teaching codes, without a regular expression
 
     @Test("Six ASCII digits are a teaching code, and nothing else is")
