@@ -6,7 +6,5 @@
 	<array>
 		<string>group.segrini.samuele.PoliVerse</string>
 	</array>
-	<key>com.apple.developer.usernotifications.time-sensitive</key>
-	<true/>
 </dict>
 </plist>

@@ -31,6 +31,8 @@ enum MacSnapshots {
     static var openSettings: OpenSettingsAction?
     /// Opens a sitting's detail, handed over by the main window.
     static var showExam: (() -> Void)?
+    /// Selects the next course in Corsi, handed over by Corsi.
+    static var nextCourse: (() -> Void)?
 
     /// Renders the windows, opens the menu bar panel, and renders them again.
     static func run() async {
@@ -66,6 +68,18 @@ enum MacSnapshots {
                     .write(to: folder.appendingPathComponent("settings.png"))
             }
         }
+        // Switches that once put two search fields in the toolbar: Cerca to Corsi and
+        // back, and one course replacing another.
+        for destination in [AppDestination.search, .weBeep, .search, .weBeep] {
+            destination.send()
+            try? await Task.sleep(for: .seconds(1.5))
+        }
+        for _ in 0..<3 {
+            nextCourse?()
+            try? await Task.sleep(for: .seconds(1.5))
+        }
+        write(prefix: "courses-switched", onlyFirst: true)
+        NSLog("MacSnapshots switches survived")
         // Glass is not drawn by a cached display, so the sidebar's content is rendered on
         // its own.
         if let main = NSApp.windows.first, let frame = main.contentView?.superview,

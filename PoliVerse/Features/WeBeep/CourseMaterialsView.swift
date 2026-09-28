@@ -106,7 +106,7 @@ struct CourseMaterialsView: View {
             .frame(maxWidth: 700)
             .frame(maxWidth: .infinity)
         }
-        .searchable(text: $query, prompt: "Cerca nei materiali")
+        .nestedSearchable(text: $query, prompt: "Cerca nei materiali")
         .navigationTitle(course.name)
         .navigationBarTitleDisplayMode(.inline)
         .overlay {

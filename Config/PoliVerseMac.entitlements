@@ -14,9 +14,7 @@
 	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.segrini.samuele.PoliVerse</string>
+		<string>$(TeamIdentifierPrefix)segrini.samuele.PoliVerse</string>
 	</array>
-	<key>com.apple.developer.usernotifications.time-sensitive</key>
-	<true/>
 </dict>
 </plist>

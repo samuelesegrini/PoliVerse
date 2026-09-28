@@ -75,7 +75,7 @@ struct ManifestiView: View {
         .lookList()
         .navigationTitle("Manifesto")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $query, prompt: "Cerca un insegnamento")
+        .nestedSearchable(text: $query, prompt: "Cerca un insegnamento")
         .onSubmit(of: .search) { runSearch() }
         // Warms the detail pages of what is on screen, so opening one is
         // instant — each is a page fetch and a parse.

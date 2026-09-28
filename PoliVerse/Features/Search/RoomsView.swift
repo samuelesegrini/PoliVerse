@@ -110,7 +110,7 @@ struct RoomsView: View {
         .lookList()
         .navigationTitle("Aule")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $query, prompt: "Sigla aula, edificio o sede")
+        .nestedSearchable(text: $query, prompt: "Sigla aula, edificio o sede")
         .overlay {
             if rooms.isLoading && rooms.rooms.isEmpty {
                 ProgressView()
