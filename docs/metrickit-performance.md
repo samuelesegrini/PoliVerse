@@ -745,7 +745,7 @@ actor ReportArchive {
     private let directory: URL
     private let maxFiles: Int
     private let maxBytes: Int
-    private let log = Logger(subsystem: "one.wape.PoliVerse", category: "metrics")
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "metrics")
 
     init(directory: URL? = nil, maxFiles: Int = 60, maxBytes: Int = 5_000_000) { … }
 
@@ -875,7 +875,7 @@ if #available(iOS 27, *) {
 
 ```swift
 nonisolated enum PerfSignpost {
-    static let poi = OSSignposter(subsystem: "one.wape.PoliVerse", category: .pointsOfInterest)
+    static let poi = OSSignposter(subsystem: "segrini.samuele.PoliVerse", category: .pointsOfInterest)
     static let metricLog: OSLog = {
         if #available(iOS 27, *) { MetricManager.logHandle(category: "PoliVerse") }
         else { MXMetricManager.makeLogHandle(category: "PoliVerse") }
@@ -950,7 +950,7 @@ signpost.
 
 ### Phase 3 — context and regression guards
 
-1. **[iOS 27]** `StateReporting`: domain `one.wape.PoliVerse.tab`, labels = tab
+1. **[iOS 27]** `StateReporting`: domain `segrini.samuele.PoliVerse.tab`, labels = tab
    values from `NewDestination.Tab`, reported by `NewRootView` from
    `.onChange(of: shell.selection, initial: true)`. Register the domain in
    `MetricManager(enabledStateReportingDomains:)` (Step 1.2 changes from
@@ -961,7 +961,7 @@ signpost.
    change — decide deliberately):
    `measure(metrics: [XCTApplicationLaunchMetric()])` for cold launch;
    `XCTHitchMetric(application:)` **[iOS 26]** over a Calendar week swipe and a
-   News scroll; `XCTOSSignpostMetric(subsystem: "one.wape.PoliVerse",
+   News scroll; `XCTOSSignpostMetric(subsystem: "segrini.samuele.PoliVerse",
    category: "PointsOfInterest", name: "agenda.load")` in mock-data mode for
    deterministic timing. Baselines: 100 ms for discrete actions, hitch ratio
    < 5 ms/s.

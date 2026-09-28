@@ -35,9 +35,9 @@ Safari.
 ```
 web view sees  https://ios.idserver.servizicie.interno.gov.it/...&nextUrl=...
      ↓ cancel
-we open        CIEID://https://ios.idserver.servizicie.interno.gov.it/...&sourceApp=one.wape.PoliVerse
+we open        CIEID://https://ios.idserver.servizicie.interno.gov.it/...&sourceApp=segrini.samuele.PoliVerse
      ↓ user authenticates with card + PIN
-CieID opens    one.wape.PoliVerse://https://idserver.servizicie.interno.gov.it/...
+CieID opens    segrini.samuele.PoliVerse://https://idserver.servizicie.interno.gov.it/...
      ↓ onOpenURL → CieIDRouter
 we strip to    https://idserver.servizicie.interno.gov.it/...
      ↓ load into the SAME web view (it holds the session)
@@ -71,7 +71,7 @@ CieID rejects it. The SDK concatenates for the same reason.
 exactly that string before parsing. Not handling it breaks real logins while
 every well-formed test still passes, so there is a test for it specifically.
 
-**Two schemes, deliberately.** `one.wape.PoliVerse` for the CIE return (the SDK
+**Two schemes, deliberately.** `segrini.samuele.PoliVerse` for the CIE return (the SDK
 asks integrators to use the bundle identifier) and `poliverse` for the Moodle
 token. The payloads are unrelated and keeping them apart means neither handler
 can mis-parse the other.
@@ -120,7 +120,7 @@ Most of the WebKit noise around this flow is irrelevant:
 | `cannot add handler to 0 from 0` | CoreAnimation noise |
 
 The lines worth watching are the app's own, under subsystem
-`one.wape.PoliVerse`: `Handing off to CieID for path=…`,
+`segrini.samuele.PoliVerse`: `Handing off to CieID for path=…`,
 `Incoming URL scheme=… prefix=…`, `Recovered return host=… path=…`, and
 `Resuming session after CieID`. These log at `info` so they persist in the
 device log.
