@@ -26,7 +26,8 @@ private struct Choices<Content: View>: View {
         case .row:
             ScrollViewReader { reader in
                 ScrollView(.horizontal) {
-                    HStack(spacing: spacing) { content() }
+                    // Lazy, so a row of icons builds only the ones on screen.
+                    LazyHStack(spacing: spacing) { content() }
                         .padding(.horizontal, 4)
                 }
                 .scrollIndicators(.hidden)
@@ -45,7 +46,7 @@ private struct Choices<Content: View>: View {
 
 /// One icon to pick: its picture and name, ringed when in use.
 private struct IconChoice: View {
-    /// The icon's preview image.
+    /// The name of the icon's preview in the asset catalog.
     let image: String
     /// What it is called.
     let title: Text
@@ -55,10 +56,10 @@ private struct IconChoice: View {
     /// The view's content.
     var body: some View {
         VStack(spacing: 5) {
-            Image(image)
-                .resizable()
-                .frame(width: 52, height: 52)
-                .clipShape(.rect(cornerRadius: 12, style: .continuous))
+            // Decoded in the background: drawn with `Image(image)`, every
+            // tile decoded on the main thread at once and froze the part the
+            // first time it opened.
+            IconPreviewImage(name: image)
                 .overlay {
                     RoundedRectangle(cornerRadius: 15, style: .continuous)
                         .strokeBorder(chosen ? Color.white : .clear, lineWidth: 2.5)
@@ -85,6 +86,10 @@ struct AppIconPicker: View {
     /// How the icons are laid out.
     var layout = ChoiceLayout.row
 
+    /// Points to pixels on this screen, for decoding the previews at the size
+    /// they are drawn.
+    @Environment(\.displayScale) private var displayScale
+
     /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -94,6 +99,23 @@ struct AppIconPicker: View {
             case .orbit, .dial, .closeUp: colours
             case .special: specials
             }
+        }
+        // The rest of the shape's previews, decoded one by one in the
+        // background, so a row scrolled sideways finds them ready.
+        .task(id: look.appIconStyle) {
+            await IconPreviewCache.shared.prefetch(previews(in: look.appIconStyle),
+                                                   pixelSide: Int((52 * displayScale).rounded(.up)))
+        }
+    }
+
+    /// The previews a shape shows, in the order the picker shows them.
+    ///
+    /// - Parameter style: The icon's shape.
+    /// - Returns: The previews' asset names.
+    private func previews(in style: AppIconStyle) -> [String] {
+        switch style {
+        case .special: SpecialIcon.allCases.map(\.previewImage)
+        case .orbit, .dial, .closeUp: AppIconChoice.choices(in: style).map { $0.previewImage(in: style) }
         }
     }
 
