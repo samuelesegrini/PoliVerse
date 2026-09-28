@@ -1140,14 +1140,15 @@ iPhone 12 Pro, iOS 27.2, Release, sample data, `main` against this pass.
   without `==`, so the standard library's `RawRepresentable` `==` won over the
   synthesised one and every comparison encoded both looks. SwiftUI compares the
   look, an environment value, on every update. It now has a memberwise `==`.
-- **Calendar paging: what is left is SwiftUI's own work.** After both fixes the
-  app's code is under 1% of the main thread while paging; the rest is layout
-  and rendering of the calendar page itself (the glass buttons and chips, the
-  animated day list). Main-thread samples on the simulator moved from 4,096 to
-  about 3,930 per run, so most of the hitch is not app code. The device A/B of
-  this last change could not run: the iPhone dropped off. Rerun
-  `testCalendarWeekPagingHitches` on it, `main` against this branch, to close
-  it.
+- **Calendar paging was the animation.** After both fixes above the app's
+  code was under 1% of the main thread while paging, and the device numbers did
+  not move (`main` 10.6–12.1 ms/s, this branch 11.8–13.4). Taking the animation
+  away halved them: **5.7 and 5.9 ms/s** over two runs, steady from one
+  iteration to the next. Animating only the week strip was no better than
+  animating the page (12.4, 13.8): the cost is the look's material under the
+  strip being redrawn on every animated frame, not the size of what animates.
+  A turned week now changes without animation; tapping a day and "Oggi" still
+  animate. One short hitch per turned week remains, at Apple's 5 ms/s line.
 - The Swift Concurrency and System Trace passes need the same Xcode-launched
   profile, and a signed-in account to exercise the offline cache and the
   network; sample data skips both.
