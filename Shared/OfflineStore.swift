@@ -32,6 +32,16 @@ nonisolated final class OfflineStore: Sendable {
     /// Diagnostic log for this type, under the `offline` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "offline")
 
+    /// Times each ``loaded(_:as:account:)`` in Points of Interest, as `offline.read`
+    /// with the record's name.
+    ///
+    /// Not a ``PerfSignpost`` name: reads overlap — a refresh restores several
+    /// services at once — and MetricKit's `mxSignpost` pairs intervals by name alone,
+    /// so it would pair them wrongly. Points of Interest pairs by signpost ID, which
+    /// is what Instruments and XCTest's signpost metric read.
+    private static let signposter = OSSignposter(
+        subsystem: "segrini.samuele.PoliVerse", category: .pointsOfInterest)
+
     /// The serial queue every encode and write runs on, and that every read and delete
     /// waits behind. One per process, not one per store.
     private static let writes = DispatchQueue(label: "segrini.samuele.PoliVerse.offline-writes", qos: .utility)
@@ -254,6 +264,10 @@ nonisolated final class OfflineStore: Sendable {
         _ type: Value.Type, as name: String, account: String?
     ) async -> Entry<Value>? {
         guard let account, !account.isEmpty else { return nil }
+        let signposter = Self.signposter
+        let interval = signposter.beginInterval("offline.read", id: signposter.makeSignpostID(),
+                                                "\(name, privacy: .public)")
+        defer { signposter.endInterval("offline.read", interval) }
         // Waited for at the caller's urgency, not the queue's: the queue runs at
         // utility, and at launch an unboosted wait behind it measured close to a
         // second on `agenda.load`. `flush()` never had the problem, because a

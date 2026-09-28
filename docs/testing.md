@@ -9,6 +9,7 @@ Politecnico's servers is a test of the Politecnico's servers.
 | `PoliVerse` | `PoliVerseTests` | Unit tests. Fast, run on every change. |
 | `PoliVerseUI` | `PoliVerseUITests` | Functional UI tests, Debug. Navigation, search, lifecycle, accessibility audits. |
 | `PoliVersePerformance` | `PoliVerseUITests` | Launch, hitch and signpost measurements, Release, plus the Personalizza walkthrough. Minutes long; kept out of the ordinary test action. |
+| `PoliVerseRealData` | `PoliVerseUITests` | The same measurements on the account signed in on a device. Opt-in, never in CI; see below. |
 
 ## Running
 
@@ -109,6 +110,46 @@ Adding a screen means adding an identifier to its root and a row to
   XCTest, which is where `XCUIApplication` lives.
 - A network test stubs `URLProtocol` and keys its answers by something unique
   to the test, so the suite stays parallel.
+
+## Measuring on a real account
+
+Sample data is small and skips the offline cache and the network, which is
+exactly where `docs/metrickit-performance.md` §5 moved work. `RealDataPerformanceTests`
+takes the measurements again on the student's own account, on their own phone.
+
+1. Install the app from the `PoliVerseRealData` scheme on the phone once
+   (a build for testing does it), open it, and **sign in by hand**. No test
+   types a credential. Later installs over it keep the session.
+2. Keep the phone unlocked, screen on, on a cable.
+3. Run:
+
+```
+xcodebuild test -project PoliVerse.xcodeproj -scheme PoliVerseRealData \
+  -destination 'id=<the phone's UDID>' -allowProvisioningUpdates
+```
+
+What it measures: launch with the real token and cache; every offline read at
+launch (`offline.read`, one interval per record) next to `session.restore`; the
+refresh each launch runs (`freshness.revalidate`, `agenda.load`, `career.load`);
+hitches scrolling Oggi, Corsi, Carriera, the updates feed and the materials of
+the course with the most files; hitches and `agenda.load` paging the calendar;
+memory after a walk through the tabs.
+
+The rules it keeps:
+
+- **Opt-in.** Only this scheme runs the class, and it sets
+  `POLIVERSE_REAL_DATA=1`; without it each test skips. `PoliVersePerformance`
+  and `PoliVerseUI` list the class as skipped as well.
+- **Nobody signed in is a skip, not a failure**, with the instruction to sign
+  in.
+- **Read-only and light.** Three iterations; the refresh it times is the one the
+  app runs at every launch anyway. Finding the biggest course opens each
+  course's materials once per run.
+- **No pictures kept.** The scheme's attachment lifetime is "keep never": a
+  screenshot of Carriera is a screenshot of someone's marks. Keep the result
+  bundles out of the repository.
+- **Compare in one sitting.** The account's data changes daily, so compare two
+  builds by alternating them in the same session, not against an old baseline.
 
 ## The Mac app
 

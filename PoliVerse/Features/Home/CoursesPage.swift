@@ -502,6 +502,7 @@ struct CoursesPage: View {
                                   unread: news(for: course).total)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("course-\(course.id)")
                 .contextMenu { menuItems(course) }
             }
         }
@@ -524,6 +525,7 @@ struct CoursesPage: View {
                               last: course.id == list.last?.id)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("course-\(course.id)")
                 .contextMenu { menuItems(course) }
             }
         }

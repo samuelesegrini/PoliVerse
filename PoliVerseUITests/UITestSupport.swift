@@ -18,16 +18,23 @@ nonisolated class PoliVerseUITestCase: XCTestCase {
     /// single page with its bottom panel.
     enum Layout: String { case tabs, singlePage }
 
+    /// Whose data the app shows: the sample set every ordinary test uses, or the
+    /// account signed in on the device, for ``RealDataPerformanceTests`` alone.
+    enum DataSource { case sample, signedInAccount }
+
     override func setUp() {
         continueAfterFailure = false
     }
 
     /// An app configured but not yet launched, so a test can add its own
     /// flags — a text size, a different layout — before starting it.
-    @MainActor func makeApp(layout: Layout = .tabs, textSize: String? = nil) -> XCUIApplication {
+    @MainActor func makeApp(layout: Layout = .tabs, textSize: String? = nil,
+                            data: DataSource = .sample) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments += [
-            "-useMockData", "<true/>",
+            // Pinned either way, so a switch left on in Impostazioni cannot
+            // decide which data a run measures.
+            "-useMockData", data == .sample ? "<true/>" : "<false/>",
             "-hasCompletedOnboarding", "<true/>",
             "-usesNewInterface", "<true/>",
             "-appLayout", layout.rawValue,

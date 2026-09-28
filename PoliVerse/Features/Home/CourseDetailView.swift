@@ -303,6 +303,7 @@ struct CourseDetailView: View {
                 row(symbol: "folder", title: String(localized: "Materiali"), trailing: newCount(badges.materials),
                     tile: ramp.colour(1, of: 6), last: false, chevron: true)
             }
+            .accessibilityIdentifier("course-materials")
             NavigationLink { CourseRecordingsView(course: course) } label: {
                 row(symbol: "play.rectangle", title: String(localized: "Registrazioni"),
                     trailing: toWatch(recordings.toWatch(in: course)), tile: ramp.colour(2, of: 6),

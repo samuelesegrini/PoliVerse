@@ -68,6 +68,9 @@
                <Test
                   Identifier = "SignedOutUITests">
                </Test>
+               <Test
+                  Identifier = "RealDataPerformanceTests">
+               </Test>
             </SkippedTests>
          </TestableReference>
       </Testables>
