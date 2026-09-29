@@ -43,6 +43,8 @@ struct DataStorageView: View {
     @State private var confirmingDeletion: StorageAudit.Category?
     /// Whether deleting every downloaded material is being confirmed.
     @State private var confirmingMaterials = false
+    /// The saved recordings, whose network choice is set here.
+    @Environment(RecordingDownloads.self) private var recordings
 
     /// The kinds that are downloaded WeBeep files, which can be fetched again.
     private var materials: [StorageAudit.Category] { categories.filter(\.kind.isMaterial) }
@@ -87,6 +89,19 @@ struct DataStorageView: View {
                 }
                 .lookRow()
             }
+
+            #if os(iOS)
+            Section {
+                Toggle("Scarica anche con la rete cellulare", isOn: Bindable(recordings).allowsCellular)
+            } header: {
+                Text("Registrazioni")
+            } footer: {
+                Text(recordings.allowsCellular
+                     ? "Una lezione occupa circa 90 MB all’ora. Spento, i download aspettano il Wi-Fi e rispettano la modalità Dati ridotti."
+                     : "I download aspettano il Wi-Fi e rispettano la modalità Dati ridotti. Cambiare scelta riavvia quelli in corso.")
+            }
+            .lookRow()
+            #endif
 
             Section {
                 if let appData {

@@ -32,6 +32,9 @@ nonisolated struct RecordingDownloadAttributes: ActivityAttributes {
         nonisolated enum Phase: String, Codable, Hashable, Sendable {
             /// Bytes are arriving.
             case downloading
+            /// Held back for Wi-Fi: the only connection is cellular, and the student
+            /// chose not to use it for recordings.
+            case waiting
             /// On the device.
             case finished
             /// Stopped when the app was closed; carried on at the next launch.

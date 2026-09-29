@@ -647,6 +647,8 @@ private struct RecordingRow: View {
 
     /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
+    /// The saved recordings, which say when a download is waiting for Wi-Fi.
+    @Environment(RecordingDownloads.self) private var downloads
     /// The date tile's width, scaled with the reader's text.
     @ScaledMetric(relativeTo: .body) private var tile: CGFloat = 44
 
@@ -746,6 +748,7 @@ private struct RecordingRow: View {
         case .downloaded: parts.append(String(localized: "offline"))
         case .failed: parts.append(String(localized: "download non riuscito"))
         case .interrupted: parts.append(String(localized: "download interrotto"))
+        case .downloading where downloads.isWaitingForWiFi: parts.append(String(localized: "in attesa del Wi-Fi"))
         case .idle, .downloading: break
         }
         return parts.joined(separator: " · ")

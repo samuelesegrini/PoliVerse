@@ -1,4 +1,5 @@
 import Foundation
+import Network
 import Observation
 import OSLog
 
@@ -58,6 +59,30 @@ final class RecordingDownloads {
     /// The downloads' Live Activities, on the Lock Screen and in the Dynamic Island.
     private let activities = DownloadActivities()
 
+    /// Whether downloads may use cellular data, a personal hotspot, or a connection in
+    /// Low Data Mode. On by default; off, a download waits for Wi-Fi.
+    ///
+    /// A lecture is a couple of hundred megabytes. Changing the choice restarts the
+    /// downloads in flight under it, since a request's network rules are fixed when it
+    /// is made.
+    var allowsCellular: Bool {
+        didSet {
+            guard allowsCellular != oldValue else { return }
+            UserDefaults.standard.set(allowsCellular, forKey: Self.cellularKey)
+            restartUnderNetworkChoice()
+            refreshWaiting()
+        }
+    }
+    /// Where ``allowsCellular`` is kept.
+    nonisolated static let cellularKey = "recordingDownloadsOverCellular"
+    /// `true` while a download is held back for Wi-Fi: the only connection is cellular,
+    /// a hotspot or in Low Data Mode, and ``allowsCellular`` is off.
+    private(set) var isWaitingForWiFi = false
+    /// Whether the current connection is one ``allowsCellular`` governs.
+    private var onExpensivePath = false
+    /// Watches the connection, so a download held back for Wi-Fi says so.
+    private let path = NWPathMonitor()
+
     /// Where the files live.
     nonisolated static var directory: URL {
         URL.applicationSupportDirectory.appending(path: "Recordings", directoryHint: .isDirectory)
@@ -73,7 +98,13 @@ final class RecordingDownloads {
         configuration.httpCookieStorage = nil
         self.relay = relay
         session = URLSession(configuration: configuration, delegate: relay, delegateQueue: nil)
+        allowsCellular = UserDefaults.standard.object(forKey: Self.cellularKey) as? Bool ?? true
         relay.owner = self
+        path.pathUpdateHandler = { [weak self] path in
+            let expensive = path.isExpensive || path.isConstrained
+            Task { @MainActor in self?.pathChanged(expensive: expensive) }
+        }
+        path.start(queue: DispatchQueue(label: "segrini.samuele.PoliVerse.recordings-network"))
         scanFiles()
         reattach()
     }
@@ -137,6 +168,7 @@ final class RecordingDownloads {
         for (field, value) in HTTPCookie.requestHeaderFields(with: cookies) {
             request.setValue(value, forHTTPHeaderField: field)
         }
+        Self.apply(allowsCellular, to: &request)
         let task = session.downloadTask(with: request)
         task.taskDescription = String(recording.transferID)
         task.countOfBytesClientExpectsToReceive = Int64(stream.fileSize ?? 0)
@@ -144,6 +176,7 @@ final class RecordingDownloads {
         startedAt[String(recording.transferID)] = .now
         task.resume()
         activities.start(for: recording)
+        refreshWaiting()
         log.info("Downloading transfer \(recording.transferID, privacy: .public)")
     }
 
@@ -208,6 +241,86 @@ final class RecordingDownloads {
         startedAt = [:]
         activities.dismissAll()
         log.info("Saved recordings deleted")
+    }
+
+    // MARK: - The network
+
+    /// Sets a request's network rules from the student's choice.
+    ///
+    /// - Parameters:
+    ///   - cellular: Whether cellular, hotspots and Low Data Mode may be used.
+    ///   - request: The request to change.
+    nonisolated static func apply(_ cellular: Bool, to request: inout URLRequest) {
+        request.allowsExpensiveNetworkAccess = cellular
+        request.allowsConstrainedNetworkAccess = cellular
+    }
+
+    /// Whether a download is held back: it is in flight, the connection is one the
+    /// choice rules out, and the choice rules it out.
+    ///
+    /// - Parameters:
+    ///   - inFlight: Whether any download is in flight.
+    ///   - expensive: Whether the connection is cellular, a hotspot or in Low Data Mode.
+    ///   - allowsCellular: The student's choice.
+    /// - Returns: `true` when downloads are waiting for Wi-Fi.
+    nonisolated static func waitsForWiFi(inFlight: Bool, expensive: Bool, allowsCellular: Bool) -> Bool {
+        inFlight && expensive && !allowsCellular
+    }
+
+    /// Takes a change of connection.
+    private func pathChanged(expensive: Bool) {
+        onExpensivePath = expensive
+        refreshWaiting()
+    }
+
+    /// Recomputes ``isWaitingForWiFi`` and tells the Live Activities.
+    private func refreshWaiting() {
+        let inFlight = statuses.compactMap { id, status -> Int? in
+            if case .downloading = status { return id }
+            return nil
+        }
+        let waiting = Self.waitsForWiFi(inFlight: !inFlight.isEmpty, expensive: onExpensivePath,
+                                        allowsCellular: allowsCellular)
+        guard waiting != isWaitingForWiFi else { return }
+        isWaitingForWiFi = waiting
+        activities.waiting(inFlight, isWaiting: waiting)
+    }
+
+    /// Restarts the downloads in flight whose network rules differ from the choice.
+    ///
+    /// A request's rules are fixed when it is made, and a download carried on from its
+    /// resume data keeps the old request, so each is started again from its original
+    /// request with the new rules — from the beginning, within the life of the address.
+    private func restartUnderNetworkChoice() {
+        let cellular = allowsCellular
+        session.getAllTasks { [weak self] tasks in
+            let stale = tasks.compactMap { task -> (URLRequest, String)? in
+                guard let description = task.taskDescription, Int(description) != nil,
+                      var request = task.originalRequest,
+                      request.allowsExpensiveNetworkAccess != cellular else { return nil }
+                // Renamed first, so its cancellation is not taken for the student's.
+                task.taskDescription = "replaced"
+                task.cancel()
+                Self.apply(cellular, to: &request)
+                return (request, description)
+            }
+            Task { @MainActor in self?.restart(stale) }
+        }
+    }
+
+    /// Starts again the downloads ``restartUnderNetworkChoice()`` stopped.
+    private func restart(_ requests: [(URLRequest, String)]) {
+        for (request, description) in requests {
+            let task = session.downloadTask(with: request)
+            task.taskDescription = description
+            task.resume()
+            if let id = Int(description) {
+                statuses[id] = .downloading(nil)
+                activities.resumed(id)
+            }
+        }
+        if !requests.isEmpty { log.info("Restarted \(requests.count, privacy: .public) downloads under the new network choice") }
+        refreshWaiting()
     }
 
     /// Waits until iOS has delivered the events of a background relaunch, so the app

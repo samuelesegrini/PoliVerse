@@ -69,6 +69,22 @@ final class DownloadActivities {
         #endif
     }
 
+    /// Says the downloads in flight are held back for Wi-Fi, or no longer are.
+    ///
+    /// - Parameters:
+    ///   - ids: The downloads in flight, by `transfer_id`.
+    ///   - isWaiting: Whether they are waiting for Wi-Fi.
+    func waiting(_ ids: [Int], isWaiting: Bool) {
+        #if os(iOS)
+        for id in ids {
+            published[id] = nil
+            let state = RecordingDownloadAttributes.ContentState(
+                phase: isWaiting ? .waiting : .downloading, fraction: nil)
+            Task { await Self.update(id, state: state) }
+        }
+        #endif
+    }
+
     /// Resumes following a download carried on from where it stopped.
     ///
     /// - Parameter id: The recording's `transfer_id`.
@@ -168,7 +184,7 @@ typealias RecordingDownloadPhase = RecordingDownloadAttributes.ContentState.Phas
 /// How a download ended. The Mac has no Live Activities; the type keeps the callers
 /// the same on both.
 enum RecordingDownloadPhase {
-    case downloading, finished, interrupted, failed
+    case downloading, waiting, finished, interrupted, failed
 }
 #endif
 

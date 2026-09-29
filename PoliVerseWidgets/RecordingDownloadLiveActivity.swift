@@ -97,8 +97,8 @@ struct DownloadProgressBar: View {
     /// The view's content.
     var body: some View {
         switch state.phase {
-        case .downloading:
-            if let fraction = state.fraction {
+        case .downloading, .waiting:
+            if state.phase == .downloading, let fraction = state.fraction {
                 ProgressView(value: fraction).tint(.accentColor)
             } else {
                 ProgressView().progressViewStyle(.linear).tint(.accentColor)
@@ -134,6 +134,7 @@ enum DownloadActivityText {
     static func symbol(_ phase: RecordingDownloadAttributes.ContentState.Phase) -> String {
         switch phase {
         case .downloading: "arrow.down.circle"
+        case .waiting: "wifi"
         case .finished: "checkmark.circle.fill"
         case .interrupted: "pause.circle"
         case .failed: "exclamationmark.circle"
@@ -144,6 +145,7 @@ enum DownloadActivityText {
     static func headline(_ phase: RecordingDownloadAttributes.ContentState.Phase) -> LocalizedStringKey {
         switch phase {
         case .downloading: "Download della registrazione"
+        case .waiting: "In attesa del Wi-Fi"
         case .finished: "Registrazione scaricata"
         case .interrupted: "Download interrotto · riprende all'apertura"
         case .failed: "Download non riuscito"
@@ -155,6 +157,7 @@ enum DownloadActivityText {
         switch state.phase {
         case .downloading:
             state.fraction.map { $0.formatted(.percent.precision(.fractionLength(0))) } ?? "…"
+        case .waiting: String(localized: "Wi-Fi")
         case .finished: String(localized: "Pronta")
         case .interrupted: String(localized: "In pausa")
         case .failed: String(localized: "Errore")

@@ -51,3 +51,29 @@ struct DownloadActivityTests {
         #expect(DownloadActivities.detail(of: recording) == "Lezione · 21 set")
     }
 }
+
+/// When a recording's download waits for Wi-Fi, and what its request allows.
+@Suite("Download network choice")
+struct DownloadNetworkTests {
+    @Test("A download waits for Wi-Fi only on cellular, with cellular turned off", arguments: [
+        (true, true, false, true),
+        (true, true, true, false),
+        (true, false, false, false),
+        (false, true, false, false),
+    ])
+    func waits(inFlight: Bool, expensive: Bool, allowsCellular: Bool, expected: Bool) {
+        #expect(RecordingDownloads.waitsForWiFi(inFlight: inFlight, expensive: expensive,
+                                                allowsCellular: allowsCellular) == expected)
+    }
+
+    @Test("The choice sets both the cellular and the Low Data Mode rules")
+    func request() {
+        var request = URLRequest(url: URL(string: "https://example.com/lecture.mp4")!)
+        RecordingDownloads.apply(false, to: &request)
+        #expect(!request.allowsExpensiveNetworkAccess)
+        #expect(!request.allowsConstrainedNetworkAccess)
+        RecordingDownloads.apply(true, to: &request)
+        #expect(request.allowsExpensiveNetworkAccess)
+        #expect(request.allowsConstrainedNetworkAccess)
+    }
+}
