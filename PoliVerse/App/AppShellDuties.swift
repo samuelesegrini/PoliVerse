@@ -22,7 +22,13 @@ struct AppShellDuties: ViewModifier {
     @Environment(NotificationModel.self) private var notifications
     /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
+    /// The recordings list, and the way to Webex for a fresh address.
+    @Environment(RecordingsModel.self) private var recordings
+    /// The saved recordings, whose interrupted downloads are carried on.
+    @Environment(RecordingDownloads.self) private var downloads
     @State private var spotlight = SpotlightIndex()
+    /// Carries on the downloads a closed app left behind.
+    @State private var recovery = DownloadRecovery()
 
     /// Applies the modifier to `content`.
     ///
@@ -52,6 +58,14 @@ struct AppShellDuties: ViewModifier {
                 // Launching *because* of a control: the phase is already active
                 // by the time the view appears, so the change above never fires.
                 if let destination = AppDestination.takePending() { route(destination) }
+            }
+            // Each time the app comes to the front, including at launch: a
+            // download the closed app left behind is carried on, or started
+            // again from a fresh address once its old one has expired.
+            .task(id: scenePhase == .active) {
+                guard scenePhase == .active else { return }
+                await recovery.run(downloads: downloads, recordings: recordings,
+                                   account: session, accountEmail: session.student?.email)
             }
             // Indexed after the data lands, and only then: an index built from
             // an empty model would publish nothing and look like a broken

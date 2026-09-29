@@ -191,6 +191,29 @@ final class RecordingDownloads {
         resume(recording.transferID)
     }
 
+    /// The downloads stopped part-way, waiting to be carried on.
+    var interrupted: [Int] {
+        statuses.compactMap { id, status in status == .interrupted ? id : nil }.sorted()
+    }
+
+    /// Whether an interrupted download can carry on from where it stopped: its resume
+    /// data is on the device and the address inside it is still good.
+    ///
+    /// - Parameter id: The recording's `transfer_id`.
+    /// - Returns: `false` when it needs a fresh address.
+    func isResumable(_ id: Int) -> Bool {
+        guard let started = startedAt[String(id)] else { return false }
+        return Date.now.timeIntervalSince(started) < resumeLifetime
+            && FileManager.default.fileExists(atPath: Self.resumeFile(for: id).path)
+    }
+
+    /// Resumes one download by `transfer_id`, for a recording no longer held in the
+    /// list. See ``resume(_:)``.
+    @discardableResult
+    func resume(transferID id: Int) -> Bool {
+        resume(id)
+    }
+
     /// Resumes one download by `transfer_id`. See ``resume(_:)``.
     @discardableResult
     private func resume(_ id: Int) -> Bool {

@@ -270,6 +270,53 @@ final class RecordingsModel {
         return (outcome, await RecordingsWebKit.webexCookies())
     }
 
+    /// What asking Webex for a recording's file came to.
+    enum FreshDownload {
+        /// The file's address, with Webex's cookies to send along.
+        case ready(WebexStream, cookies: [HTTPCookie])
+        /// The lecturer does not allow downloading it.
+        case forbidden
+        /// Webex wants the student to sign in first.
+        case signInNeeded
+        /// The recording's Webex address could not be found.
+        case noAddress
+        /// Webex's page did not say where the file is.
+        case noAnswer
+    }
+
+    /// Asks Webex for a recording's file, with an address minted now.
+    ///
+    /// The address carries a ticket that lasts ninety minutes, so a download started
+    /// later, or carried on after that, needs a fresh one. Used by the Download button
+    /// and by ``DownloadRecovery``.
+    ///
+    /// - Parameters:
+    ///   - recording: The recording.
+    ///   - accountEmail: The student's institutional email, for Webex.
+    /// - Returns: What Webex answered.
+    func freshDownload(for recording: Recording, accountEmail: String?) async -> FreshDownload {
+        guard let address = await webexAddress(for: recording) else {
+            return phase == .needsSignIn ? .signInNeeded : .noAddress
+        }
+        let (outcome, cookies) = await stream(at: address, accountEmail: accountEmail, for: recording)
+        switch outcome {
+        case .stream(let stream) where stream.allowsDownload: return .ready(stream, cookies: cookies)
+        case .stream: return .forbidden
+        case .signInNeeded: return .signInNeeded
+        case .failed: return .noAnswer
+        }
+    }
+
+    /// A recording held for this account, by `transfer_id`, restoring the offline copy
+    /// first when nothing has been read yet this launch.
+    ///
+    /// - Parameter transferID: The recording's `transfer_id`.
+    /// - Returns: The recording, or `nil` when none is held.
+    func recording(transferID: Int) async -> Recording? {
+        await restoreIfNeeded()
+        return recordings.first { $0.transferID == transferID }
+    }
+
     /// The email the student gave for Webex, when the institutional one was not the
     /// account's. Kept on this device, and forgotten at sign-out.
     var webexEmail: String? {

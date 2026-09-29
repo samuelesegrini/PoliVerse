@@ -189,7 +189,10 @@ button the lecturer enabled on Webex; it is not a bulk mirror.
   (`FileDownloadModel`): Application Support, `isExcludedFromBackup`.
 - The ticket in the URL expires after 90 minutes. A download that fails after that
   needs a fresh `/stream` call and a new URL; resume data may not survive the change
-  **[?]**.
+  **[?]**. `DownloadRecovery` does this each time the app comes to the front: an
+  interrupted download resumes while its resume data is younger than 80 minutes,
+  and is otherwise started again, from zero, from a fresh address. It stops at the
+  first Webex sign-in, leaving the rest for the row's "Riprendi".
 - No share sheet, no export to Files: the recording contains other students'
   voices.
 - Show size before downloading (≈ 90 MB/h) and the total in the storage screen,

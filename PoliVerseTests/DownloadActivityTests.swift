@@ -77,3 +77,21 @@ struct DownloadNetworkTests {
         #expect(request.allowsConstrainedNetworkAccess)
     }
 }
+
+/// Carrying on the downloads a closed app left behind.
+@Suite("Download recovery")
+struct DownloadRecoveryTests {
+    /// Resume data still good wins: it carries on from where it stopped, with no
+    /// request to Webex. Past that, a recording in the list is asked for afresh;
+    /// one that is not cannot be, and is left for the student.
+    @Test("Each interrupted download resumes, is asked for afresh, or is left")
+    func plan() {
+        let steps = DownloadRecovery.plan(interrupted: [1, 2, 3, 4], resumable: [1, 4], known: [1, 2])
+        #expect(steps == [.resume(1), .refetch(2), .skip(3), .resume(4)])
+    }
+
+    @Test("Nothing interrupted, nothing to do")
+    func empty() {
+        #expect(DownloadRecovery.plan(interrupted: [], resumable: [], known: []).isEmpty)
+    }
+}

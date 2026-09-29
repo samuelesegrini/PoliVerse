@@ -569,17 +569,14 @@ struct CourseRecordingsView: View {
         guard opening == nil else { return }
         opening = recording.id
         defer { opening = nil }
-        guard let address = await model.webexAddress(for: recording) else {
-            downloadRefusal = String(localized: "Non è stato possibile raggiungere la registrazione su Webex.")
-            return
-        }
-        let (outcome, cookies) = await model.stream(at: address, accountEmail: session.student?.email, for: recording)
-        switch outcome {
-        case .stream(let stream) where stream.allowsDownload:
+        switch await model.freshDownload(for: recording, accountEmail: session.student?.email) {
+        case .ready(let stream, let cookies):
             downloads.download(recording, from: stream, cookies: cookies)
-        case .stream:
+        case .forbidden:
             downloadRefusal = String(localized: "Il docente non permette di scaricare questa registrazione. Si può guardare in streaming.")
-        default:
+        case .noAddress:
+            downloadRefusal = String(localized: "Non è stato possibile raggiungere la registrazione su Webex.")
+        case .signInNeeded, .noAnswer:
             downloadRefusal = String(localized: "Webex non ha risposto. Apri la registrazione una volta, poi riprova a scaricarla.")
         }
     }
