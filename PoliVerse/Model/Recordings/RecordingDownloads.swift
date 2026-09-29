@@ -55,6 +55,8 @@ final class RecordingDownloads {
     private let session: URLSession
     /// Called once iOS has delivered every event of a background relaunch.
     private var eventsDelivered: CheckedContinuation<Void, Never>?
+    /// The downloads' Live Activities, on the Lock Screen and in the Dynamic Island.
+    private let activities = DownloadActivities()
 
     /// Where the files live.
     nonisolated static var directory: URL {
@@ -141,6 +143,7 @@ final class RecordingDownloads {
         statuses[recording.transferID] = .downloading(nil)
         startedAt[String(recording.transferID)] = .now
         task.resume()
+        activities.start(for: recording)
         log.info("Downloading transfer \(recording.transferID, privacy: .public)")
     }
 
@@ -169,6 +172,7 @@ final class RecordingDownloads {
         task.taskDescription = String(id)
         statuses[id] = .downloading(nil)
         task.resume()
+        activities.resumed(id)
         log.info("Resuming download of transfer \(id, privacy: .public)")
         return true
     }
@@ -183,6 +187,7 @@ final class RecordingDownloads {
         }
         try? FileManager.default.removeItem(at: Self.resumeFile(for: recording.transferID))
         statuses[recording.transferID] = nil
+        activities.dismiss(recording.transferID)
     }
 
     /// Deletes a saved recording, or what is left of an interrupted download.
@@ -192,6 +197,7 @@ final class RecordingDownloads {
         try? FileManager.default.removeItem(at: Self.file(for: recording.transferID))
         try? FileManager.default.removeItem(at: Self.resumeFile(for: recording.transferID))
         statuses[recording.transferID] = nil
+        activities.dismiss(recording.transferID)
     }
 
     /// Deletes every saved recording and stops every download, on sign-out.
@@ -200,6 +206,7 @@ final class RecordingDownloads {
         try? FileManager.default.removeItem(at: Self.directory)
         statuses = [:]
         startedAt = [:]
+        activities.dismissAll()
         log.info("Saved recordings deleted")
     }
 
@@ -214,12 +221,14 @@ final class RecordingDownloads {
     /// Takes a download's progress.
     fileprivate func progressed(_ id: Int, fraction: Double?) {
         statuses[id] = .downloading(fraction)
+        activities.progressed(id, fraction: fraction)
     }
 
     /// Takes a download that finished with its file in place.
     fileprivate func finished(_ id: Int, at url: URL) {
         statuses[id] = .downloaded(url)
         startedAt[String(id)] = nil
+        activities.ended(id, as: .finished)
         log.info("Downloaded transfer \(id, privacy: .public)")
     }
 
@@ -227,16 +236,21 @@ final class RecordingDownloads {
     /// it on at once when it still can.
     fileprivate func interrupted(_ id: Int) {
         log.info("Download of transfer \(id, privacy: .public) interrupted")
-        if !resume(id) { statuses[id] = .interrupted }
+        if !resume(id) {
+            statuses[id] = .interrupted
+            activities.ended(id, as: .interrupted)
+        }
     }
 
     /// Takes a download that failed, or was cancelled.
     fileprivate func failed(_ id: Int, message: String?) {
         guard let message else {
             statuses[id] = nil
+            activities.dismiss(id)
             return
         }
         statuses[id] = .failed(message)
+        activities.ended(id, as: .failed)
         log.error("Download of transfer \(id, privacy: .public) failed: \(message, privacy: .public)")
     }
 
@@ -277,6 +291,9 @@ final class RecordingDownloads {
             let ids = tasks.compactMap { $0.taskDescription.flatMap(Int.init) }
             Task { @MainActor in
                 for id in ids where self?.statuses[id] == nil { self?.statuses[id] = .downloading(nil) }
+                // An activity left by a download that is no longer running
+                // would show a bar that never moves.
+                self?.activities.dismissAll(keeping: Set(ids))
             }
         }
     }

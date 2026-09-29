@@ -229,7 +229,7 @@ below is about threads: all of it happens outside the process.
 
 | Step | What | Notes |
 | --- | --- | --- |
-| **7. Live Activity for a download** | "Analisi 1 — 45%" on the Lock Screen and in the Dynamic Island, updated from the session delegate's progress, ended on finish, failure or cancel | Reuses `LiveActivityController`. Throttle updates: the system budgets them |
+| **7. Live Activity for a download** — done | "Analisi 1 — 45%" on the Lock Screen and in the Dynamic Island, updated from the session delegate's progress, ended on finish, failure or cancel | Reuses `LiveActivityController`. Throttle updates: the system budgets them |
 | **8. Wi-Fi only, or cellular too** | A choice in Impostazioni, applied per request with `allowsExpensiveNetworkAccess` / `allowsConstrainedNetworkAccess` | A lecture is ≈ 90 MB an hour |
 | **9. Recover an expired download** | On opening the app, a download stopped past the resume data's 80 minutes asks `/stream` for a fresh address and continues, instead of waiting in "interrotto" for a tap | Foreground only: a fresh address needs the Webex session in WebKit. Whether resume data survives the new address is unverified (`recordings.md`) |
 | **10. A queue of lectures** | Several lectures asked for, downloaded one after another | A product decision first: `recordings.md` says one lecture at a time, on purpose |

@@ -250,6 +250,32 @@ private let previewLecture = LectureActivityAttributes(
     LectureActivityAttributes.ContentState(phase: .running)
 }
 
+private let previewDownload = RecordingDownloadAttributes(
+    transferID: 1, course: "Sistemi Distribuiti", detail: "Lezione · 21 set", megabytes: 180)
+
+#Preview("Download · schermata di blocco", as: .content, using: previewDownload) {
+    RecordingDownloadLiveActivity()
+} contentStates: {
+    RecordingDownloadAttributes.ContentState(phase: .downloading, fraction: nil)
+    RecordingDownloadAttributes.ContentState(phase: .downloading, fraction: 0.45)
+    RecordingDownloadAttributes.ContentState(phase: .finished, fraction: 1)
+    RecordingDownloadAttributes.ContentState(phase: .interrupted, fraction: nil)
+    RecordingDownloadAttributes.ContentState(phase: .failed, fraction: nil)
+}
+
+#Preview("Download · isola", as: .dynamicIsland(.compact), using: previewDownload) {
+    RecordingDownloadLiveActivity()
+} contentStates: {
+    RecordingDownloadAttributes.ContentState(phase: .downloading, fraction: 0.45)
+    RecordingDownloadAttributes.ContentState(phase: .finished, fraction: 1)
+}
+
+#Preview("Download · isola minima", as: .dynamicIsland(.minimal), using: previewDownload) {
+    RecordingDownloadLiveActivity()
+} contentStates: {
+    RecordingDownloadAttributes.ContentState(phase: .downloading, fraction: 0.45)
+}
+
 // MARK: - Controlli
 
 // `#Preview(as:widget:)` has no ControlWidget form, so the controls are
