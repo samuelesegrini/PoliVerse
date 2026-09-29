@@ -55,6 +55,36 @@ struct PendingChangesTests {
         #expect(pending.count == 0)
     }
 
+    /// Signal returning and the app coming to the front often coincide. The
+    /// second flush used to return at once, leaving a change made meanwhile
+    /// for the next foregrounding.
+    @Test("A flush asked for during another sends what was queued meanwhile")
+    func secondFlushSendsLaterChanges() async {
+        let pending = queue()
+        let delivery = MidFlush()
+        pending.deliver { [delivery] action in
+            delivery.sent.append(action)
+            if delivery.sent.count == 1 {
+                pending.record(.courseFavourite(moodleID: 8, value: true))
+                delivery.second = Task { await pending.flush() }
+            }
+            return true
+        }
+
+        pending.record(.courseFavourite(moodleID: 7, value: true))
+        await pending.flush()
+        await delivery.second?.value
+
+        #expect(delivery.sent.count == 2)
+        #expect(pending.count == 0)
+    }
+
+    /// What ``secondFlushSendsLaterChanges()`` saw.
+    private final class MidFlush {
+        var sent: [PendingAction] = []
+        var second: Task<Void, Never>?
+    }
+
     /// Handing ownership back to the server is the whole reason the caller is
     /// told: keeping the optimistic override would make the app ignore a
     /// favourite removed later from the web, forever.

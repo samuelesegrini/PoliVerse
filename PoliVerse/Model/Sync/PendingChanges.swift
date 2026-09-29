@@ -119,8 +119,11 @@ final class PendingChanges {
 
     /// Sends everything waiting, oldest first.
     ///
-    /// Returns immediately when a flush is already running, when there is no
-    /// connection, when nobody is signed in, or when the queue is empty.
+    /// A call while a flush runs waits for it and then sends what was queued in the
+    /// meantime: signal returning and the app coming to the front often coincide, and
+    /// returning at once left a change made mid-flush for the next foregrounding.
+    /// Returns at once when there is no connection, when nobody is signed in, or when
+    /// the queue is empty.
     ///
     /// Deliveries are sequential: two queued changes can target the same course, and
     /// sending them together would leave the final state to whichever request the
@@ -128,11 +131,27 @@ final class PendingChanges {
     /// connection that drops again does not spend the retry budget of everything
     /// behind it.
     func flush() async {
-        guard !isFlushing, network.isOnline, account.matricola != nil else { return }
+        // Chained, so passes never overlap: two at once would send a change twice.
+        let previous = flushing
+        let task = Task(name: "pending flush") {
+            await previous?.value
+            await self.sendQueued()
+        }
+        flushing = task
+        await task.value
+        if flushing == task { flushing = nil }
+    }
+
+    /// The last flush queued, which the next one runs after.
+    @ObservationIgnored private var flushing: Task<Void, Never>?
+
+    /// One pass over the queue.
+    private func sendQueued() async {
+        guard network.isOnline, account.matricola != nil else { return }
         // Read without blocking: a flush runs on every foregrounding, and an
         // empty queue — the usual case — should cost the main actor nothing.
         var queue = await ActionQueue.read(store: store, account: account.matricola)
-        guard !queue.isEmpty, !isFlushing else { return }
+        guard !queue.isEmpty else { return }
 
         isFlushing = true
         defer { isFlushing = false }
