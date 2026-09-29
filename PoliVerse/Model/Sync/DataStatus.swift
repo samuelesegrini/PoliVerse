@@ -39,7 +39,7 @@ final class DataStatus {
     }
 
     /// How long a refresh must run before it is announced. Longer than a load served
-    /// out of ``LoadWindow``, shorter than a real round trip.
+    /// out of the loaders' caches, shorter than a real round trip.
     static let quietInterval: Duration = .milliseconds(700)
     /// How long ``State/updated(_:)`` is shown before the line goes quiet.
     static let confirmationInterval: Duration = .seconds(3)

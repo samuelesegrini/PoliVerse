@@ -310,7 +310,7 @@ final class FreeRoomsModel {
         // Only a pass that produced rooms counts. A campus where every request
         // failed leaves `loaded` empty, and stamping that would both suppress
         // the retry a minute later and print "ora" over an empty screen — the
-        // same rule ``LoadWindow`` follows for every other service.
+        // same rule the ``Loader`` follows for every other service.
         if !loaded.isEmpty { markLoaded() }
         saveWidgetSnapshot()
         let booked = loaded.reduce(0) { $0 + $1.bookings.count }

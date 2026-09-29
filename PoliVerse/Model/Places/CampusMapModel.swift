@@ -103,28 +103,56 @@ final class CampusMapModel {
     ///
     /// Availability is not loaded — see ``loadAvailability(campus:)``.
     ///
+    /// A call for another campus while one runs is not turned away: the picker changes
+    /// the campus mid-load, and dropping the call left the previous campus's pins on
+    /// screen. Only the newest call places pins; the coordinates fetch is shared.
+    ///
     /// - Parameter campus: The campus to show, or `nil` for every campus.
     func load(campus: String?) async {
         guard !skipsLoading else { return }
-        guard !isLoading else { return }
+        loads += 1
+        let mine = loads
+        loadsInFlight += 1
         isLoading = true
         errorMessage = nil
-        defer { isLoading = false }
+        defer {
+            loadsInFlight -= 1
+            if loadsInFlight == 0 { isLoading = false }
+        }
         showsAvailability = false
 
         if locations.isEmpty, let cached = await MapPlacement.cachedLocations() {
             locations = cached
         }
-        await place(campus: campus)
+        await place(campus: campus, load: mine)
 
         async let catalogueLoaded: Void = catalogue.load()
         if !locationsRefreshed {
-            await loadLocations()
-            await place(campus: campus)
+            await refreshLocations()
+            await place(campus: campus, load: mine)
         }
         await catalogueLoaded
-        await place(campus: campus)
+        await place(campus: campus, load: mine)
         log.notice("map: \(self.placed.count, privacy: .public) buildings placed")
+    }
+
+    /// Counts loads, so an older one can tell a newer one has started.
+    @ObservationIgnored private var loads = 0
+    /// Loads in flight, which ``isLoading`` reports.
+    @ObservationIgnored private var loadsInFlight = 0
+    /// The coordinates fetch in flight, which a second load joins.
+    @ObservationIgnored private var locationsTask: Task<Void, Never>?
+
+    /// Refetches the coordinates, or waits for the refetch already running.
+    private func refreshLocations() async {
+        if let locationsTask {
+            await locationsTask.value
+            return
+        }
+        let task = Task(name: "map coordinates") { await self.loadLocations() }
+        locationsTask = task
+        await task.value
+        locationsTask = nil
     }
 
     /// Recomputes the pins for a campus and starts revealing them.
@@ -134,12 +162,14 @@ final class CampusMapModel {
     /// grey pins would claim more than it knows. The reveal is not awaited, so
     /// ``load(campus:)`` can keep fetching while pins land.
     ///
-    /// - Parameter campus: The campus to place, or `nil` for every campus.
-    private func place(campus: String?) async {
+    /// - Parameters:
+    ///   - campus: The campus to place, or `nil` for every campus.
+    ///   - load: The load placing them; a newer load's placement wins.
+    private func place(campus: String?, load: Int) async {
         guard !locations.isEmpty, !catalogue.rooms.isEmpty else { return }
         let placed = await MapPlacement.pinsInBackground(
             rooms: catalogue.rooms, locations: locations, campus: campus)
-        guard placed != self.placed.map(\.uncoloured) else { return }
+        guard load == loads, placed != self.placed.map(\.uncoloured) else { return }
         self.placed = placed
         // Placing again drops any colouring, so say so rather than keep a
         // legend over grey pins.
@@ -239,9 +269,10 @@ final class CampusMapModel {
             let data = try await http.data(for: APIRequest(
                 host: .maps, path: "/spazi/edificio/geojson",
                 query: [.init(name: "filter", value: "")], authenticated: false))
-            let decoded = try await BackgroundJSON.decode(BuildingGeoJSON.self, from: data)
-            locations = Dictionary(
-                decoded.locations.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            locations = try await Compute.run {
+                let decoded = try JSONDecoder().decode(BuildingGeoJSON.self, from: data)
+                return Dictionary(decoded.locations.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            }
             locationsRefreshed = true
             await MapPlacement.cache(locations)
             log.notice("map: \(self.locations.count, privacy: .public) building coordinates")

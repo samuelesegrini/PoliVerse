@@ -83,7 +83,7 @@ final class BackgroundRefresh {
         // whether it finished: the unified log is the only other witness, and
         // nobody reporting a problem can read it.
         DiagnosticsLog.shared.backgroundRefreshStarted()
-        let work = Task {
+        let work = Task(name: "background.refresh") {
             await refresh()
             // A cancelled run was already recorded by the expiration handler,
             // with the moment iOS stopped it; writing again would move it.

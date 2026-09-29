@@ -14,10 +14,11 @@ The app is one SwiftUI target plus a widget extension. Three layers divide it:
 
 ![The three layers of the app target, the widget extension, and the Shared types compiled into both.](layers)
 
-- **Model** owns data. Each remote service is a ``Source`` behind a ``Store``,
-  which adds caching, an offline copy, a load window and a load phase.
-  Feature-facing models such as ``CareerModel``, ``CourseModel`` and
-  ``AgendaModel`` compose those stores into the shapes screens consume.
+- **Model** owns data. Each remote service is a ``Resource`` behind a
+  ``Loader``, which joins requests, caches and keeps the offline copy, and is
+  observed through a ``Query``. Feature-facing models such as ``CareerModel``,
+  ``CourseModel`` and ``AgendaModel`` compose them into the shapes screens
+  consume.
 - **Features** own screens. Each directory under `Features` is one area of the
   app, and ``ShellState`` routes between them.
 - **DesignSystem** owns the shared surfaces, and the ``Theme`` that colours
@@ -34,7 +35,7 @@ The `Shared` types are compiled into both the app and the widget extension, and
 
 | Area | Starts at | Article |
 |---|---|---|
-| Loading and caching | ``Store`` | <doc:DataLayer> |
+| Loading and caching | ``Loader`` | <doc:DataLayer> |
 | Getting in | ``Session`` | <doc:Authentication> |
 | The look | ``TodayStyle`` | <doc:Customisation> |
 | Outside the app | ``OfflineStore`` | <doc:WidgetsAndActivities> |
@@ -42,7 +43,7 @@ The `Shared` types are compiled into both the app and the widget extension, and
 
 ### Running against sample data
 
-Every ``Source`` must supply ``Source/sample()``, so the whole app renders
+Every personal ``Resource`` supplies `sample(_:)`, so the whole app renders
 without an account. ``Session/useMockData`` turns it on, and
 ``SampleDegree`` derives the sample career, timetable, courses and materials
 from a single fictional degree so that they agree with one another.
@@ -69,13 +70,13 @@ from a single fictional degree so that they agree with one another.
 
 ### The data layer
 
-- ``Store``
-- ``Source``
+- ``Query``
+- ``Loader``
+- ``Resource``
 - ``Env``
 - ``Account``
 - ``HTTP``
 - ``OfflineStore``
-- ``LoadWindow``
 - ``DataStatus``
 - ``FreshnessCoordinator``
 - ``PendingChanges``

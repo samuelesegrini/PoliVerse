@@ -215,6 +215,22 @@ actor Loader<R: Resource> {
         entries[key] = entry
     }
 
+    /// Files a value built elsewhere as if it had just been fetched, and writes its
+    /// offline copy — a course's listing, built from a page another loader fetched.
+    ///
+    /// - Parameters:
+    ///   - value: The value.
+    ///   - key: Its key.
+    ///   - env: Whose it is.
+    func put(_ value: R.Value, for key: R.Key, env: Env) {
+        let now = clock.now
+        entries[key] = Entry(value: value, fetchedAt: .now, stamp: now, lastUsed: now, source: env.source)
+        if R.persistence == .offline, !env.isSample, let matricola = env.matricola {
+            resource.save(value, to: offline, as: resource.storageName(for: key), account: matricola)
+        }
+        evictIfNeeded()
+    }
+
     /// Forgets one key, so the next ask fetches it.
     func invalidate(_ key: R.Key) {
         entries[key] = nil

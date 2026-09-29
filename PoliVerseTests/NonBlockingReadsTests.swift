@@ -35,45 +35,6 @@ struct NonBlockingReadsTests {
         #expect(await store.loaded(Payload.self, as: "x", account: "") == nil)
     }
 
-    // MARK: CachedSlot, claimed and finished
-
-    @Test("A claimed restore adopts what it read")
-    func claimAdopts() async {
-        let store = store()
-        store.save(Payload(value: "cached"), as: "x", account: "111")
-        var slot = CachedSlot<Payload>(name: "x", store: store)
-
-        let claim = slot.claimRestore(for: "111")
-        #expect(claim != nil)
-        let entry = await claim?.read()
-        #expect(slot.finish(claim!, with: entry)?.value == "cached")
-        #expect(slot.age != nil)
-    }
-
-    /// The race the split exists to handle: a fetch lands while the file is
-    /// still being read, and the older disk copy must not replace it.
-    @Test("A restore overtaken by a save is dropped")
-    func claimLosesToSave() async {
-        let store = store()
-        store.save(Payload(value: "old"), as: "x", account: "111")
-        var slot = CachedSlot<Payload>(name: "x", store: store)
-
-        let claim = slot.claimRestore(for: "111")!
-        slot.save(Payload(value: "fresh"), for: "111")
-        let entry = await claim.read()
-        #expect(slot.finish(claim, with: entry) == nil)
-        #expect(slot.age == 0)
-    }
-
-    @Test("An account already restored is not claimed again")
-    func claimOnce() {
-        var slot = CachedSlot<Payload>(name: "x", store: store())
-        #expect(slot.claimRestore(for: nil) == nil)
-        #expect(slot.claimRestore(for: "111") != nil)
-        #expect(slot.claimRestore(for: "111") == nil)
-        #expect(slot.claimRestore(for: "222") != nil)
-    }
-
     // MARK: Agenda, indexed by title
 
     @Test("Events are grouped by lowercased title and sorted within it")
@@ -91,9 +52,9 @@ struct NonBlockingReadsTests {
         #expect(index.count == 2)
     }
 
-    /// Paging the calendar replaces the agenda week after week; a view that
-    /// read one day must see that day's entries, and nothing but that day.
-    @Test("A day read through its slice follows the index, and a far load leaves an empty day empty")
+    /// Paging the calendar adds weeks to the agenda; a view that read one day
+    /// must see that day's entries, and nothing but that day.
+    @Test("A day read through its slice follows the index, and a far page keeps today")
     @MainActor
     func daySlices() async {
         let agenda = AgendaModel(account: StubAccount(matricola: "111", isSample: true, http: FixtureHTTP([:])))
@@ -101,9 +62,10 @@ struct NonBlockingReadsTests {
         let today = agenda.events(on: .now)
         #expect(today == AgendaModel.index(agenda.events)[PoliMiDate.romeCalendar.startOfDay(for: .now)] ?? [])
 
-        // A window four months out no longer holds today.
+        // Four months out is added to what is held; today stays, and the
+        // widgets, the reminders and the Watch with it.
         await agenda.ensureLoaded(covering: .now.addingTimeInterval(120 * 86400))
-        #expect(agenda.events(on: .now).isEmpty)
+        #expect(agenda.events(on: .now) == today)
         // A day first asked for now is filled from the index like any other.
         let far = Date.now.addingTimeInterval(120 * 86400)
         #expect(agenda.events(on: far) == AgendaModel.index(agenda.events)[PoliMiDate.romeCalendar.startOfDay(for: far)] ?? [])

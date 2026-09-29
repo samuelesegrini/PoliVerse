@@ -10,7 +10,7 @@ import OSLog
 /// the app and the preview environment both use.
 ///
 /// The coordinator holds no opinion about when to refresh; callers decide that.
-/// Whether a given load reaches the network remains ``LoadWindow``'s decision, so
+/// Whether a given load reaches the network remains each ``Loader``'s decision, so
 /// calling ``revalidate(force:)`` on every return from the app switcher costs no
 /// requests.
 ///
@@ -185,7 +185,7 @@ final class FreshnessCoordinator {
         let previous = inFlight
         // `loads`, `status` and `log` by value, as before: the run belongs to
         // the app's data rather than to this object's lifetime.
-        let task = Task { @MainActor [loads, status, log] in
+        let task = Task(name: "freshness.revalidate") { @MainActor [loads, status, log] in
             await previous?.value
             // Inside the chain, after the previous run: passes never overlap
             // here, which a same-named signpost requires.
@@ -194,7 +194,9 @@ final class FreshnessCoordinator {
             status?.refreshBegan()
             // Enqueued on the main actor in registration order, so they start
             // in that order; each suspends on the network and lets the next go.
-            let running = loads.map { load in Task { @MainActor in await load.run(force) } }
+            let running = loads.map { load in
+                Task(name: "refresh \(load.name)") { @MainActor in await load.run(force) }
+            }
             var failed: [String] = []
             for (load, run) in zip(loads, running) {
                 await run.value

@@ -66,8 +66,10 @@ final class RecordingsModel {
     private var courseEntries: [String: URL] = [:]
     /// The account the held data belongs to.
     private var heldFor: String?
-    /// Whether an operation is walking recman, so a second waits its turn.
-    private var busy = false
+    /// The last operation queued on recman's one browser session. Each waits for the
+    /// one before: returning at once instead left a course asked for mid-read unread,
+    /// and a recording tapped while the list loaded without an address to play.
+    @ObservationIgnored private var tail: Task<Void, Never>?
     /// Set once the Politecnico has refused the jump for this service, so it is not
     /// asked again until the next launch.
     private var jumpRefused = false
@@ -168,21 +170,35 @@ final class RecordingsModel {
     ///   - force: Reads recman whatever the age of what is held.
     ///   - entry: The course's WeBeep "Registrazioni" link, asked for only when recman
     ///     is to be read.
-    func load(_ course: Course, force: Bool = false, entry: () async -> URL?) async {
+    func load(_ course: Course, force: Bool = false, entry: @escaping @MainActor () async -> URL?) async {
         await restoreIfNeeded()
         if account.isSample {
             recordings = Self.samples()
             phase = .idle
             return
         }
-        guard account.matricola != nil, let code = course.teachingCode, !busy else { return }
-        if !force, phase != .needsSignIn, let at = readAt[code], Date.now.timeIntervalSince(at) < ttl { return }
+        guard account.matricola != nil, let code = course.teachingCode else { return }
+        await serially { [self] in
+            // Asked after waiting: the operation before may have read this course.
+            if !force, phase != .needsSignIn, let at = readAt[code], Date.now.timeIntervalSince(at) < ttl { return }
+            phase = .loading
+            if let url = await entry() { courseEntries[code] = url }
+            await read(code)
+        }
+    }
 
-        busy = true
-        defer { busy = false }
-        phase = .loading
-        if let url = await entry() { courseEntries[code] = url }
-        await read(code)
+    /// Runs an operation on recman once the one queued before it has finished.
+    ///
+    /// - Parameter work: The operation.
+    /// - Returns: What it returned.
+    private func serially<T: Sendable>(_ work: @escaping @MainActor () async -> T) async -> T {
+        let previous = tail
+        let task = Task(name: "recman") { @MainActor in
+            await previous?.value
+            return await work()
+        }
+        tail = Task { _ = await task.value }
+        return await task.value
     }
 
     /// Where a recording plays on Webex.
@@ -195,10 +211,14 @@ final class RecordingsModel {
     ///   case ``phase`` says why when it is the session.
     func webexAddress(for recording: Recording) async -> URL? {
         if let known = webexAddresses[recording.transferID] { return known }
-        guard !account.isSample, !busy else { return nil }
-        busy = true
-        defer { busy = false }
+        guard !account.isSample else { return nil }
+        return await serially { [self] in await findAddress(for: recording) }
+    }
 
+    /// Finds a recording's Webex address, reading its course again when its links may
+    /// have expired. Runs on recman's queue.
+    private func findAddress(for recording: Recording) async -> URL? {
+        if let known = webexAddresses[recording.transferID] { return known }
         let code = recording.teachingCode
         let fresh = readAt[code].map { Date.now.timeIntervalSince($0) < linkLifetime } ?? false
         if !fresh || playLinks[recording.transferID] == nil {

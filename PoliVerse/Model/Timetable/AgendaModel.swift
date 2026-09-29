@@ -5,64 +5,54 @@ import OSLog
 /// Lectures, exams and deadlines from the Politecnico's agenda, merged with the
 /// student's personal timetable.
 ///
-/// Two endpoints on the agenda host:
-/// `GET {agenda}/v1/matricola/{matricola}/events` for the timetable window, and
-/// `…/events/deadlines` for deadlines, which are sparse and worth a year's horizon of
-/// their own. Both filter server-side on `start_date` and `end_date`.
-///
 /// ## What is held
 ///
-/// ``officialEvents`` is what the server sent. ``events`` is that merged with the
-/// ``personalTimetable``'s lessons through ``TimetableMerge``, and is what the screens
-/// read. ``events(on:)`` answers from an index rebuilt on write rather than filtering
-/// the window on every read.
+/// The timetable is held **per week**: ``AgendaWeeks`` keyed by the Monday a week
+/// starts on, and the deadlines, ``AgendaDeadlines``, a year ahead of the first week
+/// asked for. ``officialEvents`` is the two merged, one entry per id. ``events`` is
+/// that merged with the ``personalTimetable``'s lessons through ``TimetableMerge``,
+/// and is what the screens read; ``events(on:)`` answers from an index built with it.
 ///
 /// ## Loading
 ///
-/// ``load(around:force:)`` fetches a window from a week behind the date to a month
-/// ahead, and ``ensureLoaded(covering:)`` extends it when the student navigates past
-/// its edge. A load that gets nothing keeps what is held and reports its age: an empty
-/// calendar is indistinguishable from a free week. Sample lectures are never
-/// substituted for a failure, since a room that does not exist would send someone to
-/// it.
+/// ``load(around:force:)`` asks for the weeks from a week behind a date to a month
+/// ahead, and ``ensureLoaded(covering:)`` asks for the weeks around a date whose own
+/// week is not held. Paging adds weeks rather than moving a window, so today's week
+/// stays whatever the calendar is showing. The fetching, the joining of a week asked
+/// for twice and how long a week stays fresh belong to a ``Loader``; two loads for
+/// different weeks run together rather than one waiting for the other.
 ///
-/// This model fetches by hand rather than through ``Store``, because its window is a
-/// parameter of the request.
+/// A week or the deadlines failing keeps what was held for them: an empty calendar is
+/// indistinguishable from a free week. Sample lectures are never substituted for a
+/// failure, since a room that does not exist would send someone to it.
+///
+/// ## Threads
+///
+/// The merge with the personal timetable and both indexes are built by
+/// ``Compute/run(_:)`` off the main actor, and assigned here only when they changed.
 @Observable
 final class AgendaModel {
-    /// Everything on the agenda for the loaded window, official and personal, in time
-    /// order. Setting it rebuilds the per-day index.
-    private(set) var events: [AgendaEvent] = [] {
-        didSet {
-            eventsByDay = Self.index(events)
-            eventsByTitle = Self.titleIndex(events)
-            refreshSlices()
-        }
-    }
-    /// ``events`` grouped by Rome day and sorted, rebuilt whenever they change.
+    /// Everything on the agenda for the weeks held, official and personal, in time
+    /// order.
+    private(set) var events: [AgendaEvent] = []
+    /// ``events`` grouped by Rome day and sorted, rebuilt with them.
     ///
-    /// The week strip asks for each of its seven days on every body pass, so one pass on
-    /// write is cheaper than seven filters and sorts on read. Not observed: views read a
-    /// day through ``events(on:)``, which hands them that day's ``Slice``.
-    ///
-    /// See `docs/metrickit-performance.md` §3.2 and §5.5.
+    /// Not observed: views read a day through ``events(on:)``, which hands them that
+    /// day's ``Slice``. See `docs/metrickit-performance.md` §3.2 and §5.5.
     @ObservationIgnored private var eventsByDay: [Date: [AgendaEvent]] = [:]
     /// ``events`` grouped by lowercased title, each group in time order.
     ///
     /// Courses find their lessons by name, since the agenda carries no teaching code.
-    /// Matching against a few dozen distinct titles once per course is far cheaper than
-    /// lowercasing every event for every card on every body pass. Not observed, like
-    /// ``eventsByDay``.
+    /// Not observed, like ``eventsByDay``.
     @ObservationIgnored private var eventsByTitle: [String: [AgendaEvent]] = [:]
 
     /// One day's or one course's entries, observed on their own.
     ///
     /// Observation tracks whole properties. With the indexes observed, replacing
-    /// ``events`` — which paging the calendar past the fetched month does week after
-    /// week — invalidated every view that read any day or any course: Oggi under the
-    /// calendar, the Corsi cards in their tab, the shell's accessory. A view now
-    /// depends on the one slice it read, and a slice is reassigned only when its
-    /// entries change.
+    /// ``events`` — which paging the calendar does week after week — invalidated
+    /// every view that read any day or any course: Oggi under the calendar, the Corsi
+    /// cards in their tab, the shell's accessory. A view now depends on the one slice
+    /// it read, and a slice is reassigned only when its entries change.
     @Observable
     final class Slice {
         /// The entries, in time order.
@@ -74,6 +64,253 @@ final class AgendaModel {
     @ObservationIgnored private var courseSlices: [String: Slice] = [:]
     /// The exams and deadlines, which Oggi's "In arrivo" lists; `nil` until asked for.
     @ObservationIgnored private var milestoneSlice: Slice?
+
+    /// What the Politecnico's agenda sent, without personal lessons.
+    ///
+    /// ``TimetableHandover`` compares against this rather than ``events``, or personal
+    /// lessons would confirm themselves.
+    private(set) var officialEvents: [AgendaEvent] = []
+    /// The student's personal timetable, whose lessons join ``events`` until the official
+    /// agenda carries them. Setting it rebuilds ``events`` and rewrites the widgets' copy.
+    var personalTimetable: PersonalTimetable? {
+        didSet {
+            guard personalTimetable != oldValue else { return }
+            Task(name: "agenda rebuild") {
+                await rebuild()
+                saveForWidgets()
+            }
+        }
+    }
+    /// `true` while a load is in flight.
+    private(set) var isLoading = false
+    /// The last load's error, or `nil` when it succeeded. A failed deadlines fetch does
+    /// not set it.
+    private(set) var errorMessage: String?
+    /// From the start of the first week held to the end of the last. `nil` before the
+    /// first week arrives.
+    private(set) var loadedRange: ClosedRange<Date>?
+    /// Seconds since the week being looked at was fetched, or `nil` if never.
+    private(set) var age: TimeInterval?
+
+    /// The weeks held, by the Monday they start on, each in time order.
+    @ObservationIgnored private var weeks: [Date: [AgendaEvent]] = [:]
+    /// The deadlines held.
+    @ObservationIgnored private var deadlines: [AgendaEvent] = []
+    /// Whose agenda ``weeks`` and ``deadlines`` are, as ``Env/source``. A change
+    /// discards them: they describe someone else, or sample data.
+    @ObservationIgnored private var heldSource: String?
+    /// The accounts whose offline copy has been restored this launch.
+    @ObservationIgnored private var restored: Set<String> = []
+    /// Loads in flight, which ``isLoading`` reports.
+    @ObservationIgnored private var loadsInFlight = 0
+    /// Bumped by each rebuild, so an older one finishing late does not overwrite a newer.
+    @ObservationIgnored private var generation = 0
+
+    /// Whose agenda to load, and the transport.
+    private let account: any Account
+    /// The weeks' fetches: joined, kept fresh, batched.
+    private let weekLoader: Loader<AgendaWeeks>
+    /// The deadlines' fetches.
+    private let deadlineLoader: Loader<AgendaDeadlines>
+    /// Where the widgets' copy lives.
+    private let offline: OfflineStore
+    /// Diagnostic log for this type, under the `agenda` category.
+    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "agenda")
+
+    /// The name of the widgets' copy of the merged agenda.
+    nonisolated static let widgetCopyName = "agenda"
+
+    /// Creates the model. Nothing is loaded or restored here.
+    ///
+    /// - Parameters:
+    ///   - account: Whose agenda to load.
+    ///   - offline: Where the widgets' copy lives.
+    init(account: any Account, offline: OfflineStore = .shared) {
+        self.account = account
+        self.offline = offline
+        weekLoader = Loader(AgendaWeeks(), offline: offline)
+        deadlineLoader = Loader(AgendaDeadlines(), offline: offline)
+    }
+
+    // MARK: - Loading
+
+    /// Loads the weeks from a week behind a date to a month ahead, and the deadlines a
+    /// year ahead of them.
+    ///
+    /// Weeks held and fresh are not asked for again; a week already being fetched is
+    /// joined, not fetched twice. The lectures and the deadlines are fetched
+    /// concurrently, and a deadline that also appears in the events feed is kept once.
+    ///
+    /// - Parameters:
+    ///   - date: The date the student is looking at.
+    ///   - force: Fetches even the weeks held fresh; set by pull-to-refresh.
+    func load(around date: Date = .now, force: Bool = false) async {
+        let env = Env(account)
+        adopt(env)
+        await restoreCache(env)
+
+        guard env.isSample || env.matricola != nil else {
+            errorMessage = AuthError.notAuthenticated.localizedDescription
+            return
+        }
+
+        let wanted = AgendaWeeks.weeks(around: date)
+        let deadlineKey = wanted.first ?? AgendaWeeks.week(of: date)
+        var due = false
+        for week in wanted where await weekLoader.isDue(week, env: env, force: force) { due = true; break }
+        let deadlinesDue = await deadlineLoader.isDue(deadlineKey, env: env, force: force)
+        guard due || deadlinesDue else { return }
+
+        loadsInFlight += 1
+        isLoading = true
+        errorMessage = nil
+        defer {
+            loadsInFlight -= 1
+            if loadsInFlight == 0 { isLoading = false }
+        }
+
+        async let lectures = fetchWeeks(wanted, env: env, force: force)
+        async let fetchedDeadlines = fetchDeadlines(deadlineKey, env: env, force: force)
+        let (weekResult, deadlineResult) = await (lectures, fetchedDeadlines)
+
+        // The student may have signed out or switched to sample data meanwhile.
+        guard heldSource == env.source else { return }
+
+        switch weekResult {
+        case .success(let snapshots):
+            for (week, snapshot) in snapshots { weeks[week] = snapshot.value }
+            if let current = snapshots[AgendaWeeks.week(of: date)] ?? snapshots.values.first {
+                age = env.isSample ? nil : max(0, Date.now.timeIntervalSince(current.fetchedAt))
+            }
+        case .failure(let error):
+            // Kept, not cleared: what is held was really this student's
+            // timetable, and an empty calendar is indistinguishable from a
+            // free week. Its age is shown instead.
+            errorMessage = userFacingMessage(error)
+        }
+        if let fresh = deadlineResult { deadlines = fresh }
+
+        await rebuild()
+        if case .success = weekResult { saveForWidgets() }
+    }
+
+    /// Loads the weeks around a date whose own week is not held.
+    ///
+    /// - Parameter date: The date the student navigated to.
+    func ensureLoaded(covering date: Date) async {
+        let week = AgendaWeeks.week(of: date)
+        guard heldSource != Env(account).source || weeks[week] == nil else { return }
+        log.debug("Navigated to a week not held; fetching around it")
+        await load(around: date)
+    }
+
+    /// Fetches weeks through the loader.
+    private func fetchWeeks(_ wanted: [Date], env: Env, force: Bool) async -> Result<[Date: Loader<AgendaWeeks>.Snapshot], any Error> {
+        do {
+            return .success(try await weekLoader.values(wanted, env: env, force: force))
+        } catch {
+            log.error("Agenda load failed: \(error.localizedDescription)")
+            return .failure(error)
+        }
+    }
+
+    /// Fetches the deadlines through their loader.
+    ///
+    /// A failure is logged and does not set ``errorMessage``: the timetable is the point
+    /// and deadlines are additional.
+    private func fetchDeadlines(_ key: Date, env: Env, force: Bool) async -> [AgendaEvent]? {
+        do {
+            return try await deadlineLoader.value(key, env: env, force: force).value
+        } catch {
+            log.error("Deadlines failed: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    /// Discards what is held when it belongs to another account or to sample data.
+    private func adopt(_ env: Env) {
+        guard heldSource != env.source else { return }
+        heldSource = env.source
+        weeks = [:]
+        deadlines = []
+        age = nil
+    }
+
+    /// Puts the last known timetable on screen before any request answers, once per
+    /// account, from the copy written for the widgets.
+    ///
+    /// Read and decoded off the main actor. Weeks a fetch filled while the file was
+    /// being read keep the fetched entries.
+    private func restoreCache(_ env: Env) async {
+        // Sample data never reads the student's copy: it would flash their real
+        // timetable before the samples replaced it.
+        guard !env.isSample, let matricola = env.matricola, restored.insert(matricola).inserted,
+              let entry = await offline.loaded([AgendaEvent].self, as: Self.widgetCopyName, account: matricola),
+              heldSource == env.source
+        else { return }
+        let official = TimetableMerge.officialOnly(entry.value)
+        let byWeek = Dictionary(grouping: official) { AgendaWeeks.week(of: $0.start) }
+        for (week, events) in byWeek where weeks[week] == nil {
+            weeks[week] = events.sorted { $0.start < $1.start }
+        }
+        if age == nil { age = entry.age }
+        await rebuild()
+    }
+
+    // MARK: - Building
+
+    /// What a rebuild produces, off the main actor.
+    private struct Built: Sendable {
+        let official: [AgendaEvent]
+        let events: [AgendaEvent]
+        let byDay: [Date: [AgendaEvent]]
+        let byTitle: [String: [AgendaEvent]]
+        let range: ClosedRange<Date>?
+    }
+
+    /// Recomputes ``officialEvents``, ``events`` and the indexes from the weeks and
+    /// deadlines held, off the main actor, and assigns what changed.
+    private func rebuild() async {
+        generation += 1
+        let mine = generation
+        let weeks = weeks
+        let deadlines = deadlines
+        let timetable = personalTimetable
+        let built = await Compute.run { Self.build(weeks: weeks, deadlines: deadlines, timetable: timetable) }
+        guard mine == generation else { return }
+        if officialEvents != built.official { officialEvents = built.official }
+        if loadedRange != built.range { loadedRange = built.range }
+        guard events != built.events else { return }
+        eventsByDay = built.byDay
+        eventsByTitle = built.byTitle
+        events = built.events
+        refreshSlices()
+    }
+
+    /// The merge and the indexes, as a pure function.
+    ///
+    /// The events feed can carry a deadline too; one of each is kept, the feed's first.
+    /// Personal lessons fill the span from the first week held to the end of the last,
+    /// or the weeks around today before anything is held.
+    private nonisolated static func build(weeks: [Date: [AgendaEvent]], deadlines: [AgendaEvent],
+                                          timetable: PersonalTimetable?) -> Built {
+        var known = Set<Int>()
+        let official = (weeks.keys.sorted().flatMap { weeks[$0] ?? [] } + deadlines)
+            .filter { known.insert($0.id).inserted }
+            .sorted { $0.start < $1.start }
+        let calendar = PoliMiDate.romeCalendar
+        let range: ClosedRange<Date>? = {
+            guard let first = weeks.keys.min(), let last = weeks.keys.max(),
+                  let end = calendar.date(byAdding: .day, value: 7, to: last) else { return nil }
+            return first...end
+        }()
+        let interval = range.map { DateInterval(start: $0.lowerBound, end: $0.upperBound) }
+            ?? DateInterval(start: calendar.date(byAdding: .day, value: -7, to: .now) ?? .now,
+                            end: calendar.date(byAdding: .month, value: 1, to: .now) ?? .now)
+        let events = TimetableMerge.merge(official: official, timetable: timetable, in: interval)
+        return Built(official: official, events: events, byDay: index(events),
+                     byTitle: titleIndex(events), range: range)
+    }
 
     /// Brings every slice handed out so far in step with the indexes, touching only
     /// those whose entries changed.
@@ -91,327 +328,25 @@ final class AgendaModel {
             if milestoneSlice.events != fresh { milestoneSlice.events = fresh }
         }
     }
-    /// What the Politecnico's agenda sent, without personal lessons.
-    ///
-    /// ``TimetableHandover`` compares against this rather than ``events``, or personal
-    /// lessons would confirm themselves.
-    private(set) var officialEvents: [AgendaEvent] = []
-    /// The student's personal timetable, whose lessons join ``events`` until the official
-    /// agenda carries them. Setting it rebuilds ``events`` and rewrites the widgets' copy.
-    var personalTimetable: PersonalTimetable? {
-        didSet {
-            guard personalTimetable != oldValue else { return }
-            rebuild()
-            saveForWidgets()
-        }
-    }
-    /// `true` while a load is in flight.
-    private(set) var isLoading = false
-    /// Calls waiting for the load in flight to end, resumed when it does.
-    @ObservationIgnored private var waiting: [CheckedContinuation<Void, Never>] = []
-    /// The last load's error, or `nil` when it succeeded. A failed deadlines fetch does
-    /// not set it.
-    private(set) var errorMessage: String?
-    /// From the start of the first span held to the end of the last, so navigating past
-    /// its edge can fetch more. `nil` before the first successful load.
-    private(set) var loadedRange: ClosedRange<Date>?
-    /// Every span fetched since the last load around a date, which ``covers(_:)`` asks.
-    ///
-    /// Paging the calendar past the held month used to replace the window with one
-    /// around the new week. Today then fell out of ``events``, and everything keyed on
-    /// them followed: the widgets' copy, the reminders and the Watch lost the day's
-    /// lectures until the next refresh. A paged week is added instead.
-    private var loadedSpans: [ClosedRange<Date>] = [] {
-        didSet {
-            loadedRange = loadedSpans.isEmpty ? nil
-                : loadedSpans.map(\.lowerBound).min()!...loadedSpans.map(\.upperBound).max()!
-        }
-    }
-
-    /// Whose agenda to load, and the transport.
-    private let account: any Account
-    /// Diagnostic log for this type, under the `agenda` category.
-    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "agenda")
-    /// Suppresses redundant refreshes of the held window.
-    private var window = LoadWindow()
-    /// The offline copy, holding the merged events so the widgets see personal lessons
-    /// too.
-    private var slot = CachedSlot<[AgendaEvent]>(name: "agenda")
-    /// Seconds since the events on screen were fetched, or `nil` if never.
-    private(set) var age: TimeInterval?
-
-    /// Identifies the data currently held, so a change of account — or of the sample-data
-    /// toggle — reloads rather than waiting out the load window.
-    private var source: String {
-        account.isSample ? "mock" : (account.matricola ?? "anonymous")
-    }
-
-
-    /// The `n_events` cap. A cap rather than a target, now that the span is filtered
-    /// server-side; a full timetable month is well under it.
-    private let pageSize = 200
-
-    /// How far behind the requested date to fetch. A week costs nothing and means stepping
-    /// back does not trigger a round trip.
-    private let lookBehind = DateComponents(day: -7)
-    /// How far ahead of the requested date to fetch, matching the official client.
-    private let lookAhead = DateComponents(month: 1)
-
-    /// Creates the model. Nothing is loaded or restored here.
-    ///
-    /// - Parameter account: Whose agenda to load.
-    init(account: any Account) {
-        self.account = account
-    }
-
-    /// Puts the last known timetable on screen before any request answers.
-    ///
-    /// Called from ``load(around:force:)`` rather than from `init()`, where the matricola
-    /// is not known yet. Does nothing after the first restore for an account. The file
-    /// is read and decoded off the main actor.
-    private func restoreCache() async {
-        // Sample data never reads the student's copy: it would flash their real
-        // timetable before the samples replaced it.
-        guard !account.isSample, let claim = slot.claimRestore(for: account.matricola) else { return }
-        let entry = await claim.read()
-        guard let cached = slot.finish(claim, with: entry) else { return }
-        officialEvents = TimetableMerge.officialOnly(cached)
-        rebuild()
-        age = slot.age
-    }
-
-    /// Fetches a window around a date, replacing whatever was held.
-    ///
-    /// Waits for a load already in flight, then returns when the load window has not
-    /// expired and the held span already covers the date. The lectures and the deadlines
-    /// are fetched concurrently, and a deadline that also appears in the events feed is
-    /// kept once.
-    ///
-    /// - Parameters:
-    ///   - date: The date to centre the window on.
-    ///   - force: Bypasses the load window; set by pull-to-refresh.
-    func load(around date: Date = .now, force: Bool = false) async {
-        await load(around: date, force: force, extending: false)
-    }
-
-    /// Fetches a window around a date.
-    ///
-    /// - Parameters:
-    ///   - date: The date to centre the window on.
-    ///   - force: Bypasses the load window.
-    ///   - extending: Adds the window to what is held rather than replacing it; set when
-    ///     the student navigates past the held span.
-    private func load(around date: Date, force: Bool, extending: Bool) async {
-        // One load at a time. A call arriving mid-load waits for it and then
-        // decides afresh: returning at once left a week paged to during the
-        // launch refresh empty, since nothing asked for it again.
-        while isLoading {
-            await withCheckedContinuation { waiting.append($0) }
-        }
-        guard window.shouldLoad(force: force, source: source) || !covers(date) else { return }
-        isLoading = true
-        errorMessage = nil
-        // After the guard, so a skipped call is not timed as a fast one.
-        let interval = PerfSignpost.begin(.agendaLoad)
-        defer {
-            isLoading = false
-            PerfSignpost.end(interval)
-            let resumed = waiting
-            waiting = []
-            for continuation in resumed { continuation.resume() }
-        }
-
-        let calendar = PoliMiDate.romeCalendar
-        let from = calendar.date(byAdding: lookBehind, to: date) ?? date
-        let to = calendar.date(byAdding: lookAhead, to: date) ?? date
-
-        await restoreCache()
-
-        if account.isSample {
-            loadedSpans = [from...to]
-            officialEvents = AgendaEvent.samples(around: date)
-            rebuild()
-            window.markLoaded(source: source)
-            return
-        }
-
-        guard let matricola = account.matricola else {
-            errorMessage = AuthError.notAuthenticated.localizedDescription
-            return
-        }
-
-        // Lectures and deadlines are separate endpoints. Deadlines look a year
-        // ahead upstream because they are sparse and worth seeing early, so
-        // they are fetched over their own span rather than this window.
-        async let lectures = fetchEvents(matricola: matricola, from: from, to: to)
-        async let deadlines = fetchDeadlines(matricola: matricola, from: from)
-
-        let (fetched, fetchedDeadlines) = await (lectures, deadlines)
-
-        guard fetched != nil || fetchedDeadlines != nil else {
-            // Kept, not cleared: what is held was really this student's
-            // timetable, and an empty calendar is indistinguishable from a
-            // free week. Its age is shown instead.
-            //
-            // Still no mock fallback: sample lectures shown as real would
-            // send someone to a room that does not exist.
-            return
-        }
-
-        // Each endpoint answers only for its own entries. One that failed
-        // leaves what it sent before as it was: taking the deadlines' reply
-        // as the whole window emptied the week of its lectures. When extending,
-        // what is held outside the new window stays too: it is still the
-        // student's timetable, and today is usually in it.
-        let span = from...to
-        let extends = extending && !loadedSpans.isEmpty
-        let carried = officialEvents.filter { event in
-            let answered = event.kind == .deadline ? fetchedDeadlines != nil : fetched != nil
-            return !answered || (extends && !span.contains(event.start))
-        }
-        // A deadline can also appear in the events feed; keep one of each,
-        // the fresh one first.
-        var known = Set<Int>()
-        let merged = ((fetched ?? []) + (fetchedDeadlines ?? []) + carried)
-            .filter { known.insert($0.id).inserted }
-
-        officialEvents = merged.sorted { $0.start < $1.start }
-        // Only lectures that arrived make the span held; otherwise it would
-        // show as a free week and never be asked for again.
-        if fetched != nil {
-            if extends { loadedSpans.append(span) } else { loadedSpans = [span] }
-            window.markLoaded(source: source)
-        }
-        rebuild()
-        saveForWidgets()
-        age = slot.age
-    }
-
-    /// Recomputes ``events`` by merging the personal timetable into ``officialEvents``
-    /// over the held span, or over a default span when nothing is loaded yet.
-    private func rebuild() {
-        let calendar = PoliMiDate.romeCalendar
-        let interval = loadedRange.map { DateInterval(start: $0.lowerBound, end: $0.upperBound) }
-            ?? DateInterval(start: calendar.date(byAdding: lookBehind, to: .now) ?? .now,
-                            end: calendar.date(byAdding: lookAhead, to: .now) ?? .now)
-        events = TimetableMerge.merge(official: officialEvents, timetable: personalTimetable, in: interval)
-    }
 
     /// Writes the merged events to the app group and asks the agenda widgets to reload.
     ///
     /// Nothing else tells them the file changed, so without the reload the Lock Screen
     /// keeps the previous lecture until the system happens to grant one.
     ///
-    /// Does nothing for a sample account or before the first successful load.
+    /// Does nothing for a sample account or before the first week arrives.
     private func saveForWidgets() {
         guard !account.isSample, let matricola = account.matricola, loadedRange != nil else { return }
-        slot.save(events, for: matricola)
-        // The widgets read this file; nothing else tells them it changed.
-        // Without this the Lock Screen keeps last night's lecture until the
-        // system happens to grant a reload, which can be hours.
+        offline.save(events, as: Self.widgetCopyName, account: matricola)
         WidgetReloader.request(WidgetKind.agenda)
     }
 
-    /// Whether the held span includes a date.
-    ///
-    /// - Parameter date: The date to test.
-    /// - Returns: `false` before the first successful load.
-    private func covers(_ date: Date) -> Bool {
-        loadedSpans.contains { $0.contains(date) }
-    }
-
-    /// Fetches only if a date falls outside the span already held.
-    ///
-    /// The fetch is forced, since the span genuinely does not hold the date and freshness
-    /// is beside the point.
-    ///
-    /// - Parameter date: The date the student navigated to.
-    func ensureLoaded(covering date: Date) async {
-        guard loadedRange != nil else {
-            await load(around: date)
-            return
-        }
-        guard !covers(date) else { return }
-        log.debug("Navigated outside the loaded window; fetching around it")
-        // Forced: the window genuinely does not hold this date, so freshness
-        // is beside the point.
-        await load(around: date, force: true, extending: true)
-    }
-
-    /// Fetches the timetable events for a span.
-    ///
-    /// Entries with unparseable timestamps are dropped rather than placed on a guessed
-    /// day. A failure sets ``errorMessage``.
-    ///
-    /// - Parameters:
-    ///   - matricola: Whose agenda to fetch.
-    ///   - from: Start of the span.
-    ///   - to: End of the span.
-    /// - Returns: The entries, or `nil` on failure.
-    private func fetchEvents(matricola: String, from: Date, to: Date) async -> [AgendaEvent]? {
-        do {
-            let data = try await account.http.data(for: APIRequest(
-                host: .agenda,
-                path: "/v1/matricola/\(matricola)/events",
-                query: [
-                    .init(name: "start_date", value: PoliMiDate.queryString(from)),
-                    .init(name: "end_date", value: PoliMiDate.queryString(to)),
-                    .init(name: "n_events", value: String(pageSize)),
-                ]
-            ))
-            let dtos = try await BackgroundJSON.decode([AgendaEventDTO].self, from: data,
-                                                       iso8601Dates: true)
-            // Drop entries with unparseable timestamps rather than guessing at
-            // a date and showing a lecture on the wrong day.
-            let parsed = dtos.compactMap { $0.toEvent() }
-            // The range is logged with the count because the two are only
-            // meaningful together: an empty agenda and a window that has
-            // slipped past the events look identical without it.
-            log.notice("agenda \(PoliMiDate.queryString(from), privacy: .public)…\(PoliMiDate.queryString(to), privacy: .public): \(dtos.count, privacy: .public) events, \(parsed.count, privacy: .public) usable")
-            return parsed
-        } catch {
-            log.error("Agenda load failed: \(error.localizedDescription)")
-            errorMessage = userFacingMessage(error)
-            return nil
-        }
-    }
-
-    /// Fetches deadlines for the year after a date.
-    ///
-    /// A failure is logged and does not set ``errorMessage``: the timetable is the point
-    /// and deadlines are additional.
-    ///
-    /// - Parameters:
-    ///   - matricola: Whose deadlines to fetch.
-    ///   - from: Start of the span.
-    /// - Returns: The deadlines, or `nil` on failure.
-    private func fetchDeadlines(matricola: String, from: Date) async -> [AgendaEvent]? {
-        let to = PoliMiDate.romeCalendar.date(byAdding: .year, value: 1, to: from) ?? from
-        do {
-            let data = try await account.http.data(for: APIRequest(
-                host: .agenda,
-                path: "/v1/matricola/\(matricola)/events/deadlines",
-                query: [
-                    .init(name: "start_date", value: PoliMiDate.queryString(from)),
-                    .init(name: "end_date", value: PoliMiDate.queryString(to)),
-                ]
-            ))
-            let dtos = try await BackgroundJSON.decode([AgendaEventDTO].self, from: data,
-                                                       iso8601Dates: true)
-            let parsed = dtos.compactMap { $0.toEvent() }
-            log.notice("agenda \(PoliMiDate.queryString(from), privacy: .public)…\(PoliMiDate.queryString(to), privacy: .public): \(dtos.count, privacy: .public) deadlines, \(parsed.count, privacy: .public) usable")
-            return parsed
-        } catch {
-            // Not fatal: the timetable is the point, deadlines are a bonus.
-            log.error("Deadlines failed: \(error.localizedDescription)")
-            return nil
-        }
-    }
+    // MARK: - Reading
 
     /// Everything on the agenda for one Rome day, in time order.
     ///
     /// - Parameter day: Any moment in the day.
-    /// - Returns: The entries, from the index. Empty for a day outside the held span.
+    /// - Returns: The entries, from the index. Empty for a day in no week held.
     func events(on day: Date) -> [AgendaEvent] {
         let key = PoliMiDate.romeCalendar.startOfDay(for: day)
         if let slice = daySlices[key] { return slice.events }
@@ -492,7 +427,8 @@ final class AgendaModel {
             .mapValues { $0.sorted { $0.start < $1.start } }
     }
 
-    /// The days in the held span that have something on them, which dots the week strip.
+    /// The days in the weeks held that have something on them, which dots the week
+    /// strip.
     ///
     /// - Returns: The starts of those days, in Rome.
     func daysWithEvents() -> Set<Date> {
@@ -512,11 +448,12 @@ final class AgendaModel {
     /// The first entry that has not yet ended, for the Oggi summary.
     ///
     /// - Parameter moment: The moment to measure from.
-    /// - Returns: The entry, or `nil` when nothing in the held span is still ahead.
+    /// - Returns: The entry, or `nil` when nothing in the weeks held is still ahead.
     func nextEvent(after moment: Date = .now) -> AgendaEvent? {
         events.first { $0.end > moment }
     }
 }
+
 /// ``AgendaModel`` satisfies ``TimetablePublishing`` as it stands.
 ///
 /// Declared here rather than beside the protocol: ``TimetablePublishing``

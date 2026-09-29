@@ -42,7 +42,7 @@ struct DataStatusTests {
     }
 
     /// The reason the line is not simply bound to `isLoading`: inside a tab
-    /// view, most passes are served from ``LoadWindow`` and finish in a frame.
+    /// view, most passes are served from the loaders' caches and finish in a frame.
     @Test("Un aggiornamento istantaneo non compare")
     func staysQuietForAFastRefresh() async throws {
         let status = make()

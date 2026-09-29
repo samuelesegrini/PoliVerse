@@ -1,6 +1,7 @@
 # Loading data and using threads: a target architecture
 
-A proposal, written 2026-09-29. Nothing here is implemented. Sources: the WWDC25
+Written 2026-09-29 as a proposal; steps 1–6 are implemented on
+`refactor/data-loading` (see §8 for where the code differs from the plan). Sources: the WWDC25
 sessions this project already follows ([Embracing Swift concurrency](https://developer.apple.com/videos/play/wwdc2025/268/),
 [Explore concurrency in SwiftUI](https://developer.apple.com/videos/play/wwdc2025/266/)) and WWDC26's
 [Profile, fix, and verify (268)](https://developer.apple.com/videos/play/wwdc2026/268/),
@@ -263,3 +264,43 @@ below is about threads: all of it happens outside the process.
 - **Tests.** `Loader` is tested once for joining, supersession, TTL, the offline
   copy and cancellation. Each `build` is a pure function with parameterized
   tests. A model no longer needs its own concurrency tests.
+
+---
+
+## 8. What was built
+
+Steps 1–6 as planned, with these differences:
+
+- **One `fetch`, not `fetch` + `build`.** `Resource.fetch(_:env:previous:)` is
+  `@concurrent` and does both the waiting and the building: separating them
+  bought nothing once the whole method runs off the main actor, and the career's
+  six endpoints do not split into one wire value. `previous` stayed, for partial
+  failures. A batch `fetch(_ keys:…)` exists for resources whose endpoint answers
+  a span; its default fetches each key concurrently.
+- **`sample(_:)` is optional.** Public data (rooms, occupancy, the catalogue) has
+  none and is fetched as usual under sample data.
+- **The offline copy is only for `Codable` values**, chosen at conformance time
+  (`Resource.save`/`read` default to nothing, and to `OfflineStore` where the value
+  is `Codable`). `Loader.put` files a value built from another fetch — a course's
+  listing, built from its page.
+- **The agenda keeps the widgets' file as its offline copy.** Weeks are held in
+  memory by the loader; the merged agenda the widgets read is still written as
+  `agenda` and restored from at launch, so the widgets' contract did not change.
+  Weeks are fetched in runs of up to seven, one request per load.
+- **Two passes are rules, not resources.** The free-rooms campus pass
+  (`FreeRoomsModel.passIsDue`) and the WeBeep update sweep
+  (`WeBeepModel.sweepIsDue`) aggregate many keys; each keeps a one-line freshness
+  rule, tested, where `LoadWindow` was.
+- **`NotificationModel` keeps a generation guard** rather than becoming an actor:
+  a newer plan stops an older one mid-way, which is the property that mattered.
+- **`FreshnessCoordinator` keeps its ordered passes**, now named tasks, since the
+  status line reads failures in registration order.
+- **Also fixed on the way**, each a request dropped rather than joined:
+  `RoomsModel` (free rooms saw an empty catalogue at launch), `CampusMapModel`
+  (a campus picked mid-load kept the old pins), `WeBeepModel.loadMaterials` (on
+  the Mac, switching course mid-load kept the old files), `RecordingsModel` (a
+  recording tapped while the list loaded had no address to play; recman's one
+  browser session is now a queue), `CareersModel`.
+- **Left as they are:** `UpdateFeed`'s feed rows are still built on the main
+  actor, cached until the log changes: its accessors are synchronous and read by
+  views. `Session` decodes a token and a profile on the main actor: constant size.

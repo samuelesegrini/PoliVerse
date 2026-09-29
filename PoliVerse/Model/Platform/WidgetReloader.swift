@@ -32,7 +32,7 @@ enum WidgetReloader {
         pending.formUnion(kinds)
         changedWhileActive.formUnion(kinds)
         guard debounce == nil else { return }
-        debounce = Task {
+        debounce = Task(name: "widget reload") {
             try? await Task.sleep(for: window)
             await flush()
         }

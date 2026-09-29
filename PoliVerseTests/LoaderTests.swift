@@ -399,4 +399,51 @@ struct LoaderTests {
         #expect(await counter.count("stored") == 0)
         #expect(await loader.restore(Whole(), env: sample) == nil)
     }
+
+    /// Models are built at launch, before the session is restored, so the
+    /// first asks come with no matricola; a career switch changes it in a tap.
+    @Test("Nothing is restored while signed out, and a new account restores again")
+    func restorePerAccount() async {
+        let offline = offline()
+        offline.save("mine", as: Stored.id, account: "111")
+        offline.save("theirs", as: Stored.id, account: "222")
+        let loader = Loader(Stored(counter: Counter()), offline: offline)
+
+        #expect(await loader.restore(Whole(), env: Env(http: FixtureHTTP(), matricola: nil, isSample: false)) == nil)
+        #expect(await loader.restore(Whole(), env: Self.env)?.value == "mine")
+        let other = Env(http: FixtureHTTP(), matricola: "222", isSample: false)
+        #expect(await loader.restore(Whole(), env: other)?.value == "theirs")
+    }
+
+    @Test("A value filed with put is held fresh and written to disk")
+    func put() async {
+        let offline = offline()
+        let loader = Loader(Stored(counter: Counter()), offline: offline)
+        await loader.put("built", for: Whole(), env: Self.env)
+        offline.flush()
+        #expect(await loader.isHeld(Whole(), env: Self.env))
+        #expect(offline.load(String.self, as: Stored.id, account: "111")?.value == "built")
+    }
+}
+
+/// The hourly WeBeep sweep: one request per course page, so it is not repeated
+/// within the hour for the same account.
+@Suite("WeBeep sweep")
+struct WeBeepSweepTests {
+    private let now = Date(timeIntervalSince1970: 1_000_000)
+
+    @Test("A sweep within the hour is not repeated; past it, it is")
+    func interval() {
+        let last = (account: "111", at: now)
+        #expect(!WeBeepModel.sweepIsDue(last: last, account: "111", force: false, now: now.addingTimeInterval(1800)))
+        #expect(WeBeepModel.sweepIsDue(last: last, account: "111", force: false, now: now.addingTimeInterval(3601)))
+    }
+
+    @Test("Another account, a forced sweep and the first sweep always run")
+    func alwaysRuns() {
+        let last = (account: "111", at: now)
+        #expect(WeBeepModel.sweepIsDue(last: last, account: "222", force: false, now: now))
+        #expect(WeBeepModel.sweepIsDue(last: last, account: "111", force: true, now: now))
+        #expect(WeBeepModel.sweepIsDue(last: nil, account: "111", force: false, now: now))
+    }
 }

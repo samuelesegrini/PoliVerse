@@ -16,8 +16,11 @@ import OSLog
 /// ## Loading
 ///
 /// The catalogue changes rarely, so ``load(force:)`` serves the ``DiskCache`` copy
-/// first and fetches only when nothing is held or a refresh is asked for. Reading,
-/// joining and writing the catalogue all happen off the main actor.
+/// first and fetches once a day or when a refresh is asked for. The fetch goes through
+/// a ``Loader`` of ``RoomCatalogueResource``, so a second caller — free rooms awaiting
+/// the catalogue while the rooms list loads it — waits for the same fetch instead of
+/// being turned away with nothing. Reading, joining and writing the catalogue all
+/// happen off the main actor.
 @Observable
 final class RoomsModel {
     /// Every room in the catalogue, sorted by code.
@@ -42,6 +45,10 @@ final class RoomsModel {
     /// Injectable only so a test cannot overwrite the real one. The cache is deliberately
     /// not keyed by account — a campus is the same campus for everyone.
     private let cacheName: String
+    /// The catalogue's fetch, joined across callers.
+    private let loader: Loader<RoomCatalogueResource>
+    /// Loads in flight, which ``isLoading`` reports.
+    @ObservationIgnored private var loadsInFlight = 0
 
     /// Seeds the catalogue and stops it fetching, for previews.
     ///
@@ -71,6 +78,7 @@ final class RoomsModel {
     init(http: any HTTP = PublicHTTP(), cacheName: String = "rooms") {
         self.http = http
         self.cacheName = cacheName
+        loader = Loader(RoomCatalogueResource(http: http, cacheName: cacheName))
         // The cached catalogue is *not* read here: this runs while the app is
         // launching, and decoding 350 rooms from disk on the main thread is a
         // stall before anything is on screen. ``load(force:)`` reads it in the
@@ -89,53 +97,38 @@ final class RoomsModel {
 
     /// Loads the catalogue, serving the cached copy first.
     ///
-    /// Returns immediately when a load is in flight, or when a catalogue is already held
-    /// and `force` is `false`. The four catalogues are fetched concurrently and joined
-    /// off the main actor; the result is cached. A failure leaves whatever was held in
-    /// place and sets ``errorMessage``.
+    /// A call while a load is in flight waits for it. The catalogue is fetched when none
+    /// has been fetched today, or when `force` asks; the four catalogues are fetched
+    /// concurrently and joined off the main actor, and the result is cached. A failure
+    /// leaves whatever was held in place and sets ``errorMessage``.
     ///
-    /// - Parameter force: Refetches even when a catalogue is already held.
+    /// - Parameter force: Refetches even when today's catalogue is held.
     func load(force: Bool = false) async {
         guard !skipsLoading else { return }
-        guard !isLoading, force || rooms.isEmpty else { return }
+        loadsInFlight += 1
         isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
-
+        defer {
+            loadsInFlight -= 1
+            if loadsInFlight == 0 { isLoading = false }
+        }
         // Disk first, so callers have a catalogue to draw within a frame or
         // two rather than after four network round-trips.
         if rooms.isEmpty, let cached = await Self.cachedCatalogue(cacheName) {
             adopt(cached.rooms, campuses: cached.campuses)
         }
-
+        let env = Env.public(http)
+        guard await loader.isDue(Whole(), env: env, force: force) else { return }
+        errorMessage = nil
         do {
-            // Three independent catalogues; fetch together and join locally.
-            async let roomsTask = fetch("/spazi/aula", as: [ClassroomDTO].self)
-            async let buildingsTask = fetch("/spazi/edificio", as: [BuildingDTO].self)
-            async let campusesTask = fetch("/spazi/campus", as: [CampusDTO].self)
-            async let floorsTask = fetch("/spazi/piano", as: [FloorDTO].self)
-            // The sites only name the campuses' groups: without them the rooms still work.
-            async let sitesTask = try? fetch("/spazi/sede", as: [SiteDTO].self)
-
-            let (rawRooms, rawBuildings, rawCampuses, rawFloors) =
-                try await (roomsTask, buildingsTask, campusesTask, floorsTask)
-
-            let joined = await Self.join(
-                rooms: rawRooms, buildings: rawBuildings, campuses: rawCampuses, floors: rawFloors,
-                sites: await sitesTask ?? [])
-
-            log.notice("rooms: \(rawRooms.count, privacy: .public) in catalogue, \(joined.rooms.count, privacy: .public) usable")
-            adopt(joined.rooms, campuses: joined.campuses)
-            await Self.cache(joined.rooms, as: cacheName)
+            let fetched = try await loader.value(Whole(), env: env, force: force).value
+            if fetched.rooms != rooms { adopt(fetched.rooms, campuses: fetched.campuses) }
         } catch {
             log.error("Room catalogue failed: \(error.localizedDescription)")
             errorMessage = userFacingMessage(error)
         }
     }
 
-    /// The catalogue as it is held in memory: the rooms, and the campus list derived from
-    /// them once rather than per read.
-    nonisolated private struct Catalogue: Sendable {
+    nonisolated struct Catalogue: Sendable {
         /// The rooms.
         let rooms: [Classroom]
         /// The campuses present, sorted.
@@ -165,7 +158,7 @@ final class RoomsModel {
     ///   - rawSites: The site catalogue.
     /// - Returns: The joined rooms, sorted by code, with their campus list.
     @concurrent
-    private static func join(rooms rawRooms: [ClassroomDTO], buildings rawBuildings: [BuildingDTO],
+    fileprivate static func join(rooms rawRooms: [ClassroomDTO], buildings rawBuildings: [BuildingDTO],
                              campuses rawCampuses: [CampusDTO], floors rawFloors: [FloorDTO],
                              sites rawSites: [SiteDTO]) async -> Catalogue {
         let buildings = Dictionary(
@@ -234,7 +227,7 @@ final class RoomsModel {
     ///   - rooms: The rooms to cache.
     ///   - name: The ``DiskCache`` record.
     @concurrent
-    private static func cache(_ rooms: [Classroom], as name: String) async {
+    fileprivate static func cache(_ rooms: [Classroom], as name: String) async {
         DiskCache.save(rooms, as: name)
     }
 
@@ -245,11 +238,6 @@ final class RoomsModel {
     ///   - type: The shape to decode.
     /// - Returns: The decoded catalogue.
     /// - Throws: ``APIError``.
-    private func fetch<T: Decodable & Sendable>(_ path: String, as type: T.Type) async throws -> T {
-        let data = try await http.data(for: APIRequest(host: .maps, path: path,
-                                                       authenticated: false))
-        return try await BackgroundJSON.decode(T.self, from: data)
-    }
 }
 /// ``RoomsModel`` satisfies ``RoomCatalogue`` as it stands.
 ///
@@ -257,3 +245,45 @@ final class RoomsModel {
 /// `Sendable`, and a `Sendable` conformance stated in another file is
 /// retroactive.
 extension RoomsModel: RoomCatalogue {}
+
+/// The room catalogue: rooms, buildings, campuses, floors and sites, joined.
+nonisolated struct RoomCatalogueResource: Resource {
+    typealias Value = RoomsModel.Catalogue
+
+    static let id = "rooms"
+    /// A campus's rooms change between terms, not between launches.
+    static let ttl: TimeInterval = 86_400
+    /// Kept in ``DiskCache`` by name rather than per account: a campus is the same
+    /// campus for everyone.
+    static let persistence = Persistence.memory
+
+    /// The transport.
+    let http: any HTTP
+    /// Which ``DiskCache`` record holds the catalogue.
+    let cacheName: String
+
+    @concurrent
+    func fetch(_ key: Whole, env: Env, previous: RoomsModel.Catalogue?) async throws -> RoomsModel.Catalogue {
+        // Three independent catalogues; fetch together and join locally.
+        async let roomsTask = fetch("/spazi/aula", as: [ClassroomDTO].self)
+        async let buildingsTask = fetch("/spazi/edificio", as: [BuildingDTO].self)
+        async let campusesTask = fetch("/spazi/campus", as: [CampusDTO].self)
+        async let floorsTask = fetch("/spazi/piano", as: [FloorDTO].self)
+        // The sites only name the campuses' groups: without them the rooms still work.
+        async let sitesTask = try? fetch("/spazi/sede", as: [SiteDTO].self)
+        let (rawRooms, rawBuildings, rawCampuses, rawFloors) =
+            try await (roomsTask, buildingsTask, campusesTask, floorsTask)
+        let joined = await RoomsModel.join(
+            rooms: rawRooms, buildings: rawBuildings, campuses: rawCampuses, floors: rawFloors,
+            sites: await sitesTask ?? [])
+        Logger(subsystem: "segrini.samuele.PoliVerse", category: "rooms")
+            .notice("rooms: \(rawRooms.count, privacy: .public) in catalogue, \(joined.rooms.count, privacy: .public) usable")
+        await RoomsModel.cache(joined.rooms, as: cacheName)
+        return joined
+    }
+
+    private func fetch<T: Decodable & Sendable>(_ path: String, as type: T.Type) async throws -> T {
+        let data = try await http.data(for: APIRequest(host: .maps, path: path, authenticated: false))
+        return try await BackgroundJSON.decode(T.self, from: data)
+    }
+}

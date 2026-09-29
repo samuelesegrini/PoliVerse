@@ -143,7 +143,7 @@ struct CourseMaterialsView: View {
             WeBeepLoginSheet { await weBeep.loadMaterials(for: course) }
         }
         .task { await weBeep.loadMaterials(for: course) }
-        .refreshable { await weBeep.loadMaterials(for: course) }
+        .refreshable { await weBeep.loadMaterials(for: course, force: true) }
     }
 
     /// The kinds of file drawn as a pile, the largest in front, with how

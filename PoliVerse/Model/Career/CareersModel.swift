@@ -67,11 +67,27 @@ final class CareersModel {
 
     /// Loads the enrolment list once.
     ///
-    /// Returns immediately when a load is in flight or the list is already held. A sample
-    /// account gets ``Career/samples()``. A failure leaves the list empty and sets
+    /// Returns when the list is already held; a call while a load is in flight waits for
+    /// it, so a caller that reads ``careers`` right after finds them. A sample account
+    /// gets ``Career/samples()``. A failure leaves the list empty and sets
     /// ``errorMessage``.
     func load() async {
-        guard !isLoading, careers.isEmpty else { return }
+        if let running {
+            await running.value
+            return
+        }
+        guard careers.isEmpty else { return }
+        let task = Task(name: "careers load") { await self.fetch() }
+        running = task
+        await task.value
+        running = nil
+    }
+
+    /// The load in flight, which a second caller joins.
+    @ObservationIgnored private var running: Task<Void, Never>?
+
+    /// Fetches the enrolment list.
+    private func fetch() async {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }

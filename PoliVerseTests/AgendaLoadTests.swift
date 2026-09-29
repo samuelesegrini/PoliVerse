@@ -67,33 +67,55 @@ struct AgendaLoadTests {
         return Data("[\(rows.joined(separator: ","))]".utf8)
     }
 
-    // MARK: - The window asked for
+    // MARK: - The weeks asked for
 
-    /// A week behind and a month ahead: the official app asks for a month
-    /// forward, and a week back costs nothing while meaning that stepping back
-    /// a week does not trigger a round trip.
-    @Test("The fetched window is a week behind and a month ahead")
-    func windowAroundTheDay() async throws {
+    /// From the week of seven days before to the week of a month after: the
+    /// official app asks for a month forward, and a week back costs nothing
+    /// while meaning that stepping back a week does not trigger a round trip.
+    /// Whole weeks, so a week is held or not, and in one request.
+    @Test("The weeks from the one before to a month ahead go out in one request")
+    func weeksAroundTheDay() async throws {
         let http = FixtureHTTP([eventsPath: Data("[]".utf8),
                                 deadlinesPath: Data("[]".utf8)])
         let agenda = model(http)
 
         await agenda.load(around: Self.day)
 
-        let request = try #require(await http.requests.first { $0.path == eventsPath })
+        let path = eventsPath
+        let requests = await http.requests.filter { $0.path == path }
+        #expect(requests.count == 1)
+        let request = try #require(requests.first)
         #expect(request.host == .agenda)
         let calendar = PoliMiDate.romeCalendar
         let start = try #require(request.query.first { $0.name == "start_date" }?.value)
         let end = try #require(request.query.first { $0.name == "end_date" }?.value)
-        #expect(start == PoliMiDate.queryString(
-            try #require(calendar.date(byAdding: .day, value: -7, to: Self.day))))
-        #expect(end == PoliMiDate.queryString(
-            try #require(calendar.date(byAdding: .month, value: 1, to: Self.day))))
+        let firstWeek = AgendaWeeks.week(of: try #require(calendar.date(byAdding: .day, value: -7, to: Self.day)))
+        let lastWeek = AgendaWeeks.week(of: try #require(calendar.date(byAdding: .month, value: 1, to: Self.day)))
+        #expect(start == PoliMiDate.queryString(firstWeek))
+        #expect(end == PoliMiDate.queryString(try #require(calendar.date(byAdding: .day, value: 7, to: lastWeek))))
+    }
+
+    /// Weeks start on Monday in Rome, and a run longer than a load ever asks
+    /// for is split, so each request stays under the event cap.
+    @Test("Contiguous weeks are grouped into runs of at most seven")
+    func runs() throws {
+        let calendar = PoliMiDate.romeCalendar
+        let monday = AgendaWeeks.week(of: Self.day)
+        #expect(calendar.component(.weekday, from: monday) == 2)
+        let weeks = try (0..<8).map { try #require(calendar.date(byAdding: .day, value: 7 * $0, to: monday)) }
+        let gap = try #require(calendar.date(byAdding: .day, value: 7 * 20, to: monday))
+        let runs = AgendaWeeks.runs(weeks + [gap])
+        #expect(runs.map(\.count) == [7, 1, 1])
+        // However the month falls, a load around a date is one run.
+        for offset in 0..<31 {
+            let date = try #require(calendar.date(byAdding: .day, value: offset, to: Self.day))
+            #expect(AgendaWeeks.runs(AgendaWeeks.weeks(around: date)).count == 1)
+        }
     }
 
     /// Deadlines are sparse and worth seeing early, so they get their own
-    /// horizon rather than the window on screen.
-    @Test("Deadlines are fetched a year ahead, not over the shown window")
+    /// horizon rather than the weeks on screen.
+    @Test("Deadlines are fetched a year ahead, not over the weeks shown")
     func deadlinesLookFurther() async throws {
         let http = FixtureHTTP([eventsPath: Data("[]".utf8),
                                 deadlinesPath: Data("[]".utf8)])
@@ -103,7 +125,7 @@ struct AgendaLoadTests {
 
         let request = try #require(await http.requests.first { $0.path == deadlinesPath })
         let end = try #require(request.query.first { $0.name == "end_date" }?.value)
-        let from = try #require(PoliMiDate.romeCalendar.date(byAdding: .day, value: -7, to: Self.day))
+        let from = AgendaWeeks.week(of: try #require(PoliMiDate.romeCalendar.date(byAdding: .day, value: -7, to: Self.day)))
         #expect(end == PoliMiDate.queryString(
             try #require(PoliMiDate.romeCalendar.date(byAdding: .year, value: 1, to: from))))
     }
@@ -223,7 +245,7 @@ struct AgendaLoadTests {
 
     /// The reason the window is held at all: navigating inside it must not
     /// refetch, and stepping outside it must.
-    @Test("A date inside the loaded window does not refetch; outside does")
+    @Test("A date in a week held does not refetch; one outside does")
     func refetchesOnlyOutsideTheWindow() async {
         let http = FixtureHTTP([eventsPath: Self.events([2]),
                                 deadlinesPath: Data("[]".utf8)])
@@ -241,7 +263,7 @@ struct AgendaLoadTests {
 
     /// Paging the calendar past the held month used to replace the window, and
     /// today's lectures left the widgets, the reminders and the Watch with it.
-    @Test("Navigating past the window adds to what is held instead of replacing it")
+    @Test("Navigating past the weeks held adds to them instead of replacing them")
     func pagingKeepsToday() async {
         let account = StubAccount(
             matricola: matricola,

@@ -44,23 +44,32 @@ final class WeBeepModel {
     /// The listing for the course last loaded by ``loadMaterials(for:)``. Sections with no
     /// files are omitted.
     private(set) var sections: [WeBeepSection] = []
-    /// One offline slot per course's listing.
+    /// Each course's listing, held and written to disk per course.
     ///
     /// Downloaded files stay on disk, but without the listing they cannot be found — which
-    /// would make downloading for a train journey pointless. Cached per course, since one
+    /// would make downloading for a train journey pointless. Kept per course, since one
     /// course's materials say nothing about another's.
-    private var materialSlots: [String: CachedSlot<[WeBeepSection]>] = [:]
+    private let listings = Loader(MaterialsListing())
     /// `true` while a materials load is in flight.
     private(set) var isLoadingMaterials = false
+    /// Materials loads in flight, which ``isLoadingMaterials`` reports.
+    @ObservationIgnored private var materialLoads = 0
+    /// Bumped by each materials load, so only the course asked for last fills
+    /// ``sections``: switching course mid-load used to be turned away, and the previous
+    /// course's files stayed on screen.
+    @ObservationIgnored private var materialsGeneration = 0
 
     /// Supplies the signed-in student, whose matricola keys the caches, and the
     /// sample-data flag.
     private let session: Session
     /// Where the update sweep records what it notices.
     private let feed: UpdateFeed
-    /// Suppresses repeated update sweeps within an hour. A course page changes when a
-    /// lecturer uploads, and every sweep is one request per course.
-    private var updatesWindow = LoadWindow(interval: 3600)
+    /// The account and moment of the last sweep that read something, which
+    /// ``sweepIsDue(last:account:force:now:)`` asks.
+    @ObservationIgnored private var lastSweep: (account: String, at: Date)?
+    /// How long a sweep is not repeated. A course page changes when a lecturer uploads,
+    /// and every sweep is one request per course.
+    nonisolated static let sweepInterval: TimeInterval = 3600
     /// How many course pages one sweep reads. The cap is what lets a sweep fit in a
     /// background refresh, which has about thirty seconds for everything.
     static let watchLimit = 6
@@ -78,6 +87,10 @@ final class WeBeepModel {
 
     /// The Moodle client, built from the stored token. `nil` when WeBeep is not connected.
     private var api: WeBeepAPI?
+    /// Course pages through the current client, joined and reused for ten minutes, so the
+    /// materials screen, the forums, the recordings link and the sweep share one
+    /// `core_course_get_contents`. Rebuilt with the client.
+    private var pages: Loader<CoursePage>?
     /// The signed-in user's Moodle id, learned by ``loadCourses()``.
     private var userID: Int?
     /// Moodle course id per ``Course/id``, remembered once a course has been matched by
@@ -93,7 +106,7 @@ final class WeBeepModel {
         self.session = session
         self.feed = feed
         if let token = storedToken() {
-            api = WeBeepAPI(token: token)
+            connect(WeBeepAPI(token: token))
         }
     }
 
@@ -110,12 +123,29 @@ final class WeBeepModel {
         return String(data: data, encoding: .utf8)
     }
 
+    /// Uses a Moodle client, with a loader of its own for course pages.
+    private func connect(_ client: WeBeepAPI) {
+        api = client
+        pages = Loader(CoursePage(api: client))
+    }
+
+    /// The contents of a course page, through the page loader.
+    ///
+    /// - Parameters:
+    ///   - moodleID: Moodle's course id.
+    ///   - force: Fetches even a page read in the last ten minutes.
+    /// - Returns: The page's sections.
+    private func page(_ moodleID: Int, force: Bool = false) async throws -> [MoodleSection] {
+        guard let pages else { throw URLError(.userAuthenticationRequired) }
+        return try await pages.value(moodleID, env: Env(session), force: force).value
+    }
+
     /// Stores a freshly obtained token and enters ``State/ready``.
     ///
     /// - Parameter token: The token from ``WeBeepAuth/token(from:passport:verifySignature:)``.
     func store(_ token: WeBeepAuth.MoodleToken) {
         try? KeychainStore.save(Data(token.token.utf8), account: keychainAccount)
-        api = WeBeepAPI(token: token.token)
+        connect(WeBeepAPI(token: token.token))
         state = .ready
     }
 
@@ -124,6 +154,7 @@ final class WeBeepModel {
     func signOut() {
         KeychainStore.delete(account: keychainAccount)
         api = nil
+        pages = nil
         userID = nil
         courses = []
         sections = []
@@ -206,27 +237,42 @@ final class WeBeepModel {
 
     /// Fetches one course's files into ``sections``.
     ///
-    /// The cached listing is restored first, so the screen has content before the request
-    /// and keeps it if the request fails — which is how a downloaded file is found again
-    /// without signal. Only entries that are genuinely files are listed: a module may
-    /// carry links or nothing at all.
+    /// The listing held for the course — from this session or from disk — goes on screen
+    /// first, so the screen has content before the request and keeps it if the request
+    /// fails, which is how a downloaded file is found again without signal. Only entries
+    /// that are genuinely files are listed: a module may carry links or nothing at all.
+    ///
+    /// A call for another course while one runs is not turned away: the course asked for
+    /// last is the one ``sections`` shows.
     ///
     /// A listing for a page the update sweep would read anyway is also handed to
     /// ``UpdateFeed``, since noticing what is new costs nothing once the listing is here.
     /// Opening an old course therefore never announces its old results as news.
     ///
-    /// - Parameter course: The course whose materials to load.
-    func loadMaterials(for course: Course) async {
-        guard !isLoadingMaterials else { return }
+    /// - Parameters:
+    ///   - course: The course whose materials to load.
+    ///   - force: Fetches the page even if it was read in the last ten minutes;
+    ///     pull-to-refresh.
+    func loadMaterials(for course: Course, force: Bool = false) async {
+        materialsGeneration += 1
+        let mine = materialsGeneration
+        materialLoads += 1
         isLoadingMaterials = true
-        defer { isLoadingMaterials = false }
+        defer {
+            materialLoads -= 1
+            if materialLoads == 0 { isLoadingMaterials = false }
+        }
+        func isCurrent() -> Bool { mine == materialsGeneration && !Task.isCancelled }
 
         // Last known listing first, so the screen has content before the
         // request and keeps it if the request fails.
-        await restoreMaterials(for: course)
+        let env = Env(session)
+        let held = await listings.cached(course.id, env: env)
+        let known = held == nil ? await listings.restore(course.id, env: env) : held
+        if let known, isCurrent() { sections = known.value }
 
         if session.useMockData || api == nil {
-            sections = WeBeepSection.samples(for: course)
+            if isCurrent() { sections = WeBeepSection.samples(for: course) }
             if api == nil && !session.useMockData { state = .needsLogin }
             return
         }
@@ -236,13 +282,12 @@ final class WeBeepModel {
         do {
             if courses.isEmpty { await loadCourses() }
             guard let moodleID = moodleCourseID(for: course) else {
-                sections = []
+                if isCurrent() { sections = [] }
                 state = .failed("Corso non trovato su WeBeep.")
                 return
             }
 
-            let raw = try await api.contents(courseID: moodleID)
-            contents[moodleID] = (raw, .now)
+            let raw = try await page(moodleID, force: force)
             // The listing is already here; noticing what is new costs nothing.
             // Only for a page the background pass would read anyway — this
             // year's, linked by id — so opening an old course never announces
@@ -253,42 +298,56 @@ final class WeBeepModel {
                 await feed.recordMaterials(
                     course: watched, sections: raw, account: account, inspect: resultsInspector())
             }
-            sections = raw.compactMap { section in
-                let files = (section.modules ?? []).flatMap { module in
-                    (module.contents ?? []).compactMap { content -> WeBeepFile? in
-                        // Modules carry more than files — `url` entries point
-                        // offsite, labels carry none at all.
-                        guard content.type == "file",
-                              let name = content.filename,
-                              let fileURL = content.fileurl else { return nil }
-                        return WeBeepFile(
-                            id: "\(module.id)-\(name)",
-                            name: name,
-                            courseID: course.id,
-                            sectionName: section.name,
-                            sizeBytes: content.filesize ?? 0,
-                            modifiedAt: content.timemodified.map {
-                                Date(timeIntervalSince1970: TimeInterval($0))
-                            } ?? .now,
-                            downloadURL: api.authenticatedFileURL(fileURL)
-                        )
-                    }
-                }
-                guard !files.isEmpty else { return nil }
-                return WeBeepSection(id: String(section.id), name: section.name, files: files)
-            }
+            let courseID = course.id
+            let listing = await Compute.run { Self.listing(of: raw, courseID: courseID, api: api) }
+            await listings.put(listing, for: course.id, env: env)
             // Logged in the same shape as the other services, so a device run
             // shows plainly whether the materials path ran — this one went
             // unverified longest precisely because it said nothing.
-            log.notice("WeBeep course \(moodleID, privacy: .public): \(raw.count, privacy: .public) sections, \(self.sections.count, privacy: .public) with files, \(self.sections.reduce(0) { $0 + $1.files.count }, privacy: .public) files")
+            log.notice("WeBeep course \(moodleID, privacy: .public): \(raw.count, privacy: .public) sections, \(listing.count, privacy: .public) with files, \(listing.reduce(0) { $0 + $1.files.count }, privacy: .public) files")
+            guard isCurrent() else { return }
+            sections = listing
             state = .ready
-            saveMaterials(for: course)
         } catch let error as WeBeepAPI.Failure {
             handle(error)
             // Kept, not cleared: a cached listing is how a downloaded file is
             // found again without signal.
         } catch {
             state = .failed(userFacingMessage(error) ?? "")
+        }
+    }
+
+    /// The files of a course page, by section. Sections with no files are left out.
+    ///
+    /// - Parameters:
+    ///   - raw: The page's sections.
+    ///   - courseID: The app's id for the course.
+    ///   - api: The client that signs the download addresses.
+    /// - Returns: The listing.
+    nonisolated static func listing(of raw: [MoodleSection], courseID: String, api: WeBeepAPI) -> [WeBeepSection] {
+        raw.compactMap { section in
+            let files = (section.modules ?? []).flatMap { module in
+                (module.contents ?? []).compactMap { content -> WeBeepFile? in
+                    // Modules carry more than files — `url` entries point
+                    // offsite, labels carry none at all.
+                    guard content.type == "file",
+                          let name = content.filename,
+                          let fileURL = content.fileurl else { return nil }
+                    return WeBeepFile(
+                        id: "\(module.id)-\(name)",
+                        name: name,
+                        courseID: courseID,
+                        sectionName: section.name,
+                        sizeBytes: content.filesize ?? 0,
+                        modifiedAt: content.timemodified.map {
+                            Date(timeIntervalSince1970: TimeInterval($0))
+                        } ?? .now,
+                        downloadURL: api.authenticatedFileURL(fileURL)
+                    )
+                }
+            }
+            guard !files.isEmpty else { return nil }
+            return WeBeepSection(id: String(section.id), name: section.name, files: files)
         }
     }
 
@@ -302,15 +361,15 @@ final class WeBeepModel {
     ///
     /// The sweep stops early on a sign-out or a career switch, since the rest would be
     /// weighed against somebody else's sittings, and on cancellation. A sweep that read
-    /// nothing does not mark the load window, so it is retried.
+    /// nothing is not recorded, so it is retried.
     ///
     /// - Parameters:
-    ///   - force: Bypasses the hourly load window.
+    ///   - force: Sweeps however recent the last sweep was.
     ///   - deadline: Stops starting new courses after this moment, so a background refresh
     ///     ends on its own terms rather than being killed mid-write.
     func checkForUpdates(force: Bool = false, until deadline: Date? = nil) async {
         guard !session.useMockData, api != nil, let account = session.student?.matricola,
-              updatesWindow.shouldLoad(force: force, source: account) else { return }
+              Self.sweepIsDue(last: lastSweep, account: account, force: force) else { return }
 
         if courses.isEmpty { await loadCourses() }
         guard let api else { return }
@@ -327,7 +386,7 @@ final class WeBeepModel {
                   deadline.map({ Date.now < $0 }) ?? true,
                   let target = MaterialCourse(course) else { break }
             do {
-                let raw = try await api.contents(courseID: target.moodleID)
+                let raw = try await page(target.moodleID)
                 await feed.recordMaterials(
                     course: target, sections: raw, account: account, inspect: resultsInspector())
                 // One more request, only where the page has an announcements
@@ -367,7 +426,22 @@ final class WeBeepModel {
         }
         log.notice("Checked \(checked, privacy: .public) of \(watched.count, privacy: .public) course pages for updates")
         // A pass that read nothing is retried next time, like any failed load.
-        if checked > 0 { updatesWindow.markLoaded(source: account) }
+        if checked > 0 { lastSweep = (account, .now) }
+    }
+
+    /// Whether an update sweep should run: always when forced, for another account than
+    /// the last sweep's, or before any; otherwise once ``sweepInterval`` has gone by.
+    ///
+    /// - Parameters:
+    ///   - last: The last sweep that read something.
+    ///   - account: The matricola about to be swept for.
+    ///   - force: Sweeps regardless.
+    ///   - now: The clock.
+    /// - Returns: `true` when the sweep should run.
+    nonisolated static func sweepIsDue(last: (account: String, at: Date)?, account: String,
+                                       force: Bool, now: Date = .now) -> Bool {
+        guard !force, let last, last.account == account else { return true }
+        return now.timeIntervalSince(last.at) >= sweepInterval
     }
 
     /// Reads a new results file for the student's own line, if they have turned that on.
@@ -445,43 +519,6 @@ final class WeBeepModel {
     /// - Returns: The year, or `nil` when the label does not begin with four digits.
     private static func startYear(of label: String) -> Int? {
         Int(label.prefix(4))
-    }
-
-    /// The offline record name a course's listing is stored under.
-    ///
-    /// - Parameter course: The course.
-    /// - Returns: The record name.
-    private func slotName(for course: Course) -> String { "materials-\(course.id)" }
-
-    /// Puts a course's cached listing into ``sections``, if there is one for this account.
-    ///
-    /// The file is read and decoded off the main actor; the slot is re-read after the
-    /// read, since a save may have replaced it meanwhile.
-    ///
-    /// - Parameter course: The course.
-    private func restoreMaterials(for course: Course) async {
-        var slot = materialSlots[course.id]
-            ?? CachedSlot<[WeBeepSection]>(name: slotName(for: course))
-        let claim = slot.claimRestore(for: session.student?.matricola)
-        materialSlots[course.id] = slot
-        guard let claim else { return }
-        let entry = await claim.read()
-        guard var current = materialSlots[course.id] else { return }
-        if let cached = current.finish(claim, with: entry) {
-            sections = cached
-        }
-        materialSlots[course.id] = current
-    }
-
-    /// Stores the current ``sections`` as this course's listing. Nothing is written under
-    /// sample data.
-    ///
-    /// - Parameter course: The course.
-    private func saveMaterials(for course: Course) {
-        var slot = materialSlots[course.id]
-            ?? CachedSlot<[WeBeepSection]>(name: slotName(for: course))
-        slot.save(sections, for: session.useMockData ? nil : session.student?.matricola)
-        materialSlots[course.id] = slot
     }
 
     /// Matches a Politecnico course to its Moodle counterpart.
@@ -575,10 +612,6 @@ final class WeBeepModel {
 
     // MARK: - Forums
 
-    /// Course pages read recently, so the course hub's forums and the materials screen
-    /// share one `core_course_get_contents`. Reused for ten minutes.
-    private var contents: [Int: (sections: [MoodleSection], at: Date)] = [:]
-
     /// The forums on a course's page.
     ///
     /// - Parameter course: The course.
@@ -589,12 +622,8 @@ final class WeBeepModel {
         guard let api else { return nil }
         if courses.isEmpty { await loadCourses() }
         guard let moodleID = moodleCourseID(for: course) else { return nil }
-        if let cached = contents[moodleID], Date.now.timeIntervalSince(cached.at) < 600 {
-            return CourseForum.forums(in: cached.sections)
-        }
         do {
-            let raw = try await api.contents(courseID: moodleID)
-            contents[moodleID] = (raw, .now)
+            let raw = try await page(moodleID)
             return CourseForum.forums(in: raw)
         } catch let error as WeBeepAPI.Failure where error.isAuthFailure {
             handle(error)
@@ -616,13 +645,8 @@ final class WeBeepModel {
         guard !session.useMockData, let api else { return nil }
         if courses.isEmpty { await loadCourses() }
         guard let moodleID = moodleCourseID(for: course) else { return nil }
-        if let cached = contents[moodleID], Date.now.timeIntervalSince(cached.at) < 600 {
-            let sections = cached.sections
-            return await Compute.run { RecmanParser.courseEntry(in: sections) }
-        }
         do {
-            let raw = try await api.contents(courseID: moodleID)
-            contents[moodleID] = (raw, .now)
+            let raw = try await page(moodleID)
             return await Compute.run { RecmanParser.courseEntry(in: raw) }
         } catch let error as WeBeepAPI.Failure where error.isAuthFailure {
             handle(error)
@@ -688,5 +712,47 @@ extension WeBeepModel: CourseEnrolments {
     func enrolledCourses() async -> [Course] {
         await loadCourses()
         return courses.map(Course.init(moodle:))
+    }
+}
+
+/// One course page on WeBeep, `core_course_get_contents`, reused for ten minutes.
+nonisolated struct CoursePage: Resource {
+    typealias Key = Int
+    typealias Value = [MoodleSection]
+
+    static let id = "webeep-page"
+    static let ttl: TimeInterval = 600
+    static let persistence = Persistence.memory
+    static let capacity = 32
+
+    /// The client, with its token.
+    let api: WeBeepAPI
+
+    @concurrent
+    func fetch(_ key: Int, env: Env, previous: [MoodleSection]?) async throws -> [MoodleSection] {
+        try await api.contents(courseID: key)
+    }
+}
+
+/// A course's listing of files, kept per course and written to disk.
+///
+/// Built from a ``CoursePage`` and filed with ``Loader/put(_:for:env:)``; never fetched
+/// on its own. Its loader is what keeps the listing for the train journey: restored
+/// once per account, and dropped if a fresher listing overtook the read.
+nonisolated struct MaterialsListing: Resource {
+    typealias Key = String
+    typealias Value = [WeBeepSection]
+
+    /// A listing is built from its page, not fetched.
+    struct BuiltFromPage: Error {}
+
+    static let id = "materials"
+    static let capacity = 64
+
+    func storageName(for key: String) -> String { "materials-\(key)" }
+
+    @concurrent
+    func fetch(_ key: String, env: Env, previous: [WeBeepSection]?) async throws -> [WeBeepSection] {
+        throw BuiltFromPage()
     }
 }

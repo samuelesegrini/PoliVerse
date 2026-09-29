@@ -326,9 +326,9 @@ struct PoliVerseApp: App {
                 if phase == .active {
                     Task {
                         await pending.flush()
-                        // Not forced: `LoadWindow` makes a return from the
-                        // app switcher free and a return after lunch one
-                        // round trip. Forcing here would turn every glance
+                        // Not forced: a loader serves a fresh value without
+                        // asking, so a return from the app switcher is free and
+                        // a return after lunch one round trip. Forcing here would turn every glance
                         // at the multitasking view into five requests.
                         //
                         // Skipped mid-login: CieID (and the SPID/eIDAS

@@ -8,20 +8,30 @@ Every piece of data on screen comes through the same pipeline, so a screen
 never has to know whether it is looking at a cached answer, a fresh one, or a
 change the student made while offline.
 
-![A load through the Store pipeline, what happens when it fails, and how a write goes the other way.](store-pipeline)
+### Resource, Loader and Query
 
-### Source and Store
+A ``Resource`` describes one kind of data: how to fetch it, for which key, how
+long an answer stays good, whether it is written to disk, and what it looks
+like under sample data. Its `fetch` is `@concurrent`, so decoding and parsing
+run off the main actor. A ``Loader`` — one actor per resource — does the rest
+the same way for every resource:
 
-A ``Source`` describes one kind of data: where it is cached, how to fetch it,
-and how to decode it. ``Store`` drives it. A `load()` on a store:
+1. **joins** a request already in flight for the same key, so eight callers
+   cost one request and a second caller waits instead of being turned away;
+2. **keeps** what came back for the resource's lifetime, per account, and
+   serves it without asking again;
+3. **warms** keys about to be needed at `.utility`, raised to the caller's
+   priority when someone then asks for them;
+4. **restores** the offline copy once per account before the network answers,
+   and drops a restore that a fresh fetch overtook.
 
-1. reads the cache and publishes it at once, so the screen has something to
-   draw on the first frame;
-2. decides whether a refresh is due, from the ``LoadWindow`` the source asks
-   for;
-3. fetches, decodes, writes the cache, and publishes the result;
-4. records what happened in ``DataStatus`` and with the
-   ``FreshnessCoordinator``, so the app can say how old what it is showing is.
+A ``Query`` is the `@MainActor` `@Observable` handle a view reads for one key:
+the value, whether it is loading, the error, and its age. It assigns only what
+changed, so a refresh that brings the same answer redraws nothing. The area
+models hold queries and loaders underneath and keep their own API.
+
+Freshness is recorded in ``DataStatus`` and with the
+``FreshnessCoordinator``, so the app can say how old what it is showing is.
 
 > Important: A failed refresh never clears what is already there. The cached
 > answer stays on screen and the failure is reported beside it — an empty
@@ -37,15 +47,16 @@ services on top of it, and the table below is the whole of the outward surface:
 | ``PoliMiAPI`` | the Politecnico's authenticated services | the token ``TokenStore`` holds |
 | ``PublicHTTP`` | the services that need no account | none |
 | ``ConnectionProbe`` | asking a service whether it is there at all | none |
-| ``ResourceLoader`` | de-duplicating the same request in flight twice | whatever the caller uses |
+| ``Loader`` | joining the same request in flight twice, and keeping the answer | whatever the caller uses |
 
 ``PoliMiAPI`` resolves hosts through ``ServiceDirectory`` rather than
 hard-coding them, so a change on the Politecnico's side needs no release, and
 turns a failure into something a screen can show.
 
-> Tip: ``ResourceLoader`` sits in front of the requests that are asked for many
-> times at once — a room's occupancy, a teaching's scheda. The same work is
-> never started twice, and an answer already in hand is reused.
+> Tip: The agenda's weeks, a room's occupancy and a teaching's scheda are asked
+> for many times at once. Through a ``Loader`` the same work is never started
+> twice, contiguous weeks go out as one request, and an answer already in hand
+> is reused.
 
 ### Writing
 
@@ -83,8 +94,8 @@ waking the app. See <doc:WidgetsAndActivities>.
 
 ### Sample data
 
-With `useMockData` on, every source answers from the fixtures in
-`Model/Samples` rather than from the network.
+With `useMockData` on, every resource answers from its `sample(_:)` rather
+than from the network; public data, the same for everyone, is fetched as usual.
 
 > Note: Every fixture is derived from a single ``SampleDegree``, so the
 > timetable, the libretto, the materials and the widgets all describe one
@@ -94,9 +105,10 @@ With `useMockData` on, every source answers from the fixtures in
 ## Topics
 
 ### The pipeline
-- ``Source``
-- ``Store``
-- ``LoadWindow``
+- ``Resource``
+- ``Loader``
+- ``Query``
+- ``Compute``
 - ``DataStatus``
 - ``FreshnessCoordinator``
 
@@ -105,7 +117,6 @@ With `useMockData` on, every source answers from the fixtures in
 - ``PoliMiAPI``
 - ``PublicHTTP``
 - ``ServiceDirectory``
-- ``ResourceLoader``
 - ``ConnectionProbe``
 
 ### Writing
