@@ -287,7 +287,8 @@ final class RecordingsModel {
 
         switch outcome {
         case .archive(let html):
-            take(RecmanParser.rows(in: html, fallbackCode: courseEntries[code] == nil ? nil : code), for: code)
+            let fallback = courseEntries[code] == nil ? nil : code
+            take(await Compute.run { RecmanParser.rows(in: html, fallbackCode: fallback) }, for: code)
             await RecordingsWebKit.saveSession()
         case .signInNeeded:
             phase = .needsSignIn

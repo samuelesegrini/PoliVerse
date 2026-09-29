@@ -5,15 +5,15 @@ import OSLog
 /// The student's academic record, as the screens read it.
 ///
 /// The six endpoints and their partial-failure rules belong to ``CareerSource``, and
-/// the load window, offline copy and error text to ``Store``. What is here is what
+/// the cache, the offline copy and the error text to ``Query`` and its ``Loader``. What is here is what
 /// only this feature knows: what a load means for ``UpdateFeed`` and the widgets,
 /// saving a target average back to Servizi Online, and the figures derived from the
 /// libretto through ``StudyPlan`` and ``Sittings``.
 @Observable
 @MainActor
 final class CareerModel {
-    /// The loaded record, with its cache and load window.
-    private let store: Store<CareerSource>
+    /// The loaded record, observed; the loader behind it holds the cache.
+    private let query: Query<CareerSource>
     /// Whose record is loaded, and the transport the target write goes through.
     private let account: any Account
     /// Told about every successful load, so it can notice what changed.
@@ -43,13 +43,13 @@ final class CareerModel {
         self.feed = feed
         self.pending = pending
         self.offline = offline
-        self.store = Store(CareerSource(), account: account, offline: offline)
+        self.query = Query(CareerSource(), account: account, offline: offline)
     }
 
     // MARK: - What the screens read
 
     /// The loaded record, or an empty one before the first load.
-    private var payload: CareerSource.Payload { store.value ?? CareerSource.Payload() }
+    private var payload: CareerSource.Payload { query.value ?? CareerSource.Payload() }
 
     /// The aggregate figures.
     var gradeBook: GradeBook { payload.gradeBook }
@@ -67,15 +67,15 @@ final class CareerModel {
     var examServicesRefused: Bool { payload.servicesRefused }
 
     /// `true` while a load is in flight.
-    var isLoading: Bool { store.isLoading }
+    var isLoading: Bool { query.isLoading }
     /// Seconds since the record was fetched, or `nil` if never.
-    var age: TimeInterval? { store.age }
+    var age: TimeInterval? { query.age }
 
     /// The last load's error, or `nil` when it succeeded — and `nil` while
     /// ``examServicesRefused`` holds, since that is reported in its own words rather than
     /// as a failure the student could retry.
     var errorMessage: String? {
-        examServicesRefused ? nil : store.errorMessage
+        examServicesRefused ? nil : query.errorMessage
     }
 
     /// The libretto's arithmetic. See ``StudyPlan``.
@@ -142,7 +142,7 @@ final class CareerModel {
     /// cached record, and re-recording it would have the feed reasoning about data it has
     /// already seen.
     ///
-    /// - Parameter force: Bypasses the store's load window.
+    /// - Parameter force: Fetches even when a fresh value is held; pull-to-refresh.
     func load(force: Bool = false) async {
         // Before the load, not after: signing out must clear the feed whether
         // or not anything is fetched.
@@ -154,12 +154,12 @@ final class CareerModel {
             feed.show(account: account.matricola)
         }
 
-        await store.load(force: force)
+        await query.load(force: force)
 
         // Only on a load that actually got somewhere. What is held after a
         // failure is the cached record, and re-recording it would have the
         // feed reasoning about data it has already seen.
-        guard !account.isSample, store.errorMessage == nil,
+        guard !account.isSample, query.errorMessage == nil,
               let matricola = account.matricola else { return }
         await feed.recordExams(sessions: payload.sessions, libretto: payload.libretto,
                                account: matricola)

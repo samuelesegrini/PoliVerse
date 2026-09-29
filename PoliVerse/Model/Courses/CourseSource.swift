@@ -1,14 +1,14 @@
 import Foundation
 import OSLog
 
-/// The ``Source`` for the student's enrolled teachings.
+/// The ``Resource`` for the student's enrolled teachings.
 ///
 /// WeBeep is asked first and `/v1/insegn` is the fallback. `/v1/insegn` is the exam
 /// registration endpoint, so it lists teachings that still have sittings to sit: a
 /// student who has passed everything gets an empty array from it, which is correct
 /// for exams and useless as a course list. WeBeep lists actual enrolments and keeps
 /// them after the exam is passed.
-nonisolated struct CourseSource: Source {
+nonisolated struct CourseSource: Resource {
     /// Names the offline record and the log category.
     static let id = "courses"
     /// Fifteen minutes: the enrolled-course list changes at most once a semester.
@@ -30,7 +30,8 @@ nonisolated struct CourseSource: Source {
     /// - Returns: The WeBeep enrolments, or the teachings from `/v1/insegn` when WeBeep
     ///   has none.
     /// - Throws: ``APIError`` from the fallback request.
-    func fetch(_ env: Env) async throws -> [Course] {
+    @concurrent
+    func fetch(_ key: Whole, env: Env, previous: [Course]?) async throws -> [Course] {
         let webeep = await enrolled()
         if !webeep.isEmpty {
             Self.log.notice("WeBeep provided \(webeep.count, privacy: .public) enrolled courses")
@@ -50,5 +51,5 @@ nonisolated struct CourseSource: Source {
     }
 
     /// The sample course list.
-    func sample() -> [Course] { Course.samples }
+    func sample(_ key: Whole) -> [Course]? { Course.samples }
 }

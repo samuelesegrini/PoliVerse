@@ -391,11 +391,10 @@ struct FreeRoomsWindowTests {
 
     @Test("A pass from seconds ago is not repeated")
     func recentPassSkipped() {
-        var window = LoadWindow(interval: 60)
         let now = Date(timeIntervalSince1970: 1_000_000)
         let source = key("2026-03-10", "Milano Leonardo")
-        window.markLoaded(source: source, at: now)
-        #expect(!window.shouldLoad(source: source, now: now.addingTimeInterval(30)))
+        #expect(!FreeRoomsModel.passIsDue(last: (source, now), key: source, force: false,
+                                          now: now.addingTimeInterval(30)))
     }
 
     /// Sixty seconds rather than five minutes: occupancy turns over on the
@@ -403,28 +402,33 @@ struct FreeRoomsWindowTests {
     /// walking across campus to an occupied room.
     @Test("A pass from over a minute ago is repeated")
     func stalePassRuns() {
-        var window = LoadWindow(interval: 60)
         let now = Date(timeIntervalSince1970: 1_000_000)
         let source = key("2026-03-10", "Milano Leonardo")
-        window.markLoaded(source: source, at: now)
-        #expect(window.shouldLoad(source: source, now: now.addingTimeInterval(61)))
+        #expect(FreeRoomsModel.passIsDue(last: (source, now), key: source, force: false,
+                                         now: now.addingTimeInterval(61)))
     }
 
     @Test("Another day always reloads, however recent the last pass")
     func changedDayReloads() {
-        var window = LoadWindow(interval: 60)
         let now = Date(timeIntervalSince1970: 1_000_000)
-        window.markLoaded(source: key("2026-03-10", "Milano Leonardo"), at: now)
-        #expect(window.shouldLoad(
-            source: key("2026-03-11", "Milano Leonardo"), now: now.addingTimeInterval(1)))
+        #expect(FreeRoomsModel.passIsDue(
+            last: (key("2026-03-10", "Milano Leonardo"), now),
+            key: key("2026-03-11", "Milano Leonardo"), force: false, now: now.addingTimeInterval(1)))
     }
 
     @Test("Another campus always reloads")
     func changedCampusReloads() {
-        var window = LoadWindow(interval: 60)
         let now = Date(timeIntervalSince1970: 1_000_000)
-        window.markLoaded(source: key("2026-03-10", "Milano Leonardo"), at: now)
-        #expect(window.shouldLoad(
-            source: key("2026-03-10", "Milano Bovisa"), now: now.addingTimeInterval(1)))
+        #expect(FreeRoomsModel.passIsDue(
+            last: (key("2026-03-10", "Milano Leonardo"), now),
+            key: key("2026-03-10", "Milano Bovisa"), force: false, now: now.addingTimeInterval(1)))
+    }
+
+    @Test("Pull-to-refresh always runs, and so does the first pass")
+    func forceAndFirst() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let source = key("2026-03-10", "Milano Leonardo")
+        #expect(FreeRoomsModel.passIsDue(last: (source, now), key: source, force: true, now: now))
+        #expect(FreeRoomsModel.passIsDue(last: nil, key: source, force: false, now: now))
     }
 }

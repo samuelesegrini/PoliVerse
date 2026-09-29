@@ -18,15 +18,15 @@ import OSLog
 /// ## Cost
 ///
 /// Occupancy is per room, so a campus is one request each — up to around 158 for the
-/// largest. They run through a ``ResourceLoader`` in batches of ``concurrency``, are
-/// cached per room and day, and are shared with the room detail screen, so a room
-/// already fetched costs nothing.
+/// largest. They run through a ``Loader`` of ``OccupancyResource`` in batches of
+/// ``concurrency``, are cached per room and day, and are shared with the room detail
+/// screen, so a room already fetched costs nothing.
 ///
 /// ## Freshness
 ///
-/// The load window is one minute rather than the usual five, because occupancy turns
-/// over on the lecture boundary and this is the screen where stale data means walking
-/// across campus to an occupied room.
+/// A pass is repeated after one minute rather than the usual five, because occupancy
+/// turns over on the lecture boundary and this is the screen where stale data means
+/// walking across campus to an occupied room.
 @Observable
 final class FreeRoomsModel {
     /// The rooms of the chosen campus, with their bookings for ``day``. Rooms that could
@@ -63,25 +63,29 @@ final class FreeRoomsModel {
     /// Diagnostic log for this type, under the `aule` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "aule")
 
-    /// Suppresses repeated passes within a minute, keyed on the day and campus being
-    /// shown.
-    private var window = LoadWindow(interval: 60)
+    /// The day and campus of the last pass that produced rooms, and when, which
+    /// ``passIsDue(last:key:force:now:)`` asks.
+    @ObservationIgnored private var lastPass: (key: String, at: Date)?
+    /// How long a pass is not repeated for the same day and campus.
+    nonisolated static let passInterval: TimeInterval = 60
     /// The day and campus of the pass in flight, and which pass it is.
     ///
     /// A pass for another day or campus is not turned away while one runs: the
     /// picker changes both mid-pass, and the old pass then published its rooms
-    /// under the new campus and stamped the window with it, so the right pass
+    /// under the new campus and recorded itself for it, so the right pass
     /// was suppressed for a minute. The newest pass is the only one that
     /// publishes.
     @ObservationIgnored private var inFlight: (key: String, pass: Int)?
     /// Counts passes, so an older one can tell it has been superseded.
     @ObservationIgnored private var passes = 0
 
-    /// Fetches, caches and coalesces occupancy per room and day.
+    /// Fetches, caches and joins occupancy per room and day.
     ///
-    /// Coalescing is what stops a room opened from search being fetched twice while the
+    /// Joining is what stops a room opened from search being fetched twice while the
     /// campus pass is still running.
-    private let loader: ResourceLoader<OccupancyKey, [RoomBooking]>
+    private let loader: Loader<OccupancyResource>
+    /// Public data: nobody's account.
+    private let env = Env.public()
 
     /// One room on one day, which is what occupancy is cached by.
     nonisolated struct OccupancyKey: Hashable, Sendable {
@@ -123,19 +127,7 @@ final class FreeRoomsModel {
     init(catalogue: any RoomCatalogue, session: URLSession = .shared) {
         self.catalogue = catalogue
         self.session = session
-        loader = ResourceLoader(
-            // A day's timetable does not change while the app is open, and a
-            // past day never changes at all.
-            lifetime: .seconds(1800),
-            capacity: 512
-        ) { key in
-            let day = PoliMiDate.romeCalendar.date(
-                from: PoliMiDate.romeCalendar.dateComponents(
-                    [.year, .month, .day],
-                    from: PoliMiDate.parse(key.day) ?? .now)) ?? .now
-            return await Self.occupancy(
-                occupancyID: key.occupancyID, roomID: key.roomID, day: day, session: session)
-        }
+        loader = Loader(OccupancyResource(session: session))
     }
 
     /// The campuses the catalogue knows.
@@ -156,13 +148,30 @@ final class FreeRoomsModel {
     /// ``age(now:)`` against the current moment.
     var age: TimeInterval? { age(now: .now) }
 
-    /// Records a pass that produced rooms, and marks the load window for this day and
-    /// campus.
+    /// Records a pass that produced rooms for the day and campus shown.
     ///
     /// - Parameter date: When the pass completed.
     func markLoaded(at date: Date = .now) {
         loadedAt = date
-        window.markLoaded(source: "\(PoliMiDate.queryString(day))|\(campus ?? "-")", at: date)
+        lastPass = ("\(PoliMiDate.queryString(day))|\(campus ?? "-")", date)
+    }
+
+    /// Whether a pass should run.
+    ///
+    /// Always when forced, for another day or campus than the last pass, or before any;
+    /// otherwise once ``passInterval`` has gone by. Only passes that produced rooms are
+    /// recorded, so a campus where every request failed is retried at once.
+    ///
+    /// - Parameters:
+    ///   - last: The last recorded pass.
+    ///   - key: The day and campus about to be shown.
+    ///   - force: Pull-to-refresh.
+    ///   - now: The clock.
+    /// - Returns: `true` when the pass should run.
+    nonisolated static func passIsDue(last: (key: String, at: Date)?, key: String,
+                                      force: Bool, now: Date = .now) -> Bool {
+        guard !force, let last, last.key == key else { return true }
+        return now.timeIntervalSince(last.at) >= passInterval
     }
 
     /// 08:00 to 20:00 in Rome on ``day``.
@@ -209,14 +218,14 @@ final class FreeRoomsModel {
     ///
     /// Loads the catalogue first, chooses a campus if none is set, and publishes the
     /// widget's room list once per launch. Returns without fetching when a pass is in
-    /// flight or the one-minute window has not expired for this day and campus.
+    /// flight or a pass for this day and campus ran less than a minute ago.
     ///
     /// Rooms are fetched in batches of ``concurrency`` through the shared loader. A room
     /// whose occupancy is hidden or whose request failed goes to ``hiddenRooms`` rather
-    /// than being listed as free. Only a pass that produced rooms marks the window, so a
+    /// than being listed as free. Only a pass that produced rooms is recorded, so a
     /// campus where everything failed is retried rather than reported as fresh and empty.
     ///
-    /// - Parameter force: Bypasses the load window.
+    /// - Parameter force: Runs the pass however recent the last one was.
     func load(force: Bool = false) async {
         guard !skipsLoading else { return }
         await catalogue.load()
@@ -225,7 +234,7 @@ final class FreeRoomsModel {
         publishWidgetCatalogue()
 
         let key = "\(PoliMiDate.queryString(day))|\(campus ?? "-")"
-        guard inFlight?.key != key, window.shouldLoad(force: force, source: key) else { return }
+        guard inFlight?.key != key, Self.passIsDue(last: lastPass, key: key, force: force) else { return }
         passes += 1
         let pass = passes
         inFlight = (key, pass)
@@ -269,8 +278,8 @@ final class FreeRoomsModel {
                     guard let occupancyID = room.occupancyID else { continue }
                     let key = OccupancyKey(
                         roomID: room.id, occupancyID: occupancyID, day: stamp)
-                    group.addTask { [loader] in
-                        (room.id, await loader.value(for: key))
+                    group.addTask(name: "occupancy \(room.id)") { [loader, env] in
+                        (room.id, try? await loader.value(key, env: env).value)
                     }
                 }
                 for await (id, bookings) in group { fetched[id] = bookings }
@@ -374,13 +383,13 @@ final class FreeRoomsModel {
         let key = OccupancyKey(
             roomID: room.id, occupancyID: occupancyID,
             day: PoliMiDate.queryString(day))
-        return await loader.value(for: key)
+        return try? await loader.value(key, env: env).value
     }
 
     /// Warms the rooms around the one being looked at.
     ///
-    /// Detached at background priority and never awaited, so the room the student actually
-    /// opened does not wait on its neighbours.
+    /// At `.utility` and never awaited, so the room the student actually opened does not
+    /// wait on its neighbours; opening one being warmed raises its fetch.
     ///
     /// - Parameter rooms: The rooms to warm.
     func prefetch(_ rooms: some Sequence<Classroom>) {
@@ -390,32 +399,7 @@ final class FreeRoomsModel {
             return OccupancyKey(roomID: room.id, occupancyID: occupancyID, day: stamp)
         }
         guard !keys.isEmpty else { return }
-        Task.detached(priority: .background) { [loader] in
-            await loader.prefetch(keys)
-        }
-    }
-
-    /// Fetches one room's bookings for a day.
-    ///
-    /// Static and fully parameterised, so it carries no actor-isolated state and runs off
-    /// the main actor. The request itself is shared with the widget, in
-    /// ``RoomOccupancy``.
-    ///
-    /// - Parameters:
-    ///   - id: The room's `idaula`.
-    ///   - roomID: The room's printed code, which the bookings are identified by.
-    ///   - day: The day to ask about.
-    ///   - session: The session to fetch through.
-    /// - Returns: The bookings, or `nil` when the occupancy is hidden or the call failed.
-    private static func occupancy(
-        occupancyID id: String, roomID: String, day: Date, session: URLSession
-    ) async -> [RoomBooking]? {
-        guard case .busy(let bands) = await RoomOccupancy.fetch(
-            occupancyID: id, on: day, session: session)
-        else { return nil }
-        return bands.enumerated().map { index, band in
-            RoomBooking(id: "\(roomID)-\(index)", start: band.start, end: band.end, title: nil)
-        }
+        Task(name: "occupancy warm") { [loader, env] in await loader.warm(keys, env: env) }
     }
 
     /// Hands the widget the room references it needs to fetch a campus by itself.
@@ -460,3 +444,35 @@ extension OccupancyBand {
 /// `Sendable`, and a `Sendable` conformance stated in another file is
 /// retroactive.
 extension FreeRoomsModel: RoomAvailability {}
+
+/// One room's bookings on one day, from the public occupancy endpoint.
+///
+/// The request itself is shared with the widget, in ``RoomOccupancy``.
+nonisolated struct OccupancyResource: Resource {
+    /// Hidden occupancy, or a failed call: either way nothing to show as free.
+    struct Unavailable: Error {}
+
+    static let id = "occupancy"
+    /// A day's timetable does not change while the app is open, and a past day never
+    /// changes at all.
+    static let ttl: TimeInterval = 1800
+    static let persistence = Persistence.memory
+    static let capacity = 512
+
+    /// The session the requests are issued through.
+    let session: URLSession
+
+    @concurrent
+    func fetch(_ key: FreeRoomsModel.OccupancyKey, env: Env, previous: [RoomBooking]?) async throws -> [RoomBooking] {
+        let calendar = PoliMiDate.romeCalendar
+        let day = calendar.date(from: calendar.dateComponents(
+            [.year, .month, .day], from: PoliMiDate.parse(key.day) ?? .now)) ?? .now
+        guard case .busy(let bands) = await RoomOccupancy.fetch(
+            occupancyID: key.occupancyID, on: day, session: session)
+        else { throw Unavailable() }
+        return bands.enumerated().map { index, band in
+            RoomBooking(id: "\(key.roomID)-\(index)", start: band.start, end: band.end, title: nil)
+        }
+    }
+
+}

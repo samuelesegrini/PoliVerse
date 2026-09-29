@@ -85,8 +85,11 @@ final class NotificationModel {
         await refreshAuthorization()
         guard authorization == .authorized || authorization == .provisional else { return }
 
-        let plan = NotificationPlan.build(
-            events: events, exams: exams, assignments: assignments, updates: updates, preferences: preferences)
+        let preferences = preferences
+        let plan = await Compute.run {
+            NotificationPlan.build(
+                events: events, exams: exams, assignments: assignments, updates: updates, preferences: preferences)
+        }
         // The shell asks again whenever the agenda grows, which paging the
         // calendar does week after week; the plan rarely changes with it, and
         // replacing it is one round trip to the notification centre per reminder.

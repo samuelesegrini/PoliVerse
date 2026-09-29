@@ -617,12 +617,13 @@ final class WeBeepModel {
         if courses.isEmpty { await loadCourses() }
         guard let moodleID = moodleCourseID(for: course) else { return nil }
         if let cached = contents[moodleID], Date.now.timeIntervalSince(cached.at) < 600 {
-            return RecmanParser.courseEntry(in: cached.sections)
+            let sections = cached.sections
+            return await Compute.run { RecmanParser.courseEntry(in: sections) }
         }
         do {
             let raw = try await api.contents(courseID: moodleID)
             contents[moodleID] = (raw, .now)
-            return RecmanParser.courseEntry(in: raw)
+            return await Compute.run { RecmanParser.courseEntry(in: raw) }
         } catch let error as WeBeepAPI.Failure where error.isAuthFailure {
             handle(error)
             return nil

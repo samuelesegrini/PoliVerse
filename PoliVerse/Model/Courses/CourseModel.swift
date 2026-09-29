@@ -4,7 +4,7 @@ import Observation
 /// The student's enrolled teachings, as the screens read them.
 ///
 /// ``courses`` is derived rather than stored, from four independent facts: what the
-/// service returned, held in a ``Store``; the flags this device remembers for
+/// service returned, held in a ``Query``; the flags this device remembers for
 /// courses WeBeep does not know; the changes that have not reached WeBeep yet, held
 /// in ``OptimisticFlags``; and the teaching codes the study plan supplied. Nothing
 /// has to be written back in a particular order, and no path can overwrite another's
@@ -22,8 +22,8 @@ import Observation
 @Observable
 @MainActor
 final class CourseModel {
-    /// The loaded course list, with its cache and load window.
-    private let store: Store<CourseSource>
+    /// The loaded course list, observed; the loader behind it holds the cache.
+    private let query: Query<CourseSource>
     /// Reads the WeBeep enrolments and mirrors the two flags back to it.
     private let enrolments: any CourseEnrolments
 
@@ -73,7 +73,7 @@ final class CourseModel {
         self.favourites = Set(defaults.stringArray(forKey: "favouriteCourses") ?? [])
         self.hiddenCourses = Set(defaults.stringArray(forKey: "hiddenCourses") ?? [])
         self.optimistic = OptimisticFlags(defaults: defaults)
-        self.store = Store(
+        self.query = Query(
             CourseSource(enrolled: { [weak enrolments] in
                 await enrolments?.enrolledCourses() ?? []
             }),
@@ -93,7 +93,7 @@ final class CourseModel {
     ///
     /// Sorted by ``sortCourses(_:)``.
     var courses: [Course] {
-        let loaded = store.value ?? []
+        let loaded = query.value ?? []
         let withLocal = loaded.map { course -> Course in
             var copy = course
             if let code = planCodes[course.id], course.code == nil || course.teachingCode == nil {
@@ -113,11 +113,11 @@ final class CourseModel {
     }
 
     /// `true` while a load is in flight.
-    var isLoading: Bool { store.isLoading }
+    var isLoading: Bool { query.isLoading }
     /// The last load's error, or `nil` when it succeeded.
-    var errorMessage: String? { store.errorMessage }
+    var errorMessage: String? { query.errorMessage }
     /// Seconds since the course list was fetched, or `nil` if never.
-    var age: TimeInterval? { store.age }
+    var age: TimeInterval? { query.age }
 
     /// The courses shown in the normal list: everything not hidden.
     var visibleCourses: [Course] { courses.filter { !$0.isHidden } }
@@ -145,9 +145,9 @@ final class CourseModel {
 
     /// Loads the course list, then fills in teaching codes from the study plan.
     ///
-    /// - Parameter force: Bypasses the store's load window.
+    /// - Parameter force: Fetches even when a fresh value is held; pull-to-refresh.
     func load(force: Bool = false) async {
-        await store.load(force: force)
+        await query.load(force: force)
         await fillCodes()
     }
 

@@ -325,7 +325,8 @@ final class PersonalTimetableModel {
             for semester in [1, 2] {
                 guard let html = await cart.textTimetable(semester: semester, yearCode: yearCode) else { continue }
                 readAny = true
-                for entry in PersonalTimetableParser.entries(html) where !entries.contains(where: { $0.code == entry.code }) {
+                let read = await Compute.run { PersonalTimetableParser.entries(html) }
+                for entry in read where !entries.contains(where: { $0.code == entry.code }) {
                     entries.append(entry)
                 }
             }

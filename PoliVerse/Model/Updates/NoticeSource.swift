@@ -1,7 +1,7 @@
 import Foundation
 import OSLog
 
-/// The ``Source`` for the Politecnico's notifications.
+/// The ``Resource`` for the Politecnico's notifications.
 ///
 /// `GET {app}/v1/notifications` exists — it appears in the official client and answers
 /// 401 unauthenticated — but its body has not been captured, so every field name in
@@ -10,7 +10,7 @@ import OSLog
 /// on a real account replaces the guesses with fact.
 ///
 /// Read state is layered on in ``adjust(_:)``, which runs on every path.
-nonisolated struct NoticeSource: Source {
+nonisolated struct NoticeSource: Resource {
     /// Names the offline record and the log category.
     static let id = "notices"
 
@@ -41,7 +41,8 @@ nonisolated struct NoticeSource: Source {
     /// - Returns: The notices, flagged unreadable when the payload carried rows the decoder
     ///   could not read.
     /// - Throws: ``APIError``.
-    func fetch(_ env: Env) async throws -> Payload {
+    @concurrent
+    func fetch(_ key: Whole, env: Env, previous: Payload?) async throws -> Payload {
         let data = try await env.http.data(for: APIRequest(host: .app, path: "/v1/notifications"))
         #if DEBUG
         Self.log.notice("notifications payload shape: \(JSONShape.describe(data), privacy: .public)")
@@ -57,7 +58,7 @@ nonisolated struct NoticeSource: Source {
     }
 
     /// The sample notices.
-    func sample() -> Payload {
+    func sample(_ key: Whole) -> Payload? {
         Payload(notices: Notice.samples())
     }
 

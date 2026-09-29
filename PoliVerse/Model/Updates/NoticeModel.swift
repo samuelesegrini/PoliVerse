@@ -4,14 +4,14 @@ import OSLog
 
 /// The Politecnico's notifications, as the screens read them.
 ///
-/// The loading belongs to ``Store`` and the endpoint to ``NoticeSource``. What is here
+/// The loading belongs to ``Query`` and the endpoint to ``NoticeSource``. What is here
 /// is what only this feature knows: the unread count, marking read, and fetching the
 /// full text of one notice where the list carried only a summary.
 @Observable
 @MainActor
 final class NoticeModel {
-    /// The loaded notices, with their cache and load window.
-    private let store: Store<NoticeSource>
+    /// The loaded notices, observed; the loader behind it holds the cache.
+    private let query: Query<NoticeSource>
     /// Whose notifications to load, and the transport the detail call goes through.
     private let account: any Account
     /// Where “read in PoliVerse” is kept.
@@ -29,34 +29,34 @@ final class NoticeModel {
         self.readLocally = readLocally
         var source = NoticeSource()
         source.readLocally = readLocally
-        self.store = Store(source, account: account)
+        self.query = Query(source, account: account)
     }
 
     /// The notices, newest first, with their read state resolved.
-    var notices: [Notice] { store.value?.notices ?? [] }
+    var notices: [Notice] { query.value?.notices ?? [] }
     /// Whether the endpoint answered with rows the decoder could not read — a different
     /// thing from an empty inbox, and not to be shown as one.
-    var payloadUnreadable: Bool { store.value?.unreadable ?? false }
+    var payloadUnreadable: Bool { query.value?.unreadable ?? false }
     /// `true` while a load is in flight.
-    var isLoading: Bool { store.isLoading }
+    var isLoading: Bool { query.isLoading }
     /// The last load's error, or `nil` when it succeeded.
-    var errorMessage: String? { store.errorMessage }
+    var errorMessage: String? { query.errorMessage }
     /// Seconds since the notices were fetched, or `nil` if never.
-    var age: TimeInterval? { store.age }
+    var age: TimeInterval? { query.age }
 
     /// How many notices are unread, which badges the bell.
     var unreadCount: Int { notices.filter { !$0.isRead }.count }
 
     /// Loads the notifications.
     ///
-    /// - Parameter force: Bypasses the store's load window.
+    /// - Parameter force: Fetches even when a fresh value is held; pull-to-refresh.
     func load(force: Bool = false) async {
-        await store.load(force: force)
+        await query.load(force: force)
     }
 
     /// Fetches one notice's full text, where the list carried only a summary.
     ///
-    /// Outside ``Store`` deliberately: one notice fetched on demand, with no load window, no
+    /// Outside ``Query`` deliberately: one notice fetched on demand, with no cache, no
     /// offline copy and no age. The markup is preserved, since the detail view renders it.
     ///
     /// - Parameter notice: The notice to expand.
@@ -91,7 +91,7 @@ final class NoticeModel {
     func markRead(_ notice: Notice) {
         guard !notice.isRead else { return }
         readLocally.insert([notice.id])
-        store.update { payload in
+        query.update { payload in
             guard let index = payload.notices.firstIndex(where: { $0.id == notice.id })
             else { return }
             payload.notices[index].isRead = true
@@ -101,7 +101,7 @@ final class NoticeModel {
     /// Marks every held notice read, on the device and in the held list.
     func markAllRead() {
         readLocally.insert(Set(notices.map(\.id)))
-        store.update { payload in
+        query.update { payload in
             for index in payload.notices.indices { payload.notices[index].isRead = true }
         }
     }

@@ -1,14 +1,14 @@
 import Foundation
 import OSLog
 
-/// The ``Source`` for the student's academic record: grade book, libretto, sittings,
+/// The ``Resource`` for the student's academic record: grade book, libretto, sittings,
 /// plan header and the target average set on Servizi Online.
 ///
 /// Six independent endpoints across three hosts, fetched concurrently because they
 /// are one screen and one being slow should not delay the rest. Each may fail on its
 /// own — a missing target average is the common case rather than an error — and the
 /// fetch throws only when both load-bearing calls came back empty.
-nonisolated struct CareerSource: Source {
+nonisolated struct CareerSource: Resource {
     /// Names the offline record and the log category.
     static let id = "career"
     /// Fifteen minutes: marks are published in batches rather than continuously.
@@ -49,7 +49,7 @@ nonisolated struct CareerSource: Source {
     }
 
     /// Both load-bearing calls came back empty, so there is nothing to show that was not
-    /// already on screen. ``Store`` keeps the previous value on this error.
+    /// already on screen. ``Query`` keeps the previous value on this error.
     struct NothingLoaded: Error {}
 
     /// Fetches the whole record.
@@ -62,7 +62,8 @@ nonisolated struct CareerSource: Source {
     /// - Returns: The record, with a `nil` piece left at its default.
     /// - Throws: ``AuthError/notAuthenticated`` without a matricola, or ``NothingLoaded``
     ///   when neither the grade book nor the sittings loaded.
-    func fetch(_ env: Env) async throws -> Payload {
+    @concurrent
+    func fetch(_ key: Whole, env: Env, previous: Payload?) async throws -> Payload {
         guard let matricola = env.matricola else { throw AuthError.notAuthenticated }
         let refused = RefusalFlag()
 
@@ -106,7 +107,7 @@ nonisolated struct CareerSource: Source {
     }
 
     /// The sample record: grade book, sittings and libretto.
-    func sample() -> Payload {
+    func sample(_ key: Whole) -> Payload? {
         Payload(gradeBook: .sample, sessions: ExamSession.samples(),
                 libretto: LibrettoExam.samples())
     }

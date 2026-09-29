@@ -82,7 +82,8 @@ final class TimetableCart {
     /// - Returns: The link, or `nil` when the page carries none.
     func cartLink(for teaching: ManifestoTeaching) async -> PersonalTimetableParser.CartLink? {
         guard let html = await page("ManifestoPublic.do?\(teaching.detailQuery(defaultYear: year.code))") else { return nil }
-        return PersonalTimetableParser.cartLink(in: html, code: teaching.code)
+        let code = teaching.code
+        return await Compute.run { PersonalTimetableParser.cartLink(in: html, code: code) }
     }
 
     /// The sections a teaching asks the student to choose between.
@@ -95,10 +96,15 @@ final class TimetableCart {
     ///   sections or the fragment could not be read.
     func sections(for teaching: ManifestoTeaching)
         async -> (link: PersonalTimetableParser.SectionsLink, options: [PersonalTimetableParser.SectionOption])? {
-        guard let html = await page("ManifestoPublic.do?\(teaching.detailQuery(defaultYear: year.code))"),
-              let link = PersonalTimetableParser.sectionsLink(in: html, code: teaching.code) else { return nil }
+        guard let html = await page("ManifestoPublic.do?\(teaching.detailQuery(defaultYear: year.code))")
+        else { return nil }
+        let code = teaching.code
         // The dialog's school, which the page writes into its own script.
-        let school = HTMLScraper.firstMatch(#"k_cf:\s*([0-9]+)"#, in: html, group: 1) ?? "-1"
+        let (found, school) = await Compute.run {
+            (PersonalTimetableParser.sectionsLink(in: html, code: code),
+             HTMLScraper.firstMatch(#"k_cf:\s*([0-9]+)"#, in: html, group: 1) ?? "-1")
+        }
+        guard let link = found else { return nil }
         var components = URLComponents()
         components.queryItems = [
             .init(name: "evn_showsezioni", value: "evento"), .init(name: "aa", value: teaching.year ?? year.code),
@@ -109,7 +115,7 @@ final class TimetableCart {
             .init(name: "lang", value: PoliMiLanguage.current.rawValue),
         ]
         guard let fragment = await page("ManifestoPublic.do?\(components.percentEncodedQuery ?? "")") else { return nil }
-        let options = PersonalTimetableParser.sections(fragment)
+        let options = await Compute.run { PersonalTimetableParser.sections(fragment) }
         return options.isEmpty ? nil : (link, options)
     }
 

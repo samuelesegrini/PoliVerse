@@ -42,49 +42,20 @@ final class ManifestiModel {
     private let syllabusBase = URL(string:
         "https://onlineservices.polimi.it/schedaincarico/schedaincarico/controller/scheda_pubblica/SchedaPublic.do")!
 
-    /// Fetches, caches and coalesces teaching detail pages, keyed by their query.
-    private let detailLoader: ResourceLoader<String, ManifestoDetail>
-    /// Fetches, caches and coalesces syllabi, keyed by their class id.
-    private let syllabusLoader: ResourceLoader<String, Syllabus>
+    /// Fetches, caches and joins teaching detail pages, keyed by their query.
+    private let detailLoader: Loader<ManifestoDetailResource>
+    /// Fetches, caches and joins syllabi, keyed by their class id.
+    private let syllabusLoader: Loader<SyllabusResource>
+    /// Public pages: nobody's account.
+    private let env = Env.public()
 
     /// - Parameter pages: the site the catalogue is read from. Swapped for a
     ///   fixture in tests, which is the only way to exercise a scraper.
     init(pages: any PageFetching = ScrapedSite.stateless()) {
         self.pages = pages
 
-        let base = self.base
-        detailLoader = ResourceLoader(lifetime: .seconds(3600), capacity: 64) { key in
-            guard let url = URL(string: "\(base.absoluteString)/ManifestoPublic.do?\(key)"),
-                  let html = await pages.page(url)
-            else { return nil }
-            let code = HTMLScraper.queryValue("codDescr", in: key) ?? ""
-            return ManifestoParser.detail(html, code: code)
-        }
-
-        let syllabusBase = self.syllabusBase
-        syllabusLoader = ResourceLoader(lifetime: .seconds(86400), capacity: 128) { classID in
-            // A scheda changes at most once a year: a stored copy younger than
-            // a week is the answer, without a page.
-            let stored = "syllabus-\(classID)-\(PoliMiLanguage.current.rawValue)"
-            let cached = DiskCache.load(Syllabus.self, as: stored)
-            if let cached, cached.isFresh(within: Self.storedLifetime) { return cached.value }
-            var components = URLComponents(url: syllabusBase, resolvingAgainstBaseURL: false)!
-            components.queryItems = [
-                .init(name: "evn_default", value: "evento"),
-                .init(name: "c_classe", value: classID),
-                .init(name: "lang", value: PoliMiLanguage.current.rawValue),
-            ]
-            guard let url = components.url,
-                  let html = await pages.page(url)
-            else { return cached?.value }   // offline: last week's scheda beats none
-            let parsed = ManifestoParser.syllabus(html)
-            // An empty parse is a failure, not an answer: the service returns
-            // its search page when a class id is unknown, and caching that as
-            // "this teaching has no syllabus" would be wrong.
-            guard !parsed.isEmpty else { return cached?.value }
-            DiskCache.save(parsed, as: stored)
-            return parsed
-        }
+        detailLoader = Loader(ManifestoDetailResource(pages: pages, base: base))
+        syllabusLoader = Loader(SyllabusResource(pages: pages, base: syllabusBase))
     }
 
     // MARK: - Search
@@ -129,7 +100,7 @@ final class ManifestiModel {
             errorMessage = String(localized: "Il catalogo del Politecnico non ha risposto.")
             return
         }
-        results = ManifestoParser.searchResults(html)
+        results = await Compute.run { ManifestoParser.searchResults(html) }
         log.notice("manifesti: \(self.results.count, privacy: .public) insegnamenti per «\(trimmed, privacy: .private)»")
     }
 
@@ -233,7 +204,7 @@ final class ManifestiModel {
         var seen: Set<String> = []
         var rows: [ManifestoTeaching] = []
         // The student's degree course first, so it is never cut by the cap.
-        let found = ManifestoParser.searchResults(html).filter { $0.code == teachingCode }
+        let found = await Compute.run { ManifestoParser.searchResults(html) }.filter { $0.code == teachingCode }
         for teaching in SyllabusPicker.ordered(found, degreeName: degreeName) {
             // One per degree course and plan: plans can bracket differently.
             if seen.insert("\(teaching.courseCode)-\(teaching.planCode ?? "")").inserted { rows.append(teaching) }
@@ -284,7 +255,7 @@ final class ManifestiModel {
         components.queryItems = selection?.queryItems(language: language) ?? [.init(name: "lang", value: language.rawValue)]
         guard let url = URL(string: "\(base.absoluteString)/ManifestoPublic.do?\(components.percentEncodedQuery ?? "")"),
               let html = await pages.page(url) else { return nil }
-        return CatalogueParser.page(html)
+        return await Compute.run { CatalogueParser.page(html) }
     }
 
     /// The page of a degree course, found in whichever school lists it: every
@@ -342,7 +313,7 @@ final class ManifestiModel {
         ]
         guard let html = await post("ricerche/RicercaPerInsegnamentoPublic.do", form: form)
         else { return stored?.value }
-        let rows = PlanCandidates.distinct(ManifestoParser.searchResults(html).filter { $0.code == teachingCode })
+        let rows = PlanCandidates.distinct(await Compute.run { ManifestoParser.searchResults(html) }.filter { $0.code == teachingCode })
         offerings[name] = rows
         await Self.storeOffering(rows, name)
         return rows
@@ -389,7 +360,7 @@ final class ManifestiModel {
     /// - Parameter teaching: The row to open.
     /// - Returns: The detail, or `nil` when the page could not be read.
     func detail(for teaching: ManifestoTeaching) async -> ManifestoDetail? {
-        await detailLoader.value(for: teaching.detailQuery(defaultYear: year.code))
+        try? await detailLoader.value(teaching.detailQuery(defaultYear: year.code), env: env).value
     }
 
     /// Warms the detail pages of rows the student has not opened yet.
@@ -397,9 +368,7 @@ final class ManifestiModel {
     /// - Parameter teachings: The rows to warm.
     func prefetchDetails(_ teachings: some Sequence<ManifestoTeaching>) {
         let keys = teachings.map { $0.detailQuery(defaultYear: year.code) }
-        Task.detached(priority: .background) { [detailLoader] in
-            await detailLoader.prefetch(keys)
-        }
+        Task(name: "manifesto warm") { [detailLoader, env] in await detailLoader.warm(keys, env: env) }
     }
 
     /// One teaching's syllabus, with its books, objectives and assessment.
@@ -407,7 +376,7 @@ final class ManifestiModel {
     /// - Parameter classID: The `c_classe` from ``ManifestoModule/syllabusID``.
     /// - Returns: The syllabus, or `nil` when the page could not be read or carried nothing.
     func syllabus(for classID: String) async -> Syllabus? {
-        await syllabusLoader.value(for: classID)
+        try? await syllabusLoader.value(classID, env: env).value
     }
 
     // MARK: - Transport
@@ -438,3 +407,79 @@ final class ManifestiModel {
 /// `Sendable` — the study plan captures one in `withTaskGroup` — and a
 /// `Sendable` conformance stated in another file is retroactive.
 extension ManifestiModel: ManifestoReading {}
+
+/// A teaching's detail page in the catalogue, keyed by its query.
+nonisolated struct ManifestoDetailResource: Resource {
+    /// The page did not load, or carried no detail.
+    struct Unreadable: Error {}
+
+    static let id = "manifesto-detail"
+    static let ttl: TimeInterval = 3600
+    static let persistence = Persistence.memory
+    static let capacity = 64
+
+    /// The site the catalogue is read from.
+    let pages: any PageFetching
+    /// The catalogue controller.
+    let base: URL
+
+    @concurrent
+    func fetch(_ key: String, env: Env, previous: ManifestoDetail?) async throws -> ManifestoDetail {
+        guard let url = URL(string: "\(base.absoluteString)/ManifestoPublic.do?\(key)"),
+              let html = await pages.page(url)
+        else { throw Unreadable() }
+        let code = HTMLScraper.queryValue("codDescr", in: key) ?? ""
+        guard let detail = ManifestoParser.detail(html, code: code) else { throw Unreadable() }
+        return detail
+    }
+
+}
+
+/// One teaching's syllabus, keyed by its class id.
+///
+/// A scheda changes at most once a year, so a stored copy younger than a week is the
+/// answer without a page, and an older one is still better than none when the service
+/// does not answer.
+nonisolated struct SyllabusResource: Resource {
+    /// No page and no stored copy.
+    struct Unreadable: Error {}
+
+    static let id = "syllabus"
+    static let ttl: TimeInterval = 86400
+    static let persistence = Persistence.memory
+    static let capacity = 128
+
+    /// The site the syllabus is read from.
+    let pages: any PageFetching
+    /// The syllabus service.
+    let base: URL
+
+    @concurrent
+    func fetch(_ key: String, env: Env, previous: Syllabus?) async throws -> Syllabus {
+        let stored = "syllabus-\(key)-\(PoliMiLanguage.current.rawValue)"
+        let cached = DiskCache.load(Syllabus.self, as: stored)
+        if let cached, cached.isFresh(within: ManifestiModel.storedLifetime) { return cached.value }
+        var components = URLComponents(url: base, resolvingAgainstBaseURL: false)!
+        components.queryItems = [
+            .init(name: "evn_default", value: "evento"),
+            .init(name: "c_classe", value: key),
+            .init(name: "lang", value: PoliMiLanguage.current.rawValue),
+        ]
+        guard let url = components.url, let html = await pages.page(url) else {
+            // Offline: last week's scheda beats none.
+            if let cached { return cached.value }
+            throw Unreadable()
+        }
+        let parsed = ManifestoParser.syllabus(html)
+        // An empty parse is a failure, not an answer: the service returns its
+        // search page when a class id is unknown, and caching that as "this
+        // teaching has no syllabus" would be wrong.
+        guard !parsed.isEmpty else {
+            if let cached { return cached.value }
+            throw Unreadable()
+        }
+        DiskCache.save(parsed, as: stored)
+        return parsed
+    }
+
+}

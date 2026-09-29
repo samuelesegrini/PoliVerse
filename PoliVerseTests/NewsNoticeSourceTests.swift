@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import PoliVerse
 
-/// The two services ported onto ``Store`` first, tested through their real
+/// The two services ported onto the shared pipeline first, tested through their real
 /// endpoints for the first time.
 ///
 /// ``NewsTests`` and ``NoticeTests`` already pin the decoders, which is the
@@ -28,7 +28,7 @@ struct NewsNoticeSourceTests {
         var source = NewsSource()
         source.now = { now }
 
-        _ = try await source.fetch(Env(http: http, matricola: "111", isSample: false))
+        _ = try await source.fetch(Whole(), env: Env(http: http, matricola: "111", isSample: false), previous: nil)
 
         let request = try #require(await http.requests.first)
         #expect(request.host == .agenda)
@@ -48,14 +48,14 @@ struct NewsNoticeSourceTests {
     @Test("An empty list is quiet; an unreadable body is flagged")
     func newsUnreadable() async throws {
         let quiet = try await NewsSource().fetch(
-            Env(http: FixtureHTTP(["/v1/persona/news": Data("[]".utf8)]),
-                matricola: "111", isSample: false))
+            Whole(), env: Env(http: FixtureHTTP(["/v1/persona/news": Data("[]".utf8)]),
+                              matricola: "111", isSample: false), previous: nil)
         #expect(quiet.items.isEmpty)
         #expect(quiet.unreadable == false)
 
         let garbled = try await NewsSource().fetch(
-            Env(http: FixtureHTTP(["/v1/persona/news": Data(#"{"unexpected": 1}"#.utf8)]),
-                matricola: "111", isSample: false))
+            Whole(), env: Env(http: FixtureHTTP(["/v1/persona/news": Data(#"{"unexpected": 1}"#.utf8)]),
+                              matricola: "111", isSample: false), previous: nil)
         #expect(garbled.items.isEmpty)
         #expect(garbled.unreadable)
     }
@@ -83,7 +83,7 @@ struct NewsNoticeSourceTests {
     func noticeRequest() async throws {
         let http = FixtureHTTP(["/v1/notifications": Data("[]".utf8)])
 
-        _ = try await NoticeSource().fetch(Env(http: http, matricola: "111", isSample: false))
+        _ = try await NoticeSource().fetch(Whole(), env: Env(http: http, matricola: "111", isSample: false), previous: nil)
 
         let request = try #require(await http.requests.first)
         #expect(request.host == .app)
@@ -130,7 +130,7 @@ struct NewsNoticeSourceTests {
 
         var source = NoticeSource()
         source.readLocally = remembered.state
-        let store = Store(source,
+        let store = Query(source,
                           account: StubAccount(matricola: "111",
                                                http: FixtureHTTP.failing(APIError.cancelled)),
                           offline: offline)

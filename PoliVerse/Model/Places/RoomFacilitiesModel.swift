@@ -4,10 +4,10 @@ import OSLog
 
 /// What a room is equipped with, and what is installed on its machines.
 ///
-/// Both endpoints are public and keyed on `idaula`, like occupancy. The fetches sit on
-/// a ``ResourceLoader``, so concurrent callers share one request, results outlive the
-/// view that asked for them, and the rows either side of the one on screen can be
-/// warmed through ``prefetch(_:)``.
+/// Both endpoints are public and keyed on `idaula`, like occupancy. The fetches go
+/// through a ``Loader`` of ``RoomDetailsResource``, so concurrent callers share one
+/// request, results outlive the view that asked for them, and the rows either side of
+/// the one on screen can be warmed through ``prefetch(_:)``.
 @Observable
 final class RoomFacilitiesModel {
     /// A room's equipment, by `idaula`, for the views to read. The loader behind it holds
@@ -19,35 +19,16 @@ final class RoomFacilitiesModel {
 
     /// Diagnostic log for this type, under the `aule` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "aule")
-    /// Fetches, caches and coalesces the two calls per room.
-    private let loader: ResourceLoader<String, RoomDetails>
+    /// Fetches, caches and joins the two calls per room.
+    private let loader: Loader<RoomDetailsResource>
+    /// Public data: nobody's account.
+    private let env = Env.public()
 
-    /// Equipment and software together: they are always wanted together, so one entry
-    /// means one cache slot and one round of coalescing instead of two.
-    nonisolated struct RoomDetails: Sendable {
-        /// What the room is equipped with.
-        let equipment: [RoomFacility]
-        /// What is installed on its machines.
-        let software: [RoomFacility]
-    }
-
-    /// Builds the loader, with an hour's lifetime per room and room for 256 of them.
+    /// Builds the loader.
     ///
     /// - Parameter http: The transport the two public calls go through.
     init(http: any HTTP = PublicHTTP()) {
-        loader = ResourceLoader(
-            // A room's projector does not move; an hour is conservative.
-            lifetime: .seconds(3600),
-            capacity: 256
-        ) { id in
-            async let kit = Self.fetch(path: "dotazioni", id: id, http: http)
-            async let apps = Self.fetch(path: "software", id: id, http: http)
-            let (loadedKit, loadedApps) = await (kit, apps)
-            // Both failing is a failure; one failing is a room with no
-            // software, which is the normal case.
-            guard loadedKit != nil || loadedApps != nil else { return nil }
-            return RoomDetails(equipment: loadedKit ?? [], software: loadedApps ?? [])
-        }
+        loader = Loader(RoomDetailsResource(http: http))
     }
 
     /// Creates a model already holding the same equipment for every sample room.
@@ -83,8 +64,8 @@ final class RoomFacilitiesModel {
     ///
     /// - Parameter id: The room's `idaula`.
     func load(id: String?) async {
-        guard let id, !isLoaded(id) else { return }
-        guard let details = await loader.value(for: id) else { return }
+        guard let id, !isLoaded(id),
+              let details = try? await loader.value(id, env: env).value else { return }
         equipment[id] = details.equipment
         software[id] = details.software
         log.notice("room \(id, privacy: .public): \(details.equipment.count, privacy: .public) dotazioni, \(details.software.count, privacy: .public) software")
@@ -92,16 +73,15 @@ final class RoomFacilitiesModel {
 
     /// Warms rooms the student has not opened yet.
     ///
-    /// Detached at background priority and never awaited, so it cannot delay the room
-    /// actually being looked at. Rooms already held are skipped.
+    /// At `.utility` and never awaited, so it cannot delay the room actually being
+    /// looked at; opening a room being warmed raises that fetch to the screen's
+    /// priority. Rooms already held are skipped.
     ///
     /// - Parameter rooms: The rooms to warm.
     func prefetch(_ rooms: some Sequence<Classroom>) {
         let ids = rooms.compactMap(\.occupancyID).filter { !isLoaded($0) }
         guard !ids.isEmpty else { return }
-        Task.detached(priority: .background) { [loader] in
-            await loader.prefetch(ids)
-        }
+        Task(name: "facilities warm") { [loader, env] in await loader.warm(ids, env: env) }
     }
 
     /// Waits for any warming to finish.
@@ -118,6 +98,45 @@ final class RoomFacilitiesModel {
         software.removeAll()
         Task { [loader] in await loader.clear() }
     }
+}
+
+/// A room's equipment and software, from the two public endpoints keyed on `idaula`.
+nonisolated struct RoomDetailsResource: Resource {
+    /// Equipment and software together: they are always wanted together, so one entry
+    /// means one cache slot and one fetch to join instead of two.
+    struct Details: Sendable {
+        /// What the room is equipped with.
+        let equipment: [RoomFacility]
+        /// What is installed on its machines.
+        let software: [RoomFacility]
+    }
+
+    /// Both lists failed for a room.
+    struct Unavailable: Error {}
+
+    static let id = "room-details"
+    /// A room's projector does not move; an hour is conservative.
+    static let ttl: TimeInterval = 3600
+    static let persistence = Persistence.memory
+    static let capacity = 256
+
+    /// The transport the two calls go through.
+    let http: any HTTP
+
+    @concurrent
+    func fetch(_ key: String, env: Env, previous: Details?) async throws -> Details {
+        async let kit = Self.list(path: "dotazioni", id: key, http: http)
+        async let apps = Self.list(path: "software", id: key, http: http)
+        let (loadedKit, loadedApps) = await (kit, apps)
+        // Both failing is a failure; one failing is a room with no software,
+        // which is the normal case.
+        guard loadedKit != nil || loadedApps != nil else { throw Unavailable() }
+        return Details(equipment: loadedKit ?? [], software: loadedApps ?? [])
+    }
+
+    func sample(_ key: String) -> Details? {
+        Details(equipment: RoomFacility.samples(), software: [])
+    }
 
     /// Fetches one of the two facility lists for a room.
     ///
@@ -129,9 +148,7 @@ final class RoomFacilitiesModel {
     ///   - http: The transport.
     /// - Returns: The items, or `nil` on any failure. `nil` rather than throwing, because
     ///   one of the two endpoints failing usually means a room with no software listed.
-    private static func fetch(
-        path: String, id: String, http: any HTTP
-    ) async -> [RoomFacility]? {
+    private static func list(path: String, id: String, http: any HTTP) async -> [RoomFacility]? {
         do {
             let data = try await http.data(for: APIRequest(
                 host: .maps, path: "/ricerca/aula/\(path)/\(id)", authenticated: false))

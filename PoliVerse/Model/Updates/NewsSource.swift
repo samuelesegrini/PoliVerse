@@ -1,7 +1,7 @@
 import Foundation
 import OSLog
 
-/// The ``Source`` for the Politecnico's news.
+/// The ``Resource`` for the Politecnico's news.
 ///
 /// `GET {agenda}/v1/persona/news` over a window from a month behind to a year ahead —
 /// wider than the official client's, because news published last week is still news to
@@ -12,7 +12,7 @@ import OSLog
 ///
 /// The path and query are verified from the official client; the body's field names are
 /// read leniently and its shape is logged in debug builds.
-nonisolated struct NewsSource: Source {
+nonisolated struct NewsSource: Resource {
     /// Names the offline record and the log category.
     static let id = "news"
     /// Fifteen minutes: the university publishes a handful of items a week.
@@ -45,7 +45,8 @@ nonisolated struct NewsSource: Source {
     /// - Returns: The items, newest first, flagged unreadable when the payload carried rows
     ///   the decoder could not read.
     /// - Throws: ``APIError``.
-    func fetch(_ env: Env) async throws -> Payload {
+    @concurrent
+    func fetch(_ key: Whole, env: Env, previous: Payload?) async throws -> Payload {
         let calendar = PoliMiDate.romeCalendar
         let now = now()
         // A month behind, a year ahead. The official app asks for today
@@ -79,7 +80,7 @@ nonisolated struct NewsSource: Source {
     }
 
     /// The sample news items.
-    func sample() -> Payload {
+    func sample(_ key: Whole) -> Payload? {
         Payload(items: NewsItem.samples())
     }
 }
