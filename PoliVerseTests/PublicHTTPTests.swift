@@ -12,7 +12,7 @@ import Testing
 /// Serialised: the stub below is one shared `URLProtocol` with static state,
 /// and Swift Testing runs a suite's tests in parallel by default — which had
 /// one test's 404 arriving in another's URL assertion.
-@Suite("Public HTTP", .serialized)
+@Suite("Public HTTP", .serialized, .tags(.network))
 struct PublicHTTPTests {
     private func client() -> PublicHTTP {
         PublicHTTP(session: RecordingStub.session)

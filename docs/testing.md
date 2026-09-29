@@ -111,6 +111,44 @@ Adding a screen means adding an identifier to its root and a row to
 - A network test stubs `URLProtocol` and keys its answers by something unique
   to the test, so the suite stays parallel.
 
+## Swift Testing and Xcode 27 tools
+
+- **Tags** (`PoliVerseTests/Tags.swift`): `.parsing`, `.network`,
+  `.persistence`, `.timing`. A test plan can include or exclude them; start
+  with `.timing` when a run is flaky.
+- **Parameterized tests** over a loop: each argument is its own case in the
+  report, runs in parallel, and fails on its own. Give a case struct a
+  `testDescription` (`CustomTestStringConvertible`) so the report names it.
+- **One cache per test.** A model that restores an offline copy on its first
+  load reads whatever the last test saved for that matricola. Give each test
+  its own, as `AgendaLoadTests` does, or the suite passes or fails by order.
+- **Warnings, not failures**, for findings that need a look but must not block:
+  `Issue.record("…", severity: .warning)`. The UI-test target cannot
+  `import Testing` as configured (it resolves to `_Testing_Unavailable`), so
+  `AccessibilityAuditUITests` still keeps its contrast findings in an attachment.
+- **`Test.cancel("…")`** skips one argument of a parameterized test from inside
+  it; `.enabled(if:)` is still the choice when the condition is known up front.
+- **Exit tests** (`#expect(processExitsWith:)`) are macOS, Linux and Windows
+  only; the unit tests run on the iOS simulator, so they are not available here.
+- **Playgrounds** (`PoliVerse/Model/Playgrounds.swift`, Debug only): the pure
+  planners — reminders, Oggi's "In arrivo", an agenda payload — run in the
+  canvas with a fixed `now`. Change the date or paste a recorded row, look at
+  the result, then pin what you found in a test.
+
+Finding flaky tests: `-test-iterations` does not repeat Swift Testing tests.
+Build once, then loop `test-without-building`:
+
+```
+xcodebuild build-for-testing -scheme PoliVerse -destination '…'
+for i in $(seq 1 10); do
+  xcodebuild test-without-building -scheme PoliVerse -destination '…' | grep 'Test run with'
+done
+```
+
+Running two `xcodebuild test`s on the same simulator or the same DerivedData
+at once stalls one of them; give a second run its own `-derivedDataPath` and
+simulator.
+
 ## Measuring on a real account
 
 Sample data is small and skips the offline cache and the network, which is

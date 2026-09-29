@@ -169,8 +169,8 @@ final class Session {
                 let ids = list.compactMap(\.identifier)
                 // Prefer the student profile when the account has several.
                 if let chosen = ids.first(where: { $0 == PoliMiProfile.student }) ?? ids.first {
-                    profileID = chosen
-                    await profileBox.set(chosen)
+                    await use(profile: chosen)
+                    if !useMockData { await tokens.remember(profileID: chosen) }
                     log.notice("Using poliAuthProfile \(chosen, privacy: .public)")
                     return
                 }
@@ -179,6 +179,14 @@ final class Session {
         } catch {
             log.error("profiles fetch failed: \(error.localizedDescription)")
         }
+    }
+
+    /// Presents a profile from now on.
+    ///
+    /// - Parameter profile: The `poliAuthProfile` to send.
+    func use(profile: Int) async {
+        profileID = profile
+        await profileBox.set(profile)
     }
 
     /// Enters ``State/signedIn(_:)`` and brings everything keyed by matricola into
@@ -191,8 +199,13 @@ final class Session {
     ///
     /// - Parameter student: Who the token belongs to.
     func signIn(_ student: Student) async {
-        state = .signedIn(student)
+        // The matricola first: entering the state starts the refresh, whose
+        // requests read it.
         await profileBox.set(matricola: student.matricola)
+        state = .signedIn(student)
+        // Remembered with the token, so the next launch can open on it. Never
+        // the sample student, which would then stand in for the real one.
+        if !useMockData { await tokens.remember(student) }
         // Widgets read the offline files, which are keyed by matricola, and
         // have no session of their own to ask.
         SharedAccount.update(matricola: student.matricola, firstName: student.firstName)

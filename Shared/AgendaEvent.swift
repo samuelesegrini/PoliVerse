@@ -365,7 +365,7 @@ nonisolated struct AgendaEventDTO: Decodable, Sendable {
         else { return nil }
 
         return AgendaEvent(
-            id: event_id ?? abs(date_start.hashValue),
+            id: event_id ?? Self.fallbackID(start: date_start, title: title?.preferred),
             title: title?.preferred.isEmpty == false ? title!.preferred : "Evento",
             start: start,
             end: end,
@@ -380,6 +380,26 @@ nonisolated struct AgendaEventDTO: Decodable, Sendable {
                 return name?.isEmpty == false ? name : nil
             }
         )
+    }
+
+    /// An identifier for an entry the agenda sent without one.
+    ///
+    /// Computed with FNV-1a rather than `hashValue`, which Swift seeds per process: the
+    /// same entry got a new id on every launch, so the widgets' copy and the reminders
+    /// pointed at entries that no longer existed. The title is part of it because two
+    /// entries at the same moment were given one id, and the load keeps one per id.
+    /// Kept above 2⁶², far from the agenda's own ids.
+    ///
+    /// - Parameters:
+    ///   - start: The start timestamp as sent.
+    ///   - title: The entry's name, if any.
+    /// - Returns: The identifier.
+    static func fallbackID(start: String, title: String?) -> Int {
+        var hash: UInt64 = 0xcbf2_9ce4_8422_2325
+        for byte in "\(start)|\(title ?? "")".utf8 {
+            hash = (hash ^ UInt64(byte)) &* 0x0000_0100_0000_01B3
+        }
+        return Int(hash & 0x3FFF_FFFF_FFFF_FFFF) | (1 << 62)
     }
 }
 

@@ -77,6 +77,36 @@ actor TokenStore {
     /// predates scope recording.
     var grantedScope: String? { current()?.grantedScope }
 
+    /// The student last confirmed for the stored pair, or `nil` when there is no pair
+    /// or none has been confirmed since it was kept.
+    var student: Student? { current()?.student }
+
+    /// The profile last chosen for the stored pair.
+    var profileID: Int? { current()?.profileID }
+
+    /// Records who the stored pair belongs to, and persists it when that changed.
+    ///
+    /// Does nothing when there is no stored pair.
+    ///
+    /// - Parameter student: The student `/jaf/internal/user` returned.
+    func remember(_ student: Student) {
+        guard var current = current(), current.student != student else { return }
+        current.student = student
+        token = current
+        persist()
+    }
+
+    /// Records the profile chosen for the stored pair, and persists it when that
+    /// changed.
+    ///
+    /// - Parameter profileID: The `poliAuthProfile` in use.
+    func remember(profileID: Int) {
+        guard var current = current(), current.profileID != profileID else { return }
+        current.profileID = profileID
+        token = current
+        persist()
+    }
+
     /// When the stored access token stops working, for the diagnostics page. The token
     /// itself is never exposed; a date is all a bug report needs.
     var expiresAt: Date? { current()?.expiresAt }
@@ -146,6 +176,8 @@ actor TokenStore {
             // the app's record, and a refresh never widens it, so it carries over;
             // dropping it made the next launch read a scope change and sign out.
             fresh.grantedScope = current.grantedScope
+            fresh.student = current.student
+            fresh.profileID = current.profileID
             token = fresh
             persist()
             return fresh.accessToken
@@ -206,6 +238,8 @@ actor TokenStore {
             // the app's record, and a refresh never widens it, so it carries over;
             // dropping it made the next launch read a scope change and sign out.
             fresh.grantedScope = current.grantedScope
+            fresh.student = current.student
+            fresh.profileID = current.profileID
             token = fresh
             persist()
             return fresh.accessToken

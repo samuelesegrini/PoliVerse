@@ -66,6 +66,16 @@ final class FreeRoomsModel {
     /// Suppresses repeated passes within a minute, keyed on the day and campus being
     /// shown.
     private var window = LoadWindow(interval: 60)
+    /// The day and campus of the pass in flight, and which pass it is.
+    ///
+    /// A pass for another day or campus is not turned away while one runs: the
+    /// picker changes both mid-pass, and the old pass then published its rooms
+    /// under the new campus and stamped the window with it, so the right pass
+    /// was suppressed for a minute. The newest pass is the only one that
+    /// publishes.
+    @ObservationIgnored private var inFlight: (key: String, pass: Int)?
+    /// Counts passes, so an older one can tell it has been superseded.
+    @ObservationIgnored private var passes = 0
 
     /// Fetches, caches and coalesces occupancy per room and day.
     ///
@@ -215,11 +225,21 @@ final class FreeRoomsModel {
         publishWidgetCatalogue()
 
         let key = "\(PoliMiDate.queryString(day))|\(campus ?? "-")"
-        guard !isLoading, window.shouldLoad(force: force, source: key) else { return }
+        guard inFlight?.key != key, window.shouldLoad(force: force, source: key) else { return }
+        passes += 1
+        let pass = passes
+        inFlight = (key, pass)
         isLoading = true
         errorMessage = nil
         hiddenRooms = []
-        defer { isLoading = false }
+        defer {
+            if inFlight?.pass == pass {
+                inFlight = nil
+                isLoading = false
+            }
+        }
+        // Whether this is still the pass the screen is waiting for.
+        func isCurrent() -> Bool { inFlight?.pass == pass && !Task.isCancelled }
 
         let wanted = catalogue.rooms(matching: "", campus: campus)
             .filter { $0.occupancyID != nil }
@@ -255,6 +275,7 @@ final class FreeRoomsModel {
                 }
                 for await (id, bookings) in group { fetched[id] = bookings }
             }
+            guard isCurrent() else { return }
 
             for room in slice {
                 switch fetched[room.id] {

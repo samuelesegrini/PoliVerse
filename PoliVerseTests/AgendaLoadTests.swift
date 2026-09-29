@@ -9,20 +9,23 @@ import Testing
 /// It is the most-opened screen in the app, and the rules below — which window
 /// is fetched, what happens when one of the two endpoints is down, what is kept
 /// when both are — are the ones a student notices when they are wrong.
-@Suite("Agenda load")
+@Suite("Agenda load", .tags(.network))
 @MainActor
 struct AgendaLoadTests {
-    private static let matricola = "111"
-    private static let eventsPath = "/v1/matricola/111/events"
-    private static let deadlinesPath = "/v1/matricola/111/events/deadlines"
+    /// A matricola of each test's own. The model keeps an offline copy per
+    /// matricola and restores it on the first load, so with one shared number a
+    /// test read what another had just saved, and passed or failed by order.
+    private let matricola = String(Int.random(in: 10_000_000...99_999_999))
+    private var eventsPath: String { "/v1/matricola/\(matricola)/events" }
+    private var deadlinesPath: String { "/v1/matricola/\(matricola)/events/deadlines" }
 
     /// Midday, so the ±window never straddles a day boundary by accident.
     private static let day = PoliMiDate.romeCalendar.date(
         from: DateComponents(year: 2026, month: 3, day: 10, hour: 12))!
 
-    private func model(_ http: FixtureHTTP, matricola: String? = matricola,
+    private func model(_ http: FixtureHTTP, signedIn: Bool = true,
                        isSample: Bool = false) -> AgendaModel {
-        AgendaModel(account: StubAccount(matricola: matricola, isSample: isSample, http: http))
+        AgendaModel(account: StubAccount(matricola: signedIn ? matricola : nil, isSample: isSample, http: http))
     }
 
     /// The wire format the agenda sends: Rome wall-clock, no offset.
@@ -49,6 +52,21 @@ struct AgendaLoadTests {
         return Data("[\(rows.joined(separator: ","))]".utf8)
     }
 
+    /// One deadline, `hours` from the fixed day, as the deadlines endpoint sends it.
+    private static func deadlines(_ offsets: [Double], idFrom: Int = 100) -> Data {
+        let rows = offsets.enumerated().map { index, hours -> String in
+            let start = day.addingTimeInterval(hours * 3600)
+            return """
+            {"event_id": \(idFrom + index),
+             "date_start": "\(wire.string(from: start))",
+             "date_end": "\(wire.string(from: start))",
+             "event_type": {"typeId": 4},
+             "title": {"it": "Consegna \(idFrom + index)"}}
+            """
+        }
+        return Data("[\(rows.joined(separator: ","))]".utf8)
+    }
+
     // MARK: - The window asked for
 
     /// A week behind and a month ahead: the official app asks for a month
@@ -56,13 +74,13 @@ struct AgendaLoadTests {
     /// a week does not trigger a round trip.
     @Test("The fetched window is a week behind and a month ahead")
     func windowAroundTheDay() async throws {
-        let http = FixtureHTTP([Self.eventsPath: Data("[]".utf8),
-                                Self.deadlinesPath: Data("[]".utf8)])
+        let http = FixtureHTTP([eventsPath: Data("[]".utf8),
+                                deadlinesPath: Data("[]".utf8)])
         let agenda = model(http)
 
         await agenda.load(around: Self.day)
 
-        let request = try #require(await http.requests.first { $0.path == Self.eventsPath })
+        let request = try #require(await http.requests.first { $0.path == eventsPath })
         #expect(request.host == .agenda)
         let calendar = PoliMiDate.romeCalendar
         let start = try #require(request.query.first { $0.name == "start_date" }?.value)
@@ -77,13 +95,13 @@ struct AgendaLoadTests {
     /// horizon rather than the window on screen.
     @Test("Deadlines are fetched a year ahead, not over the shown window")
     func deadlinesLookFurther() async throws {
-        let http = FixtureHTTP([Self.eventsPath: Data("[]".utf8),
-                                Self.deadlinesPath: Data("[]".utf8)])
+        let http = FixtureHTTP([eventsPath: Data("[]".utf8),
+                                deadlinesPath: Data("[]".utf8)])
         let agenda = model(http)
 
         await agenda.load(around: Self.day)
 
-        let request = try #require(await http.requests.first { $0.path == Self.deadlinesPath })
+        let request = try #require(await http.requests.first { $0.path == deadlinesPath })
         let end = try #require(request.query.first { $0.name == "end_date" }?.value)
         let from = try #require(PoliMiDate.romeCalendar.date(byAdding: .day, value: -7, to: Self.day))
         #expect(end == PoliMiDate.queryString(
@@ -95,7 +113,7 @@ struct AgendaLoadTests {
     /// One endpoint being down is not the timetable being unavailable.
     @Test("Lectures still show when the deadlines endpoint is down")
     func lecturesSurviveDeadlineFailure() async {
-        let http = FixtureHTTP([Self.eventsPath: Self.events([2])],
+        let http = FixtureHTTP([eventsPath: Self.events([2])],
                                fallback: .failure(APIError.badStatus(500, body: "down")))
         let agenda = model(http)
 
@@ -111,8 +129,8 @@ struct AgendaLoadTests {
     @Test("Both endpoints down keeps what was already on screen")
     func bothDownKeepsWhatIsHeld() async {
         let account = StubAccount(
-            matricola: Self.matricola,
-            http: FixtureHTTP([Self.eventsPath: Self.events([2, 5])],
+            matricola: matricola,
+            http: FixtureHTTP([eventsPath: Self.events([2, 5])],
                               fallback: .failure(APIError.badStatus(500, body: "down"))))
         let agenda = AgendaModel(account: account)
         await agenda.load(around: Self.day)
@@ -124,13 +142,74 @@ struct AgendaLoadTests {
         #expect(agenda.events.count == 2)
     }
 
+    /// The deadlines answering is not the timetable answering: taking their
+    /// reply as the whole window emptied the week, and the widgets, the
+    /// reminders and the Watch with it.
+    @Test("Lectures down and deadlines up keeps the lectures held")
+    func lecturesDownKeepsLectures() async {
+        let account = StubAccount(
+            matricola: matricola,
+            http: FixtureHTTP([eventsPath: Self.events([2, 5]), deadlinesPath: Data("[]".utf8)]))
+        let agenda = AgendaModel(account: account)
+        await agenda.load(around: Self.day)
+
+        account.http = FixtureHTTP([deadlinesPath: Self.deadlines([30])],
+                                   fallback: .failure(APIError.badStatus(500, body: "down")))
+        await agenda.load(around: Self.day, force: true)
+
+        #expect(agenda.events(on: Self.day).filter { $0.kind != .deadline }.count == 2)
+        #expect(agenda.errorMessage != nil)
+    }
+
+    /// The reverse: deadlines are fetched a year ahead and change rarely, so a
+    /// failed fetch is no reason to forget the ones already known.
+    @Test("Deadlines down keeps the deadlines held")
+    func deadlinesDownKeepsDeadlines() async {
+        let account = StubAccount(
+            matricola: matricola,
+            http: FixtureHTTP([eventsPath: Self.events([2]), deadlinesPath: Self.deadlines([30])]))
+        let agenda = AgendaModel(account: account)
+        await agenda.load(around: Self.day)
+        #expect(agenda.milestones().count == 1)
+
+        account.http = FixtureHTTP([eventsPath: Self.events([2])],
+                                   fallback: .failure(APIError.badStatus(500, body: "down")))
+        await agenda.load(around: Self.day, force: true)
+
+        #expect(agenda.milestones().count == 1)
+        #expect(agenda.errorMessage == nil)
+    }
+
+    /// A week whose lectures did not arrive is not held: marking it covered
+    /// showed it as a free week and never asked again.
+    @Test("A paged week whose lectures failed is fetched again")
+    func failedPageIsRetried() async {
+        let account = StubAccount(
+            matricola: matricola,
+            http: FixtureHTTP([eventsPath: Self.events([2]), deadlinesPath: Data("[]".utf8)]))
+        let agenda = AgendaModel(account: account)
+        await agenda.load(around: Self.day)
+
+        let later = Self.day.addingTimeInterval(60 * 86_400)
+        account.http = FixtureHTTP([deadlinesPath: Data("[]".utf8)],
+                                   fallback: .failure(APIError.badStatus(500, body: "down")))
+        await agenda.ensureLoaded(covering: later)
+        #expect(agenda.events(on: later).isEmpty)
+
+        account.http = FixtureHTTP([eventsPath: Self.events([60 * 24 + 2], idFrom: 10),
+                                    deadlinesPath: Data("[]".utf8)])
+        await agenda.ensureLoaded(covering: later)
+        #expect(agenda.events(on: later).count == 1)
+        #expect(agenda.events(on: Self.day).count == 1)
+    }
+
     // MARK: - Grouping and the window held
 
     @Test("Events are grouped by Rome day and sorted within it")
     func groupsByDay() async {
         // Two the same day, one the next.
-        let http = FixtureHTTP([Self.eventsPath: Self.events([5, 2, 26]),
-                                Self.deadlinesPath: Data("[]".utf8)])
+        let http = FixtureHTTP([eventsPath: Self.events([5, 2, 26]),
+                                deadlinesPath: Data("[]".utf8)])
         let agenda = model(http)
 
         await agenda.load(around: Self.day)
@@ -146,8 +225,8 @@ struct AgendaLoadTests {
     /// refetch, and stepping outside it must.
     @Test("A date inside the loaded window does not refetch; outside does")
     func refetchesOnlyOutsideTheWindow() async {
-        let http = FixtureHTTP([Self.eventsPath: Self.events([2]),
-                                Self.deadlinesPath: Data("[]".utf8)])
+        let http = FixtureHTTP([eventsPath: Self.events([2]),
+                                deadlinesPath: Data("[]".utf8)])
         let agenda = model(http)
         await agenda.load(around: Self.day)
         let afterFirst = await http.requests.count
@@ -160,10 +239,53 @@ struct AgendaLoadTests {
         #expect(await http.requests.count > afterFirst)
     }
 
+    /// Paging the calendar past the held month used to replace the window, and
+    /// today's lectures left the widgets, the reminders and the Watch with it.
+    @Test("Navigating past the window adds to what is held instead of replacing it")
+    func pagingKeepsToday() async {
+        let account = StubAccount(
+            matricola: matricola,
+            http: FixtureHTTP([eventsPath: Self.events([2]), deadlinesPath: Data("[]".utf8)]))
+        let agenda = AgendaModel(account: account)
+        await agenda.load(around: Self.day)
+
+        let later = Self.day.addingTimeInterval(60 * 86_400)
+        account.http = FixtureHTTP([eventsPath: Self.events([60 * 24 + 2], idFrom: 10),
+                                    deadlinesPath: Data("[]".utf8)])
+        await agenda.ensureLoaded(covering: later)
+
+        #expect(agenda.events(on: Self.day).count == 1)
+        #expect(agenda.events(on: later).count == 1)
+
+        // Both spans are held: going back does not fetch again.
+        account.http = FixtureHTTP.failing(APIError.badStatus(500, body: "down"))
+        await agenda.ensureLoaded(covering: Self.day)
+        #expect(agenda.errorMessage == nil)
+    }
+
+    /// The launch refresh and a paged week meet often: the calendar opens while
+    /// the refresh is still waiting on the network.
+    @Test("A week asked for during another load is fetched once that load ends")
+    func pagingDuringALoadIsNotDropped() async {
+        let http = FixtureHTTP([eventsPath: Self.events([2]), deadlinesPath: Data("[]".utf8)])
+        let agenda = model(http)
+        let later = Self.day.addingTimeInterval(60 * 86_400)
+
+        async let refresh: Void = agenda.load(around: Self.day)
+        async let paged: Void = agenda.ensureLoaded(covering: later)
+        _ = await (refresh, paged)
+
+        let path = eventsPath
+        let requests = await http.requests
+        let lectureFetches = requests.filter { $0.path == path }
+        #expect(lectureFetches.count == 2)
+        #expect(!agenda.isLoading)
+    }
+
     @Test("The next event is the first that has not ended")
     func nextEventSkipsWhatIsOver() async throws {
-        let http = FixtureHTTP([Self.eventsPath: Self.events([-2, 3]),
-                                Self.deadlinesPath: Data("[]".utf8)])
+        let http = FixtureHTTP([eventsPath: Self.events([-2, 3]),
+                                deadlinesPath: Data("[]".utf8)])
         let agenda = model(http)
         await agenda.load(around: Self.day)
 
@@ -187,7 +309,7 @@ struct AgendaLoadTests {
     @Test("With no account, nothing is fetched and the reason is said")
     func signedOutSaysSo() async {
         let http = FixtureHTTP()
-        let agenda = model(http, matricola: nil)
+        let agenda = model(http, signedIn: false)
 
         await agenda.load(around: Self.day)
 

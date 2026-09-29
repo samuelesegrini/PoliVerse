@@ -225,10 +225,20 @@ final class ServiceDirectory {
     /// A failure, a non-success status or an undecodable payload leaves the fallbacks
     /// in place and still marks the directory loaded. A resolved URL that differs from
     /// its fallback is logged, since it means the baked-in value is stale.
+    ///
+    /// The two requests go out together: neither needs the other, and restoring a
+    /// session waits on both before it can ask who the student is.
     func load() async {
         guard !didLoad else { return }
-        await loadOAuthParams()
+        async let params: Void = loadOAuthParams()
+        async let props: Void = loadProps()
+        _ = await (params, props)
+        didLoad = true
+    }
 
+    /// Fetches `/jaf/public/props` into ``resolved`` and ``serviceProfiles``, keeping
+    /// the fallbacks on any failure.
+    private func loadProps() async {
         let url = Service.app.fallback.appendingPathComponent("/jaf/public/props")
         do {
             var request = URLRequest(url: url)
@@ -238,7 +248,6 @@ final class ServiceDirectory {
             let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
                 log.error("props returned a non-success status; keeping fallbacks")
-                didLoad = true
                 return
             }
 
@@ -269,11 +278,9 @@ final class ServiceDirectory {
                 }
             }
             resolved = map
-            didLoad = true
             log.info("Service directory loaded (\(map.count) entries)")
         } catch {
             log.error("props fetch failed: \(error.localizedDescription); keeping fallbacks")
-            didLoad = true
         }
     }
 

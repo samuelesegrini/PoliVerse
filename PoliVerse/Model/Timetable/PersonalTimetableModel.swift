@@ -426,6 +426,11 @@ final class PersonalTimetableModel {
         agenda?.personalTimetable = nil
         selection = []
         bracketChoices = [:]
+        // Kept, a section picked for the deleted timetable was applied to the
+        // next one without asking, even in another year.
+        sectionChoices = [:]
+        sectionQuestions = []
+        refused = []
         yearsOfCourse = [:]
         progress = .idle
         // An empty entry, which no longer decodes as a timetable.

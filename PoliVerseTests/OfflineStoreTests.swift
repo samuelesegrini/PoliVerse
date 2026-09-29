@@ -8,7 +8,7 @@ import Testing
 /// vanished — worse, `CareerModel` actively wiped itself on a failed load,
 /// so going into a basement replaced a student's exam record with an empty
 /// screen.
-@Suite("Offline store")
+@Suite("Offline store", .tags(.persistence))
 struct OfflineStoreTests {
     /// `nonisolated`: the project defaults types to MainActor, and a
     /// main-actor-isolated Codable conformance cannot satisfy a Sendable
@@ -170,7 +170,7 @@ struct CachedAgendaTests {
 /// support built over the last hours silently starts from nothing on the
 /// version that adds widgets, and a student opens the app on a train to find
 /// their timetable gone.
-@Suite("Offline store migration")
+@Suite("Offline store migration", .tags(.persistence))
 struct OfflineStoreMigrationTests {
     private func temp(_ name: String) -> URL {
         let url = FileManager.default.temporaryDirectory

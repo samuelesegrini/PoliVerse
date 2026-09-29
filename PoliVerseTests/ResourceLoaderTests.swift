@@ -8,7 +8,7 @@ import Testing
 /// this?", each subtly different, and none of them coalesced concurrent
 /// callers or prefetched anything. These pin the behaviour that made it worth
 /// having one.
-@Suite("Resource loader")
+@Suite("Resource loader", .tags(.timing))
 struct ResourceLoaderTests {
     /// Counts how many times the work actually ran, which is the whole point.
     private actor Counter {

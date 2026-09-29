@@ -7,7 +7,7 @@ import Testing
 /// Nothing here calls `DiskCache.clear()`: it removes the whole folder, and
 /// other tests build services that write to it. Each test uses a name of its
 /// own instead, which is also how the app uses it.
-@Suite("Cache su disco")
+@Suite("Cache su disco", .tags(.persistence))
 struct DiskCacheTests {
     private nonisolated struct Payload: Codable, Equatable, Sendable {
         var courses: [String]

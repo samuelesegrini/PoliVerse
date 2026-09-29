@@ -72,6 +72,8 @@ final class AgendaModel {
     @ObservationIgnored private var daySlices: [Date: Slice] = [:]
     /// The slice of every course asked for so far, by lowercased name.
     @ObservationIgnored private var courseSlices: [String: Slice] = [:]
+    /// The exams and deadlines, which Oggi's "In arrivo" lists; `nil` until asked for.
+    @ObservationIgnored private var milestoneSlice: Slice?
 
     /// Brings every slice handed out so far in step with the indexes, touching only
     /// those whose entries changed.
@@ -83,6 +85,10 @@ final class AgendaModel {
         for (target, slice) in courseSlices {
             let fresh = matching(target)
             if slice.events != fresh { slice.events = fresh }
+        }
+        if let milestoneSlice {
+            let fresh = Self.milestones(in: events)
+            if milestoneSlice.events != fresh { milestoneSlice.events = fresh }
         }
     }
     /// What the Politecnico's agenda sent, without personal lessons.
@@ -101,12 +107,26 @@ final class AgendaModel {
     }
     /// `true` while a load is in flight.
     private(set) var isLoading = false
+    /// Calls waiting for the load in flight to end, resumed when it does.
+    @ObservationIgnored private var waiting: [CheckedContinuation<Void, Never>] = []
     /// The last load's error, or `nil` when it succeeded. A failed deadlines fetch does
     /// not set it.
     private(set) var errorMessage: String?
-    /// The span currently held, so navigating past its edge can fetch more. `nil` before
-    /// the first successful load.
+    /// From the start of the first span held to the end of the last, so navigating past
+    /// its edge can fetch more. `nil` before the first successful load.
     private(set) var loadedRange: ClosedRange<Date>?
+    /// Every span fetched since the last load around a date, which ``covers(_:)`` asks.
+    ///
+    /// Paging the calendar past the held month used to replace the window with one
+    /// around the new week. Today then fell out of ``events``, and everything keyed on
+    /// them followed: the widgets' copy, the reminders and the Watch lost the day's
+    /// lectures until the next refresh. A paged week is added instead.
+    private var loadedSpans: [ClosedRange<Date>] = [] {
+        didSet {
+            loadedRange = loadedSpans.isEmpty ? nil
+                : loadedSpans.map(\.lowerBound).min()!...loadedSpans.map(\.upperBound).max()!
+        }
+    }
 
     /// Whose agenda to load, and the transport.
     private let account: any Account
@@ -162,7 +182,7 @@ final class AgendaModel {
 
     /// Fetches a window around a date, replacing whatever was held.
     ///
-    /// Returns immediately when a load is in flight, or when the load window has not
+    /// Waits for a load already in flight, then returns when the load window has not
     /// expired and the held span already covers the date. The lectures and the deadlines
     /// are fetched concurrently, and a deadline that also appears in the events feed is
     /// kept once.
@@ -171,9 +191,24 @@ final class AgendaModel {
     ///   - date: The date to centre the window on.
     ///   - force: Bypasses the load window; set by pull-to-refresh.
     func load(around date: Date = .now, force: Bool = false) async {
-        guard !isLoading,
-              window.shouldLoad(force: force, source: source) || !covers(date)
-        else { return }
+        await load(around: date, force: force, extending: false)
+    }
+
+    /// Fetches a window around a date.
+    ///
+    /// - Parameters:
+    ///   - date: The date to centre the window on.
+    ///   - force: Bypasses the load window.
+    ///   - extending: Adds the window to what is held rather than replacing it; set when
+    ///     the student navigates past the held span.
+    private func load(around date: Date, force: Bool, extending: Bool) async {
+        // One load at a time. A call arriving mid-load waits for it and then
+        // decides afresh: returning at once left a week paged to during the
+        // launch refresh empty, since nothing asked for it again.
+        while isLoading {
+            await withCheckedContinuation { waiting.append($0) }
+        }
+        guard window.shouldLoad(force: force, source: source) || !covers(date) else { return }
         isLoading = true
         errorMessage = nil
         // After the guard, so a skipped call is not timed as a fast one.
@@ -181,6 +216,9 @@ final class AgendaModel {
         defer {
             isLoading = false
             PerfSignpost.end(interval)
+            let resumed = waiting
+            waiting = []
+            for continuation in resumed { continuation.resume() }
         }
 
         let calendar = PoliMiDate.romeCalendar
@@ -190,7 +228,7 @@ final class AgendaModel {
         await restoreCache()
 
         if account.isSample {
-            loadedRange = from...to
+            loadedSpans = [from...to]
             officialEvents = AgendaEvent.samples(around: date)
             rebuild()
             window.markLoaded(source: source)
@@ -220,15 +258,31 @@ final class AgendaModel {
             return
         }
 
-        // A deadline can also appear in the events feed; keep one of each.
-        var merged = fetched ?? []
-        let known = Set(merged.map(\.id))
-        merged += (fetchedDeadlines ?? []).filter { !known.contains($0.id) }
+        // Each endpoint answers only for its own entries. One that failed
+        // leaves what it sent before as it was: taking the deadlines' reply
+        // as the whole window emptied the week of its lectures. When extending,
+        // what is held outside the new window stays too: it is still the
+        // student's timetable, and today is usually in it.
+        let span = from...to
+        let extends = extending && !loadedSpans.isEmpty
+        let carried = officialEvents.filter { event in
+            let answered = event.kind == .deadline ? fetchedDeadlines != nil : fetched != nil
+            return !answered || (extends && !span.contains(event.start))
+        }
+        // A deadline can also appear in the events feed; keep one of each,
+        // the fresh one first.
+        var known = Set<Int>()
+        let merged = ((fetched ?? []) + (fetchedDeadlines ?? []) + carried)
+            .filter { known.insert($0.id).inserted }
 
-        loadedRange = from...to
         officialEvents = merged.sorted { $0.start < $1.start }
+        // Only lectures that arrived make the span held; otherwise it would
+        // show as a free week and never be asked for again.
+        if fetched != nil {
+            if extends { loadedSpans.append(span) } else { loadedSpans = [span] }
+            window.markLoaded(source: source)
+        }
         rebuild()
-        window.markLoaded(source: source)
         saveForWidgets()
         age = slot.age
     }
@@ -263,7 +317,7 @@ final class AgendaModel {
     /// - Parameter date: The date to test.
     /// - Returns: `false` before the first successful load.
     private func covers(_ date: Date) -> Bool {
-        loadedRange?.contains(date) ?? false
+        loadedSpans.contains { $0.contains(date) }
     }
 
     /// Fetches only if a date falls outside the span already held.
@@ -281,7 +335,7 @@ final class AgendaModel {
         log.debug("Navigated outside the loaded window; fetching around it")
         // Forced: the window genuinely does not hold this date, so freshness
         // is beside the point.
-        await load(around: date, force: true)
+        await load(around: date, force: true, extending: true)
     }
 
     /// Fetches the timetable events for a span.
@@ -375,6 +429,30 @@ final class AgendaModel {
         let calendar = PoliMiDate.romeCalendar
         return Dictionary(grouping: events) { calendar.startOfDay(for: $0.start) }
             .mapValues { $0.sorted { $0.start < $1.start } }
+    }
+
+    /// The exams and deadlines on the agenda, in time order.
+    ///
+    /// Observed on their own, like a day: Oggi's "In arrivo" lists only these, and
+    /// read the whole agenda before, so every week paged in the calendar redrew it.
+    ///
+    /// - Returns: The exams and deadlines held.
+    func milestones() -> [AgendaEvent] {
+        let slice = milestoneSlice ?? {
+            let slice = Slice()
+            slice.events = Self.milestones(in: events)
+            milestoneSlice = slice
+            return slice
+        }()
+        return slice.events
+    }
+
+    /// The exams and deadlines among some events, in their order.
+    ///
+    /// - Parameter events: The events, in time order.
+    /// - Returns: Those that are exams or deadlines.
+    private nonisolated static func milestones(in events: [AgendaEvent]) -> [AgendaEvent] {
+        events.filter { $0.kind == .exam || $0.kind == .deadline }
     }
 
     /// Everything on the agenda that belongs to a course, matched by name, in time

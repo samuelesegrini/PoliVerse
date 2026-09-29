@@ -1153,6 +1153,60 @@ iPhone 12 Pro, iOS 27.2, Release, sample data, `main` against this pass.
   profile, and a signed-in account to exercise the offline cache and the
   network; sample data skips both.
 
+### 5.5 On a real account
+
+`RealDataPerformanceTests` on the iPhone 12 Pro, iOS 27.2, Release, signed in.
+The first run, in the afternoon on 8e7f299:
+
+| Measurement | Result |
+| --- | --- |
+| Launch, first frame responsive | 0.60 s |
+| `session.restore` | **2.0 s**, behind `LaunchGate` |
+| `offline.read`, every record at launch | under 1 ms |
+| `freshness.revalidate` | **11.4 s** (`agenda.load` 2.0 s, `career.load` 2.7 s) |
+| Calendar paging, hitch ratio | 11.2 ms/s, 0.42 s `agenda.load` per page |
+| Corsi / Oggi / Carriera / Novità scroll | 7.1 / 9.0 / 3.1 / 4.5 ms/s |
+| Memory after a walk | 78 MB, peak 125 MB, flat across iterations |
+
+The offline reads that §5.1 moved were already cheap on real data. The time was
+on the network, in series:
+
+| Finding | Fix |
+| --- | --- |
+| Restoring waited on four round trips — OAuth params, props, `/jaf/internal/user`, profiles — one after another, behind a spinner; and any failure of `/user`, including no connection, showed the sign-in screen with the token and every offline copy on the device | The student and profile id confirmed last are kept in the token's Keychain record, so they go wherever it goes. A launch signs in as them at once and confirms in the background (`LoginFlow.confirm`); only a refused token signs out (`LoginFlow.refusesToken`). The directory's two requests, and `/user` with the profiles, now go out together |
+| The refresh after launch ran its six loads in series | They start in registration order and run together; `TokenStore` still refreshes once for all |
+| Paging the calendar past the held month replaced the agenda window. Today left `events`, and the widgets' file, the reminders and the Watch followed — and every page rescheduled every reminder | Paged weeks are added to the spans held (`loadedSpans`); `NotificationModel.reschedule` leaves an unchanged plan alone |
+| A week asked for while another load was in flight — the calendar opened during the launch refresh — returned at `guard !isLoading` and was never fetched | A call arriving mid-load waits for it, then decides |
+| Oggi's "In arrivo" read the whole agenda, so every paged week redrew it | `AgendaModel.milestones()`, a slice of the exams and deadlines |
+
+Measured by alternating the builds in one sitting, late evening, three
+iterations each:
+
+| Test | Before (two rounds) | After (two rounds) |
+| --- | --- | --- |
+| `session.restore` | 0.90 s, 0.87 s | **0.11 s, 0.018 s** |
+| `freshness.revalidate` | 5.5 s, 4.8 s | 2.6 s, 3.4 / 3.0 / 15.8 s |
+| Launch, first frame responsive | 0.48 s, 0.45 s | 0.73 s, 0.72 s |
+| Calendar paging, hitch ratio | 11.5, 10.0 ms/s | 9.8, 11.1 ms/s |
+
+- **Launch "regressed" by 0.25 s because it now measures a different frame.**
+  Before, the first frame was `LaunchGate` and the main thread then sat idle for
+  the restore; the student's timetable arrived at about 0.45 + 0.9 s plus
+  building the shell. Now the shell with the student's data is the launch. An
+  App Launch trace of the new build shows that quarter-second as SwiftUI
+  building the shell — navigation stacks, layout — with no app code of note.
+- **One refresh took 15.8 s**, `agenda.load` and `career.load` each ~15.6 s: the
+  shape of a 15-second request timeout. Not seen again; worth watching.
+- The calendar's hitches did not move: they are the page change, as §5.4 found.
+- `testCalendarPaging` paged four weeks per iteration. Once fetched weeks were
+  kept, later iterations loaded nothing, and XCTest drops a metric missing from
+  any iteration; it pages six. `testBiggestCourseMaterialsScrolling` never ran:
+  the course cards are not buttons to XCUITest, since the row merges its
+  children; it now looks for any element with the identifier.
+- A test runner newly installed on the phone asks for the passcode before
+  UI automation can start; until then the run fails with "Timed out while
+  enabling automation mode".
+
 ## Not verified, in one place
 
 - Whether registering both `MXMetricManager` and `MetricManager` duplicates
