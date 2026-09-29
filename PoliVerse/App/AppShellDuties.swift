@@ -113,16 +113,16 @@ struct AppShellDuties: ViewModifier {
             }
     }
 
-    /// Rebuilt when the day, the timetable or the sittings change.
-    ///
-    /// The day is in the key because the Watch is sent the days from today:
-    /// past midnight the same events describe a window that starts yesterday.
     /// Starts the next queued recording, if nothing is downloading.
     private func advanceQueue() async {
         await downloadQueue.advance(downloads: downloads, recordings: recordings,
                                     account: session, accountEmail: session.student?.email)
     }
 
+    /// Rebuilt when the day, the timetable or the sittings change.
+    ///
+    /// The day is in the key because the Watch is sent the days from today:
+    /// past midnight the same events describe a window that starts yesterday.
     private var watchKey: String {
         let day = PoliMiDate.romeCalendar.startOfDay(for: .now).timeIntervalSince1970
         return "\(day)-\(agenda.events.count)-\(career.sessions.count)"

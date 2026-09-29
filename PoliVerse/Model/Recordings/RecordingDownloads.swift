@@ -46,7 +46,12 @@ final class RecordingDownloads {
     nonisolated static let sessionIdentifier = "segrini.samuele.PoliVerse.recordings"
 
     /// Each recording's status, by `transfer_id`. Recordings not listed are idle.
-    private(set) var statuses: [Int: Status] = [:]
+    private(set) var statuses: [Int: Status] = [:] {
+        didSet {
+            let busy = statuses.values.contains { if case .downloading = $0 { true } else { false } }
+            if busy != isBusy { isBusy = busy }
+        }
+    }
 
     /// Diagnostic log for this type, under the `recordings` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "recordings")
@@ -206,9 +211,10 @@ final class RecordingDownloads {
     }
 
     /// Whether a download is in flight, so the next asked for waits its turn.
-    var isBusy: Bool {
-        statuses.values.contains { if case .downloading = $0 { true } else { false } }
-    }
+    ///
+    /// Stored, and assigned only when it changes: the app's shell watches it, and
+    /// ``statuses`` changes with every few kilobytes of progress.
+    private(set) var isBusy = false
 
     /// Whether a recording is waiting its turn.
     ///

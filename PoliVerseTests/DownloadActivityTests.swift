@@ -116,3 +116,14 @@ struct DownloadQueueTests {
         #expect(DownloadQueue.next(queue: [3, 4], busy: false, known: [4]) == .drop(3))
     }
 }
+
+/// The steps of a recovery say which download each one starts.
+@Suite("Download recovery steps")
+struct DownloadRecoveryStepTests {
+    @Test("Resuming and refetching start a download; skipping does not")
+    func ids() {
+        #expect(DownloadRecovery.Step.resume(1).id == 1)
+        #expect(DownloadRecovery.Step.refetch(2).id == 2)
+        #expect(DownloadRecovery.Step.skip(3).id == nil)
+    }
+}

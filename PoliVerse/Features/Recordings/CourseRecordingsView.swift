@@ -402,8 +402,10 @@ struct CourseRecordingsView: View {
                 }
                 .buttonStyle(.plain)
                 .glassEffect(.regular.interactive(), in: .circle)
-                .accessibilityLabel(recording.megabytes.map { String(localized: "Scarica per vederla offline (\($0) MB)") }
-                                    ?? String(localized: "Scarica per vederla offline"))
+                .accessibilityLabel(downloads.isBusy
+                    ? String(localized: "Aggiungi alla coda dei download")
+                    : recording.megabytes.map { String(localized: "Scarica per vederla offline (\($0) MB)") }
+                        ?? String(localized: "Scarica per vederla offline"))
             }
         default:
             EmptyView()
@@ -589,7 +591,13 @@ struct CourseRecordingsView: View {
         defer { opening = nil }
         switch await model.freshDownload(for: recording, accountEmail: session.student?.email) {
         case .ready(let stream, let cookies):
-            downloads.download(recording, from: stream, cookies: cookies)
+            // The queue may have started one while Webex answered: one at a time,
+            // so this one waits its turn instead.
+            if downloads.isBusy {
+                downloads.enqueue(recording)
+            } else {
+                downloads.download(recording, from: stream, cookies: cookies)
+            }
         case .forbidden:
             downloadRefusal = String(localized: "Il docente non permette di scaricare questa registrazione. Si può guardare in streaming.")
         case .noAddress:

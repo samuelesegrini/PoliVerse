@@ -71,8 +71,18 @@ final class DownloadQueue {
                 log.info("Queued transfer \(id, privacy: .public) is no longer in the list; dropped")
             case .start(let id):
                 guard let recording = head else { return }
+                // Stopped part-way and still resumable: carry on from there, with
+                // no request to Webex and nothing downloaded twice.
+                if downloads.isResumable(id) {
+                    downloads.dequeue(id)
+                    if downloads.resume(transferID: id) { return }
+                }
                 switch await recordings.freshDownload(for: recording, accountEmail: accountEmail) {
                 case .ready(let stream, let cookies):
+                    // Asking Webex takes a few seconds, and the student may have
+                    // started one meanwhile: this one keeps its place for the next
+                    // turn rather than making two at once.
+                    guard !downloads.isBusy else { return }
                     // Takes it out of the queue, and makes the queue busy.
                     downloads.download(recording, from: stream, cookies: cookies)
                     return

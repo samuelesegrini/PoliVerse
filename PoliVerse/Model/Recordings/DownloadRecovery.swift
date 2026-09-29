@@ -10,6 +10,10 @@ import OSLog
 /// resumed when it still can be, and otherwise started again from a fresh address:
 /// the old resume data belongs to the old address, so the restart begins from zero.
 ///
+/// One at a time, like every download: the first carries on, and the rest join the
+/// queue behind it, where ``DownloadQueue`` resumes each from its saved progress while
+/// that is still good.
+///
 /// Quiet by design. It runs in the foreground only, since a fresh address needs the
 /// Webex session in WebKit; it asks nothing of the student; and it stops at the first
 /// sign-in Webex asks for, leaving the rest in "interrotto", where the row's menu still
@@ -25,6 +29,14 @@ final class DownloadRecovery {
         /// Leave it: the recording is not in the list, so there is nothing to ask
         /// Webex about.
         case skip(Int)
+
+        /// The download the step is about, when it is one that can start.
+        var id: Int? {
+            switch self {
+            case .resume(let id), .refetch(let id): id
+            case .skip: nil
+            }
+        }
     }
 
     /// `true` while a pass runs, so coming to the front twice does not start two.
@@ -70,6 +82,11 @@ final class DownloadRecovery {
                               known: Set(held.keys))
         for step in steps {
             guard !Task.isCancelled else { return }
+            // Something is downloading already: this one waits its turn.
+            if downloads.isBusy, let recording = step.id.flatMap({ held[$0] }) {
+                downloads.enqueue(recording)
+                continue
+            }
             switch step {
             case .resume(let id):
                 downloads.resume(transferID: id)
@@ -79,6 +96,10 @@ final class DownloadRecovery {
                 guard let recording = held[id] else { continue }
                 switch await recordings.freshDownload(for: recording, accountEmail: accountEmail) {
                 case .ready(let stream, let cookies):
+                    guard !downloads.isBusy else {
+                        downloads.enqueue(recording)
+                        continue
+                    }
                     downloads.download(recording, from: stream, cookies: cookies)
                     log.info("Interrupted download \(id, privacy: .public) started again from a fresh address")
                 case .signInNeeded:
