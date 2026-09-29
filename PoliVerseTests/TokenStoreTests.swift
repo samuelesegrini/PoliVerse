@@ -65,6 +65,63 @@ struct TokenStoreTests {
         #expect(await store.grantedScope == "openid polimi_app agenda", "Anche il refresh forzato")
     }
 
+    /// A launch opens on the student kept with the pair; a refresh dropping them
+    /// would send the next launch back to waiting on the network.
+    @Test("A refresh keeps the student and profile remembered with the pair")
+    func refreshKeepsStudent() async throws {
+        let storage = InMemoryTokenPersistence(initial: expiredToken())
+        let store = TokenStore(storage: storage) { _ in
+            PoliMiToken(accessToken: "fresh", refreshToken: "next", expiresIn: 3600)
+        }
+        await store.remember(Student.sample)
+        await store.remember(profileID: 7)
+
+        #expect(try await store.validToken() == "fresh")
+        #expect(await store.student == Student.sample)
+        #expect(await store.profileID == 7)
+        // And across a launch: the persisted record carries them.
+        #expect(storage.load()?.student == Student.sample)
+        let reloaded = try JSONDecoder().decode(
+            PoliMiToken.Stored.self, from: JSONEncoder().encode(PoliMiToken.Stored(try #require(storage.load()))))
+        #expect(reloaded.token.student == Student.sample)
+        #expect(reloaded.token.profileID == 7)
+    }
+
+    /// The remembered student is what a launch signs in as before asking anyone,
+    /// so it must go wherever the pair goes.
+    @Test("A refused refresh forgets the student with the pair")
+    func refusalForgetsStudent() async {
+        struct Refused: Error {}
+        let store = TokenStore(storage: InMemoryTokenPersistence(initial: expiredToken())) { _ in throw Refused() }
+        await store.remember(Student.sample)
+
+        _ = try? await store.validToken()
+
+        #expect(await store.student == nil)
+    }
+
+    /// Only a refusal signs a remembered student out; not reaching the
+    /// Politecnico says nothing about the grant.
+    @Test("Only a refused token counts as signed out at launch")
+    func refusalIsNotOffline() {
+        #expect(LoginFlow.refusesToken(AuthError.sessionExpired))
+        #expect(LoginFlow.refusesToken(APIError.invalidScope))
+        #expect(LoginFlow.refusesToken(APIError.badStatus(401, body: "")))
+        #expect(!LoginFlow.refusesToken(APIError.transport(URLError(.notConnectedToInternet))))
+        #expect(!LoginFlow.refusesToken(URLError(.timedOut)))
+        #expect(!LoginFlow.refusesToken(APIError.badStatus(503, body: "")))
+    }
+
+    /// Records written before the student was kept still decode, as a pair with
+    /// nobody remembered, so the first launch after the update confirms as before.
+    @Test("A stored pair from before decodes with no student")
+    func oldRecordDecodes() throws {
+        let old = Data(#"{"accessToken":"a","refreshToken":"r","expiresIn":3600,"issuedAt":0,"grantedScope":"s"}"#.utf8)
+        let token = try JSONDecoder().decode(PoliMiToken.Stored.self, from: old).token
+        #expect(token.student == nil)
+        #expect(token.grantedScope == "s")
+    }
+
     @Test("A valid token is returned without refreshing")
     func validTokenSkipsRefresh() async throws {
         let counter = RefreshCounter()

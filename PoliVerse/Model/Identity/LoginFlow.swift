@@ -29,15 +29,16 @@ final class LoginFlow {
     /// Decides the opening screen from what is already on the device.
     ///
     /// Sample data signs in as ``Student/sample``. With no stored token the session
-    /// goes straight to ``Session/State/signedOut``. With one, the service directory is
-    /// loaded, the token's granted scope is compared against the current scope list,
-    /// and the student is read back from `/jaf/internal/user`.
+    /// goes straight to ``Session/State/signedOut``. With one, the student the token
+    /// last belonged to is signed in at once, and confirmed in the background by
+    /// ``confirm(_:)``; a token with no remembered student — one stored before the app
+    /// kept it — is confirmed first, as every restore used to be.
     ///
-    /// A scope mismatch clears the token and returns to sign-in: a token carries the
-    /// scopes granted at creation and refreshing never widens them, so a token minted
-    /// before a scope existed would keep failing on that one service indefinitely. A
-    /// token with no recorded scope counts as a mismatch, since those are precisely the
-    /// tokens that predate the change.
+    /// Opening on the remembered student is what a launch waited two seconds for: the
+    /// service directory, then `/jaf/internal/user` and the profiles, one round trip
+    /// after another, behind a spinner. It is also what lets the app open without a
+    /// connection. Reading the student back failed offline and landed on the sign-in
+    /// screen, with the token and every offline copy still on the device.
     ///
     /// The directory is loaded only on the path that needs it. The two paths that call
     /// nothing — a fresh install and sample data — warm it in the background instead,
@@ -54,38 +55,96 @@ final class LoginFlow {
             warmDirectory()
             return
         }
+        guard let known = await session.tokens.student else {
+            await confirm(nil)
+            return
+        }
+        // The profile before the student: signing in starts the refresh, and
+        // its requests present the profile.
+        if let profile = await session.tokens.profileID { await session.use(profile: profile) }
+        await session.signIn(known)
+        Task { await confirm(known) }
+    }
 
-        // Restoring a real session does need it: the scope comparison below
-        // reads the current scopes, and the request after it needs the host.
+    /// Checks the stored token against the Politecnico and reads the student back.
+    ///
+    /// A scope mismatch clears the token and returns to sign-in: a token carries the
+    /// scopes granted at creation and refreshing never widens them, so a token minted
+    /// before a scope existed would keep failing on that one service indefinitely. A
+    /// token with no recorded scope counts as a mismatch, since those are precisely the
+    /// tokens that predate the change.
+    ///
+    /// A token the Politecnico refuses signs out. Anything else — no connection, a
+    /// server down — keeps a remembered student signed in, since it says nothing about
+    /// the grant; without one there is nobody to show, and the session signs out as
+    /// before.
+    ///
+    /// Nothing is changed if the session has moved on meanwhile, to a sign-out or to
+    /// another student.
+    ///
+    /// - Parameter known: The student already signed in from the stored token, or
+    ///   `nil` when none was remembered and the session is still loading.
+    private func confirm(_ known: Student?) async {
+        // The scope comparison below reads the current scopes, and the requests
+        // after it need the host.
         await session.directory.load()
 
-        // A token only carries the scopes it was granted at creation; refreshing
-        // never widens them. If the Politecnico has added a scope since this
-        // token was minted, it will 401 on the new service indefinitely, so
-        // re-authenticate rather than leave the user on a half-broken session.
-        //
-        // A nil recorded scope counts as a mismatch, not as "fine": every token
-        // minted before the app started recording it is precisely the token
-        // that predates the scope change, so `if let` would skip exactly the
-        // case this check exists for.
         let currentScope = session.directory.oauth.scope
         let granted = await session.tokens.grantedScope
         if granted != currentScope {
+            guard isStill(on: known) else { return }
             log.notice("Stored token scope differs from current (had scope: \(granted != nil, privacy: .public)); re-authenticating")
             await session.tokens.clear()
             session.enter(.signedOut)
             return
         }
         do {
-            let dto = try await session.api.send(
+            // Together: neither needs the other.
+            async let user = session.api.send(
                 APIRequest(host: .app, path: "/jaf/internal/user"),
                 as: PoliMiUserDTO.self
             )
-            await session.signIn(dto.toStudent())
-            await session.loadProfile()
+            async let profile: Void = session.loadProfile()
+            let dto = try await user
+            await profile
+            guard isStill(on: known) else { return }
+            let student = dto.toStudent()
+            // The same student again changes nothing on screen, and signing in
+            // again would start a second refresh.
+            if student != known { await session.signIn(student) }
         } catch {
-            log.error("Restore failed: \(error.localizedDescription)")
-            session.enter(.signedOut)
+            guard isStill(on: known) else { return }
+            if known == nil || Self.refusesToken(error) {
+                log.error("Restore failed: \(error.localizedDescription)")
+                session.enter(.signedOut)
+            } else {
+                log.notice("Could not confirm the session; staying signed in: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Whether the session is where ``confirm(_:)`` found it.
+    ///
+    /// - Parameter known: The student it started from, or `nil` for a session still
+    ///   loading.
+    /// - Returns: `false` once the student has signed out, or another has signed in.
+    private func isStill(on known: Student?) -> Bool {
+        guard let known else { return session.state == .loading }
+        return session.student?.id == known.id
+    }
+
+    /// Whether an error means the Politecnico no longer accepts the stored token, as
+    /// opposed to not having been reached.
+    ///
+    /// - Parameter error: What reading the student threw.
+    /// - Returns: `true` for a refused refresh, a missing token, a scope refusal and a
+    ///   401 that survived a refresh.
+    static func refusesToken(_ error: any Error) -> Bool {
+        switch error {
+        case is AuthError: true
+        case APIError.invalidScope: true
+        case APIError.badStatus(401, _): true
+        default: false
         }
     }
 

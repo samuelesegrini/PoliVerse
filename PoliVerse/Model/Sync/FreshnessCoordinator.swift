@@ -4,7 +4,8 @@ import OSLog
 /// The single definition of what refreshing everything means.
 ///
 /// Services register a load with ``register(_:title:failure:age:_:)``, and
-/// ``revalidate(force:)`` runs the registered loads in registration order.
+/// ``revalidate(force:)`` starts the registered loads in registration order and runs
+/// them together.
 /// ``standard(courses:agenda:career:notices:news:weBeep:status:)`` builds the set
 /// the app and the preview environment both use.
 ///
@@ -54,7 +55,7 @@ final class FreshnessCoordinator {
         let run: Load
     }
 
-    /// The registered loads, in the order they run.
+    /// The registered loads, in the order they start.
     private var loads: [Registration] = []
     /// What the app tells the student about its data.
     ///
@@ -72,7 +73,7 @@ final class FreshnessCoordinator {
     /// home screen wants them.
     ///
     /// Courses, the timetable and the career come first, as the content on screen.
-    /// Notices and news follow. The WeBeep update sweep runs last: it reads several
+    /// Notices and news follow. The WeBeep update sweep starts last: it reads several
     /// course pages and what it finds lands in ``UpdateFeed`` rather than on an open
     /// screen.
     ///
@@ -120,7 +121,7 @@ final class FreshnessCoordinator {
         return coordinator
     }
 
-    /// Adds a load to the set, to run after everything registered before it.
+    /// Adds a load to the set, to start after everything registered before it.
     ///
     /// The closure captures its service strongly. Every service is held by
     /// ``PoliVerseApp`` for the life of the process and no service holds the
@@ -152,7 +153,13 @@ final class FreshnessCoordinator {
         }
     }
 
-    /// Runs every registered load in order and returns when the last one is done.
+    /// Starts every registered load in order and returns when the last one is done.
+    ///
+    /// The loads run together. They are independent — each reads its own endpoint,
+    /// and WeBeep's sweep fetches its own course list — and one after another they
+    /// took over eleven seconds on a real account, most of it waiting on the network.
+    /// A token that needs refreshing is refreshed once for all of them by
+    /// ``TokenStore``.
     ///
     /// Callers may overlap freely. A gentle pass arriving while another is in flight
     /// waits for it instead of putting a second copy of every request on the wire. A
@@ -185,9 +192,12 @@ final class FreshnessCoordinator {
             let interval = PerfSignpost.begin(.freshnessRevalidate)
             defer { PerfSignpost.end(interval) }
             status?.refreshBegan()
+            // Enqueued on the main actor in registration order, so they start
+            // in that order; each suspends on the network and lets the next go.
+            let running = loads.map { load in Task { @MainActor in await load.run(force) } }
             var failed: [String] = []
-            for load in loads {
-                await load.run(force)
+            for (load, run) in zip(loads, running) {
+                await run.value
                 // Read after the load, not inside it: a service clears its own
                 // error when a load starts, so asking before would report the
                 // previous pass.

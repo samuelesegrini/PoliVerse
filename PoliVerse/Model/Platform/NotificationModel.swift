@@ -17,6 +17,8 @@ final class NotificationModel {
     private(set) var authorization: UNAuthorizationStatus = .notDetermined
     /// The plan currently pending, as last scheduled.
     private(set) var scheduled: [PlannedNotification] = []
+    /// Whether ``scheduled`` has been written to the notification centre since launch.
+    @ObservationIgnored private var hasScheduled = false
 
     /// Which reminders the student wants and how far ahead. Persisted whenever it
     /// changes.
@@ -64,6 +66,7 @@ final class NotificationModel {
     ///
     /// Replaced rather than added to: lectures move and sittings are withdrawn, and a
     /// reminder for something that no longer exists cannot be noticed from inside the app.
+    /// A plan equal to the one pending is left as it is.
     /// Each reminder fires on Rome wall-clock components, so a plan made in one time zone
     /// still fires at the right local moment.
     ///
@@ -81,6 +84,13 @@ final class NotificationModel {
 
         let plan = NotificationPlan.build(
             events: events, exams: exams, assignments: assignments, updates: updates, preferences: preferences)
+        // The shell asks again whenever the agenda grows, which paging the
+        // calendar does week after week; the plan rarely changes with it, and
+        // replacing it is one round trip to the notification centre per reminder.
+        // Only once this process has replaced the pending set: an empty plan
+        // must still clear what the last launch left.
+        guard !hasScheduled || plan != scheduled else { return }
+        hasScheduled = true
 
         centre.removeAllPendingNotificationRequests()
         for item in plan {

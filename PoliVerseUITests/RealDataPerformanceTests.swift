@@ -174,7 +174,10 @@ nonisolated final class RealDataPerformanceTests: PoliVerseUITestCase {
             XCTHitchMetric(application: app),
             XCTOSSignpostMetric(subsystem: Self.subsystem, category: "PointsOfInterest", name: "agenda.load"),
         ], options: options) {
-            for _ in 0..<4 { next.tap() }
+            // Six weeks, past the month each fetch holds, so every iteration
+            // loads: weeks already fetched are kept, and an iteration with no
+            // `agenda.load` makes XCTest drop the metric for all but the first.
+            for _ in 0..<6 { next.tap() }
         }
     }
 
@@ -183,6 +186,9 @@ nonisolated final class RealDataPerformanceTests: PoliVerseUITestCase {
     @MainActor func testBiggestCourseMaterialsScrolling() throws {
         let app = try launchSignedIn()
         let course = try biggestCourse(in: app)
+        // Back to Corsi's root: walking every course can leave another screen
+        // on top, and the card is only on Corsi's own.
+        switchTab(app, to: "Corsi", expecting: "tab-courses")
         openMaterials(of: course, in: app)
         measureScrolling(app.scrollViews.firstMatch, in: app)
     }
@@ -195,7 +201,9 @@ nonisolated final class RealDataPerformanceTests: PoliVerseUITestCase {
     /// - Returns: The identifier of the biggest course's card.
     @MainActor private func biggestCourse(in app: XCUIApplication) throws -> String {
         switchTab(app, to: "Corsi", expecting: "tab-courses")
-        let cards = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'course-'"))
+        // Any element type: a card's row merges its children into one element,
+        // and XCUITest does not report it as a button.
+        let cards = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'course-'"))
         guard cards.firstMatch.waitForExistence(timeout: 20) else {
             throw XCTSkip("Corsi lists no courses on this account")
         }
@@ -204,6 +212,10 @@ nonisolated final class RealDataPerformanceTests: PoliVerseUITestCase {
 
         var best: (identifier: String, files: Int)?
         for identifier in identifiers {
+            // A course seen only on WeBeep can be matched to an official one
+            // when the launch refresh lands, and its card takes the official
+            // id: one that has gone is skipped, not failed.
+            guard reveal(identifier, in: app) else { continue }
             openMaterials(of: identifier, in: app)
             let files = fileCount(in: app)
             goBack(app)
@@ -214,10 +226,27 @@ nonisolated final class RealDataPerformanceTests: PoliVerseUITestCase {
         return best.identifier
     }
 
+    /// Scrolls Corsi until a course's card is in the tree.
+    ///
+    /// Favourites are a lazy grid at the top: once the list has scrolled down under
+    /// the walk, their tiles are not in the tree until scrolled back into view.
+    ///
+    /// - Returns: Whether the card is there.
+    @MainActor private func reveal(_ course: String, in app: XCUIApplication) -> Bool {
+        let card = app.descendants(matching: .any)[course].firstMatch
+        if card.waitForExistence(timeout: 5) { return true }
+        let list = app.scrollViews.matching(identifier: "tab-courses").firstMatch
+        guard list.exists else { return false }
+        for _ in 0..<4 where !card.exists { list.swipeDown(velocity: .fast) }
+        for _ in 0..<8 where !card.exists { list.swipeUp() }
+        return card.exists
+    }
+
     /// From Corsi, opens a course and then its materials.
     @MainActor private func openMaterials(of course: String, in app: XCUIApplication) {
-        tap(app.buttons[course].firstMatch, "Corsi has no card \(course)", timeout: 20)
-        tap(app.buttons["course-materials"].firstMatch, "The course has no Materiali", timeout: 20)
+        _ = reveal(course, in: app)
+        tap(app.descendants(matching: .any)[course].firstMatch, "Corsi has no card \(course)", timeout: 20)
+        tap(app.descendants(matching: .any)["course-materials"].firstMatch, "The course has no Materiali", timeout: 20)
     }
 
     /// The number of files the materials hero reports, once the listing arrives.

@@ -27,6 +27,15 @@ nonisolated struct PoliMiToken: Codable, Sendable, Equatable {
     /// scope lets ``TokenStore`` notice and re-authenticate.
     var grantedScope: String?
 
+    /// The student this pair last read back from `/jaf/internal/user`.
+    ///
+    /// Kept with the pair so that a launch can open on the student straight away and
+    /// confirm them in the background, and so that it goes wherever the pair goes:
+    /// signing out or a refused refresh deletes both.
+    var student: Student?
+    /// The `poliAuthProfile` last chosen for this pair, kept for the same reason.
+    var profileID: Int?
+
     /// When the access token stops being valid.
     var expiresAt: Date { issuedAt.addingTimeInterval(TimeInterval(expiresIn)) }
 
@@ -40,8 +49,8 @@ nonisolated struct PoliMiToken: Codable, Sendable, Equatable {
         Date.now.addingTimeInterval(leeway) >= expiresAt
     }
 
-    /// Only the three fields the server sends. ``issuedAt`` and ``grantedScope`` are
-    /// the app's own.
+    /// Only the three fields the server sends. ``issuedAt``, ``grantedScope``,
+    /// ``student`` and ``profileID`` are the app's own.
     private enum CodingKeys: String, CodingKey {
         case accessToken, refreshToken, expiresIn
     }
@@ -59,6 +68,11 @@ nonisolated struct PoliMiToken: Codable, Sendable, Equatable {
         var issuedAt: Date
         /// The scope the pair was minted with.
         var grantedScope: String?
+        /// The student last confirmed for the pair. Absent from records written before
+        /// it was kept.
+        var student: Student?
+        /// The profile last chosen for the pair.
+        var profileID: Int?
 
         /// Captures a token for persistence.
         ///
@@ -69,13 +83,16 @@ nonisolated struct PoliMiToken: Codable, Sendable, Equatable {
             expiresIn = token.expiresIn
             issuedAt = token.issuedAt
             grantedScope = token.grantedScope
+            student = token.student
+            profileID = token.profileID
         }
 
         /// The stored pair, back as a ``PoliMiToken``.
         var token: PoliMiToken {
             PoliMiToken(
                 accessToken: accessToken, refreshToken: refreshToken,
-                expiresIn: expiresIn, issuedAt: issuedAt, grantedScope: grantedScope
+                expiresIn: expiresIn, issuedAt: issuedAt, grantedScope: grantedScope,
+                student: student, profileID: profileID
             )
         }
     }

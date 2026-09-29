@@ -23,7 +23,7 @@ struct FreshnessCoordinatorTests {
         #expect(calls.names == ["agenda", "career"])
     }
 
-    @Test("Loads run in the order they were registered")
+    @Test("Loads start in the order they were registered")
     func runsInOrder() async {
         let coordinator = FreshnessCoordinator()
         let calls = Recorder()
@@ -34,6 +34,24 @@ struct FreshnessCoordinatorTests {
         await coordinator.revalidate()
 
         #expect(calls.names == ["courses", "agenda", "career", "notices", "news"])
+    }
+
+    /// One after another, the six loads took over eleven seconds on a real
+    /// account, nearly all of it waiting on the network.
+    @Test("A load waiting on the network does not hold up the next")
+    func runsTogether() async {
+        let coordinator = FreshnessCoordinator()
+        let calls = Recorder()
+        coordinator.register("agenda") { _ in
+            calls.record("agenda began")
+            await Task.yield()
+            calls.record("agenda ended")
+        }
+        coordinator.register("career") { _ in calls.record("career") }
+
+        await coordinator.revalidate()
+
+        #expect(calls.names == ["agenda began", "career", "agenda ended"])
     }
 
     @Test("The force flag reaches each load")

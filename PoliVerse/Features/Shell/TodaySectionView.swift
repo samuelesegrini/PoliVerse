@@ -200,7 +200,7 @@ struct TodaySectionView: View {
                                         current.event.roomLabel].compactMap { $0 }.joined(separator: " · "),
                                when: when, date: current.event.start, opens: .event(current.event))]
         case .upcoming:
-            return TodayDigest.upcoming(events: agenda.events, deadlines: updates.deadlines, exams: career.sessions,
+            return TodayDigest.upcoming(events: agenda.milestones(), deadlines: updates.deadlines, exams: career.sessions,
                                         now: now, limit: section.itemLimit)
                 .map { item in
                     TodayEntry(id: item.id, symbol: item.source == .exam ? "graduationcap" : "pencil.and.list.clipboard",

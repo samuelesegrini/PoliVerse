@@ -160,6 +160,48 @@ struct AgendaLoadTests {
         #expect(await http.requests.count > afterFirst)
     }
 
+    /// Paging the calendar past the held month used to replace the window, and
+    /// today's lectures left the widgets, the reminders and the Watch with it.
+    @Test("Navigating past the window adds to what is held instead of replacing it")
+    func pagingKeepsToday() async {
+        let account = StubAccount(
+            matricola: Self.matricola,
+            http: FixtureHTTP([Self.eventsPath: Self.events([2]), Self.deadlinesPath: Data("[]".utf8)]))
+        let agenda = AgendaModel(account: account)
+        await agenda.load(around: Self.day)
+
+        let later = Self.day.addingTimeInterval(60 * 86_400)
+        account.http = FixtureHTTP([Self.eventsPath: Self.events([60 * 24 + 2], idFrom: 10),
+                                    Self.deadlinesPath: Data("[]".utf8)])
+        await agenda.ensureLoaded(covering: later)
+
+        #expect(agenda.events(on: Self.day).count == 1)
+        #expect(agenda.events(on: later).count == 1)
+
+        // Both spans are held: going back does not fetch again.
+        account.http = FixtureHTTP.failing(APIError.badStatus(500, body: "down"))
+        await agenda.ensureLoaded(covering: Self.day)
+        #expect(agenda.errorMessage == nil)
+    }
+
+    /// The launch refresh and a paged week meet often: the calendar opens while
+    /// the refresh is still waiting on the network.
+    @Test("A week asked for during another load is fetched once that load ends")
+    func pagingDuringALoadIsNotDropped() async {
+        let http = FixtureHTTP([Self.eventsPath: Self.events([2]), Self.deadlinesPath: Data("[]".utf8)])
+        let agenda = model(http)
+        let later = Self.day.addingTimeInterval(60 * 86_400)
+
+        async let refresh: Void = agenda.load(around: Self.day)
+        async let paged: Void = agenda.ensureLoaded(covering: later)
+        _ = await (refresh, paged)
+
+        let requests = await http.requests
+        let lectureFetches = requests.filter { $0.path == Self.eventsPath }
+        #expect(lectureFetches.count == 2)
+        #expect(!agenda.isLoading)
+    }
+
     @Test("The next event is the first that has not ended")
     func nextEventSkipsWhatIsOver() async throws {
         let http = FixtureHTTP([Self.eventsPath: Self.events([-2, 3]),
