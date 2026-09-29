@@ -1201,8 +1201,11 @@ iterations each:
 - `testCalendarPaging` paged four weeks per iteration. Once fetched weeks were
   kept, later iterations loaded nothing, and XCTest drops a metric missing from
   any iteration; it pages six. `testBiggestCourseMaterialsScrolling` never ran:
-  the course cards are not buttons to XCUITest, since the row merges its
-  children; it now looks for any element with the identifier.
+  it looked for the course cards as buttons. It now looks for any element with
+  the identifier, scrolls the favourites' lazy grid back into view, and skips a
+  card whose id changed mid-walk — a WeBeep-only course matched to an official
+  one once the launch refresh lands. The biggest course's materials scroll at
+  **4.0 ms/s**.
 - A test runner newly installed on the phone asks for the passcode before
   UI automation can start; until then the run fails with "Timed out while
   enabling automation mode".
