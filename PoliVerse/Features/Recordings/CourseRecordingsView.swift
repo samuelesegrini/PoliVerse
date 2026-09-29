@@ -384,9 +384,16 @@ struct CourseRecordingsView: View {
                 .glassEffect(.regular, in: .circle)
                 .accessibilityLabel("Download in corso")
         case .idle, .failed:
-            if !model.downloadForbidden.contains(recording.transferID), !session.useMockData {
+            if downloads.isQueued(recording) {
+                Image(systemName: "clock")
+                    .font(.headline)
+                    .foregroundStyle(colour.color)
+                    .frame(width: 50, height: 50)
+                    .glassEffect(.regular, in: .circle)
+                    .accessibilityLabel("In coda per il download")
+            } else if !model.downloadForbidden.contains(recording.transferID), !session.useMockData {
                 Button {
-                    Task { await download(recording) }
+                    if downloads.isBusy { downloads.enqueue(recording) } else { Task { await download(recording) } }
                 } label: {
                     Image(systemName: "arrow.down.to.line")
                         .font(.headline)
@@ -554,11 +561,22 @@ struct CourseRecordingsView: View {
             }
             Button("Annulla il download", systemImage: "xmark.circle") { downloads.delete(recording) }
         case .idle, .failed:
-            if !model.downloadForbidden.contains(recording.transferID), !session.useMockData {
-                Button(recording.megabytes.map { String(localized: "Scarica per vederla offline (\($0) MB)") }
-                       ?? String(localized: "Scarica per vederla offline"),
-                       systemImage: "arrow.down.circle") {
-                    Task { await download(recording) }
+            if downloads.isQueued(recording) {
+                Button("Togli dalla coda", systemImage: "minus.circle") { downloads.dequeue(recording.transferID) }
+            } else if !model.downloadForbidden.contains(recording.transferID), !session.useMockData {
+                if downloads.isBusy {
+                    // One at a time: the next starts when this one is in.
+                    Button(recording.megabytes.map { String(localized: "Aggiungi alla coda dei download (\($0) MB)") }
+                           ?? String(localized: "Aggiungi alla coda dei download"),
+                           systemImage: "text.badge.plus") {
+                        downloads.enqueue(recording)
+                    }
+                } else {
+                    Button(recording.megabytes.map { String(localized: "Scarica per vederla offline (\($0) MB)") }
+                           ?? String(localized: "Scarica per vederla offline"),
+                           systemImage: "arrow.down.circle") {
+                        Task { await download(recording) }
+                    }
                 }
             }
         }
@@ -746,6 +764,7 @@ private struct RecordingRow: View {
         case .failed: parts.append(String(localized: "download non riuscito"))
         case .interrupted: parts.append(String(localized: "download interrotto"))
         case .downloading where downloads.isWaitingForWiFi: parts.append(String(localized: "in attesa del Wi-Fi"))
+        case .idle where downloads.isQueued(recording): parts.append(String(localized: "in coda"))
         case .idle, .downloading: break
         }
         return parts.joined(separator: " · ")

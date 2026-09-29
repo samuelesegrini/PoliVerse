@@ -183,7 +183,10 @@ towards option 1 and the feature needs a smooth "sign in again" sheet.
 
 **[J]** Allowed only when `preventDownload == false && enforcePreventDownload ==
 false`, started by the student, one lecture at a time. This matches the Download
-button the lecturer enabled on Webex; it is not a bulk mirror.
+button the lecturer enabled on Webex; it is not a bulk mirror. Lectures asked for
+while one downloads join a queue (`RecordingDownloads.queue`, `DownloadQueue`): each
+still chosen by the student, each checked for the lecturer's permission when its turn
+comes, downloaded one after another with a fresh address. There is no "download all".
 
 - Background `URLSession` download of `mp4URL`, stored like WeBeep files
   (`FileDownloadModel`): Application Support, `isExcludedFromBackup`.

@@ -158,6 +158,7 @@ final class RecordingDownloads {
     ///   - cookies: Webex's cookies, sent along like the player sends them.
     func download(_ recording: Recording, from stream: WebexStream, cookies: [HTTPCookie]) {
         guard stream.allowsDownload, let address = stream.mp4URL else { return }
+        dequeue(recording.transferID)
         switch status(of: recording) {
         case .downloading, .downloaded: return
         case .idle, .failed, .interrupted: break
@@ -189,6 +190,53 @@ final class RecordingDownloads {
     @discardableResult
     func resume(_ recording: Recording) -> Bool {
         resume(recording.transferID)
+    }
+
+    // MARK: - The queue
+
+    /// Recordings the student asked for while another was downloading, by
+    /// `transfer_id`, in the order asked. Kept across launches.
+    ///
+    /// One download at a time, as on Webex's own page: a lecture is a couple of hundred
+    /// megabytes, and several at once would each go slower and all finish later. Each
+    /// still needs the lecturer's permission, checked when its turn comes, and a fresh
+    /// address from Webex, which ``DownloadQueue`` asks for with the app in front.
+    private(set) var queue: [Int] = UserDefaults.standard.array(forKey: "recordingDownloadQueue") as? [Int] ?? [] {
+        didSet { UserDefaults.standard.set(queue, forKey: "recordingDownloadQueue") }
+    }
+
+    /// Whether a download is in flight, so the next asked for waits its turn.
+    var isBusy: Bool {
+        statuses.values.contains { if case .downloading = $0 { true } else { false } }
+    }
+
+    /// Whether a recording is waiting its turn.
+    ///
+    /// - Parameter recording: The recording.
+    /// - Returns: `true` when it is in the queue.
+    func isQueued(_ recording: Recording) -> Bool {
+        queue.contains(recording.transferID)
+    }
+
+    /// Puts a recording at the end of the queue. Does nothing when it is already there,
+    /// saved, or downloading.
+    ///
+    /// - Parameter recording: The recording.
+    func enqueue(_ recording: Recording) {
+        switch status(of: recording) {
+        case .downloading, .downloaded: return
+        case .idle, .failed, .interrupted: break
+        }
+        guard !queue.contains(recording.transferID) else { return }
+        queue.append(recording.transferID)
+        log.info("Queued transfer \(recording.transferID, privacy: .public), \(self.queue.count, privacy: .public) waiting")
+    }
+
+    /// Takes a recording out of the queue.
+    ///
+    /// - Parameter id: The recording's `transfer_id`.
+    func dequeue(_ id: Int) {
+        queue.removeAll { $0 == id }
     }
 
     /// The downloads stopped part-way, waiting to be carried on.
@@ -262,6 +310,7 @@ final class RecordingDownloads {
         try? FileManager.default.removeItem(at: Self.directory)
         statuses = [:]
         startedAt = [:]
+        queue = []
         activities.dismissAll()
         log.info("Saved recordings deleted")
     }

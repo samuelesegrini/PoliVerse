@@ -29,6 +29,8 @@ struct AppShellDuties: ViewModifier {
     @State private var spotlight = SpotlightIndex()
     /// Carries on the downloads a closed app left behind.
     @State private var recovery = DownloadRecovery()
+    /// Starts the next queued recording.
+    @State private var downloadQueue = DownloadQueue()
 
     /// Applies the modifier to `content`.
     ///
@@ -66,6 +68,17 @@ struct AppShellDuties: ViewModifier {
                 guard scenePhase == .active else { return }
                 await recovery.run(downloads: downloads, recordings: recordings,
                                    account: session, accountEmail: session.student?.email)
+                await advanceQueue()
+            }
+            // One recording at a time: when one ends with the app in front, and
+            // when one is queued with nothing downloading, the next goes.
+            .onChange(of: downloads.isBusy) { _, busy in
+                guard !busy, scenePhase == .active else { return }
+                Task { await advanceQueue() }
+            }
+            .onChange(of: downloads.queue) { _, queue in
+                guard !queue.isEmpty, !downloads.isBusy, scenePhase == .active else { return }
+                Task { await advanceQueue() }
             }
             // Indexed after the data lands, and only then: an index built from
             // an empty model would publish nothing and look like a broken
@@ -104,6 +117,12 @@ struct AppShellDuties: ViewModifier {
     ///
     /// The day is in the key because the Watch is sent the days from today:
     /// past midnight the same events describe a window that starts yesterday.
+    /// Starts the next queued recording, if nothing is downloading.
+    private func advanceQueue() async {
+        await downloadQueue.advance(downloads: downloads, recordings: recordings,
+                                    account: session, accountEmail: session.student?.email)
+    }
+
     private var watchKey: String {
         let day = PoliMiDate.romeCalendar.startOfDay(for: .now).timeIntervalSince1970
         return "\(day)-\(agenda.events.count)-\(career.sessions.count)"

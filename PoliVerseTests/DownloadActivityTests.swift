@@ -95,3 +95,24 @@ struct DownloadRecoveryTests {
         #expect(DownloadRecovery.plan(interrupted: [], resumable: [], known: []).isEmpty)
     }
 }
+
+/// One recording downloading at a time, the rest waiting their turn.
+@Suite("Download queue")
+struct DownloadQueueTests {
+    @Test("The head of the queue starts once nothing is downloading")
+    func startsWhenIdle() {
+        #expect(DownloadQueue.next(queue: [3, 4], busy: false, known: [3, 4]) == .start(3))
+    }
+
+    @Test("Nothing starts while a download is in flight, or with nothing queued")
+    func waits() {
+        #expect(DownloadQueue.next(queue: [3, 4], busy: true, known: [3, 4]) == .wait)
+        #expect(DownloadQueue.next(queue: [], busy: false, known: []) == .wait)
+    }
+
+    /// A recording no longer in the list has nothing to ask Webex about.
+    @Test("A queued recording no longer in the list is dropped")
+    func dropsUnknown() {
+        #expect(DownloadQueue.next(queue: [3, 4], busy: false, known: [4]) == .drop(3))
+    }
+}
