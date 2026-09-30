@@ -278,6 +278,38 @@ struct AgendaLoadTests {
         #expect(await http.requests.count > afterFirst)
     }
 
+    /// Hot or saving power, the weeks ahead can wait: only the one on screen is
+    /// fetched.
+    @Test("Under device pressure only the week asked for is fetched, not the weeks ahead")
+    func noLookAheadUnderPressure() async {
+        let http = FixtureHTTP([eventsPath: Self.events([2]),
+                                deadlinesPath: Data("[]".utf8)])
+        let agenda = AgendaModel(account: StubAccount(matricola: matricola, http: http),
+                                 pressure: { true })
+        await agenda.load(around: Self.day)
+        let afterFirst = await http.requests.count
+
+        let nearEdge = Self.day.addingTimeInterval(24 * 86_400)
+        await agenda.ensureLoaded(covering: nearEdge)
+        #expect(await http.requests.count == afterFirst)
+    }
+
+    /// A launch a few minutes after the last fetched the timetable again, though
+    /// every week was on disk as fetched.
+    @Test("A new model within the weeks' lifetime serves them from disk without fetching")
+    func keptWeeksAreServed() async {
+        let http = FixtureHTTP([eventsPath: Self.events([2]),
+                                deadlinesPath: Data("[]".utf8)])
+        await model(http).load(around: Self.day)
+        await OfflineStore.shared.flushed()
+        let afterFirst = await http.requests.count
+
+        let relaunched = model(http)
+        await relaunched.load(around: Self.day)
+        #expect(await http.requests.count == afterFirst)
+        #expect(relaunched.events(on: Self.day).count == 1)
+    }
+
     /// Paging the calendar past the held month used to replace the window, and
     /// today's lectures left the widgets, the reminders and the Watch with it.
     @Test("Navigating past the weeks held adds to them instead of replacing them")

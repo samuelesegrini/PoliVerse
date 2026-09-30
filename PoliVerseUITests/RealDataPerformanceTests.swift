@@ -41,11 +41,22 @@ nonisolated final class RealDataPerformanceTests: PoliVerseUITestCase {
 
     // MARK: Launch
 
+    /// An app on the signed-in account, not yet launched.
+    ///
+    /// - Parameter forcingRefresh: Makes the launch refresh ask the network for
+    ///   everything, as a first launch of the day would. Without it, a relaunch seconds
+    ///   after the last serves the offline copies and measures no network at all.
+    @MainActor private func makeSignedInApp(forcingRefresh: Bool = true) -> XCUIApplication {
+        let app = makeApp(data: .signedInAccount)
+        if forcingRefresh { app.launchArguments += ["-forceLaunchRefresh", "<true/>"] }
+        return app
+    }
+
     /// A launched app on the signed-in account, sitting on Oggi.
     ///
     /// - Throws: A skip when nobody is signed in on the device.
     @MainActor private func launchSignedIn() throws -> XCUIApplication {
-        let app = makeApp(data: .signedInAccount)
+        let app = makeSignedInApp()
         app.launch()
         if app.buttons["today-customize"].firstMatch.waitForExistence(timeout: 30) { return app }
         if app.buttons["Codice persona e password"].firstMatch.exists {
@@ -100,7 +111,7 @@ nonisolated final class RealDataPerformanceTests: PoliVerseUITestCase {
             XCTOSSignpostMetric(subsystem: Self.subsystem, category: "PointsOfInterest", name: "agenda.load"),
             XCTOSSignpostMetric(subsystem: Self.subsystem, category: "PointsOfInterest", name: "career.load"),
         ], options: options) {
-            let app = makeApp(data: .signedInAccount)
+            let app = makeSignedInApp()
             app.launch()
             XCTAssertTrue(app.buttons["today-customize"].firstMatch.waitForExistence(timeout: 30))
             // Long enough for the pass to finish on a slow connection.
@@ -126,7 +137,30 @@ nonisolated final class RealDataPerformanceTests: PoliVerseUITestCase {
             XCTOSSignpostMetric(subsystem: Self.subsystem, category: "PointsOfInterest", name: "agenda.load"),
             XCTOSSignpostMetric(subsystem: Self.subsystem, category: "PointsOfInterest", name: "career.load"),
         ], options: options) {
-            let app = makeApp(data: .signedInAccount)
+            let app = makeSignedInApp()
+            app.launch()
+            XCTAssertTrue(app.buttons["today-customize"].firstMatch.waitForExistence(timeout: 30))
+            sleep(20)
+            app.terminate()
+        }
+    }
+
+    /// A relaunch a minute after the last, the way a student reopens the app: the
+    /// refresh is not forced, so what was fetched within its lifetime is served from
+    /// the offline copies. The status line's stretch is what they wait for.
+    @MainActor func testWarmRelaunchRefresh() throws {
+        // A full refresh first, left to finish, so every copy on disk is fresh.
+        let first = try launchSignedIn()
+        sleep(20)
+        first.terminate()
+
+        let options = XCTMeasureOptions()
+        options.iterationCount = 3
+        measure(metrics: [
+            XCTOSSignpostMetric(subsystem: Self.subsystem, category: "PointsOfInterest", name: "freshness.revalidate"),
+            XCTOSSignpostMetric(subsystem: Self.subsystem, category: "PointsOfInterest", name: "freshness.visible"),
+        ], options: options) {
+            let app = makeSignedInApp(forcingRefresh: false)
             app.launch()
             XCTAssertTrue(app.buttons["today-customize"].firstMatch.waitForExistence(timeout: 30))
             sleep(20)

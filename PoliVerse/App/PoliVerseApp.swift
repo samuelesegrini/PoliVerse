@@ -384,9 +384,19 @@ struct PoliVerseApp: App {
             // Avvisi and Notizie right after signing in — a gentle run
             // here could still be joined to whatever the scene-phase
             // handler skipped above, and end up doing nothing.
-            .onChange(of: session.state) { _, newValue in
+            //
+            // Not forced when the session was restored at launch: the offline
+            // copies are back by then, and one fetched within its lifetime —
+            // minutes ago, or by a background refresh — is as good as a new
+            // one. Forcing refetched all of it, and the student waited on the
+            // network for data they had just seen. `forceLaunchRefresh`, a
+            // launch argument, forces it anyway: the real-data tests time the
+            // network refresh by relaunching seconds apart.
+            .onChange(of: session.state) { oldValue, newValue in
                 if case .signedIn = newValue {
-                    Task { await freshness.revalidate(force: true) }
+                    let restored = oldValue == .loading
+                        && !UserDefaults.standard.bool(forKey: "forceLaunchRefresh")
+                    Task { await freshness.revalidate(force: !restored) }
                 }
             }
     }

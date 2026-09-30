@@ -66,7 +66,21 @@ final class WeBeepModel {
     private let feed: UpdateFeed
     /// The account and moment of the last sweep that read something, which
     /// ``sweepIsDue(last:account:force:now:)`` asks.
-    @ObservationIgnored private var lastSweep: (account: String, at: Date)?
+    ///
+    /// Kept between launches, so a launch within the hour — whose refresh is no longer
+    /// forced — does not read six course pages again.
+    private var lastSweep: (account: String, at: Date)? {
+        get {
+            let defaults = UserDefaults.standard
+            guard let account = defaults.string(forKey: "webeepLastSweepAccount"),
+                  let at = defaults.object(forKey: "webeepLastSweepAt") as? Date else { return nil }
+            return (account, at)
+        }
+        set {
+            UserDefaults.standard.set(newValue?.account, forKey: "webeepLastSweepAccount")
+            UserDefaults.standard.set(newValue?.at, forKey: "webeepLastSweepAt")
+        }
+    }
     /// How long a sweep is not repeated. A course page changes when a lecturer uploads,
     /// and every sweep is one request per course.
     nonisolated static let sweepInterval: TimeInterval = 3600
@@ -153,8 +167,9 @@ final class WeBeepModel {
     /// - Parameter token: The token from ``WeBeepAuth/token(from:passport:verifySignature:)``.
     func store(_ token: WeBeepAuth.MoodleToken) {
         try? KeychainStore.save(Data(token.token.utf8), account: keychainAccount)
-        // Another token may be another user.
+        // Another token may be another user, whose pages have not been read.
         userID = nil
+        lastSweep = nil
         connect(WeBeepAPI(token: token.token))
         state = .ready
     }
@@ -166,6 +181,7 @@ final class WeBeepModel {
         api = nil
         pages = nil
         userID = nil
+        lastSweep = nil
         courses = []
         keepCourses()
         sections = []
@@ -424,6 +440,11 @@ final class WeBeepModel {
     func checkForUpdates(force: Bool = false, until deadline: Date? = nil) async {
         guard !session.useMockData, api != nil, let account = session.student?.matricola,
               Self.sweepIsDue(last: lastSweep, account: account, force: force) else { return }
+        // Nothing it finds is on screen: hot or saving power, it waits for a later pass.
+        guard !DevicePressure.isHigh else {
+            log.notice("Update sweep skipped: Low Power Mode or thermal pressure")
+            return
+        }
 
         // The list kept from the last launch rather than a fresh one: Corsi's
         // refresh is fetching that at the same moment, and waiting for it held

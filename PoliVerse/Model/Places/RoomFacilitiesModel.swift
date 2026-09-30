@@ -75,12 +75,13 @@ final class RoomFacilitiesModel {
     ///
     /// At `.utility` and never awaited, so it cannot delay the room actually being
     /// looked at; opening a room being warmed raises that fetch to the screen's
-    /// priority. Rooms already held are skipped.
+    /// priority. Rooms already held are skipped, and nothing is warmed while the phone
+    /// is hot or saving power (``DevicePressure``).
     ///
     /// - Parameter rooms: The rooms to warm.
     func prefetch(_ rooms: some Sequence<Classroom>) {
         let ids = rooms.compactMap(\.occupancyID).filter { !isLoaded($0) }
-        guard !ids.isEmpty else { return }
+        guard !ids.isEmpty, !DevicePressure.isHigh else { return }
         Task(name: "facilities warm") { [loader, env] in await loader.warm(ids, env: env) }
     }
 

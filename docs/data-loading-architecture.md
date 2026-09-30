@@ -359,3 +359,61 @@ Medians. The base's `freshness.revalidate` is its status line too: before
 
 What is left is the Politecnico's servers: news (≈ 1.8 s) and the slowest of the
 career's six calls (≈ 1.6 s) are single requests, waiting on the answer.
+
+---
+
+## 10. Fresh at launch, and backing off (2026-09-30)
+
+Branch `perf/fresh-launch`, from WWDC26's Power and Performance lab (8003): fetch
+ahead so data is there at launch, and back off optional work when the phone is hot.
+
+### Fresh at launch
+
+Two things made every launch wait on the network, however recent the data:
+
+- A restored offline copy never counted as fresh (`Loader.restore` left it unstamped).
+- The pass after a restore was forced, which skips every freshness rule.
+
+Now a copy younger than its resource's `ttl` is restored as fresh, aged from when it
+was fetched, and the pass after a restore is a normal one; a real sign-in, a career
+switch and the launch argument `forceLaunchRefresh` still force it. The timetable,
+whose weeks and deadlines were memory-only, keeps each week and each deadline span on
+disk (`agenda-week-<Monday>`, `agenda-deadlines-<Monday>`), so it qualifies too. The
+WeBeep sweep's last run is kept in `UserDefaults`, so a relaunch inside the hour does
+not read six course pages again.
+
+The window is each resource's `ttl`: 15 minutes for career, courses and news,
+5 minutes for the timetable and notices. It is the rule a return from the app switcher
+already followed with what was in memory.
+
+### Backing off
+
+`DevicePressure.isHigh` is true in Low Power Mode or at a serious or critical
+`ProcessInfo.thermalState`. While it holds, the work nobody is looking at is skipped
+and runs on a later pass: the WeBeep update sweep, the free-rooms pass run only for
+the widget, warming rooms' occupancy and facilities, and the calendar's look-ahead.
+What the student opened is never held back.
+
+### Tests
+
+`RealDataPerformanceTests` relaunch seconds apart, so the refresh tests now pass
+`-forceLaunchRefresh` to keep timing the network; `testWarmRelaunchRefresh` times the
+relaunch as a student gets it. Unit tests that shared a matricola in the shared
+offline store (Corsi, news, notices) now take one each: a copy one test saved was
+served, fresh, to the next.
+
+### Measured
+
+iPhone 12 Pro, the real account, `main` (410c228) against this branch, three runs of
+three launches each, alternated. Medians, means in brackets:
+
+| Launch | `main` | This branch |
+| --- | --- | --- |
+| Relaunch seconds after the last: status line (`freshness.visible`; `main`'s `freshness.revalidate`) | 2.86 s (3.49) | **0.06 s (0.28)** |
+| Forced refresh: whole pass | 2.86 s (3.49) | 2.77 s (2.65) |
+| Forced refresh: timetable (`agenda.load`) | 0.93 s (1.18) | 1.15 s (1.23) |
+| Forced refresh: career (`career.load`) | 1.58 s (1.71) | 1.67 s (1.64) |
+
+The forced path is the same work as before and moves within the network's spread;
+the first run of the three was slow for both builds. Two of nine warm relaunches
+took 0.6–0.9 s: one service found due and fetched.

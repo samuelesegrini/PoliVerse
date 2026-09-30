@@ -11,6 +11,12 @@ import Testing
 @Suite("Ported sources")
 @MainActor
 struct NewsNoticeSourceTests {
+    /// A matricola of the test's own: the models keep their offline copy per matricola
+    /// in the shared store, and a fresh copy is served without fetching.
+    private static func uniqueMatricola() -> String {
+        String(Int.random(in: 10_000_000...99_999_999))
+    }
+
     private func offline() -> OfflineStore {
         OfflineStore(directory: FileManager.default.temporaryDirectory
             .appendingPathComponent("ported-\(UUID().uuidString)", isDirectory: true))
@@ -66,7 +72,7 @@ struct NewsNoticeSourceTests {
         [{"news_id": 1, "title": {"it": "Bandi"}, "date_start": "2020-01-01T09:00:00",
           "date_end": "2099-01-01T09:00:00"}]
         """.utf8)
-        let account = StubAccount(http: FixtureHTTP(["/v1/persona/news": payload]))
+        let account = StubAccount(matricola: Self.uniqueMatricola(), http: FixtureHTTP(["/v1/persona/news": payload]))
         let news = NewsModel(account: account)
 
         await news.load()
@@ -99,7 +105,7 @@ struct NewsNoticeSourceTests {
         let payload = Data("""
         [{"id_notice": "n1", "titolo": "Uno"}, {"id_notice": "n2", "titolo": "Due"}]
         """.utf8)
-        let account = StubAccount(http: FixtureHTTP(["/v1/notifications": payload]))
+        let account = StubAccount(matricola: Self.uniqueMatricola(), http: FixtureHTTP(["/v1/notifications": payload]))
         let notices = NoticeModel(account: account, readLocally: remembered.state)
 
         await notices.load()
@@ -148,7 +154,7 @@ struct NewsNoticeSourceTests {
         let payload = Data("""
         [{"id_notice": "n1", "titolo": "Uno"}, {"id_notice": "n2", "titolo": "Due"}]
         """.utf8)
-        let account = StubAccount(http: FixtureHTTP(["/v1/notifications": payload]))
+        let account = StubAccount(matricola: Self.uniqueMatricola(), http: FixtureHTTP(["/v1/notifications": payload]))
         let notices = NoticeModel(account: account, readLocally: RememberedReads().state)
 
         await notices.load()

@@ -109,6 +109,8 @@ final class AgendaModel {
     /// Whose agenda to load, and the transport.
     private let account: any Account
     /// The weeks' fetches: joined, kept fresh, batched.
+    /// Whether optional work should wait; see ``DevicePressure``.
+    private let pressure: @Sendable () -> Bool
     private let weekLoader: Loader<AgendaWeeks>
     /// The deadlines' fetches.
     private let deadlineLoader: Loader<AgendaDeadlines>
@@ -125,9 +127,11 @@ final class AgendaModel {
     /// - Parameters:
     ///   - account: Whose agenda to load.
     ///   - offline: Where the widgets' copy lives.
-    init(account: any Account, offline: OfflineStore = .shared) {
+    init(account: any Account, offline: OfflineStore = .shared,
+         pressure: @escaping @Sendable () -> Bool = { DevicePressure.isHigh }) {
         self.account = account
         self.offline = offline
+        self.pressure = pressure
         weekLoader = Loader(AgendaWeeks(), offline: offline)
         deadlineLoader = Loader(AgendaDeadlines(), offline: offline)
     }
@@ -156,6 +160,9 @@ final class AgendaModel {
 
         let wanted = AgendaWeeks.weeks(around: date)
         let deadlineKey = wanted.first ?? AgendaWeeks.week(of: date)
+        // The weeks and deadlines as they were fetched: within their lifetime they
+        // are served as they are, and nothing below asks the network.
+        if await restoreFetched(wanted, deadlineKey: deadlineKey, env: env) { await rebuild() }
         var due = false
         for week in wanted where await weekLoader.isDue(week, env: env, force: force) { due = true; break }
         let deadlinesDue = await deadlineLoader.isDue(deadlineKey, env: env, force: force)
@@ -199,12 +206,13 @@ final class AgendaModel {
     ///
     /// Looking ahead is what keeps paging from waiting: the weeks next to the one on
     /// screen arrive while the student is still reading it, rather than after they
-    /// have paged to an empty week.
+    /// have paged to an empty week. Only the week itself while the phone is hot or
+    /// saving power (``DevicePressure``).
     ///
     /// - Parameter date: The date the student navigated to.
     func ensureLoaded(covering date: Date) async {
         let calendar = PoliMiDate.romeCalendar
-        let neighbours = [-7, 0, 7, 14].map {
+        let neighbours = (pressure() ? [0] : [-7, 0, 7, 14]).map {
             AgendaWeeks.week(of: calendar.date(byAdding: .day, value: $0, to: date) ?? date)
         }
         guard heldSource != Env(account).source || neighbours.contains(where: { weeks[$0] == nil })
@@ -264,6 +272,27 @@ final class AgendaModel {
         }
         if age == nil { age = entry.age }
         await rebuild()
+    }
+
+    /// Puts the kept copies of the weeks and deadlines a load wants in place, once per
+    /// account and key, ahead of the widgets' merged copy.
+    ///
+    /// - Returns: Whether anything held changed.
+    private func restoreFetched(_ wanted: [Date], deadlineKey: Date, env: Env) async -> Bool {
+        guard !env.isSample, env.matricola != nil else { return false }
+        var changed = false
+        for week in wanted {
+            guard let kept = await weekLoader.restore(week, env: env), heldSource == env.source,
+                  weeks[week] != kept.value else { continue }
+            weeks[week] = kept.value
+            changed = true
+        }
+        if let kept = await deadlineLoader.restore(deadlineKey, env: env), heldSource == env.source,
+           deadlines != kept.value {
+            deadlines = kept.value
+            changed = true
+        }
+        return changed
     }
 
     // MARK: - Building

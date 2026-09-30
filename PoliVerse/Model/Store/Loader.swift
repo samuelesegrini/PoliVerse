@@ -256,11 +256,16 @@ actor Loader<R: Resource> {
     /// The file is read and decoded off this actor. A copy that a fetch overtook while
     /// it was being read is dropped rather than put over newer data.
     ///
+    /// A copy younger than ``Resource/ttl`` counts as fresh, aged from when it was
+    /// fetched: a launch a few minutes after the last one — or after a background
+    /// refresh — serves it without asking, as a return from the app switcher serves
+    /// what is in memory. An older copy is shown and fetched again.
+    ///
     /// - Parameters:
     ///   - key: The key.
     ///   - env: Whose copy.
-    /// - Returns: The restored snapshot, never fresh, or `nil` when there was nothing
-    ///   to restore or it was already restored for this account.
+    /// - Returns: The restored snapshot, or `nil` when there was nothing to restore or
+    ///   it was already restored for this account.
     func restore(_ key: R.Key, env: Env) async -> Snapshot? {
         guard R.persistence == .offline, !env.isSample, let matricola = env.matricola else { return nil }
         let name = resource.storageName(for: key)
@@ -268,8 +273,10 @@ actor Loader<R: Resource> {
         guard let entry = await resource.read(from: offline, as: name, account: matricola) else { return nil }
         // Something newer landed while the file was read.
         if let held = entries[key], held.source == env.source { return nil }
+        // A negative age is a clock set back since the save: nothing to trust.
+        let stamp = (0..<R.ttl).contains(entry.age) ? clock.now.advanced(by: .seconds(-entry.age)) : nil
         let restoredEntry = Entry(value: entry.value, fetchedAt: Date.now.addingTimeInterval(-entry.age),
-                                  stamp: nil, lastUsed: clock.now, source: env.source)
+                                  stamp: stamp, lastUsed: clock.now, source: env.source)
         entries[key] = restoredEntry
         evictIfNeeded()
         return snapshot(restoredEntry)

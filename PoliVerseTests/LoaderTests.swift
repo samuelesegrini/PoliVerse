@@ -364,7 +364,9 @@ struct LoaderTests {
         #expect(offline.load(String.self, as: Stored.id, account: "222") == nil)
     }
 
-    @Test("The offline copy is restored once per account, and never counts as fresh")
+    /// A launch a few minutes after the last fetched everything again, and the
+    /// student waited on the network for data they had just seen.
+    @Test("The offline copy is restored once per account, and counts as fresh within its lifetime")
     func restoresOnce() async {
         let offline = offline()
         offline.save("cached", as: Stored.id, account: "111")
@@ -372,8 +374,22 @@ struct LoaderTests {
 
         let restored = await loader.restore(Whole(), env: Self.env)
         #expect(restored?.value == "cached")
-        #expect(restored?.isFresh == false)
+        #expect(restored?.isFresh == true)
         #expect(await loader.restore(Whole(), env: Self.env) == nil)
+        #expect(await loader.isDue(Whole(), env: Self.env) == false)
+    }
+
+    @Test("An offline copy older than its lifetime is restored but fetched again")
+    func oldCopyIsDue() async {
+        let offline = offline()
+        // `OfflineStore`'s record, written an hour ago.
+        let hourAgo = Date.now.addingTimeInterval(-3600).timeIntervalSinceReferenceDate
+        offline.write(Data(#"{"value":"cached","storedAt":\#(hourAgo)}"#.utf8), as: Stored.id, account: "111")
+        let loader = Loader(Stored(counter: Counter()), offline: offline)
+
+        let restored = await loader.restore(Whole(), env: Self.env)
+        #expect(restored?.value == "cached")
+        #expect(restored?.isFresh == false)
         #expect(await loader.isDue(Whole(), env: Self.env))
     }
 

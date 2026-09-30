@@ -357,7 +357,9 @@ final class FreeRoomsModel {
     /// fetched on every foregrounding for nothing, and a snapshot already covering today
     /// is left alone.
     func refreshForWidgetIfNeeded() async {
-        guard Calendar.current.isDateInToday(day) else { return }
+        // A whole campus for a widget nobody is looking at: not while the phone
+        // is hot or saving power.
+        guard Calendar.current.isDateInToday(day), !DevicePressure.isHigh else { return }
         let installed = (try? await WidgetCenter.shared.currentConfigurations())?
             .contains { $0.kind == WidgetKind.freeRooms.rawValue } ?? false
         guard installed else { return }
@@ -390,6 +392,7 @@ final class FreeRoomsModel {
     ///
     /// At `.utility` and never awaited, so the room the student actually opened does not
     /// wait on its neighbours; opening one being warmed raises its fetch.
+    /// Nothing is warmed while the phone is hot or saving power (``DevicePressure``).
     ///
     /// - Parameter rooms: The rooms to warm.
     func prefetch(_ rooms: some Sequence<Classroom>) {
@@ -398,7 +401,7 @@ final class FreeRoomsModel {
             guard let occupancyID = room.occupancyID else { return nil }
             return OccupancyKey(roomID: room.id, occupancyID: occupancyID, day: stamp)
         }
-        guard !keys.isEmpty else { return }
+        guard !keys.isEmpty, !DevicePressure.isHigh else { return }
         Task(name: "occupancy warm") { [loader, env] in await loader.warm(keys, env: env) }
     }
 

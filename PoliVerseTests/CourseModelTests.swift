@@ -33,6 +33,11 @@ struct CourseModelTests {
 
     /// Defaults of their own, so a test cannot see another's flags or the
     /// developer's.
+    /// A matricola of each test's own. The course list's offline copy is kept per
+    /// matricola and a fresh one is served without fetching, so with one shared number
+    /// a test read the list the previous one had just saved.
+    private let matricola = String(Int.random(in: 10_000_000...99_999_999))
+
     private func defaults() -> UserDefaults {
         UserDefaults(suiteName: "courses-\(UUID().uuidString)")!
     }
@@ -63,7 +68,7 @@ struct CourseModelTests {
         let enrolments = StubEnrolments()
         enrolments.enrolled = [Self.course(id: "wb1", name: "Analisi", moodleID: 7)]
         let http = FixtureHTTP(["/v1/insegn": Self.insegn(["Fisica"])])
-        let model = CourseModel(account: StubAccount(http: http), enrolments: enrolments, defaults: defaults())
+        let model = CourseModel(account: StubAccount(matricola: matricola, http: http), enrolments: enrolments, defaults: defaults())
 
         await model.load()
 
@@ -75,7 +80,7 @@ struct CourseModelTests {
     func iaeFallback() async throws {
         let enrolments = StubEnrolments()
         let http = FixtureHTTP(["/v1/insegn": Self.insegn(["Fisica"])])
-        let model = CourseModel(account: StubAccount(http: http), enrolments: enrolments, defaults: defaults())
+        let model = CourseModel(account: StubAccount(matricola: matricola, http: http), enrolments: enrolments, defaults: defaults())
 
         await model.load()
 
@@ -95,7 +100,7 @@ struct CourseModelTests {
         let enrolments = StubEnrolments()
         enrolments.enrolled = [Self.course(id: "wb1", name: "Analisi", moodleID: 7)]
         enrolments.accepts = false
-        let model = CourseModel(account: StubAccount(http: FixtureHTTP()),
+        let model = CourseModel(account: StubAccount(matricola: matricola, http: FixtureHTTP()),
                                 enrolments: enrolments, defaults: defaults())
         await model.load()
 
@@ -118,7 +123,7 @@ struct CourseModelTests {
         let enrolments = StubEnrolments()
         enrolments.enrolled = [Self.course(id: "wb1", name: "Analisi", moodleID: 7)]
         enrolments.accepts = false
-        let model = CourseModel(account: StubAccount(http: FixtureHTTP()),
+        let model = CourseModel(account: StubAccount(matricola: matricola, http: FixtureHTTP()),
                                 enrolments: enrolments, defaults: defaults())
         await model.load()
         model.toggleFavourite(try #require(model.courses.first))
@@ -140,7 +145,7 @@ struct CourseModelTests {
             Self.course(id: "z", name: "Zoologia", moodleID: 2),
         ]
         enrolments.accepts = false
-        let model = CourseModel(account: StubAccount(http: FixtureHTTP()),
+        let model = CourseModel(account: StubAccount(matricola: matricola, http: FixtureHTTP()),
                                 enrolments: enrolments, defaults: defaults())
         await model.load()
 
@@ -155,7 +160,7 @@ struct CourseModelTests {
         let enrolments = StubEnrolments()
         enrolments.enrolled = [Self.course(id: "wb1", name: "Analisi", moodleID: 7)]
         enrolments.accepts = false
-        let model = CourseModel(account: StubAccount(http: FixtureHTTP()),
+        let model = CourseModel(account: StubAccount(matricola: matricola, http: FixtureHTTP()),
                                 enrolments: enrolments, defaults: defaults())
         await model.load()
 

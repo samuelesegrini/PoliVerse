@@ -16,8 +16,10 @@ nonisolated struct AgendaWeeks: Resource {
     typealias Value = [AgendaEvent]
 
     static let id = "agenda-week"
-    /// The model writes the merged agenda for the widgets, and restores from it.
-    static let persistence = Persistence.memory
+    /// Each week is kept on disk as fetched, so a launch within ``ttl`` of the last
+    /// fetch shows it without asking. The merged agenda the widgets read is written
+    /// separately by the model, and is what the first frame restores from.
+    static let persistence = Persistence.offline
     /// Two years of weeks, far more than a session pages through.
     static let capacity = 104
     static let signpost: PerfSignpost.Name? = .agendaLoad
@@ -26,6 +28,9 @@ nonisolated struct AgendaWeeks: Resource {
     /// entries a week, which a full week of lectures, labs and tutorials stays under.
     /// A cap rather than a target, since the span is filtered server-side.
     static func pageSize(weeks: Int) -> Int { max(200, 40 * weeks) }
+
+    /// One file per week, named by its Monday.
+    func storageName(for key: Date) -> String { "\(Self.id)-\(PoliMiDate.queryString(key))" }
     /// The most weeks one request covers: the most a load around a date asks for, a
     /// week behind to a month ahead, so a load is always one request.
     static let weeksPerRequest = 7
@@ -149,8 +154,12 @@ nonisolated struct AgendaDeadlines: Resource {
     typealias Value = [AgendaEvent]
 
     static let id = "agenda-deadlines"
-    static let persistence = Persistence.memory
+    /// Kept on disk like the weeks, so a launch within ``ttl`` asks for neither.
+    static let persistence = Persistence.offline
     static let capacity = 8
+
+    /// One file per span, named by the week it starts on.
+    func storageName(for key: Date) -> String { "\(Self.id)-\(PoliMiDate.queryString(key))" }
 
     private static let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "agenda")
 
