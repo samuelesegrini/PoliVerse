@@ -283,7 +283,7 @@ struct CoursesPage: View {
     private func spotlightHero(shown: [Course], focus: (course: Course, lesson: AgendaEvent?)?) -> some View {
         let unread = shown.reduce(0) { $0 + news(for: $1).total }
         return VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .center, spacing: 12) {
+            titleRow(alignment: .center) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Corsi")
                         .font(style.dateFont.font(size: 38 * style.dateSize, weight: style.dateWeight))
@@ -298,10 +298,7 @@ struct CoursesPage: View {
                             .contentTransition(.numericText())
                     }
                 }
-                Spacer(minLength: 8)
-                if courses.academicYears.count > 1 { yearMenu }
             }
-            .padding(.horizontal, 4)
             originChip
             if let focus {
                 SpotlightCard(course: focus.course, lesson: focus.lesson, colour: colour(of: focus.course),
@@ -333,14 +330,11 @@ struct CoursesPage: View {
     private func blueprintHero(shown: [Course]) -> some View {
         let news = newsTallies(shown)
         return VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .bottom, spacing: 12) {
+            titleRow(alignment: .bottom) {
                 Text("Corsi")
                     .font(style.dateFont.font(size: 40 * style.dateSize, weight: style.dateWeight))
                     .accessibilityAddTraits(.isHeader)
-                Spacer(minLength: 8)
-                if courses.academicYears.count > 1 { yearMenu }
             }
-            .padding(.horizontal, 4)
             originChip
             if !news.isEmpty {
                 BlueprintNewsTable(news: Array(news.prefix(6)))
@@ -355,7 +349,7 @@ struct CoursesPage: View {
         let news = newsTallies(shown)
         let total = news.reduce(0) { $0 + $1.total }
         return VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .bottom, spacing: 12) {
+            titleRow(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Corsi")
                         .font(style.dateFont.font(size: 40 * style.dateSize, weight: style.dateWeight))
@@ -368,10 +362,7 @@ struct CoursesPage: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                Spacer(minLength: 8)
-                if courses.academicYears.count > 1 { yearMenu }
             }
-            .padding(.horizontal, 4)
             originChip
             if !news.isEmpty {
                 PlayfulNewsRail(news: Array(news.prefix(6)))
@@ -414,6 +405,23 @@ struct CoursesPage: View {
         return Text(verbatim: parts.joined(separator: " · "))
     }
 
+    /// The page's title with the year menu across from it, or under it at
+    /// accessibility text sizes, where side by side the year was squeezed to
+    /// one digit per line.
+    private func titleRow<Title: View>(alignment: VerticalAlignment,
+                                       @ViewBuilder title: () -> Title) -> some View {
+        let stacked = typeSize.isAccessibilitySize
+        let layout = stacked
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout(alignment: alignment, spacing: 12))
+        return layout {
+            title()
+            if !stacked { Spacer(minLength: 8) }
+            if courses.academicYears.count > 1 { yearMenu }
+        }
+        .padding(.horizontal, 4)
+    }
+
     /// The academic year the list shows, as a menu of every year the courses
     /// come from and "Tutti gli anni".
     private var yearMenu: some View {
@@ -428,7 +436,7 @@ struct CoursesPage: View {
             }
         } label: {
             HStack(spacing: 6) {
-                if let year { Text(verbatim: year).monospacedDigit() } else { Text("Tutti gli anni") }
+                if let year { Text(verbatim: year).monospacedDigit().lineLimit(1) } else { Text("Tutti gli anni") }
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
