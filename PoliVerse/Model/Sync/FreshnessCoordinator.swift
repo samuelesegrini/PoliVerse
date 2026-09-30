@@ -51,6 +51,9 @@ final class FreshnessCoordinator {
         let failure: Failure?
         /// Read on demand to report the age of the held data.
         let age: Age?
+        /// Whether the load waits for the others to finish, because nothing it finds
+        /// is on screen. See ``register(_:title:failure:age:afterScreen:_:)``.
+        let afterScreen: Bool
         /// The load itself.
         let run: Load
     }
@@ -117,7 +120,9 @@ final class FreshnessCoordinator {
         }
         // After everything on screen: it reads several course pages, and
         // what it finds lands in the feed rather than on any open screen.
-        coordinator.register("webeep-updates") { await weBeep.checkForUpdates(force: $0) }
+        // Started once the rest has landed: run beside them, its six pages
+        // slowed the timetable and the career by a fifth on a real account.
+        coordinator.register("webeep-updates", afterScreen: true) { await weBeep.checkForUpdates(force: $0) }
         return coordinator
     }
 
@@ -134,10 +139,16 @@ final class FreshnessCoordinator {
     ///   - failure: Read after each load; a non-empty message means that load did not
     ///     get what it went for.
     ///   - age: Read on demand for ``services``.
+    ///   - afterScreen: Starts the load only once every other load of the pass has
+    ///     finished, and after the status line has been told the pass is over. For
+    ///     work whose result is not on screen, so it neither competes with what the
+    ///     student is waiting for nor keeps "Aggiornamento in corso…" up.
     ///   - run: The load itself.
     func register(_ name: String, title: LocalizedStringResource? = nil,
-                  failure: Failure? = nil, age: Age? = nil, _ run: @escaping Load) {
-        loads.append(Registration(name: name, title: title, failure: failure, age: age, run: run))
+                  failure: Failure? = nil, age: Age? = nil, afterScreen: Bool = false,
+                  _ run: @escaping Load) {
+        loads.append(Registration(name: name, title: title, failure: failure, age: age,
+                                  afterScreen: afterScreen, run: run))
     }
 
     /// Every named service, read as it stands now rather than as it stood at the end
@@ -155,9 +166,10 @@ final class FreshnessCoordinator {
 
     /// Starts every registered load in order and returns when the last one is done.
     ///
-    /// The loads run together. They are independent — each reads its own endpoint,
-    /// and WeBeep's sweep fetches its own course list — and one after another they
-    /// took over eleven seconds on a real account, most of it waiting on the network.
+    /// The loads run together. They are independent — each reads its own endpoint —
+    /// and one after another they took over eleven seconds on a real account, most of
+    /// it waiting on the network. Loads registered `afterScreen` start once the rest
+    /// have finished and the status line has been told the pass is over.
     /// A token that needs refreshing is refreshed once for all of them by
     /// ``TokenStore``.
     ///
@@ -192,13 +204,20 @@ final class FreshnessCoordinator {
             let interval = PerfSignpost.begin(.freshnessRevalidate)
             defer { PerfSignpost.end(interval) }
             status?.refreshBegan()
+            let visible = PerfSignpost.begin(.freshnessVisible)
             // Enqueued on the main actor in registration order, so they start
             // in that order; each suspends on the network and lets the next go.
-            let running = loads.map { load in
-                Task(name: "refresh \(load.name)") { @MainActor in await load.run(force) }
+            func start(_ load: Registration) -> Task<Void, Never> {
+                Task(name: "refresh \(load.name)") { @MainActor in
+                    let interval = PerfSignpost.beginRefresh(load.name)
+                    defer { PerfSignpost.end(interval) }
+                    await load.run(force)
+                }
             }
+            let onScreen = loads.filter { !$0.afterScreen }
+            let running = onScreen.map(start)
             var failed: [String] = []
-            for (load, run) in zip(loads, running) {
+            for (load, run) in zip(onScreen, running) {
                 await run.value
                 // Read after the load, not inside it: a service clears its own
                 // error when a load starts, so asking before would report the
@@ -208,6 +227,10 @@ final class FreshnessCoordinator {
                 if let title = load.title { failed.append(String(localized: title)) }
             }
             status?.refreshEnded(failures: failed)
+            PerfSignpost.end(visible)
+            // Nothing these find is on screen, so the status line is not kept
+            // waiting for them; the pass still is, so the next one follows it.
+            for run in loads.filter(\.afterScreen).map(start) { await run.value }
         }
         inFlight = task
         await task.value

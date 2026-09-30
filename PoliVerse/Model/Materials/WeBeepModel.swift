@@ -91,8 +91,16 @@ final class WeBeepModel {
     /// materials screen, the forums, the recordings link and the sweep share one
     /// `core_course_get_contents`. Rebuilt with the client.
     private var pages: Loader<CoursePage>?
-    /// The signed-in user's Moodle id, learned by ``loadCourses()``.
-    private var userID: Int?
+    /// The signed-in user's Moodle id, learned by ``loadCourses()`` and kept with the
+    /// token, so a course list costs one round trip instead of two.
+    private var userID: Int? {
+        get { UserDefaults.standard.object(forKey: Self.userIDKey) as? Int }
+        set { UserDefaults.standard.set(newValue, forKey: Self.userIDKey) }
+    }
+    private static let userIDKey = "webeepUserID"
+    /// The course list being fetched, which a second caller joins: the refresh at
+    /// launch asks for it from Corsi and from the update sweep at once.
+    private var coursesLoad: Task<Void, Never>?
     /// Moodle course id per ``Course/id``, remembered once a course has been matched by
     /// code or name.
     private var courseIDByCode: [String: Int] = [:]
@@ -145,6 +153,8 @@ final class WeBeepModel {
     /// - Parameter token: The token from ``WeBeepAuth/token(from:passport:verifySignature:)``.
     func store(_ token: WeBeepAuth.MoodleToken) {
         try? KeychainStore.save(Data(token.token.utf8), account: keychainAccount)
+        // Another token may be another user.
+        userID = nil
         connect(WeBeepAPI(token: token.token))
         state = .ready
     }
@@ -157,6 +167,7 @@ final class WeBeepModel {
         pages = nil
         userID = nil
         courses = []
+        keepCourses()
         sections = []
         courseIDByCode = [:]
         state = .needsLogin
@@ -211,28 +222,71 @@ final class WeBeepModel {
     /// Fetches the enrolled course list, learning the Moodle user id on the way.
     ///
     /// Under sample data it only enters ``State/ready``. Without a token it enters
-    /// ``State/needsLogin``.
+    /// ``State/needsLogin``. A call while one runs joins it.
     func loadCourses() async {
         if session.useMockData {
             state = .ready
             return
         }
-        guard let api else {
+        guard api != nil else {
             state = .needsLogin
             return
         }
+        if let coursesLoad {
+            await coursesLoad.value
+            return
+        }
+        let task = Task(name: "webeep courses") { await self.fetchCourses() }
+        coursesLoad = task
+        await task.value
+        coursesLoad = nil
+    }
 
+    /// Where the course list is kept between launches.
+    private static let coursesCacheName = "webeep-courses"
+
+    /// Puts the course list kept from the last launch in place, if none is held.
+    private func restoreCourses(account: String) async {
+        guard let kept = await OfflineStore.shared.loaded(
+            [MoodleCourse].self, as: Self.coursesCacheName, account: account)?.value,
+              courses.isEmpty, api != nil else { return }
+        courses = kept
+    }
+
+    /// The course list, by the Moodle user id held or else learned from the site info.
+    ///
+    /// A failure with a held id asks for the id again before giving up, so an id that
+    /// no longer matches the token costs a round trip rather than the connection.
+    private func fetchCourses() async {
+        guard let api else { return }
         state = .loading
         do {
+            if let known = userID {
+                do {
+                    courses = try await api.courses(userID: known)
+                    keepCourses()
+                    state = .ready
+                    return
+                } catch {
+                    guard !Task.isCancelled else { throw error }
+                    userID = nil
+                }
+            }
             let info = try await api.siteInfo()
             userID = info.userid
             courses = try await api.courses(userID: info.userid)
+            keepCourses()
             state = .ready
         } catch let error as WeBeepAPI.Failure {
             handle(error)
         } catch {
             state = .failed(error.localizedDescription)
         }
+    }
+
+    /// Keeps the course list for the next launch's update sweep.
+    private func keepCourses() {
+        OfflineStore.shared.save(courses, as: Self.coursesCacheName, account: session.student?.matricola)
     }
 
     /// Fetches one course's files into ``sections``.
@@ -371,42 +425,61 @@ final class WeBeepModel {
         guard !session.useMockData, api != nil, let account = session.student?.matricola,
               Self.sweepIsDue(last: lastSweep, account: account, force: force) else { return }
 
+        // The list kept from the last launch rather than a fresh one: Corsi's
+        // refresh is fetching that at the same moment, and waiting for it held
+        // the sweep a second and a half before its first page.
+        if courses.isEmpty { await restoreCourses(account: account) }
         if courses.isEmpty { await loadCourses() }
         guard let api else { return }
         feed.show(account: account)
 
         let watched = Self.watched(courses.map(Course.init(moodle:)), now: .now, pass: watchPass)
+            .compactMap { MaterialCourse($0) }
         watchPass += 1
         var checked = 0
         var read: [MaterialCourse] = []
-        for course in watched {
-            // A sign-out or a career switch mid-pass ends it: the rest would
-            // be weighed against somebody else's sittings.
-            guard !Task.isCancelled, session.student?.matricola == account,
-                  deadline.map({ Date.now < $0 }) ?? true,
-                  let target = MaterialCourse(course) else { break }
-            do {
-                let raw = try await page(target.moodleID)
-                await feed.recordMaterials(
-                    course: target, sections: raw, account: account, inspect: resultsInspector())
-                // One more request, only where the page has an announcements
-                // forum. A failure here is the forum's, not the page's.
-                if let forum = AnnouncementDetector.forumInstances(in: raw).first {
-                    do {
-                        let posts = try await api.discussions(forumID: forum)
-                        await feed.recordAnnouncements(course: target, posts: posts, account: account)
-                    } catch {
-                        log.error("Announcements for course \(target.moodleID, privacy: .public) failed: \(error.localizedDescription)")
-                    }
+        // A sign-out or a career switch mid-pass ends it: the rest would be
+        // weighed against somebody else's sittings.
+        func mayStart() -> Bool {
+            !Task.isCancelled && session.student?.matricola == account
+                && deadline.map({ Date.now < $0 }) ?? true
+        }
+        // Every watched page at once rather than one after another: each is a
+        // round trip or two to WeBeep, and six in a row held the status line
+        // for seconds. What each page says is still recorded one page at a time.
+        var pending = watched[...]
+        var refused: WeBeepAPI.Failure?
+        await withTaskGroup(of: SweptPage.self) { group in
+            var running = 0
+            while true {
+                while running < Self.sweepWidth, mayStart(), let target = pending.popFirst() {
+                    group.addTask { await self.sweep(target, api: api) }
+                    running += 1
                 }
-                checked += 1
-                read.append(target)
-            } catch let error as WeBeepAPI.Failure where error.isAuthFailure {
-                handle(error)
-                return
-            } catch {
-                log.error("Update check for course \(target.moodleID, privacy: .public) failed: \(error.localizedDescription)")
+                guard let page = await group.next() else { break }
+                running -= 1
+                switch page.outcome {
+                case .failure(let error as WeBeepAPI.Failure) where error.isAuthFailure:
+                    refused = error
+                    group.cancelAll()
+                    return
+                case .failure(let error):
+                    log.error("Update check for course \(page.course.moodleID, privacy: .public) failed: \(error.localizedDescription)")
+                case .success(let raw):
+                    guard session.student?.matricola == account else { break }
+                    await feed.recordMaterials(
+                        course: page.course, sections: raw, account: account, inspect: resultsInspector())
+                    if let posts = page.posts {
+                        await feed.recordAnnouncements(course: page.course, posts: posts, account: account)
+                    }
+                    checked += 1
+                    read.append(page.course)
+                }
             }
+        }
+        if let refused {
+            handle(refused)
+            return
         }
         // Assignments for every page read, in a single request.
         if !read.isEmpty, !Task.isCancelled, deadline.map({ Date.now < $0 }) ?? true,
@@ -427,6 +500,36 @@ final class WeBeepModel {
         log.notice("Checked \(checked, privacy: .public) of \(watched.count, privacy: .public) course pages for updates")
         // A pass that read nothing is retried next time, like any failed load.
         if checked > 0 { lastSweep = (account, .now) }
+    }
+
+    /// How many course pages the sweep reads at once: all it watches, well within
+    /// ``APISession/connectionsPerHost``.
+    static let sweepWidth = watchLimit
+
+    /// One course page read by the sweep, with its announcements where it has a forum.
+    private struct SweptPage: Sendable {
+        let course: MaterialCourse
+        let outcome: Result<[MoodleSection], any Error>
+        let posts: [MoodleDiscussion]?
+    }
+
+    /// Reads one course page for the sweep, and its announcements forum where it has
+    /// one. A failure of the forum is the forum's, not the page's.
+    private func sweep(_ course: MaterialCourse, api: WeBeepAPI) async -> SweptPage {
+        do {
+            let raw = try await page(course.moodleID)
+            var posts: [MoodleDiscussion]?
+            if let forum = AnnouncementDetector.forumInstances(in: raw).first {
+                do {
+                    posts = try await api.discussions(forumID: forum)
+                } catch {
+                    log.error("Announcements for course \(course.moodleID, privacy: .public) failed: \(error.localizedDescription)")
+                }
+            }
+            return SweptPage(course: course, outcome: .success(raw), posts: posts)
+        } catch {
+            return SweptPage(course: course, outcome: .failure(error), posts: nil)
+        }
     }
 
     /// Whether an update sweep should run: always when forced, for another account than

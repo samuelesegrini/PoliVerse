@@ -268,3 +268,29 @@ struct ProfileHeaderTests {
         #expect(list[0].dprofile == nil)
     }
 }
+
+/// The transports read the routing off the main actor, from a copy the directory
+/// keeps as its properties change. The copy has to say what the properties say.
+@Suite("Routing off the main actor")
+@MainActor
+struct RoutingTests {
+    @Test("Before loading, the routing gives the same answers as the directory")
+    func fallbacksMatch() {
+        let directory = ServiceDirectory()
+        for service in ServiceDirectory.Service.allCases {
+            #expect(directory.routedURL(for: service) == directory.baseURL(for: service))
+            #expect(directory.routedProfile(for: service, userProfile: 7)
+                    == directory.profile(for: service, userProfile: 7))
+        }
+        #expect(directory.routedDProfile == nil)
+    }
+
+    @Test("A secondary profile reaches the routing as soon as it is set")
+    func dProfileFollows() {
+        let directory = ServiceDirectory()
+        directory.dProfile = "DOCENTE"
+        #expect(directory.routedDProfile == "DOCENTE")
+        directory.dProfile = nil
+        #expect(directory.routedDProfile == nil)
+    }
+}

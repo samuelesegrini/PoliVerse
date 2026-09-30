@@ -54,6 +54,25 @@ struct FreshnessCoordinatorTests {
         #expect(calls.names == ["agenda began", "career", "agenda ended"])
     }
 
+    /// Run beside the loads on screen, the WeBeep sweep's pages slowed the
+    /// timetable and the career on a real account.
+    @Test("A load registered after the screen starts once the others have ended")
+    func afterScreenWaits() async {
+        let coordinator = FreshnessCoordinator()
+        let calls = Recorder()
+        coordinator.register("sweep", afterScreen: true) { _ in calls.record("sweep") }
+        coordinator.register("agenda") { _ in
+            calls.record("agenda began")
+            await Task.yield()
+            calls.record("agenda ended")
+        }
+        coordinator.register("career") { _ in calls.record("career") }
+
+        await coordinator.revalidate()
+
+        #expect(calls.names == ["agenda began", "career", "agenda ended", "sweep"])
+    }
+
     @Test("The force flag reaches each load")
     func forwardsForce() async {
         let coordinator = FreshnessCoordinator()

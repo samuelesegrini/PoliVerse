@@ -185,7 +185,7 @@ nonisolated final class PoliMiAPI: Sendable {
         profileID: @escaping @Sendable () async -> Int = { PoliMiProfile.student },
         matricola: @escaping @Sendable () async -> String? = { nil },
         onInvalidScope: @escaping @Sendable () async -> Void = {},
-        session: URLSession = .shared
+        session: URLSession = APISession.shared
     ) {
         self.tokens = tokens
         self.directory = directory
@@ -489,7 +489,7 @@ nonisolated final class PoliMiAPI: Sendable {
     /// - Throws: Whatever ``TokenStore/validToken()`` raises for an authenticated
     ///   request.
     private func makeURLRequest(_ request: APIRequest) async throws -> URLRequest {
-        let base = await MainActor.run { directory.baseURL(for: request.host) }
+        let base = directory.routedURL(for: request.host)
         var components = URLComponents(
             url: base.appendingPathComponent(request.path),
             resolvingAgainstBaseURL: false
@@ -542,9 +542,7 @@ nonisolated final class PoliMiAPI: Sendable {
             // presets the header to the *service's* profile (`0`); the user's
             // profile is only the fallback for clients that set none.
             let user = await profileID()
-            let serviceProfile = await MainActor.run {
-                directory.profile(for: request.host, userProfile: user)
-            }
+            let serviceProfile = directory.routedProfile(for: request.host, userProfile: user)
             let profile = request.profileOverride ?? serviceProfile
             urlRequest.setValue(String(profile), forHTTPHeaderField: "poliAuthProfile")
 
@@ -559,7 +557,7 @@ nonisolated final class PoliMiAPI: Sendable {
             //
             // An account with no secondary profile therefore gets the sentinel
             // on one client and no header at all on the other.
-            let dProfile = await MainActor.run { directory.dProfile }
+            let dProfile = directory.routedDProfile
             if let dProfile {
                 urlRequest.setValue(dProfile, forHTTPHeaderField: "poliAuthD_profile")
             } else if Self.usesAxiosClient(request) {

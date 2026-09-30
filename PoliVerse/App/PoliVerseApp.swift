@@ -343,7 +343,15 @@ struct PoliVerseApp: App {
                         // even once sign-in actually succeeded. The
                         // `session.state` watcher below covers the real
                         // post-login revalidate instead.
-                        if session.state != .exchangingCode {
+                        //
+                        // Skipped before the restore has decided who is signed
+                        // in, too: at a cold launch the scene becomes active
+                        // while the session is still loading, and a pass then
+                        // had no account, failed every service but WeBeep's
+                        // course list, and held the real pass — the forced one
+                        // the sign-in below starts — behind it for a round trip
+                        // or two.
+                        if session.student != nil {
                             await freshness.revalidate()
                         }
                         await personalTimetable.refreshIfStale()

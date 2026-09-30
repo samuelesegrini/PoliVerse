@@ -19,7 +19,7 @@ nonisolated struct MoodleSiteInfo: Decodable, Sendable {
 /// hidden and neither — so they are read from here rather than kept locally.
 /// ``isfavourite`` is a real favourite record and ``hidden`` is the user preference
 /// the same endpoint resolves.
-nonisolated struct MoodleCourse: Decodable, Sendable {
+nonisolated struct MoodleCourse: Codable, Sendable {
     /// Moodle's course id, which every other call is keyed by.
     let id: Int
     /// The course's title, which carries the teaching code and academic year — see

@@ -66,7 +66,7 @@ nonisolated struct PublicHTTP: HTTP {
     ///   1200 bytes of the body, ``APIError/cancelled`` for a cancellation, and
     ///   ``APIError/transport(_:)`` for anything else.
     func data(for request: APIRequest) async throws -> Data {
-        let base = await directory?.baseURL(for: request.host) ?? request.host.fallback
+        let base = directory?.routedURL(for: request.host) ?? request.host.fallback
         guard var components = URLComponents(
             url: base.appendingPathComponent(request.path), resolvingAgainstBaseURL: false)
         else { throw APIError.endpointGone(request.path) }

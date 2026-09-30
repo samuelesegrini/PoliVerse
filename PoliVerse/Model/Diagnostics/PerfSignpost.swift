@@ -26,6 +26,9 @@ nonisolated enum PerfSignpost {
         case careerLoad = "career.load"
         /// One ``FreshnessCoordinator/revalidate(force:)`` pass.
         case freshnessRevalidate = "freshness.revalidate"
+        /// The part of a pass the status line shows: until every service on screen
+        /// has landed, before the work registered to run after it.
+        case freshnessVisible = "freshness.visible"
         /// One granted ``BackgroundRefresh`` run.
         case backgroundRefresh = "background.refresh"
 
@@ -36,6 +39,7 @@ nonisolated enum PerfSignpost {
             case .agendaLoad: "agenda.load"
             case .careerLoad: "career.load"
             case .freshnessRevalidate: "freshness.revalidate"
+            case .freshnessVisible: "freshness.visible"
             case .backgroundRefresh: "background.refresh"
             }
         }
@@ -64,6 +68,39 @@ nonisolated enum PerfSignpost {
         mxSignpost(.begin, log: metricLog, name: name.staticName)
         let state = signposter.beginInterval(name.staticName, id: signposter.makeSignpostID())
         return Interval(name: name, state: state)
+    }
+
+    /// One service's load inside a refresh pass, open on Points of Interest only.
+    struct RefreshInterval {
+        fileprivate let name: StaticString
+        fileprivate let state: OSSignpostIntervalState
+    }
+
+    /// Opens `refresh.<service>` for one registration of ``FreshnessCoordinator``, so
+    /// Instruments and the real-data tests can say which service a pass waited on.
+    ///
+    /// Not sent to MetricKit, which keeps only a few custom metrics per app.
+    ///
+    /// - Parameter service: The registration name.
+    /// - Returns: The interval, or `nil` for a registration without a signpost name.
+    static func beginRefresh(_ service: String) -> RefreshInterval? {
+        let name: StaticString
+        switch service {
+        case "courses": name = "refresh.courses"
+        case "agenda": name = "refresh.agenda"
+        case "career": name = "refresh.career"
+        case "notices": name = "refresh.notices"
+        case "news": name = "refresh.news"
+        case "webeep-updates": name = "refresh.webeep-updates"
+        default: return nil
+        }
+        return RefreshInterval(name: name, state: signposter.beginInterval(name, id: signposter.makeSignpostID()))
+    }
+
+    /// Closes what ``beginRefresh(_:)`` opened.
+    static func end(_ interval: RefreshInterval?) {
+        guard let interval else { return }
+        signposter.endInterval(interval.name, interval.state)
     }
 
     /// Closes an interval on both signposters.

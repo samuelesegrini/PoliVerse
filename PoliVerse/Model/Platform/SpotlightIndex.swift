@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 @MainActor
 final class SpotlightIndex {
     /// The domain every indexed item is filed under.
-    static let domain = "segrini.samuele.PoliVerse.items"
+    nonisolated static let domain = "segrini.samuele.PoliVerse.items"
     /// The activity type a Spotlight hit arrives as, carrying an ``Item`` identifier.
     static let activityType = "segrini.samuele.PoliVerse.open"
 
@@ -66,13 +66,18 @@ final class SpotlightIndex {
     /// Hidden courses are omitted. Lecturers are indexed as contacts and everything else
     /// as content. Does nothing when there is nothing to index.
     ///
+    /// Built and submitted off the main actor: the room catalogue alone is hundreds of
+    /// items, each with an attribute set.
+    ///
     /// - Parameters:
     ///   - courses: The enrolled teachings.
     ///   - rooms: The room catalogue.
     ///   - teachers: The lecturer roster.
     ///   - exams: The exam sittings.
-    func index(courses: [Course], rooms: [Classroom],
-               teachers: [Teacher], exams: [ExamSession]) {
+    @concurrent
+    nonisolated func index(courses: [Course], rooms: [Classroom],
+                           teachers: [Teacher], exams: [ExamSession]) async {
+        let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "spotlight")
         var items: [CSSearchableItem] = []
 
         for course in courses where !course.isHidden {
@@ -111,7 +116,7 @@ final class SpotlightIndex {
 
         guard !items.isEmpty else { return }
         let count = items.count
-        index.indexSearchableItems(items) { [log] error in
+        CSSearchableIndex.default().indexSearchableItems(items) { error in
             if let error {
                 log.error("Spotlight indexing failed: \(error.localizedDescription)")
             } else {
@@ -146,7 +151,7 @@ final class SpotlightIndex {
     ///   - keywords: Extra terms to match on. Empty ones are dropped.
     ///   - type: The content type, which decides how the result is presented.
     /// - Returns: The item, ready to index.
-    private func item(_ item: Item, title: String, description: String,
+    nonisolated private func item(_ item: Item, title: String, description: String,
                       keywords: [String], type: UTType) -> CSSearchableItem {
         let attributes = CSSearchableItemAttributeSet(contentType: type)
         attributes.title = title

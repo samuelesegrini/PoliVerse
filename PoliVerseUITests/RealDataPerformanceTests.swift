@@ -109,6 +109,31 @@ nonisolated final class RealDataPerformanceTests: PoliVerseUITestCase {
         }
     }
 
+    /// The same pass, service by service: which one the pass waits on.
+    @MainActor func testRefreshByService() throws {
+        try launchSignedIn().terminate()
+
+        let options = XCTMeasureOptions()
+        options.iterationCount = 3
+        let services = ["courses", "agenda", "career", "notices", "news", "webeep-updates"]
+        measure(metrics: services.map {
+            XCTOSSignpostMetric(subsystem: Self.subsystem, category: "PointsOfInterest", name: "refresh.\($0)")
+        } + [
+            XCTOSSignpostMetric(subsystem: Self.subsystem, category: "PointsOfInterest", name: "freshness.revalidate"),
+            // What the status line shows: the pass until everything on screen
+            // has landed.
+            XCTOSSignpostMetric(subsystem: Self.subsystem, category: "PointsOfInterest", name: "freshness.visible"),
+            XCTOSSignpostMetric(subsystem: Self.subsystem, category: "PointsOfInterest", name: "agenda.load"),
+            XCTOSSignpostMetric(subsystem: Self.subsystem, category: "PointsOfInterest", name: "career.load"),
+        ], options: options) {
+            let app = makeApp(data: .signedInAccount)
+            app.launch()
+            XCTAssertTrue(app.buttons["today-customize"].firstMatch.waitForExistence(timeout: 30))
+            sleep(20)
+            app.terminate()
+        }
+    }
+
     // MARK: Scrolling
 
     /// Hitches while flicking a scroll view up and down, three times over.

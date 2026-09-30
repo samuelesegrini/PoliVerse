@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import Synchronization
 import OSLog
 
 /// Where each Politecnico backend currently lives, and the OAuth client
@@ -170,12 +171,49 @@ final class ServiceDirectory {
     }
 
     /// Base URLs read from `props`. A service absent here uses its ``Service/fallback``.
-    private(set) var resolved: [Service: URL] = [:]
+    private(set) var resolved: [Service: URL] = [:] {
+        didSet { routing.withLock { $0.resolved = resolved } }
+    }
     /// Per-service `poliAuthProfile` values read from `props`.
-    private(set) var serviceProfiles: [Service: Int] = [:]
+    private(set) var serviceProfiles: [Service: Int] = [:] {
+        didSet { routing.withLock { $0.serviceProfiles = serviceProfiles } }
+    }
     /// The signed-in account's secondary profile, sent as `poliAuthD_profile`. `nil`
     /// for a plain student account.
-    var dProfile: String?
+    var dProfile: String? {
+        didSet { routing.withLock { $0.dProfile = dProfile } }
+    }
+
+    /// What a request needs to be addressed, copied from the three properties above
+    /// as they change.
+    nonisolated struct Routing: Sendable {
+        var resolved: [Service: URL] = [:]
+        var serviceProfiles: [Service: Int] = [:]
+        var dProfile: String?
+    }
+
+    /// The routing, readable from any thread.
+    ///
+    /// The transports build every request from it. Reading the observable properties
+    /// instead meant three hops to the main actor per request, and at launch — the
+    /// moment the main thread is busiest drawing the first screens — each request
+    /// waited its turn there before it could leave the phone.
+    nonisolated let routing = Mutex(Routing())
+
+    /// ``baseURL(for:)``, from any thread and without observation.
+    nonisolated func routedURL(for service: Service) -> URL {
+        routing.withLock { $0.resolved[service] } ?? service.fallback
+    }
+
+    /// ``profile(for:userProfile:)``, from any thread and without observation.
+    nonisolated func routedProfile(for service: Service, userProfile: Int) -> Int {
+        routing.withLock { $0.serviceProfiles[service] } ?? service.fallbackProfile ?? userProfile
+    }
+
+    /// ``dProfile``, from any thread and without observation.
+    nonisolated var routedDProfile: String? {
+        routing.withLock { $0.dProfile }
+    }
     /// The OAuth client configuration in force.
     private(set) var oauth: OAuthParams = .fallback
     /// Whether ``load()`` has run. Set even when the fetch fails, so the fallbacks are
@@ -190,7 +228,7 @@ final class ServiceDirectory {
     /// Creates a directory holding only the fallbacks. Call ``load()`` to resolve them.
     ///
     /// - Parameter session: The session the configuration fetches are issued through.
-    init(session: URLSession = .shared) {
+    init(session: URLSession = APISession.shared) {
         self.session = session
     }
 

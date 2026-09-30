@@ -304,3 +304,58 @@ Steps 1–6 as planned, with these differences:
 - **Left as they are:** `UpdateFeed`'s feed rows are still built on the main
   actor, cached until the log changes: its accessors are synchronous and read by
   views. `Session` decodes a token and a profile on the main actor: constant size.
+
+---
+
+## 9. Latency pass (2026-09-30)
+
+Branch `perf/latency-loop`. Goal: 20–30% less waiting for data. Measured on the
+iPhone 12 Pro with the real account (`PoliVerseRealData`), base and candidate
+builds alternated in one sitting, three launches per run.
+
+### What the pass waited on
+
+`refresh.<service>` signposts (new, Points of Interest only) split the launch
+refresh by service. On the first candidate the pass ended exactly when the
+WeBeep update sweep ended; everything on screen had landed a second earlier:
+
+| Service | Median |
+| --- | --- |
+| WeBeep sweep | ≈ 3 s |
+| Career, courses, news | ≈ 1.5–1.9 s |
+| Timetable | ≈ 1.1–1.3 s |
+| Notices | ≈ 0.6 s |
+
+### Changes
+
+| Change | Where | Why |
+| --- | --- | --- |
+| Eight connections per host | `APISession` | `api.polimi.it` and `webeep.polimi.it` speak HTTP/1.1, and `URLSession.shared` opens four per host on iOS; the launch refresh sends about nine requests to `api.polimi.it` at once |
+| Requests addressed off the main actor | `ServiceDirectory.routing` | three main-actor hops per request to read base URL and profiles; at launch each request queued behind the first frames |
+| No refresh before the restore | `PoliVerseApp` | the scene became active while the session was loading; that pass had no account and held the real, forced pass behind it |
+| WeBeep course list: joined, one round trip | `WeBeepModel.loadCourses` | Corsi and the sweep fetched it twice at launch, each `site_info` then `courses`; the Moodle user id is now kept |
+| WeBeep course list kept offline | `WeBeepModel.restoreCourses` | the sweep waited ≈ 1.5 s for the list before its first page |
+| Sweep pages in parallel | `WeBeepModel.checkForUpdates` | six pages one after another |
+| Sweep after the screen | `FreshnessCoordinator` `afterScreen` | run beside the rest, its pages made the timetable and career ≈ 15–20% slower; the status line now ends when on-screen data is in (`freshness.visible`) |
+| Spotlight off the main actor, once | `AppShellDuties`, `SpotlightIndex` | the whole room catalogue was rebuilt as `CSSearchableItem`s on the main thread each time courses, rooms or sittings changed during the launch refresh |
+| Calendar look-ahead | `AgendaModel.ensureLoaded` | the week after the edge of what was held was fetched only once on screen |
+| Dynamic colours not main-actor code | `Theme.adaptive`, `Theme.onAccent` | a crash, not a delay: SwiftUI resolves colours off the main thread too, and the provider closures were inferred as main-actor code, so the Swift 6 isolation check trapped (`dispatch_assert_queue`). Eight crash reports on the test phone in one afternoon, baseline builds included |
+
+### Result
+
+Twelve launches per build (four runs of three), base and candidate alternated, the
+account's real data, 2026-09-30 evening:
+
+| Measure | Base | Candidate | Change |
+| --- | --- | --- | --- |
+| Status line "Aggiornamento in corso…" (`freshness.revalidate` → `freshness.visible`) | 3.61 s | 1.93 s | **−46%** |
+| Timetable (`agenda.load`) | 1.21 s | 1.02 s | −16% |
+| Whole pass, WeBeep sweep included (`freshness.revalidate`) | 3.61 s | 3.18 s | −12% |
+| Career (`career.load`) | 1.48 s | 1.63 s | +10% (mean +4%; within this metric's spread) |
+
+Medians. The base's `freshness.revalidate` is its status line too: before
+`afterScreen`, the line stayed up until the sweep ended. Run
+`RealDataPerformanceTests/testRefreshByService` for the per-service split.
+
+What is left is the Politecnico's servers: news (≈ 1.8 s) and the slowest of the
+career's six calls (≈ 1.6 s) are single requests, waiting on the answer.

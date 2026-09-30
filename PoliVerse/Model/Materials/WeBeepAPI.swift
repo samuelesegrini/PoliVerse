@@ -56,7 +56,7 @@ nonisolated final class WeBeepAPI: Sendable {
     /// - Parameters:
     ///   - token: The web-service token from ``WeBeepAuth``.
     ///   - session: The session requests are issued through.
-    init(token: String, session: URLSession = .shared) {
+    init(token: String, session: URLSession = APISession.shared) {
         self.token = token
         self.session = session
     }

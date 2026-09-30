@@ -261,6 +261,23 @@ struct AgendaLoadTests {
         #expect(await http.requests.count > afterFirst)
     }
 
+    /// Paging waited on arrival: the week after the edge of what was held was
+    /// fetched only once it was on screen, empty until the answer came.
+    @Test("A date two weeks from the edge of the weeks held fetches ahead")
+    func fetchesAheadNearTheEdge() async {
+        let http = FixtureHTTP([eventsPath: Self.events([2]),
+                                deadlinesPath: Data("[]".utf8)])
+        let agenda = model(http)
+        await agenda.load(around: Self.day)
+        let afterFirst = await http.requests.count
+
+        // Held, but the week two after it is past the month ahead.
+        let nearEdge = Self.day.addingTimeInterval(24 * 86_400)
+        #expect(agenda.loadedRange?.contains(nearEdge) == true)
+        await agenda.ensureLoaded(covering: nearEdge)
+        #expect(await http.requests.count > afterFirst)
+    }
+
     /// Paging the calendar past the held month used to replace the window, and
     /// today's lectures left the widgets, the reminders and the Watch with it.
     @Test("Navigating past the weeks held adds to them instead of replacing them")

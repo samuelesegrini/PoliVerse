@@ -85,16 +85,21 @@ struct AppShellDuties: ViewModifier {
             // feature.
             .task(id: indexKey) {
                 guard !session.useMockData, !courses.courses.isEmpty else { return }
-                spotlight.index(
-                    courses: courses.courses,
-                    rooms: rooms.rooms,
-                    teachers: Teacher.roster(courses: courses.courses, sessions: career.sessions),
-                    exams: career.sessions)
-                // The same material, in the narrow shape an App Intent can read
-                // from a process where none of these services exist.
-                EntityIndexWriter.write(courses: courses.courses, rooms: rooms.rooms,
-                                        exams: career.sessions,
-                                        account: session.student?.matricola)
+                // Once the launch refresh has settled rather than once per
+                // service landing: a new key cancels this wait.
+                do { try await Task.sleep(for: .seconds(2)) } catch { return }
+                let (courses, rooms, sessions) = (courses.courses, rooms.rooms, career.sessions)
+                let account = session.student?.matricola
+                // Built off the main actor, the roster included.
+                await Compute.run {
+                    // The same material, in the narrow shape an App Intent can
+                    // read from a process where none of these services exist.
+                    EntityIndexWriter.write(courses: courses, rooms: rooms, exams: sessions, account: account)
+                }
+                await spotlight.index(
+                    courses: courses, rooms: rooms,
+                    teachers: await Compute.run { Teacher.roster(courses: courses, sessions: sessions) },
+                    exams: sessions)
             }
             // The Watch has no session and no network of its own, so the phone
             // hands it the day. Sent on the same signal the reminders use,

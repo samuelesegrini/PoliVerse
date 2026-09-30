@@ -194,13 +194,22 @@ final class AgendaModel {
         if case .success = weekResult { saveForWidgets() }
     }
 
-    /// Loads the weeks around a date whose own week is not held.
+    /// Loads the weeks around a date when its own week, the one before or the two
+    /// after are not held.
+    ///
+    /// Looking ahead is what keeps paging from waiting: the weeks next to the one on
+    /// screen arrive while the student is still reading it, rather than after they
+    /// have paged to an empty week.
     ///
     /// - Parameter date: The date the student navigated to.
     func ensureLoaded(covering date: Date) async {
-        let week = AgendaWeeks.week(of: date)
-        guard heldSource != Env(account).source || weeks[week] == nil else { return }
-        log.debug("Navigated to a week not held; fetching around it")
+        let calendar = PoliMiDate.romeCalendar
+        let neighbours = [-7, 0, 7, 14].map {
+            AgendaWeeks.week(of: calendar.date(byAdding: .day, value: $0, to: date) ?? date)
+        }
+        guard heldSource != Env(account).source || neighbours.contains(where: { weeks[$0] == nil })
+        else { return }
+        log.debug("Navigated near a week not held; fetching around it")
         await load(around: date)
     }
 
