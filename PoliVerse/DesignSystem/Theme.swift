@@ -65,16 +65,22 @@ enum Theme {
     ///   - light: The light-mode components.
     ///   - dark: The dark-mode components.
     /// - Returns: The adaptive colour.
+    ///
+    /// The providers are `@Sendable`, and so not isolated to the main actor as this
+    /// type is: SwiftUI resolves colours off the main thread too, and a provider
+    /// inferred as main-actor code stopped the app there with an isolation check
+    /// (`dispatch_assert_queue`): eight crashes in one afternoon of launches on an
+    /// iPhone 12 Pro.
     private static func adaptive(
         light: (Double, Double, Double), dark: (Double, Double, Double)
     ) -> Color {
         #if os(iOS)
-        Color(UIColor { traits in
+        Color(UIColor { @Sendable traits in
             let c = traits.userInterfaceStyle == .dark ? dark : light
             return UIColor(red: c.0, green: c.1, blue: c.2, alpha: 1)
         })
         #else
-        Color(NSColor(name: nil) { appearance in
+        Color(NSColor(name: nil) { @Sendable appearance in
             let c = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? dark : light
             return NSColor(srgbRed: c.0, green: c.1, blue: c.2, alpha: 1)
         })
@@ -87,13 +93,13 @@ enum Theme {
     /// fixed white label works in light mode and scores about 2.3:1 in dark. Near-black on
     /// the lighter dark-mode accent gives roughly 9:1.
     #if os(iOS)
-    static let onAccent = Color(UIColor { traits in
+    static let onAccent = Color(UIColor { @Sendable traits in
         traits.userInterfaceStyle == .dark
             ? UIColor(white: 0.08, alpha: 1)
             : .white
     })
     #else
-    static let onAccent = Color(NSColor(name: nil) { appearance in
+    static let onAccent = Color(NSColor(name: nil) { @Sendable appearance in
         appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
             ? NSColor(white: 0.08, alpha: 1)
             : .white
