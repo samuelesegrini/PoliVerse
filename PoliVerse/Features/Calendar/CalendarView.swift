@@ -6,6 +6,8 @@ struct CalendarView: View {
     @Environment(AgendaModel.self) private var agenda
     /// The locale dates and numbers are formatted in.
     @Environment(\.locale) private var locale
+    /// The reader's text size: at accessibility sizes the strip names each day by its initial.
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     /// The day being shown, in Rome. Moving past the loaded window fetches more.
     @State private var selectedDay: Date = PoliMiDate.romeCalendar.startOfDay(for: .now)
@@ -126,8 +128,13 @@ struct CalendarView: View {
 
                 Spacer()
 
+                // Two lines at most: at the largest text sizes "Set – Ott
+                // 2026" would otherwise take one word per line between the arrows.
                 Text(monthTitle)
                     .font(.headline)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
                     .contentTransition(.numericText())
 
                 Spacer()
@@ -165,12 +172,18 @@ struct CalendarView: View {
             withAnimation(.snappy(duration: 0.2)) { selectedDay = day }
         } label: {
             VStack(spacing: 4) {
+                // One line each, shrunk rather than wrapped: seven columns on a
+                // 375pt phone leave ~40pt a day, and a wrapped "28" reads as 2 over 8.
                 Text(weekdaySymbol(day))
                     .font(.caption2.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                     .foregroundStyle(isSelected ? AnyShapeStyle(Theme.onAccent.opacity(0.85)) : AnyShapeStyle(.secondary))
                 Text(dayNumber(day))
                     .font(.title3.weight(isSelected || isToday ? .bold : .medium))
                     .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                     .foregroundStyle(isSelected ? AnyShapeStyle(Theme.onAccent) : (isToday ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary)))
                 Circle()
                     .fill(isSelected ? AnyShapeStyle(Theme.onAccent) : AnyShapeStyle(.tint))
@@ -193,27 +206,42 @@ struct CalendarView: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    /// What to show, as glass chips, as Cerca narrows its results.
+    /// What to show, as glass chips, as Cerca narrows its results: in a row
+    /// that scrolls sideways when the three no longer fit, rather than
+    /// wrapping "Lezioni" a syllable per line.
     private var filters: some View {
         GlassEffectContainer(spacing: 8) {
-            HStack(spacing: 8) {
-                ForEach(Filter.allCases) { item in
-                    let on = filter == item
-                    Button { withAnimation(.snappy) { filter = item } } label: {
-                        Text(item.rawValue)
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(on ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 9)
-                            .contentShape(.capsule)
-                    }
-                    .buttonStyle(.plain)
-                    .glassEffect(on ? .regular.tint(Color.accentColor.opacity(0.18)).interactive() : .regular.interactive(),
-                                 in: .capsule)
-                    .accessibilityAddTraits(on ? .isSelected : [])
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    filterChips
+                    Spacer(minLength: 0)
                 }
-                Spacer(minLength: 0)
+                ScrollView(.horizontal) {
+                    HStack(spacing: 8) { filterChips }
+                }
+                .scrollIndicators(.hidden)
+                .scrollClipDisabled()
             }
+        }
+    }
+
+    /// One glass chip per filter, the chosen one tinted.
+    private var filterChips: some View {
+        ForEach(Filter.allCases) { item in
+            let on = filter == item
+            Button { withAnimation(.snappy) { filter = item } } label: {
+                Text(item.rawValue)
+                    .font(.subheadline.weight(.medium))
+                    .lineLimit(1)
+                    .foregroundStyle(on ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 9)
+                    .contentShape(.capsule)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(on ? .regular.tint(Color.accentColor.opacity(0.18)).interactive() : .regular.interactive(),
+                         in: .capsule)
+            .accessibilityAddTraits(on ? .isSelected : [])
         }
     }
 
@@ -271,12 +299,13 @@ struct CalendarView: View {
         return "\(first) – \(second)".capitalized
     }
 
-    /// A day's weekday, abbreviated.
+    /// A day's weekday, abbreviated, or only its initial at accessibility text sizes.
     ///
     /// - Parameter day: The day.
     /// - Returns: The abbreviation, in the reader's language.
     private func weekdaySymbol(_ day: Date) -> String {
-        day.formatted(.dateTime.weekday(.abbreviated).locale(locale)).uppercased()
+        let width: Date.FormatStyle.Symbol.Weekday = typeSize.isAccessibilitySize ? .narrow : .abbreviated
+        return day.formatted(.dateTime.weekday(width).locale(locale)).uppercased()
     }
 
     /// A day's number in its month.

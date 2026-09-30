@@ -71,40 +71,24 @@ struct CampusMapView: View {
         }
     }
 
-    /// The campus and the availability toggle as glass floating over the map.
+    /// The campus and the availability toggle as glass floating over the map:
+    /// side by side when both labels fit on one line, else one above the other,
+    /// so neither wraps a word at a time.
     private var controls: some View {
         GlassEffectContainer(spacing: 10) {
-        HStack(spacing: 10) {
-            if map.campuses.count > 1 {
-                Menu {
-                    Picker("Sede", selection: $campus) {
-                        Text("Tutte").tag(String?.none)
-                        ForEach(map.campuses, id: \.self) { name in
-                            Text(name).tag(String?.some(name))
-                        }
-                    }
-                } label: {
-                    Label(campus ?? String(localized: "Tutte le sedi"), systemImage: "building.2")
-                        .lineLimit(1)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    campusMenu(lines: 1)
+                    Spacer(minLength: 0)
+                    availabilityButton(lines: 1)
                 }
-                .buttonStyle(.glass)
-            }
-            Spacer(minLength: 0)
-
-            Button {
-                Task {
-                    loadingAvailability = true
-                    await map.loadAvailability(campus: campus)
-                    loadingAvailability = false
+                // Stacked, each has the whole width and may take a second line.
+                VStack(alignment: .leading, spacing: 10) {
+                    campusMenu(lines: 2)
+                    availabilityButton(lines: 2)
                 }
-            } label: {
-                Label(
-                    map.showsAvailability ? "Aggiorna disponibilità" : "Mostra libere ora",
-                    systemImage: loadingAvailability ? "clock" : "checkmark.circle")
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .buttonStyle(.glassProminent)
-            .disabled(loadingAvailability || map.placed.isEmpty)
-        }
         }
         .controlSize(.large)
         .padding(.horizontal, 16)
@@ -114,6 +98,47 @@ struct CampusMapView: View {
             withAnimation { position = .region(CampusRegions.region(for: campus)) }
             Task { await map.load(campus: campus) }
         }
+    }
+
+    /// The campus picker, when there is more than one campus.
+    ///
+    /// - Parameter lines: The most lines its label may take.
+    @ViewBuilder
+    private func campusMenu(lines: Int) -> some View {
+        if map.campuses.count > 1 {
+            Menu {
+                Picker("Sede", selection: $campus) {
+                    Text("Tutte").tag(String?.none)
+                    ForEach(map.campuses, id: \.self) { name in
+                        Text(name).tag(String?.some(name))
+                    }
+                }
+            } label: {
+                Label(campus ?? String(localized: "Tutte le sedi"), systemImage: "building.2")
+                    .lineLimit(lines)
+            }
+            .buttonStyle(.glass)
+        }
+    }
+
+    /// Asks which rooms are free now and colours the pins by it.
+    ///
+    /// - Parameter lines: The most lines its label may take.
+    private func availabilityButton(lines: Int) -> some View {
+        Button {
+            Task {
+                loadingAvailability = true
+                await map.loadAvailability(campus: campus)
+                loadingAvailability = false
+            }
+        } label: {
+            Label(
+                map.showsAvailability ? "Aggiorna disponibilità" : "Mostra libere ora",
+                systemImage: loadingAvailability ? "clock" : "checkmark.circle")
+                .lineLimit(lines)
+        }
+        .buttonStyle(.glassProminent)
+        .disabled(loadingAvailability || map.placed.isEmpty)
     }
 
     /// The capsule above the map: what the colours mean once availability has been counted,

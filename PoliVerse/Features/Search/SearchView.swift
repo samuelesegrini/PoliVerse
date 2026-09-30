@@ -37,6 +37,8 @@ struct SearchView: View {
     @Environment(\.locale) private var locale
     /// The look in use, which the tiles' colour and typeface come from.
     @Environment(\.colorScheme) private var scheme
+    /// The reader's text size: the campus tiles go to one column at accessibility sizes.
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.look) private var style
     /// The latest searches, newest first, one per line.
     @AppStorage("searchRecents") private var storedRecents = ""
@@ -473,7 +475,12 @@ struct SearchView: View {
     private var campusSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             LookHeading("Campus")
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+            // One to a row at accessibility sizes, as Corsi's favourites: two
+            // side by side broke "Mappa" into "Map-pa".
+            let columns = typeSize.isAccessibilitySize
+                ? [GridItem(.flexible())]
+                : [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+            LazyVGrid(columns: columns, spacing: 12) {
                 ForEach([NewDestination.freeRooms, .map]) { place in
                     NavigationLink(value: place) {
                         PlaceTile(title: Text(place.title), detail: Text(place.detail), symbol: place.systemImage,
