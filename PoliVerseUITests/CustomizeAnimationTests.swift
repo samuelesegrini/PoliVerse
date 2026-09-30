@@ -153,7 +153,9 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         icon.tap()
         // Every shape comes in every colour; pick one of Giorno's.
         app.buttons["Giorno"].firstMatch.tap()
-        app.buttons["app-icon-graphite"].firstMatch.tap()
+        let graphite = app.buttons["app-icon-graphite"].firstMatch
+        revealInRow(graphite, anchor: app.buttons["app-icon-automatic"].firstMatch, in: app)
+        graphite.tap()
         settle()
         shot(app, "12-app-icon")
         app.buttons["app-done"].tap()
@@ -415,6 +417,26 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
             attempts += 1
         }
         return element
+    }
+
+    /// Swipes a row of choices along until `element` is on screen. The row is
+    /// lazy, so a choice past its edge does not exist until it is scrolled to.
+    ///
+    /// - Parameters:
+    ///   - element: The choice to bring into view.
+    ///   - anchor: A choice at the start of the row, which gives its height.
+    ///   - app: The app under test.
+    @MainActor private func revealInRow(_ element: XCUIElement, anchor: XCUIElement, in app: XCUIApplication) {
+        guard anchor.waitForExistence(timeout: 3) else { return }
+        let row = anchor.frame.midY
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        let start = origin.withOffset(CGVector(dx: app.frame.width * 0.8, dy: row))
+        let end = origin.withOffset(CGVector(dx: app.frame.width * 0.2, dy: row))
+        var swipes = 0
+        while !(element.exists && element.isHittable) && swipes < 6 {
+            start.press(forDuration: 0.05, thenDragTo: end)
+            swipes += 1
+        }
     }
 
     @MainActor private func zone(_ app: XCUIApplication, _ id: String) -> XCUIElement {
