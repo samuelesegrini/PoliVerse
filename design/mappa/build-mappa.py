@@ -1014,31 +1014,46 @@ def draw_iso(campus, b):
         leaf = [(ex + tx * 1.5, ey + ty * 1.5), (ex - tx * 1.5, ey - ty * 1.5)]
         q = [(*leaf[0], dz0), (*leaf[1], dz0), (*leaf[1], dz1), (*leaf[0], dz1)]
         if ent.get("rampa"):
-            # A raised ground floor: a ramp from the street up to a landing at the door,
-            # and under the landing the door to the floor below.
+            # A raised ground floor, as the plans draw it: a landing before the door, ramps
+            # down from its ends along the walls, and under the landing, between its posts,
+            # the glazed entrance to the floor below.
             r = ent["rampa"]
             zg = base_h + r.get("quota", 5)
-            w, deep, run = r.get("larghezza", 3.0) / 2, r.get("pianerottolo", 4.0), r.get("lunghezza", 12.0)
+            land = [turn(tuple(p)) for p in r["pianerottolo"]]
+            ramps = [[turn(tuple(p)) for p in q] for q in r["rampe"]]
             P = lambda s, o, z: (ex + tx * s + nx * o, ey + ty * s + ny * o, z)
-            pale, side, edge = "#E9E6E0", "#CFCAC0", "#BDB7AC"
-            under = [P(1.2, 0.05, 0), P(-1.2, 0.05, 0), P(-1.2, 0.05, zg - 1.6), P(1.2, 0.05, zg - 1.6)]
-            door.append(f'<polygon points="{iso_poly(under)}" fill="#26303D"/>')
-            door.append(f'<polygon points="{iso_poly([P(1.2, 0.05, zg - 1.6), P(-1.2, 0.05, zg - 1.6), P(-1.2, 1.2, zg - 1.6), P(1.2, 1.2, zg - 1.6)])}" fill="{SHADOW}" opacity="0.35"/>')
+            pale, edge = "#E9E6E0", "#BDB7AC"
+            half = r.get("sotto", 3.5)
+            door.append(f'<polygon points="{iso_poly([P(half, 0.05, 0), P(-half, 0.05, 0), P(-half, 0.05, zg - 1.4), P(half, 0.05, zg - 1.4)])}" fill="#2B3644"/>')
+            mull = "".join(f'M{fmt(iso(*P(s0, 0.06, 0)[:2])[0])} {fmt(iso(*P(s0, 0.06, 0)[:2])[1])}V{fmt(iso(*P(s0, 0.06, 0)[:2], zg - 1.4)[1])}'
+                           for s0 in [-half + i * 2 * half / 4 for i in range(1, 4)])
+            door.append(f'<path d="{mull}" stroke="#8C96A3" stroke-width="0.6"/>')
             door.append(f'<polygon points="{iso_poly([P(1.5, 0.05, zg), P(-1.5, 0.05, zg), P(-1.5, 0.05, zg + ISO_FLOOR * 0.6), P(1.5, 0.05, zg + ISO_FLOOR * 0.6)])}" fill="{ISO_DOOR}"/>')
-            for s0 in (w - 0.3, -w + 0.3):           # the landing's two posts
-                door.append(f'<path d="M{fmt(iso(*P(s0, deep - 0.3, 0)[:2])[0])} {fmt(iso(*P(s0, deep - 0.3, 0)[:2])[1])}V{fmt(iso(*P(s0, deep - 0.3, zg - 1.2)[:2], zg - 1.2)[1])}" stroke="{side}" stroke-width="1.6"/>')
-            land = [P(w, 0, zg), P(-w, 0, zg), P(-w, deep, zg), P(w, deep, zg)]
-            ramp = [P(w, deep, zg), P(-w, deep, zg), P(-w, deep + run, 0), P(w, deep + run, 0)]
-            for top, z_off in ((ramp, 1.2), (land, 1.2)):
-                for i in range(4):
-                    a3, c3 = top[i], top[(i + 1) % 4]
-                    face = [a3, c3, (c3[0], c3[1], c3[2] - z_off), (a3[0], a3[1], a3[2] - z_off)]
-                    door.append(f'<polygon points="{iso_poly(face)}" fill="{edge}"/>')
-                door.append(f'<polygon points="{iso_poly(top)}" fill="{pale}"/>')
-            rail = "".join(f'M{fmt(iso(*P(s0, 0, zg + 3)[:2], zg + 3)[0])} {fmt(iso(*P(s0, 0, zg + 3)[:2], zg + 3)[1])}'
-                           f'L{fmt(iso(*P(s0, deep, zg + 3)[:2], zg + 3)[0])} {fmt(iso(*P(s0, deep, zg + 3)[:2], zg + 3)[1])}'
-                           f'L{fmt(iso(*P(s0, deep + run, 3)[:2], 3)[0])} {fmt(iso(*P(s0, deep + run, 3)[:2], 3)[1])}' for s0 in (w, -w))
-            door.append(f'<path d="{rail}" stroke="#FFFFFF" stroke-width="0.9" fill="none"/>')
+            # The landing's posts, along its outer edge.
+            outer = max(zip(land, land[1:] + land[:1]), key=lambda e: math.dist(*e) * (1 if outward(e[0], e[1], land)[0] + outward(e[0], e[1], land)[1] > 0 else 0))
+            posts = []
+            for i in range(5):
+                x, y = outer[0][0] + (outer[1][0] - outer[0][0]) * (i + 0.5) / 5, outer[0][1] + (outer[1][1] - outer[0][1]) * (i + 0.5) / 5
+                x, y = x - nx * 0.5, y - ny * 0.5
+                posts.append(f'M{fmt(iso(x, y, 0)[0])} {fmt(iso(x, y, 0)[1])}V{fmt(iso(x, y, zg - 1.2)[1])}')
+            door.append(f'<path d="{"".join(posts)}" stroke="#D2CEC6" stroke-width="2.2"/>')
+            def slab(top3):
+                out = []
+                for i in range(len(top3)):
+                    a3, c3 = top3[i], top3[(i + 1) % len(top3)]
+                    out.append(f'<polygon points="{iso_poly([a3, c3, (c3[0], c3[1], c3[2] - 1.2), (a3[0], a3[1], a3[2] - 1.2)])}" fill="{edge}"/>')
+                out.append(f'<polygon points="{iso_poly(top3)}" fill="{pale}"/>')
+                return out
+            line = lambda p3, q3: f'M{fmt(iso(*p3)[0])} {fmt(iso(*p3)[1])}L{fmt(iso(*q3)[0])} {fmt(iso(*q3)[1])}'
+            pieces = [(sum(x + y for x, y in land) / len(land), slab([(x, y, zg) for x, y in land])
+                       + [f'<path d="{line((*outer[0], zg + 3), (*outer[1], zg + 3))}" stroke="#FFFFFF" stroke-width="0.9"/>'])]
+            for q in ramps:
+                # The first two corners meet the landing, the last two the ground.
+                top3 = [(*q[0], zg), (*q[1], zg), (*q[2], 0), (*q[3], 0)]
+                rails = line((q[1][0], q[1][1], zg + 3), (q[2][0], q[2][1], 3)) + line((q[0][0], q[0][1], zg + 3), (q[3][0], q[3][1], 3))
+                pieces.append((sum(x + y for x, y in q) / 4, slab(top3) + [f'<path d="{rails}" stroke="#FFFFFF" stroke-width="0.9"/>']))
+            for _, piece in sorted(pieces, key=lambda p: p[0]):
+                door += piece
         else:
             door.append(f'<polygon points="{iso_poly(q)}" fill="{ISO_DOOR}"/>')
         canopy = ccw([(ex + tx * 3, ey + ty * 3), (ex - tx * 3, ey - ty * 3),
