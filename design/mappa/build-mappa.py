@@ -677,24 +677,48 @@ def sculpture_a(pts, at, top):
     ux, uy = (c[0] - a[0]) / length, (c[1] - a[1]) / length
     p = lambda t, out=3.2: (q[0] + ux * t + n[0] * out, q[1] + uy * t + n[1] * out)
     base = 6.0
-    # As on Via Ampère: a thick black leg, long and leaning, running past the apex; a
-    # thinner, steeper red leg; and a red crossbar low down, over the door.
+    # As on Via Ampère: an equilateral A, a thick black leg running a little past the
+    # apex, a thinner red one, and the red crossbar over the opening it frames.
     out = 4.5
     zx = top * 0.92
     h = zx - base
+    # Metres along the façade that look as wide as h is tall over √3: the legs at 60° as
+    # seen, however the façade turns from the viewer.
+    seen = math.dist(iso(0, 0), iso(ux, uy))
+    half = h / seen / math.sqrt(3)
     apex = 3.2
     xs = lambda t0, t1, f: t0 + (t1 - t0) * f
     leg = lambda t0, t1, z1, w: [(*p(t0, out), base), (*p(t0 + w, out), base), (*p(t1 + w, out), z1), (*p(t1, out), z1)]
-    tb, tr = apex + 8.5, apex - 5.5      # the black and red feet, metres along the façade
-    wb, wr = 2.2, 1.2
-    black_leg = leg(tb, xs(tb, apex, 1.32), base + h * 1.32, wb)
-    red_leg = leg(tr - wr, apex, zx, wr)
-    z0, z1 = base + h * 0.17, base + h * 0.28
-    f0, f1 = 0.17, 0.28
+    tb, tr = apex + half, apex - half          # the black and red feet
+    wb, wr = 2.2, 1.4
+    black_leg = leg(tb - wb / 2, xs(tb, apex, 1.12) - wb / 2, base + h * 1.12, wb)
+    red_leg = leg(tr - wr / 2, apex - wr / 2, zx, wr)
+    # The opening: the ground storey, open under the A into the building.
+    zp = base + 23
+    f0, f1 = (zp - base) / h, (zp - base) / h + 0.09
+    z0, z1 = base + h * f0, base + h * f1
     bar = [(*p(xs(tr, apex, f0), out), z0), (*p(xs(tb, apex, f0), out), z0),
            (*p(xs(tb, apex, f1), out), z1), (*p(xs(tr, apex, f1), out), z1)]
-    door = [(*p(1.0, 0.2), base), (*p(4.0, 0.2), base), (*p(4.0, 0.2), base + 12), (*p(1.0, 0.2), base + 12)]
-    return [f'<polygon points="{iso_poly(door)}" fill="{ISO_DOOR}"/>',
+    o0, o1 = tr + 1.5, tb - 1.5
+    face = lambda t0, t1, za, zb, d=0.15: [(*p(t0, d), za), (*p(t1, d), za), (*p(t1, d), zb), (*p(t0, d), zb)]
+    line = lambda t0, t1, z, d=0.2: f'M{fmt(iso(*p(t0, d), z)[0])} {fmt(iso(*p(t0, d), z)[1])}L{fmt(iso(*p(t1, d), z)[0])} {fmt(iso(*p(t1, d), z)[1])}'
+    span = o1 - o0
+    opening = [f'<polygon points="{iso_poly(face(o0, o1, base, zp))}" fill="#1B1F25"/>',
+               # the sunken floor seen through the well, warm with its lights
+               f'<polygon points="{iso_poly(face(o0 + span * 0.08, o1 - span * 0.3, base + 1, base + 6, 0.1))}" fill="#3A332B"/>',
+               # the silver ducts along the ceiling
+               f'<polygon points="{iso_poly(face(o0, o1, zp - 4.2, zp - 2.4, 0.18))}" fill="#A9B0B9"/>',
+               f'<polygon points="{iso_poly(face(o0, o1, zp - 2.0, zp - 0.6, 0.18))}" fill="#C9CED5"/>',
+               # the white stair rising inside, on the red leg's side
+               f'<polygon points="{iso_poly([(*p(o0 + span * 0.04, 0.17), base + 6), (*p(o0 + span * 0.2, 0.17), base + 6), (*p(o0 + span * 0.42, 0.17), zp - 5), (*p(o0 + span * 0.3, 0.17), zp - 5)])}" fill="#E4E6E9"/>',
+               # lit glazing at the back of the hall
+               f'<polygon points="{iso_poly(face(o0 + span * 0.5, o1 - span * 0.12, base + 7, base + 14, 0.16))}" fill="#E8C989" opacity="0.75"/>',
+               # the black columns holding the building over the opening
+               f'<path d="' + "".join(f'M{fmt(iso(*p(t, 0.2), base)[0])} {fmt(iso(*p(t, 0.2), base)[1])}V{fmt(iso(*p(t, 0.2), zp)[1])}'
+                                      for t in (o0 + span * 0.33, o0 + span * 0.66)) + f'" stroke="{STEEL}" stroke-width="2.2"/>',
+               # the orange railings of the walkway and the well
+               f'<path d="{line(o0, o1, base + 6.5)}{line(o0, o1, base + 4.5)}" stroke="#E2672A" stroke-width="1.1" fill="none"/>']
+    return [*opening,
             f'<polygon points="{iso_poly(red_leg)}" fill="{STEEL_RED}"/>',
             f'<polygon points="{iso_poly(bar)}" fill="{STEEL_RED}"/>',
             f'<polygon points="{iso_poly(black_leg)}" fill="{STEEL}"/>']
