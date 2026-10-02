@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-102.6 -187.8 146.8 189.2" width="293.6" height="378.4">
+<defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient></defs>
+<polygon points="4.2,-58.2 -45.4,-29.6 -45.4,-33.6 4.2,-62.2" fill="#D4D8DF"/>
+<polygon points="-45.4,-29.6 -72.4,-45.2 -72.4,-49.2 -45.4,-33.6" fill="#F2F3F6"/>
+<polygon points="-22.9,-77.8 4.2,-62.2 -45.4,-33.6 -72.4,-49.2" fill="#FFFFFF"/>
+<polygon points="2.8,-62.2 -45.4,-34.4 -45.4,-48.4 2.8,-76.2" fill="url(#iso-glass-r)"/>
+<polygon points="-45.4,-34.4 -71,-49.2 -71,-63.2 -45.4,-48.4" fill="url(#iso-glass-l)"/>
+<path d="M-5.3 -57.6V-71.6M-13.3 -52.9V-66.9M-21.3 -48.3V-62.3M-29.3 -43.7V-57.7M-37.4 -39V-53M-53.9 -39.3V-53.3M-62.5 -44.3V-58.3" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>
+</svg>

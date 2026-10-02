@@ -864,17 +864,18 @@ def draw_plan(b, floor, geo):
         out = not inside(area_centroid(rings[0]), outline)
         rooms.append({**v, "tipo": kind, "rings": rings, "fuori": out})
     lines = geo["linee"]
-    # A room the step-free route runs through is somewhere people walk: draw it as one.
+    # A room the step-free route runs through is somewhere people walk: draw it as one,
+    # unless it is a hall the route crosses.
     for ax, ay, bx, by, _ in geo.get("percorso_accessibile", []):
         mid = ((ax + bx) / 2, (ay + by) / 2)
         for rm in rooms:
-            if rm["tipo"] == "locale" and inside(mid, rm["rings"][0]):
+            if rm["tipo"] == "locale" and abs(signed_area(rm["rings"][0])) < 250 and inside(mid, rm["rings"][0]):
                 rm["tipo"] = "corridoio"
 
     every = [p for r in shell for p in r] + [p for rm in rooms for p in rm["rings"][0]]
     every += [(s[0], s[1]) for segs in lines.values() for s in segs] + [(s[2], s[3]) for segs in lines.values() for s in segs]
     xs, ys = [p[0] for p in every], [p[1] for p in every]
-    m = 9.0       # room for the entrance's name beside its arrow
+    m = 12.0      # room for the entrance's name beside its arrow
     x0, y0, x1, y1 = min(xs) - m, min(ys) - m, max(xs) + m, max(ys) + m
     wall = WALL_PER_FLOOR * 1.4
     strati = []

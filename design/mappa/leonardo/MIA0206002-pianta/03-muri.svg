@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="65.5 21.6 55 55.4" width="549.6" height="554">
-<defs><clipPath id="pl-guscio"><path d="M78.9 54.8L98.4 54.7L98.4 59.9L108.4 59.9L108.5 67.8L74.5 68L74.5 54.8ZM79.4 38L81.8 38L81.8 42.1L79.4 42.1Z"/></clipPath></defs>
-<path d="M78.9 54.8L98.4 54.7L98.4 59.9L108.4 59.9L108.5 67.8L74.5 68L74.5 54.8ZM79.4 38L81.8 38L81.8 42.1L79.4 42.1Z" fill="#B9BFC9" fill-rule="evenodd"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="62.5 18.6 60.9 61.4" width="609.4" height="613.7">
+<defs><clipPath id="pl-guscio"><path d="M78.9 54.7L98.4 54.6L98.4 59.9L108.4 59.9L108.5 67.8L74.5 68L74.5 54.8ZM79.4 38L81.8 37.9L81.8 42L79.5 42Z"/></clipPath></defs>
+<path d="M78.9 54.7L98.4 54.6L98.4 59.9L108.4 59.9L108.5 67.8L74.5 68L74.5 54.8ZM79.4 38L81.8 37.9L81.8 42L79.5 42Z" fill="#B9BFC9" fill-rule="evenodd"/>
 <path d="" fill="#FFFFFF" clip-path="url(#pl-guscio)"/>
 </svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-102.6 -187.8 146.8 189.2" width="293.6" height="378.4">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="4.2,-112.2 -45.4,-83.6 -45.4,-87.6 4.2,-116.2" fill="#D4D8DF"/>
+<polygon points="-45.4,-83.6 -72.4,-99.2 -72.4,-103.2 -45.4,-87.6" fill="#F2F3F6"/>
+<polygon points="-22.9,-131.8 4.2,-116.2 -45.4,-87.6 -72.4,-103.2" fill="#FFFFFF"/>
+<polygon points="2.8,-112.2 -45.4,-84.4 -45.4,-88.4 2.8,-116.2" fill="#FFD98A" opacity="0.55"/>
+<polygon points="2.8,-116.2 -45.4,-88.4 -45.4,-102.4 2.8,-130.2" fill="url(#iso-lit-r)"/>
+<polygon points="2.8,-116.2 -5.3,-111.6 -5.3,-125.6 2.8,-130.2" fill="#B87A24" opacity="0.14"/>
+<polygon points="-21.3,-102.3 -29.3,-97.7 -29.3,-111.7 -21.3,-116.3" fill="#FFFFFF" opacity="0.18"/>
+<polygon points="2.8,-123.2 -45.4,-95.4 -45.4,-102.4 2.8,-130.2" fill="url(#iso-lit-glow)"/>
+<polygon points="-45.4,-84.4 -71,-99.2 -71,-103.2 -45.4,-88.4" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-45.4,-88.4 -71,-103.2 -71,-117.2 -45.4,-102.4" fill="url(#iso-lit-l)"/>
+<polygon points="-62.5,-98.3 -71,-103.2 -71,-117.2 -62.5,-112.3" fill="#B87A24" opacity="0.14"/>
+<polygon points="-45.4,-95.4 -71,-110.2 -71,-117.2 -45.4,-102.4" fill="url(#iso-lit-glow)"/>
+<path d="M2.8 -119.4L-45.4 -91.6M-45.4 -91.6L-71 -106.4" stroke="#D9963A" stroke-width="1.1" opacity="0.4"/>
+<path d="M-5.3 -111.6V-125.6M-13.3 -106.9V-120.9M-21.3 -102.3V-116.3M-29.3 -97.7V-111.7M-37.4 -93V-107M-53.9 -93.3V-107.3M-62.5 -98.3V-112.3" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+</svg>

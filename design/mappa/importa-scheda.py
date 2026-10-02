@@ -450,25 +450,35 @@ def main(csie):
             if room:
                 pairs.append((flipped(area_centroid(rings[0])), room[0]["centre"]))
     ref = None
+    fitted = None
     if len(pairs) >= 4:
         t, used, err = robust_fit(pairs)
         print(f"fit on {used}/{len(pairs)} rooms, median error {err * 100:.0f} cm, "
               f"scale {t['s']:.4f}, rotation {math.degrees(t['th']):.2f}°")
+        # Room numbers repeat across buildings too: a fit this loose matched the wrong rooms.
+        fitted = t if err < 1.0 else None
+        if not fitted:
+            print("  too loose: those rooms are not the same, the outline is used instead")
+            level_of = {c: None for c in drawn}
+    if fitted:
+        t = fitted
     else:
         # OpenStreetMap maps no room inside: match the floor's outline to the building's.
-        # The ground floor stands on the footprint; a basement may reach under the courtyard.
-        ref = next((c for c in drawn if c.endswith("000") and drawn[c]["shell"]),
-                   next((c for c in drawn if drawn[c]["shell"]), None))
-        shell = max(drawn[ref]["shell"], key=lambda r: abs(area(r)))
-        # The campus's drawings share north and scale: take them from the buildings placed so far.
+        # The floor whose outline sits best on the footprint places the building: often the
+        # ground floor, but a basement may reach under a courtyard and a ground floor be partial.
         known = [json.loads(g.read_text())["trasformazione"] for g in (HERE / "piante").glob("*-geometria.json")
                  if not g.name.startswith(csie)]
         known = [k for k in known if k.get("da") != "contorno"]
         prior = (statistics.median(k["th"] for k in known), statistics.median(k["s"] for k in known)) if known else None
-        t, err = outline_fit([flipped(p) for p in shell], [tuple(p) for p in building["pianta"]], prior)
-        t["da"] = "contorno"
+        tries = []
+        for c in drawn:
+            if drawn[c]["shell"]:
+                shell = max(drawn[c]["shell"], key=lambda r: abs(area(r)))
+                tries.append(outline_fit([flipped(p) for p in shell], [tuple(p) for p in building["pianta"]], prior) + (c,))
+        t, err, ref = min(tries, key=lambda x: x[1])
         print(f"no rooms in OpenStreetMap: {ref}'s outline fitted to the building's, "
               f"median gap {err * 100:.0f} cm, scale {t['s']:.4f}, rotation {math.degrees(t['th']):.2f}°")
+        t["da"] = "contorno"
 
     # Some floors are drawn with their own origin. Lift shafts stand in the same place on
     # every floor, so a floor OpenStreetMap does not place is moved until its lifts sit on
@@ -476,6 +486,12 @@ def main(csie):
     lifts = {c: lift_centres([(apply(t, flipped(a)), apply(t, flipped(b))) for a, b in f["lines"]["ascensori"]])
              for c, f in drawn.items()}
     anchors = [c for c in drawn if level_of[c]] or [ref]
+    anchor = next((c for c in anchors if drawn[c]["shell"]), None)
+    # Placed by its outline, every floor goes onto the building's footprint; placed by its rooms,
+    # onto the floor OpenStreetMap placed.
+    anchor_shell = ([tuple(p) for p in building["pianta"]] if not fitted else
+                    [apply(t, flipped(p)) for p in max(drawn[anchor]["shell"], key=lambda r: abs(area(r)))]
+                    if anchor else None)
     placed = [p for c in anchors for p in lifts[c]]
     shift = {}
     for c in drawn:
@@ -491,8 +507,15 @@ def main(csie):
                     best = (n, dx, dy)
         if best[0] >= 2:
             shift[c] = best[1:]
-        else:
-            print(f"{c}: no lifts to place it by, left where its drawing puts it")
+        elif drawn[c]["shell"] and anchor_shell:
+            # No lifts: the floor's outline onto the anchor's, by a shift only.
+            own = [apply(t, flipped(p)) for p in max(drawn[c]["shell"], key=lambda r: abs(area(r)))]
+            moved, gap = outline_fit(own, anchor_shell, (0.0, 1.0))
+            dx, dy = apply(moved, own[0])[0] - own[0][0], apply(moved, own[0])[1] - own[0][1]
+            if gap < 1.0:
+                shift[c] = (dx, dy)
+            else:
+                print(f"{c}: no lifts, and its outline matches nothing: left where its drawing puts it")
     print("moved:", {c: (r2(dx), r2(dy)) for c, (dx, dy) in shift.items() if math.hypot(dx, dy) > 0.05})
 
     out = {"csie": csie, "fonte": "onlineservices.polimi.it/maps_rest, piano/<csip>/svg/pub",

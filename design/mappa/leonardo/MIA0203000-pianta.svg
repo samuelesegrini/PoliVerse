@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-29.9 -36.6 83.9 76.9" width="839.4" height="769.3">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-32.9 -39.6 89.9 82.9" width="899.4" height="829.3">
 <g id="livello-fondo" data-livello="terreno">
-<rect x="-29.9" y="-36.6" width="83.9" height="76.9" fill="#EEF0EA"/>
+<rect x="-32.9" y="-39.6" width="89.9" height="82.9" fill="#EEF0EA"/>
 <path d="M-18.4 -18.4L-8.7 -24.1L2.6 -22.3L2.7 -7.2L19.6 -10.4L39.5 -17.8L45.3 -7.7L43.5 3.8L28.9 3.9L26.7 8.1L28.2 8.8L23.6 17.9L23.5 17.9L23.2 18.4L22.9 18.2L23.1 17.8L23 17.8L22.8 18.3L17.9 17.5L17.8 17.6L18 17.8L18 18L13.4 16.6L12.1 16.4L7.3 16.2L7.4 16.1L7.6 16L7.6 15.8L3 15.1L3.1 30.5L-8 32.5L-17.9 27.1L-11.6 8.1L-11.7 8L-11.8 8.3L-12 8.3L-11.6 5.1L-11.6 3.4L-12.1 0.3L-11.8 0.2L-11.7 0.5L-11.7 0.5Z" fill="#4E5566" opacity="0.10"/>
 </g>
 <g id="livello-esterni" data-livello="esterni">

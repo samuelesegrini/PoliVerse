@@ -1,0 +1,20 @@
+{
+  "csie": "MIA0214",
+  "piani": [
+    {
+      "csip": "MIA021401I",
+      "nome": "Primo Interrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA021400S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0214000",
+      "nome": "Terra",
+      "aule": {}
+    }
+  ]
+}

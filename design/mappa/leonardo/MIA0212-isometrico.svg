@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-102.6 -187.8 146.8 189.2" width="293.6" height="378.4">
+<defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient><radialGradient id="iso-shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#1D2B40" stop-opacity="0.22"/><stop offset="1" stop-color="#1D2B40" stop-opacity="0"/></radialGradient><radialGradient id="iso-tree" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#9FD08A"/><stop offset="1" stop-color="#4F9A5E"/></radialGradient></defs>
+<g id="livello-ombra" data-livello="ombre">
+<ellipse cx="-34.1" cy="-45.7" rx="44" ry="25.3" fill="url(#iso-shadow)"/>
+</g>
+<g id="livello-lotto" data-livello="terreno">
+<polygon points="28.4,-47.2 -45.4,-4.6 -45.4,-9.6 28.4,-52.2" fill="#AFBFD0"/>
+<polygon points="-45.4,-4.6 -96.6,-34.2 -96.6,-39.2 -45.4,-9.6" fill="#C8D4E1"/>
+<polygon points="-22.9,-81.8 28.4,-52.2 -45.4,-9.6 -96.6,-39.2" fill="#E3ECF5"/>
+</g>
+<g id="livello-percorso" data-livello="percorsi">
+<polygon points="-3.1,-48 2.5,-51.2 14.6,-44.2 9.1,-41" fill="#F4F7FA"/>
+</g>
+<g id="livello-alberi-dietro" data-livello="alberi">
+</g>
+<g id="livello-basamento" data-livello="edifici">
+<polygon points="11.1,-52.2 -45.4,-19.6 -45.4,-25.6 11.1,-58.2" fill="#AEB4BE"/>
+<polygon points="-45.4,-19.6 -79.3,-39.2 -79.3,-45.2 -45.4,-25.6" fill="#C9CED6"/>
+<polygon points="-22.9,-77.8 11.1,-58.2 -45.4,-25.6 -79.3,-45.2" fill="#E9EBEF"/>
+</g>
+<g id="livello-MIA0212000" data-livello="piani" data-piano="MIA0212000">
+<polygon points="4.2,-58.2 -45.4,-29.6 -45.4,-33.6 4.2,-62.2" fill="#D4D8DF"/>
+<polygon points="-45.4,-29.6 -72.4,-45.2 -72.4,-49.2 -45.4,-33.6" fill="#F2F3F6"/>
+<polygon points="-22.9,-77.8 4.2,-62.2 -45.4,-33.6 -72.4,-49.2" fill="#FFFFFF"/>
+<polygon points="2.8,-62.2 -45.4,-34.4 -45.4,-48.4 2.8,-76.2" fill="url(#iso-glass-r)"/>
+<polygon points="-45.4,-34.4 -71,-49.2 -71,-63.2 -45.4,-48.4" fill="url(#iso-glass-l)"/>
+<path d="M-5.3 -57.6V-71.6M-13.3 -52.9V-66.9M-21.3 -48.3V-62.3M-29.3 -43.7V-57.7M-37.4 -39V-53M-53.9 -39.3V-53.3M-62.5 -44.3V-58.3" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>
+</g>
+<g id="livello-MIA0212000-acceso" data-livello="piani" data-piano="MIA0212000" data-acceso="true" style="display: none">
+<polygon points="4.2,-58.2 -45.4,-29.6 -45.4,-33.6 4.2,-62.2" fill="#D4D8DF"/>
+<polygon points="-45.4,-29.6 -72.4,-45.2 -72.4,-49.2 -45.4,-33.6" fill="#F2F3F6"/>
+<polygon points="-22.9,-77.8 4.2,-62.2 -45.4,-33.6 -72.4,-49.2" fill="#FFFFFF"/>
+<polygon points="2.8,-58.2 -45.4,-30.4 -45.4,-34.4 2.8,-62.2" fill="#FFD98A" opacity="0.55"/>
+<polygon points="2.8,-62.2 -45.4,-34.4 -45.4,-48.4 2.8,-76.2" fill="url(#iso-lit-r)"/>
+<polygon points="2.8,-62.2 -5.3,-57.6 -5.3,-71.6 2.8,-76.2" fill="#B87A24" opacity="0.14"/>
+<polygon points="-21.3,-48.3 -29.3,-43.7 -29.3,-57.7 -21.3,-62.3" fill="#FFFFFF" opacity="0.18"/>
+<polygon points="2.8,-69.2 -45.4,-41.4 -45.4,-48.4 2.8,-76.2" fill="url(#iso-lit-glow)"/>
+<polygon points="-45.4,-30.4 -71,-45.2 -71,-49.2 -45.4,-34.4" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-45.4,-34.4 -71,-49.2 -71,-63.2 -45.4,-48.4" fill="url(#iso-lit-l)"/>
+<polygon points="-62.5,-44.3 -71,-49.2 -71,-63.2 -62.5,-58.3" fill="#B87A24" opacity="0.14"/>
+<polygon points="-45.4,-41.4 -71,-56.2 -71,-63.2 -45.4,-48.4" fill="url(#iso-lit-glow)"/>
+<path d="M2.8 -65.4L-45.4 -37.6M-45.4 -37.6L-71 -52.4" stroke="#D9963A" stroke-width="1.1" opacity="0.4"/>
+<path d="M-5.3 -57.6V-71.6M-13.3 -52.9V-66.9M-21.3 -48.3V-62.3M-29.3 -43.7V-57.7M-37.4 -39V-53M-53.9 -39.3V-53.3M-62.5 -44.3V-58.3" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+</g>
+<g id="livello-ingresso" data-livello="ingressi">
+<polygon points="-2.9,-58.1 2.3,-61.1 2.3,-71.2 -2.9,-68.2" fill="#2D3B4F"/>
+<polygon points="10.1,-69.7 -0.3,-63.7 -0.3,-66.7 10.1,-72.7" fill="#C9CED6"/>
+<polygon points="-0.3,-63.7 -5.5,-66.7 -5.5,-69.7 -0.3,-66.7" fill="#E8EAEE"/>
+<polygon points="-5.5,-69.7 4.9,-75.7 10.1,-72.7 -0.3,-66.7" fill="#FFFFFF"/>
+</g>
+<g id="livello-MIA0212001" data-livello="piani" data-piano="MIA0212001">
+<polygon points="4.2,-76.2 -45.4,-47.6 -45.4,-51.6 4.2,-80.2" fill="#D4D8DF"/>
+<polygon points="-45.4,-47.6 -72.4,-63.2 -72.4,-67.2 -45.4,-51.6" fill="#F2F3F6"/>
+<polygon points="-22.9,-95.8 4.2,-80.2 -45.4,-51.6 -72.4,-67.2" fill="#FFFFFF"/>
+<polygon points="2.8,-80.2 -45.4,-52.4 -45.4,-66.4 2.8,-94.2" fill="url(#iso-glass-r)"/>
+<polygon points="-45.4,-52.4 -71,-67.2 -71,-81.2 -45.4,-66.4" fill="url(#iso-glass-l)"/>
+<path d="M-5.3 -75.6V-89.6M-13.3 -70.9V-84.9M-21.3 -66.3V-80.3M-29.3 -61.7V-75.7M-37.4 -57V-71M-53.9 -57.3V-71.3M-62.5 -62.3V-76.3" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>
+</g>
+<g id="livello-MIA0212001-acceso" data-livello="piani" data-piano="MIA0212001" data-acceso="true" style="display: none">
+<polygon points="4.2,-76.2 -45.4,-47.6 -45.4,-51.6 4.2,-80.2" fill="#D4D8DF"/>
+<polygon points="-45.4,-47.6 -72.4,-63.2 -72.4,-67.2 -45.4,-51.6" fill="#F2F3F6"/>
+<polygon points="-22.9,-95.8 4.2,-80.2 -45.4,-51.6 -72.4,-67.2" fill="#FFFFFF"/>
+<polygon points="2.8,-76.2 -45.4,-48.4 -45.4,-52.4 2.8,-80.2" fill="#FFD98A" opacity="0.55"/>
+<polygon points="2.8,-80.2 -45.4,-52.4 -45.4,-66.4 2.8,-94.2" fill="url(#iso-lit-r)"/>
+<polygon points="2.8,-80.2 -5.3,-75.6 -5.3,-89.6 2.8,-94.2" fill="#B87A24" opacity="0.14"/>
+<polygon points="-21.3,-66.3 -29.3,-61.7 -29.3,-75.7 -21.3,-80.3" fill="#FFFFFF" opacity="0.18"/>
+<polygon points="2.8,-87.2 -45.4,-59.4 -45.4,-66.4 2.8,-94.2" fill="url(#iso-lit-glow)"/>
+<polygon points="-45.4,-48.4 -71,-63.2 -71,-67.2 -45.4,-52.4" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-45.4,-52.4 -71,-67.2 -71,-81.2 -45.4,-66.4" fill="url(#iso-lit-l)"/>
+<polygon points="-62.5,-62.3 -71,-67.2 -71,-81.2 -62.5,-76.3" fill="#B87A24" opacity="0.14"/>
+<polygon points="-45.4,-59.4 -71,-74.2 -71,-81.2 -45.4,-66.4" fill="url(#iso-lit-glow)"/>
+<path d="M2.8 -83.4L-45.4 -55.6M-45.4 -55.6L-71 -70.4" stroke="#D9963A" stroke-width="1.1" opacity="0.4"/>
+<path d="M-5.3 -75.6V-89.6M-13.3 -70.9V-84.9M-21.3 -66.3V-80.3M-29.3 -61.7V-75.7M-37.4 -57V-71M-53.9 -57.3V-71.3M-62.5 -62.3V-76.3" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+</g>
+<g id="livello-MIA0212002" data-livello="piani" data-piano="MIA0212002">
+<polygon points="4.2,-94.2 -45.4,-65.6 -45.4,-69.6 4.2,-98.2" fill="#D4D8DF"/>
+<polygon points="-45.4,-65.6 -72.4,-81.2 -72.4,-85.2 -45.4,-69.6" fill="#F2F3F6"/>
+<polygon points="-22.9,-113.8 4.2,-98.2 -45.4,-69.6 -72.4,-85.2" fill="#FFFFFF"/>
+<polygon points="2.8,-98.2 -45.4,-70.4 -45.4,-84.4 2.8,-112.2" fill="url(#iso-glass-r)"/>
+<polygon points="-45.4,-70.4 -71,-85.2 -71,-99.2 -45.4,-84.4" fill="url(#iso-glass-l)"/>
+<path d="M-5.3 -93.6V-107.6M-13.3 -88.9V-102.9M-21.3 -84.3V-98.3M-29.3 -79.7V-93.7M-37.4 -75V-89M-53.9 -75.3V-89.3M-62.5 -80.3V-94.3" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>
+</g>
+<g id="livello-MIA0212002-acceso" data-livello="piani" data-piano="MIA0212002" data-acceso="true" style="display: none">
+<polygon points="4.2,-94.2 -45.4,-65.6 -45.4,-69.6 4.2,-98.2" fill="#D4D8DF"/>
+<polygon points="-45.4,-65.6 -72.4,-81.2 -72.4,-85.2 -45.4,-69.6" fill="#F2F3F6"/>
+<polygon points="-22.9,-113.8 4.2,-98.2 -45.4,-69.6 -72.4,-85.2" fill="#FFFFFF"/>
+<polygon points="2.8,-94.2 -45.4,-66.4 -45.4,-70.4 2.8,-98.2" fill="#FFD98A" opacity="0.55"/>
+<polygon points="2.8,-98.2 -45.4,-70.4 -45.4,-84.4 2.8,-112.2" fill="url(#iso-lit-r)"/>
+<polygon points="2.8,-98.2 -5.3,-93.6 -5.3,-107.6 2.8,-112.2" fill="#B87A24" opacity="0.14"/>
+<polygon points="-21.3,-84.3 -29.3,-79.7 -29.3,-93.7 -21.3,-98.3" fill="#FFFFFF" opacity="0.18"/>
+<polygon points="2.8,-105.2 -45.4,-77.4 -45.4,-84.4 2.8,-112.2" fill="url(#iso-lit-glow)"/>
+<polygon points="-45.4,-66.4 -71,-81.2 -71,-85.2 -45.4,-70.4" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-45.4,-70.4 -71,-85.2 -71,-99.2 -45.4,-84.4" fill="url(#iso-lit-l)"/>
+<polygon points="-62.5,-80.3 -71,-85.2 -71,-99.2 -62.5,-94.3" fill="#B87A24" opacity="0.14"/>
+<polygon points="-45.4,-77.4 -71,-92.2 -71,-99.2 -45.4,-84.4" fill="url(#iso-lit-glow)"/>
+<path d="M2.8 -101.4L-45.4 -73.6M-45.4 -73.6L-71 -88.4" stroke="#D9963A" stroke-width="1.1" opacity="0.4"/>
+<path d="M-5.3 -93.6V-107.6M-13.3 -88.9V-102.9M-21.3 -84.3V-98.3M-29.3 -79.7V-93.7M-37.4 -75V-89M-53.9 -75.3V-89.3M-62.5 -80.3V-94.3" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+</g>
+<g id="livello-MIA0212003" data-livello="piani" data-piano="MIA0212003">
+<polygon points="4.2,-112.2 -45.4,-83.6 -45.4,-87.6 4.2,-116.2" fill="#D4D8DF"/>
+<polygon points="-45.4,-83.6 -72.4,-99.2 -72.4,-103.2 -45.4,-87.6" fill="#F2F3F6"/>
+<polygon points="-22.9,-131.8 4.2,-116.2 -45.4,-87.6 -72.4,-103.2" fill="#FFFFFF"/>
+<polygon points="2.8,-116.2 -45.4,-88.4 -45.4,-102.4 2.8,-130.2" fill="url(#iso-glass-r)"/>
+<polygon points="-45.4,-88.4 -71,-103.2 -71,-117.2 -45.4,-102.4" fill="url(#iso-glass-l)"/>
+<path d="M-5.3 -111.6V-125.6M-13.3 -106.9V-120.9M-21.3 -102.3V-116.3M-29.3 -97.7V-111.7M-37.4 -93V-107M-53.9 -93.3V-107.3M-62.5 -98.3V-112.3" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>
+</g>
+<g id="livello-MIA0212003-acceso" data-livello="piani" data-piano="MIA0212003" data-acceso="true" style="display: none">
+<polygon points="4.2,-112.2 -45.4,-83.6 -45.4,-87.6 4.2,-116.2" fill="#D4D8DF"/>
+<polygon points="-45.4,-83.6 -72.4,-99.2 -72.4,-103.2 -45.4,-87.6" fill="#F2F3F6"/>
+<polygon points="-22.9,-131.8 4.2,-116.2 -45.4,-87.6 -72.4,-103.2" fill="#FFFFFF"/>
+<polygon points="2.8,-112.2 -45.4,-84.4 -45.4,-88.4 2.8,-116.2" fill="#FFD98A" opacity="0.55"/>
+<polygon points="2.8,-116.2 -45.4,-88.4 -45.4,-102.4 2.8,-130.2" fill="url(#iso-lit-r)"/>
+<polygon points="2.8,-116.2 -5.3,-111.6 -5.3,-125.6 2.8,-130.2" fill="#B87A24" opacity="0.14"/>
+<polygon points="-21.3,-102.3 -29.3,-97.7 -29.3,-111.7 -21.3,-116.3" fill="#FFFFFF" opacity="0.18"/>
+<polygon points="2.8,-123.2 -45.4,-95.4 -45.4,-102.4 2.8,-130.2" fill="url(#iso-lit-glow)"/>
+<polygon points="-45.4,-84.4 -71,-99.2 -71,-103.2 -45.4,-88.4" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-45.4,-88.4 -71,-103.2 -71,-117.2 -45.4,-102.4" fill="url(#iso-lit-l)"/>
+<polygon points="-62.5,-98.3 -71,-103.2 -71,-117.2 -62.5,-112.3" fill="#B87A24" opacity="0.14"/>
+<polygon points="-45.4,-95.4 -71,-110.2 -71,-117.2 -45.4,-102.4" fill="url(#iso-lit-glow)"/>
+<path d="M2.8 -119.4L-45.4 -91.6M-45.4 -91.6L-71 -106.4" stroke="#D9963A" stroke-width="1.1" opacity="0.4"/>
+<path d="M-5.3 -111.6V-125.6M-13.3 -106.9V-120.9M-21.3 -102.3V-116.3M-29.3 -97.7V-111.7M-37.4 -93V-107M-53.9 -93.3V-107.3M-62.5 -98.3V-112.3" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+</g>
+<g id="livello-tetto" data-livello="edifici">
+<polygon points="4.2,-130.2 -45.4,-101.6 -45.4,-105.6 4.2,-134.2" fill="#D4D8DF"/>
+<polygon points="-45.4,-101.6 -72.4,-117.2 -72.4,-121.2 -45.4,-105.6" fill="#F2F3F6"/>
+<polygon points="-22.9,-149.8 4.2,-134.2 -45.4,-105.6 -72.4,-121.2" fill="#FFFFFF"/>
+<polygon points="-22.9,-146.6 -1.4,-134.2 -45.4,-108.8 -66.9,-121.2" fill="#EEF0F3"/>
+</g>
+<g id="livello-impianti" data-livello="impianti">
+</g>
+<g id="livello-alberi-davanti" data-livello="alberi">
+</g>
+<g id="livello-etichette-piani" data-livello="etichette-piani" style="display: none">
+<path d="M6.2 -69.2H14.2" stroke="#8E8E93" stroke-width="0.8" stroke-dasharray="1.5 1.5"/><rect x="14.2" y="-74.2" width="9" height="10" rx="5" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.8"/><text x="18.7" y="-66.6" font-size="7" font-weight="700" text-anchor="middle" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">T</text>
+<path d="M6.2 -87.2H14.2" stroke="#8E8E93" stroke-width="0.8" stroke-dasharray="1.5 1.5"/><rect x="14.2" y="-92.2" width="9" height="10" rx="5" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.8"/><text x="18.7" y="-84.6" font-size="7" font-weight="700" text-anchor="middle" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">1</text>
+<path d="M6.2 -105.2H14.2" stroke="#8E8E93" stroke-width="0.8" stroke-dasharray="1.5 1.5"/><rect x="14.2" y="-110.2" width="9" height="10" rx="5" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.8"/><text x="18.7" y="-102.6" font-size="7" font-weight="700" text-anchor="middle" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">2</text>
+<path d="M6.2 -123.2H14.2" stroke="#8E8E93" stroke-width="0.8" stroke-dasharray="1.5 1.5"/><rect x="14.2" y="-128.2" width="9" height="10" rx="5" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.8"/><text x="18.7" y="-120.6" font-size="7" font-weight="700" text-anchor="middle" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">3</text>
+</g>
+</svg>
