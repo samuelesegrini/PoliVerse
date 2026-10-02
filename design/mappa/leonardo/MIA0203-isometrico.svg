@@ -1,15 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-112.5 -163.3 280.3 240.3" width="560.6" height="480.6">
-<defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient><linearGradient id="iso-focus-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D86C9"/><stop offset="1" stop-color="#1C6BAD"/></linearGradient><linearGradient id="iso-focus-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1B5E98"/><stop offset="1" stop-color="#154C7C"/></linearGradient><radialGradient id="iso-shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#1D2B40" stop-opacity="0.22"/><stop offset="1" stop-color="#1D2B40" stop-opacity="0"/></radialGradient><radialGradient id="iso-tree" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#9FD08A"/><stop offset="1" stop-color="#4F9A5E"/></radialGradient></defs>
-<g id="ombra"><ellipse cx="14.4" cy="-8.2" rx="126.4" ry="72.5" fill="url(#iso-shadow)"/></g>
-<g id="lotto">
+<defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient><radialGradient id="iso-shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#1D2B40" stop-opacity="0.22"/><stop offset="1" stop-color="#1D2B40" stop-opacity="0"/></radialGradient><radialGradient id="iso-tree" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#9FD08A"/><stop offset="1" stop-color="#4F9A5E"/></radialGradient></defs>
+<g id="livello-ombra" data-livello="ombre">
+<ellipse cx="14.4" cy="-8.2" rx="126.4" ry="72.5" fill="url(#iso-shadow)"/>
+</g>
+<g id="livello-lotto" data-livello="terreno">
 <polygon points="161.8,-10.4 20.8,71 20.8,66 161.8,-15.4" fill="#AFBFD0"/>
 <polygon points="20.8,71 -106.5,-2.5 -106.5,-7.5 20.8,66" fill="#C8D4E1"/>
 <polygon points="34.5,-88.9 161.8,-15.4 20.8,66 -106.5,-7.5" fill="#E3ECF5"/>
+</g>
+<g id="livello-percorso" data-livello="percorsi">
 <polygon points="-21.8,13.8 -16.3,17 -40.2,30.8 -45.7,27.6" fill="#F4F7FA"/>
 </g>
-<g id="alberi-dietro">
+<g id="livello-alberi-dietro" data-livello="alberi">
+<ellipse cx="33.3" cy="-80.2" rx="9.2" ry="4.2" fill="#1D2B40" opacity="0.16"/><rect x="31.8" y="-100.2" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="33.3" cy="-101.2" r="8.3" fill="url(#iso-tree)"/>
+<ellipse cx="5" cy="-64.1" rx="6.9" ry="3.1" fill="#1D2B40" opacity="0.16"/><rect x="3.5" y="-84.1" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="5" cy="-83.8" r="6.2" fill="url(#iso-tree)"/>
+<ellipse cx="102.5" cy="-33.6" rx="9.7" ry="4.4" fill="#1D2B40" opacity="0.16"/><rect x="101" y="-53.6" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="102.5" cy="-54.9" r="8.8" fill="url(#iso-tree)"/>
+<ellipse cx="85" cy="-30.1" rx="8.9" ry="4" fill="#1D2B40" opacity="0.16"/><rect x="83.5" y="-50.1" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="85" cy="-50.9" r="8.1" fill="url(#iso-tree)"/>
+<ellipse cx="86.6" cy="-24.4" rx="7.2" ry="3.2" fill="#1D2B40" opacity="0.16"/><rect x="85.1" y="-44.4" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="86.6" cy="-44.3" r="6.5" fill="url(#iso-tree)"/>
+<ellipse cx="93" cy="-17.9" rx="8.3" ry="3.8" fill="#1D2B40" opacity="0.16"/><rect x="91.5" y="-37.9" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="93" cy="-38.4" r="7.5" fill="url(#iso-tree)"/>
+<ellipse cx="115.5" cy="-13.1" rx="9.2" ry="4.2" fill="#1D2B40" opacity="0.16"/><rect x="114" y="-33.1" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="115.5" cy="-34.1" r="8.3" fill="url(#iso-tree)"/>
+<ellipse cx="92.7" cy="-8.7" rx="7.4" ry="3.4" fill="#1D2B40" opacity="0.16"/><rect x="91.2" y="-28.7" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="92.7" cy="-28.8" r="6.8" fill="url(#iso-tree)"/>
 </g>
-<g id="basamento">
+<g id="livello-basamento" data-livello="edifici">
 <polygon points="87.7,-43.1 61.3,-27.4 61.3,-33.4 87.7,-49.1" fill="#AEB4BE"/>
 <polygon points="78.2,-6.5 36.6,11.9 36.6,5.9 78.2,-12.5" fill="#AEB4BE"/>
 <polygon points="-28.7,13.8 -76.6,0.6 -76.6,-5.4 -28.7,7.8" fill="#C9CED6"/>
@@ -19,7 +31,7 @@
 <polygon points="41.4,44.3 7.9,47.9 7.9,41.9 41.4,38.3" fill="#AEB4BE"/>
 <polygon points="8.2,-40 32.3,-70.6 67.4,-66.1 87.7,-49.1 61.3,-33.4 78.2,-12.5 36.6,5.9 63.5,21 41.4,38.3 7.9,41.9 -16.3,15 -28.7,7.8 -76.6,-5.4 -69.3,-25.2 -39.9,-36.9 -12.9,-22.1" fill="#E9EBEF"/>
 </g>
-<g id="MIA020300S">
+<g id="livello-MIA020300S" data-livello="piani" data-piano="MIA020300S">
 <polygon points="81.4,-49.4 55.4,-34 55.4,-38 81.4,-53.4" fill="#D4D8DF"/>
 <polygon points="72.1,-13.4 29.1,5.6 29.1,1.6 72.1,-17.4" fill="#D4D8DF"/>
 <polygon points="-25.8,5.5 -71,-7 -71,-11 -25.8,1.5" fill="#F2F3F6"/>
@@ -36,12 +48,14 @@
 <polygon points="55.7,17.4 38.1,31.2 38.1,17.2 55.7,3.4" fill="url(#iso-glass-r)"/>
 <polygon points="38.1,31.2 11.1,34.1 11.1,20.1 38.1,17.2" fill="url(#iso-glass-r)"/>
 <path d="M71.5 -48.3V-62.3M62.9 -43.2V-57.2M60 -12.8V-26.8M49.2 -8V-22M38.4 -3.2V-17.2M-36.4 -2.1V-16.1M-47.6 -5.1V-19.1M-58.7 -8.2V-22.2M-18.4 5V-9M5.5 27.8V13.8M-0.2 21.5V7.5M-5.8 15.2V1.2M46.9 24.3V10.3M24.6 32.6V18.6" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>
+</g>
+<g id="livello-ingresso" data-livello="ingressi">
 <polygon points="-21.7,3.9 -16.5,6.9 -16.5,-3.1 -21.7,-6.1" fill="#2D3B4F"/>
 <polygon points="-19.1,1.4 -29.4,-4.6 -29.4,-7.6 -19.1,-1.6" fill="#E8EAEE"/>
 <polygon points="-13.9,-1.6 -19.1,1.4 -19.1,-1.6 -13.9,-4.6" fill="#C9CED6"/>
 <polygon points="-24.2,-10.6 -13.9,-4.6 -19.1,-1.6 -29.4,-7.6" fill="#FFFFFF"/>
 </g>
-<g id="MIA0203000">
+<g id="livello-MIA0203000" data-livello="piani" data-piano="MIA0203000">
 <polygon points="81.4,-67.4 55.4,-52 55.4,-56 81.4,-71.4" fill="#D4D8DF"/>
 <polygon points="72.1,-31.4 29.1,-12.4 29.1,-16.4 72.1,-35.4" fill="#D4D8DF"/>
 <polygon points="-25.8,-12.5 -71,-25 -71,-29 -25.8,-16.5" fill="#F2F3F6"/>
@@ -59,7 +73,7 @@
 <polygon points="38.1,13.2 11.1,16.1 11.1,2.1 38.1,-0.8" fill="url(#iso-glass-r)"/>
 <path d="M71.5 -66.3V-80.3M62.9 -61.2V-75.2M60 -30.8V-44.8M49.2 -26V-40M38.4 -21.2V-35.2M-36.4 -20.1V-34.1M-47.6 -23.1V-37.1M-58.7 -26.2V-40.2M-18.4 -13V-27M5.5 9.8V-4.2M-0.2 3.5V-10.5M-5.8 -2.8V-16.8M46.9 6.3V-7.7M24.6 14.6V0.6" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>
 </g>
-<g id="MIA0203001">
+<g id="livello-MIA0203001" data-livello="piani" data-piano="MIA0203001">
 <polygon points="81.4,-85.4 55.4,-70 55.4,-74 81.4,-89.4" fill="#D4D8DF"/>
 <polygon points="72.1,-49.4 29.1,-30.4 29.1,-34.4 72.1,-53.4" fill="#D4D8DF"/>
 <polygon points="-25.8,-30.5 -71,-43 -71,-47 -25.8,-34.5" fill="#F2F3F6"/>
@@ -77,7 +91,7 @@
 <polygon points="38.1,-4.8 11.1,-1.9 11.1,-15.9 38.1,-18.8" fill="url(#iso-glass-r)"/>
 <path d="M71.5 -84.3V-98.3M62.9 -79.2V-93.2M60 -48.8V-62.8M49.2 -44V-58M38.4 -39.2V-53.2M-36.4 -38.1V-52.1M-47.6 -41.1V-55.1M-58.7 -44.2V-58.2M-18.4 -31V-45M5.5 -8.2V-22.2M-0.2 -14.5V-28.5M-5.8 -20.8V-34.8M46.9 -11.7V-25.7M24.6 -3.4V-17.4" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>
 </g>
-<g id="tetto">
+<g id="livello-tetto" data-livello="edifici">
 <polygon points="81.4,-103.4 55.4,-88 55.4,-92 81.4,-107.4" fill="#D4D8DF"/>
 <polygon points="72.1,-67.4 29.1,-48.4 29.1,-52.4 72.1,-71.4" fill="#D4D8DF"/>
 <polygon points="-25.8,-48.5 -71,-61 -71,-65 -25.8,-52.5" fill="#F2F3F6"/>
@@ -87,6 +101,8 @@
 <polygon points="38.6,-18.3 10.6,-15.3 10.6,-19.3 38.6,-22.3" fill="#D4D8DF"/>
 <polygon points="12.5,-96.6 35.2,-125.3 64.4,-121.6 81.4,-107.4 55.4,-92 72.1,-71.4 29.1,-52.4 57,-36.7 38.6,-22.3 10.6,-19.3 -12.3,-44.7 -25.8,-52.5 -71,-65 -65,-81.5 -40.4,-91.3 -12.1,-75.8" fill="#FFFFFF"/>
 <polygon points="15.9,-95.5 37.4,-122.7 62.1,-119.6 76.4,-107.6 50.7,-92.5 67.2,-72.1 23.1,-52.6 51.8,-36.5 36.4,-24.4 12.7,-21.8 -9.1,-46.1 -23.5,-54.4 -66.5,-66.3 -61.4,-80.1 -40.8,-88.4 -11.5,-72.3" fill="#EEF0F3"/>
+</g>
+<g id="livello-impianti" data-livello="impianti">
 <polygon points="58.9,-108 45,-100 45,-107 58.9,-115" fill="#C7CCD5"/>
 <polygon points="45,-100 38.1,-104 38.1,-111 45,-107" fill="#E3E6EB"/>
 <polygon points="52,-119 58.9,-115 45,-107 38.1,-111" fill="#FFFFFF"/>
@@ -97,9 +113,19 @@
 <polygon points="22.5,-29 15.6,-33 15.6,-40 22.5,-36" fill="#E3E6EB"/>
 <polygon points="27.7,-47 34.6,-43 22.5,-36 15.6,-40" fill="#FFFFFF"/>
 </g>
-<g id="alberi">
-<ellipse cx="58.9" cy="20" rx="9.2" ry="4.2" fill="#1D2B40" opacity="0.16"/><rect x="57.4" y="0" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="58.9" cy="-1" r="8.3" fill="url(#iso-tree)"/>
-<ellipse cx="93.5" cy="-6" rx="8" ry="3.6" fill="#1D2B40" opacity="0.16"/><rect x="92" y="-26" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="93.5" cy="-26.4" r="7.3" fill="url(#iso-tree)"/>
-<ellipse cx="110.9" cy="-2" rx="8.6" ry="3.9" fill="#1D2B40" opacity="0.16"/><rect x="109.4" y="-22" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="110.9" cy="-22.7" r="7.8" fill="url(#iso-tree)"/>
+<g id="livello-alberi-davanti" data-livello="alberi">
+<ellipse cx="126.1" cy="-7.2" rx="9.2" ry="4.2" fill="#1D2B40" opacity="0.16"/><rect x="124.6" y="-27.2" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="126.1" cy="-28.2" r="8.3" fill="url(#iso-tree)"/>
+<ellipse cx="117.3" cy="-1.7" rx="8.3" ry="3.8" fill="#1D2B40" opacity="0.16"/><rect x="115.8" y="-21.7" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="117.3" cy="-22.2" r="7.5" fill="url(#iso-tree)"/>
+<ellipse cx="108.9" cy="3.7" rx="7.2" ry="3.2" fill="#1D2B40" opacity="0.16"/><rect x="107.4" y="-16.3" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="108.9" cy="-16.2" r="6.5" fill="url(#iso-tree)"/>
+<ellipse cx="101.3" cy="6.7" rx="8" ry="3.6" fill="#1D2B40" opacity="0.16"/><rect x="99.8" y="-13.3" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="101.3" cy="-13.7" r="7.3" fill="url(#iso-tree)"/>
+<ellipse cx="91.1" cy="13" rx="6.9" ry="3.1" fill="#1D2B40" opacity="0.16"/><rect x="89.6" y="-7" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="91.1" cy="-6.7" r="6.2" fill="url(#iso-tree)"/>
+<ellipse cx="67" cy="15.5" rx="7.2" ry="3.2" fill="#1D2B40" opacity="0.16"/><rect x="65.5" y="-4.5" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="67" cy="-4.4" r="6.5" fill="url(#iso-tree)"/>
+<ellipse cx="-26.5" cy="27.5" rx="8.6" ry="3.9" fill="#1D2B40" opacity="0.16"/><rect x="-28" y="7.5" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="-26.5" cy="6.8" r="7.8" fill="url(#iso-tree)"/>
+<ellipse cx="18.5" cy="54.1" rx="8.9" ry="4" fill="#1D2B40" opacity="0.16"/><rect x="17" y="34.1" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="18.5" cy="33.3" r="8.1" fill="url(#iso-tree)"/>
+</g>
+<g id="livello-etichette-piani" data-livello="etichette-piani" style="display: none">
+<path d="M83.4 -60.4H91.4" stroke="#8E8E93" stroke-width="0.8" stroke-dasharray="1.5 1.5"/><rect x="91.4" y="-65.4" width="9" height="10" rx="5" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.8"/><text x="95.9" y="-57.8" font-size="7" font-weight="700" text-anchor="middle" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">S</text>
+<path d="M83.4 -78.4H91.4" stroke="#8E8E93" stroke-width="0.8" stroke-dasharray="1.5 1.5"/><rect x="91.4" y="-83.4" width="9" height="10" rx="5" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.8"/><text x="95.9" y="-75.8" font-size="7" font-weight="700" text-anchor="middle" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">T</text>
+<path d="M83.4 -96.4H91.4" stroke="#8E8E93" stroke-width="0.8" stroke-dasharray="1.5 1.5"/><rect x="91.4" y="-101.4" width="9" height="10" rx="5" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.8"/><text x="95.9" y="-93.8" font-size="7" font-weight="700" text-anchor="middle" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">1</text>
 </g>
 </svg>

@@ -12,8 +12,10 @@ whole campus reads as one clean, uniform drawing.
 | `<campus>.json` | the hand-drawn description of each building on that campus |
 | `piante/<csie>.json` | the hand-drawn rooms of each floor of one building |
 | `<campus>/<csie>-mappa.svg` | top-down: the building and its surroundings |
-| `<campus>/<csie>-isometrico.svg` | isometric: the building alone, one group per floor |
+| `<campus>/<csie>-isometrico.svg` | isometric: the building alone, one layer per floor |
 | `<campus>/<csip>-pianta.svg` | floor plan: one floor, its rooms, doors and entrances |
+| `<campus>/<drawing>/NN-<layer>.svg` | the same drawing split into one file per layer |
+| `livelli.json` | every layer, and every drawing's layers in stacking order |
 
 Run `python3 build-mappa.py` after any change. It has no dependencies.
 
@@ -45,7 +47,9 @@ floor plans sit exactly inside its outline.
      isometric view then looks from the south-west so the door shows. Leave it
      out to look from the south-east.
    - `riquadro` — the area of the top-down drawing, `[x0, y0, x1, y1]`.
-2. Add the paths, green areas, and trees around it to `contesto`.
+2. Add what surrounds it to `contesto`: `percorsi`, `verde`, `alberi`
+   (`[x, y, radius]`), `scale` (outdoor steps, as lines), `ingressi`, `bici`
+   (`[x, y, capacity]`), `lampioni`, `dae`, `acqua`, and street `nomi`.
 3. Run the script and look at both SVGs before committing.
 
 An entry without `riquadro` is a neighbour that has only a rough outline so
@@ -68,24 +72,63 @@ it is redrawn properly.
 - `ingressi` — a point on the outer wall for each way in, with
   `"principale": true` on the main one.
 - `pilastri` — free-standing columns, where they help a reader find their way.
+- `acqua` — drinking fountains on this floor.
+- a `wc` with `"accessibile": true` gets the accessibility symbol; lifts always do.
 
 Draw a floor over its reference image: one point per corner, walls straight,
 no detail a student would not use to find a room.
 
+## Layers
+
+Every drawing is a stack of layers the app can switch on and off. `livelli.json`
+holds the catalogue — each layer's Italian name, whether it is on by default,
+and whether it is fixed (the drawing makes no sense without it) — and, for
+each drawing, its layers in stacking order, back to front.
+
+| Layer | Map | 3D | Plan | Default |
+|---|---|---|---|---|
+| `terreno` | ✓ | ✓ | ✓ | fixed |
+| `edifici` | ✓ | ✓ | | fixed |
+| `piani` | | ✓ | | fixed |
+| `locali`, `muri` | | | ✓ | fixed |
+| `verde`, `strade`, `percorsi`, `scale-esterne` | ✓ | path | | on |
+| `alberi`, `ombre`, `impianti` | ✓ | ✓ | | on |
+| `ingressi` | ✓ | ✓ | ✓ | on |
+| `bici`, `dae`, `nomi`, `numeri` | ✓ | | | on |
+| `acqua` | ✓ | | ✓ | on |
+| `lampioni` | ✓ | | | off |
+| `gradoni`, `gradini`, `ascensori`, `pilastri`, `porte`, `accessibilita`, `etichette` | | | ✓ | on |
+| `etichette-piani` | | ✓ | | off |
+
+The same layer can appear more than once in a stack: the 3D trees are split
+into `alberi-dietro` and `alberi-davanti` around the building, both under the
+`alberi` switch. Two ways to use them:
+
+- **One file per drawing.** In `<drawing>.svg` each layer is a group
+  `id="livello-<name>" data-livello="<layer>"`; a layer that is off by default
+  carries `style="display: none"`. Show or hide groups by `data-livello`.
+- **One image per layer.** Stack the files in `<drawing>/` in the order
+  `livelli.json` gives. They share one frame, so they register with no
+  offsets; hide an image to switch its layer off.
+
 ## Highlighting
 
-In `-isometrico.svg` each floor is a group named by its `csip`, lowest first,
-with the roof in `tetto`. Glazing uses `url(#iso-glass-l)` / `url(#iso-glass-r)`.
-To highlight a floor, switch that group's glazing to `url(#iso-focus-l)` /
-`url(#iso-focus-r)`. Both pairs are already defined in every file.
+In the 3D view each floor is a layer named by its `csip`, lowest first. Its
+entry in `livelli.json` names an `evidenziato` file: the same floor in blue.
+Swap the two images to highlight that floor. In the single file, switch the
+floor group's glazing from `url(#iso-glass-l)` / `url(#iso-glass-r)` to
+`url(#iso-focus-l)` / `url(#iso-focus-r)`; both pairs are defined.
 
 In `-pianta.svg` each classroom is a group with its `csiv` as id and
 `data-sigla`; its label is the group `<csiv>-etichetta`. To highlight a room,
-recolour that group's first path.
+recolour that group's path.
 
 ## Sources
 
-Outlines and surroundings are traced by eye from OpenStreetMap, so the
+Outlines and surroundings are traced by eye from OpenStreetMap, and the
+positions of trees, lawns, outdoor steps, entrances, bike racks, lamps,
+defibrillators, fountains and the Trifoglio's columns come from it too, so the
 drawings carry its attribution: © OpenStreetMap contributors (ODbL). Room
 layouts are redrawn by eye from the floor plan images on the Politecnico's
-public maps service; nothing is converted from them automatically.
+public maps service, checked against OpenStreetMap's indoor mapping; nothing
+is converted from either automatically.
