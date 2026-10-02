@@ -235,7 +235,7 @@
           "file": "leonardo/MIA0203-isometrico/06-MIA020300S.svg",
           "livello": "piani",
           "piano": "MIA020300S",
-          "evidenziato": "leonardo/MIA0203-isometrico/06-MIA020300S-evidenziato.svg"
+          "acceso": "leonardo/MIA0203-isometrico/06-MIA020300S-acceso.svg"
         },
         {
           "file": "leonardo/MIA0203-isometrico/07-ingresso.svg",
@@ -245,13 +245,13 @@
           "file": "leonardo/MIA0203-isometrico/08-MIA0203000.svg",
           "livello": "piani",
           "piano": "MIA0203000",
-          "evidenziato": "leonardo/MIA0203-isometrico/08-MIA0203000-evidenziato.svg"
+          "acceso": "leonardo/MIA0203-isometrico/08-MIA0203000-acceso.svg"
         },
         {
           "file": "leonardo/MIA0203-isometrico/09-MIA0203001.svg",
           "livello": "piani",
           "piano": "MIA0203001",
-          "evidenziato": "leonardo/MIA0203-isometrico/09-MIA0203001-evidenziato.svg"
+          "acceso": "leonardo/MIA0203-isometrico/09-MIA0203001-acceso.svg"
         },
         {
           "file": "leonardo/MIA0203-isometrico/10-tetto.svg",

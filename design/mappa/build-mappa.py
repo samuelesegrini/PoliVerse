@@ -56,8 +56,12 @@ MARKER_EDGE = "#E3E5EA"
 ISO_SLAB_LEFT, ISO_SLAB_RIGHT, ISO_SLAB_TOP = "#F2F3F6", "#D4D8DF", "#FFFFFF"
 ISO_GLASS_LEFT = ("#B9D2EA", "#8FB1D4")
 ISO_GLASS_RIGHT = ("#7F9FC2", "#617FA3")
-ISO_FOCUS_LEFT = ("#3D86C9", "#1C6BAD")
-ISO_FOCUS_RIGHT = ("#1B5E98", "#154C7C")
+# A floor with its lights on: warm rooms seen through the glass.
+ISO_LIT_LEFT = ("#FFF7DC", "#FFD47E")
+ISO_LIT_RIGHT = ("#FBE2A2", "#ECB65A")
+LIGHT_SPILL = "#FFD98A"
+LIGHT_DESK = "#D9963A"
+LIGHT_FRAME = "#9C7434"
 ISO_ROOF_INNER = "#EEF0F3"
 ISO_PLANT = ("#E3E6EB", "#C7CCD5", "#FFFFFF")
 ISO_LOT = ("#C8D4E1", "#AFBFD0", "#E3ECF5")
@@ -125,8 +129,8 @@ DEFS = {
                 f'<stop offset="1" stop-color="{LAMP_GLOW}" stop-opacity="0"/></radialGradient>'),
     "iso-glass-l": grad("iso-glass-l", *ISO_GLASS_LEFT),
     "iso-glass-r": grad("iso-glass-r", *ISO_GLASS_RIGHT),
-    "iso-focus-l": grad("iso-focus-l", *ISO_FOCUS_LEFT),
-    "iso-focus-r": grad("iso-focus-r", *ISO_FOCUS_RIGHT),
+    "iso-lit-l": grad("iso-lit-l", *ISO_LIT_LEFT),
+    "iso-lit-r": grad("iso-lit-r", *ISO_LIT_RIGHT),
     "iso-shadow": (f'<radialGradient id="iso-shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="{ISO_SHADOW}" stop-opacity="0.22"/>'
                    f'<stop offset="1" stop-color="{ISO_SHADOW}" stop-opacity="0"/></radialGradient>'),
     "iso-tree": ('<radialGradient id="iso-tree" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#9FD08A"/>'
@@ -137,7 +141,7 @@ DEFS = {
 class Strato:
     """One layer of one drawing: its markup, the defs it needs, and its layer id.
 
-    `lit` is the same layer with its floor highlighted, for the isometric floors.
+    `lit` is the same layer with the floor's lights on, for the isometric floors.
     """
 
     def __init__(self, nome, livello, parti, defs=(), piano=None, lit=None, lit_defs=()):
@@ -331,22 +335,25 @@ def write_drawing(dest, name, view, width, height, strati):
     for old in folder.glob("*.svg"):
         old.unlink()
     head = svg_head(view, width, height)
-    # The single file also carries the highlight gradients, so a floor can be lit in place.
     combined = [head] + defs_block(d for s in strati for d in s.defs + s.lit_defs)
     entries = []
     for i, s in enumerate(strati, 1):
         hidden = "" if LIVELLI[s.livello][1] else ' style="display: none"'
         extra = f' data-piano="{s.piano}"' if s.piano else ""
         combined += [f'<g id="livello-{s.nome}" data-livello="{s.livello}"{extra}{hidden}>'] + s.parti + ["</g>"]
+        if s.lit is not None:
+            # The lit floor sits right beside the plain one, hidden: show one, hide the other.
+            combined += [f'<g id="livello-{s.nome}-acceso" data-livello="{s.livello}"{extra} data-acceso="true" '
+                         f'style="display: none">'] + s.lit + ["</g>"]
         file = f"{i:02d}-{s.nome}.svg"
         (folder / file).write_text("\n".join([head] + defs_block(s.defs) + s.parti + ["</svg>"]) + "\n")
         entry = {"file": f"{dest.name}/{name}/{file}", "livello": s.livello}
         if s.piano:
             entry["piano"] = s.piano
         if s.lit is not None:
-            lit = f"{i:02d}-{s.nome}-evidenziato.svg"
+            lit = f"{i:02d}-{s.nome}-acceso.svg"
             (folder / lit).write_text("\n".join([head] + defs_block(s.lit_defs) + s.lit + ["</svg>"]) + "\n")
-            entry["evidenziato"] = f"{dest.name}/{name}/{lit}"
+            entry["acceso"] = f"{dest.name}/{name}/{lit}"
         entries.append(entry)
     (dest / f"{name}.svg").write_text("\n".join(combined + ["</svg>"]) + "\n")
     return {"file": f"{dest.name}/{name}.svg", "viewBox": view, "strati": entries}
@@ -590,25 +597,47 @@ def draw_iso(campus, b):
     glass = offset(pts, -0.4)
 
     def storey(z0, lit):
-        gl, gr = ("url(#iso-focus-l)", "url(#iso-focus-r)") if lit else ("url(#iso-glass-l)", "url(#iso-glass-r)")
-        out = prism(pts, z0, z0 + ISO_SLAB, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
-        mullions = []
-        for a, c, is_left, q in faces(glass, z0 + ISO_SLAB, z0 + ISO_FLOOR):
+        """One floor. Lit, it is the same floor at dusk with its lights on:
+        warm rooms behind the glass, a row of ceiling lights, desks catching
+        the light, frames dark against it, and a glow spilling onto the slab."""
+        gl, gr = ("url(#iso-lit-l)", "url(#iso-lit-r)") if lit else ("url(#iso-glass-l)", "url(#iso-glass-r)")
+        g0, g1 = z0 + ISO_SLAB, z0 + ISO_FLOOR
+        out = prism(pts, z0, g0, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
+        mullions, lamps, desks = [], [], []
+        for a, c, is_left, q in faces(glass, g0, g1):
+            if lit:
+                spill = [(a[0], a[1], z0), (c[0], c[1], z0), (c[0], c[1], g0), (a[0], a[1], g0)]
+                out.append(f'<polygon points="{iso_poly(spill)}" fill="{LIGHT_SPILL}" opacity="0.55"/>')
             out.append(f'<polygon points="{iso_poly(q)}" fill="{gl if is_left else gr}"/>')
+            if lit:
+                ceiling = [(a[0], a[1], g1 - 3.2), (c[0], c[1], g1 - 3.2), (c[0], c[1], g1), (a[0], a[1], g1)]
+                out.append(f'<polygon points="{iso_poly(ceiling)}" fill="#FFFFFF" opacity="0.5"/>')
+                (lx0, ly0), (lx1, ly1) = iso(a[0], a[1], g1 - 4.6), iso(c[0], c[1], g1 - 4.6)
+                lamps.append(f"M{fmt(lx0)} {fmt(ly0)}L{fmt(lx1)} {fmt(ly1)}")
+                (dx0, dy0), (dx1, dy1) = iso(a[0], a[1], g0 + 3.2), iso(c[0], c[1], g0 + 3.2)
+                desks.append(f"M{fmt(dx0)} {fmt(dy0)}L{fmt(dx1)} {fmt(dy1)}")
             n = max(1, round(math.dist(a, c) / ISO_MULLION))
             for i in range(1, n):
                 t = i / n
                 x, y = a[0] + (c[0] - a[0]) * t, a[1] + (c[1] - a[1]) * t
-                (px, py0), (_, py1) = iso(x, y, z0 + ISO_SLAB), iso(x, y, z0 + ISO_FLOOR)
+                (px, py0), (_, py1) = iso(x, y, g0), iso(x, y, g1)
                 mullions.append(f"M{fmt(px)} {fmt(py0)}V{fmt(py1)}")
-        stroke = "#CFE2F5" if lit else "#FFFFFF"
-        out.append(f'<path d="{"".join(mullions)}" stroke="{stroke}" stroke-width="1.2" opacity="0.75"/>')
+        if lit:
+            out.append(f'<path d="{"".join(desks)}" stroke="{LIGHT_DESK}" stroke-width="1.1" opacity="0.6"/>')
+            # Ceiling spotlights: round dots, each in a soft halo on the same rhythm.
+            out.append(f'<path d="{"".join(lamps)}" stroke="#FFFFFF" stroke-width="4" stroke-dasharray="0.1 6" '
+                       f'stroke-linecap="round" opacity="0.4"/>')
+            out.append(f'<path d="{"".join(lamps)}" stroke="#FFFFFF" stroke-width="1.7" stroke-dasharray="0.1 6" '
+                       f'stroke-linecap="round"/>')
+            out.append(f'<path d="{"".join(mullions)}" stroke="{LIGHT_FRAME}" stroke-width="1.2" opacity="0.55"/>')
+        else:
+            out.append(f'<path d="{"".join(mullions)}" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>')
         return out
 
     for f, csip in enumerate(levels):
         z0 = base_h + f * ISO_FLOOR
         strati.append(Strato(csip, "piani", storey(z0, False), ["iso-glass-l", "iso-glass-r"], piano=csip,
-                             lit=storey(z0, True), lit_defs=["iso-focus-l", "iso-focus-r"]))
+                             lit=storey(z0, True), lit_defs=["iso-lit-l", "iso-lit-r"]))
         if f == 0:
             # The door sits on the ground floor; anything higher is drawn over it.
             strati.append(Strato("ingresso", "ingressi", door))

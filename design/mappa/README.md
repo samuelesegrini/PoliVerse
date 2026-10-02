@@ -113,11 +113,17 @@ into `alberi-dietro` and `alberi-davanti` around the building, both under the
 
 ## Highlighting
 
-In the 3D view each floor is a layer named by its `csip`, lowest first. Its
-entry in `livelli.json` names an `evidenziato` file: the same floor in blue.
-Swap the two images to highlight that floor. In the single file, switch the
-floor group's glazing from `url(#iso-glass-l)` / `url(#iso-glass-r)` to
-`url(#iso-focus-l)` / `url(#iso-focus-r)`; both pairs are defined.
+In the 3D view each floor is a layer named by its `csip`, lowest first, and
+a floor is highlighted by switching its lights on: warm rooms behind the
+glass, a row of ceiling spotlights, desks catching the light, frames dark
+against it, and light spilling onto the slab. The rest of the building stays
+in daylight, so the lit floor is the one the eye lands on.
+
+- **One image per layer:** the floor's entry in `livelli.json` names an
+  `acceso` file. Swap the floor's image for it.
+- **One file:** each floor group `livello-<csip>` has a hidden twin
+  `livello-<csip>-acceso` (`data-acceso="true"`) right after it. Hide the
+  first and show the twin.
 
 In `-pianta.svg` each classroom is a group with its `csiv` as id and
 `data-sigla`; its label is the group `<csiv>-etichetta`. To highlight a room,

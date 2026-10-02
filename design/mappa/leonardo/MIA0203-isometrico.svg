@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-112.5 -163.3 280.3 240.3" width="560.6" height="480.6">
-<defs><linearGradient id="iso-focus-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D86C9"/><stop offset="1" stop-color="#1C6BAD"/></linearGradient><linearGradient id="iso-focus-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1B5E98"/><stop offset="1" stop-color="#154C7C"/></linearGradient><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient><radialGradient id="iso-shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#1D2B40" stop-opacity="0.22"/><stop offset="1" stop-color="#1D2B40" stop-opacity="0"/></radialGradient><radialGradient id="iso-tree" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#9FD08A"/><stop offset="1" stop-color="#4F9A5E"/></radialGradient></defs>
+<defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient><radialGradient id="iso-shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#1D2B40" stop-opacity="0.22"/><stop offset="1" stop-color="#1D2B40" stop-opacity="0"/></radialGradient><radialGradient id="iso-tree" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#9FD08A"/><stop offset="1" stop-color="#4F9A5E"/></radialGradient></defs>
 <g id="livello-ombra" data-livello="ombre">
 <ellipse cx="14.4" cy="-8.2" rx="126.4" ry="72.5" fill="url(#iso-shadow)"/>
 </g>
@@ -49,6 +49,41 @@
 <polygon points="38.1,31.2 11.1,34.1 11.1,20.1 38.1,17.2" fill="url(#iso-glass-r)"/>
 <path d="M71.5 -48.3V-62.3M62.9 -43.2V-57.2M60 -12.8V-26.8M49.2 -8V-22M38.4 -3.2V-17.2M-36.4 -2.1V-16.1M-47.6 -5.1V-19.1M-58.7 -8.2V-22.2M-18.4 5V-9M5.5 27.8V13.8M-0.2 21.5V7.5M-5.8 15.2V1.2M46.9 24.3V10.3M24.6 32.6V18.6" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>
 </g>
+<g id="livello-MIA020300S-acceso" data-livello="piani" data-piano="MIA020300S" data-acceso="true" style="display: none">
+<polygon points="81.4,-49.4 55.4,-34 55.4,-38 81.4,-53.4" fill="#D4D8DF"/>
+<polygon points="72.1,-13.4 29.1,5.6 29.1,1.6 72.1,-17.4" fill="#D4D8DF"/>
+<polygon points="-25.8,5.5 -71,-7 -71,-11 -25.8,1.5" fill="#F2F3F6"/>
+<polygon points="-12.3,13.3 -25.8,5.5 -25.8,1.5 -12.3,9.3" fill="#F2F3F6"/>
+<polygon points="10.6,38.7 -12.3,13.3 -12.3,9.3 10.6,34.7" fill="#F2F3F6"/>
+<polygon points="57,21.3 38.6,35.7 38.6,31.7 57,17.3" fill="#D4D8DF"/>
+<polygon points="38.6,35.7 10.6,38.7 10.6,34.7 38.6,31.7" fill="#D4D8DF"/>
+<polygon points="12.5,-42.6 35.2,-71.3 64.4,-67.6 81.4,-53.4 55.4,-38 72.1,-17.4 29.1,1.6 57,17.3 38.6,31.7 10.6,34.7 -12.3,9.3 -25.8,1.5 -71,-11 -65,-27.5 -40.4,-37.3 -12.1,-21.8" fill="#FFFFFF"/>
+<polygon points="80.1,-49.5 54.3,-34.1 54.3,-38.1 80.1,-53.5" fill="#FFD98A" opacity="0.55"/>
+<polygon points="80.1,-53.5 54.3,-38.1 54.3,-52.1 80.1,-67.5" fill="url(#iso-lit-r)"/>
+<polygon points="80.1,-64.3 54.3,-48.9 54.3,-52.1 80.1,-67.5" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="70.8,-13.6 27.6,5.5 27.6,1.5 70.8,-17.6" fill="#FFD98A" opacity="0.55"/>
+<polygon points="70.8,-17.6 27.6,1.5 27.6,-12.5 70.8,-31.6" fill="url(#iso-lit-r)"/>
+<polygon points="70.8,-28.4 27.6,-9.3 27.6,-12.5 70.8,-31.6" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="-25.2,5 -69.9,-7.3 -69.9,-11.3 -25.2,1" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-25.2,1 -69.9,-11.3 -69.9,-25.3 -25.2,-13" fill="url(#iso-lit-l)"/>
+<polygon points="-25.2,-9.8 -69.9,-22.1 -69.9,-25.3 -25.2,-13" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="-11.5,13 -25.2,5 -25.2,1 -11.5,9" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-11.5,9 -25.2,1 -25.2,-13 -11.5,-5" fill="url(#iso-lit-l)"/>
+<polygon points="-11.5,-1.8 -25.2,-9.8 -25.2,-13 -11.5,-5" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="11.1,38.1 -11.5,13 -11.5,9 11.1,34.1" fill="#FFD98A" opacity="0.55"/>
+<polygon points="11.1,34.1 -11.5,9 -11.5,-5 11.1,20.1" fill="url(#iso-lit-l)"/>
+<polygon points="11.1,23.3 -11.5,-1.8 -11.5,-5 11.1,20.1" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="55.7,21.4 38.1,35.2 38.1,31.2 55.7,17.4" fill="#FFD98A" opacity="0.55"/>
+<polygon points="55.7,17.4 38.1,31.2 38.1,17.2 55.7,3.4" fill="url(#iso-lit-r)"/>
+<polygon points="55.7,6.6 38.1,20.4 38.1,17.2 55.7,3.4" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="38.1,35.2 11.1,38.1 11.1,34.1 38.1,31.2" fill="#FFD98A" opacity="0.55"/>
+<polygon points="38.1,31.2 11.1,34.1 11.1,20.1 38.1,17.2" fill="url(#iso-lit-r)"/>
+<polygon points="38.1,20.4 11.1,23.3 11.1,20.1 38.1,17.2" fill="#FFFFFF" opacity="0.5"/>
+<path d="M80.1 -56.7L54.3 -41.3M70.8 -20.8L27.6 -1.7M-25.2 -2.2L-69.9 -14.5M-11.5 5.8L-25.2 -2.2M11.1 30.9L-11.5 5.8M55.7 14.2L38.1 28M38.1 28L11.1 30.9" stroke="#D9963A" stroke-width="1.1" opacity="0.6"/>
+<path d="M80.1 -62.9L54.3 -47.5M70.8 -27L27.6 -7.9M-25.2 -8.4L-69.9 -20.7M-11.5 -0.4L-25.2 -8.4M11.1 24.7L-11.5 -0.4M55.7 8L38.1 21.8M38.1 21.8L11.1 24.7" stroke="#FFFFFF" stroke-width="4" stroke-dasharray="0.1 6" stroke-linecap="round" opacity="0.4"/>
+<path d="M80.1 -62.9L54.3 -47.5M70.8 -27L27.6 -7.9M-25.2 -8.4L-69.9 -20.7M-11.5 -0.4L-25.2 -8.4M11.1 24.7L-11.5 -0.4M55.7 8L38.1 21.8M38.1 21.8L11.1 24.7" stroke="#FFFFFF" stroke-width="1.7" stroke-dasharray="0.1 6" stroke-linecap="round"/>
+<path d="M71.5 -48.3V-62.3M62.9 -43.2V-57.2M60 -12.8V-26.8M49.2 -8V-22M38.4 -3.2V-17.2M-36.4 -2.1V-16.1M-47.6 -5.1V-19.1M-58.7 -8.2V-22.2M-18.4 5V-9M5.5 27.8V13.8M-0.2 21.5V7.5M-5.8 15.2V1.2M46.9 24.3V10.3M24.6 32.6V18.6" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+</g>
 <g id="livello-ingresso" data-livello="ingressi">
 <polygon points="-21.7,3.9 -16.5,6.9 -16.5,-3.1 -21.7,-6.1" fill="#2D3B4F"/>
 <polygon points="-19.1,1.4 -29.4,-4.6 -29.4,-7.6 -19.1,-1.6" fill="#E8EAEE"/>
@@ -73,6 +108,41 @@
 <polygon points="38.1,13.2 11.1,16.1 11.1,2.1 38.1,-0.8" fill="url(#iso-glass-r)"/>
 <path d="M71.5 -66.3V-80.3M62.9 -61.2V-75.2M60 -30.8V-44.8M49.2 -26V-40M38.4 -21.2V-35.2M-36.4 -20.1V-34.1M-47.6 -23.1V-37.1M-58.7 -26.2V-40.2M-18.4 -13V-27M5.5 9.8V-4.2M-0.2 3.5V-10.5M-5.8 -2.8V-16.8M46.9 6.3V-7.7M24.6 14.6V0.6" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>
 </g>
+<g id="livello-MIA0203000-acceso" data-livello="piani" data-piano="MIA0203000" data-acceso="true" style="display: none">
+<polygon points="81.4,-67.4 55.4,-52 55.4,-56 81.4,-71.4" fill="#D4D8DF"/>
+<polygon points="72.1,-31.4 29.1,-12.4 29.1,-16.4 72.1,-35.4" fill="#D4D8DF"/>
+<polygon points="-25.8,-12.5 -71,-25 -71,-29 -25.8,-16.5" fill="#F2F3F6"/>
+<polygon points="-12.3,-4.7 -25.8,-12.5 -25.8,-16.5 -12.3,-8.7" fill="#F2F3F6"/>
+<polygon points="10.6,20.7 -12.3,-4.7 -12.3,-8.7 10.6,16.7" fill="#F2F3F6"/>
+<polygon points="57,3.3 38.6,17.7 38.6,13.7 57,-0.7" fill="#D4D8DF"/>
+<polygon points="38.6,17.7 10.6,20.7 10.6,16.7 38.6,13.7" fill="#D4D8DF"/>
+<polygon points="12.5,-60.6 35.2,-89.3 64.4,-85.6 81.4,-71.4 55.4,-56 72.1,-35.4 29.1,-16.4 57,-0.7 38.6,13.7 10.6,16.7 -12.3,-8.7 -25.8,-16.5 -71,-29 -65,-45.5 -40.4,-55.3 -12.1,-39.8" fill="#FFFFFF"/>
+<polygon points="80.1,-67.5 54.3,-52.1 54.3,-56.1 80.1,-71.5" fill="#FFD98A" opacity="0.55"/>
+<polygon points="80.1,-71.5 54.3,-56.1 54.3,-70.1 80.1,-85.5" fill="url(#iso-lit-r)"/>
+<polygon points="80.1,-82.3 54.3,-66.9 54.3,-70.1 80.1,-85.5" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="70.8,-31.6 27.6,-12.5 27.6,-16.5 70.8,-35.6" fill="#FFD98A" opacity="0.55"/>
+<polygon points="70.8,-35.6 27.6,-16.5 27.6,-30.5 70.8,-49.6" fill="url(#iso-lit-r)"/>
+<polygon points="70.8,-46.4 27.6,-27.3 27.6,-30.5 70.8,-49.6" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="-25.2,-13 -69.9,-25.3 -69.9,-29.3 -25.2,-17" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-25.2,-17 -69.9,-29.3 -69.9,-43.3 -25.2,-31" fill="url(#iso-lit-l)"/>
+<polygon points="-25.2,-27.8 -69.9,-40.1 -69.9,-43.3 -25.2,-31" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="-11.5,-5 -25.2,-13 -25.2,-17 -11.5,-9" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-11.5,-9 -25.2,-17 -25.2,-31 -11.5,-23" fill="url(#iso-lit-l)"/>
+<polygon points="-11.5,-19.8 -25.2,-27.8 -25.2,-31 -11.5,-23" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="11.1,20.1 -11.5,-5 -11.5,-9 11.1,16.1" fill="#FFD98A" opacity="0.55"/>
+<polygon points="11.1,16.1 -11.5,-9 -11.5,-23 11.1,2.1" fill="url(#iso-lit-l)"/>
+<polygon points="11.1,5.3 -11.5,-19.8 -11.5,-23 11.1,2.1" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="55.7,3.4 38.1,17.2 38.1,13.2 55.7,-0.6" fill="#FFD98A" opacity="0.55"/>
+<polygon points="55.7,-0.6 38.1,13.2 38.1,-0.8 55.7,-14.6" fill="url(#iso-lit-r)"/>
+<polygon points="55.7,-11.4 38.1,2.4 38.1,-0.8 55.7,-14.6" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="38.1,17.2 11.1,20.1 11.1,16.1 38.1,13.2" fill="#FFD98A" opacity="0.55"/>
+<polygon points="38.1,13.2 11.1,16.1 11.1,2.1 38.1,-0.8" fill="url(#iso-lit-r)"/>
+<polygon points="38.1,2.4 11.1,5.3 11.1,2.1 38.1,-0.8" fill="#FFFFFF" opacity="0.5"/>
+<path d="M80.1 -74.7L54.3 -59.3M70.8 -38.8L27.6 -19.7M-25.2 -20.2L-69.9 -32.5M-11.5 -12.2L-25.2 -20.2M11.1 12.9L-11.5 -12.2M55.7 -3.8L38.1 10M38.1 10L11.1 12.9" stroke="#D9963A" stroke-width="1.1" opacity="0.6"/>
+<path d="M80.1 -80.9L54.3 -65.5M70.8 -45L27.6 -25.9M-25.2 -26.4L-69.9 -38.7M-11.5 -18.4L-25.2 -26.4M11.1 6.7L-11.5 -18.4M55.7 -10L38.1 3.8M38.1 3.8L11.1 6.7" stroke="#FFFFFF" stroke-width="4" stroke-dasharray="0.1 6" stroke-linecap="round" opacity="0.4"/>
+<path d="M80.1 -80.9L54.3 -65.5M70.8 -45L27.6 -25.9M-25.2 -26.4L-69.9 -38.7M-11.5 -18.4L-25.2 -26.4M11.1 6.7L-11.5 -18.4M55.7 -10L38.1 3.8M38.1 3.8L11.1 6.7" stroke="#FFFFFF" stroke-width="1.7" stroke-dasharray="0.1 6" stroke-linecap="round"/>
+<path d="M71.5 -66.3V-80.3M62.9 -61.2V-75.2M60 -30.8V-44.8M49.2 -26V-40M38.4 -21.2V-35.2M-36.4 -20.1V-34.1M-47.6 -23.1V-37.1M-58.7 -26.2V-40.2M-18.4 -13V-27M5.5 9.8V-4.2M-0.2 3.5V-10.5M-5.8 -2.8V-16.8M46.9 6.3V-7.7M24.6 14.6V0.6" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+</g>
 <g id="livello-MIA0203001" data-livello="piani" data-piano="MIA0203001">
 <polygon points="81.4,-85.4 55.4,-70 55.4,-74 81.4,-89.4" fill="#D4D8DF"/>
 <polygon points="72.1,-49.4 29.1,-30.4 29.1,-34.4 72.1,-53.4" fill="#D4D8DF"/>
@@ -90,6 +160,41 @@
 <polygon points="55.7,-18.6 38.1,-4.8 38.1,-18.8 55.7,-32.6" fill="url(#iso-glass-r)"/>
 <polygon points="38.1,-4.8 11.1,-1.9 11.1,-15.9 38.1,-18.8" fill="url(#iso-glass-r)"/>
 <path d="M71.5 -84.3V-98.3M62.9 -79.2V-93.2M60 -48.8V-62.8M49.2 -44V-58M38.4 -39.2V-53.2M-36.4 -38.1V-52.1M-47.6 -41.1V-55.1M-58.7 -44.2V-58.2M-18.4 -31V-45M5.5 -8.2V-22.2M-0.2 -14.5V-28.5M-5.8 -20.8V-34.8M46.9 -11.7V-25.7M24.6 -3.4V-17.4" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>
+</g>
+<g id="livello-MIA0203001-acceso" data-livello="piani" data-piano="MIA0203001" data-acceso="true" style="display: none">
+<polygon points="81.4,-85.4 55.4,-70 55.4,-74 81.4,-89.4" fill="#D4D8DF"/>
+<polygon points="72.1,-49.4 29.1,-30.4 29.1,-34.4 72.1,-53.4" fill="#D4D8DF"/>
+<polygon points="-25.8,-30.5 -71,-43 -71,-47 -25.8,-34.5" fill="#F2F3F6"/>
+<polygon points="-12.3,-22.7 -25.8,-30.5 -25.8,-34.5 -12.3,-26.7" fill="#F2F3F6"/>
+<polygon points="10.6,2.7 -12.3,-22.7 -12.3,-26.7 10.6,-1.3" fill="#F2F3F6"/>
+<polygon points="57,-14.7 38.6,-0.3 38.6,-4.3 57,-18.7" fill="#D4D8DF"/>
+<polygon points="38.6,-0.3 10.6,2.7 10.6,-1.3 38.6,-4.3" fill="#D4D8DF"/>
+<polygon points="12.5,-78.6 35.2,-107.3 64.4,-103.6 81.4,-89.4 55.4,-74 72.1,-53.4 29.1,-34.4 57,-18.7 38.6,-4.3 10.6,-1.3 -12.3,-26.7 -25.8,-34.5 -71,-47 -65,-63.5 -40.4,-73.3 -12.1,-57.8" fill="#FFFFFF"/>
+<polygon points="80.1,-85.5 54.3,-70.1 54.3,-74.1 80.1,-89.5" fill="#FFD98A" opacity="0.55"/>
+<polygon points="80.1,-89.5 54.3,-74.1 54.3,-88.1 80.1,-103.5" fill="url(#iso-lit-r)"/>
+<polygon points="80.1,-100.3 54.3,-84.9 54.3,-88.1 80.1,-103.5" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="70.8,-49.6 27.6,-30.5 27.6,-34.5 70.8,-53.6" fill="#FFD98A" opacity="0.55"/>
+<polygon points="70.8,-53.6 27.6,-34.5 27.6,-48.5 70.8,-67.6" fill="url(#iso-lit-r)"/>
+<polygon points="70.8,-64.4 27.6,-45.3 27.6,-48.5 70.8,-67.6" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="-25.2,-31 -69.9,-43.3 -69.9,-47.3 -25.2,-35" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-25.2,-35 -69.9,-47.3 -69.9,-61.3 -25.2,-49" fill="url(#iso-lit-l)"/>
+<polygon points="-25.2,-45.8 -69.9,-58.1 -69.9,-61.3 -25.2,-49" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="-11.5,-23 -25.2,-31 -25.2,-35 -11.5,-27" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-11.5,-27 -25.2,-35 -25.2,-49 -11.5,-41" fill="url(#iso-lit-l)"/>
+<polygon points="-11.5,-37.8 -25.2,-45.8 -25.2,-49 -11.5,-41" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="11.1,2.1 -11.5,-23 -11.5,-27 11.1,-1.9" fill="#FFD98A" opacity="0.55"/>
+<polygon points="11.1,-1.9 -11.5,-27 -11.5,-41 11.1,-15.9" fill="url(#iso-lit-l)"/>
+<polygon points="11.1,-12.7 -11.5,-37.8 -11.5,-41 11.1,-15.9" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="55.7,-14.6 38.1,-0.8 38.1,-4.8 55.7,-18.6" fill="#FFD98A" opacity="0.55"/>
+<polygon points="55.7,-18.6 38.1,-4.8 38.1,-18.8 55.7,-32.6" fill="url(#iso-lit-r)"/>
+<polygon points="55.7,-29.4 38.1,-15.6 38.1,-18.8 55.7,-32.6" fill="#FFFFFF" opacity="0.5"/>
+<polygon points="38.1,-0.8 11.1,2.1 11.1,-1.9 38.1,-4.8" fill="#FFD98A" opacity="0.55"/>
+<polygon points="38.1,-4.8 11.1,-1.9 11.1,-15.9 38.1,-18.8" fill="url(#iso-lit-r)"/>
+<polygon points="38.1,-15.6 11.1,-12.7 11.1,-15.9 38.1,-18.8" fill="#FFFFFF" opacity="0.5"/>
+<path d="M80.1 -92.7L54.3 -77.3M70.8 -56.8L27.6 -37.7M-25.2 -38.2L-69.9 -50.5M-11.5 -30.2L-25.2 -38.2M11.1 -5.1L-11.5 -30.2M55.7 -21.8L38.1 -8M38.1 -8L11.1 -5.1" stroke="#D9963A" stroke-width="1.1" opacity="0.6"/>
+<path d="M80.1 -98.9L54.3 -83.5M70.8 -63L27.6 -43.9M-25.2 -44.4L-69.9 -56.7M-11.5 -36.4L-25.2 -44.4M11.1 -11.3L-11.5 -36.4M55.7 -28L38.1 -14.2M38.1 -14.2L11.1 -11.3" stroke="#FFFFFF" stroke-width="4" stroke-dasharray="0.1 6" stroke-linecap="round" opacity="0.4"/>
+<path d="M80.1 -98.9L54.3 -83.5M70.8 -63L27.6 -43.9M-25.2 -44.4L-69.9 -56.7M-11.5 -36.4L-25.2 -44.4M11.1 -11.3L-11.5 -36.4M55.7 -28L38.1 -14.2M38.1 -14.2L11.1 -11.3" stroke="#FFFFFF" stroke-width="1.7" stroke-dasharray="0.1 6" stroke-linecap="round"/>
+<path d="M71.5 -84.3V-98.3M62.9 -79.2V-93.2M60 -48.8V-62.8M49.2 -44V-58M38.4 -39.2V-53.2M-36.4 -38.1V-52.1M-47.6 -41.1V-55.1M-58.7 -44.2V-58.2M-18.4 -31V-45M5.5 -8.2V-22.2M-0.2 -14.5V-28.5M-5.8 -20.8V-34.8M46.9 -11.7V-25.7M24.6 -3.4V-17.4" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
 </g>
 <g id="livello-tetto" data-livello="edifici">
 <polygon points="81.4,-103.4 55.4,-88 55.4,-92 81.4,-107.4" fill="#D4D8DF"/>
