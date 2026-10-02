@@ -606,7 +606,10 @@ def floor_names(b):
 # Claddings for a building drawn by its profile: (left face, right face, top).
 CLADDING = {"ceramica": ("#E6E0D4", "#CDC5B6", "#F1EDE5"),
             "mattone": ("#ECE7DE", "#D3CBBD", "#F4F1EB"),
-            "fessura": ("#4D5D72", "#36465B", "#5B6B80")}
+            "fessura": ("#4D5D72", "#36465B", "#5B6B80"),
+            "bianco": ("#F6F7F9", "#DDE0E5", "#FFFFFF")}
+STEEL = "#23272E"             # Viganò's black steel
+STEEL_RED = "#D9473A"         # and his red
 SKYLIGHT, SKYLIGHT_LIT = "#C9D6E4", "#FFD98A"
 
 
@@ -632,7 +635,58 @@ def floor_rooms(b, csip, turn, kinds=("aula",)):
     return out
 
 
-def draw_profile(b, pts, turn, z, storey, door, strati, zmid):
+def exoskeleton(pts, top, others):
+    """Viganò's steel: cruciform columns standing out from the visible façades, rising past
+    the roof to a crowning frame, braced in V, with beams reaching back over the roof.
+    Façades against another part of the building get none."""
+    lines, heavy = [], []
+    zt = top + ISO_SLAB + 16
+    seg = lambda p, za, q, zb: f"M{fmt(iso(*p, za)[0])} {fmt(iso(*p, za)[1])}L{fmt(iso(*q, zb)[0])} {fmt(iso(*q, zb)[1])}"
+    for a, c, _, _ in faces(pts, 0, 1):
+        mid = ((a[0] + c[0]) / 2, (a[1] + c[1]) / 2)
+        if math.dist(a, c) < 6 or any(math.dist(mid, nearest_edge(mid, [o])[0]) < 1.0 for o in others):
+            continue
+        n = outward(a, c, pts)
+        length = math.dist(a, c)
+        ux, uy = (c[0] - a[0]) / length, (c[1] - a[1]) / length
+        k = max(1, round(length / 7.2))
+        heads = []
+        for i in range(k + 1):
+            t = i * length / k
+            p = (a[0] + ux * t + n[0] * 1.8, a[1] + uy * t + n[1] * 1.8)
+            heavy.append(seg(p, 0, p, zt))
+            back = (p[0] - n[0] * 5.5, p[1] - n[1] * 5.5)
+            lines.append(seg(p, zt, back, zt))                        # beam back over the roof
+            lines.append(seg(p, zt, (p[0] - n[0] * 1.8, p[1] - n[1] * 1.8), top + ISO_SLAB))  # strut to the roof
+            heads.append(p)
+        for p, q in zip(heads, heads[1:]):
+            lines.append(seg(p, zt, q, zt))                           # the crown
+            m = ((p[0] + q[0]) / 2, (p[1] + q[1]) / 2)
+            lines.append(seg(p, zt, m, zt - 10) + seg(m, zt - 10, q, zt))  # V bracing
+            lines.append(seg(p, top - 4, q, top - 4))                 # the beam the floors hang from
+    return [f'<path d="{"".join(lines)}" stroke="{STEEL}" stroke-width="1.1" fill="none" stroke-linejoin="round"/>',
+            f'<path d="{"".join(heavy)}" stroke="{STEEL}" stroke-width="2.6" fill="none"/>']
+
+
+def sculpture_a(pts, at, top):
+    """The "A" of architecture over Viganò's main entrance: three steel sections in red
+    and black, standing before the façade at `at`."""
+    q, a, c, _ = nearest_edge(at, [pts])
+    n = outward(a, c, pts)
+    length = math.dist(a, c)
+    ux, uy = (c[0] - a[0]) / length, (c[1] - a[1]) / length
+    p = lambda t, out=3.2: (q[0] + ux * t + n[0] * out, q[1] + uy * t + n[1] * out)
+    base = 6.0
+    red = [(*p(-4), base), (*p(9), base), (*p(7.5), top * 0.95)]
+    leg = [(*p(-7), base), (*p(9.5), top + 20)]
+    bar = [(*p(-2.5), top * 0.3), (*p(9), top * 0.3)]
+    line = lambda pp, w: (f'<path d="M{fmt(iso(*pp[0])[0])} {fmt(iso(*pp[0])[1])}L{fmt(iso(*pp[1])[0])} {fmt(iso(*pp[1])[1])}" '
+                          f'stroke="{STEEL}" stroke-width="{w}" stroke-linecap="square"/>')
+    return [f'<polygon points="{iso_poly(red)}" fill="{STEEL_RED}"/>', line(leg, 3.4), line(bar, 2.2),
+            f'<polygon points="{iso_poly([(*p(-1.2, 0.2), base), (*p(1.2, 0.2), base), (*p(1.2, 0.2), base + 12), (*p(-1.2, 0.2), base + 12)])}" fill="{ISO_DOOR}"/>']
+
+
+def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, parte=""):
     """Draws the bands of `profilo`, bottom up, from height z; returns the top.
 
     A band is a floor (`piano`) drawn as `vetro` (a glazed storey), `pieno` (a
@@ -641,8 +695,9 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid):
     `sporto` metres, casting its shadow on it; lit, its skylights glow over the
     classrooms). `h` is its height in drawing units, `sagoma: propria` sets it on
     the floor's own outline, set back on the roof of what is below."""
+    tag = f"-{parte}" if parte else ""
     below, roofed, skylights = pts, False, []
-    for band in b["profilo"]:
+    for band in profilo or b["profilo"]:
         csip, kind, h = band.get("piano"), band["tipo"], band["h"]
         own = pts
         if band.get("sagoma") == "propria":
@@ -660,14 +715,14 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid):
                            f"L{fmt(iso(*c, z + ISO_SLAB + 3)[0])} {fmt(iso(*c, z + ISO_SLAB + 3)[1])}"
                            for a, c, _, _ in faces(below, 0, 1))
             roof.append(f'<path d="{rail}" stroke="#AEB4BE" stroke-width="0.8" fill="none"/>')
-            strati.append(Strato("tetto", "edifici", roof))
+            strati.append(Strato("tetto" + tag, "edifici", roof))
             for c, lights in skylights:
-                strati.append(Strato(f"{c}-lucernari", "piani", lights(False), piano=c, lit=lights(True)))
+                strati.append(Strato(f"{c}-lucernari{tag}", "piani", lights(False), piano=c, lit=lights(True)))
             skylights.clear()
             z, roofed = z + ISO_SLAB, True
         def body(lit):
             if kind == "vetro":
-                return storey(z, lit, h, own)
+                return storey(z, lit, h, own, band.get("telaio"))
             if kind == "sporto":
                 out = []
                 # Its shadow on the band below, deepest under the overhang.
@@ -690,8 +745,8 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid):
                         courses.append(f"M{fmt(x0)} {fmt(y0)}L{fmt(x1)} {fmt(y1)}")
                 out.append(f'<path d="{"".join(courses)}" stroke="#FFFFFF" stroke-width="0.5" opacity="0.35"/>')
             return out
-        zmid[csip] = z + h / 2
-        strati.append(Strato(csip, "piani", body(False), ["iso-glass-l", "iso-glass-r"], piano=csip,
+        zmid.setdefault(csip, z + h / 2)
+        strati.append(Strato(csip + tag, "piani", body(False), ["iso-glass-l", "iso-glass-r"], piano=csip,
                              lit=body(True), lit_defs=["iso-lit-l", "iso-lit-r", "iso-lit-glow"]))
         if band.get("ingresso"):
             strati.append(Strato("ingresso", "ingressi", door))
@@ -701,6 +756,8 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid):
                 out = []
                 for x0, y0, x1, y1 in floor_rooms(b, csip, turn):
                     cx, cy, w, d = (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) * 0.6, (y1 - y0) * 0.6
+                    if not inside((cx, cy), pts):
+                        continue                  # a classroom under another part's roof
                     sky = [(cx - w / 2, cy - d / 2), (cx + w / 2, cy - d / 2), (cx + w / 2, cy + d / 2), (cx - w / 2, cy + d / 2)]
                     out.append(f'<polygon points="{iso_poly([(x, y, zt) for x, y in sky])}" '
                                f'fill="{SKYLIGHT_LIT if lit else SKYLIGHT}" opacity="{0.95 if lit else 0.8}"/>')
@@ -711,9 +768,9 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid):
         below = own
     roof = prism(below, z, z + ISO_SLAB, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
     roof.append(f'<polygon points="{iso_poly([(x, y, z + ISO_SLAB) for x, y in offset(below, -1.6)])}" fill="{ISO_ROOF_INNER}"/>')
-    strati.append(Strato("tetto", "edifici", roof))
+    strati.append(Strato("tetto" + tag, "edifici", roof))
     for c, lights in skylights:
-        strati.append(Strato(f"{c}-lucernari", "piani", lights(False), piano=c, lit=lights(True)))
+        strati.append(Strato(f"{c}-lucernari{tag}", "piani", lights(False), piano=c, lit=lights(True)))
     return z
 
 
@@ -753,7 +810,7 @@ def draw_iso(campus, b):
 
     ent = b.get("ingresso")
     walk, door = [], []
-    if ent:
+    if ent and "lato" in ent:
         raw = [turn(p) for p in b["pianta"]]    # "lato" counts edges in the file's own order
         a, c = raw[ent["lato"]], raw[(ent["lato"] + 1) % len(raw)]
         ex, ey = a[0] + (c[0] - a[0]) * ent["t"], a[1] + (c[1] - a[1]) * ent["t"]
@@ -777,7 +834,7 @@ def draw_iso(campus, b):
     strati.append(Strato("alberi-dietro", "alberi", [iso_tree(*t) for t in behind], ["iso-tree"]))
     strati.append(Strato("basamento", "edifici", prism(base, 0, base_h, ISO_BASE[:2], ISO_BASE[2])))
 
-    def storey(z0, lit, h=ISO_FLOOR, shape=None):
+    def storey(z0, lit, h=ISO_FLOOR, shape=None, frame=None):
         """One floor. Lit, it is the same floor at dusk with its lights on:
         warm rooms behind the glass, brightest under the ceiling where the
         light comes from, each bay a little different as rooms are, desks
@@ -793,6 +850,8 @@ def draw_iso(campus, b):
                 spill = [(a[0], a[1], z0), (c[0], c[1], z0), (c[0], c[1], g0), (a[0], a[1], g0)]
                 out.append(f'<polygon points="{iso_poly(spill)}" fill="{LIGHT_SPILL}" opacity="0.55"/>')
             out.append(f'<polygon points="{iso_poly(q)}" fill="{gl if is_left else gr}"/>')
+            if frame and not lit:
+                out.append(f'<polygon points="{iso_poly(q)}" fill="#1E2A3A" opacity="0.38"/>')   # tinted glass
             n = max(1, round(math.dist(a, c) / ISO_MULLION))
             at = lambda t: (a[0] + (c[0] - a[0]) * t, a[1] + (c[1] - a[1]) * t)
             if lit:
@@ -819,11 +878,25 @@ def draw_iso(campus, b):
             out.append(f'<path d="{"".join(desks)}" stroke="{LIGHT_DESK}" stroke-width="1.1" opacity="0.4"/>')
             out.append(f'<path d="{"".join(mullions)}" stroke="{LIGHT_FRAME}" stroke-width="1.2" opacity="0.55"/>')
         else:
-            out.append(f'<path d="{"".join(mullions)}" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>')
+            out.append(f'<path d="{"".join(mullions)}" stroke="{frame or "#FFFFFF"}" stroke-width="1.2" '
+                       f'opacity="{0.9 if frame else 0.75}"/>')
         return out
 
     zmid = {}
-    if b.get("profilo"):
+    if b.get("parti"):
+        # A building of parts, each with its own outline and bands, the farthest drawn first.
+        parts = [(p, ccw([turn(q) for q in p["pianta"]])) for p in b["parti"]]
+        parts.sort(key=lambda pp: sum(x + y for x, y in pp[1]) / len(pp[1]))
+        top = 0
+        for part, own in parts:
+            ztop = draw_profile(b, own, turn, base_h, storey, door, strati, zmid, part["profilo"], part["nome"])
+            others = [o for p2, o in parts if p2 is not part]
+            if part.get("esoscheletro"):
+                strati.append(Strato(f"struttura-{part['nome']}", "edifici", exoskeleton(own, ztop, others)))
+            if ent and ent.get("scultura") == "A" and part.get("ingresso"):
+                strati.append(Strato("ingresso", "ingressi", sculpture_a(own, turn(tuple(ent["punto"])), ztop)))
+            top = max(top, ztop)
+    elif b.get("profilo"):
         # A building that is not a stack of like storeys: its bands, bottom up, as drawn.
         top = draw_profile(b, pts, turn, base_h, storey, door, strati, zmid)
     else:

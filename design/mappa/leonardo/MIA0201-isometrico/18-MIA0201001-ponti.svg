@@ -1,12 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-260.8 -112.5 322.3 306.1" width="644.5" height="612.2">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-260.8 -95.5 322.3 289.1" width="644.5" height="578.2">
 <defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient></defs>
-<polygon points="-72.7,15 -76.9,17.2 -76.9,6.4 -72.7,4.2" fill="#4E5566" opacity="0.22"/>
 <polygon points="21.5,74 -5.5,90 -5.5,79.2 21.5,63.2" fill="#4E5566" opacity="0.22"/>
-<polygon points="-72.4,133.4 -230.4,42 -230.4,31.2 -72.4,122.6" fill="#4E5566" opacity="0.22"/>
 <polygon points="-1.7,92.2 -72.4,133.4 -72.4,122.6 -1.7,81.4" fill="#4E5566" opacity="0.22"/>
-<polygon points="-67.4,4.2 -71.6,6.5 -71.6,-17.5 -67.4,-19.8" fill="#D3CBBD"/>
+<polygon points="-72.4,133.4 -104.2,115 -104.2,104.2 -72.4,122.6" fill="#4E5566" opacity="0.22"/>
 <polygon points="26.6,63.2 -0.4,79.2 -0.4,55.2 26.6,39.2" fill="#D3CBBD"/>
-<polygon points="-72.4,125.6 -235.6,31.2 -235.6,7.2 -72.4,101.6" fill="#ECE7DE"/>
 <polygon points="3.5,81.4 -72.4,125.6 -72.4,101.6 3.5,57.4" fill="#D3CBBD"/>
-<polygon points="-132.5,-51.5 -90.8,-27.4 -85.9,-30.2 -67.4,-19.8 -71.6,-17.5 26.6,39.2 -0.4,55.2 3.5,57.4 -72.4,101.6 -235.6,7.2" fill="#F4F1EB"/>
+<polygon points="-72.4,125.6 -109.4,104.1 -109.4,80.1 -72.4,101.6" fill="#ECE7DE"/>
+<polygon points="-5.9,20.4 26.6,39.2 -0.4,55.2 3.5,57.4 -72.4,101.6 -109.4,80.1" fill="#F4F1EB"/>
 </svg>

@@ -2242,7 +2242,7 @@
     },
     "leonardo/MIA0201-isometrico": {
       "file": "leonardo/MIA0201-isometrico.svg",
-      "viewBox": "-260.8 -112.5 322.3 306.1",
+      "viewBox": "-260.8 -95.5 322.3 289.1",
       "strati": [
         {
           "file": "leonardo/MIA0201-isometrico/01-ombra.svg",
@@ -2265,63 +2265,95 @@
           "livello": "edifici"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/06-MIA020100S.svg",
+          "file": "leonardo/MIA0201-isometrico/06-MIA020100S-vigano.svg",
           "livello": "piani",
           "piano": "MIA020100S",
-          "acceso": "leonardo/MIA0201-isometrico/06-MIA020100S-acceso.svg"
+          "acceso": "leonardo/MIA0201-isometrico/06-MIA020100S-vigano-acceso.svg"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/07-MIA0201000.svg",
+          "file": "leonardo/MIA0201-isometrico/07-MIA0201000-vigano.svg",
           "livello": "piani",
           "piano": "MIA0201000",
-          "acceso": "leonardo/MIA0201-isometrico/07-MIA0201000-acceso.svg"
+          "acceso": "leonardo/MIA0201-isometrico/07-MIA0201000-vigano-acceso.svg"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/08-ingresso.svg",
+          "file": "leonardo/MIA0201-isometrico/08-MIA0201S00-vigano.svg",
+          "livello": "piani",
+          "piano": "MIA0201S00",
+          "acceso": "leonardo/MIA0201-isometrico/08-MIA0201S00-vigano-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0201-isometrico/09-MIA0201001-vigano.svg",
+          "livello": "piani",
+          "piano": "MIA0201001",
+          "acceso": "leonardo/MIA0201-isometrico/09-MIA0201001-vigano-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0201-isometrico/10-tetto-vigano.svg",
+          "livello": "edifici"
+        },
+        {
+          "file": "leonardo/MIA0201-isometrico/11-MIA0201002-vigano.svg",
+          "livello": "piani",
+          "piano": "MIA0201002",
+          "acceso": "leonardo/MIA0201-isometrico/11-MIA0201002-vigano-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0201-isometrico/12-tetto-vigano.svg",
+          "livello": "edifici"
+        },
+        {
+          "file": "leonardo/MIA0201-isometrico/13-struttura-vigano.svg",
+          "livello": "edifici"
+        },
+        {
+          "file": "leonardo/MIA0201-isometrico/14-ingresso.svg",
           "livello": "ingressi"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/09-MIA0201S00.svg",
+          "file": "leonardo/MIA0201-isometrico/15-MIA020100S-ponti.svg",
+          "livello": "piani",
+          "piano": "MIA020100S",
+          "acceso": "leonardo/MIA0201-isometrico/15-MIA020100S-ponti-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0201-isometrico/16-MIA0201000-ponti.svg",
+          "livello": "piani",
+          "piano": "MIA0201000",
+          "acceso": "leonardo/MIA0201-isometrico/16-MIA0201000-ponti-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0201-isometrico/17-MIA0201S00-ponti.svg",
           "livello": "piani",
           "piano": "MIA0201S00",
-          "acceso": "leonardo/MIA0201-isometrico/09-MIA0201S00-acceso.svg"
+          "acceso": "leonardo/MIA0201-isometrico/17-MIA0201S00-ponti-acceso.svg"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/10-MIA0201001.svg",
+          "file": "leonardo/MIA0201-isometrico/18-MIA0201001-ponti.svg",
           "livello": "piani",
           "piano": "MIA0201001",
-          "acceso": "leonardo/MIA0201-isometrico/10-MIA0201001-acceso.svg"
+          "acceso": "leonardo/MIA0201-isometrico/18-MIA0201001-ponti-acceso.svg"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/11-tetto.svg",
+          "file": "leonardo/MIA0201-isometrico/19-tetto-ponti.svg",
           "livello": "edifici"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/12-MIA0201001-lucernari.svg",
+          "file": "leonardo/MIA0201-isometrico/20-MIA0201001-lucernari-ponti.svg",
           "livello": "piani",
           "piano": "MIA0201001",
-          "acceso": "leonardo/MIA0201-isometrico/12-MIA0201001-lucernari-acceso.svg"
+          "acceso": "leonardo/MIA0201-isometrico/20-MIA0201001-lucernari-ponti-acceso.svg"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/13-MIA0201002.svg",
-          "livello": "piani",
-          "piano": "MIA0201002",
-          "acceso": "leonardo/MIA0201-isometrico/13-MIA0201002-acceso.svg"
-        },
-        {
-          "file": "leonardo/MIA0201-isometrico/14-tetto.svg",
-          "livello": "edifici"
-        },
-        {
-          "file": "leonardo/MIA0201-isometrico/15-impianti.svg",
+          "file": "leonardo/MIA0201-isometrico/21-impianti.svg",
           "livello": "impianti"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/16-alberi-davanti.svg",
+          "file": "leonardo/MIA0201-isometrico/22-alberi-davanti.svg",
           "livello": "alberi"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/17-etichette-piani.svg",
+          "file": "leonardo/MIA0201-isometrico/23-etichette-piani.svg",
           "livello": "etichette-piani"
         }
       ]

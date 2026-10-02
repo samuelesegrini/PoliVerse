@@ -159,33 +159,82 @@
         [-49.0, -27.5]
       ],
       "livelli": ["MIA020100S", "MIA0201000", "MIA0201S00", "MIA0201001", "MIA0201002"],
-      "ingresso": {"lato": 3, "t": 0.15},
+      "ingresso": {"punto": [-105.2, 38.0], "scultura": "A"},
       "vista": "sud-ovest",
-      "profilo": [
-        {"piano": "MIA020100S", "tipo": "fessura", "h": 5},
+      "riquadro": [-144, -50, -10, 86],
+      "parti": [
         {
-          "piano": "MIA0201000",
-          "tipo": "pieno",
-          "rivestimento": "ceramica",
-          "h": 15,
-          "ingresso": true
+          "nome": "ponti",
+          "pianta": [
+            [-105.15, 45.0],
+            [-105.2, 63.4],
+            [-64.2, 63.2],
+            [-64.2, 61.0],
+            [-48.4, 60.8],
+            [-48.4, 45.0]
+          ],
+          "profilo": [
+            {"piano": "MIA020100S", "tipo": "fessura", "h": 5},
+            {
+              "piano": "MIA0201000",
+              "tipo": "pieno",
+              "rivestimento": "ceramica",
+              "h": 15
+            },
+            {"piano": "MIA0201S00", "tipo": "vetro", "h": 20},
+            {
+              "piano": "MIA0201001",
+              "tipo": "sporto",
+              "sporto": 1.5,
+              "rivestimento": "mattone",
+              "h": 24
+            }
+          ]
         },
-        {"piano": "MIA0201S00", "tipo": "vetro", "h": 20},
         {
-          "piano": "MIA0201001",
-          "tipo": "sporto",
-          "sporto": 1.5,
-          "rivestimento": "mattone",
-          "h": 24
-        },
-        {
-          "piano": "MIA0201002",
-          "tipo": "vetro",
-          "sagoma": "propria",
-          "h": 18
+          "nome": "vigano",
+          "esoscheletro": true,
+          "ingresso": true,
+          "pianta": [
+            [-105.1, -27.9],
+            [-105.15, 45.0],
+            [-48.4, 45.0],
+            [-48.4, 4.0],
+            [-46.1, 4.1],
+            [-46.2, -3.4],
+            [-49.0, -3.4],
+            [-49.0, -27.5]
+          ],
+          "profilo": [
+            {"piano": "MIA020100S", "tipo": "fessura", "h": 5},
+            {
+              "piano": "MIA0201000",
+              "tipo": "vetro",
+              "telaio": "#23272E",
+              "h": 18
+            },
+            {
+              "piano": "MIA0201S00",
+              "tipo": "pieno",
+              "rivestimento": "bianco",
+              "h": 6
+            },
+            {
+              "piano": "MIA0201001",
+              "tipo": "vetro",
+              "telaio": "#23272E",
+              "h": 18
+            },
+            {
+              "piano": "MIA0201002",
+              "tipo": "vetro",
+              "telaio": "#23272E",
+              "sagoma": "propria",
+              "h": 18
+            }
+          ]
         }
-      ],
-      "riquadro": [-144, -50, -10, 86]
+      ]
     },
     {
       "csie": "MIA0206",
@@ -872,7 +921,7 @@
       {"punto": [77.2, 57.6]},
       {"punto": [83.9, 21.3]},
       {"punto": [-126.4, 25.0]},
-      {"punto": [-105.4, 17.7], "principale": true},
+      {"punto": [-105.2, 38.0], "principale": true},
       {"punto": [-126.9, -49.6]}
     ],
     "nomi": [
