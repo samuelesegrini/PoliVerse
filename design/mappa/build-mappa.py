@@ -104,6 +104,8 @@ LIVELLI = {
     "muri": ("Muri esterni", True, True),
     "ingressi": ("Ingressi", True, False),
     "accessibilita": ("Accessibilità", True, False),
+    "percorso-accessibile": ("Percorso accessibile", False, False),
+    "dotazioni": ("Dotazioni delle aule", True, False),
     "bici": ("Rastrelliere per bici", True, False),
     "lampioni": ("Lampioni", False, False),
     "dae": ("Defibrillatori", True, False),
@@ -306,6 +308,45 @@ def access_badge(x, y, size=2.2):
     h = size / 2
     return (f'<rect x="{fmt(x - h)}" y="{fmt(y - h)}" width="{fmt(size)}" height="{fmt(size)}" rx="{fmt(size * 0.22)}" '
             f'fill="{BADGE_FOCUS}"/>' + glyph_wheelchair(x, y + 0.08, size * 0.38))
+
+
+def glyph_projector(x, y, s):
+    p = lambda dx, dy: f"{fmt(x + dx * s)} {fmt(y + dy * s)}"
+    return (f'<rect x="{fmt(x - 0.8 * s)}" y="{fmt(y - 0.42 * s)}" width="{fmt(1.6 * s)}" height="{fmt(0.9 * s)}" '
+            f'rx="{fmt(0.18 * s)}" fill="{BADGE_FOCUS}"/>'
+            f'<circle cx="{fmt(x + 0.32 * s)}" cy="{fmt(y + 0.03 * s)}" r="{fmt(0.26 * s)}" fill="#FFFFFF"/>'
+            f'<path d="M{p(-0.5, 0.48)}V{fmt(y + 0.78 * s)}M{p(0.5, 0.48)}V{fmt(y + 0.78 * s)}" '
+            f'stroke="{BADGE_FOCUS}" stroke-width="{fmt(0.16 * s)}" stroke-linecap="round"/>')
+
+
+def glyph_microphone(x, y, s):
+    p = lambda dx, dy: f"{fmt(x + dx * s)} {fmt(y + dy * s)}"
+    return (f'<rect x="{fmt(x - 0.26 * s)}" y="{fmt(y - 0.9 * s)}" width="{fmt(0.52 * s)}" height="{fmt(1.0 * s)}" '
+            f'rx="{fmt(0.26 * s)}" fill="{BADGE_FOCUS}"/>'
+            f'<path d="M{p(-0.52, -0.15)}A{fmt(0.52 * s)} {fmt(0.52 * s)} 0 0 0 {p(0.52, -0.15)}M{p(0, 0.37)}V{fmt(y + 0.82 * s)}'
+            f'M{p(-0.32, 0.82)}H{fmt(x + 0.32 * s)}" fill="none" stroke="{BADGE_FOCUS}" stroke-width="{fmt(0.16 * s)}" '
+            f'stroke-linecap="round"/>')
+
+
+def glyph_bolt(x, y, s):
+    p = lambda dx, dy: f"{fmt(x + dx * s)} {fmt(y + dy * s)}"
+    return (f'<path d="M{p(0.18, -0.92)}L{p(-0.48, 0.12)}L{p(-0.02, 0.12)}L{p(-0.18, 0.92)}L{p(0.48, -0.16)}'
+            f'L{p(0.02, -0.16)}Z" fill="{LIGHT_DESK}"/>')
+
+
+def glyph_network(x, y, s):
+    p = lambda dx, dy: f"{fmt(x + dx * s)} {fmt(y + dy * s)}"
+    box = lambda cx, cy: (f'<rect x="{fmt(x + (cx - 0.24) * s)}" y="{fmt(y + (cy - 0.24) * s)}" width="{fmt(0.48 * s)}" '
+                          f'height="{fmt(0.48 * s)}" rx="{fmt(0.08 * s)}" fill="{BADGE_FOCUS}"/>')
+    return (f'<path d="M{p(0, -0.4)}V{fmt(y + 0.08 * s)}M{p(-0.6, 0.4)}V{fmt(y + 0.08 * s)}H{fmt(x + 0.6 * s)}V{fmt(y + 0.4 * s)}" '
+            f'fill="none" stroke="{BADGE_FOCUS}" stroke-width="{fmt(0.14 * s)}"/>'
+            + box(0, -0.62) + box(-0.6, 0.62) + box(0.6, 0.62))
+
+
+# What a room offers, in the order the icons sit under its label. Only these
+# tell rooms apart; every lecture hall here is dimmable and has a wired desk.
+EQUIPMENT = [("proiettore", glyph_projector), ("microfono", glyph_microphone),
+             ("prese", glyph_bolt), ("rete", glyph_network)]
 
 
 def entrance_arrow(q, n, main=False):
@@ -798,6 +839,28 @@ def draw_plan(b, floor):
     strati.append(Strato("porte", "porte",
                          [f'<path d="{"".join(doors)}" stroke="#FFFFFF" stroke-width="{INNER_WALL + 0.25}"/>'] if doors else []))
 
+    # The step-free route the Politecnico publishes for this floor: a line on a white halo,
+    # with an arrowhead where its map marks the way to go.
+    route = floor.get("percorso_accessibile", [])
+    lines, heads = [], []
+    for ax, ay, bx, by, way in route:
+        if way:
+            # The line stops at the arrowhead's base, so nothing shows past its tip.
+            (fx, fy), (tx, ty) = ((ax, ay), (bx, by)) if way > 0 else ((bx, by), (ax, ay))
+            n = math.dist((fx, fy), (tx, ty)) or 1
+            ux, uy = (tx - fx) / n, (ty - fy) / n
+            hx, hy = tx - ux * 1.1, ty - uy * 1.1
+            heads.append(poly([(tx, ty), (hx - uy * 0.6, hy + ux * 0.6), (hx + uy * 0.6, hy - ux * 0.6)]))
+            ax, ay, bx, by = fx, fy, hx, hy
+        lines.append(f"M{fmt(ax)} {fmt(ay)}L{fmt(bx)} {fmt(by)}")
+    lines = "".join(lines)
+    strati.append(Strato("percorso-accessibile", "percorso-accessibile", [
+        f'<path d="{lines}" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>',
+        f'<path d="{"".join(heads)}" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.6" stroke-linejoin="round"/>',
+        f'<path d="{lines}" fill="none" stroke="{BADGE_FOCUS}" stroke-width="0.42" stroke-linecap="round" stroke-linejoin="round"/>',
+        f'<path d="{"".join(heads)}" fill="{BADGE_FOCUS}"/>',
+    ] if route else []))
+
     strati.append(Strato("muri", "muri", [f'<path d="{poly(shell)}" fill="none" stroke="{PLAN_SHELL}" '
                                           f'stroke-width="{SHELL_WALL}" stroke-linejoin="round"/>']))
 
@@ -830,6 +893,21 @@ def draw_plan(b, floor):
 
     strati.append(Strato("acqua", "acqua", [marker(x, y, glyph_drop, r=1.4) for x, y in floor.get("acqua", [])]))
     strati.append(Strato("etichette", "etichette", [lbl for lbl in (plan_label(r) for r in rooms) if lbl]))
+
+    # A row of small chips under each lecture hall's label: what the room offers.
+    kit = []
+    for r in rooms:
+        have = [draw for name, draw in EQUIPMENT if name in r.get("dotazioni", [])]
+        if r["tipo"] != "aula" or not have:
+            continue
+        x, y = r.get("etichetta") or area_centroid([tuple(p) for p in r["forma"]])
+        cy = y + (5.2 if r.get("posti") else 3.6) / 2 + 1.5
+        step = 2.1
+        for i, draw in enumerate(have):
+            cx = x + (i - (len(have) - 1) / 2) * step
+            kit.append(f'<circle cx="{fmt(cx)}" cy="{fmt(cy)}" r="0.9" fill="#FFFFFF" stroke="{MARKER_EDGE}" stroke-width="0.15"/>'
+                       + draw(cx, cy, 0.55))
+    strati.append(Strato("dotazioni", "dotazioni", kit))
 
     return f"{fmt(x0)} {fmt(y0)} {fmt(x1 - x0)} {fmt(y1 - y0)}", (x1 - x0) * 10, (y1 - y0) * 10, strati
 

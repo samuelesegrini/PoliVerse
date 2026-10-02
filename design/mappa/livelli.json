@@ -95,6 +95,16 @@
       "predefinito": true,
       "fisso": false
     },
+    "percorso-accessibile": {
+      "nome": "Percorso accessibile",
+      "predefinito": false,
+      "fisso": false
+    },
+    "dotazioni": {
+      "nome": "Dotazioni delle aule",
+      "predefinito": true,
+      "fisso": false
+    },
     "bici": {
       "nome": "Rastrelliere per bici",
       "predefinito": true,
@@ -304,24 +314,32 @@
           "livello": "porte"
         },
         {
-          "file": "leonardo/MIA020300S-pianta/08-muri.svg",
+          "file": "leonardo/MIA020300S-pianta/08-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA020300S-pianta/09-muri.svg",
           "livello": "muri"
         },
         {
-          "file": "leonardo/MIA020300S-pianta/09-ingressi.svg",
+          "file": "leonardo/MIA020300S-pianta/10-ingressi.svg",
           "livello": "ingressi"
         },
         {
-          "file": "leonardo/MIA020300S-pianta/10-accessibilita.svg",
+          "file": "leonardo/MIA020300S-pianta/11-accessibilita.svg",
           "livello": "accessibilita"
         },
         {
-          "file": "leonardo/MIA020300S-pianta/11-acqua.svg",
+          "file": "leonardo/MIA020300S-pianta/12-acqua.svg",
           "livello": "acqua"
         },
         {
-          "file": "leonardo/MIA020300S-pianta/12-etichette.svg",
+          "file": "leonardo/MIA020300S-pianta/13-etichette.svg",
           "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA020300S-pianta/14-dotazioni.svg",
+          "livello": "dotazioni"
         }
       ]
     },
@@ -358,24 +376,32 @@
           "livello": "porte"
         },
         {
-          "file": "leonardo/MIA0203000-pianta/08-muri.svg",
+          "file": "leonardo/MIA0203000-pianta/08-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA0203000-pianta/09-muri.svg",
           "livello": "muri"
         },
         {
-          "file": "leonardo/MIA0203000-pianta/09-ingressi.svg",
+          "file": "leonardo/MIA0203000-pianta/10-ingressi.svg",
           "livello": "ingressi"
         },
         {
-          "file": "leonardo/MIA0203000-pianta/10-accessibilita.svg",
+          "file": "leonardo/MIA0203000-pianta/11-accessibilita.svg",
           "livello": "accessibilita"
         },
         {
-          "file": "leonardo/MIA0203000-pianta/11-acqua.svg",
+          "file": "leonardo/MIA0203000-pianta/12-acqua.svg",
           "livello": "acqua"
         },
         {
-          "file": "leonardo/MIA0203000-pianta/12-etichette.svg",
+          "file": "leonardo/MIA0203000-pianta/13-etichette.svg",
           "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA0203000-pianta/14-dotazioni.svg",
+          "livello": "dotazioni"
         }
       ]
     },
@@ -412,24 +438,32 @@
           "livello": "porte"
         },
         {
-          "file": "leonardo/MIA0203001-pianta/08-muri.svg",
+          "file": "leonardo/MIA0203001-pianta/08-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA0203001-pianta/09-muri.svg",
           "livello": "muri"
         },
         {
-          "file": "leonardo/MIA0203001-pianta/09-ingressi.svg",
+          "file": "leonardo/MIA0203001-pianta/10-ingressi.svg",
           "livello": "ingressi"
         },
         {
-          "file": "leonardo/MIA0203001-pianta/10-accessibilita.svg",
+          "file": "leonardo/MIA0203001-pianta/11-accessibilita.svg",
           "livello": "accessibilita"
         },
         {
-          "file": "leonardo/MIA0203001-pianta/11-acqua.svg",
+          "file": "leonardo/MIA0203001-pianta/12-acqua.svg",
           "livello": "acqua"
         },
         {
-          "file": "leonardo/MIA0203001-pianta/12-etichette.svg",
+          "file": "leonardo/MIA0203001-pianta/13-etichette.svg",
           "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA0203001-pianta/14-dotazioni.svg",
+          "livello": "dotazioni"
         }
       ]
     }

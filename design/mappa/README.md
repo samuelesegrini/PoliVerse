@@ -73,6 +73,11 @@ it is redrawn properly.
   `"principale": true` on the main one.
 - `pilastri` — free-standing columns, where they help a reader find their way.
 - `acqua` — drinking fountains on this floor.
+- `percorso_accessibile` — the step-free route, as segments `[x1, y1, x2, y2, way]`;
+  `way` is 1 or -1 where an arrow points to the second or first end, 0 where none.
+- an `aula` may list its `dotazioni`: `proiettore`, `microfono`, `prese` (power
+  at the seats) and `rete` (network at the seats) get an icon under its label;
+  `oscurabile` and `cattedra` are kept as data.
 - a `wc` with `"accessibile": true` gets the accessibility symbol; lifts always do.
 
 Draw a floor over its reference image: one point per corner, walls straight,
@@ -97,7 +102,8 @@ each drawing, its layers in stacking order, back to front.
 | `bici`, `dae`, `nomi`, `numeri` | ✓ | | | on |
 | `acqua` | ✓ | | ✓ | on |
 | `lampioni` | ✓ | | | off |
-| `gradoni`, `gradini`, `ascensori`, `pilastri`, `porte`, `accessibilita`, `etichette` | | | ✓ | on |
+| `gradoni`, `gradini`, `ascensori`, `pilastri`, `porte`, `accessibilita`, `etichette`, `dotazioni` | | | ✓ | on |
+| `percorso-accessibile` | | | ✓ | off |
 | `etichette-piani` | | ✓ | | off |
 
 The same layer can appear more than once in a stack: the 3D trees are split
@@ -138,3 +144,9 @@ drawings carry its attribution: © OpenStreetMap contributors (ODbL). Room
 layouts are redrawn by eye from the floor plan images on the Politecnico's
 public maps service, checked against OpenStreetMap's indoor mapping; nothing
 is converted from either automatically.
+
+The step-free routes, drinking fountains and classroom equipment come from the
+same public maps service (`piano/<csip>/svg/pub` and
+`ricerca/aula/dotazioni/<idaula>`). Its floor coordinates are its own; they
+were brought into the campus frame with one transform fitted on the rooms it
+shares with OpenStreetMap (118 rooms, median error 7 cm).
