@@ -163,6 +163,20 @@ def fmt(v):
     return "0" if s == "-0" else s
 
 
+def simplify_ring(pts, tol):
+    """Douglas–Peucker on a closed outline, split at the point farthest from the first."""
+    def rdp(seq):
+        a, b = seq[0], seq[-1]
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        n = math.hypot(dx, dy) or 1e-9
+        far, idx = max(((abs(dy * p[0] - dx * p[1] + b[0] * a[1] - b[1] * a[0]) / n, i)
+                        for i, p in enumerate(seq[1:-1], 1)), default=(0.0, 0))
+        return [a, b] if far <= tol else rdp(seq[:idx + 1])[:-1] + rdp(seq[idx:])
+    i = max(range(len(pts)), key=lambda j: math.dist(pts[0], pts[j]))
+    ring = rdp(pts[:i + 1])[:-1] + rdp(pts[i:] + [pts[0]])[:-1]
+    return ring if len(ring) >= 3 else pts
+
+
 def signed_area(pts):
     return sum(x1 * y2 - x2 * y1 for (x1, y1), (x2, y2) in zip(pts, pts[1:] + pts[:1])) / 2
 
@@ -203,7 +217,9 @@ def offset(pts, d):
             out.append(p3)
             continue
         t = ((p1[0] - p3[0]) * (p3[1] - p4[1]) - (p1[1] - p3[1]) * (p3[0] - p4[0])) / den
-        out.append((p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1])))
+        q = (p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1]))
+        # A sharp corner would throw the mitre far out: bevel it instead.
+        out.append(q if math.dist(q, p3) < 4 * abs(d) + 0.5 else p3)
     return out
 
 
@@ -587,6 +603,120 @@ def floor_names(b):
     return {f["csip"]: f["nome"] for f in json.loads(plans.read_text())["piani"]}
 
 
+# Claddings for a building drawn by its profile: (left face, right face, top).
+CLADDING = {"ceramica": ("#E6E0D4", "#CDC5B6", "#F1EDE5"),
+            "mattone": ("#ECE7DE", "#D3CBBD", "#F4F1EB"),
+            "fessura": ("#4D5D72", "#36465B", "#5B6B80")}
+SKYLIGHT, SKYLIGHT_LIT = "#C9D6E4", "#FFD98A"
+
+
+def floor_outline(b, csip, turn):
+    """A floor's own gross outline, simplified, in the view's frame."""
+    geo = json.loads((HERE / "piante" / f"{b['csie']}-geometria.json").read_text())["piani"][csip]
+    ring = max(geo["contorno"], key=lambda r: abs(signed_area([tuple(p) for p in r])))
+    return ccw([turn(p) for p in simplify_ring([tuple(p) for p in ring], 0.6)])
+
+
+def floor_rooms(b, csip, turn, kinds=("aula",)):
+    """The bounding boxes of a floor's rooms of the given kinds (classrooms by default)."""
+    geo = json.loads((HERE / "piante" / f"{b['csie']}-geometria.json").read_text())["piani"][csip]
+    plans = HERE / "piante" / f"{b['csie']}.json"
+    aule = set()
+    if plans.exists():
+        aule = {k for f in json.loads(plans.read_text())["piani"] if f["csip"] == csip for k in f["aule"]}
+    out = []
+    for v in geo["vani"]:
+        if v["csiv"] in aule or v["tipo"] in kinds:
+            r = [turn(tuple(p)) for p in v["forma"][0]]
+            out.append((min(p[0] for p in r), min(p[1] for p in r), max(p[0] for p in r), max(p[1] for p in r)))
+    return out
+
+
+def draw_profile(b, pts, turn, z, storey, door, strati, zmid):
+    """Draws the bands of `profilo`, bottom up, from height z; returns the top.
+
+    A band is a floor (`piano`) drawn as `vetro` (a glazed storey), `pieno` (a
+    blind volume in `rivestimento` ceramica or mattone), `fessura` (a thin dark
+    glazed slot) or `sporto` (a blind volume overhanging the one below by
+    `sporto` metres, casting its shadow on it; lit, its skylights glow over the
+    classrooms). `h` is its height in drawing units, `sagoma: propria` sets it on
+    the floor's own outline, set back on the roof of what is below."""
+    below, roofed, skylights = pts, False, []
+    for band in b["profilo"]:
+        csip, kind, h = band.get("piano"), band["tipo"], band["h"]
+        own = pts
+        if band.get("sagoma") == "propria":
+            # Kept within the building: a floor's drawing may reach past it (a gallery, a
+            # bridge); those points go onto the building's edge.
+            near = offset(pts, 1.0)
+            own = [p if inside(p, near) else nearest_edge(p, [pts])[0] for p in floor_outline(b, csip, turn)]
+            own = [p for i, p in enumerate(own) if math.dist(p, own[i - 1]) > 0.1]
+            own = ccw(simplify_ring(own, 0.6))
+        if own is not pts and not roofed:
+            roof = prism(below, z, z + ISO_SLAB, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
+            roof.append(f'<polygon points="{iso_poly([(x, y, z + ISO_SLAB) for x, y in offset(below, -1.6)])}" fill="{ISO_ROOF_INNER}"/>')
+            # The parapet railing along the roof's edge.
+            rail = "".join(f"M{fmt(iso(*a, z + ISO_SLAB + 3)[0])} {fmt(iso(*a, z + ISO_SLAB + 3)[1])}"
+                           f"L{fmt(iso(*c, z + ISO_SLAB + 3)[0])} {fmt(iso(*c, z + ISO_SLAB + 3)[1])}"
+                           for a, c, _, _ in faces(below, 0, 1))
+            roof.append(f'<path d="{rail}" stroke="#AEB4BE" stroke-width="0.8" fill="none"/>')
+            strati.append(Strato("tetto", "edifici", roof))
+            for c, lights in skylights:
+                strati.append(Strato(f"{c}-lucernari", "piani", lights(False), piano=c, lit=lights(True)))
+            skylights.clear()
+            z, roofed = z + ISO_SLAB, True
+        def body(lit):
+            if kind == "vetro":
+                return storey(z, lit, h, own)
+            if kind == "sporto":
+                out = []
+                # Its shadow on the band below, deepest under the overhang.
+                for a, c, _, _ in faces(below, 0, 1):
+                    q = [(a[0], a[1], z - h * 0.45), (c[0], c[1], z - h * 0.45), (c[0], c[1], z), (a[0], a[1], z)]
+                    out.append(f'<polygon points="{iso_poly(q)}" fill="{SHADOW}" opacity="0.22"/>')
+                shape = offset(own, band.get("sporto", 2.0))
+                out += prism(shape, z, z + h, *(lambda c: (c[:2], c[2]))(CLADDING[band.get("rivestimento", "mattone")]))
+                return out
+            colors = CLADDING["fessura" if kind == "fessura" else band.get("rivestimento", "ceramica")]
+            if kind == "fessura" and lit:
+                colors = (ISO_LIT_LEFT[1], ISO_LIT_RIGHT[1], colors[2])
+            out = prism(own, z, z + h, colors[:2], colors[2])
+            if kind == "pieno":
+                # The cladding's courses, faint.
+                courses = []
+                for a, c, _, _ in faces(own, 0, 1):
+                    for k in range(1, int(h / 3)):
+                        (x0, y0), (x1, y1) = iso(*a, z + k * 3), iso(*c, z + k * 3)
+                        courses.append(f"M{fmt(x0)} {fmt(y0)}L{fmt(x1)} {fmt(y1)}")
+                out.append(f'<path d="{"".join(courses)}" stroke="#FFFFFF" stroke-width="0.5" opacity="0.35"/>')
+            return out
+        zmid[csip] = z + h / 2
+        strati.append(Strato(csip, "piani", body(False), ["iso-glass-l", "iso-glass-r"], piano=csip,
+                             lit=body(True), lit_defs=["iso-lit-l", "iso-lit-r", "iso-lit-glow"]))
+        if band.get("ingresso"):
+            strati.append(Strato("ingresso", "ingressi", door))
+        if kind == "sporto":
+            # Its classrooms are lit from above: skylights over each, on the roof drawn next.
+            def lights(lit, zt=z + h + ISO_SLAB, csip=csip):
+                out = []
+                for x0, y0, x1, y1 in floor_rooms(b, csip, turn):
+                    cx, cy, w, d = (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) * 0.6, (y1 - y0) * 0.6
+                    sky = [(cx - w / 2, cy - d / 2), (cx + w / 2, cy - d / 2), (cx + w / 2, cy + d / 2), (cx - w / 2, cy + d / 2)]
+                    out.append(f'<polygon points="{iso_poly([(x, y, zt) for x, y in sky])}" '
+                               f'fill="{SKYLIGHT_LIT if lit else SKYLIGHT}" opacity="{0.95 if lit else 0.8}"/>')
+                return out
+            skylights.append((csip, lights))
+            own = offset(own, band.get("sporto", 2.0))
+        z += h
+        below = own
+    roof = prism(below, z, z + ISO_SLAB, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
+    roof.append(f'<polygon points="{iso_poly([(x, y, z + ISO_SLAB) for x, y in offset(below, -1.6)])}" fill="{ISO_ROOF_INNER}"/>')
+    strati.append(Strato("tetto", "edifici", roof))
+    for c, lights in skylights:
+        strati.append(Strato(f"{c}-lucernari", "piani", lights(False), piano=c, lit=lights(True)))
+    return z
+
+
 def draw_iso(campus, b):
     turn = view(b)
     pts = ccw([turn(p) for p in b["pianta"]])
@@ -647,16 +777,16 @@ def draw_iso(campus, b):
     strati.append(Strato("alberi-dietro", "alberi", [iso_tree(*t) for t in behind], ["iso-tree"]))
     strati.append(Strato("basamento", "edifici", prism(base, 0, base_h, ISO_BASE[:2], ISO_BASE[2])))
 
-    glass = offset(pts, -0.4)
-
-    def storey(z0, lit):
+    def storey(z0, lit, h=ISO_FLOOR, shape=None):
         """One floor. Lit, it is the same floor at dusk with its lights on:
         warm rooms behind the glass, brightest under the ceiling where the
         light comes from, each bay a little different as rooms are, desks
         catching the light, frames dark against it, and a glow on the slab."""
         gl, gr = ("url(#iso-lit-l)", "url(#iso-lit-r)") if lit else ("url(#iso-glass-l)", "url(#iso-glass-r)")
-        g0, g1 = z0 + ISO_SLAB, z0 + ISO_FLOOR
-        out = prism(pts, z0, g0, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
+        g0, g1 = z0 + ISO_SLAB, z0 + h
+        own = shape or pts
+        glass = offset(own, -0.4)
+        out = prism(own, z0, g0, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
         mullions, desks = [], []
         for k, (a, c, is_left, q) in enumerate(faces(glass, g0, g1)):
             if lit:
@@ -692,17 +822,23 @@ def draw_iso(campus, b):
             out.append(f'<path d="{"".join(mullions)}" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>')
         return out
 
-    for f, csip in enumerate(levels):
-        z0 = base_h + f * ISO_FLOOR
-        strati.append(Strato(csip, "piani", storey(z0, False), ["iso-glass-l", "iso-glass-r"], piano=csip,
-                             lit=storey(z0, True), lit_defs=["iso-lit-l", "iso-lit-r", "iso-lit-glow"]))
-        if f == 0:
-            # The door sits on the ground floor; anything higher is drawn over it.
-            strati.append(Strato("ingresso", "ingressi", door))
+    zmid = {}
+    if b.get("profilo"):
+        # A building that is not a stack of like storeys: its bands, bottom up, as drawn.
+        top = draw_profile(b, pts, turn, base_h, storey, door, strati, zmid)
+    else:
+        for f, csip in enumerate(levels):
+            z0 = base_h + f * ISO_FLOOR
+            zmid[csip] = z0 + (ISO_SLAB + ISO_FLOOR) / 2
+            strati.append(Strato(csip, "piani", storey(z0, False), ["iso-glass-l", "iso-glass-r"], piano=csip,
+                                 lit=storey(z0, True), lit_defs=["iso-lit-l", "iso-lit-r", "iso-lit-glow"]))
+            if f == 0:
+                # The door sits on the ground floor; anything higher is drawn over it.
+                strati.append(Strato("ingresso", "ingressi", door))
 
-    roof = prism(pts, top, top + ISO_SLAB, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
-    roof.append(f'<polygon points="{iso_poly([(x, y, top + ISO_SLAB) for x, y in offset(pts, -1.6)])}" fill="{ISO_ROOF_INNER}"/>')
-    strati.append(Strato("tetto", "edifici", roof))
+        roof = prism(pts, top, top + ISO_SLAB, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
+        roof.append(f'<polygon points="{iso_poly([(x, y, top + ISO_SLAB) for x, y in offset(pts, -1.6)])}" fill="{ISO_ROOF_INNER}"/>')
+        strati.append(Strato("tetto", "edifici", roof))
     plant = []
     for x, y, w, h in b.get("impianti", []):
         c = [turn(p) for p in ((x, y), (x + w, y + h))]
@@ -716,9 +852,8 @@ def draw_iso(campus, b):
     # Floor tags beside the right-most corner, one per storey.
     right = max(pts, key=lambda p: iso(*p)[0])
     tags = []
-    for f, csip in enumerate(levels):
-        zm = base_h + f * ISO_FLOOR + (ISO_SLAB + ISO_FLOOR) / 2
-        px, py = iso(*right, zm)
+    for f, csip in enumerate(c for c in (list(zmid) if b.get("profilo") else levels)):
+        px, py = iso(*right, zmid[csip])
         label = FLOOR_TAGS.get(names.get(csip, ""), str(f))
         w = 9 + 4 * max(0, len(label) - 1)
         tags.append(f'<path d="M{fmt(px + 2)} {fmt(py)}H{fmt(px + 10)}" stroke="#8E8E93" stroke-width="0.8" stroke-dasharray="1.5 1.5"/>'

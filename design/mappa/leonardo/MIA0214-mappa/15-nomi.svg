@@ -4,4 +4,5 @@
 <text x="5" y="79" font-size="3.2" font-weight="600" text-anchor="middle" letter-spacing="0.3" fill="#5E7A55" font-family="-apple-system, system-ui, sans-serif">Piazza Leonardo da Vinci</text>
 <text x="153.2" y="17.1" font-size="3.2" font-weight="600" text-anchor="middle" letter-spacing="0.3" fill="#5E7A55" font-family="-apple-system, system-ui, sans-serif" transform="rotate(90 153.2 16)">Via Giuseppe Ponzio</text>
 <text x="94.4" y="69.6" font-size="3.2" font-weight="600" text-anchor="middle" letter-spacing="0.3" fill="#5E7A55" font-family="-apple-system, system-ui, sans-serif" transform="rotate(-1 94.4 68.5)">Via Edoardo Bonardi</text>
+<text x="-113.5" y="21.1" font-size="3.2" font-weight="600" text-anchor="middle" letter-spacing="0.3" fill="#5E7A55" font-family="-apple-system, system-ui, sans-serif" transform="rotate(90 -113.5 20)">Via Ampère</text>
 </svg>

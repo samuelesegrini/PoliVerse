@@ -32,11 +32,12 @@ def main():
     dest.mkdir(parents=True, exist_ok=True)
     s = src.read_text()
     (dest / "iso-giorno.svg").write_text(strip_hidden(s))
-    day = f'id="livello-{csip}" data-livello="piani" data-piano="{csip}">'
-    lit = f'id="livello-{csip}-acceso" data-livello="piani" data-piano="{csip}" data-acceso="true" style="display: none">'
-    if day not in s or lit not in s:
+    # Every layer of that floor (its storey, its skylights) swaps to its lit twin.
+    day = re.compile(r'(<g id="livello-[^"]*" data-livello="[^"]*" data-piano="%s")>' % re.escape(csip))
+    lit = re.compile(r'(<g id="livello-[^"]*-acceso" data-livello="[^"]*" data-piano="%s" data-acceso="true") style="display: none">' % re.escape(csip))
+    if not day.search(s) or not lit.search(s):
         sys.exit(f"{csip} is not a floor of {src}")
-    s = s.replace(day, day[:-1] + ' style="display: none">').replace(lit, lit.replace(' style="display: none"', ""))
+    s = lit.sub(r"\1>", day.sub(r'\1 style="display: none">', s))
     (dest / f"iso-{csip}-acceso.svg").write_text(strip_hidden(s))
 
 
