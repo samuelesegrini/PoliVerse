@@ -95,13 +95,14 @@ LIVELLI = {
     "edifici": ("Edifici", True, True),
     "impianti": ("Impianti sul tetto", True, False),
     "piani": ("Piani", True, True),
+    "esterni": ("Spazi esterni", True, False),
+    "muri": ("Muri", True, True),
     "locali": ("Locali", True, True),
-    "gradoni": ("Gradoni delle aule", True, False),
-    "gradini": ("Gradini delle scale", True, False),
+    "arredi": ("Banchi e gradoni", True, False),
+    "gradini": ("Scale e ringhiere", True, False),
     "ascensori": ("Ascensori", True, False),
-    "pilastri": ("Pilastri", True, False),
+    "finestre": ("Finestre", True, False),
     "porte": ("Porte", True, False),
-    "muri": ("Muri esterni", True, True),
     "ingressi": ("Ingressi", True, False),
     "accessibilita": ("Accessibilità", True, False),
     "percorso-accessibile": ("Percorso accessibile", False, False),
@@ -288,8 +289,8 @@ def glyph_heart(x, y):
             f'<path d="M{p(0.12, -0.55)}L{p(-0.22, 0.02)}L{p(0.02, 0.02)}L{p(-0.12, 0.45)}L{p(0.24, -0.14)}L{p(0, -0.14)}Z" fill="{ALERT}"/>')
 
 
-def glyph_drop(x, y):
-    p = lambda dx, dy: f"{fmt(x + dx)} {fmt(y + dy)}"
+def glyph_drop(x, y, s=1.0):
+    p = lambda dx, dy: f"{fmt(x + dx * s)} {fmt(y + dy * s)}"
     return (f'<path d="M{p(0, -0.9)}C{p(0.4, -0.35)} {p(0.62, -0.02)} {p(0.62, 0.28)}C{p(0.62, 0.66)} {p(0.33, 0.9)} {p(0, 0.9)}'
             f'C{p(-0.33, 0.9)} {p(-0.62, 0.66)} {p(-0.62, 0.28)}C{p(-0.62, -0.02)} {p(-0.4, -0.35)} {p(0, -0.9)}Z" fill="{BADGE_FOCUS}"/>')
 
@@ -353,7 +354,7 @@ def entrance_arrow(q, n, main=False):
     """A triangle outside the wall, pointing in through the door."""
     nx, ny = n
     tx, ty = -ny, nx
-    length, half = (3.2, 1.7) if main else (2.5, 1.25)
+    length, half = (3.2, 1.7) if main else (1.9, 0.95)
     tip = (q[0] + nx * 0.35, q[1] + ny * 0.35)
     base = (q[0] + nx * length, q[1] + ny * length)
     tri = [tip, (base[0] + tx * half, base[1] + ty * half), (base[0] - tx * half, base[1] - ty * half)]
@@ -728,185 +729,303 @@ def draw_iso(campus, b):
 
 # ---------------------------------------------------------------- floor plans
 
-PLAN_FILL = {"aula": "#E3ECF5", "wc": "#EEF0F3", "scale": "#E9EBEF",
-             "ascensore": "#E9EBEF", "locale": "#F2F3F6"}
-PLAN_WALL = "#C9CED6"          # inner walls, between rooms
-PLAN_SHELL = "#AEB4BE"         # the outer wall
-PLAN_TIER = "#CBDCEE"          # amphitheatre rows
-PLAN_TREAD = "#D3D7DF"         # stair treads
+PLAN_FILL = {"aula": "#E3ECF5", "corridoio": "#FFFFFF", "wc": "#EEF0F3", "scale": "#E9EBEF",
+             "ascensore": "#E9EBEF", "locale": "#F3F4F7", "tecnico": "#E4E7EC"}
+PLAN_OUTSIDE = "#F8F9F6"       # landings, ramps and links outside the gross outline
+PLAN_WALL = "#B9BFC9"          # the walls: what is left of the floor between the rooms
+PLAN_TREAD = "#C3C8D1"         # stair treads and railings
+PLAN_SEAT = "#C9D9EC"          # rows of seats and desks
+PLAN_GLASS = "#8FC3E8"         # windows
+PLAN_DOOR = "#A3AAB6"          # door leaves and their swing
 PLAN_MUTED = "#8E8E93"
-INNER_WALL = 0.3               # m
-SHELL_WALL = 0.6               # m
-DOOR = 1.4                     # m of opening
-ENTRANCE = 2.2                 # m of opening in the outer wall
 
 
-def hatch(pts, edge, step, margin):
-    """Lines parallel to edge `edge` of the polygon, `step` apart, across all of it."""
-    a, b = pts[edge], pts[(edge + 1) % len(pts)]
-    length = math.dist(a, b)
-    ux, uy = (b[0] - a[0]) / length, (b[1] - a[1]) / length
-    vx, vy = outward(a, b, pts)
-    vx, vy = -vx, -vy                                   # into the room
-    depth = max((p[0] - a[0]) * vx + (p[1] - a[1]) * vy for p in pts)
-    reach = max(math.dist(a, p) for p in pts) + 1
-    lines, d = [], margin
-    while d < depth - margin:
-        ox, oy = a[0] + vx * d, a[1] + vy * d
-        lines.append(f"M{fmt(ox - ux * reach)} {fmt(oy - uy * reach)}L{fmt(ox + ux * reach)} {fmt(oy + uy * reach)}")
-        d += step
-    return "".join(lines)
+def segs_path(segs):
+    return "".join(f"M{fmt(a)} {fmt(b)}L{fmt(c)} {fmt(d)}" for a, b, c, d, *_ in segs)
 
 
-def opening(q, a, b, width):
-    n = math.dist(a, b)
-    ux, uy = (b[0] - a[0]) / n * width / 2, (b[1] - a[1]) / n * width / 2
-    return f"M{fmt(q[0] - ux)} {fmt(q[1] - uy)}L{fmt(q[0] + ux)} {fmt(q[1] + uy)}"
+def rings_path(rings):
+    return "".join(poly([tuple(p) for p in r]) for r in rings)
 
 
-def plan_label(room):
-    x, y = room.get("etichetta") or area_centroid([tuple(p) for p in room["forma"]])
-    if room["tipo"] == "wc":
-        dx = -1.4 if room.get("accessibile") else 0
-        return (f'<text x="{fmt(x + dx)}" y="{fmt(y + 0.6)}" font-size="1.7" font-weight="700" '
-                f'text-anchor="middle" fill="{PLAN_MUTED}" {FONT}>WC</text>')
-    if room["tipo"] != "aula":
-        return ""
-    sigla, seats = room["sigla"], f'{room["posti"]} posti' if room.get("posti") else ""
+def clusters(items, near):
+    """Groups items that touch, by union–find on the pairs `near` accepts."""
+    parent = list(range(len(items)))
+
+    def root(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for i in range(len(items)):
+        for j in range(i + 1, len(items)):
+            if near(items[i], items[j]):
+                parent[root(i)] = root(j)
+    groups = {}
+    for i in range(len(items)):
+        groups.setdefault(root(i), []).append(items[i])
+    return list(groups.values())
+
+
+def hull(points):
+    pts = sorted(set(points))
+    if len(pts) < 3:
+        return pts
+    cross = lambda o, a, b: (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+    lower, upper = [], []
+    for p in pts:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
+            lower.pop()
+        lower.append(p)
+    for p in reversed(pts):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
+            upper.pop()
+        upper.append(p)
+    return lower[:-1] + upper[:-1]
+
+
+def bbox_gap(a, b):
+    (ax0, ay0, ax1, ay1), (bx0, by0, bx1, by1) = a, b
+    return max(bx0 - ax1, ax0 - bx1, by0 - ay1, ay0 - by1, 0)
+
+
+def ring_box(ring):
+    xs, ys = [p[0] for p in ring], [p[1] for p in ring]
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
+def visual_centre(rings, step=0.4):
+    """The point deepest inside a room: where its label sits clear of every wall."""
+    outer = rings[0]
+    x0, y0, x1, y1 = ring_box(outer)
+    edges = [(a, b) for r in rings for a, b in zip(r, r[1:] + r[:1])]
+
+    def clearance(p):
+        best = 1e9
+        for a, b in edges:
+            dx, dy = b[0] - a[0], b[1] - a[1]
+            t = max(0.0, min(1.0, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / ((dx * dx + dy * dy) or 1)))
+            best = min(best, math.dist(p, (a[0] + dx * t, a[1] + dy * t)))
+        return best
+
+    best, at = -1.0, area_centroid(outer)
+    y = y0 + step / 2
+    while y < y1:
+        x = x0 + step / 2
+        while x < x1:
+            if inside((x, y), outer) and not any(inside((x, y), h) for h in rings[1:]):
+                c = clearance((x, y))
+                if c > best:
+                    best, at = c, (x, y)
+            x += step
+        y += step
+    return at
+
+
+def aula_label(x, y, sigla, seats, csiv):
     w = max(len(sigla) * 1.3, len(seats) * 0.72) + 1.6
     h = 5.2 if seats else 3.6
-    out = (f'<g id="{room["csiv"]}-etichetta">'
+    out = (f'<g id="{csiv}-etichetta">'
            f'<rect x="{fmt(x - w / 2)}" y="{fmt(y - h / 2)}" width="{fmt(w)}" height="{fmt(h)}" rx="{fmt(min(h, 3.6) / 2)}" '
            f'fill="#FFFFFF" stroke="{MARKER_EDGE}" stroke-width="0.2"/>'
            f'<text x="{fmt(x)}" y="{fmt(y - h / 2 + 2.6)}" font-size="2.2" font-weight="700" text-anchor="middle" fill="{BADGE_FOCUS}" {FONT}>{sigla}</text>')
     if seats:
         out += (f'<text x="{fmt(x)}" y="{fmt(y + h / 2 - 0.9)}" font-size="1.3" font-weight="600" '
                 f'text-anchor="middle" fill="#6E6E73" {FONT}>{seats}</text>')
-    return out + "</g>"
+    return out + "</g>", h
 
 
-def draw_plan(b, floor):
-    shell = [tuple(p) for p in b["pianta"]]
-    xs, ys = [p[0] for p in shell], [p[1] for p in shell]
-    m = 7.0
+def draw_plan(b, floor, geo):
+    """One floor, drawn from the imported geometry in the illustrations' look.
+
+    The floor slab is filled with the wall colour and every room is laid on top
+    of it, so the walls are exactly what is left between the rooms, at their
+    real thickness. Each door cuts its opening out of the wall where its leaf
+    closes, and draws its leaf and swing.
+    """
+    shell = [[tuple(p) for p in r] for r in geo["contorno"]]
+    shell.sort(key=lambda r: -abs(signed_area(r)))
+    outline = shell[0]
+    kinds = floor.get("tipi", {})
+    aule = floor.get("aule", {})
+    accessible = set(floor.get("wc_accessibili", []))
+    rooms = []
+    for v in geo["vani"]:
+        rings = [[tuple(p) for p in r] for r in v["forma"]]
+        kind = "aula" if v["csiv"] in aule else kinds.get(v["csiv"], v["tipo"])
+        out = not inside(area_centroid(rings[0]), outline)
+        rooms.append({**v, "tipo": kind, "rings": rings, "fuori": out})
+    lines = geo["linee"]
+    # A room the step-free route runs through is somewhere people walk: draw it as one.
+    for ax, ay, bx, by, _ in geo.get("percorso_accessibile", []):
+        mid = ((ax + bx) / 2, (ay + by) / 2)
+        for rm in rooms:
+            if rm["tipo"] == "locale" and inside(mid, rm["rings"][0]):
+                rm["tipo"] = "corridoio"
+
+    every = [p for r in shell for p in r] + [p for rm in rooms for p in rm["rings"][0]]
+    every += [(s[0], s[1]) for segs in lines.values() for s in segs] + [(s[2], s[3]) for segs in lines.values() for s in segs]
+    xs, ys = [p[0] for p in every], [p[1] for p in every]
+    m = 9.0       # room for the entrance's name beside its arrow
     x0, y0, x1, y1 = min(xs) - m, min(ys) - m, max(xs) + m, max(ys) + m
     wall = WALL_PER_FLOOR * 1.4
-    rooms = floor["locali"]
-    polys = [[tuple(p) for p in r["forma"]] for r in rooms]
     strati = []
 
     strati.append(Strato("fondo", "terreno", [
         f'<rect x="{fmt(x0)}" y="{fmt(y0)}" width="{fmt(x1 - x0)}" height="{fmt(y1 - y0)}" fill="{GROUND}"/>',
-        f'<path d="{poly(shell, wall * 0.86, wall * 1.57)}" fill="{SHADOW}" opacity="0.10"/>',
-        f'<path d="{poly(shell)}" fill="#FFFFFF"/>']))
+        f'<path d="{poly(outline, wall * 0.86, wall * 1.57)}" fill="{SHADOW}" opacity="0.10"/>']))
+
+    strati.append(Strato("esterni", "esterni", [
+        f'<path d="{rings_path(rm["rings"])}" fill="{PLAN_OUTSIDE}" fill-rule="evenodd" stroke="{PLAN_TREAD}" '
+        f'stroke-width="0.08" stroke-linejoin="round"/>' for rm in rooms if rm["fuori"]] + [
+        f'<path d="{segs_path(lines["esterni"])}" stroke="{PLAN_TREAD}" stroke-width="0.1" stroke-linecap="round"/>']))
+
+    # Openings: where each leaf closes, through the wall, kept inside the outline.
+    cuts = []
+    for d in geo["porte"]:
+        h, c = d["cardine"], d["chiusa"]
+        ux, uy = c[0] - h[0], c[1] - h[1]
+        n = math.hypot(ux, uy) or 1
+        nx, ny = -uy / n * 0.45, ux / n * 0.45
+        cuts.append(poly([(h[0] + nx, h[1] + ny), (c[0] + nx, c[1] + ny), (c[0] - nx, c[1] - ny), (h[0] - nx, h[1] - ny)]))
+    strati.append(Strato("muri", "muri", [
+        f'<defs><clipPath id="pl-guscio"><path d="{rings_path(shell)}"/></clipPath></defs>',
+        f'<path d="{rings_path(shell)}" fill="{PLAN_WALL}" fill-rule="evenodd"/>',
+        f'<path d="{"".join(cuts)}" fill="#FFFFFF" clip-path="url(#pl-guscio)"/>']))
 
     fills = []
-    for r, pts in zip(rooms, polys):
-        attrs = f' id="{r["csiv"]}" data-sigla="{r["sigla"]}"' if r.get("csiv") else ""
-        fills.append(f'<g{attrs} data-tipo="{r["tipo"]}"><path d="{poly(pts)}" fill="{PLAN_FILL[r["tipo"]]}" '
-                     f'stroke="{PLAN_WALL}" stroke-width="{INNER_WALL}" stroke-linejoin="round"/></g>')
+    for rm in rooms:
+        if rm["fuori"]:
+            continue
+        attrs = f' id="{rm["csiv"]}"' + (f' data-sigla="{aule[rm["csiv"]]["sigla"]}"' if rm["csiv"] in aule else "")
+        fills.append(f'<path{attrs} data-tipo="{rm["tipo"]}" d="{rings_path(rm["rings"])}" fill="{PLAN_FILL[rm["tipo"]]}" '
+                     f'fill-rule="evenodd"/>')
     strati.append(Strato("locali", "locali", fills))
 
-    def lines_in(kind, step, margin, color, width, key):
-        clips, marks = [], []
-        for i, (r, pts) in enumerate(zip(rooms, polys)):
-            if r["tipo"] != kind:
-                continue
-            clips.append(f'<clipPath id="{key}-{i}"><path d="{poly(pts)}"/></clipPath>')
-            edge = r.get("gradoni" if kind == "aula" else "gradini", 0)
-            marks.append(f'<path d="{hatch(pts, edge, step, margin)}" clip-path="url(#{key}-{i})" '
-                         f'stroke="{color}" stroke-width="{width}"/>')
-        return ([f"<defs>{''.join(clips)}</defs>"] if clips else []) + marks
+    strati.append(Strato("arredi", "arredi", [
+        f'<path d="{segs_path(lines["arredi"])}" stroke="{PLAN_SEAT}" stroke-width="0.09" stroke-linecap="round"/>']))
+    strati.append(Strato("gradini", "gradini", [
+        f'<path d="{segs_path(lines["scale"])}" stroke="{PLAN_TREAD}" stroke-width="0.06" stroke-linecap="round"/>',
+        f'<path d="{segs_path(lines["ringhiere"])}" stroke="{PLAN_DOOR}" stroke-width="0.07" stroke-linecap="round"/>']))
 
-    strati.append(Strato("gradoni", "gradoni", lines_in("aula", 0.9, 1.4, PLAN_TIER, 0.18, "gr")))
-    strati.append(Strato("gradini", "gradini", lines_in("scale", 0.45, 0.25, PLAN_TREAD, 0.12, "gd")))
+    lift_groups = clusters(lines["ascensori"], lambda s, t: min(
+        math.dist(p, q) for p in ((s[0], s[1]), (s[2], s[3])) for q in ((t[0], t[1]), (t[2], t[3]))) < 0.3)
+    cars = []
+    for g in lift_groups:
+        h = hull([(s[0], s[1]) for s in g] + [(s[2], s[3]) for s in g])
+        if len(h) >= 3:
+            cars.append(f'<path d="{poly(h)}" fill="{PLAN_FILL["ascensore"]}"/>')
+        cars.append(f'<path d="{segs_path(g)}" stroke="{PLAN_DOOR}" stroke-width="0.08" stroke-linecap="round"/>')
+    strati.append(Strato("ascensori", "ascensori", cars))
 
-    lifts = []
-    for r, pts in zip(rooms, polys):
-        if r["tipo"] == "ascensore" and len(pts) == 4:
-            ctr = centroid(pts)
-            p = [(q[0] + (ctr[0] - q[0]) * 0.18, q[1] + (ctr[1] - q[1]) * 0.18) for q in pts]
-            lifts.append(f'<path d="M{fmt(p[0][0])} {fmt(p[0][1])}L{fmt(p[2][0])} {fmt(p[2][1])}'
-                         f'M{fmt(p[1][0])} {fmt(p[1][1])}L{fmt(p[3][0])} {fmt(p[3][1])}" '
-                         f'stroke="#C7CCD5" stroke-width="0.2" stroke-linecap="round"/>')
-    strati.append(Strato("ascensori", "ascensori", lifts))
+    strati.append(Strato("finestre", "finestre", [
+        f'<path d="{segs_path(lines["finestre"])}" stroke="{PLAN_GLASS}" stroke-width="0.12" stroke-linecap="round"/>']))
 
-    strati.append(Strato("pilastri", "pilastri",
-                         [f'<rect x="{fmt(x - 0.35)}" y="{fmt(y - 0.35)}" width="0.7" height="0.7" rx="0.12" fill="{PLAN_WALL}"/>'
-                          for x, y in floor.get("pilastri", [])]))
+    leaves = []
+    for d in geo["porte"]:
+        h, c, o = d["cardine"], d["chiusa"], d["aperta"]
+        r = math.dist(h, c)
+        sweep = 1 if (c[0] - h[0]) * (o[1] - h[1]) - (c[1] - h[1]) * (o[0] - h[0]) > 0 else 0
+        leaves.append(f"M{fmt(h[0])} {fmt(h[1])}L{fmt(o[0])} {fmt(o[1])}"
+                      f"M{fmt(c[0])} {fmt(c[1])}A{fmt(r)} {fmt(r)} 0 0 {sweep} {fmt(o[0])} {fmt(o[1])}")
+    strati.append(Strato("porte", "porte", [
+        f'<path d="{"".join(leaves)}" fill="none" stroke="{PLAN_DOOR}" stroke-width="0.07" stroke-linecap="round"/>']))
 
-    doors = [opening(*nearest_edge(tuple(p), polys)[:3], DOOR) for p in floor.get("porte", [])]
-    strati.append(Strato("porte", "porte",
-                         [f'<path d="{"".join(doors)}" stroke="#FFFFFF" stroke-width="{INNER_WALL + 0.25}"/>'] if doors else []))
-
-    # The step-free route the Politecnico publishes for this floor: a line on a white halo,
-    # with an arrowhead where its map marks the way to go.
-    route = floor.get("percorso_accessibile", [])
-    lines, heads = [], []
-    for ax, ay, bx, by, way in route:
+    # The step-free route: the line stops at each arrowhead's base, so nothing shows past its tip.
+    route, heads = [], []
+    for ax, ay, bx, by, way in geo.get("percorso_accessibile", []):
+        if math.dist((ax, ay), (bx, by)) < 0.2:
+            continue
         if way:
-            # The line stops at the arrowhead's base, so nothing shows past its tip.
             (fx, fy), (tx, ty) = ((ax, ay), (bx, by)) if way > 0 else ((bx, by), (ax, ay))
-            n = math.dist((fx, fy), (tx, ty)) or 1
+            n = math.dist((fx, fy), (tx, ty))
             ux, uy = (tx - fx) / n, (ty - fy) / n
-            hx, hy = tx - ux * 1.1, ty - uy * 1.1
-            heads.append(poly([(tx, ty), (hx - uy * 0.6, hy + ux * 0.6), (hx + uy * 0.6, hy - ux * 0.6)]))
+            hx, hy = tx - ux * min(1.0, n * 0.6), ty - uy * min(1.0, n * 0.6)
+            heads.append(poly([(tx, ty), (hx - uy * 0.55, hy + ux * 0.55), (hx + uy * 0.55, hy - ux * 0.55)]))
             ax, ay, bx, by = fx, fy, hx, hy
-        lines.append(f"M{fmt(ax)} {fmt(ay)}L{fmt(bx)} {fmt(by)}")
-    lines = "".join(lines)
+        route.append((ax, ay, bx, by))
     strati.append(Strato("percorso-accessibile", "percorso-accessibile", [
-        f'<path d="{lines}" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>',
-        f'<path d="{"".join(heads)}" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.6" stroke-linejoin="round"/>',
-        f'<path d="{lines}" fill="none" stroke="{BADGE_FOCUS}" stroke-width="0.42" stroke-linecap="round" stroke-linejoin="round"/>',
+        f'<path d="{segs_path(route)}" fill="none" stroke="#FFFFFF" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>',
+        f'<path d="{"".join(heads)}" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.5" stroke-linejoin="round"/>',
+        f'<path d="{segs_path(route)}" fill="none" stroke="{BADGE_FOCUS}" stroke-width="0.38" stroke-linecap="round" stroke-linejoin="round"/>',
         f'<path d="{"".join(heads)}" fill="{BADGE_FOCUS}"/>',
     ] if route else []))
 
-    strati.append(Strato("muri", "muri", [f'<path d="{poly(shell)}" fill="none" stroke="{PLAN_SHELL}" '
-                                          f'stroke-width="{SHELL_WALL}" stroke-linejoin="round"/>']))
-
+    # Ways in: every door that opens through the outline, one arrow per doorway,
+    # and the main entrance larger, with its name.
     ways = []
-    for e in floor.get("ingressi", []):
-        q, a, c, _ = nearest_edge(tuple(e["punto"]), [shell])
-        nx, ny = outward(a, c, shell)
-        ways.append(f'<path d="{opening(q, a, c, ENTRANCE)}" stroke="#FFFFFF" stroke-width="{SHELL_WALL + 0.3}"/>')
-        ways.append(entrance_arrow(q, (nx, ny), e.get("principale", False)))
-        if e.get("principale"):
-            # Beside the arrow, on its far side, whichever way the wall faces.
-            lx, ly = q[0] + nx * 3.8, q[1] + ny * 3.8
-            if abs(nx) > abs(ny):
-                anchor = "end" if nx < 0 else "start"
-            else:
-                anchor, ly = "middle", ly + (1.6 if ny > 0 else -0.6)
-            ways.append(f'<text x="{fmt(lx)}" y="{fmt(ly + 0.55)}" font-size="1.5" font-weight="700" '
-                        f'text-anchor="{anchor}" fill="{BADGE_FOCUS}" {FONT}>Ingresso</text>')
+    main = floor.get("principale")
+    if main:
+        q, a, c, _ = nearest_edge(tuple(main), [outline])
+        n = outward(a, c, outline)
+        ways.append(entrance_arrow(q, n, True))
+        lx, ly = q[0] + n[0] * 4.0, q[1] + n[1] * 4.0
+        anchor = ("end" if n[0] < 0 else "start") if abs(n[0]) > abs(n[1]) else "middle"
+        if anchor == "middle":
+            ly += 1.6 if n[1] > 0 else -0.6
+        ways.append(f'<text x="{fmt(lx)}" y="{fmt(ly + 0.55)}" font-size="1.5" font-weight="700" '
+                    f'text-anchor="{anchor}" fill="{BADGE_FOCUS}" {FONT}>Ingresso</text>')
+    outside = []
+    for d in geo["porte"]:
+        if not d["esterna"]:
+            continue
+        h, c = d["cardine"], d["chiusa"]
+        mid = ((h[0] + c[0]) / 2, (h[1] + c[1]) / 2)
+        n = math.dist(h, c) or 1
+        nx, ny = -(c[1] - h[1]) / n, (c[0] - h[0]) / n
+        # Which way is out is read from the door itself: its far side lies outside the outline.
+        if inside((mid[0] + nx * 0.9, mid[1] + ny * 0.9), outline):
+            nx, ny = -nx, -ny
+        outside.append((mid, (nx, ny)))
+    for g in clusters(outside, lambda p, q: math.dist(p[0], q[0]) < 2.5):
+        p = centroid([m for m, _ in g])
+        if main and math.dist(p, main) < 4:
+            continue
+        n = g[0][1]
+        ways.append(entrance_arrow((p[0] + n[0] * 0.3, p[1] + n[1] * 0.3), n))
     strati.append(Strato("ingressi", "ingressi", ways))
 
-    access = []
-    lift_pts = [p for r, pts in zip(rooms, polys) if r["tipo"] == "ascensore" for p in pts]
-    if lift_pts:
-        access.append(access_badge(*centroid(lift_pts)))
-    for r, pts in zip(rooms, polys):
-        if r["tipo"] == "wc" and r.get("accessibile"):
-            x, y = r.get("etichetta") or area_centroid(pts)
-            access.append(access_badge(x + 1.6, y))
+    wc = [rm for rm in rooms if rm["tipo"] == "wc" and not rm["fuori"]]
+    wc_groups = clusters(wc, lambda s, t: bbox_gap(ring_box(s["rings"][0]), ring_box(t["rings"][0])) < 1.6)
+    access, labels = [], []
+    for car in lift_groups:
+        pts = [(s[0], s[1]) for s in car] + [(s[2], s[3]) for s in car]
+        if len(pts) >= 6:
+            access.append(access_badge(*centroid(pts), size=1.5))
+    for g in wc_groups:
+        big = max(g, key=lambda rm: abs(signed_area(rm["rings"][0])))
+        x, y = big["etichetta"]
+        lit = any(rm["csiv"] in accessible for rm in g)
+        labels.append(f'<text x="{fmt(x - (1.2 if lit else 0))}" y="{fmt(y + 0.55)}" font-size="1.5" font-weight="700" '
+                      f'text-anchor="middle" fill="{PLAN_MUTED}" {FONT}>WC</text>')
+        if lit:
+            access.append(access_badge(x + 1.4, y, size=1.8))
     strati.append(Strato("accessibilita", "accessibilita", access))
 
-    strati.append(Strato("acqua", "acqua", [marker(x, y, glyph_drop, r=1.4) for x, y in floor.get("acqua", [])]))
-    strati.append(Strato("etichette", "etichette", [lbl for lbl in (plan_label(r) for r in rooms) if lbl]))
+    water = [tuple(p) for p in geo.get("acqua", [])]
+    for p in floor.get("acqua", []):
+        if all(math.dist(p, q) > 1.5 for q in water):
+            water.append(tuple(p))
+    strati.append(Strato("acqua", "acqua", [marker(x, y, lambda gx, gy: glyph_drop(gx, gy, 0.62), r=0.85)
+                                            for x, y in water]))
 
-    # A row of small chips under each lecture hall's label: what the room offers.
     kit = []
-    for r in rooms:
-        have = [draw for name, draw in EQUIPMENT if name in r.get("dotazioni", [])]
-        if r["tipo"] != "aula" or not have:
+    for rm in rooms:
+        meta = aule.get(rm["csiv"])
+        if not meta:
             continue
-        x, y = r.get("etichetta") or area_centroid([tuple(p) for p in r["forma"]])
-        cy = y + (5.2 if r.get("posti") else 3.6) / 2 + 1.5
-        step = 2.1
+        x, y = meta.get("etichetta") or visual_centre(rm["rings"])
+        seats = f'{meta["posti"]} posti' if meta.get("posti") else ""
+        text, h = aula_label(x, y, meta["sigla"], seats, rm["csiv"])
+        labels.append(text)
+        have = [draw for name, draw in EQUIPMENT if name in meta.get("dotazioni", [])]
+        cy = y + h / 2 + 1.5
         for i, draw in enumerate(have):
-            cx = x + (i - (len(have) - 1) / 2) * step
+            cx = x + (i - (len(have) - 1) / 2) * 2.1
             kit.append(f'<circle cx="{fmt(cx)}" cy="{fmt(cy)}" r="0.9" fill="#FFFFFF" stroke="{MARKER_EDGE}" stroke-width="0.15"/>'
                        + draw(cx, cy, 0.55))
+    strati.append(Strato("etichette", "etichette", labels))
     strati.append(Strato("dotazioni", "dotazioni", kit))
 
     return f"{fmt(x0)} {fmt(y0)} {fmt(x1 - x0)} {fmt(y1 - y0)}", (x1 - x0) * 10, (y1 - y0) * 10, strati
@@ -931,10 +1050,12 @@ def main():
             disegni[f"{src.stem}/{name}"] = write_drawing(dest, name, *draw_iso(campus, b))
             print(f"{src.stem}/{b['csie']}  {b.get('nome', b['numero'])}")
             plans = HERE / "piante" / f"{b['csie']}.json"
-            if plans.exists():
+            geometry = HERE / "piante" / f"{b['csie']}-geometria.json"
+            if plans.exists() and geometry.exists():
+                geo = json.loads(geometry.read_text())["piani"]
                 for floor in json.loads(plans.read_text())["piani"]:
                     name = f"{floor['csip']}-pianta"
-                    disegni[f"{src.stem}/{name}"] = write_drawing(dest, name, *draw_plan(b, floor))
+                    disegni[f"{src.stem}/{name}"] = write_drawing(dest, name, *draw_plan(b, floor, geo[floor["csip"]]))
                     print(f"{src.stem}/{floor['csip']}  piano {floor['nome']}")
     catalogue = {k: {"nome": n, "predefinito": on, "fisso": fixed} for k, (n, on, fixed) in LIVELLI.items()}
     (HERE / "livelli.json").write_text(json.dumps({"livelli": catalogue, "disegni": disegni},

@@ -10,7 +10,9 @@ whole campus reads as one clean, uniform drawing.
 |---|---|
 | `build-mappa.py` | the source of truth for the look; regenerates every SVG below |
 | `<campus>.json` | the hand-drawn description of each building on that campus |
-| `piante/<csie>.json` | the hand-drawn rooms of each floor of one building |
+| `importa-scheda.py` | imports a building's floor geometry from the Politecnico's maps service |
+| `piante/<csie>-geometria.json` | that geometry, in the campus frame (generated, do not edit) |
+| `piante/<csie>.json` | what the geometry does not say: classrooms, entrances, corrections |
 | `<campus>/<csie>-mappa.svg` | top-down: the building and its surroundings |
 | `<campus>/<csie>-isometrico.svg` | isometric: the building alone, one layer per floor |
 | `<campus>/<csip>-pianta.svg` | floor plan: one floor, its rooms, doors and entrances |
@@ -58,30 +60,35 @@ it is redrawn properly.
 
 ## Adding floor plans
 
-`piante/<csie>.json` lists the building's floors, each with:
+Floor plans are drawn from exact geometry, not traced:
 
-- `csip` and `nome` — the floor's code and name, as the maps service gives them.
-- `locali` — the rooms, each a `forma` (corners in campus metres) and a `tipo`:
-  `aula`, `wc`, `scale`, `ascensore`, or `locale` for anything else. A room
-  that is not listed is corridor.
-  - an `aula` also takes `sigla`, `csiv`, `posti`, `gradoni` (the edge its
-    rows of seats run parallel to) and, where the centre is crowded,
-    `etichetta` (where its label goes);
-  - `scale` take `gradini`, the edge their treads run parallel to.
-- `porte` — a point near each door; it is snapped to the nearest wall.
-- `ingressi` — a point on the outer wall for each way in, with
-  `"principale": true` on the main one.
-- `pilastri` — free-standing columns, where they help a reader find their way.
-- `acqua` — drinking fountains on this floor.
-- `percorso_accessibile` — the step-free route, as segments `[x1, y1, x2, y2, way]`;
-  `way` is 1 or -1 where an arrow points to the second or first end, 0 where none.
-- an `aula` may list its `dotazioni`: `proiettore`, `microfono`, `prese` (power
-  at the seats) and `rete` (network at the seats) get an icon under its label;
-  `oscurabile` and `cattedra` are kept as data.
-- a `wc` with `"accessibile": true` gets the accessibility symbol; lifts always do.
+1. List the floors in the building's `livelli` and run
+   `python3 importa-scheda.py <csie>` (needs network). It fetches each floor's
+   public drawing from the Politecnico's maps service and writes
+   `piante/<csie>-geometria.json`: the gross floor outline, every room as a
+   polygon with its `csiv` and label point, each door as hinge and leaf
+   (flagged when it opens to the outside), stairs, lifts, windows, railings,
+   outdoor parts, seats and desks, the step-free route and the fountains — all
+   in the campus frame. Rooms are typed (classroom, toilet, stairs, lift,
+   corridor, technical) from OpenStreetMap's indoor map where it says.
+2. Write `piante/<csie>.json`, one entry per floor, with what the geometry
+   does not say:
+   - `csip`, `nome` — the floor's code and name.
+   - `aule` — each classroom by `csiv`: `sigla`, `posti`, `dotazioni`
+     (`proiettore`, `microfono`, `prese`, `rete` get an icon under its label;
+     `oscurabile` and `cattedra` are kept as data), and `etichetta` only if its
+     label must not sit at the room's visual centre.
+   - `tipi` — corrections to a room's type, by `csiv`.
+   - `wc_accessibili` — the accessible toilets, by `csiv`.
+   - `principale` — a point on the outer wall at the main entrance.
+   - `acqua` — fountains the service does not list.
+3. Run `python3 build-mappa.py`.
 
-Draw a floor over its reference image: one point per corner, walls straight,
-no detail a student would not use to find a room.
+The drawing keeps the geometry and gives it the illustrations' look: the floor
+slab is filled with the wall colour and every room is laid on top, so walls are
+exactly what is left between rooms, at their real thickness; each door cuts
+its opening through the wall where its leaf closes. A room the step-free route
+runs through is drawn as a walkway.
 
 ## Layers
 
@@ -102,7 +109,7 @@ each drawing, its layers in stacking order, back to front.
 | `bici`, `dae`, `nomi`, `numeri` | ✓ | | | on |
 | `acqua` | ✓ | | ✓ | on |
 | `lampioni` | ✓ | | | off |
-| `gradoni`, `gradini`, `ascensori`, `pilastri`, `porte`, `accessibilita`, `etichette`, `dotazioni` | | | ✓ | on |
+| `esterni`, `arredi`, `gradini`, `ascensori`, `finestre`, `porte`, `accessibilita`, `etichette`, `dotazioni` | | | ✓ | on |
 | `percorso-accessibile` | | | ✓ | off |
 | `etichette-piani` | | ✓ | | off |
 
@@ -121,8 +128,8 @@ into `alberi-dietro` and `alberi-davanti` around the building, both under the
 
 In the 3D view each floor is a layer named by its `csip`, lowest first, and
 a floor is highlighted by switching its lights on: warm rooms behind the
-glass, a row of ceiling spotlights, desks catching the light, frames dark
-against it, and light spilling onto the slab. The rest of the building stays
+glass, brightest under the ceiling, each bay a little different, desks catching
+the light, frames dark against it, and light spilling onto the slab. The rest of the building stays
 in daylight, so the lit floor is the one the eye lands on.
 
 - **One image per layer:** the floor's entry in `livelli.json` names an
@@ -131,22 +138,22 @@ in daylight, so the lit floor is the one the eye lands on.
   `livello-<csip>-acceso` (`data-acceso="true"`) right after it. Hide the
   first and show the twin.
 
-In `-pianta.svg` each classroom is a group with its `csiv` as id and
-`data-sigla`; its label is the group `<csiv>-etichetta`. To highlight a room,
-recolour that group's path.
+In `-pianta.svg` every room is a path with its `csiv` as id and its type in
+`data-tipo`; classrooms also carry `data-sigla`, and their label is the group
+`<csiv>-etichetta`. To highlight a room, recolour its path.
 
 ## Sources
 
-Outlines and surroundings are traced by eye from OpenStreetMap, and the
-positions of trees, lawns, outdoor steps, entrances, bike racks, lamps,
-defibrillators, fountains and the Trifoglio's columns come from it too, so the
-drawings carry its attribution: © OpenStreetMap contributors (ODbL). Room
-layouts are redrawn by eye from the floor plan images on the Politecnico's
-public maps service, checked against OpenStreetMap's indoor mapping; nothing
-is converted from either automatically.
+Neighbouring outlines and the surroundings are traced by eye from
+OpenStreetMap, and the positions of trees, lawns, outdoor steps, entrances,
+bike racks, lamps, defibrillators and fountains come from it too, so the
+drawings carry its attribution: © OpenStreetMap contributors (ODbL).
 
-The step-free routes, drinking fountains and classroom equipment come from the
-same public maps service (`piano/<csip>/svg/pub` and
-`ricerca/aula/dotazioni/<idaula>`). Its floor coordinates are its own; they
-were brought into the campus frame with one transform fitted on the rooms it
-shares with OpenStreetMap (118 rooms, median error 7 cm).
+Floor geometry, step-free routes, fountains and classroom equipment come from
+the Politecnico's public maps service (`piano/<csip>/svg/pub`,
+`ricerca/aula/dotazioni/<idaula>`). Its drawings use the building's own CAD
+frame; `importa-scheda.py` brings them into the campus frame with one
+similarity transform fitted on the rooms they share with OpenStreetMap's indoor
+map (for the Trifoglio, 120 rooms, median error 7 cm). A building whose floor
+plans are drawn takes its map and 3D outline from its ground floor's gross
+outline, simplified.
