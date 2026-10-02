@@ -703,6 +703,250 @@
       ],
       "numero": "3A",
       "badge": [-7.5, 271.8]
+    },
+    {
+      "csie": "MIA0102",
+      "numero": "2",
+      "nome": "Bruno Finzi",
+      "piani": 3,
+      "pianta": [
+        [-70.7, 102.0],
+        [-29.3, 100.6],
+        [-29.1, 92.6],
+        [-10.8, 92.5],
+        [-10.4, 172.8],
+        [-28.4, 173.0],
+        [-28.4, 167.6],
+        [-70.4, 167.1]
+      ],
+      "badge": [-68.0, 104.0],
+      "livelli": ["MIA010200S", "MIA0102000", "MIA0102001", "MIA0102002"],
+      "piani_3d": ["MIA0102000", "MIA0102001", "MIA0102002"],
+      "riquadro": [-107, 65, 27, 201],
+      "vista": "sud-ovest",
+      "parti": [
+        {
+          "nome": "est",
+          "pianta": [
+            [-26.6, 92.5],
+            [-10.6, 92.5],
+            [-10.6, 172.9],
+            [-26.6, 172.9]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010200S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 5
+            },
+            {
+              "piano": "MIA0102000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "archi",
+              "bugnato": true,
+              "campata": 4.2,
+              "h": 14
+            },
+            {
+              "piano": "MIA0102001",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "campata": 4.2,
+              "h": 14
+            },
+            {
+              "piano": "MIA0102002",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "campata": 4.2,
+              "h": 12
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 0.6,
+              "h": 2
+            },
+            {"tipo": "coppi", "h": 8, "rientro": 4}
+          ]
+        },
+        {
+          "nome": "nord",
+          "pianta": [
+            [-56.8, 100.8],
+            [-26.6, 100.8],
+            [-26.6, 115.4],
+            [-56.8, 115.4]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010200S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 5
+            },
+            {
+              "piano": "MIA0102000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "archi",
+              "bugnato": true,
+              "campata": 4.2,
+              "h": 14
+            },
+            {
+              "piano": "MIA0102001",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "campata": 4.2,
+              "h": 14
+            },
+            {
+              "piano": "MIA0102002",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "campata": 4.2,
+              "h": 12
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 0.6,
+              "h": 2
+            },
+            {"tipo": "coppi", "h": 8, "rientro": 4}
+          ]
+        },
+        {
+          "nome": "sud",
+          "pianta": [
+            [-56.8, 151.6],
+            [-26.6, 151.6],
+            [-26.6, 167.4],
+            [-56.8, 167.4]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010200S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 5
+            },
+            {
+              "piano": "MIA0102000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "archi",
+              "bugnato": true,
+              "campata": 4.2,
+              "h": 14
+            },
+            {
+              "piano": "MIA0102001",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "campata": 4.2,
+              "h": 14
+            },
+            {
+              "piano": "MIA0102002",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "campata": 4.2,
+              "h": 12
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 0.6,
+              "h": 2
+            },
+            {"tipo": "coppi", "h": 8, "rientro": 4}
+          ]
+        },
+        {
+          "nome": "fronte",
+          "pianta": [
+            [-70.7, 101.0],
+            [-56.8, 101.0],
+            [-56.8, 167.3],
+            [-70.7, 167.3]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010200S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 5
+            },
+            {
+              "piano": "MIA0102000",
+              "tipo": "palazzo",
+              "rivestimento": "ocra",
+              "finestre": "archi",
+              "bugnato": true,
+              "campata": 4.6,
+              "h": 14
+            },
+            {
+              "piano": "MIA0102001",
+              "tipo": "palazzo",
+              "rivestimento": "ocra",
+              "finestre": "balconi",
+              "campata": 4.6,
+              "ordine": true,
+              "h": 16
+            },
+            {
+              "piano": "MIA0102002",
+              "tipo": "palazzo",
+              "rivestimento": "ocra",
+              "finestre": "rette",
+              "campata": 4.6,
+              "h": 12
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 0.9,
+              "h": 2.2
+            },
+            {
+              "piano": "balaustra",
+              "tipo": "balaustra",
+              "decoro": true,
+              "h": 4.5
+            },
+            {"tipo": "coppi", "h": 7, "rientro": 3}
+          ],
+          "pinnacoli": [
+            [-70.4, 101.4],
+            [-70.4, 107.0],
+            [-70.4, 161.4],
+            [-70.4, 166.9]
+          ],
+          "portoni": {
+            "punto": [-70.7, 134.2],
+            "n": 3,
+            "passo": 4.6,
+            "h": 8,
+            "da": 5
+          },
+          "ingresso": true
+        }
+      ]
     }
   ],
   "contesto": {

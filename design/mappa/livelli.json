@@ -5498,6 +5498,292 @@
         }
       ]
     },
+    "leonardo/MIA0102-mappa": {
+      "file": "leonardo/MIA0102-mappa.svg",
+      "viewBox": "-107 65 134 136",
+      "strati": [
+        {
+          "file": "leonardo/MIA0102-mappa/01-terreno.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/02-verde.svg",
+          "livello": "verde"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/03-strade.svg",
+          "livello": "strade"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/04-percorsi.svg",
+          "livello": "percorsi"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/05-scale-esterne.svg",
+          "livello": "scale-esterne"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/06-alberi.svg",
+          "livello": "alberi"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/07-ombre.svg",
+          "livello": "ombre"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/08-edifici.svg",
+          "livello": "edifici"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/09-impianti.svg",
+          "livello": "impianti"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/10-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/11-bici.svg",
+          "livello": "bici"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/12-lampioni.svg",
+          "livello": "lampioni"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/13-dae.svg",
+          "livello": "dae"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/14-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/15-panchine.svg",
+          "livello": "panchine"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/16-tavoli.svg",
+          "livello": "tavoli"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/17-cestini.svg",
+          "livello": "cestini"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/18-riciclo.svg",
+          "livello": "riciclo"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/19-bagni.svg",
+          "livello": "bagni"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/20-ristoro.svg",
+          "livello": "ristoro"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/21-distributori.svg",
+          "livello": "distributori"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/22-opere.svg",
+          "livello": "opere"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/23-nomi.svg",
+          "livello": "nomi"
+        },
+        {
+          "file": "leonardo/MIA0102-mappa/24-numeri.svg",
+          "livello": "numeri"
+        }
+      ]
+    },
+    "leonardo/MIA0102-isometrico": {
+      "file": "leonardo/MIA0102-isometrico.svg",
+      "viewBox": "7.5 -5.4 313.8 274.1",
+      "strati": [
+        {
+          "file": "leonardo/MIA0102-isometrico/01-ombra.svg",
+          "livello": "ombre"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/02-lotto.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/03-percorso.svg",
+          "livello": "percorsi"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/04-alberi-dietro.svg",
+          "livello": "alberi"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/05-basamento.svg",
+          "livello": "edifici"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/06-MIA010200S-nord.svg",
+          "livello": "piani",
+          "piano": "MIA010200S",
+          "acceso": "leonardo/MIA0102-isometrico/06-MIA010200S-nord-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/07-MIA0102000-nord.svg",
+          "livello": "piani",
+          "piano": "MIA0102000",
+          "acceso": "leonardo/MIA0102-isometrico/07-MIA0102000-nord-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/08-MIA0102001-nord.svg",
+          "livello": "piani",
+          "piano": "MIA0102001",
+          "acceso": "leonardo/MIA0102-isometrico/08-MIA0102001-nord-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/09-MIA0102002-nord.svg",
+          "livello": "piani",
+          "piano": "MIA0102002",
+          "acceso": "leonardo/MIA0102-isometrico/09-MIA0102002-nord-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/10-cornicione-nord.svg",
+          "livello": "piani",
+          "piano": "cornicione",
+          "acceso": "leonardo/MIA0102-isometrico/10-cornicione-nord-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/11-tetto-nord.svg",
+          "livello": "edifici"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/12-MIA010200S-est.svg",
+          "livello": "piani",
+          "piano": "MIA010200S",
+          "acceso": "leonardo/MIA0102-isometrico/12-MIA010200S-est-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/13-MIA0102000-est.svg",
+          "livello": "piani",
+          "piano": "MIA0102000",
+          "acceso": "leonardo/MIA0102-isometrico/13-MIA0102000-est-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/14-MIA0102001-est.svg",
+          "livello": "piani",
+          "piano": "MIA0102001",
+          "acceso": "leonardo/MIA0102-isometrico/14-MIA0102001-est-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/15-MIA0102002-est.svg",
+          "livello": "piani",
+          "piano": "MIA0102002",
+          "acceso": "leonardo/MIA0102-isometrico/15-MIA0102002-est-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/16-cornicione-est.svg",
+          "livello": "piani",
+          "piano": "cornicione",
+          "acceso": "leonardo/MIA0102-isometrico/16-cornicione-est-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/17-tetto-est.svg",
+          "livello": "edifici"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/18-MIA010200S-fronte.svg",
+          "livello": "piani",
+          "piano": "MIA010200S",
+          "acceso": "leonardo/MIA0102-isometrico/18-MIA010200S-fronte-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/19-MIA0102000-fronte.svg",
+          "livello": "piani",
+          "piano": "MIA0102000",
+          "acceso": "leonardo/MIA0102-isometrico/19-MIA0102000-fronte-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/20-MIA0102001-fronte.svg",
+          "livello": "piani",
+          "piano": "MIA0102001",
+          "acceso": "leonardo/MIA0102-isometrico/20-MIA0102001-fronte-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/21-MIA0102002-fronte.svg",
+          "livello": "piani",
+          "piano": "MIA0102002",
+          "acceso": "leonardo/MIA0102-isometrico/21-MIA0102002-fronte-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/22-cornicione-fronte.svg",
+          "livello": "piani",
+          "piano": "cornicione",
+          "acceso": "leonardo/MIA0102-isometrico/22-cornicione-fronte-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/23-balaustra-fronte.svg",
+          "livello": "piani",
+          "piano": "balaustra",
+          "acceso": "leonardo/MIA0102-isometrico/23-balaustra-fronte-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/24-tetto-fronte.svg",
+          "livello": "edifici"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/25-ornati-fronte.svg",
+          "livello": "edifici"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/26-MIA010200S-sud.svg",
+          "livello": "piani",
+          "piano": "MIA010200S",
+          "acceso": "leonardo/MIA0102-isometrico/26-MIA010200S-sud-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/27-MIA0102000-sud.svg",
+          "livello": "piani",
+          "piano": "MIA0102000",
+          "acceso": "leonardo/MIA0102-isometrico/27-MIA0102000-sud-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/28-MIA0102001-sud.svg",
+          "livello": "piani",
+          "piano": "MIA0102001",
+          "acceso": "leonardo/MIA0102-isometrico/28-MIA0102001-sud-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/29-MIA0102002-sud.svg",
+          "livello": "piani",
+          "piano": "MIA0102002",
+          "acceso": "leonardo/MIA0102-isometrico/29-MIA0102002-sud-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/30-cornicione-sud.svg",
+          "livello": "piani",
+          "piano": "cornicione",
+          "acceso": "leonardo/MIA0102-isometrico/30-cornicione-sud-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/31-tetto-sud.svg",
+          "livello": "edifici"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/32-impianti.svg",
+          "livello": "impianti"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/33-alberi-davanti.svg",
+          "livello": "alberi"
+        },
+        {
+          "file": "leonardo/MIA0102-isometrico/34-etichette-piani.svg",
+          "livello": "etichette-piani"
+        }
+      ]
+    },
     "leonardo/parco-piazza-leonardo-mappa": {
       "file": "leonardo/parco-piazza-leonardo-mappa.svg",
       "viewBox": "-190 85 145 255",

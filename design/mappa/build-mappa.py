@@ -668,7 +668,8 @@ CLADDING = {"ceramica": ("#E6E0D4", "#CDC5B6", "#F1EDE5"),
             "mosaico": ("#6B6E75", "#565960", "#7A7D84"),
             "stucco": ("#E4DFD3", "#CAC4B5", "#EEEAE1"),      # the Rettorato's grey-beige stone
             "pietra": ("#B4B2AA", "#9C9A92", "#C6C4BC"),
-            "intonaco": ("#ECE7DC", "#D4CEC0", "#F2EFE8")}    # the courtyard wings' pale render     # and its grey glass mosaic
+            "intonaco": ("#ECE7DC", "#D4CEC0", "#F2EFE8"),
+            "ocra": ("#DDCCA6", "#C5B38B", "#E8DCC0")}         # the side blocks' warmer stone    # the courtyard wings' pale render     # and its grey glass mosaic
 WINDOW_FRAME = "#F4F5F7"
 STEEL = "#23272E"             # Viganò's black steel
 STEEL_RED = "#C0503B"         # and his red
