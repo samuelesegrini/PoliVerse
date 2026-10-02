@@ -105,12 +105,14 @@ for b in c["edifici"]:
     for x, y, w, h in b.get("impianti", []):
         inner += (f'<rect x="{f(x)}" y="{f(y)}" width="{f(w)}" height="{f(h)}" rx="0.8" fill="{bm.PLANT}"></rect>'
                   f'<rect x="{f(x)}" y="{f(y + h - 0.6)}" width="{f(w)}" height="1" fill="{bm.PLANT_LIP}"></rect>')
-    name = f'Edificio {b["numero"]}' + (f' — {b["nome"]}' if b.get("nome") else "")
+    name = (f'Edificio {b["numero"]}' if b.get("numero") else "Edificio") + (f' — {b["nome"]}' if b.get("nome") else "")
     out.append(box(x0, y0, x1, y1, f"{name} ({cid})", inner))
 out.append("</div>")
 
 out.append('<div data-label="Numeri">')
 for b in c["edifici"]:
+    if "badge" not in b:
+        continue
     x, y = b["badge"]; label = b["numero"]
     w = 7.0 + 2.4 * max(0, len(label) - 1)
     fill = bm.BADGE_FOCUS if b is focus else bm.BADGE
