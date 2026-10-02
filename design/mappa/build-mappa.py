@@ -503,12 +503,15 @@ def draw_map(campus, focus):
                          f'<text {at} fill="{INK}">{b["nome"]}</text>')
     for n in ctx.get("nomi", []):
         x, y = n["punto"]
+        turn = f' transform="rotate({n["angolo"]} {fmt(x)} {fmt(y)})"' if n.get("angolo") else ""
         names.append(f'<text x="{fmt(x)}" y="{fmt(y + 1.1)}" font-size="3.2" font-weight="600" text-anchor="middle" '
-                     f'letter-spacing="0.3" fill="{STREET_INK}" {FONT}>{n["testo"]}</text>')
+                     f'letter-spacing="0.3" fill="{STREET_INK}" {FONT}{turn}>{n["testo"]}</text>')
     strati.append(Strato("nomi", "nomi", names))
 
     badges = [f'<g font-size="4" font-weight="700" text-anchor="middle" {FONT}>']
     for b in campus["edifici"]:
+        if "badge" not in b:
+            continue
         x, y = b["badge"]
         label = b["numero"]
         w = 7.0 + 2.4 * max(0, len(label) - 1)
@@ -587,7 +590,9 @@ def floor_names(b):
 def draw_iso(campus, b):
     turn = view(b)
     pts = ccw([turn(p) for p in b["pianta"]])
-    levels = b.get("livelli") or [f"piano-{i}" for i in range(floor_count(b))]
+    # The storeys the view stacks: all of `livelli` unless `piani_3d` leaves out a
+    # basement or a rooftop plant floor, which are no glass storey.
+    levels = b.get("piani_3d") or b.get("livelli") or [f"piano-{i}" for i in range(floor_count(b))]
     floors = len(levels)
     names = floor_names(b)
     xs, ys = [p[0] for p in pts], [p[1] for p in pts]

@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-62 -44 134 136" width="536" height="544">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="28 -44 134 136" width="536" height="544">
 <defs><radialGradient id="mp-glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#F5D77A" stop-opacity="0.55"/><stop offset="1" stop-color="#F5D77A" stop-opacity="0"/></radialGradient><linearGradient id="mp-roof" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F2F3F6"/></linearGradient><linearGradient id="mp-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D3D7DF"/><stop offset="1" stop-color="#BFC4CE"/></linearGradient></defs>
 <g id="livello-terreno" data-livello="terreno">
-<rect x="-62" y="-44" width="134" height="136" fill="#EEF0EA"/>
+<rect x="28" y="-44" width="134" height="136" fill="#EEF0EA"/>
 </g>
 <g id="livello-verde" data-livello="verde">
 <path d="M-60 72.8L70 72.8Q72 72.8 72 74.8L72 78.4Q72 80.4 70 80.4L-60 80.4Q-62 80.4 -62 78.4L-62 74.8Q-62 72.8 -60 72.8Z" fill="#D5E8CC"/>
@@ -326,10 +326,10 @@
 </g>
 <g id="livello-numeri" data-livello="numeri">
 <g font-size="4" font-weight="700" text-anchor="middle" font-family="-apple-system, system-ui, sans-serif">
-<rect x="-9" y="-24" width="9.4" height="6" rx="3" fill="#1C6BAD"/><text x="-4.3" y="-19.6" fill="#FFFFFF">13</text>
+<rect x="-9" y="-24" width="9.4" height="6" rx="3" fill="#8E8E93"/><text x="-4.3" y="-19.6" fill="#FFFFFF">13</text>
 <rect x="-38.5" y="-25" width="11.8" height="6" rx="3" fill="#8E8E93"/><text x="-32.6" y="-20.6" fill="#FFFFFF">16B</text>
 <rect x="53" y="-21" width="11.8" height="6" rx="3" fill="#8E8E93"/><text x="58.9" y="-16.6" fill="#FFFFFF">14B</text>
-<rect x="55" y="-3" width="9.4" height="6" rx="3" fill="#8E8E93"/><text x="59.7" y="1.4" fill="#FFFFFF">14</text>
+<rect x="55" y="-3" width="9.4" height="6" rx="3" fill="#1C6BAD"/><text x="59.7" y="1.4" fill="#FFFFFF">14</text>
 <rect x="-38" y="38" width="9.4" height="6" rx="3" fill="#8E8E93"/><text x="-33.3" y="42.4" fill="#FFFFFF">12</text>
 <rect x="-11.5" y="42" width="11.8" height="6" rx="3" fill="#8E8E93"/><text x="-5.6" y="46.4" fill="#FFFFFF">16A</text>
 <rect x="-58" y="-25" width="9.4" height="6" rx="3" fill="#8E8E93"/><text x="-53.3" y="-20.6" fill="#FFFFFF">11</text>

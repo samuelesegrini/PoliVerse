@@ -18,6 +18,8 @@ whole campus reads as one clean, uniform drawing.
 | `<campus>/<csip>-pianta.svg` | floor plan: one floor, its rooms, doors and entrances |
 | `<campus>/<drawing>/NN-<layer>.svg` | the same drawing split into one file per layer |
 | `livelli.json` | every layer, and every drawing's layers in stacking order |
+| `strumenti/contesto.py` | adds OpenStreetMap's surroundings to the campus file for a larger map frame |
+| `strumenti/aule.py` | fills a building's classrooms, seats and equipment into `piante/<csie>.json` |
 | `strumenti/elementi.py` | prints the map as one element per object, for a design canvas board |
 | `strumenti/anteprime-iso.py` | writes day and lights-on previews of an isometric view |
 
