@@ -2307,53 +2307,49 @@
           "livello": "edifici"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/14-ingresso.svg",
-          "livello": "ingressi"
-        },
-        {
-          "file": "leonardo/MIA0201-isometrico/15-MIA020100S-ponti.svg",
+          "file": "leonardo/MIA0201-isometrico/14-MIA020100S-ponti.svg",
           "livello": "piani",
           "piano": "MIA020100S",
-          "acceso": "leonardo/MIA0201-isometrico/15-MIA020100S-ponti-acceso.svg"
+          "acceso": "leonardo/MIA0201-isometrico/14-MIA020100S-ponti-acceso.svg"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/16-MIA0201000-ponti.svg",
+          "file": "leonardo/MIA0201-isometrico/15-MIA0201000-ponti.svg",
           "livello": "piani",
           "piano": "MIA0201000",
-          "acceso": "leonardo/MIA0201-isometrico/16-MIA0201000-ponti-acceso.svg"
+          "acceso": "leonardo/MIA0201-isometrico/15-MIA0201000-ponti-acceso.svg"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/17-MIA0201S00-ponti.svg",
+          "file": "leonardo/MIA0201-isometrico/16-MIA0201S00-ponti.svg",
           "livello": "piani",
           "piano": "MIA0201S00",
-          "acceso": "leonardo/MIA0201-isometrico/17-MIA0201S00-ponti-acceso.svg"
+          "acceso": "leonardo/MIA0201-isometrico/16-MIA0201S00-ponti-acceso.svg"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/18-MIA0201001-ponti.svg",
+          "file": "leonardo/MIA0201-isometrico/17-MIA0201001-ponti.svg",
           "livello": "piani",
           "piano": "MIA0201001",
-          "acceso": "leonardo/MIA0201-isometrico/18-MIA0201001-ponti-acceso.svg"
+          "acceso": "leonardo/MIA0201-isometrico/17-MIA0201001-ponti-acceso.svg"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/19-tetto-ponti.svg",
+          "file": "leonardo/MIA0201-isometrico/18-tetto-ponti.svg",
           "livello": "edifici"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/20-MIA0201001-lucernari-ponti.svg",
+          "file": "leonardo/MIA0201-isometrico/19-MIA0201001-lucernari-ponti.svg",
           "livello": "piani",
           "piano": "MIA0201001",
-          "acceso": "leonardo/MIA0201-isometrico/20-MIA0201001-lucernari-ponti-acceso.svg"
+          "acceso": "leonardo/MIA0201-isometrico/19-MIA0201001-lucernari-ponti-acceso.svg"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/21-impianti.svg",
+          "file": "leonardo/MIA0201-isometrico/20-impianti.svg",
           "livello": "impianti"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/22-alberi-davanti.svg",
+          "file": "leonardo/MIA0201-isometrico/21-alberi-davanti.svg",
           "livello": "alberi"
         },
         {
-          "file": "leonardo/MIA0201-isometrico/23-etichette-piani.svg",
+          "file": "leonardo/MIA0201-isometrico/22-etichette-piani.svg",
           "livello": "etichette-piani"
         }
       ]

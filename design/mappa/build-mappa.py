@@ -677,13 +677,24 @@ def sculpture_a(pts, at, top):
     ux, uy = (c[0] - a[0]) / length, (c[1] - a[1]) / length
     p = lambda t, out=3.2: (q[0] + ux * t + n[0] * out, q[1] + uy * t + n[1] * out)
     base = 6.0
-    red = [(*p(-4), base), (*p(9), base), (*p(7.5), top * 0.95)]
-    leg = [(*p(-7), base), (*p(9.5), top + 20)]
-    bar = [(*p(-2.5), top * 0.3), (*p(9), top * 0.3)]
-    line = lambda pp, w: (f'<path d="M{fmt(iso(*pp[0])[0])} {fmt(iso(*pp[0])[1])}L{fmt(iso(*pp[1])[0])} {fmt(iso(*pp[1])[1])}" '
-                          f'stroke="{STEEL}" stroke-width="{w}" stroke-linecap="square"/>')
-    return [f'<polygon points="{iso_poly(red)}" fill="{STEEL_RED}"/>', line(leg, 3.4), line(bar, 2.2),
-            f'<polygon points="{iso_poly([(*p(-1.2, 0.2), base), (*p(1.2, 0.2), base), (*p(1.2, 0.2), base + 12), (*p(-1.2, 0.2), base + 12)])}" fill="{ISO_DOOR}"/>']
+    # An A, standing out in front of the columns: a black leg leaning past the apex, a red
+    # leg, a red crossbar, and the red head between the legs above it.
+    out = 4.5
+    zx, zc = top * 0.92, top * 0.5
+    leg = lambda t0, t1, z1, w: [(*p(t0, out), base), (*p(t0 + w, out), base), (*p(t1 + w, out), z1), (*p(t1, out), z1)]
+    at = lambda t0, t1, f: t0 + (t1 - t0) * f
+    fc = (zc - base) / (zx - base)
+    red_leg = leg(9.0, 2.6, zx, 2.0)
+    black_leg = leg(-6.5, 3.4, zx + (zx - base) * 0.25, 2.0)
+    l, r = at(-6.5 + 2.0, 1.6 + 2.0, fc), at(9.0, 2.6, fc)
+    bar = [(*p(l, out), zc), (*p(r, out), zc), (*p(at(9.0, 2.6, fc + 0.09), out), zc + 5), (*p(at(-4.5, 3.6, fc + 0.09), out), zc + 5)]
+    head = [(*p(at(-4.5, 3.6, fc + 0.09), out), zc + 5), (*p(at(9.0, 2.6, fc + 0.09), out), zc + 5), (*p(3.2, out), zx)]
+    door = [(*p(1.0, 0.2), base), (*p(4.0, 0.2), base), (*p(4.0, 0.2), base + 12), (*p(1.0, 0.2), base + 12)]
+    return [f'<polygon points="{iso_poly(door)}" fill="{ISO_DOOR}"/>',
+            f'<polygon points="{iso_poly(head)}" fill="{STEEL_RED}"/>',
+            f'<polygon points="{iso_poly(bar)}" fill="{STEEL_RED}"/>',
+            f'<polygon points="{iso_poly(red_leg)}" fill="{STEEL_RED}"/>',
+            f'<polygon points="{iso_poly(black_leg)}" fill="{STEEL}"/>']
 
 
 def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, parte=""):
@@ -891,10 +902,12 @@ def draw_iso(campus, b):
         for part, own in parts:
             ztop = draw_profile(b, own, turn, base_h, storey, door, strati, zmid, part["profilo"], part["nome"])
             others = [o for p2, o in parts if p2 is not part]
-            if part.get("esoscheletro"):
-                strati.append(Strato(f"struttura-{part['nome']}", "edifici", exoskeleton(own, ztop, others)))
+            steel = exoskeleton(own, ztop, others) if part.get("esoscheletro") else []
             if ent and ent.get("scultura") == "A" and part.get("ingresso"):
-                strati.append(Strato("ingresso", "ingressi", sculpture_a(own, turn(tuple(ent["punto"])), ztop)))
+                # The A hangs from the structure, in front of it: one layer, drawn after the columns.
+                steel += sculpture_a(own, turn(tuple(ent["punto"])), ztop)
+            if steel:
+                strati.append(Strato(f"struttura-{part['nome']}", "edifici", steel))
             top = max(top, ztop)
     elif b.get("profilo"):
         # A building that is not a stack of like storeys: its bands, bottom up, as drawn.
