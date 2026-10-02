@@ -785,6 +785,41 @@ def sculpture_a(pts, at, top):
             f'<polygon points="{iso_poly(black_leg)}" fill="{STEEL}"/>']
 
 
+def ornaments(part, own, turn, top, z0):
+    """A palazzo's crown and steps: a curved pediment over the middle of the front
+    (`frontone`: a point on it and its width), obelisks, a clock turret, and a flight
+    of steps before the door (`scalinata`: a point on the front, width, depth, steps)."""
+    out = []
+    if part.get("frontone"):
+        f = part["frontone"]
+        q, a, c, _ = nearest_edge(turn(tuple(f["punto"])), [own])
+        n = outward(a, c, own)
+        L = math.dist(a, c)
+        u = ((c[0] - a[0]) / L, (c[1] - a[1]) / L)
+        w = f.get("larghezza", 10) / 2
+        at = lambda t, zz, o=0.3: (q[0] + u[0] * t + n[0] * o, q[1] + u[1] * t + n[1] * o, zz)
+        arc = [at(w * math.cos(th), top + 2 + 9 * math.sin(th)) for th in [math.pi * k / 16 for k in range(17)]]
+        inner = [at(0.8 * w * math.cos(th), top + 2 + 7 * math.sin(th)) for th in [math.pi * k / 16 for k in range(16, -1, -1)]]
+        out.append(f'<polygon points="{iso_poly([at(w, top), *arc, at(-w, top)])}" fill="#EDE4CF" stroke="#CDBF9F" stroke-width="0.4"/>')
+        out.append(f'<polygon points="{iso_poly(arc[1:-1] + inner[1:-1])}" fill="#F5EFE1"/>')
+        crest = [at(-1.4, top + 4), at(1.4, top + 4), at(1.4, top + 9), at(0, top + 10.5), at(-1.4, top + 9)]
+        out.append(f'<polygon points="{iso_poly(crest)}" fill="#D9CCAE" stroke="#BFB094" stroke-width="0.3"/>')
+    out += pinnacles(part, turn, top)
+    if part.get("scalinata"):
+        s = part["scalinata"]
+        q, a, c, _ = nearest_edge(turn(tuple(s["punto"])), [own])
+        n = outward(a, c, own)
+        L = math.dist(a, c)
+        u = ((c[0] - a[0]) / L, (c[1] - a[1]) / L)
+        w, deep, k = s.get("larghezza", 14) / 2, s.get("profondita", 4), s.get("gradini", 4)
+        for i in range(k):
+            o0, o1 = deep * i / k, deep
+            zz = z0 * (k - i) / k
+            step = [(q[0] + u[0] * t + n[0] * o, q[1] + u[1] * t + n[1] * o) for t, o in ((-w, o0), (w, o0), (w, o1), (-w, o1))]
+            out += prism(ccw(step), 0, zz, ("#C9C7BF", "#B1AFA7"), "#D8D6CF")
+    return out
+
+
 def pinnacles(b, turn, top):
     """Stone obelisks on the roof's corners and a clock turret, farthest first."""
     out = []
@@ -954,7 +989,9 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
     the floor's own outline, set back on the roof of what is below."""
     tag = f"-{parte}" if parte else ""
     below, roofed, skylights = pts, False, []
-    for band in profilo or b["profilo"]:
+    bands = profilo or b["profilo"]
+    tiles = next((x for x in bands if x["tipo"] == "coppi"), None)
+    for band in [x for x in bands if x is not tiles]:
         csip, kind, h = band.get("piano"), band["tipo"], band["h"]
         own = pts
         if band.get("sagoma") == "propria":
@@ -1096,7 +1133,18 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
             own = offset(own, band.get("sporto", 2.0))
         z += h
         below = own
-    if b.get("gronda"):
+    if tiles:
+        # A hipped roof in red tiles: each side slopes up from the eaves to a ridge set in.
+        eaves, ridge = offset(below, 0.6), offset(below, -tiles.get("rientro", 4.0))
+        zr = z + tiles["h"]
+        roof = []
+        for a, c, left, _ in faces(eaves, 0, 1):
+            i, j = eaves.index(a), eaves.index(c)
+            q = [(*a, z), (*c, z), (*ridge[j], zr), (*ridge[i], zr)]
+            roof.append(f'<polygon points="{iso_poly(q)}" fill="{"#C2704A" if left else "#A85A38"}"/>')
+        roof.append(f'<polygon points="{iso_poly([(x, y, zr) for x, y in ridge])}" fill="#CF7E57"/>')
+        z = zr
+    elif b.get("gronda"):
         # A thin pale roof overhanging every side by `gronda` metres, its shadow on the wall.
         roof = []
         for a, c, _, _ in faces(below, 0, 1):
@@ -1278,6 +1326,8 @@ def draw_iso(campus, b):
                 steel += sculpture_a(own, turn(tuple(ent["punto"])), ztop)
             if steel:
                 strati.append(Strato(f"struttura-{part['nome']}", "edifici", steel))
+            if part.get("pinnacoli") or part.get("orologio") or part.get("frontone") or part.get("scalinata"):
+                strati.append(Strato(f"ornati-{part['nome']}", "edifici", ornaments(part, own, turn, ztop, base_h)))
             top = max(top, ztop)
     elif b.get("profilo"):
         # A building that is not a stack of like storeys: its bands, bottom up, as drawn.

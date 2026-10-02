@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="177.8 81.4 250.5 242.8" width="501" height="485.6">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="177.8 70.4 250.5 253.8" width="501" height="507.6">
 <defs><radialGradient id="iso-shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#1D2B40" stop-opacity="0.22"/><stop offset="1" stop-color="#1D2B40" stop-opacity="0"/></radialGradient></defs>
 <ellipse cx="295.9" cy="251.6" rx="109.3" ry="62.7" fill="url(#iso-shadow)"/>
 </svg>
