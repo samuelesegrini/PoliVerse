@@ -609,7 +609,7 @@ CLADDING = {"ceramica": ("#E6E0D4", "#CDC5B6", "#F1EDE5"),
             "fessura": ("#4D5D72", "#36465B", "#5B6B80"),
             "bianco": ("#F6F7F9", "#DDE0E5", "#FFFFFF")}
 STEEL = "#23272E"             # Viganò's black steel
-STEEL_RED = "#D9473A"         # and his red
+STEEL_RED = "#C0503B"         # and his red
 SKYLIGHT, SKYLIGHT_LIT = "#C9D6E4", "#FFD98A"
 
 
@@ -677,23 +677,26 @@ def sculpture_a(pts, at, top):
     ux, uy = (c[0] - a[0]) / length, (c[1] - a[1]) / length
     p = lambda t, out=3.2: (q[0] + ux * t + n[0] * out, q[1] + uy * t + n[1] * out)
     base = 6.0
-    # An A, standing out in front of the columns: a black leg leaning past the apex, a red
-    # leg, a red crossbar, and the red head between the legs above it.
+    # As on Via Ampère: a thick black leg, long and leaning, running past the apex; a
+    # thinner, steeper red leg; and a red crossbar low down, over the door.
     out = 4.5
-    zx, zc = top * 0.92, top * 0.5
+    zx = top * 0.92
+    h = zx - base
+    apex = 3.2
+    xs = lambda t0, t1, f: t0 + (t1 - t0) * f
     leg = lambda t0, t1, z1, w: [(*p(t0, out), base), (*p(t0 + w, out), base), (*p(t1 + w, out), z1), (*p(t1, out), z1)]
-    at = lambda t0, t1, f: t0 + (t1 - t0) * f
-    fc = (zc - base) / (zx - base)
-    red_leg = leg(9.0, 2.6, zx, 2.0)
-    black_leg = leg(-6.5, 3.4, zx + (zx - base) * 0.25, 2.0)
-    l, r = at(-6.5 + 2.0, 1.6 + 2.0, fc), at(9.0, 2.6, fc)
-    bar = [(*p(l, out), zc), (*p(r, out), zc), (*p(at(9.0, 2.6, fc + 0.09), out), zc + 5), (*p(at(-4.5, 3.6, fc + 0.09), out), zc + 5)]
-    head = [(*p(at(-4.5, 3.6, fc + 0.09), out), zc + 5), (*p(at(9.0, 2.6, fc + 0.09), out), zc + 5), (*p(3.2, out), zx)]
+    tb, tr = apex + 8.5, apex - 5.5      # the black and red feet, metres along the façade
+    wb, wr = 2.2, 1.2
+    black_leg = leg(tb, xs(tb, apex, 1.32), base + h * 1.32, wb)
+    red_leg = leg(tr - wr, apex, zx, wr)
+    z0, z1 = base + h * 0.17, base + h * 0.28
+    f0, f1 = 0.17, 0.28
+    bar = [(*p(xs(tr, apex, f0), out), z0), (*p(xs(tb, apex, f0), out), z0),
+           (*p(xs(tb, apex, f1), out), z1), (*p(xs(tr, apex, f1), out), z1)]
     door = [(*p(1.0, 0.2), base), (*p(4.0, 0.2), base), (*p(4.0, 0.2), base + 12), (*p(1.0, 0.2), base + 12)]
     return [f'<polygon points="{iso_poly(door)}" fill="{ISO_DOOR}"/>',
-            f'<polygon points="{iso_poly(head)}" fill="{STEEL_RED}"/>',
-            f'<polygon points="{iso_poly(bar)}" fill="{STEEL_RED}"/>',
             f'<polygon points="{iso_poly(red_leg)}" fill="{STEEL_RED}"/>',
+            f'<polygon points="{iso_poly(bar)}" fill="{STEEL_RED}"/>',
             f'<polygon points="{iso_poly(black_leg)}" fill="{STEEL}"/>']
 
 
