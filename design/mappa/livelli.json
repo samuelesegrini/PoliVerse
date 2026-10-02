@@ -5362,7 +5362,7 @@
     },
     "leonardo/MIA0101-isometrico": {
       "file": "leonardo/MIA0101-isometrico.svg",
-      "viewBox": "-548.5 18.8 250.9 236",
+      "viewBox": "177.8 81.4 250.5 242.8",
       "strati": [
         {
           "file": "leonardo/MIA0101-isometrico/01-ombra.svg",
@@ -5385,14 +5385,16 @@
           "livello": "edifici"
         },
         {
-          "file": "leonardo/MIA0101-isometrico/06-MIA0101000.svg",
+          "file": "leonardo/MIA0101-isometrico/06-MIA010100S.svg",
           "livello": "piani",
-          "piano": "MIA0101000",
-          "acceso": "leonardo/MIA0101-isometrico/06-MIA0101000-acceso.svg"
+          "piano": "MIA010100S",
+          "acceso": "leonardo/MIA0101-isometrico/06-MIA010100S-acceso.svg"
         },
         {
-          "file": "leonardo/MIA0101-isometrico/07-ingresso.svg",
-          "livello": "ingressi"
+          "file": "leonardo/MIA0101-isometrico/07-MIA0101000.svg",
+          "livello": "piani",
+          "piano": "MIA0101000",
+          "acceso": "leonardo/MIA0101-isometrico/07-MIA0101000-acceso.svg"
         },
         {
           "file": "leonardo/MIA0101-isometrico/08-MIA0101001.svg",
@@ -5407,19 +5409,35 @@
           "acceso": "leonardo/MIA0101-isometrico/09-MIA0101002-acceso.svg"
         },
         {
-          "file": "leonardo/MIA0101-isometrico/10-tetto.svg",
+          "file": "leonardo/MIA0101-isometrico/10-cornicione.svg",
+          "livello": "piani",
+          "piano": "cornicione",
+          "acceso": "leonardo/MIA0101-isometrico/10-cornicione-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0101-isometrico/11-balaustra.svg",
+          "livello": "piani",
+          "piano": "balaustra",
+          "acceso": "leonardo/MIA0101-isometrico/11-balaustra-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0101-isometrico/12-tetto.svg",
           "livello": "edifici"
         },
         {
-          "file": "leonardo/MIA0101-isometrico/11-impianti.svg",
+          "file": "leonardo/MIA0101-isometrico/13-pinnacoli.svg",
+          "livello": "edifici"
+        },
+        {
+          "file": "leonardo/MIA0101-isometrico/14-impianti.svg",
           "livello": "impianti"
         },
         {
-          "file": "leonardo/MIA0101-isometrico/12-alberi-davanti.svg",
+          "file": "leonardo/MIA0101-isometrico/15-alberi-davanti.svg",
           "livello": "alberi"
         },
         {
-          "file": "leonardo/MIA0101-isometrico/13-etichette-piani.svg",
+          "file": "leonardo/MIA0101-isometrico/16-etichette-piani.svg",
           "livello": "etichette-piani"
         }
       ]

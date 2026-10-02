@@ -665,7 +665,9 @@ CLADDING = {"ceramica": ("#E6E0D4", "#CDC5B6", "#F1EDE5"),
             "fessura": ("#4D5D72", "#36465B", "#5B6B80"),
             "bianco": ("#F6F7F9", "#DDE0E5", "#FFFFFF"),
             "cemento": ("#DCD8D0", "#C4BFB5", "#E8E5DF"),     # the Trifoglio's concrete base
-            "mosaico": ("#6B6E75", "#565960", "#7A7D84")}     # and its grey glass mosaic
+            "mosaico": ("#6B6E75", "#565960", "#7A7D84"),
+            "stucco": ("#EDE4CF", "#D6CAAD", "#F3EDDF"),      # the Rettorato's cream
+            "pietra": ("#B4B2AA", "#9C9A92", "#C6C4BC")}     # and its grey glass mosaic
 WINDOW_FRAME = "#F4F5F7"
 STEEL = "#23272E"             # Viganò's black steel
 STEEL_RED = "#C0503B"         # and his red
@@ -783,6 +785,31 @@ def sculpture_a(pts, at, top):
             f'<polygon points="{iso_poly(black_leg)}" fill="{STEEL}"/>']
 
 
+def pinnacles(b, turn, top):
+    """Stone obelisks on the roof's corners and a clock turret, farthest first."""
+    out = []
+    items = [("obelisco", turn(tuple(p))) for p in b.get("pinnacoli", [])]
+    if b.get("orologio"):
+        items.append(("orologio", turn(tuple(b["orologio"]))))
+    for kind, (x, y) in sorted(items, key=lambda it: it[1][0] + it[1][1]):
+        if kind == "obelisco":
+            out += prism([(x - 0.7, y - 0.7), (x + 0.7, y - 0.7), (x + 0.7, y + 0.7), (x - 0.7, y + 0.7)],
+                         top, top + 3, ("#EFE7D5", "#D3C7AB"), "#F3EDDF")
+            tip = iso(x, y, top + 16)
+            l, r, f = iso(x - 0.5, y + 0.5, top + 3), iso(x + 0.5, y - 0.5, top + 3), iso(x + 0.5, y + 0.5, top + 3)
+            out.append(f'<polygon points="{fmt(l[0])},{fmt(l[1])} {fmt(f[0])},{fmt(f[1])} {fmt(tip[0])},{fmt(tip[1])}" fill="#E9E0CB"/>')
+            out.append(f'<polygon points="{fmt(f[0])},{fmt(f[1])} {fmt(r[0])},{fmt(r[1])} {fmt(tip[0])},{fmt(tip[1])}" fill="#CFC2A4"/>')
+        else:
+            box = [(x - 2, y - 2), (x + 2, y - 2), (x + 2, y + 2), (x - 2, y + 2)]
+            out += prism(box, top, top + 9, ("#EFE7D5", "#D3C7AB"), "#F3EDDF")
+            cx, cy = iso(x - 2.05, y, top + 5)
+            out.append(f'<ellipse cx="{fmt(cx)}" cy="{fmt(cy)}" rx="1.6" ry="2.6" fill="#FFFFFF" stroke="#8C7F64" stroke-width="0.4"/>'
+                       f'<path d="M{fmt(cx)} {fmt(cy)}V{fmt(cy - 1.8)}M{fmt(cx)} {fmt(cy)}L{fmt(cx + 0.9)} {fmt(cy + 0.5)}" stroke="#3B3A36" stroke-width="0.35"/>')
+            out += prism([(x - 2.4, y - 2.4), (x + 2.4, y - 2.4), (x + 2.4, y + 2.4), (x - 2.4, y + 2.4)],
+                         top + 9, top + 10.5, ("#E7DDC6", "#CDBF9F"), "#F3EDDF")
+    return out
+
+
 def lamellae(b, pts, turn, z0, top):
     """Renzo Piano's screen for 16B: a dense row of thin white steel blades standing
     `distanza` metres out from the glass, from the first floor to `sopra` above the
@@ -827,6 +854,51 @@ def lamellae(b, pts, turn, z0, top):
             ties.append(f"M{fmt(x0)} {fmt(y0)}L{fmt(x1)} {fmt(y1)}")
         out.append(f'<path d="{"".join(blades)}" stroke="#F7F8FA" stroke-width="0.45" opacity="0.95"/>')
         out.append(f'<path d="{"".join(ties)}" stroke="#E6E9ED" stroke-width="0.9"/>')
+    return out
+
+
+def palazzo(pts, z, h, lit, colors, finestre, bugnato=False, bay=4.4):
+    """An eclectic palazzo storey, face by face, far ones first: the wall, its rusticated
+    joints, a lighter pilaster at each bay, and in each bay a window, `archi` (round
+    arched), `balconi` (arched, over a little balustraded balcony) or `rette` (square)."""
+    out = []
+    glass = "#F2D492" if lit else "#3E4652"
+    frame = "#F7F2E6"
+    for a, c, left, q in faces(pts, z, z + h):
+        out.append(f'<polygon points="{iso_poly(q)}" fill="{colors[0] if left else colors[1]}"/>')
+        n = outward(a, c, pts)
+        length = math.dist(a, c)
+        u = ((c[0] - a[0]) / length, (c[1] - a[1]) / length)
+        at = lambda t, zz, o=0.05: (a[0] + u[0] * t + n[0] * o, a[1] + u[1] * t + n[1] * o, zz)
+        if bugnato:
+            joints = "".join(f'M{fmt(iso(*at(0, zz)[:2], zz)[0])} {fmt(iso(*at(0, zz)[:2], zz)[1])}'
+                             f'L{fmt(iso(*at(length, zz)[:2], zz)[0])} {fmt(iso(*at(length, zz)[:2], zz)[1])}'
+                             for zz in [z + k * 2.4 for k in range(1, int(h / 2.4))])
+            out.append(f'<path d="{joints}" stroke="#B9AD92" stroke-width="0.35"/>')
+        k = int(length / bay)
+        if k < 1:
+            continue
+        pad = (length - k * bay) / 2
+        for i in range(k + 1):                          # pilasters
+            t = pad + i * bay
+            p = [at(t - 0.3, z, 0.12), at(t + 0.3, z, 0.12), at(t + 0.3, z + h, 0.12), at(t - 0.3, z + h, 0.12)]
+            out.append(f'<polygon points="{iso_poly(p)}" fill="{colors[2]}" opacity="0.8"/>')
+        for i in range(k):
+            t = pad + i * bay + bay / 2
+            w = 0.8 if finestre != "rette" else 0.7
+            z0, z1 = z + h * (0.18 if finestre != "rette" else 0.25), z + h * (0.68 if finestre != "rette" else 0.8)
+            shape = [at(t - w, z0), at(t + w, z0), at(t + w, z1)]
+            if finestre != "rette":
+                r = w * ISO_SCALE
+                shape += [at(t + w * math.cos(th), z1 + r * math.sin(th)) for th in [math.pi * j / 8 for j in range(1, 8)]]
+            shape += [at(t - w, z1)]
+            out.append(f'<polygon points="{iso_poly(shape)}" fill="{glass}" stroke="{frame}" stroke-width="0.7"/>')
+            if finestre == "balconi":
+                sill = [at(t - w - 0.5, z0, 0.05), at(t + w + 0.5, z0, 0.05), at(t + w + 0.5, z0, 0.9), at(t - w - 0.5, z0, 0.9)]
+                out.append(f'<polygon points="{iso_poly(sill)}" fill="{colors[2]}"/>')
+                rail = [at(t - w - 0.5, z0, 0.9), at(t + w + 0.5, z0, 0.9), at(t + w + 0.5, z0 + 3, 0.9), at(t - w - 0.5, z0 + 3, 0.9)]
+                out.append(f'<polygon points="{iso_poly(rail)}" fill="{colors[2]}" stroke="#C9BC9E" stroke-width="0.3"/>')
+    out.append(f'<polygon points="{iso_poly([(x, y, z + h) for x, y in pts])}" fill="{colors[2]}"/>')
     return out
 
 
@@ -917,6 +989,28 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
                 return out
             if kind == "vetro":
                 return storey(z, lit, h, own, band.get("telaio"))
+            if kind == "palazzo":
+                colors = CLADDING[band.get("rivestimento", "stucco")]
+                return palazzo(own, z, h, lit, colors, band.get("finestre", "archi"), band.get("bugnato", False))
+            if kind == "cornicione":
+                # A heavy cornice running out over the wall, its shadow beneath.
+                out = []
+                for a, c, _, _ in faces(below, 0, 1):
+                    q = [(a[0], a[1], z - 3), (c[0], c[1], z - 3), (c[0], c[1], z), (a[0], a[1], z)]
+                    out.append(f'<polygon points="{iso_poly(q)}" fill="{SHADOW}" opacity="0.25"/>')
+                return out + prism(offset(own, band.get("sporto", 0.8)), z, z + h, ("#F1EADB", "#D9CDB2"), "#F5F0E4")
+            if kind == "balaustra":
+                # The parapet: a stone balustrade, its posts and balusters.
+                out = prism(own, z, z + h, ("#EFE7D5", "#D8CCB0"), "#F3EDDF")
+                bars = []
+                for a, c, _, _ in faces(own, 0, 1):
+                    k = max(1, int(math.dist(a, c) / 0.7))
+                    for i in range(1, k):
+                        x, y = a[0] + (c[0] - a[0]) * i / k, a[1] + (c[1] - a[1]) * i / k
+                        (px, py0), (_, py1) = iso(x, y, z + 0.8), iso(x, y, z + h - 1)
+                        bars.append(f"M{fmt(px)} {fmt(py0)}V{fmt(py1)}")
+                out.append(f'<path d="{"".join(bars)}" stroke="#BFB297" stroke-width="0.3"/>')
+                return out
             if kind == "opalino":
                 # Milky white glass panels between thin mullions; lit, they glow.
                 colors = ("#FBE6B4", "#EED39A", "#F6F7F9") if lit else ("#F1F3F6", "#DCE1E7", "#F6F7F9")
@@ -980,7 +1074,8 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
                         courses.append(f"M{fmt(x0)} {fmt(y0)}L{fmt(x1)} {fmt(y1)}")
                 out.append(f'<path d="{"".join(courses)}" stroke="#FFFFFF" stroke-width="0.5" opacity="0.35"/>')
             return out
-        zmid.setdefault(csip, z + h / 2)
+        if not band.get("decoro"):              # a cornice or a parapet is no floor of its own
+            zmid.setdefault(csip, z + h / 2)
         strati.append(Strato(csip + tag, "piani", body(False), ["iso-glass-l", "iso-glass-r"], piano=csip,
                              lit=body(True), lit_defs=["iso-lit-l", "iso-lit-r", "iso-lit-glow"]))
         if band.get("ingresso"):
@@ -1187,6 +1282,8 @@ def draw_iso(campus, b):
     elif b.get("profilo"):
         # A building that is not a stack of like storeys: its bands, bottom up, as drawn.
         top = draw_profile(b, pts, turn, base_h, storey, door, strati, zmid)
+        if b.get("pinnacoli") or b.get("orologio"):
+            strati.append(Strato("pinnacoli", "edifici", pinnacles(b, turn, top)))
         if b.get("lamelle"):
             strati.append(Strato("lamelle", "edifici", lamellae(b, pts, turn, base_h, top)))
         if ent and ent.get("rampa"):
