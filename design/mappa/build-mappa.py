@@ -331,7 +331,8 @@ def write_drawing(dest, name, view, width, height, strati):
     for old in folder.glob("*.svg"):
         old.unlink()
     head = svg_head(view, width, height)
-    combined = [head] + defs_block(d for s in strati for d in s.defs)
+    # The single file also carries the highlight gradients, so a floor can be lit in place.
+    combined = [head] + defs_block(d for s in strati for d in s.defs + s.lit_defs)
     entries = []
     for i, s in enumerate(strati, 1):
         hidden = "" if LIVELLI[s.livello][1] else ' style="display: none"'
