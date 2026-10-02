@@ -62,6 +62,7 @@ ISO_LIT_RIGHT = ("#FBE2A2", "#ECB65A")
 LIGHT_SPILL = "#FFD98A"
 LIGHT_DESK = "#D9963A"
 LIGHT_FRAME = "#9C7434"
+LIGHT_DIM = "#B87A24"
 ISO_ROOF_INNER = "#EEF0F3"
 ISO_PLANT = ("#E3E6EB", "#C7CCD5", "#FFFFFF")
 ISO_LOT = ("#C8D4E1", "#AFBFD0", "#E3ECF5")
@@ -131,6 +132,9 @@ DEFS = {
     "iso-glass-r": grad("iso-glass-r", *ISO_GLASS_RIGHT),
     "iso-lit-l": grad("iso-lit-l", *ISO_LIT_LEFT),
     "iso-lit-r": grad("iso-lit-r", *ISO_LIT_RIGHT),
+    "iso-lit-glow": ('<linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1">'
+                     '<stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/>'
+                     '<stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>'),
     "iso-shadow": (f'<radialGradient id="iso-shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="{ISO_SHADOW}" stop-opacity="0.22"/>'
                    f'<stop offset="1" stop-color="{ISO_SHADOW}" stop-opacity="0"/></radialGradient>'),
     "iso-tree": ('<radialGradient id="iso-tree" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#9FD08A"/>'
@@ -598,37 +602,42 @@ def draw_iso(campus, b):
 
     def storey(z0, lit):
         """One floor. Lit, it is the same floor at dusk with its lights on:
-        warm rooms behind the glass, a row of ceiling lights, desks catching
-        the light, frames dark against it, and a glow spilling onto the slab."""
+        warm rooms behind the glass, brightest under the ceiling where the
+        light comes from, each bay a little different as rooms are, desks
+        catching the light, frames dark against it, and a glow on the slab."""
         gl, gr = ("url(#iso-lit-l)", "url(#iso-lit-r)") if lit else ("url(#iso-glass-l)", "url(#iso-glass-r)")
         g0, g1 = z0 + ISO_SLAB, z0 + ISO_FLOOR
         out = prism(pts, z0, g0, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
-        mullions, lamps, desks = [], [], []
-        for a, c, is_left, q in faces(glass, g0, g1):
+        mullions, desks = [], []
+        for k, (a, c, is_left, q) in enumerate(faces(glass, g0, g1)):
             if lit:
                 spill = [(a[0], a[1], z0), (c[0], c[1], z0), (c[0], c[1], g0), (a[0], a[1], g0)]
                 out.append(f'<polygon points="{iso_poly(spill)}" fill="{LIGHT_SPILL}" opacity="0.55"/>')
             out.append(f'<polygon points="{iso_poly(q)}" fill="{gl if is_left else gr}"/>')
+            n = max(1, round(math.dist(a, c) / ISO_MULLION))
+            at = lambda t: (a[0] + (c[0] - a[0]) * t, a[1] + (c[1] - a[1]) * t)
             if lit:
-                ceiling = [(a[0], a[1], g1 - 3.2), (c[0], c[1], g1 - 3.2), (c[0], c[1], g1), (a[0], a[1], g1)]
-                out.append(f'<polygon points="{iso_poly(ceiling)}" fill="#FFFFFF" opacity="0.5"/>')
-                (lx0, ly0), (lx1, ly1) = iso(a[0], a[1], g1 - 4.6), iso(c[0], c[1], g1 - 4.6)
-                lamps.append(f"M{fmt(lx0)} {fmt(ly0)}L{fmt(lx1)} {fmt(ly1)}")
+                # No two rooms glow the same: a fixed, irregular rhythm of dimmer and brighter bays.
+                for j in range(n):
+                    tone = (k * 5 + j * 3) % 7
+                    if tone in (0, 4):
+                        fill, alpha = LIGHT_DIM, 0.14
+                    elif tone == 2:
+                        fill, alpha = "#FFFFFF", 0.18
+                    else:
+                        continue
+                    (x0, y0), (x1, y1) = at(j / n), at((j + 1) / n)
+                    bay = [(x0, y0, g0), (x1, y1, g0), (x1, y1, g1), (x0, y0, g1)]
+                    out.append(f'<polygon points="{iso_poly(bay)}" fill="{fill}" opacity="{alpha}"/>')
+                ceiling = [(a[0], a[1], g1 - 7), (c[0], c[1], g1 - 7), (c[0], c[1], g1), (a[0], a[1], g1)]
+                out.append(f'<polygon points="{iso_poly(ceiling)}" fill="url(#iso-lit-glow)"/>')
                 (dx0, dy0), (dx1, dy1) = iso(a[0], a[1], g0 + 3.2), iso(c[0], c[1], g0 + 3.2)
                 desks.append(f"M{fmt(dx0)} {fmt(dy0)}L{fmt(dx1)} {fmt(dy1)}")
-            n = max(1, round(math.dist(a, c) / ISO_MULLION))
             for i in range(1, n):
-                t = i / n
-                x, y = a[0] + (c[0] - a[0]) * t, a[1] + (c[1] - a[1]) * t
-                (px, py0), (_, py1) = iso(x, y, g0), iso(x, y, g1)
+                (px, py0), (_, py1) = iso(*at(i / n), g0), iso(*at(i / n), g1)
                 mullions.append(f"M{fmt(px)} {fmt(py0)}V{fmt(py1)}")
         if lit:
-            out.append(f'<path d="{"".join(desks)}" stroke="{LIGHT_DESK}" stroke-width="1.1" opacity="0.6"/>')
-            # Ceiling spotlights: round dots, each in a soft halo on the same rhythm.
-            out.append(f'<path d="{"".join(lamps)}" stroke="#FFFFFF" stroke-width="4" stroke-dasharray="0.1 6" '
-                       f'stroke-linecap="round" opacity="0.4"/>')
-            out.append(f'<path d="{"".join(lamps)}" stroke="#FFFFFF" stroke-width="1.7" stroke-dasharray="0.1 6" '
-                       f'stroke-linecap="round"/>')
+            out.append(f'<path d="{"".join(desks)}" stroke="{LIGHT_DESK}" stroke-width="1.1" opacity="0.4"/>')
             out.append(f'<path d="{"".join(mullions)}" stroke="{LIGHT_FRAME}" stroke-width="1.2" opacity="0.55"/>')
         else:
             out.append(f'<path d="{"".join(mullions)}" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>')
@@ -637,7 +646,7 @@ def draw_iso(campus, b):
     for f, csip in enumerate(levels):
         z0 = base_h + f * ISO_FLOOR
         strati.append(Strato(csip, "piani", storey(z0, False), ["iso-glass-l", "iso-glass-r"], piano=csip,
-                             lit=storey(z0, True), lit_defs=["iso-lit-l", "iso-lit-r"]))
+                             lit=storey(z0, True), lit_defs=["iso-lit-l", "iso-lit-r", "iso-lit-glow"]))
         if f == 0:
             # The door sits on the ground floor; anything higher is drawn over it.
             strati.append(Strato("ingresso", "ingressi", door))
