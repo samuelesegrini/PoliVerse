@@ -666,8 +666,9 @@ CLADDING = {"ceramica": ("#E6E0D4", "#CDC5B6", "#F1EDE5"),
             "bianco": ("#F6F7F9", "#DDE0E5", "#FFFFFF"),
             "cemento": ("#DCD8D0", "#C4BFB5", "#E8E5DF"),     # the Trifoglio's concrete base
             "mosaico": ("#6B6E75", "#565960", "#7A7D84"),
-            "stucco": ("#EDE4CF", "#D6CAAD", "#F3EDDF"),      # the Rettorato's cream
-            "pietra": ("#B4B2AA", "#9C9A92", "#C6C4BC")}     # and its grey glass mosaic
+            "stucco": ("#E4DFD3", "#CAC4B5", "#EEEAE1"),      # the Rettorato's grey-beige stone
+            "pietra": ("#B4B2AA", "#9C9A92", "#C6C4BC"),
+            "intonaco": ("#ECE7DC", "#D4CEC0", "#F2EFE8")}    # the courtyard wings' pale render     # and its grey glass mosaic
 WINDOW_FRAME = "#F4F5F7"
 STEEL = "#23272E"             # Viganò's black steel
 STEEL_RED = "#C0503B"         # and his red
@@ -786,24 +787,44 @@ def sculpture_a(pts, at, top):
 
 
 def ornaments(part, own, turn, top, z0):
-    """A palazzo's crown and steps: a curved pediment over the middle of the front
-    (`frontone`: a point on it and its width), obelisks, a clock turret, and a flight
-    of steps before the door (`scalinata`: a point on the front, width, depth, steps)."""
+    """A palazzo's crown and steps: curved pediments over the front (`frontone`, one or
+    a list: a point on it, its width, how far below the top it starts), arched doorways
+    (`portoni`), obelisks, a clock turret, and a flight of steps before the door
+    (`scalinata`: a point on the front, width, depth, steps)."""
     out = []
     if part.get("frontone"):
-        f = part["frontone"]
-        q, a, c, _ = nearest_edge(turn(tuple(f["punto"])), [own])
+        for f in part["frontone"] if isinstance(part["frontone"], list) else [part["frontone"]]:
+            q, a, c, _ = nearest_edge(turn(tuple(f["punto"])), [own])
+            n = outward(a, c, own)
+            L = math.dist(a, c)
+            u = ((c[0] - a[0]) / L, (c[1] - a[1]) / L)
+            w, zb, rise = f.get("larghezza", 10) / 2, top - f.get("sotto", 0), f.get("freccia", 6)
+            at = lambda t, zz, o=0.6: (q[0] + u[0] * t + n[0] * o, q[1] + u[1] * t + n[1] * o, zz)
+            arc = [at(w * math.cos(th), zb + rise * math.sin(th)) for th in [math.pi * k / 16 for k in range(17)]]
+            inner = [at(0.82 * w * math.cos(th), zb + rise * 0.72 * math.sin(th)) for th in [math.pi * k / 16 for k in range(16, -1, -1)]]
+            out.append(f'<polygon points="{iso_poly([at(w, zb), *arc, at(-w, zb)])}" fill="#E4DFD3" stroke="#B9B2A2" stroke-width="0.4"/>')
+            out.append(f'<polygon points="{iso_poly(arc[1:-1] + inner[1:-1])}" fill="#EFEBE2" stroke="#C7C0B0" stroke-width="0.25"/>')
+            crest = [at(-1.3, zb - 4), at(1.3, zb - 4), at(1.5, zb + 1.5), at(0, zb + 4), at(-1.5, zb + 1.5)]
+            out.append(f'<polygon points="{iso_poly(crest)}" fill="#CFC8B7" stroke="#A9A291" stroke-width="0.3"/>')
+    if part.get("portoni"):
+        # Arched doorways in the middle of the front, iron gates in them.
+        d = part["portoni"]
+        q, a, c, _ = nearest_edge(turn(tuple(d["punto"])), [own])
         n = outward(a, c, own)
         L = math.dist(a, c)
         u = ((c[0] - a[0]) / L, (c[1] - a[1]) / L)
-        w = f.get("larghezza", 10) / 2
-        at = lambda t, zz, o=0.3: (q[0] + u[0] * t + n[0] * o, q[1] + u[1] * t + n[1] * o, zz)
-        arc = [at(w * math.cos(th), top + 2 + 9 * math.sin(th)) for th in [math.pi * k / 16 for k in range(17)]]
-        inner = [at(0.8 * w * math.cos(th), top + 2 + 7 * math.sin(th)) for th in [math.pi * k / 16 for k in range(16, -1, -1)]]
-        out.append(f'<polygon points="{iso_poly([at(w, top), *arc, at(-w, top)])}" fill="#EDE4CF" stroke="#CDBF9F" stroke-width="0.4"/>')
-        out.append(f'<polygon points="{iso_poly(arc[1:-1] + inner[1:-1])}" fill="#F5EFE1"/>')
-        crest = [at(-1.4, top + 4), at(1.4, top + 4), at(1.4, top + 9), at(0, top + 10.5), at(-1.4, top + 9)]
-        out.append(f'<polygon points="{iso_poly(crest)}" fill="#D9CCAE" stroke="#BFB094" stroke-width="0.3"/>')
+        k, step, hz, zb = d.get("n", 3), d.get("passo", 4.9), d.get("h", 10), z0 + d.get("da", 4)
+        for i in range(k):
+            t = (i - (k - 1) / 2) * step
+            at = lambda tt, zz: (q[0] + u[0] * tt + n[0] * 0.25, q[1] + u[1] * tt + n[1] * 0.25, zz)
+            w = 1.3
+            shape = [at(t - w, zb), at(t + w, zb), at(t + w, zb + hz)]
+            shape += [at(t + w * math.cos(th), zb + hz + w * ISO_SCALE * math.sin(th)) for th in [math.pi * j / 8 for j in range(1, 8)]]
+            shape += [at(t - w, zb + hz)]
+            out.append(f'<polygon points="{iso_poly(shape)}" fill="#2C3138" stroke="#E9E4D8" stroke-width="0.6"/>')
+            bars = "".join(f'M{fmt(iso(*at(t + dt, zb)[:2], zb)[0])} {fmt(iso(*at(t + dt, zb)[:2], zb)[1])}'
+                           f'V{fmt(iso(*at(t + dt, zb)[:2], zb + hz)[1])}' for dt in (-0.65, 0, 0.65))
+            out.append(f'<path d="{bars}" stroke="#5B636D" stroke-width="0.35"/>')
     out += pinnacles(part, turn, top)
     if part.get("scalinata"):
         s = part["scalinata"]
@@ -892,7 +913,7 @@ def lamellae(b, pts, turn, z0, top):
     return out
 
 
-def palazzo(pts, z, h, lit, colors, finestre, bugnato=False, bay=4.4):
+def palazzo(pts, z, h, lit, colors, finestre, bugnato=False, bay=4.4, ordine=False):
     """An eclectic palazzo storey, face by face, far ones first: the wall, its rusticated
     joints, a lighter pilaster at each bay, and in each bay a window, `archi` (round
     arched), `balconi` (arched, over a little balustraded balcony) or `rette` (square)."""
@@ -916,8 +937,12 @@ def palazzo(pts, z, h, lit, colors, finestre, bugnato=False, bay=4.4):
         pad = (length - k * bay) / 2
         for i in range(k + 1):                          # pilasters
             t = pad + i * bay
-            p = [at(t - 0.3, z, 0.12), at(t + 0.3, z, 0.12), at(t + 0.3, z + h, 0.12), at(t - 0.3, z + h, 0.12)]
-            out.append(f'<polygon points="{iso_poly(p)}" fill="{colors[2]}" opacity="0.8"/>')
+            wp = 0.55 if ordine else 0.3           # a giant order: broad pilasters, a capital on top
+            p = [at(t - wp, z, 0.2), at(t + wp, z, 0.2), at(t + wp, z + h, 0.2), at(t - wp, z + h, 0.2)]
+            out.append(f'<polygon points="{iso_poly(p)}" fill="{colors[2]}" opacity="0.9"/>')
+            if ordine:
+                cap = [at(t - wp - 0.25, z + h - 1.6, 0.3), at(t + wp + 0.25, z + h - 1.6, 0.3), at(t + wp + 0.25, z + h, 0.3), at(t - wp - 0.25, z + h, 0.3)]
+                out.append(f'<polygon points="{iso_poly(cap)}" fill="#D3CCBC"/>')
         for i in range(k):
             t = pad + i * bay + bay / 2
             w = 0.8 if finestre != "rette" else 0.7
@@ -1028,7 +1053,8 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
                 return storey(z, lit, h, own, band.get("telaio"))
             if kind == "palazzo":
                 colors = CLADDING[band.get("rivestimento", "stucco")]
-                return palazzo(own, z, h, lit, colors, band.get("finestre", "archi"), band.get("bugnato", False))
+                return palazzo(own, z, h, lit, colors, band.get("finestre", "archi"), band.get("bugnato", False),
+                               band.get("campata", 4.4), band.get("ordine", False))
             if kind == "cornicione":
                 # A heavy cornice running out over the wall, its shadow beneath.
                 out = []
@@ -1364,7 +1390,7 @@ def draw_iso(campus, b):
     # Floor tags beside the right-most corner, one per storey.
     right = max(pts, key=lambda p: iso(*p)[0])
     tags = []
-    for f, csip in enumerate(c for c in (list(zmid) if b.get("profilo") else levels)):
+    for f, csip in enumerate(c for c in (list(zmid) if b.get("profilo") or b.get("parti") else levels)):
         px, py = iso(*right, zmid[csip])
         label = FLOOR_TAGS.get(names.get(csip, ""), str(f))
         w = 9 + 4 * max(0, len(label) - 1)

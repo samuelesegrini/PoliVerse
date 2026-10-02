@@ -11,7 +11,20 @@ Sources.
 - Houses the historic Aula Magna (first floor) and the rector's offices.
 - Eclectic, neo-Baroque/neo-Renaissance; a palazzo, not a modern block.
 
-## Massing
+## Correction from the frontal photos
+
+The front is one flat block of even height, not taller corner towers: nine bays, the end
+bays stepping forward a little. Two storeys behind a giant order of pilasters with
+capitals: a rusticated ground floor (barred square windows, three arched doorways with
+iron gates in the middle, a statue in an arched niche in each end bay) and the piano
+nobile (tall arched windows over balustraded balconies). Above: a deep frieze lettered
+"1863 POLITECNICO DI MILANO", a bracketed cornice, the balustrade with stone balls.
+Segmental pediments with a coat of arms crown the end bays; two tall obelisks stand over
+each end bay. Low steps run along almost the whole front. The stone is grey-beige, not
+cream, on a grey granite plinth. The courtyard wings behind are pale render, lower, with
+red-tiled hipped roofs.
+
+## Massing (first reading, superseded where the section above differs)
 
 - Main block: three storeys above a high base, a long front to the piazza (west),
   broken by projecting end bays, each like a small tower, one storey higher.
@@ -66,6 +79,7 @@ Sources.
 - Wikipedia, *Politecnico di Milano*: https://it.wikipedia.org/wiki/Politecnico_di_Milano
 - LM Blog, *Il Politecnico di Milano in Piazza Leonardo da Vinci*:
   https://www.lmblog.it/2025/04/il-politecnico-di-milano-in-piazza-leonardo-da-vinci-cuore-di-citta-studi/
-- Wikimedia Commons photos: *Piazza Leonardo da Vinci - Milano - ingresso POLIMI.jpg*,
+- Wikimedia Commons photos: *Polimi Rettorato Campus Leonardo.jpg*, *Technical University Milan.jpg*,
+  *Giardini rettorato Polimi.jpg*, *Piazza Leonardo da Vinci - Milano - ingresso POLIMI.jpg*,
   *Facciata edificio PoliMi in Piazza Leonardo da Vinci, Milano.jpeg*,
   *MI-Milano-1963-piazza-Leonardo-da-Vinci.jpg*.
