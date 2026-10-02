@@ -209,7 +209,8 @@
             {"piano": "MIA020100S", "tipo": "fessura", "h": 5},
             {
               "piano": "MIA0201000",
-              "tipo": "vetro",
+              "tipo": "portico",
+              "arretrato": 3.0,
               "telaio": "#23272E",
               "h": 18
             },

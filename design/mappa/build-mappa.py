@@ -727,7 +727,8 @@ def sculpture_a(pts, at, top):
 def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, parte=""):
     """Draws the bands of `profilo`, bottom up, from height z; returns the top.
 
-    A band is a floor (`piano`) drawn as `vetro` (a glazed storey), `pieno` (a
+    A band is a floor (`piano`) drawn as `vetro` (a glazed storey), `portico` (an open ground floor, its glass set back
+    `arretrato` metres), `pieno` (a
     blind volume in `rivestimento` ceramica or mattone), `fessura` (a thin dark
     glazed slot) or `sporto` (a blind volume overhanging the one below by
     `sporto` metres, casting its shadow on it; lit, its skylights glow over the
@@ -761,6 +762,25 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
         def body(lit):
             if kind == "vetro":
                 return storey(z, lit, h, own, band.get("telaio"))
+            if kind == "portico":
+                # An open ground floor: the glass set back under the floors above, in their
+                # shadow, the paving running in to it, ducts along the ceiling and orange
+                # railings at the edge.
+                inner = offset(own, -band.get("arretrato", 3.0))
+                out = [f'<polygon points="{iso_poly([(x, y, z) for x, y in own])}" fill="#C3C8CF"/>']
+                out += storey(z, lit, h, inner, band.get("telaio"))
+                for a, c, _, _ in faces(inner, 0, 1):
+                    q = [(*a, z), (*c, z), (*c, z + h), (*a, z + h)]
+                    out.append(f'<polygon points="{iso_poly(q)}" fill="#14181E" opacity="{0.3 if lit else 0.5}"/>')
+                line = lambda a, c, zz: f"M{fmt(iso(*a, zz)[0])} {fmt(iso(*a, zz)[1])}L{fmt(iso(*c, zz)[0])} {fmt(iso(*c, zz)[1])}"
+                mid = offset(own, -1.2)
+                ducts = "".join(line(a, c, z + h - 2.2) for a, c, _, _ in faces(mid, 0, 1))
+                ducts2 = "".join(line(a, c, z + h - 4.4) for a, c, _, _ in faces(mid, 0, 1))
+                out.append(f'<path d="{ducts2}" stroke="#9AA2AC" stroke-width="1.8" fill="none"/>')
+                out.append(f'<path d="{ducts}" stroke="#C9CED5" stroke-width="1.8" fill="none"/>')
+                rail = "".join(line(a, c, zz) for a, c, _, _ in faces(own, 0, 1) for zz in (z + 2.2, z + 4.2))
+                out.append(f'<path d="{rail}" stroke="#E2672A" stroke-width="0.9" fill="none"/>')
+                return out
             if kind == "sporto":
                 out = []
                 # Its shadow on the band below, deepest under the overhang.
