@@ -944,10 +944,38 @@ def draw_iso(campus, b):
         dz0, dz1 = z0 + ISO_SLAB, z0 + ISO_FLOOR * 0.78
         leaf = [(ex + tx * 1.5, ey + ty * 1.5), (ex - tx * 1.5, ey - ty * 1.5)]
         q = [(*leaf[0], dz0), (*leaf[1], dz0), (*leaf[1], dz1), (*leaf[0], dz1)]
-        door.append(f'<polygon points="{iso_poly(q)}" fill="{ISO_DOOR}"/>')
+        if ent.get("rampa"):
+            # A raised ground floor: a ramp from the street up to a landing at the door,
+            # and under the landing the door to the floor below.
+            r = ent["rampa"]
+            zg = base_h + r.get("quota", 5)
+            w, deep, run = r.get("larghezza", 3.0) / 2, r.get("pianerottolo", 4.0), r.get("lunghezza", 12.0)
+            P = lambda s, o, z: (ex + tx * s + nx * o, ey + ty * s + ny * o, z)
+            pale, side, edge = "#E9E6E0", "#CFCAC0", "#BDB7AC"
+            under = [P(1.2, 0.05, 0), P(-1.2, 0.05, 0), P(-1.2, 0.05, zg - 1.6), P(1.2, 0.05, zg - 1.6)]
+            door.append(f'<polygon points="{iso_poly(under)}" fill="#26303D"/>')
+            door.append(f'<polygon points="{iso_poly([P(1.2, 0.05, zg - 1.6), P(-1.2, 0.05, zg - 1.6), P(-1.2, 1.2, zg - 1.6), P(1.2, 1.2, zg - 1.6)])}" fill="{SHADOW}" opacity="0.35"/>')
+            door.append(f'<polygon points="{iso_poly([P(1.5, 0.05, zg), P(-1.5, 0.05, zg), P(-1.5, 0.05, zg + ISO_FLOOR * 0.6), P(1.5, 0.05, zg + ISO_FLOOR * 0.6)])}" fill="{ISO_DOOR}"/>')
+            for s0 in (w - 0.3, -w + 0.3):           # the landing's two posts
+                door.append(f'<path d="M{fmt(iso(*P(s0, deep - 0.3, 0)[:2])[0])} {fmt(iso(*P(s0, deep - 0.3, 0)[:2])[1])}V{fmt(iso(*P(s0, deep - 0.3, zg - 1.2)[:2], zg - 1.2)[1])}" stroke="{side}" stroke-width="1.6"/>')
+            land = [P(w, 0, zg), P(-w, 0, zg), P(-w, deep, zg), P(w, deep, zg)]
+            ramp = [P(w, deep, zg), P(-w, deep, zg), P(-w, deep + run, 0), P(w, deep + run, 0)]
+            for top, z_off in ((ramp, 1.2), (land, 1.2)):
+                for i in range(4):
+                    a3, c3 = top[i], top[(i + 1) % 4]
+                    face = [a3, c3, (c3[0], c3[1], c3[2] - z_off), (a3[0], a3[1], a3[2] - z_off)]
+                    door.append(f'<polygon points="{iso_poly(face)}" fill="{edge}"/>')
+                door.append(f'<polygon points="{iso_poly(top)}" fill="{pale}"/>')
+            rail = "".join(f'M{fmt(iso(*P(s0, 0, zg + 3)[:2], zg + 3)[0])} {fmt(iso(*P(s0, 0, zg + 3)[:2], zg + 3)[1])}'
+                           f'L{fmt(iso(*P(s0, deep, zg + 3)[:2], zg + 3)[0])} {fmt(iso(*P(s0, deep, zg + 3)[:2], zg + 3)[1])}'
+                           f'L{fmt(iso(*P(s0, deep + run, 3)[:2], 3)[0])} {fmt(iso(*P(s0, deep + run, 3)[:2], 3)[1])}' for s0 in (w, -w))
+            door.append(f'<path d="{rail}" stroke="#FFFFFF" stroke-width="0.9" fill="none"/>')
+        else:
+            door.append(f'<polygon points="{iso_poly(q)}" fill="{ISO_DOOR}"/>')
         canopy = ccw([(ex + tx * 3, ey + ty * 3), (ex - tx * 3, ey - ty * 3),
                       (ex - tx * 3 + nx * 3, ey - ty * 3 + ny * 3), (ex + tx * 3 + nx * 3, ey + ty * 3 + ny * 3)])
-        door += prism(canopy, dz1, dz1 + 3, ("#E8EAEE", "#C9CED6"), "#FFFFFF")
+        if not ent.get("rampa"):
+            door += prism(canopy, dz1, dz1 + 3, ("#E8EAEE", "#C9CED6"), "#FFFFFF")
     strati.append(Strato("percorso", "percorsi", walk))
     strati.append(Strato("alberi-dietro", "alberi", [iso_tree(*t) for t in behind], ["iso-tree"]))
     strati.append(Strato("basamento", "edifici", prism(base, 0, base_h, ISO_BASE[:2], ISO_BASE[2])))
@@ -1019,6 +1047,8 @@ def draw_iso(campus, b):
     elif b.get("profilo"):
         # A building that is not a stack of like storeys: its bands, bottom up, as drawn.
         top = draw_profile(b, pts, turn, base_h, storey, door, strati, zmid)
+        if ent and ent.get("rampa"):
+            strati.append(Strato("ingresso", "ingressi", door))
     else:
         for f, csip in enumerate(levels):
             z0 = base_h + f * ISO_FLOOR

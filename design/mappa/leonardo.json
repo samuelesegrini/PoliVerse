@@ -34,7 +34,16 @@
         [-11.0, 20.0, 7.0, 4.0],
         [31.0, -9.0, 8.0, 4.0]
       ],
-      "ingresso": {"lato": 16, "t": 0.66},
+      "ingresso": {
+        "lato": 16,
+        "t": 0.55,
+        "rampa": {
+          "quota": 5,
+          "larghezza": 3.0,
+          "pianerottolo": 4.0,
+          "lunghezza": 12.0
+        }
+      },
       "vista": "sud-ovest",
       "riquadro": [-62, -44, 72, 92],
       "gronda": 3.0,

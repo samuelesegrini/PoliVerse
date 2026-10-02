@@ -269,15 +269,19 @@
           "livello": "edifici"
         },
         {
-          "file": "leonardo/MIA0203-isometrico/10-impianti.svg",
+          "file": "leonardo/MIA0203-isometrico/10-ingresso.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0203-isometrico/11-impianti.svg",
           "livello": "impianti"
         },
         {
-          "file": "leonardo/MIA0203-isometrico/11-alberi-davanti.svg",
+          "file": "leonardo/MIA0203-isometrico/12-alberi-davanti.svg",
           "livello": "alberi"
         },
         {
-          "file": "leonardo/MIA0203-isometrico/12-etichette-piani.svg",
+          "file": "leonardo/MIA0203-isometrico/13-etichette-piani.svg",
           "livello": "etichette-piani"
         }
       ]
