@@ -80,7 +80,44 @@
       "livelli": ["MIA021201I", "MIA021200S", "MIA0212000", "MIA0212001", "MIA0212002", "MIA0212003"],
       "riquadro": [-100, -81, 34, 55],
       "piani_3d": ["MIA0212000", "MIA0212001", "MIA0212002", "MIA0212003"],
-      "ingresso": {"lato": 1, "t": 0.09}
+      "ingresso": {"lato": 1, "t": 0.09},
+      "profilo": [
+        {
+          "piano": "MIA0212000",
+          "tipo": "opalino",
+          "h": 18,
+          "ingresso": true
+        },
+        {
+          "piano": "MIA0212001",
+          "tipo": "vetro",
+          "telaio": "#7F8791",
+          "ballatoio": 1.5,
+          "h": 18
+        },
+        {
+          "piano": "MIA0212002",
+          "tipo": "vetro",
+          "telaio": "#7F8791",
+          "ballatoio": 1.5,
+          "h": 18
+        },
+        {
+          "piano": "MIA0212003",
+          "tipo": "vetro",
+          "telaio": "#7F8791",
+          "ballatoio": 1.5,
+          "h": 18
+        }
+      ],
+      "gronda": 2.0,
+      "lamelle": {
+        "distanza": 2.2,
+        "passo": 0.6,
+        "da": 18,
+        "sopra": 8,
+        "ciechi": [1, 3]
+      }
     },
     {
       "csie": "MIA0209",

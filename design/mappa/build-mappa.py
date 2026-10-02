@@ -727,6 +727,53 @@ def sculpture_a(pts, at, top):
             f'<polygon points="{iso_poly(black_leg)}" fill="{STEEL}"/>']
 
 
+def lamellae(b, pts, turn, z0, top):
+    """Renzo Piano's screen for 16B: a dense row of thin white steel blades standing
+    `distanza` metres out from the glass, from the first floor to `sopra` above the
+    roof, tied at the top; along `ciechi` (edges of `pianta`) a blind white wall
+    instead, out to the same line and from the ground."""
+    cfg = b["lamelle"]
+    d, step, above = cfg.get("distanza", 2.0), cfg.get("passo", 0.6), cfg.get("sopra", 8)
+    z1 = z0 + cfg.get("da", 18)
+    shell = offset(pts, d)
+    raw = [turn(p) for p in b["pianta"]]
+    blind = []
+    for i in cfg.get("ciechi", []):
+        a, c = raw[i], raw[(i + 1) % len(raw)]
+        blind.append(((a[0] + c[0]) / 2, (a[1] + c[1]) / 2, (c[0] - a[0], c[1] - a[1])))
+    def is_blind(a, c):
+        m = ((a[0] + c[0]) / 2, (a[1] + c[1]) / 2)
+        for bx, by, (vx, vy) in blind:
+            cross = abs(vx * (c[1] - a[1]) - vy * (c[0] - a[0])) / (math.hypot(vx, vy) * math.dist(a, c))
+            if cross < 0.05 and math.dist(m, (bx, by)) < d + 3:
+                return True
+        return False
+    out = []
+    for a, c, left, _ in faces(shell, 0, 1):
+        if is_blind(a, c):
+            q = [(*a, 0), (*c, 0), (*c, top + 2.2), (*a, top + 2.2)]
+            out.append(f'<polygon points="{iso_poly(q)}" fill="{"#EEF0F3" if left else "#DADEE3"}"/>')
+            k = max(1, int(math.dist(a, c) / 3.0))
+            joints = "".join(f"M{fmt(iso(a[0] + (c[0] - a[0]) * i / k, a[1] + (c[1] - a[1]) * i / k, 0)[0])} "
+                             f"{fmt(iso(a[0] + (c[0] - a[0]) * i / k, a[1] + (c[1] - a[1]) * i / k, 0)[1])}"
+                             f"V{fmt(iso(a[0] + (c[0] - a[0]) * i / k, a[1] + (c[1] - a[1]) * i / k, top + 2.2)[1])}"
+                             for i in range(1, k))
+            out.append(f'<path d="{joints}" stroke="#C3C8CF" stroke-width="0.35"/>')
+            continue
+        k = max(1, int(math.dist(a, c) / step))
+        blades, ties = [], []
+        for i in range(k + 1):
+            x, y = a[0] + (c[0] - a[0]) * i / k, a[1] + (c[1] - a[1]) * i / k
+            (px, py0), (_, py1) = iso(x, y, z1), iso(x, y, top + above)
+            blades.append(f"M{fmt(px)} {fmt(py0)}V{fmt(py1)}")
+        for zz in (top + above, top + 3):
+            (x0, y0), (x1, y1) = iso(*a, zz), iso(*c, zz)
+            ties.append(f"M{fmt(x0)} {fmt(y0)}L{fmt(x1)} {fmt(y1)}")
+        out.append(f'<path d="{"".join(blades)}" stroke="#F7F8FA" stroke-width="0.45" opacity="0.95"/>')
+        out.append(f'<path d="{"".join(ties)}" stroke="#E6E9ED" stroke-width="0.9"/>')
+    return out
+
+
 def punched(pts, z, h, rows, lit, colors, big=False):
     """Windows cut into a blind wall, face by face, far ones first so nearer faces
     cover them: `rows` rows of small horizontal windows in white frames, every
@@ -803,8 +850,30 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
             skylights.clear()
             z, roofed = z + ISO_SLAB, True
         def body(lit):
+            if kind == "vetro" and band.get("ballatoio"):
+                # A glazed storey behind a walkway: the slab running out in front, a glass
+                # balustrade along its edge.
+                deck = offset(own, band["ballatoio"])
+                out = prism(deck, z, z + 1.6, ("#D9DDE2", "#C3C8CF"), "#E9ECEF")
+                out += storey(z + 1.6, lit, h - 1.6, own, band.get("telaio"))
+                for a, c, _, q in faces(deck, z + 1.6, z + 5.5):
+                    out.append(f'<polygon points="{iso_poly(q)}" fill="#DDE7EF" opacity="0.45" stroke="#B9C2CB" stroke-width="0.5"/>')
+                return out
             if kind == "vetro":
                 return storey(z, lit, h, own, band.get("telaio"))
+            if kind == "opalino":
+                # Milky white glass panels between thin mullions; lit, they glow.
+                colors = ("#FBE6B4", "#EED39A", "#F6F7F9") if lit else ("#F1F3F6", "#DCE1E7", "#F6F7F9")
+                out = prism(own, z, z + h, colors[:2], colors[2])
+                bars = []
+                for a, c, _, _ in faces(own, 0, 1):
+                    k = max(1, int(math.dist(a, c) / 2.4))
+                    for i in range(1, k):
+                        x, y = a[0] + (c[0] - a[0]) * i / k, a[1] + (c[1] - a[1]) * i / k
+                        (px, py0), (_, py1) = iso(x, y, z), iso(x, y, z + h)
+                        bars.append(f"M{fmt(px)} {fmt(py0)}V{fmt(py1)}")
+                out.append(f'<path d="{"".join(bars)}" stroke="#9AA3AD" stroke-width="0.6"/>')
+                return out
             if kind == "portico":
                 # An open ground floor: the glass set back under the floors above, in their
                 # shadow, the paving running in to it, ducts along the ceiling and orange
@@ -1047,6 +1116,8 @@ def draw_iso(campus, b):
     elif b.get("profilo"):
         # A building that is not a stack of like storeys: its bands, bottom up, as drawn.
         top = draw_profile(b, pts, turn, base_h, storey, door, strati, zmid)
+        if b.get("lamelle"):
+            strati.append(Strato("lamelle", "edifici", lamellae(b, pts, turn, base_h, top)))
         if ent and ent.get("rampa"):
             strati.append(Strato("ingresso", "ingressi", door))
     else:

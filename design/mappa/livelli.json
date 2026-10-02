@@ -611,15 +611,19 @@
           "livello": "edifici"
         },
         {
-          "file": "leonardo/MIA0212-isometrico/12-impianti.svg",
+          "file": "leonardo/MIA0212-isometrico/12-lamelle.svg",
+          "livello": "edifici"
+        },
+        {
+          "file": "leonardo/MIA0212-isometrico/13-impianti.svg",
           "livello": "impianti"
         },
         {
-          "file": "leonardo/MIA0212-isometrico/13-alberi-davanti.svg",
+          "file": "leonardo/MIA0212-isometrico/14-alberi-davanti.svg",
           "livello": "alberi"
         },
         {
-          "file": "leonardo/MIA0212-isometrico/14-etichette-piani.svg",
+          "file": "leonardo/MIA0212-isometrico/15-etichette-piani.svg",
           "livello": "etichette-piani"
         }
       ]
