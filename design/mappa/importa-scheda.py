@@ -77,6 +77,12 @@ def inside(p, pts):
     return hit
 
 
+def seg_dist(p, a, b):
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    t = max(0.0, min(1.0, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / ((dx * dx + dy * dy) or 1)))
+    return math.dist(p, (a[0] + dx * t, a[1] + dy * t))
+
+
 def simplify(pts, tol):
     """Douglas–Peucker on a closed ring: drops the CAD's sub-centimetre jitter."""
     if len(pts) < 4:
@@ -167,13 +173,15 @@ def parse_floor(svg):
     shell = chain(lines(layer("SUPLORDAPIANO")))
     arcs = [tuple(map(float, a)) for a in re.findall(
         r'd="M ([-\d.]+) ([-\d.]+) A ([-\d.]+) [-\d.]+ [-\d.]+ (\d) (\d) ([-\d.]+) ([-\d.]+)"', layer("PORTE"))]
+    # Each leaf is drawn open, as a thin rectangle out of its hinge.
+    leaves = lines(layer("PORTE"))
     route = []
     for g in re.findall(r'<line[^>]*class="impianto percorsoDisabili[^"]*"[^>]*>', svg):
         way = 1 if "marker-end" in g else (-1 if "marker-start" in g else 0)
         route.append(((num(g, "x1"), num(g, "y1")), (num(g, "x2"), num(g, "y2")), way))
     fountains = [(float(x), float(y)) for x, y in re.findall(
         r'<use[^>]*transform="translate\(([-\d.]+),([-\d.]+)\)[^"]*"[^>]*class="poi tag_0*%d"' % FOUNTAIN_TAG, svg)]
-    return {"rooms": rooms, "labels": labels, "shell": shell, "arcs": arcs, "route": route,
+    return {"rooms": rooms, "labels": labels, "shell": shell, "arcs": arcs, "leaves": leaves, "route": route,
             "fountains": fountains, "lines": {v: lines(layer(k)) for k, v in LINE_LAYERS.items()}}
 
 
@@ -355,12 +363,20 @@ def main(csie):
             label = f["labels"].get(ref) or area_centroid(ring)
             vani.append({"csiv": csiv, "tipo": kind, "etichetta": T(label),
                          "forma": [[T(p) for p in simplify(r, 0.03)] for r in rings]})
-        doors = []
+        doors, unread = [], 0
         for arc in f["arcs"]:
             hinge, p1, p2, radius = door_from_arc(arc)
-            # The closed leaf lies in the wall; the open one swings into a room.
-            in_room = lambda p: any(inside(((hinge[0] + p[0]) / 2, (hinge[1] + p[1]) / 2), ring) for ring in all_rooms)
-            closed, open_ = (p1, p2) if in_room(p2) and not in_room(p1) else (p2, p1)
+            # The arc ends where the drawn (open) leaf ends; its other end is the closed leaf, in the wall.
+            near_leaf = lambda p: min((seg_dist(p, a, b) for a, b in f["leaves"]), default=1e9)
+            d1, d2 = near_leaf(p1), near_leaf(p2)
+            # The open tip touches its leaf; the closed one is clear of every leaf, its neighbours' included.
+            if min(d1, d2) < 0.03 and max(d1, d2) > 0.12:
+                closed, open_ = (p1, p2) if d2 < d1 else (p2, p1)
+            else:
+                # No leaf drawn: the open one swings into a room.
+                in_room = lambda p: any(inside(((hinge[0] + p[0]) / 2, (hinge[1] + p[1]) / 2), ring) for ring in all_rooms)
+                closed, open_ = (p1, p2) if in_room(p2) and not in_room(p1) else (p2, p1)
+                unread += 1
             ux, uy = closed[0] - hinge[0], closed[1] - hinge[1]
             n = math.hypot(ux, uy) or 1
             nx, ny = -uy / n, ux / n
@@ -378,7 +394,8 @@ def main(csie):
             "percorso_accessibile": [T(a) + T(b) + [way] for a, b, way in f["route"]],
             "acqua": [T(p) for p in f["fountains"]],
         }
-        print(f"{c}: {len(vani)} rooms, {len(doors)} doors ({sum(d['esterna'] for d in doors)} outside), "
+        print(f"{c}: {len(vani)} rooms, {len(doors)} doors ({sum(d['esterna'] for d in doors)} outside, "
+              f"{unread} without a drawn leaf), "
               f"{len(f['route'])} route segments, {len(f['fountains'])} fountains")
     dest = HERE / "piante" / f"{csie}-geometria.json"
     dest.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")) + "\n")

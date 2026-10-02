@@ -354,7 +354,8 @@ def entrance_arrow(q, n, main=False):
     """A triangle outside the wall, pointing in through the door."""
     nx, ny = n
     tx, ty = -ny, nx
-    length, half = (3.2, 1.7) if main else (1.9, 0.95)
+    # Taller than wide, so which way it points reads at a glance.
+    length, half = (3.4, 1.45) if main else (2.2, 0.68)
     tip = (q[0] + nx * 0.35, q[1] + ny * 0.35)
     base = (q[0] + nx * length, q[1] + ny * length)
     tri = [tip, (base[0] + tx * half, base[1] + ty * half), (base[0] - tx * half, base[1] - ty * half)]
@@ -970,20 +971,41 @@ def draw_plan(b, floor, geo):
     for d in geo["porte"]:
         if not d["esterna"]:
             continue
-        h, c = d["cardine"], d["chiusa"]
+        h, c, o = d["cardine"], d["chiusa"], d["aperta"]
         mid = ((h[0] + c[0]) / 2, (h[1] + c[1]) / 2)
         n = math.dist(h, c) or 1
         nx, ny = -(c[1] - h[1]) / n, (c[0] - h[0]) / n
         # Which way is out is read from the door itself: its far side lies outside the outline.
         if inside((mid[0] + nx * 0.9, mid[1] + ny * 0.9), outline):
             nx, ny = -nx, -ny
-        outside.append((mid, (nx, ny)))
-    for g in clusters(outside, lambda p, q: math.dist(p[0], q[0]) < 2.5):
-        p = centroid([m for m, _ in g])
+        outside.append({"cardine": h, "chiusa": c, "aperta": o, "n": (nx, ny)})
+    # A doorway is the leaves that close onto the same point (both halves of a double door).
+    doorways = []
+    for g in clusters(outside, lambda s, t: math.dist(s["chiusa"], t["chiusa"]) < 0.15):
+        p = centroid([s["cardine"] for s in g] + ([g[0]["chiusa"]] if len(g) == 1 else []))
+        n = g[0]["n"]
+        t = 0.0
+        while t < 3 and inside((p[0] + n[0] * t, p[1] + n[1] * t), outline):
+            t += 0.05
+        probe = (p[0] + n[0] * (t + 0.6), p[1] + n[1] * (t + 0.6))
+        onto = next((rm for rm in rooms if rm["fuori"] and inside(probe, rm["rings"][0])), None)
+        # A door onto a ledge or balcony is no way out; one onto an outdoor stair is.
+        if onto and onto["tipo"] != "scale" and abs(signed_area(onto["rings"][0])) < 8:
+            continue
+        doorways.append({"p": p, "n": n, "leaves": g, "t": t, "onto": onto and onto["csiv"]})
+    # Doorways side by side in one wall, onto the same outdoor space, are one way in.
+    same_way = lambda a, b: (math.dist(a["p"], b["p"]) < 3.0 and a["onto"] == b["onto"]
+                             and a["n"][0] * b["n"][0] + a["n"][1] * b["n"][1] > 0.95)
+    for bank in clusters(doorways, same_way):
+        p = centroid([d["p"] for d in bank])
         if main and math.dist(p, main) < 4:
             continue
-        n = g[0][1]
-        ways.append(entrance_arrow((p[0] + n[0] * 0.3, p[1] + n[1] * 0.3), n))
+        n = bank[0]["n"]
+        # Just past the wall's outer face, and clear of any leaf that swings out.
+        swing = max((s["aperta"][0] - p[0]) * n[0] + (s["aperta"][1] - p[1]) * n[1]
+                    for d in bank for s in d["leaves"])
+        t = max(max(d["t"] for d in bank), swing + 0.1)
+        ways.append(entrance_arrow((p[0] + n[0] * t, p[1] + n[1] * t), n))
     strati.append(Strato("ingressi", "ingressi", ways))
 
     wc = [rm for rm in rooms if rm["tipo"] == "wc" and not rm["fuori"]]
