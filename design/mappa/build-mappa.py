@@ -111,6 +111,14 @@ LIVELLI = {
     "lampioni": ("Lampioni", False, False),
     "dae": ("Defibrillatori", True, False),
     "acqua": ("Fontanelle", True, False),
+    "panchine": ("Panchine", True, False),
+    "tavoli": ("Tavoli da picnic", True, False),
+    "cestini": ("Cestini", False, False),
+    "riciclo": ("Raccolta differenziata", False, False),
+    "bagni": ("Bagni", True, False),
+    "ristoro": ("Bar e ristoro", True, False),
+    "distributori": ("Distributori automatici", True, False),
+    "opere": ("Opere d'arte", True, False),
     "nomi": ("Nomi", True, False),
     "numeri": ("Numeri degli edifici", True, False),
     "etichette": ("Nomi delle aule", True, False),
@@ -425,6 +433,44 @@ def write_drawing(dest, name, view, width, height, strati):
 
 # ---------------------------------------------------------------- top-down
 
+WOOD, WOOD_EDGE = "#C9A57A", "#A9865C"
+
+
+def glyph_text(label, size=0.95):
+    return lambda x, y: (f'<text x="{fmt(x)}" y="{fmt(y + size * 0.36)}" font-size="{fmt(size)}" font-weight="700" '
+                         f'text-anchor="middle" fill="{BADGE_FOCUS}" {FONT}>{label}</text>')
+
+
+def glyph_cup(x, y):
+    p = lambda dx, dy: f"{fmt(x + dx)} {fmt(y + dy)}"
+    return (f'<path d="M{p(-0.55, -0.45)}H{fmt(x + 0.4)}V{fmt(y + 0.25)}A0.4 0.4 0 0 1 {p(0, 0.65)}H{fmt(x - 0.15)}'
+            f'A0.4 0.4 0 0 1 {p(-0.55, 0.25)}Z" fill="{BADGE_FOCUS}"/>'
+            f'<path d="M{p(0.4, -0.25)}H{fmt(x + 0.6)}A0.22 0.22 0 0 1 {p(0.6, 0.2)}H{fmt(x + 0.4)}" fill="none" '
+            f'stroke="{BADGE_FOCUS}" stroke-width="0.16"/>')
+
+
+def glyph_vending(x, y):
+    return (f'<rect x="{fmt(x - 0.5)}" y="{fmt(y - 0.8)}" width="1" height="1.6" rx="0.15" fill="{BADGE_FOCUS}"/>'
+            f'<rect x="{fmt(x - 0.32)}" y="{fmt(y - 0.6)}" width="0.42" height="0.8" fill="#FFFFFF"/>'
+            f'<rect x="{fmt(x + 0.18)}" y="{fmt(y - 0.6)}" width="0.16" height="0.3" fill="#FFFFFF"/>')
+
+
+def glyph_art(x, y):
+    p = lambda dx, dy: f"{fmt(x + dx)} {fmt(y + dy)}"
+    return f'<path d="M{p(0, -0.85)}L{p(0.8, 0)}L{p(0, 0.85)}L{p(-0.8, 0)}Z" fill="#9B6BC9"/>'
+
+
+def map_bench(x, y):
+    return (f'<rect x="{fmt(x - 0.9)}" y="{fmt(y - 0.3)}" width="1.8" height="0.6" rx="0.2" fill="{WOOD}" '
+            f'stroke="{WOOD_EDGE}" stroke-width="0.12"/>')
+
+
+def map_picnic(x, y):
+    return (f'<rect x="{fmt(x - 0.9)}" y="{fmt(y - 1.0)}" width="1.8" height="0.35" rx="0.12" fill="{WOOD_EDGE}"/>'
+            f'<rect x="{fmt(x - 0.9)}" y="{fmt(y + 0.65)}" width="1.8" height="0.35" rx="0.12" fill="{WOOD_EDGE}"/>'
+            f'<rect x="{fmt(x - 0.9)}" y="{fmt(y - 0.45)}" width="1.8" height="0.9" rx="0.15" fill="{WOOD}"/>')
+
+
 def map_tree(x, y, r):
     return (f'<circle cx="{fmt(x)}" cy="{fmt(y)}" r="{fmt(r)}" fill="{TREE}"/>'
             f'<circle cx="{fmt(x + r * 0.3)}" cy="{fmt(y + r * 0.3)}" r="{fmt(r)}" fill="{TREE_SHADE}" opacity="0.5"/>'
@@ -508,6 +554,16 @@ def draw_map(campus, focus):
                           for x, y in ctx.get("lampioni", [])], ["mp-glow"]))
     strati.append(Strato("dae", "dae", [marker(x, y, glyph_heart, ALERT) for x, y in ctx.get("dae", [])]))
     strati.append(Strato("acqua", "acqua", [marker(x, y, glyph_drop) for x, y in ctx.get("acqua", [])]))
+    strati.append(Strato("panchine", "panchine", [map_bench(x, y) for x, y in ctx.get("panchine", [])]))
+    strati.append(Strato("tavoli", "tavoli", [map_picnic(x, y) for x, y in ctx.get("tavoli", [])]))
+    strati.append(Strato("cestini", "cestini", [f'<circle cx="{fmt(x)}" cy="{fmt(y)}" r="0.4" fill="#8E959E" '
+                                                f'stroke="#FFFFFF" stroke-width="0.12"/>' for x, y in ctx.get("cestini", [])]))
+    strati.append(Strato("riciclo", "riciclo", [f'<rect x="{fmt(x - 0.5)}" y="{fmt(y - 0.5)}" width="1" height="1" rx="0.2" '
+                                                f'fill="#6FA86A" stroke="#FFFFFF" stroke-width="0.12"/>' for x, y in ctx.get("riciclo", [])]))
+    strati.append(Strato("bagni", "bagni", [marker(x, y, glyph_text("WC")) for x, y in ctx.get("bagni", [])]))
+    strati.append(Strato("ristoro", "ristoro", [marker(*r["punto"], glyph_cup) for r in ctx.get("ristoro", [])]))
+    strati.append(Strato("distributori", "distributori", [marker(x, y, glyph_vending) for x, y in ctx.get("distributori", [])]))
+    strati.append(Strato("opere", "opere", [marker(*o["punto"], glyph_art) for o in ctx.get("opere", [])]))
 
     names = []
     for b in campus["edifici"]:
@@ -1543,6 +1599,11 @@ def main():
                     name = f"{floor['csip']}-pianta"
                     disegni[f"{src.stem}/{name}"] = write_drawing(dest, name, *draw_plan(b, floor, geo[floor["csip"]]))
                     print(f"{src.stem}/{floor['csip']}  piano {floor['nome']}")
+        for parco in campus.get("parchi", []):
+            # A park drawn on its own: the map of its frame, with what it offers.
+            name = f"parco-{parco['id']}-mappa"
+            disegni[f"{src.stem}/{name}"] = write_drawing(dest, name, *draw_map(campus, parco))
+            print(f"{src.stem}/{name}  {parco['nome']}")
     catalogue = {k: {"nome": n, "predefinito": on, "fisso": fixed} for k, (n, on, fixed) in LIVELLI.items()}
     (HERE / "livelli.json").write_text(json.dumps({"livelli": catalogue, "disegni": disegni},
                                                   indent=2, ensure_ascii=False) + "\n")

@@ -130,6 +130,46 @@
       "predefinito": true,
       "fisso": false
     },
+    "panchine": {
+      "nome": "Panchine",
+      "predefinito": true,
+      "fisso": false
+    },
+    "tavoli": {
+      "nome": "Tavoli da picnic",
+      "predefinito": true,
+      "fisso": false
+    },
+    "cestini": {
+      "nome": "Cestini",
+      "predefinito": false,
+      "fisso": false
+    },
+    "riciclo": {
+      "nome": "Raccolta differenziata",
+      "predefinito": false,
+      "fisso": false
+    },
+    "bagni": {
+      "nome": "Bagni",
+      "predefinito": true,
+      "fisso": false
+    },
+    "ristoro": {
+      "nome": "Bar e ristoro",
+      "predefinito": true,
+      "fisso": false
+    },
+    "distributori": {
+      "nome": "Distributori automatici",
+      "predefinito": true,
+      "fisso": false
+    },
+    "opere": {
+      "nome": "Opere d'arte",
+      "predefinito": true,
+      "fisso": false
+    },
     "nomi": {
       "nome": "Nomi",
       "predefinito": true,
@@ -213,11 +253,43 @@
           "livello": "acqua"
         },
         {
-          "file": "leonardo/MIA0203-mappa/15-nomi.svg",
+          "file": "leonardo/MIA0203-mappa/15-panchine.svg",
+          "livello": "panchine"
+        },
+        {
+          "file": "leonardo/MIA0203-mappa/16-tavoli.svg",
+          "livello": "tavoli"
+        },
+        {
+          "file": "leonardo/MIA0203-mappa/17-cestini.svg",
+          "livello": "cestini"
+        },
+        {
+          "file": "leonardo/MIA0203-mappa/18-riciclo.svg",
+          "livello": "riciclo"
+        },
+        {
+          "file": "leonardo/MIA0203-mappa/19-bagni.svg",
+          "livello": "bagni"
+        },
+        {
+          "file": "leonardo/MIA0203-mappa/20-ristoro.svg",
+          "livello": "ristoro"
+        },
+        {
+          "file": "leonardo/MIA0203-mappa/21-distributori.svg",
+          "livello": "distributori"
+        },
+        {
+          "file": "leonardo/MIA0203-mappa/22-opere.svg",
+          "livello": "opere"
+        },
+        {
+          "file": "leonardo/MIA0203-mappa/23-nomi.svg",
           "livello": "nomi"
         },
         {
-          "file": "leonardo/MIA0203-mappa/16-numeri.svg",
+          "file": "leonardo/MIA0203-mappa/24-numeri.svg",
           "livello": "numeri"
         }
       ]
@@ -545,11 +617,43 @@
           "livello": "acqua"
         },
         {
-          "file": "leonardo/MIA0212-mappa/15-nomi.svg",
+          "file": "leonardo/MIA0212-mappa/15-panchine.svg",
+          "livello": "panchine"
+        },
+        {
+          "file": "leonardo/MIA0212-mappa/16-tavoli.svg",
+          "livello": "tavoli"
+        },
+        {
+          "file": "leonardo/MIA0212-mappa/17-cestini.svg",
+          "livello": "cestini"
+        },
+        {
+          "file": "leonardo/MIA0212-mappa/18-riciclo.svg",
+          "livello": "riciclo"
+        },
+        {
+          "file": "leonardo/MIA0212-mappa/19-bagni.svg",
+          "livello": "bagni"
+        },
+        {
+          "file": "leonardo/MIA0212-mappa/20-ristoro.svg",
+          "livello": "ristoro"
+        },
+        {
+          "file": "leonardo/MIA0212-mappa/21-distributori.svg",
+          "livello": "distributori"
+        },
+        {
+          "file": "leonardo/MIA0212-mappa/22-opere.svg",
+          "livello": "opere"
+        },
+        {
+          "file": "leonardo/MIA0212-mappa/23-nomi.svg",
           "livello": "nomi"
         },
         {
-          "file": "leonardo/MIA0212-mappa/16-numeri.svg",
+          "file": "leonardo/MIA0212-mappa/24-numeri.svg",
           "livello": "numeri"
         }
       ]
@@ -1085,11 +1189,43 @@
           "livello": "acqua"
         },
         {
-          "file": "leonardo/MIA0209-mappa/15-nomi.svg",
+          "file": "leonardo/MIA0209-mappa/15-panchine.svg",
+          "livello": "panchine"
+        },
+        {
+          "file": "leonardo/MIA0209-mappa/16-tavoli.svg",
+          "livello": "tavoli"
+        },
+        {
+          "file": "leonardo/MIA0209-mappa/17-cestini.svg",
+          "livello": "cestini"
+        },
+        {
+          "file": "leonardo/MIA0209-mappa/18-riciclo.svg",
+          "livello": "riciclo"
+        },
+        {
+          "file": "leonardo/MIA0209-mappa/19-bagni.svg",
+          "livello": "bagni"
+        },
+        {
+          "file": "leonardo/MIA0209-mappa/20-ristoro.svg",
+          "livello": "ristoro"
+        },
+        {
+          "file": "leonardo/MIA0209-mappa/21-distributori.svg",
+          "livello": "distributori"
+        },
+        {
+          "file": "leonardo/MIA0209-mappa/22-opere.svg",
+          "livello": "opere"
+        },
+        {
+          "file": "leonardo/MIA0209-mappa/23-nomi.svg",
           "livello": "nomi"
         },
         {
-          "file": "leonardo/MIA0209-mappa/16-numeri.svg",
+          "file": "leonardo/MIA0209-mappa/24-numeri.svg",
           "livello": "numeri"
         }
       ]
@@ -1411,11 +1547,43 @@
           "livello": "acqua"
         },
         {
-          "file": "leonardo/MIA0205-mappa/15-nomi.svg",
+          "file": "leonardo/MIA0205-mappa/15-panchine.svg",
+          "livello": "panchine"
+        },
+        {
+          "file": "leonardo/MIA0205-mappa/16-tavoli.svg",
+          "livello": "tavoli"
+        },
+        {
+          "file": "leonardo/MIA0205-mappa/17-cestini.svg",
+          "livello": "cestini"
+        },
+        {
+          "file": "leonardo/MIA0205-mappa/18-riciclo.svg",
+          "livello": "riciclo"
+        },
+        {
+          "file": "leonardo/MIA0205-mappa/19-bagni.svg",
+          "livello": "bagni"
+        },
+        {
+          "file": "leonardo/MIA0205-mappa/20-ristoro.svg",
+          "livello": "ristoro"
+        },
+        {
+          "file": "leonardo/MIA0205-mappa/21-distributori.svg",
+          "livello": "distributori"
+        },
+        {
+          "file": "leonardo/MIA0205-mappa/22-opere.svg",
+          "livello": "opere"
+        },
+        {
+          "file": "leonardo/MIA0205-mappa/23-nomi.svg",
           "livello": "nomi"
         },
         {
-          "file": "leonardo/MIA0205-mappa/16-numeri.svg",
+          "file": "leonardo/MIA0205-mappa/24-numeri.svg",
           "livello": "numeri"
         }
       ]
@@ -2235,11 +2403,43 @@
           "livello": "acqua"
         },
         {
-          "file": "leonardo/MIA0202-mappa/15-nomi.svg",
+          "file": "leonardo/MIA0202-mappa/15-panchine.svg",
+          "livello": "panchine"
+        },
+        {
+          "file": "leonardo/MIA0202-mappa/16-tavoli.svg",
+          "livello": "tavoli"
+        },
+        {
+          "file": "leonardo/MIA0202-mappa/17-cestini.svg",
+          "livello": "cestini"
+        },
+        {
+          "file": "leonardo/MIA0202-mappa/18-riciclo.svg",
+          "livello": "riciclo"
+        },
+        {
+          "file": "leonardo/MIA0202-mappa/19-bagni.svg",
+          "livello": "bagni"
+        },
+        {
+          "file": "leonardo/MIA0202-mappa/20-ristoro.svg",
+          "livello": "ristoro"
+        },
+        {
+          "file": "leonardo/MIA0202-mappa/21-distributori.svg",
+          "livello": "distributori"
+        },
+        {
+          "file": "leonardo/MIA0202-mappa/22-opere.svg",
+          "livello": "opere"
+        },
+        {
+          "file": "leonardo/MIA0202-mappa/23-nomi.svg",
           "livello": "nomi"
         },
         {
-          "file": "leonardo/MIA0202-mappa/16-numeri.svg",
+          "file": "leonardo/MIA0202-mappa/24-numeri.svg",
           "livello": "numeri"
         }
       ]
@@ -2987,11 +3187,43 @@
           "livello": "acqua"
         },
         {
-          "file": "leonardo/MIA0214-mappa/15-nomi.svg",
+          "file": "leonardo/MIA0214-mappa/15-panchine.svg",
+          "livello": "panchine"
+        },
+        {
+          "file": "leonardo/MIA0214-mappa/16-tavoli.svg",
+          "livello": "tavoli"
+        },
+        {
+          "file": "leonardo/MIA0214-mappa/17-cestini.svg",
+          "livello": "cestini"
+        },
+        {
+          "file": "leonardo/MIA0214-mappa/18-riciclo.svg",
+          "livello": "riciclo"
+        },
+        {
+          "file": "leonardo/MIA0214-mappa/19-bagni.svg",
+          "livello": "bagni"
+        },
+        {
+          "file": "leonardo/MIA0214-mappa/20-ristoro.svg",
+          "livello": "ristoro"
+        },
+        {
+          "file": "leonardo/MIA0214-mappa/21-distributori.svg",
+          "livello": "distributori"
+        },
+        {
+          "file": "leonardo/MIA0214-mappa/22-opere.svg",
+          "livello": "opere"
+        },
+        {
+          "file": "leonardo/MIA0214-mappa/23-nomi.svg",
           "livello": "nomi"
         },
         {
-          "file": "leonardo/MIA0214-mappa/16-numeri.svg",
+          "file": "leonardo/MIA0214-mappa/24-numeri.svg",
           "livello": "numeri"
         }
       ]
@@ -3313,11 +3545,43 @@
           "livello": "acqua"
         },
         {
-          "file": "leonardo/MIA0201-mappa/15-nomi.svg",
+          "file": "leonardo/MIA0201-mappa/15-panchine.svg",
+          "livello": "panchine"
+        },
+        {
+          "file": "leonardo/MIA0201-mappa/16-tavoli.svg",
+          "livello": "tavoli"
+        },
+        {
+          "file": "leonardo/MIA0201-mappa/17-cestini.svg",
+          "livello": "cestini"
+        },
+        {
+          "file": "leonardo/MIA0201-mappa/18-riciclo.svg",
+          "livello": "riciclo"
+        },
+        {
+          "file": "leonardo/MIA0201-mappa/19-bagni.svg",
+          "livello": "bagni"
+        },
+        {
+          "file": "leonardo/MIA0201-mappa/20-ristoro.svg",
+          "livello": "ristoro"
+        },
+        {
+          "file": "leonardo/MIA0201-mappa/21-distributori.svg",
+          "livello": "distributori"
+        },
+        {
+          "file": "leonardo/MIA0201-mappa/22-opere.svg",
+          "livello": "opere"
+        },
+        {
+          "file": "leonardo/MIA0201-mappa/23-nomi.svg",
           "livello": "nomi"
         },
         {
-          "file": "leonardo/MIA0201-mappa/16-numeri.svg",
+          "file": "leonardo/MIA0201-mappa/24-numeri.svg",
           "livello": "numeri"
         }
       ]
@@ -3827,11 +4091,43 @@
           "livello": "acqua"
         },
         {
-          "file": "leonardo/MIA0206-mappa/15-nomi.svg",
+          "file": "leonardo/MIA0206-mappa/15-panchine.svg",
+          "livello": "panchine"
+        },
+        {
+          "file": "leonardo/MIA0206-mappa/16-tavoli.svg",
+          "livello": "tavoli"
+        },
+        {
+          "file": "leonardo/MIA0206-mappa/17-cestini.svg",
+          "livello": "cestini"
+        },
+        {
+          "file": "leonardo/MIA0206-mappa/18-riciclo.svg",
+          "livello": "riciclo"
+        },
+        {
+          "file": "leonardo/MIA0206-mappa/19-bagni.svg",
+          "livello": "bagni"
+        },
+        {
+          "file": "leonardo/MIA0206-mappa/20-ristoro.svg",
+          "livello": "ristoro"
+        },
+        {
+          "file": "leonardo/MIA0206-mappa/21-distributori.svg",
+          "livello": "distributori"
+        },
+        {
+          "file": "leonardo/MIA0206-mappa/22-opere.svg",
+          "livello": "opere"
+        },
+        {
+          "file": "leonardo/MIA0206-mappa/23-nomi.svg",
           "livello": "nomi"
         },
         {
-          "file": "leonardo/MIA0206-mappa/16-numeri.svg",
+          "file": "leonardo/MIA0206-mappa/24-numeri.svg",
           "livello": "numeri"
         }
       ]
@@ -4225,11 +4521,43 @@
           "livello": "acqua"
         },
         {
-          "file": "leonardo/MIA0215-mappa/15-nomi.svg",
+          "file": "leonardo/MIA0215-mappa/15-panchine.svg",
+          "livello": "panchine"
+        },
+        {
+          "file": "leonardo/MIA0215-mappa/16-tavoli.svg",
+          "livello": "tavoli"
+        },
+        {
+          "file": "leonardo/MIA0215-mappa/17-cestini.svg",
+          "livello": "cestini"
+        },
+        {
+          "file": "leonardo/MIA0215-mappa/18-riciclo.svg",
+          "livello": "riciclo"
+        },
+        {
+          "file": "leonardo/MIA0215-mappa/19-bagni.svg",
+          "livello": "bagni"
+        },
+        {
+          "file": "leonardo/MIA0215-mappa/20-ristoro.svg",
+          "livello": "ristoro"
+        },
+        {
+          "file": "leonardo/MIA0215-mappa/21-distributori.svg",
+          "livello": "distributori"
+        },
+        {
+          "file": "leonardo/MIA0215-mappa/22-opere.svg",
+          "livello": "opere"
+        },
+        {
+          "file": "leonardo/MIA0215-mappa/23-nomi.svg",
           "livello": "nomi"
         },
         {
-          "file": "leonardo/MIA0215-mappa/16-numeri.svg",
+          "file": "leonardo/MIA0215-mappa/24-numeri.svg",
           "livello": "numeri"
         }
       ]
@@ -4413,11 +4741,43 @@
           "livello": "acqua"
         },
         {
-          "file": "leonardo/MIA0208-mappa/15-nomi.svg",
+          "file": "leonardo/MIA0208-mappa/15-panchine.svg",
+          "livello": "panchine"
+        },
+        {
+          "file": "leonardo/MIA0208-mappa/16-tavoli.svg",
+          "livello": "tavoli"
+        },
+        {
+          "file": "leonardo/MIA0208-mappa/17-cestini.svg",
+          "livello": "cestini"
+        },
+        {
+          "file": "leonardo/MIA0208-mappa/18-riciclo.svg",
+          "livello": "riciclo"
+        },
+        {
+          "file": "leonardo/MIA0208-mappa/19-bagni.svg",
+          "livello": "bagni"
+        },
+        {
+          "file": "leonardo/MIA0208-mappa/20-ristoro.svg",
+          "livello": "ristoro"
+        },
+        {
+          "file": "leonardo/MIA0208-mappa/21-distributori.svg",
+          "livello": "distributori"
+        },
+        {
+          "file": "leonardo/MIA0208-mappa/22-opere.svg",
+          "livello": "opere"
+        },
+        {
+          "file": "leonardo/MIA0208-mappa/23-nomi.svg",
           "livello": "nomi"
         },
         {
-          "file": "leonardo/MIA0208-mappa/16-numeri.svg",
+          "file": "leonardo/MIA0208-mappa/24-numeri.svg",
           "livello": "numeri"
         }
       ]
@@ -4673,11 +5033,43 @@
           "livello": "acqua"
         },
         {
-          "file": "leonardo/MIA0207-mappa/15-nomi.svg",
+          "file": "leonardo/MIA0207-mappa/15-panchine.svg",
+          "livello": "panchine"
+        },
+        {
+          "file": "leonardo/MIA0207-mappa/16-tavoli.svg",
+          "livello": "tavoli"
+        },
+        {
+          "file": "leonardo/MIA0207-mappa/17-cestini.svg",
+          "livello": "cestini"
+        },
+        {
+          "file": "leonardo/MIA0207-mappa/18-riciclo.svg",
+          "livello": "riciclo"
+        },
+        {
+          "file": "leonardo/MIA0207-mappa/19-bagni.svg",
+          "livello": "bagni"
+        },
+        {
+          "file": "leonardo/MIA0207-mappa/20-ristoro.svg",
+          "livello": "ristoro"
+        },
+        {
+          "file": "leonardo/MIA0207-mappa/21-distributori.svg",
+          "livello": "distributori"
+        },
+        {
+          "file": "leonardo/MIA0207-mappa/22-opere.svg",
+          "livello": "opere"
+        },
+        {
+          "file": "leonardo/MIA0207-mappa/23-nomi.svg",
           "livello": "nomi"
         },
         {
-          "file": "leonardo/MIA0207-mappa/16-numeri.svg",
+          "file": "leonardo/MIA0207-mappa/24-numeri.svg",
           "livello": "numeri"
         }
       ]
@@ -4863,6 +5255,274 @@
         {
           "file": "leonardo/MIA0207000-pianta/15-dotazioni.svg",
           "livello": "dotazioni"
+        }
+      ]
+    },
+    "leonardo/MIA0101-mappa": {
+      "file": "leonardo/MIA0101-mappa.svg",
+      "viewBox": "-102 142 134 136",
+      "strati": [
+        {
+          "file": "leonardo/MIA0101-mappa/01-terreno.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/02-verde.svg",
+          "livello": "verde"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/03-strade.svg",
+          "livello": "strade"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/04-percorsi.svg",
+          "livello": "percorsi"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/05-scale-esterne.svg",
+          "livello": "scale-esterne"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/06-alberi.svg",
+          "livello": "alberi"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/07-ombre.svg",
+          "livello": "ombre"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/08-edifici.svg",
+          "livello": "edifici"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/09-impianti.svg",
+          "livello": "impianti"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/10-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/11-bici.svg",
+          "livello": "bici"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/12-lampioni.svg",
+          "livello": "lampioni"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/13-dae.svg",
+          "livello": "dae"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/14-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/15-panchine.svg",
+          "livello": "panchine"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/16-tavoli.svg",
+          "livello": "tavoli"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/17-cestini.svg",
+          "livello": "cestini"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/18-riciclo.svg",
+          "livello": "riciclo"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/19-bagni.svg",
+          "livello": "bagni"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/20-ristoro.svg",
+          "livello": "ristoro"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/21-distributori.svg",
+          "livello": "distributori"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/22-opere.svg",
+          "livello": "opere"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/23-nomi.svg",
+          "livello": "nomi"
+        },
+        {
+          "file": "leonardo/MIA0101-mappa/24-numeri.svg",
+          "livello": "numeri"
+        }
+      ]
+    },
+    "leonardo/MIA0101-isometrico": {
+      "file": "leonardo/MIA0101-isometrico.svg",
+      "viewBox": "-548.5 18.8 250.9 236",
+      "strati": [
+        {
+          "file": "leonardo/MIA0101-isometrico/01-ombra.svg",
+          "livello": "ombre"
+        },
+        {
+          "file": "leonardo/MIA0101-isometrico/02-lotto.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0101-isometrico/03-percorso.svg",
+          "livello": "percorsi"
+        },
+        {
+          "file": "leonardo/MIA0101-isometrico/04-alberi-dietro.svg",
+          "livello": "alberi"
+        },
+        {
+          "file": "leonardo/MIA0101-isometrico/05-basamento.svg",
+          "livello": "edifici"
+        },
+        {
+          "file": "leonardo/MIA0101-isometrico/06-MIA0101000.svg",
+          "livello": "piani",
+          "piano": "MIA0101000",
+          "acceso": "leonardo/MIA0101-isometrico/06-MIA0101000-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0101-isometrico/07-ingresso.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0101-isometrico/08-MIA0101001.svg",
+          "livello": "piani",
+          "piano": "MIA0101001",
+          "acceso": "leonardo/MIA0101-isometrico/08-MIA0101001-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0101-isometrico/09-MIA0101002.svg",
+          "livello": "piani",
+          "piano": "MIA0101002",
+          "acceso": "leonardo/MIA0101-isometrico/09-MIA0101002-acceso.svg"
+        },
+        {
+          "file": "leonardo/MIA0101-isometrico/10-tetto.svg",
+          "livello": "edifici"
+        },
+        {
+          "file": "leonardo/MIA0101-isometrico/11-impianti.svg",
+          "livello": "impianti"
+        },
+        {
+          "file": "leonardo/MIA0101-isometrico/12-alberi-davanti.svg",
+          "livello": "alberi"
+        },
+        {
+          "file": "leonardo/MIA0101-isometrico/13-etichette-piani.svg",
+          "livello": "etichette-piani"
+        }
+      ]
+    },
+    "leonardo/parco-piazza-leonardo-mappa": {
+      "file": "leonardo/parco-piazza-leonardo-mappa.svg",
+      "viewBox": "-190 85 145 255",
+      "strati": [
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/01-terreno.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/02-verde.svg",
+          "livello": "verde"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/03-strade.svg",
+          "livello": "strade"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/04-percorsi.svg",
+          "livello": "percorsi"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/05-scale-esterne.svg",
+          "livello": "scale-esterne"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/06-alberi.svg",
+          "livello": "alberi"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/07-ombre.svg",
+          "livello": "ombre"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/08-edifici.svg",
+          "livello": "edifici"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/09-impianti.svg",
+          "livello": "impianti"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/10-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/11-bici.svg",
+          "livello": "bici"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/12-lampioni.svg",
+          "livello": "lampioni"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/13-dae.svg",
+          "livello": "dae"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/14-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/15-panchine.svg",
+          "livello": "panchine"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/16-tavoli.svg",
+          "livello": "tavoli"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/17-cestini.svg",
+          "livello": "cestini"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/18-riciclo.svg",
+          "livello": "riciclo"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/19-bagni.svg",
+          "livello": "bagni"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/20-ristoro.svg",
+          "livello": "ristoro"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/21-distributori.svg",
+          "livello": "distributori"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/22-opere.svg",
+          "livello": "opere"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/23-nomi.svg",
+          "livello": "nomi"
+        },
+        {
+          "file": "leonardo/parco-piazza-leonardo-mappa/24-numeri.svg",
+          "livello": "numeri"
         }
       ]
     }

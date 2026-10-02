@@ -7,7 +7,8 @@ frame that reaches past what is already there.
 The box is in the campus frame (metres, x east, y south). Only what lies outside the
 frames of the buildings already drawn is added, so what is in the file, often
 simplified by hand, is never doubled: trees, lawns, paths, outdoor steps, streets,
-bike racks, lamps, defibrillators, fountains, entrances (not the ones closed to the
+bike racks, lamps, defibrillators, fountains, benches, bins, picnic tables, toilets,
+vending machines, recycling bins, artworks, cafés, entrances (not the ones closed to the
 public) and the buildings around, as outlines. Positions are © OpenStreetMap
 contributors (ODbL).
 """
@@ -93,6 +94,22 @@ def main(campus_name, x0, y0, x1, y1):
             add("acqua", r1(p))
         elif t.get("amenity") == "bicycle_parking":
             add("bici", [*r1(p), int(t["capacity"]) if t.get("capacity", "").isdigit() else 10])
+        elif t.get("amenity") == "bench":
+            add("panchine", r1(p))
+        elif t.get("amenity") == "waste_basket":
+            add("cestini", r1(p))
+        elif t.get("leisure") == "picnic_table":
+            add("tavoli", r1(p))
+        elif t.get("amenity") == "toilets":
+            add("bagni", r1(p))
+        elif t.get("amenity") == "vending_machine":
+            add("distributori", r1(p))
+        elif t.get("amenity") == "recycling":
+            add("riciclo", r1(p))
+        elif t.get("tourism") == "artwork":
+            add("opere", {"punto": r1(p), **({"nome": t["name"]} if t.get("name") else {})})
+        elif t.get("amenity") in ("cafe", "bar", "fast_food", "restaurant", "pub"):
+            add("ristoro", {"punto": r1(p), **({"nome": t["name"]} if t.get("name") else {})})
         elif "entrance" in t and t.get("access") != "no" and t["entrance"] != "emergency" and "level" not in t:
             add("ingressi", {"punto": r1(p), **({"principale": True} if t["entrance"] == "main" else {})})
 
@@ -153,6 +170,26 @@ def main(campus_name, x0, y0, x1, y1):
                 taken.add(numero)
             campus["edifici"].append(b)
             added["edifici"] = added.get("edifici", 0) + 1
+    # A park mapped as several ways (a multipolygon): its outer ways joined end to end.
+    ways = {w.get("id"): [n.get("ref") for n in w.findall("nd")] for w in root.findall("way")}
+    for rel in root.findall("relation"):
+        t = tags(rel)
+        if t.get("type") != "multipolygon" or t.get("leisure") not in ("park", "garden"):
+            continue
+        parts = [ways[m.get("ref")] for m in rel.findall("member")
+                 if m.get("type") == "way" and m.get("role") == "outer" and m.get("ref") in ways]
+        ring = parts.pop(0) if parts else []
+        while parts:
+            for i, w in enumerate(parts):
+                if w[0] == ring[-1] or w[-1] == ring[-1]:
+                    ring += (w if w[0] == ring[-1] else w[::-1])[1:]
+                    parts.pop(i)
+                    break
+            else:
+                break                         # a gap: some of it lies outside the box
+        pts = [nodes[n] for n in ring if n in nodes]
+        if len(pts) > 3 and new(centre(pts)) and abs(area(pts)) > 4:
+            add("verde", [r1(p) for p in simplify_ring(pts, 0.5)])
     path.write_text(dump(campus) + "\n")
     print("added:", added or "nothing")
 
