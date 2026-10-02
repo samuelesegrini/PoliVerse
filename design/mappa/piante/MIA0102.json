@@ -1,0 +1,158 @@
+{
+  "csie": "MIA0102",
+  "piani": [
+    {
+      "csip": "MIA010200S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0102000",
+      "nome": "Terra",
+      "aule": {
+        "MIA0102000077": {
+          "sigla": "2.0.1",
+          "posti": 307,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0102000061": {
+          "sigla": "EDUCAFE",
+          "posti": 45,
+          "dotazioni": []
+        }
+      }
+    },
+    {
+      "csip": "MIA0102S00",
+      "nome": "Terra Soppalco",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0102001",
+      "nome": "Primo",
+      "aule": {
+        "MIA0102001030": {
+          "sigla": "2.0.2",
+          "posti": 300,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIA0102001001": {
+          "sigla": "2.1.1",
+          "posti": 144,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0102001002": {
+          "sigla": "2.1.2",
+          "posti": 168,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0102001003a": {
+          "sigla": "2.1.3",
+          "posti": 94,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0102001043a": {
+          "sigla": "2.1.4",
+          "posti": 214,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIA0102001043b": {
+          "sigla": "2.1.5",
+          "posti": 140,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0102002",
+      "nome": "Secondo",
+      "aule": {
+        "MIA0102002001a": {
+          "sigla": "2.2.1 ",
+          "posti": 70,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile"
+          ]
+        },
+        "MIA0102002002a": {
+          "sigla": "2.2.2",
+          "posti": 66,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIA0102002002b": {
+          "sigla": "2.2.3",
+          "posti": 56,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIA0102002002c": {
+          "sigla": "2.2.4",
+          "posti": 82,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile"
+          ]
+        },
+        "MIA0102002003a": {
+          "sigla": "2.2.5 - VIRTUAL LAB",
+          "posti": 70,
+          "dotazioni": [
+            "prese",
+            "rete"
+          ]
+        }
+      }
+    }
+  ]
+}

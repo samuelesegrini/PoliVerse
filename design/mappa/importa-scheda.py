@@ -27,6 +27,7 @@ import math
 import pathlib
 import re
 import statistics
+import tempfile
 import sys
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -44,7 +45,7 @@ LINE_LAYERS = {"scale": ["SCALE", "ARC_Scale rampe e ringhiere"],
                "finestre": ["FINESTRE", "ARC_Finestre"],
                "ringhiere": ["RINGHIERA"],
                "esterni": ["ESTERNI", "ARC_Contesto esterno"],
-               "ascensori": ["ASCENSORI", "TOV_6.3.2.A*"]}
+               "ascensori": ["ASCENSORI", "TOV_6.3.2.A*", "TOV_ASCENSORI"]}
 DOOR_LAYERS = ["PORTE", "ARC_Porte"]
 
 
@@ -192,6 +193,94 @@ def parse_floor(svg):
         r'<use[^>]*transform="translate\(([-\d.]+),([-\d.]+)\)[^"]*"[^>]*class="poi tag_0*%d"' % FOUNTAIN_TAG, svg)]
     return {"rooms": rooms, "labels": labels, "shell": shell, "arcs": arcs, "leaves": leaves, "route": route,
             "fountains": fountains, "lines": {k: lines(layer(v)) for k, v in LINE_LAYERS.items()}}
+
+
+def parse_dwg(path):
+    """The same floor from the service's CAD download (`download/dwg/piano/<csip>`), for
+    when its drawing is not served: converted with LibreDWG's dwg2dxf and read with ezdxf,
+    giving what `parse_floor` gives. Rooms are the net-area outlines, each named by the
+    room-number block inside it; arcs and lines come from the same layers. It carries no
+    room labels, step-free route or fountains: those come only with the drawing."""
+    import fnmatch
+    import subprocess
+    import ezdxf
+    dxf = path.with_suffix(".dxf")
+    subprocess.run(["dwg2dxf", "-y", "-o", str(dxf), str(path)], check=True, capture_output=True)
+    msp = ezdxf.readfile(str(dxf)).modelspace()
+    csip = path.stem
+    match = lambda layer, names: any(fnmatch.fnmatch(layer, n) for n in names)
+    xy = lambda p: (float(p[0]), float(p[1]))
+
+    def flat(entity):
+        # Blocks (fixtures, lifts) are opened up; polylines become their segments.
+        if entity.dxftype() == "INSERT":
+            for sub in entity.virtual_entities():
+                yield from flat(sub)
+        elif entity.dxftype() == "LINE":
+            yield entity
+        elif entity.dxftype() in ("LWPOLYLINE", "POLYLINE"):
+            yield from entity.virtual_entities()
+        elif entity.dxftype() == "ARC":
+            yield entity
+
+    def lines(names):
+        seen, out = set(), []
+        for e in msp:
+            if not match(e.dxf.layer, names):
+                continue
+            for s in flat(e):
+                if s.dxftype() != "LINE":
+                    continue
+                a, b = xy(s.dxf.start), xy(s.dxf.end)
+                key = tuple(sorted(((round(a[0], 3), round(a[1], 3)), (round(b[0], 3), round(b[1], 3)))))
+                if key not in seen and math.dist(a, b) > 1e-6:
+                    seen.add(key)
+                    out.append((a, b))
+        return out
+
+    def arcs(names):
+        out = []
+        for e in msp:
+            if not match(e.dxf.layer, names):
+                continue
+            for s in flat(e):
+                if s.dxftype() != "ARC":
+                    continue
+                c, r = xy(s.dxf.center), s.dxf.radius
+                a0, a1 = math.radians(s.dxf.start_angle), math.radians(s.dxf.end_angle)
+                span = (a1 - a0) % (2 * math.pi)
+                # DXF arcs run counter-clockwise, y up: the drawing's sweep flag 1.
+                out.append((c[0] + r * math.cos(a0), c[1] + r * math.sin(a0), r, int(span > math.pi), 1,
+                            c[0] + r * math.cos(a1), c[1] + r * math.sin(a1)))
+        return out
+
+    names = [(xy(e.dxf.insert), next((a.dxf.text for a in e.attribs if a.dxf.tag == "CODICE_VANO"), None))
+             for e in msp if e.dxftype() == "INSERT" and e.dxf.name == "ID_VANI"]
+    rooms = {}
+    for e in msp:
+        if e.dxf.layer != "SUPNETTAVANO" or e.dxftype() != "LWPOLYLINE":
+            continue
+        ring = [xy(p) for p in e.get_points("xy")]
+        code = next((n for p, n in names if n and inside(p, ring)), None)
+        if code:
+            rooms[csip + code] = [ring]
+    shells = [[xy(p) for p in e.get_points("xy")] for e in msp
+              if e.dxf.layer == "SUPLORDAPIANO" and e.dxftype() == "LWPOLYLINE"]
+    shell = shells or chain(lines(["SUPLORDAPIANO"]))
+    return {"rooms": rooms, "labels": {}, "shell": shell, "arcs": arcs(DOOR_LAYERS), "leaves": lines(DOOR_LAYERS),
+            "route": [], "fountains": [], "lines": {k: lines(v) for k, v in LINE_LAYERS.items()}}
+
+
+def load_floor(csip, cache):
+    """A floor's drawing from the service, or its CAD download when the drawing fails."""
+    try:
+        return parse_floor(get(f"{MAPS}/piano/{csip}/svg/pub", json.dumps(TAGS).encode()))
+    except Exception as error:
+        print(f"{csip}: drawing not served ({error}), reading the CAD download")
+        path = cache / f"{csip}.dwg"
+        with urllib.request.urlopen(f"{MAPS}/download/dwg/piano/{csip}", timeout=120) as r:
+            path.write_bytes(r.read())
+        return parse_dwg(path)
 
 
 def door_from_arc(arc):
@@ -413,7 +502,16 @@ def main(csie):
     bbox = (lon0 + (min(xs) - 15) / k, lat0 - (max(ys) + 15) / 110540,
             lon0 + (max(xs) + 15) / k, lat0 - (min(ys) - 15) / 110540)
 
-    drawn = {c: parse_floor(get(f"{MAPS}/piano/{c}/svg/pub", json.dumps(TAGS).encode())) for c in floors}
+    cache = pathlib.Path(tempfile.mkdtemp(prefix="dwg-"))
+    drawn = {c: load_floor(c, cache) for c in floors}
+    # A floor drawn without its outline (some basements) takes the largest one of the others:
+    # every floor is in the same CAD frame.
+    widest = max((f["shell"] for f in drawn.values() if f["shell"]),
+                 key=lambda s: max(abs(area(r)) for r in s), default=[])
+    for c, f in drawn.items():
+        if not f["shell"] and f["rooms"]:
+            print(f"{c}: no outline drawn, the widest floor's is used")
+            f["shell"] = widest
     rooms = osm_rooms(bbox, (lat0, lon0))
 
     # Which OpenStreetMap level is which floor: room numbers repeat on every floor, so
@@ -474,7 +572,11 @@ def main(csie):
         for c in drawn:
             if drawn[c]["shell"]:
                 shell = max(drawn[c]["shell"], key=lambda r: abs(area(r)))
-                tries.append(outline_fit([flipped(p) for p in shell], [tuple(p) for p in building["pianta"]], prior) + (c,))
+                # Most drawings share one orientation, but some are drawn a quarter turn round:
+                # each quarter is tried.
+                for k in range(4) if prior else [0]:
+                    turned = (prior[0] + k * math.pi / 2, prior[1]) if prior else None
+                    tries.append(outline_fit([flipped(p) for p in shell], [tuple(p) for p in building["pianta"]], turned) + (c,))
         t, err, ref = min(tries, key=lambda x: x[1])
         print(f"no rooms in OpenStreetMap: {ref}'s outline fitted to the building's, "
               f"median gap {err * 100:.0f} cm, scale {t['s']:.4f}, rotation {math.degrees(t['th']):.2f}°")
