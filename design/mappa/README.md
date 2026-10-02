@@ -64,26 +64,36 @@ it is redrawn properly.
 
 Floor plans are drawn from exact geometry, not traced:
 
-1. List the floors in the building's `livelli` and run
+1. List the floors in the building's `livelli` (the codes are in the service's
+   `spazi/piano` list; leave out roof levels with no outline) and run
    `python3 importa-scheda.py <csie>` (needs network). It fetches each floor's
    public drawing from the Politecnico's maps service and writes
    `piante/<csie>-geometria.json`: the gross floor outline, every room as a
    polygon with its `csiv` and label point, each door as hinge and leaf
    (flagged when it opens to the outside), stairs, lifts, windows, railings,
-   outdoor parts, seats and desks, the step-free route and the fountains — all
-   in the campus frame. Rooms are typed (classroom, toilet, stairs, lift,
-   corridor, technical) from OpenStreetMap's indoor map where it says.
-2. Write `piante/<csie>.json`, one entry per floor, with what the geometry
-   does not say:
-   - `csip`, `nome` — the floor's code and name.
-   - `aule` — each classroom by `csiv`: `sigla`, `posti`, `dotazioni`
-     (`proiettore`, `microfono`, `prese`, `rete` get an icon under its label;
-     `oscurabile` and `cattedra` are kept as data), and `etichetta` only if its
-     label must not sit at the room's visual centre.
+   outdoor parts, seats, desks and toilet fixtures, voids over the floor below,
+   the step-free route and the fountains — all in the campus frame.
+   - It reads both CAD standards the drawings come in (`PORTE`, `ARC_Porte`…).
+   - OpenStreetMap's indoor map places the building: one similarity transform,
+     fitted on the rooms both number the same. At least one floor must be mapped
+     there. A floor drawn with its own origin is moved until its lifts sit on a
+     placed floor's; the importer says when a floor has no lifts to go by.
+   - Rooms are typed from OpenStreetMap where it says; otherwise a room with
+     toilet fixtures is a toilet, one with lift lines a lift, and so on.
+2. Run `python3 strumenti/aule.py <csie>`. It writes `piante/<csie>.json`, one
+   entry per floor, with the floor's name and each classroom's `sigla`, `posti`
+   and `dotazioni` from the service (`proiettore`, `microfono`, `prese`, `rete`
+   get an icon under its label; `oscurabile` and `cattedra` are kept as data).
+   Then add by hand what neither source says; the script keeps it when run again:
+   - `principale` — a point on the outer wall at the main entrance.
+   - `ingressi` — other entrances with no swinging door in the drawing (sliding
+     or revolving); OpenStreetMap's `entrance` nodes say where. Leave out those
+     tagged `access=no`.
    - `tipi` — corrections to a room's type, by `csiv`.
    - `wc_accessibili` — the accessible toilets, by `csiv`.
-   - `principale` — a point on the outer wall at the main entrance.
    - `acqua` — fountains the service does not list.
+   - `etichetta` in a classroom — only if its label must not sit at the room's
+     visual centre.
 3. Run `python3 build-mappa.py`.
 
 The drawing keeps the geometry and gives it the illustrations' look: the floor

@@ -235,7 +235,8 @@ def line(pts):
 
 
 def floor_count(b):
-    return len(b["livelli"]) if b.get("livelli") else b.get("piani", 2)
+    """Storeys above ground, as the map and 3D view draw them."""
+    return b.get("piani") or len(b.get("livelli", [])) or 2
 
 
 def centroid(pts):
@@ -902,10 +903,14 @@ def draw_plan(b, floor, geo):
         attrs = f' id="{rm["csiv"]}"' + (f' data-sigla="{aule[rm["csiv"]]["sigla"]}"' if rm["csiv"] in aule else "")
         fills.append(f'<path{attrs} data-tipo="{rm["tipo"]}" d="{rings_path(rm["rings"])}" fill="{PLAN_FILL[rm["tipo"]]}" '
                      f'fill-rule="evenodd"/>')
+    # Voids: open to the floor below, edged like a railing.
+    fills += [f'<path data-tipo="vuoto" d="{poly([tuple(p) for p in r])}" fill="{PLAN_OUTSIDE}" stroke="{PLAN_TREAD}" '
+              f'stroke-width="0.12" stroke-dasharray="0.5 0.35"/>' for r in geo.get("vuoti", [])]
     strati.append(Strato("locali", "locali", fills))
 
     strati.append(Strato("arredi", "arredi", [
-        f'<path d="{segs_path(lines["arredi"])}" stroke="{PLAN_SEAT}" stroke-width="0.09" stroke-linecap="round"/>']))
+        f'<path d="{segs_path(lines["arredi"] + lines.get("sanitari", []))}" stroke="{PLAN_SEAT}" '
+        f'stroke-width="0.09" stroke-linecap="round"/>']))
     strati.append(Strato("gradini", "gradini", [
         f'<path d="{segs_path(lines["scale"])}" stroke="{PLAN_TREAD}" stroke-width="0.06" stroke-linecap="round"/>',
         f'<path d="{segs_path(lines["ringhiere"])}" stroke="{PLAN_DOOR}" stroke-width="0.07" stroke-linecap="round"/>']))
@@ -984,6 +989,11 @@ def draw_plan(b, floor, geo):
     for g in clusters(outside, lambda s, t: math.dist(s["chiusa"], t["chiusa"]) < 0.15):
         p = centroid([s["cardine"] for s in g] + ([g[0]["chiusa"]] if len(g) == 1 else []))
         n = g[0]["n"]
+        # In the façade, the way in is square to the façade, whatever angle the leaves
+        # are drawn at (a revolving door's are at several).
+        q, a, c, _ = nearest_edge(p, [outline])
+        if math.dist(p, q) < 1.5:
+            n = outward(a, c, outline)
         t = 0.0
         while t < 3 and inside((p[0] + n[0] * t, p[1] + n[1] * t), outline):
             t += 0.05
@@ -995,10 +1005,15 @@ def draw_plan(b, floor, geo):
         doorways.append({"p": p, "n": n, "leaves": g, "t": t, "onto": onto and onto["csiv"]})
     # Doorways side by side in one wall, onto the same outdoor space, are one way in.
     same_way = lambda a, b: (math.dist(a["p"], b["p"]) < 3.0 and a["onto"] == b["onto"]
-                             and a["n"][0] * b["n"][0] + a["n"][1] * b["n"][1] > 0.95)
+                             and a["n"][0] * b["n"][0] + a["n"][1] * b["n"][1] > 0.7)
+    # Entrances the drawing has no swinging door for (sliding or revolving), given by hand.
+    extra = [tuple(e) for e in floor.get("ingressi", [])]
+    for e in extra:
+        q, a, c, _ = nearest_edge(e, [outline])
+        ways.append(entrance_arrow(q, outward(a, c, outline)))
     for bank in clusters(doorways, same_way):
         p = centroid([d["p"] for d in bank])
-        if main and math.dist(p, main) < 4:
+        if (main and math.dist(p, main) < 4) or any(math.dist(p, e) < 3 for e in extra):
             continue
         n = bank[0]["n"]
         # Just past the wall's outer face, and clear of any leaf that swings out.
@@ -1064,13 +1079,12 @@ def main():
         dest = HERE / src.stem
         dest.mkdir(exist_ok=True)
         for b in campus["edifici"]:
-            if "riquadro" not in b:      # outline only, drawn as a neighbour so far
-                continue
-            name = f"{b['csie']}-mappa"
-            disegni[f"{src.stem}/{name}"] = write_drawing(dest, name, *draw_map(campus, b))
-            name = f"{b['csie']}-isometrico"
-            disegni[f"{src.stem}/{name}"] = write_drawing(dest, name, *draw_iso(campus, b))
-            print(f"{src.stem}/{b['csie']}  {b.get('nome', b['numero'])}")
+            if "riquadro" in b:          # without one, an outline drawn as a neighbour so far
+                name = f"{b['csie']}-mappa"
+                disegni[f"{src.stem}/{name}"] = write_drawing(dest, name, *draw_map(campus, b))
+                name = f"{b['csie']}-isometrico"
+                disegni[f"{src.stem}/{name}"] = write_drawing(dest, name, *draw_iso(campus, b))
+                print(f"{src.stem}/{b['csie']}  {b.get('nome', b['numero'])}")
             plans = HERE / "piante" / f"{b['csie']}.json"
             geometry = HERE / "piante" / f"{b['csie']}-geometria.json"
             if plans.exists() and geometry.exists():

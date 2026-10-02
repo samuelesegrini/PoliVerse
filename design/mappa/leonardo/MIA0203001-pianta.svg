@@ -80,7 +80,7 @@
 <path d="M15.9 -12.4L16.7 -11.5L15.6 -11.3ZM20.6 9L21 9.5L19.9 9.3ZM21.6 13L22.1 13.8L21 13.6ZM20 12.7L20.4 13.6L19.3 13.4ZM-0.5 -3.5L0.2 -2.7L-0.8 -2.4ZM-0.5 7L-0.9 5.9L0.2 6.1ZM-10.8 5.9L-11.2 4.8L-10.1 4.9ZM-10.7 -1.7L-10 -0.8L-11.1 -0.6ZM21.9 -0.7L21.1 0L20.8 -1ZM19.7 -10.7L18.8 -9.9L18.6 -11Z" fill="#1C6BAD"/>
 </g>
 <g id="livello-ingressi" data-livello="ingressi">
-<path d="M15.9 -13.6L16.3 -15.5L14.9 -15.3Z" fill="#1C6BAD" stroke="#1C6BAD" stroke-width="0.3" stroke-linejoin="round"/>
+<path d="M15.9 -13.6L16.2 -15.5L14.9 -15.3Z" fill="#1C6BAD" stroke="#1C6BAD" stroke-width="0.3" stroke-linejoin="round"/>
 </g>
 <g id="livello-accessibilita" data-livello="accessibilita">
 <rect x="19.4" y="11.2" width="1.5" height="1.5" rx="0.3" fill="#1C6BAD"/><circle cx="20.1" cy="11.7" r="0.1" fill="#FFFFFF"/><path d="M20.1 11.8L20.1 12.1L20.3 12.1L20.5 12.4M20.1 12L20.3 12" fill="none" stroke="#FFFFFF" stroke-width="0.1" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.9 12A0.3 0.3 0 1 0 20.3 12.4" fill="none" stroke="#FFFFFF" stroke-width="0.1" stroke-linecap="round"/>

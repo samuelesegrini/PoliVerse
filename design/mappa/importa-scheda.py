@@ -36,8 +36,16 @@ MAPS = "https://onlineservices.polimi.it/maps_rest/rest"
 OSM = "https://api.openstreetmap.org/api/0.6/map"
 TAGS = [str(i) for i in range(1, 19)] + ["POI"]       # every public point-of-interest tag
 FOUNTAIN_TAG = 5                                      # BEVERINO
-LINE_LAYERS = {"SCALE": "scale", "LAYOUT_ARREDI": "arredi", "FINESTRE": "finestre",
-               "RINGHIERA": "ringhiere", "ESTERNI": "esterni", "ASCENSORI": "ascensori"}
+# The drawings come in two CAD standards: short layer names (PORTE) and long ones
+# (ARC_Porte). Each entry lists the names, or name prefixes ending in "*", of one kind of line.
+LINE_LAYERS = {"scale": ["SCALE", "ARC_Scale rampe e ringhiere"],
+               "arredi": ["LAYOUT_ARREDI", "ARC_Arredi ON"],
+               "sanitari": ["IDR_*"],
+               "finestre": ["FINESTRE", "ARC_Finestre"],
+               "ringhiere": ["RINGHIERA"],
+               "esterni": ["ESTERNI", "ARC_Contesto esterno"],
+               "ascensori": ["ASCENSORI", "TOV_6.3.2.A*"]}
+DOOR_LAYERS = ["PORTE", "ARC_Porte"]
 
 
 def get(url, data=None):
@@ -152,9 +160,10 @@ def parse_floor(svg):
     for m in re.finditer(r'<text class="testoVano(?:Small)?" x="([-\d.]+)" y="([-\d.]+)">([^<]+)</text>', svg):
         labels[m.group(3).strip().upper()] = (float(m.group(1)), flip - float(m.group(2)))
 
-    def layer(lid):
+    def layer(names):
+        ids = "|".join(re.escape(n[:-1]) + '[^"]*' if n.endswith("*") else re.escape(n) for n in names)
         out = []
-        for m in re.finditer(r'<g class="layer" id="%s">(.*?)</g>' % re.escape(lid), svg, re.S):
+        for m in re.finditer(r'<g class="layer" id="(?:%s)">(.*?)</g>' % ids, svg, re.S):
             out.append(m.group(1))
         return "".join(out)
 
@@ -170,11 +179,11 @@ def parse_floor(svg):
                 seen.add(key)
                 out.append((a, b))
         return out
-    shell = chain(lines(layer("SUPLORDAPIANO")))
+    shell = chain(lines(layer(["SUPLORDAPIANO"])))
     arcs = [tuple(map(float, a)) for a in re.findall(
-        r'd="M ([-\d.]+) ([-\d.]+) A ([-\d.]+) [-\d.]+ [-\d.]+ (\d) (\d) ([-\d.]+) ([-\d.]+)"', layer("PORTE"))]
+        r'd="M ([-\d.]+) ([-\d.]+) A ([-\d.]+) [-\d.]+ [-\d.]+ (\d) (\d) ([-\d.]+) ([-\d.]+)"', layer(DOOR_LAYERS))]
     # Each leaf is drawn open, as a thin rectangle out of its hinge.
-    leaves = lines(layer("PORTE"))
+    leaves = lines(layer(DOOR_LAYERS))
     route = []
     for g in re.findall(r'<line[^>]*class="impianto percorsoDisabili[^"]*"[^>]*>', svg):
         way = 1 if "marker-end" in g else (-1 if "marker-start" in g else 0)
@@ -182,7 +191,7 @@ def parse_floor(svg):
     fountains = [(float(x), float(y)) for x, y in re.findall(
         r'<use[^>]*transform="translate\(([-\d.]+),([-\d.]+)\)[^"]*"[^>]*class="poi tag_0*%d"' % FOUNTAIN_TAG, svg)]
     return {"rooms": rooms, "labels": labels, "shell": shell, "arcs": arcs, "leaves": leaves, "route": route,
-            "fountains": fountains, "lines": {v: lines(layer(k)) for k, v in LINE_LAYERS.items()}}
+            "fountains": fountains, "lines": {k: lines(layer(v)) for k, v in LINE_LAYERS.items()}}
 
 
 def door_from_arc(arc):
@@ -291,6 +300,52 @@ def robust_fit(pairs):
     return t, len(cur), statistics.median(errs)
 
 
+def voids(shell, rooms, step=0.5, wall=0.6):
+    """Parts of the floor that are no room and too wide to be a wall: double-height
+    spaces and voids over the floor below. Found on a grid, traced, and simplified."""
+    if not shell:
+        return []
+    xs, ys = [p[0] for p in shell], [p[1] for p in shell]
+    boxes = [(min(p[0] for p in r), min(p[1] for p in r), max(p[0] for p in r), max(p[1] for p in r)) for r in rooms]
+    edges = [(a, b) for r in rooms + [shell] for a, b in zip(r, r[1:] + r[:1])]
+    # Edges bucketed by grid cell, so each point only looks at the walls near it.
+    buckets = {}
+    for a, b in edges:
+        for gx in range(int((min(a[0], b[0]) - wall) // 2), int((max(a[0], b[0]) + wall) // 2) + 1):
+            for gy in range(int((min(a[1], b[1]) - wall) // 2), int((max(a[1], b[1]) + wall) // 2) + 1):
+                buckets.setdefault((gx, gy), []).append((a, b))
+    cells = set()
+    for i in range(int((max(xs) - min(xs)) / step) + 1):
+        for j in range(int((max(ys) - min(ys)) / step) + 1):
+            p = (min(xs) + (i + 0.5) * step, min(ys) + (j + 0.5) * step)
+            if not inside(p, shell):
+                continue
+            if any(x0 <= p[0] <= x1 and y0 <= p[1] <= y1 and inside(p, r) for (x0, y0, x1, y1), r in zip(boxes, rooms)):
+                continue
+            near = buckets.get((int(p[0] // 2), int(p[1] // 2)), [])
+            if all(seg_dist(p, a, b) > wall for a, b in near):
+                cells.add((i, j))
+    # The cells' outer edges, chained into rings: a cell edge shared by two cells is inside.
+    count = {}
+    for i, j in cells:
+        for e in (((i, j), (i + 1, j)), ((i + 1, j), (i + 1, j + 1)), ((i, j + 1), (i + 1, j + 1)), ((i, j), (i, j + 1))):
+            count[e] = count.get(e, 0) + 1
+    to_xy = lambda c: (min(xs) + c[0] * step, min(ys) + c[1] * step)
+    rings = chain([(to_xy(a), to_xy(b)) for e, n in count.items() if n == 1 for a, b in [e]], snap=step / 4)
+    return [simplify(r, step * 0.75) for r in rings if abs(area(r)) >= 6]
+
+
+def lift_centres(segs):
+    """Lift cars: the lines of the lift layer that touch each other, as one point each."""
+    groups = []
+    for a, b in segs:
+        hit = [g for g in groups if any(min(math.dist(p, q) for p in (a, b) for q in s) < 0.3 for s in g)]
+        merged = [(a, b)] + [s for g in hit for s in g]
+        groups = [g for g in groups if g not in hit] + [merged]
+    return [(sum(p[0] for s in g for p in s) / (2 * len(g)), sum(p[1] for s in g for p in s) / (2 * len(g)))
+            for g in groups if len(g) >= 4]
+
+
 # ---------------------------------------------------------------- main
 
 def main(csie):
@@ -309,15 +364,24 @@ def main(csie):
     drawn = {c: parse_floor(get(f"{MAPS}/piano/{c}/svg/pub", json.dumps(TAGS).encode())) for c in floors}
     rooms = osm_rooms(bbox, (lat0, lon0))
 
-    # Which OpenStreetMap level is which floor: the one sharing the most room numbers.
-    level_of = {}
+    # Which OpenStreetMap level is which floor: room numbers repeat on every floor, so
+    # each level goes to the one floor it shares the most numbers with, and only when
+    # that is enough to tell. Every floor is in the same CAD frame, so floors that
+    # OpenStreetMap does not map are placed by the fit on the others.
+    shared = []
     for c, f in drawn.items():
         refs = {csiv[len(c):].upper() for csiv in f["rooms"]}
         counts = {}
         for r in rooms:
             if r["ref"] in refs:
                 counts[r["level"]] = counts.get(r["level"], 0) + 1
-        level_of[c] = max(counts, key=counts.get) if counts else None
+        shared += [(n, c, lvl) for lvl, n in counts.items()]
+    level_of, taken = {c: None for c in drawn}, set()
+    for n, c, lvl in sorted(shared, reverse=True):
+        if n >= 8 and level_of[c] is None and lvl not in taken:
+            level_of[c] = lvl
+            taken.add(lvl)
+    print("OpenStreetMap levels:", {c: lvl for c, lvl in level_of.items() if lvl})
 
     pairs = []
     by_floor = {}
@@ -337,10 +401,34 @@ def main(csie):
     print(f"fit on {used}/{len(pairs)} rooms, median error {err * 100:.0f} cm, "
           f"scale {t['s']:.4f}, rotation {math.degrees(t['th']):.2f}°")
 
-    T = lambda p: [r2(v) for v in apply(t, flipped(p))]
+    # Some floors are drawn with their own origin. Lift shafts stand in the same place on
+    # every floor, so a floor OpenStreetMap does not place is moved until its lifts sit on
+    # those of a floor it does.
+    lifts = {c: lift_centres([(apply(t, flipped(a)), apply(t, flipped(b))) for a, b in f["lines"]["ascensori"]])
+             for c, f in drawn.items()}
+    placed = [p for c in drawn if level_of[c] for p in lifts[c]]
+    shift = {}
+    for c in drawn:
+        shift[c] = (0.0, 0.0)
+        if level_of[c] or not placed:
+            continue
+        best = (0, 0.0)
+        for p in lifts[c]:
+            for q in placed:
+                dx, dy = q[0] - p[0], q[1] - p[1]
+                n = sum(1 for a in lifts[c] if any(math.dist((a[0] + dx, a[1] + dy), b) < 0.6 for b in placed))
+                if n > best[0] or (n == best[0] and math.hypot(dx, dy) < math.hypot(*best[1:] or (0, 0))):
+                    best = (n, dx, dy)
+        if best[0] >= 2:
+            shift[c] = best[1:]
+        else:
+            print(f"{c}: no lifts to place it by, left where its drawing puts it")
+    print("moved:", {c: (r2(dx), r2(dy)) for c, (dx, dy) in shift.items() if math.hypot(dx, dy) > 0.05})
+
     out = {"csie": csie, "fonte": "onlineservices.polimi.it/maps_rest, piano/<csip>/svg/pub",
            "trasformazione": {k2: round(v, 6) for k2, v in t.items()}, "piani": {}}
     for c, f in drawn.items():
+        T = lambda p, c=c: [r2(v + d) for v, d in zip(apply(t, flipped(p)), shift[c])]
         osm = by_floor[c]
         shell = max(f["shell"], key=lambda ring: abs(area(ring))) if f["shell"] else []
         all_rooms = [ring for rings in f["rooms"].values() for ring in rings[:1]]
@@ -352,7 +440,9 @@ def main(csie):
             if kind is None:
                 count = lambda name: sum(1 for a, b in f["lines"][name]
                                          if inside(((a[0] + b[0]) / 2, (a[1] + b[1]) / 2), ring))
-                if count("ascensori") >= 2:
+                if count("sanitari") >= 6 and abs(area(ring)) < 60:
+                    kind = "wc"
+                elif count("ascensori") >= 2:
                     kind = "ascensore"
                 elif count("scale") >= 6 and abs(area(ring)) < 60:
                     kind = "scale"
@@ -393,6 +483,7 @@ def main(csie):
             "linee": {name: [T(a) + T(b) for a, b in segs] for name, segs in f["lines"].items()},
             "percorso_accessibile": [T(a) + T(b) + [way] for a, b, way in f["route"]],
             "acqua": [T(p) for p in f["fountains"]],
+            "vuoti": [[T(p) for p in ring] for ring in voids(shell, all_rooms)],
         }
         print(f"{c}: {len(vani)} rooms, {len(doors)} doors ({sum(d['esterna'] for d in doors)} outside, "
               f"{unread} without a drawn leaf), "
