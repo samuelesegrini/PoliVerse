@@ -335,6 +335,58 @@ def voids(shell, rooms, step=0.5, wall=0.6):
     return [simplify(r, step * 0.75) for r in rings if abs(area(r)) >= 6]
 
 
+def outline_fit(P, Q, prior=None):
+    """A similarity taking outline P onto outline Q. With a prior (rotation, scale) from
+    the campus's other drawings only the shift is sought; without, the four quarter turns
+    of the outlines' main wall directions are tried. Each is refined by nearest points,
+    trimmed so a floor larger than the footprint (a basement) does not pull it; the
+    closest kept."""
+    def along(ring, step=0.5):
+        out = []
+        for a, b in zip(ring, ring[1:] + ring[:1]):
+            n = max(1, int(math.dist(a, b) / step))
+            out += [(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n) for i in range(n)]
+        return out
+
+    def heading(ring):
+        sx = sy = 0.0
+        for a, b in zip(ring, ring[1:] + ring[:1]):
+            ang, w = math.atan2(b[1] - a[1], b[0] - a[0]) * 4, math.dist(a, b)
+            sx, sy = sx + w * math.cos(ang), sy + w * math.sin(ang)
+        return math.atan2(sy, sx) / 4
+
+    def nearest(p):
+        best = (1e9, p)
+        for a, b in zip(Q, Q[1:] + Q[:1]):
+            dx, dy = b[0] - a[0], b[1] - a[1]
+            u = max(0.0, min(1.0, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / ((dx * dx + dy * dy) or 1)))
+            q = (a[0] + dx * u, a[1] + dy * u)
+            best = min(best, (math.dist(p, q), q))
+        return best
+
+    pts = along(P)[::3]
+    cp, cq = area_centroid(P), area_centroid(Q)
+    best = None
+    starts = [prior[0]] if prior else [heading(Q) - heading(P) + k * math.pi / 2 for k in range(4)]
+    for th in starts:
+        t = {"mx": cp[0], "my": cp[1], "nx": cq[0], "ny": cq[1], "s": prior[1] if prior else 1.0, "th": th}
+        for _ in range(30):
+            near = sorted((nearest(apply(t, p)) + (p,) for p in pts), key=lambda x: x[0])
+            pairs = [(p, q) for _, q, p in near[:int(len(near) * 0.6)]]
+            if prior:
+                # Only the shift: the mean gap of the closest pairs.
+                dx = statistics.mean(q[0] - apply(t, p)[0] for p, q in pairs)
+                dy = statistics.mean(q[1] - apply(t, p)[1] for p, q in pairs)
+                t = {**t, "nx": t["nx"] + dx, "ny": t["ny"] + dy}
+            else:
+                t = fit(pairs)
+                t["s"] = min(1.05, max(0.95, t["s"]))
+        err = statistics.median(nearest(apply(t, p))[0] for p in pts)
+        if best is None or err < best[1]:
+            best = (t, err)
+    return best
+
+
 def lift_centres(segs):
     """Lift cars: the lines of the lift layer that touch each other, as one point each."""
     groups = []
@@ -397,20 +449,38 @@ def main(csie):
             room = [r for r in same if r["tags"].get("indoor") in ("room", "corridor", "area")]
             if room:
                 pairs.append((flipped(area_centroid(rings[0])), room[0]["centre"]))
-    t, used, err = robust_fit(pairs)
-    print(f"fit on {used}/{len(pairs)} rooms, median error {err * 100:.0f} cm, "
-          f"scale {t['s']:.4f}, rotation {math.degrees(t['th']):.2f}°")
+    ref = None
+    if len(pairs) >= 4:
+        t, used, err = robust_fit(pairs)
+        print(f"fit on {used}/{len(pairs)} rooms, median error {err * 100:.0f} cm, "
+              f"scale {t['s']:.4f}, rotation {math.degrees(t['th']):.2f}°")
+    else:
+        # OpenStreetMap maps no room inside: match the floor's outline to the building's.
+        # The ground floor stands on the footprint; a basement may reach under the courtyard.
+        ref = next((c for c in drawn if c.endswith("000") and drawn[c]["shell"]),
+                   next((c for c in drawn if drawn[c]["shell"]), None))
+        shell = max(drawn[ref]["shell"], key=lambda r: abs(area(r)))
+        # The campus's drawings share north and scale: take them from the buildings placed so far.
+        known = [json.loads(g.read_text())["trasformazione"] for g in (HERE / "piante").glob("*-geometria.json")
+                 if not g.name.startswith(csie)]
+        known = [k for k in known if k.get("da") != "contorno"]
+        prior = (statistics.median(k["th"] for k in known), statistics.median(k["s"] for k in known)) if known else None
+        t, err = outline_fit([flipped(p) for p in shell], [tuple(p) for p in building["pianta"]], prior)
+        t["da"] = "contorno"
+        print(f"no rooms in OpenStreetMap: {ref}'s outline fitted to the building's, "
+              f"median gap {err * 100:.0f} cm, scale {t['s']:.4f}, rotation {math.degrees(t['th']):.2f}°")
 
     # Some floors are drawn with their own origin. Lift shafts stand in the same place on
     # every floor, so a floor OpenStreetMap does not place is moved until its lifts sit on
     # those of a floor it does.
     lifts = {c: lift_centres([(apply(t, flipped(a)), apply(t, flipped(b))) for a, b in f["lines"]["ascensori"]])
              for c, f in drawn.items()}
-    placed = [p for c in drawn if level_of[c] for p in lifts[c]]
+    anchors = [c for c in drawn if level_of[c]] or [ref]
+    placed = [p for c in anchors for p in lifts[c]]
     shift = {}
     for c in drawn:
         shift[c] = (0.0, 0.0)
-        if level_of[c] or not placed:
+        if c in anchors or not placed:
             continue
         best = (0, 0.0)
         for p in lifts[c]:
@@ -426,7 +496,7 @@ def main(csie):
     print("moved:", {c: (r2(dx), r2(dy)) for c, (dx, dy) in shift.items() if math.hypot(dx, dy) > 0.05})
 
     out = {"csie": csie, "fonte": "onlineservices.polimi.it/maps_rest, piano/<csip>/svg/pub",
-           "trasformazione": {k2: round(v, 6) for k2, v in t.items()}, "piani": {}}
+           "trasformazione": {k2: round(v, 6) if isinstance(v, float) else v for k2, v in t.items()}, "piani": {}}
     for c, f in drawn.items():
         T = lambda p, c=c: [r2(v + d) for v, d in zip(apply(t, flipped(p)), shift[c])]
         osm = by_floor[c]

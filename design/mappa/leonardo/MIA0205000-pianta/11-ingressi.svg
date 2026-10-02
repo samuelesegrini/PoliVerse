@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="40.6 -15.5 102.1 80.1" width="1021" height="800.6">
-<path d="M68 26.6L71.1 28L71 25.1Z" fill="#1C6BAD" stroke="#FFFFFF" stroke-width="0.45" stroke-linejoin="round"/>
-<text x="71.7" y="27.1" font-size="1.5" font-weight="700" text-anchor="start" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">Ingresso</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="40.6 -15.5 102.1 80" width="1020.8" height="800.4">
+<path d="M68 26.6L71 28L71 25.1Z" fill="#1C6BAD" stroke="#FFFFFF" stroke-width="0.45" stroke-linejoin="round"/>
+<text x="71.6" y="27.1" font-size="1.5" font-weight="700" text-anchor="start" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">Ingresso</text>
 <path d="M68.9 13.3L68.2 15.2L69.6 15.1Z" fill="#1C6BAD" stroke="#1C6BAD" stroke-width="0.3" stroke-linejoin="round"/>
-<path d="M62.8 -5.4L63.5 -7.2L62.1 -7.2Z" fill="#1C6BAD" stroke="#1C6BAD" stroke-width="0.3" stroke-linejoin="round"/>
+<path d="M62.9 -5.3L63.5 -7.2L62.2 -7.2Z" fill="#1C6BAD" stroke="#1C6BAD" stroke-width="0.3" stroke-linejoin="round"/>
 </svg>
