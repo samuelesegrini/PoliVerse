@@ -703,7 +703,7 @@ def sculpture_a(pts, at, top):
     face = lambda t0, t1, za, zb, d=0.15: [(*p(t0, d), za), (*p(t1, d), za), (*p(t1, d), zb), (*p(t0, d), zb)]
     line = lambda t0, t1, z, d=0.2: f'M{fmt(iso(*p(t0, d), z)[0])} {fmt(iso(*p(t0, d), z)[1])}L{fmt(iso(*p(t1, d), z)[0])} {fmt(iso(*p(t1, d), z)[1])}'
     span = o1 - o0
-    opening = [f'<polygon points="{iso_poly(face(o0, o1, base, zp))}" fill="#1B1F25"/>',
+    opening = [f'<polygon points="{iso_poly(face(o0, o1, base, zp))}" fill="#1B1F25" opacity="0.55"/>',
                # the sunken floor seen through the well, warm with its lights
                f'<polygon points="{iso_poly(face(o0 + span * 0.08, o1 - span * 0.3, base + 1, base + 6, 0.1))}" fill="#3A332B"/>',
                # the silver ducts along the ceiling
@@ -766,12 +766,19 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
                 # An open ground floor: the glass set back under the floors above, in their
                 # shadow, the paving running in to it, ducts along the ceiling and orange
                 # railings at the edge.
-                inner = offset(own, -band.get("arretrato", 3.0))
+                back = band.get("arretrato", 3.0)
+                inner = offset(own, -back)
+                outer = lambda q: nearest_edge(q, [own])[0]
                 out = [f'<polygon points="{iso_poly([(x, y, z) for x, y in own])}" fill="#C3C8CF"/>']
                 out += storey(z, lit, h, inner, band.get("telaio"))
                 for a, c, _, _ in faces(inner, 0, 1):
                     q = [(*a, z), (*c, z), (*c, z + h), (*a, z + h)]
-                    out.append(f'<polygon points="{iso_poly(q)}" fill="#14181E" opacity="{0.3 if lit else 0.5}"/>')
+                    if lit:
+                        # Lit, the hall throws its light out onto the paving under the floors above.
+                        pool = [(*a, z), (*c, z), (*outer(c), z), (*outer(a), z)]
+                        out.append(f'<polygon points="{iso_poly(pool)}" fill="#F3D9A0" opacity="0.55"/>')
+                    else:
+                        out.append(f'<polygon points="{iso_poly(q)}" fill="#14181E" opacity="0.5"/>')
                 line = lambda a, c, zz: f"M{fmt(iso(*a, zz)[0])} {fmt(iso(*a, zz)[1])}L{fmt(iso(*c, zz)[0])} {fmt(iso(*c, zz)[1])}"
                 mid = offset(own, -1.2)
                 ducts = "".join(line(a, c, z + h - 2.2) for a, c, _, _ in faces(mid, 0, 1))
