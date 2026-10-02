@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """Draws the campus buildings as illustrations in the Mappa / Edificio style.
 
-Run `python3 build-mappa.py` to regenerate every `<campus>/<csie>-*.svg`.
+Run `python3 build-mappa.py` to regenerate every SVG under `<campus>/`.
 
 Each building is described by hand in `<campus>.json`: a simplified outline
 in metres (a few chosen corners, not a survey), its floor count, rooftop
-plant, and entrance. This file turns that description into two drawings that
+plant, and entrance. This file turns that description into drawings that
 share one look, so building fifty reads as the same hand as building one:
 
 - `<csie>-mappa.svg` — top-down, the building with its surroundings, as in
   the "Mappa delle aule libere" illustration;
 - `<csie>-isometrico.svg` — the building alone in isometric, one group per
-  floor (`piano-0`, `piano-1`, …) so a single floor can be highlighted, as in
-  the "Edificio con l'aula" illustration.
+  floor so a single floor can be highlighted, as in the "Edificio con l'aula"
+  illustration;
+- `<csip>-pianta.svg` — one floor plan per floor described in
+  `piante/<csie>.json`: rooms, stairs, lifts, toilets, doors and entrances,
+  drawn inside the same outline.
 
 Coordinates are metres in a per-campus frame: x grows east, y grows south,
 origin at the campus `origine` (lat, lon). Every building of a campus lives
@@ -136,6 +139,10 @@ def poly(pts, dx=0.0, dy=0.0):
     return "M" + "L".join(f"{fmt(x + dx)} {fmt(y + dy)}" for x, y in pts) + "Z"
 
 
+def floor_count(b):
+    return len(b["livelli"]) if b.get("livelli") else b.get("piani", 2)
+
+
 def centroid(pts):
     return (sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts))
 
@@ -151,7 +158,7 @@ def map_defs():
 
 def map_building(b):
     pts = ccw([tuple(p) for p in b["pianta"]])
-    wall = WALL_PER_FLOOR * b.get("piani", 2)
+    wall = WALL_PER_FLOOR * floor_count(b)
     out = [f'<g id="{b["csie"]}">',
            f'<path d="{rounded(pts, CORNER, wall * 0.86, wall * 1.57)}" fill="{SHADOW}" opacity="0.10"/>',
            f'<path d="{rounded(pts, CORNER, 0, wall)}" fill="url(#mp-wall)"/>',
@@ -267,9 +274,23 @@ def iso_tree(x, y, r):
             f'<circle cx="{fmt(px)}" cy="{fmt(py - 16 - s * 0.6)}" r="{fmt(s)}" fill="url(#iso-tree)"/>')
 
 
+def view(b):
+    """Turns the plan so the side holding the entrance faces the viewer.
+
+    The isometric view always looks from the south-east. A building whose door
+    is on its west side is drawn from the south-west instead: the plan is
+    rotated a quarter turn, which keeps it a true view, not a mirror image.
+    """
+    if b.get("vista") == "sud-ovest":
+        return lambda p: (p[1], -p[0])
+    return lambda p: (p[0], p[1])
+
+
 def draw_iso(campus, b, focus_floor=None):
-    pts = ccw([tuple(p) for p in b["pianta"]])
-    floors = b.get("piani", 2)
+    turn = view(b)
+    pts = ccw([turn(p) for p in b["pianta"]])
+    levels = b.get("livelli") or [f"piano-{i}" for i in range(floor_count(b))]
+    floors = len(levels)
     xs, ys = [p[0] for p in pts], [p[1] for p in pts]
     lot = ccw([(min(xs) - 7, min(ys) - 7), (max(xs) + 7, min(ys) - 7),
                (max(xs) + 7, max(ys) + 7), (min(xs) - 7, max(ys) + 7)])
@@ -279,7 +300,8 @@ def draw_iso(campus, b, focus_floor=None):
 
     # Trees sit on the lot; the ones in front of the building are drawn after it.
     lx0, ly0, lx1, ly1 = lot[0][0], lot[0][1], lot[2][0], lot[2][1]
-    trees = [t for t in campus["contesto"]["alberi"]
+    trees = [(*turn(t[:2]), t[2]) for t in campus["contesto"]["alberi"]]
+    trees = [t for t in trees
              if lx0 + 3 < t[0] < lx1 - 3 and ly0 + 3 < t[1] < ly1 - 3 and not inside(t[:2], offset(pts, 3))]
     cx, cy = centroid(pts)
     behind = [t for t in trees if t[0] + t[1] < cx + cy]
@@ -293,7 +315,7 @@ def draw_iso(campus, b, focus_floor=None):
     out += prism(lot, -5, 0, ISO_LOT[:2], ISO_LOT[2])
     ent = b.get("ingresso")
     if ent:
-        raw = [tuple(p) for p in b["pianta"]]   # "lato" counts edges in the file's own order
+        raw = [turn(p) for p in b["pianta"]]    # "lato" counts edges in the file's own order
         a, c = raw[ent["lato"]], raw[(ent["lato"] + 1) % len(raw)]
         ex, ey = a[0] + (c[0] - a[0]) * ent["t"], a[1] + (c[1] - a[1]) * ent["t"]
         nx, ny = outward(a, c, pts)
@@ -317,7 +339,7 @@ def draw_iso(campus, b, focus_floor=None):
         z0 = base_h + f * ISO_FLOOR
         lit = f == focus_floor
         gl, gr = ("url(#iso-focus-l)", "url(#iso-focus-r)") if lit else ("url(#iso-glass-l)", "url(#iso-glass-r)")
-        out.append(f'<g id="piano-{f}">')
+        out.append(f'<g id="{levels[f]}">')
         out += prism(pts, z0, z0 + ISO_SLAB, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
         mullions = []
         for a, c, is_left, q in faces(glass, z0 + ISO_SLAB, z0 + ISO_FLOOR):
@@ -343,7 +365,11 @@ def draw_iso(campus, b, focus_floor=None):
     out.append('<g id="tetto">')
     out += prism(pts, top, top + ISO_SLAB, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
     out.append(f'<polygon points="{iso_poly([(x, y, top + ISO_SLAB) for x, y in offset(pts, -1.6)])}" fill="{ISO_ROOF_INNER}"/>')
-    for x, y, w, h in sorted(b.get("impianti", []), key=lambda u: u[0] + u[1]):
+    plant = []
+    for x, y, w, h in b.get("impianti", []):
+        c = [turn(p) for p in ((x, y), (x + w, y + h))]
+        plant.append((min(c[0][0], c[1][0]), min(c[0][1], c[1][1]), abs(c[1][0] - c[0][0]), abs(c[1][1] - c[0][1])))
+    for x, y, w, h in sorted(plant, key=lambda u: u[0] + u[1]):
         out += box(x, y, w, h, top + ISO_SLAB, 7, ISO_PLANT)
     out.append("</g>")
     out.append('<g id="alberi">')
@@ -356,6 +382,169 @@ def draw_iso(campus, b, focus_floor=None):
     head = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{fmt(vx0)} {fmt(vy0)} {fmt(vx1 - vx0)} {fmt(vy1 - vy0)}" '
             f'width="{fmt((vx1 - vx0) * 2)}" height="{fmt((vy1 - vy0) * 2)}">')
     return "\n".join([head] + out + ["</svg>"])
+
+
+# ---------------------------------------------------------------- floor plans
+
+PLAN_FILL = {"aula": "#E3ECF5", "wc": "#EEF0F3", "scale": "#E9EBEF",
+             "ascensore": "#E9EBEF", "locale": "#F2F3F6"}
+PLAN_WALL = "#C9CED6"          # inner walls, between rooms
+PLAN_SHELL = "#AEB4BE"         # the outer wall
+PLAN_TIER = "#CBDCEE"          # amphitheatre rows
+PLAN_TREAD = "#D3D7DF"         # stair treads
+PLAN_MUTED = "#8E8E93"
+PLAN_LABEL_EDGE = "#E3E5EA"
+INNER_WALL = 0.3               # m
+SHELL_WALL = 0.6               # m
+DOOR = 1.4                     # m of opening
+ENTRANCE = 2.2                 # m of opening in the outer wall
+FONT = 'font-family="-apple-system, system-ui, sans-serif"'
+
+
+def area_centroid(pts):
+    a = cx = cy = 0.0
+    for (x1, y1), (x2, y2) in zip(pts, pts[1:] + pts[:1]):
+        k = x1 * y2 - x2 * y1
+        a += k
+        cx += (x1 + x2) * k
+        cy += (y1 + y2) * k
+    return (cx / (3 * a), cy / (3 * a)) if abs(a) > 1e-9 else centroid(pts)
+
+
+def hatch(pts, edge, step, margin):
+    """Lines parallel to edge `edge` of the polygon, `step` apart, across all of it."""
+    a, b = pts[edge], pts[(edge + 1) % len(pts)]
+    length = math.dist(a, b)
+    ux, uy = (b[0] - a[0]) / length, (b[1] - a[1]) / length
+    vx, vy = outward(a, b, pts)
+    vx, vy = -vx, -vy                                   # into the room
+    depth = max((p[0] - a[0]) * vx + (p[1] - a[1]) * vy for p in pts)
+    reach = max(math.dist(a, p) for p in pts) + 1
+    lines, d = [], margin
+    while d < depth - margin:
+        ox, oy = a[0] + vx * d, a[1] + vy * d
+        lines.append(f"M{fmt(ox - ux * reach)} {fmt(oy - uy * reach)}L{fmt(ox + ux * reach)} {fmt(oy + uy * reach)}")
+        d += step
+    return "".join(lines)
+
+
+def nearest_edge(p, polys):
+    best = None
+    for pts in polys:
+        for a, b in zip(pts, pts[1:] + pts[:1]):
+            dx, dy = b[0] - a[0], b[1] - a[1]
+            t = max(0.0, min(1.0, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy)))
+            q = (a[0] + dx * t, a[1] + dy * t)
+            d = math.dist(p, q)
+            if best is None or d < best[0]:
+                best = (d, q, a, b, pts)
+    return best[1:]
+
+
+def opening(q, a, b, width):
+    n = math.dist(a, b)
+    ux, uy = (b[0] - a[0]) / n * width / 2, (b[1] - a[1]) / n * width / 2
+    return f"M{fmt(q[0] - ux)} {fmt(q[1] - uy)}L{fmt(q[0] + ux)} {fmt(q[1] + uy)}"
+
+
+def plan_label(room):
+    x, y = room.get("etichetta") or area_centroid([tuple(p) for p in room["forma"]])
+    if room["tipo"] == "wc":
+        return (f'<text x="{fmt(x)}" y="{fmt(y + 0.6)}" font-size="1.7" font-weight="700" '
+                f'text-anchor="middle" fill="{PLAN_MUTED}" {FONT}>WC</text>')
+    if room["tipo"] != "aula":
+        return ""
+    sigla, seats = room["sigla"], f'{room["posti"]} posti' if room.get("posti") else ""
+    w = max(len(sigla) * 1.3, len(seats) * 0.72) + 1.6
+    h = 5.2 if seats else 3.6
+    out = (f'<g id="{room["csiv"]}-etichetta">'
+           f'<rect x="{fmt(x - w / 2)}" y="{fmt(y - h / 2)}" width="{fmt(w)}" height="{fmt(h)}" rx="{fmt(min(h, 3.6) / 2)}" '
+           f'fill="#FFFFFF" stroke="{PLAN_LABEL_EDGE}" stroke-width="0.2"/>'
+           f'<text x="{fmt(x)}" y="{fmt(y - h / 2 + 2.6)}" font-size="2.2" font-weight="700" text-anchor="middle" fill="{BADGE_FOCUS}" {FONT}>{sigla}</text>')
+    if seats:
+        out += (f'<text x="{fmt(x)}" y="{fmt(y + h / 2 - 0.9)}" font-size="1.3" font-weight="600" '
+                f'text-anchor="middle" fill="#6E6E73" {FONT}>{seats}</text>')
+    return out + "</g>"
+
+
+def draw_plan(b, floor):
+    shell = [tuple(p) for p in b["pianta"]]
+    xs, ys = [p[0] for p in shell], [p[1] for p in shell]
+    m = 7.0
+    x0, y0, x1, y1 = min(xs) - m, min(ys) - m, max(xs) + m, max(ys) + m
+    wall = WALL_PER_FLOOR * 1.4
+    rooms = floor["locali"]
+    polys = [[tuple(p) for p in r["forma"]] for r in rooms]
+
+    out = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{fmt(x0)} {fmt(y0)} {fmt(x1 - x0)} {fmt(y1 - y0)}" '
+           f'width="{fmt((x1 - x0) * 10)}" height="{fmt((y1 - y0) * 10)}">', "<defs>"]
+    for i, (r, pts) in enumerate(zip(rooms, polys)):
+        if r["tipo"] in ("aula", "scale"):
+            out.append(f'<clipPath id="pl-{i}"><path d="{poly(pts)}"/></clipPath>')
+    out += ["</defs>",
+            f'<rect x="{fmt(x0)}" y="{fmt(y0)}" width="{fmt(x1 - x0)}" height="{fmt(y1 - y0)}" fill="{GROUND}"/>',
+            f'<path d="{poly(shell, wall * 0.86, wall * 1.57)}" fill="{SHADOW}" opacity="0.10"/>',
+            f'<path d="{poly(shell)}" fill="#FFFFFF"/>',
+            '<g id="locali">']
+
+    for i, (r, pts) in enumerate(zip(rooms, polys)):
+        attrs = f' id="{r["csiv"]}" data-sigla="{r["sigla"]}"' if r.get("csiv") else ""
+        out.append(f'<g{attrs} data-tipo="{r["tipo"]}">')
+        out.append(f'<path d="{poly(pts)}" fill="{PLAN_FILL[r["tipo"]]}" stroke="{PLAN_WALL}" '
+                   f'stroke-width="{INNER_WALL}" stroke-linejoin="round"/>')
+        if r["tipo"] == "aula":
+            out.append(f'<path d="{hatch(pts, r.get("gradoni", 0), 0.9, 1.4)}" clip-path="url(#pl-{i})" '
+                       f'stroke="{PLAN_TIER}" stroke-width="0.18"/>')
+        elif r["tipo"] == "scale":
+            out.append(f'<path d="{hatch(pts, r.get("gradini", 0), 0.45, 0.25)}" clip-path="url(#pl-{i})" '
+                       f'stroke="{PLAN_TREAD}" stroke-width="0.12"/>')
+        elif r["tipo"] == "ascensore" and len(pts) == 4:
+            inset = lambda p, c: (p[0] + (c[0] - p[0]) * 0.18, p[1] + (c[1] - p[1]) * 0.18)
+            ctr = centroid(pts)
+            p = [inset(q, ctr) for q in pts]
+            out.append(f'<path d="M{fmt(p[0][0])} {fmt(p[0][1])}L{fmt(p[2][0])} {fmt(p[2][1])}'
+                       f'M{fmt(p[1][0])} {fmt(p[1][1])}L{fmt(p[3][0])} {fmt(p[3][1])}" '
+                       f'stroke="#C7CCD5" stroke-width="0.2" stroke-linecap="round"/>')
+        out.append("</g>")
+    out.append("</g>")
+
+    if floor.get("pilastri"):
+        out.append(f'<g id="pilastri" fill="{PLAN_WALL}">')
+        out += [f'<rect x="{fmt(x - 0.35)}" y="{fmt(y - 0.35)}" width="0.7" height="0.7" rx="0.12"/>'
+                for x, y in floor["pilastri"]]
+        out.append("</g>")
+
+    doors = [opening(*nearest_edge(tuple(p), polys)[:3], DOOR) for p in floor.get("porte", [])]
+    out.append(f'<path id="porte" d="{"".join(doors)}" stroke="#FFFFFF" stroke-width="{INNER_WALL + 0.25}"/>')
+
+    out.append(f'<path id="muro" d="{poly(shell)}" fill="none" stroke="{PLAN_SHELL}" '
+               f'stroke-width="{SHELL_WALL}" stroke-linejoin="round"/>')
+
+    out.append('<g id="ingressi">')
+    for e in floor.get("ingressi", []):
+        q, a, c, _ = nearest_edge(tuple(e["punto"]), [shell])
+        nx, ny = outward(a, c, shell)
+        tx, ty = -ny, nx
+        out.append(f'<path d="{opening(q, a, c, ENTRANCE)}" stroke="#FFFFFF" stroke-width="{SHELL_WALL + 0.3}"/>')
+        tip = (q[0] + nx * 0.7, q[1] + ny * 0.7)
+        base = (q[0] + nx * 2.4, q[1] + ny * 2.4)
+        tri = [tip, (base[0] + tx * 1.1, base[1] + ty * 1.1), (base[0] - tx * 1.1, base[1] - ty * 1.1)]
+        out.append(f'<path d="{poly(tri)}" fill="{BADGE_FOCUS}" stroke="{BADGE_FOCUS}" stroke-width="0.3" stroke-linejoin="round"/>')
+        if e.get("principale"):
+            # Beside the arrow, on its far side, whichever way the wall faces.
+            lx, ly = q[0] + nx * 3.0, q[1] + ny * 3.0
+            if abs(nx) > abs(ny):
+                anchor = "end" if nx < 0 else "start"
+            else:
+                anchor, ly = "middle", ly + (1.6 if ny > 0 else -0.6)
+            out.append(f'<text x="{fmt(lx)}" y="{fmt(ly + 0.55)}" font-size="1.5" font-weight="700" '
+                       f'text-anchor="{anchor}" fill="{BADGE_FOCUS}" {FONT}>Ingresso</text>')
+    out.append("</g>")
+
+    out.append('<g id="etichette">')
+    out += [lbl for lbl in (plan_label(r) for r in rooms) if lbl]
+    out += ["</g>", "</svg>"]
+    return "\n".join(out)
 
 
 # ---------------------------------------------------------------- main
@@ -371,6 +560,11 @@ def main():
             (dest / f"{b['csie']}-mappa.svg").write_text(draw_map(campus, b) + "\n")
             (dest / f"{b['csie']}-isometrico.svg").write_text(draw_iso(campus, b) + "\n")
             print(f"{src.stem}/{b['csie']}  {b.get('nome', b['numero'])}")
+            plans = HERE / "piante" / f"{b['csie']}.json"
+            if plans.exists():
+                for floor in json.loads(plans.read_text())["piani"]:
+                    (dest / f"{floor['csip']}-pianta.svg").write_text(draw_plan(b, floor) + "\n")
+                    print(f"{src.stem}/{floor['csip']}  piano {floor['nome']}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-27 -34.5 81.4 73.5" width="814" height="735">
+<defs>
+<clipPath id="pl-1"><path d="M-19.9 -20.6L2 -22.8L1.8 -4.2L-13.2 -1.7Z"/></clipPath>
+<clipPath id="pl-3"><path d="M-13.2 6.1L2.2 8.5L2.6 14.2L2.8 27.8L-19.1 24.8Z"/></clipPath>
+<clipPath id="pl-5"><path d="M19.9 -12.7L40.3 -20.3L43.8 1.8L25.2 1.8L23.4 -1.9L21.2 -10Z"/></clipPath>
+<clipPath id="pl-6"><path d="M3.8 -9.5L10.6 -10.8L10.9 -5.6L4.2 -4.8Z"/></clipPath>
+<clipPath id="pl-8"><path d="M7.8 9.4L13.4 10.1L13.3 15.6L7.8 14.8Z"/></clipPath>
+<clipPath id="pl-9"><path d="M13.4 10.1L19.3 10.9L19 16.2L13.3 15.6Z"/></clipPath>
+</defs>
+<rect x="-27" y="-34.5" width="81.4" height="73.5" fill="#EEF0EA"/>
+<path d="M3.7 -7L3.3 -22.9L-8.7 -25.1L-18.7 -18.6L-11.9 0.7L-11.9 8.5L-18 27.8L-8.4 34.4L4.1 32.5L3.9 16.6L25.8 19.5L31.3 4.4L46.5 4.2L48.7 -7.8L42.1 -18.1L21.2 -10.3Z" fill="#4E5566" opacity="0.10"/>
+<path d="M2.4 -9.4L2 -25.3L-10 -27.5L-20 -21L-13.2 -1.7L-13.2 6.1L-19.3 25.4L-9.7 32L2.8 30.1L2.6 14.2L24.5 17.1L30 2L45.2 1.8L47.4 -10.2L40.8 -20.5L19.9 -12.7Z" fill="#FFFFFF"/>
+<g id="locali">
+<g data-tipo="locale">
+<path d="M-20 -21L-10 -27.5L2 -25.3L2 -22.8L-19.9 -20.6Z" fill="#F2F3F6" stroke="#C9CED6" stroke-width="0.3" stroke-linejoin="round"/>
+</g>
+<g id="MIA0203000006" data-sigla="T.1.1" data-tipo="aula">
+<path d="M-19.9 -20.6L2 -22.8L1.8 -4.2L-13.2 -1.7Z" fill="#E3ECF5" stroke="#C9CED6" stroke-width="0.3" stroke-linejoin="round"/>
+<path d="M29.3 -10.2L-26.2 -1M29.2 -11.1L-26.4 -1.8M29.1 -12L-26.5 -2.7M28.9 -12.9L-26.7 -3.6M28.8 -13.8L-26.8 -4.5M28.6 -14.6L-26.9 -5.4M28.5 -15.5L-27.1 -6.3M28.3 -16.4L-27.2 -7.2M28.2 -17.3L-27.4 -8.1M28 -18.2L-27.5 -8.9M27.9 -19.1L-27.7 -9.8M27.7 -20L-27.8 -10.7M27.6 -20.9L-28 -11.6M27.4 -21.8L-28.1 -12.5M27.3 -22.6L-28.3 -13.4M27.1 -23.5L-28.4 -14.3M27 -24.4L-28.6 -15.2M26.8 -25.3L-28.7 -16M26.7 -26.2L-28.9 -16.9" clip-path="url(#pl-1)" stroke="#CBDCEE" stroke-width="0.18"/>
+</g>
+<g data-tipo="locale">
+<path d="M-19.1 24.8L2.8 27.8L2.8 30.1L-9.7 32L-19.3 25.4Z" fill="#F2F3F6" stroke="#C9CED6" stroke-width="0.3" stroke-linejoin="round"/>
+</g>
+<g id="MIA0203000030" data-sigla="T.1.2" data-tipo="aula">
+<path d="M-13.2 6.1L2.2 8.5L2.6 14.2L2.8 27.8L-19.1 24.8Z" fill="#E3ECF5" stroke="#C9CED6" stroke-width="0.3" stroke-linejoin="round"/>
+<path d="M-41 3.2L14.2 11.8M-41.2 4.1L14.1 12.7M-41.3 5L13.9 13.6M-41.5 5.8L13.8 14.5M-41.6 6.7L13.7 15.3M-41.7 7.6L13.5 16.2M-41.9 8.5L13.4 17.1M-42 9.4L13.2 18M-42.2 10.3L13.1 18.9M-42.3 11.2L13 19.8M-42.4 12.1L12.8 20.7M-42.6 13L12.7 21.6M-42.7 13.8L12.5 22.5M-42.8 14.7L12.4 23.3M-43 15.6L12.3 24.2M-43.1 16.5L12.1 25.1M-43.3 17.4L12 26M-43.4 18.3L11.9 26.9M-43.5 19.2L11.7 27.8" clip-path="url(#pl-3)" stroke="#CBDCEE" stroke-width="0.18"/>
+</g>
+<g data-tipo="locale">
+<path d="M40.3 -20.3L40.8 -20.5L47.4 -10.2L45.2 1.8L43.8 1.8Z" fill="#F2F3F6" stroke="#C9CED6" stroke-width="0.3" stroke-linejoin="round"/>
+</g>
+<g id="MIA0203000012" data-sigla="T.1.3" data-tipo="aula">
+<path d="M19.9 -12.7L40.3 -20.3L43.8 1.8L25.2 1.8L23.4 -1.9L21.2 -10Z" fill="#E3ECF5" stroke="#C9CED6" stroke-width="0.3" stroke-linejoin="round"/>
+<path d="M34.6 -47.5L43.3 7.3M33.7 -47.4L42.4 7.5M32.8 -47.2L41.5 7.6M31.9 -47.1L40.6 7.8M31 -46.9L39.7 7.9M30.1 -46.8L38.8 8M29.2 -46.7L37.9 8.2M28.4 -46.5L37 8.3M27.5 -46.4L36.1 8.5M26.6 -46.2L35.3 8.6M25.7 -46.1L34.4 8.8M24.8 -46L33.5 8.9M23.9 -45.8L32.6 9M23 -45.7L31.7 9.2M22.1 -45.5L30.8 9.3M21.2 -45.4L29.9 9.5M20.4 -45.3L29 9.6M19.5 -45.1L28.1 9.7M18.6 -45L27.3 9.9M17.7 -44.8L26.4 10M16.8 -44.7L25.5 10.2" clip-path="url(#pl-5)" stroke="#CBDCEE" stroke-width="0.18"/>
+</g>
+<g data-tipo="scale">
+<path d="M3.8 -9.5L10.6 -10.8L10.9 -5.6L4.2 -4.8Z" fill="#E9EBEF" stroke="#C9CED6" stroke-width="0.3" stroke-linejoin="round"/>
+<path d="M-5.1 -7.5L12.8 -11M-5 -7.1L12.9 -10.5M-4.9 -6.7L13 -10.1M-4.8 -6.2L13 -9.6M-4.8 -5.8L13.1 -9.2M-4.7 -5.3L13.2 -8.8M-4.6 -4.9L13.3 -8.3M-4.5 -4.5L13.4 -7.9M-4.4 -4L13.5 -7.4M-4.3 -3.6L13.5 -7M-4.2 -3.1L13.6 -6.5" clip-path="url(#pl-6)" stroke="#D3D7DF" stroke-width="0.12"/>
+</g>
+<g data-tipo="locale">
+<path d="M10.6 -10.8L14.6 -11.5L14.8 -6.4L10.9 -5.6Z" fill="#F2F3F6" stroke="#C9CED6" stroke-width="0.3" stroke-linejoin="round"/>
+</g>
+<g data-tipo="scale">
+<path d="M7.8 9.4L13.4 10.1L13.3 15.6L7.8 14.8Z" fill="#E9EBEF" stroke="#C9CED6" stroke-width="0.3" stroke-linejoin="round"/>
+<path d="M13.3 1.8L13 18.4M12.9 1.8L12.5 18.4M12.4 1.8L12.1 18.4M12 1.8L11.6 18.4M11.5 1.8L11.2 18.4M11.1 1.7L10.7 18.4M10.6 1.7L10.3 18.4M10.2 1.7L9.8 18.3M9.7 1.7L9.4 18.3M9.3 1.7L8.9 18.3M8.8 1.7L8.5 18.3M8.4 1.7L8 18.3" clip-path="url(#pl-8)" stroke="#D3D7DF" stroke-width="0.12"/>
+</g>
+<g data-tipo="scale">
+<path d="M13.4 10.1L19.3 10.9L19 16.2L13.3 15.6Z" fill="#E9EBEF" stroke="#C9CED6" stroke-width="0.3" stroke-linejoin="round"/>
+<path d="M19.5 2.3L18.6 19.5M19.1 2.3L18.1 19.5M18.6 2.2L17.7 19.4M18.2 2.2L17.2 19.4M17.7 2.2L16.8 19.4M17.3 2.2L16.3 19.4M16.8 2.1L15.9 19.3M16.4 2.1L15.4 19.3M15.9 2.1L15 19.3M15.5 2L14.5 19.3M15 2L14.1 19.2M14.6 2L13.6 19.2M14.1 2L13.2 19.2" clip-path="url(#pl-9)" stroke="#D3D7DF" stroke-width="0.12"/>
+</g>
+<g data-tipo="ascensore">
+<path d="M20.8 10.8L22.9 11.1L22.7 13.9L20.7 13.7Z" fill="#E9EBEF" stroke="#C9CED6" stroke-width="0.3" stroke-linejoin="round"/>
+<path d="M21 11.1L22.5 13.7M22.7 11.3L20.9 13.5" stroke="#C7CCD5" stroke-width="0.2" stroke-linecap="round"/>
+</g>
+<g data-tipo="ascensore">
+<path d="M22.9 11.1L25 11.3L24.7 14.2L22.7 13.9Z" fill="#E9EBEF" stroke="#C9CED6" stroke-width="0.3" stroke-linejoin="round"/>
+<path d="M23.1 11.3L24.5 13.9M24.8 11.5L22.9 13.7" stroke="#C7CCD5" stroke-width="0.2" stroke-linecap="round"/>
+</g>
+<g data-tipo="locale">
+<path d="M2.3 7.6L6.1 8.2L6.1 14.7L2.6 14.2Z" fill="#F2F3F6" stroke="#C9CED6" stroke-width="0.3" stroke-linejoin="round"/>
+</g>
+<g data-tipo="locale">
+<path d="M25.2 1.8L30 2L28 7.3L25.7 6.8Z" fill="#F2F3F6" stroke="#C9CED6" stroke-width="0.3" stroke-linejoin="round"/>
+</g>
+</g>
+<path id="porte" d="M-9.1 -2.4L-10.5 -2.2M1.3 -4.1L-0.1 -3.9M-10.5 6.5L-9.1 6.7M-0.1 8.1L1.3 8.4M21.5 -8.9L21.1 -10.3M25.1 1.5L24.4 0.2" stroke="#FFFFFF" stroke-width="0.55"/>
+<path id="muro" d="M2.4 -9.4L2 -25.3L-10 -27.5L-20 -21L-13.2 -1.7L-13.2 6.1L-19.3 25.4L-9.7 32L2.8 30.1L2.6 14.2L24.5 17.1L30 2L45.2 1.8L47.4 -10.2L40.8 -20.5L19.9 -12.7Z" fill="none" stroke="#AEB4BE" stroke-width="0.6" stroke-linejoin="round"/>
+<g id="ingressi">
+<path d="M-13.2 1.1L-13.2 3.3" stroke="#FFFFFF" stroke-width="0.8999999999999999"/>
+<path d="M-13.9 2.2L-15.6 1.1L-15.6 3.3Z" fill="#1C6BAD" stroke="#1C6BAD" stroke-width="0.3" stroke-linejoin="round"/>
+<text x="-16.2" y="2.8" font-size="1.5" font-weight="700" text-anchor="end" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">Ingresso</text>
+<path d="M18.1 -12.4L15.9 -12" stroke="#FFFFFF" stroke-width="0.8999999999999999"/>
+<path d="M16.9 -12.8L17.6 -14.7L15.5 -14.3Z" fill="#1C6BAD" stroke="#1C6BAD" stroke-width="0.3" stroke-linejoin="round"/>
+</g>
+<g id="etichette">
+<g id="MIA0203000006-etichetta"><rect x="-11.6" y="-15.5" width="8.1" height="5.2" rx="1.8" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.2"/><text x="-7.5" y="-12.9" font-size="2.2" font-weight="700" text-anchor="middle" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">T.1.1</text><text x="-7.5" y="-11.2" font-size="1.3" font-weight="600" text-anchor="middle" fill="#6E6E73" font-family="-apple-system, system-ui, sans-serif">300 posti</text></g>
+<g id="MIA0203000030-etichetta"><rect x="-10.9" y="14.7" width="8.1" height="5.2" rx="1.8" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.2"/><text x="-6.9" y="17.3" font-size="2.2" font-weight="700" text-anchor="middle" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">T.1.2</text><text x="-6.9" y="19" font-size="1.3" font-weight="600" text-anchor="middle" fill="#6E6E73" font-family="-apple-system, system-ui, sans-serif">300 posti</text></g>
+<g id="MIA0203000012-etichetta"><rect x="28.8" y="-10.3" width="8.1" height="5.2" rx="1.8" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.2"/><text x="32.8" y="-7.7" font-size="2.2" font-weight="700" text-anchor="middle" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">T.1.3</text><text x="32.8" y="-6" font-size="1.3" font-weight="600" text-anchor="middle" fill="#6E6E73" font-family="-apple-system, system-ui, sans-serif">300 posti</text></g>
+</g>
+</svg>
