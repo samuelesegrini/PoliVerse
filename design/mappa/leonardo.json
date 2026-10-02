@@ -36,7 +36,26 @@
       ],
       "ingresso": {"lato": 16, "t": 0.66},
       "vista": "sud-ovest",
-      "riquadro": [-62, -44, 72, 92]
+      "riquadro": [-62, -44, 72, 92],
+      "gronda": 3.0,
+      "profilo": [
+        {"piano": "MIA020300S", "tipo": "fessura", "h": 5},
+        {
+          "piano": "MIA0203000",
+          "tipo": "pieno",
+          "rivestimento": "cemento",
+          "finestre": "grandi",
+          "h": 18
+        },
+        {
+          "piano": "MIA0203001",
+          "tipo": "pieno",
+          "rivestimento": "mosaico",
+          "finestre": "piccole",
+          "file": 3,
+          "h": 40
+        }
+      ]
     },
     {
       "csie": "MIA0212",

@@ -607,7 +607,10 @@ def floor_names(b):
 CLADDING = {"ceramica": ("#E6E0D4", "#CDC5B6", "#F1EDE5"),
             "mattone": ("#ECE7DE", "#D3CBBD", "#F4F1EB"),
             "fessura": ("#4D5D72", "#36465B", "#5B6B80"),
-            "bianco": ("#F6F7F9", "#DDE0E5", "#FFFFFF")}
+            "bianco": ("#F6F7F9", "#DDE0E5", "#FFFFFF"),
+            "cemento": ("#DCD8D0", "#C4BFB5", "#E8E5DF"),     # the Trifoglio's concrete base
+            "mosaico": ("#6B6E75", "#565960", "#7A7D84")}     # and its grey glass mosaic
+WINDOW_FRAME = "#F4F5F7"
 STEEL = "#23272E"             # Viganò's black steel
 STEEL_RED = "#C0503B"         # and his red
 SKYLIGHT, SKYLIGHT_LIT = "#C9D6E4", "#FFD98A"
@@ -724,6 +727,46 @@ def sculpture_a(pts, at, top):
             f'<polygon points="{iso_poly(black_leg)}" fill="{STEEL}"/>']
 
 
+def punched(pts, z, h, rows, lit, colors, big=False):
+    """Windows cut into a blind wall, face by face, far ones first so nearer faces
+    cover them: `rows` rows of small horizontal windows in white frames, every
+    so often a tall strip of glass block, as on the Trifoglio. `big` draws one
+    row of large ground-floor windows instead."""
+    out = []
+    glass = "#F2D492" if lit else "#9DB4CC"
+    for a, c, left, q in faces(pts, z, z + h):
+        # The wall again, so a nearer face covers a farther one's windows.
+        out.append(f'<polygon points="{iso_poly(q)}" fill="{colors[0] if left else colors[1]}"/>')
+        n = outward(a, c, pts)
+        length = math.dist(a, c)
+        u = ((c[0] - a[0]) / length, (c[1] - a[1]) / length)
+        at = lambda t, zz: (a[0] + u[0] * t + n[0] * 0.05, a[1] + u[1] * t + n[1] * 0.05, zz)
+        step = 4.2
+        k = int((length - 2) / step)
+        if k < 1:
+            continue
+        pad = (length - k * step) / 2
+        rect = lambda t0, t1, z0, z1: (f'<polygon points="{iso_poly([at(t0, z0), at(t1, z0), at(t1, z1), at(t0, z1)])}" '
+                                       f'fill="{glass}" stroke="{WINDOW_FRAME}" stroke-width="0.9"/>')
+        for i in range(k):
+            t = pad + i * step
+            if big:
+                out.append(rect(t + 0.6, t + step - 0.6, z + h * 0.18, z + h * 0.78))
+                continue
+            seed = (i * 7 + int(length)) % 9
+            if seed == 4:
+                out.append(rect(t + 1.8, t + 2.4, z + h * 0.12, z + h * 0.88))      # glass block
+                continue
+            for r in range(rows):
+                if (seed + r * 3) % 5 == 0:
+                    continue                                                    # blind here
+                zr = z + h * (r + 0.42) / rows
+                w = 2.6 if (seed + r) % 3 else 1.4
+                out.append(rect(t + 0.8, t + 0.8 + w, zr, zr + min(4.0, h / rows * 0.32)))
+    out.append(f'<polygon points="{iso_poly([(x, y, z + h) for x, y in pts])}" fill="{colors[2]}"/>')
+    return out
+
+
 def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, parte=""):
     """Draws the bands of `profilo`, bottom up, from height z; returns the top.
 
@@ -801,7 +844,9 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
             if kind == "fessura" and lit:
                 colors = (ISO_LIT_LEFT[1], ISO_LIT_RIGHT[1], colors[2])
             out = prism(own, z, z + h, colors[:2], colors[2])
-            if kind == "pieno":
+            if kind == "pieno" and band.get("finestre"):
+                out += punched(own, z, h, band.get("file", 1), lit, colors, band["finestre"] == "grandi")
+            elif kind == "pieno" and band.get("rivestimento") not in ("mosaico",):
                 # The cladding's courses, faint.
                 courses = []
                 for a, c, _, _ in faces(own, 0, 1):
@@ -831,8 +876,16 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
             own = offset(own, band.get("sporto", 2.0))
         z += h
         below = own
-    roof = prism(below, z, z + ISO_SLAB, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
-    roof.append(f'<polygon points="{iso_poly([(x, y, z + ISO_SLAB) for x, y in offset(below, -1.6)])}" fill="{ISO_ROOF_INNER}"/>')
+    if b.get("gronda"):
+        # A thin pale roof overhanging every side by `gronda` metres, its shadow on the wall.
+        roof = []
+        for a, c, _, _ in faces(below, 0, 1):
+            q = [(a[0], a[1], z - 7), (c[0], c[1], z - 7), (c[0], c[1], z), (a[0], a[1], z)]
+            roof.append(f'<polygon points="{iso_poly(q)}" fill="{SHADOW}" opacity="0.3"/>')
+        roof += prism(offset(below, b["gronda"]), z, z + 2.2, ("#B9BDC4", "#A3A8B0"), "#E3E5E8")
+    else:
+        roof = prism(below, z, z + ISO_SLAB, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
+        roof.append(f'<polygon points="{iso_poly([(x, y, z + ISO_SLAB) for x, y in offset(below, -1.6)])}" fill="{ISO_ROOF_INNER}"/>')
     strati.append(Strato("tetto" + tag, "edifici", roof))
     for c, lights in skylights:
         strati.append(Strato(f"{c}-lucernari{tag}", "piani", lights(False), piano=c, lit=lights(True)))

@@ -224,7 +224,7 @@
     },
     "leonardo/MIA0203-isometrico": {
       "file": "leonardo/MIA0203-isometrico.svg",
-      "viewBox": "-110.4 -160.3 269 235.2",
+      "viewBox": "-110.4 -169.3 269 244.2",
       "strati": [
         {
           "file": "leonardo/MIA0203-isometrico/01-ombra.svg",
@@ -253,35 +253,31 @@
           "acceso": "leonardo/MIA0203-isometrico/06-MIA020300S-acceso.svg"
         },
         {
-          "file": "leonardo/MIA0203-isometrico/07-ingresso.svg",
-          "livello": "ingressi"
-        },
-        {
-          "file": "leonardo/MIA0203-isometrico/08-MIA0203000.svg",
+          "file": "leonardo/MIA0203-isometrico/07-MIA0203000.svg",
           "livello": "piani",
           "piano": "MIA0203000",
-          "acceso": "leonardo/MIA0203-isometrico/08-MIA0203000-acceso.svg"
+          "acceso": "leonardo/MIA0203-isometrico/07-MIA0203000-acceso.svg"
         },
         {
-          "file": "leonardo/MIA0203-isometrico/09-MIA0203001.svg",
+          "file": "leonardo/MIA0203-isometrico/08-MIA0203001.svg",
           "livello": "piani",
           "piano": "MIA0203001",
-          "acceso": "leonardo/MIA0203-isometrico/09-MIA0203001-acceso.svg"
+          "acceso": "leonardo/MIA0203-isometrico/08-MIA0203001-acceso.svg"
         },
         {
-          "file": "leonardo/MIA0203-isometrico/10-tetto.svg",
+          "file": "leonardo/MIA0203-isometrico/09-tetto.svg",
           "livello": "edifici"
         },
         {
-          "file": "leonardo/MIA0203-isometrico/11-impianti.svg",
+          "file": "leonardo/MIA0203-isometrico/10-impianti.svg",
           "livello": "impianti"
         },
         {
-          "file": "leonardo/MIA0203-isometrico/12-alberi-davanti.svg",
+          "file": "leonardo/MIA0203-isometrico/11-alberi-davanti.svg",
           "livello": "alberi"
         },
         {
-          "file": "leonardo/MIA0203-isometrico/13-etichette-piani.svg",
+          "file": "leonardo/MIA0203-isometrico/12-etichette-piani.svg",
           "livello": "etichette-piani"
         }
       ]
