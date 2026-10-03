@@ -392,13 +392,13 @@
 <path d="M334 161L304 178.3M337.9 163.3L307.9 180.6M341.7 165.5L311.8 182.8M345.6 167.7L315.6 185M349.5 170L319.5 187.3M315.1 167.4L338.4 180.8" stroke="#E8ECEF" stroke-width="0.7"/>
 </g>
 <g id="livello-ornati-aula-magna" data-livello="edifici">
-<polygon points="361.7,158 354.7,162 354.7,153 361.7,149" fill="#D3C7AB"/>
-<polygon points="354.7,162 347.8,158 347.8,149 354.7,153" fill="#EFE7D5"/>
-<polygon points="354.7,145 361.7,149 354.7,153 347.8,149" fill="#F3EDDF"/>
-<ellipse cx="351.2" cy="150.9" rx="1.6" ry="2.6" fill="#FFFFFF" stroke="#8C7F64" stroke-width="0.4"/><path d="M351.2 150.9V149.1M351.2 150.9L352.1 151.4" stroke="#3B3A36" stroke-width="0.35"/>
-<polygon points="363,149 354.7,153.8 354.7,152.3 363,147.5" fill="#CDBF9F"/>
-<polygon points="354.7,153.8 346.4,149 346.4,147.5 354.7,152.3" fill="#E7DDC6"/>
-<polygon points="354.7,142.7 363,147.5 354.7,152.3 346.4,147.5" fill="#F3EDDF"/>
+<polygon points="354,162.4 347.1,166.4 347.1,157.4 354,153.4" fill="#D3C7AB"/>
+<polygon points="347.1,166.4 340.2,162.4 340.2,153.4 347.1,157.4" fill="#EFE7D5"/>
+<polygon points="347.1,149.4 354,153.4 347.1,157.4 340.2,153.4" fill="#F3EDDF"/>
+<ellipse cx="343.6" cy="155.3" rx="1.6" ry="2.6" fill="#FFFFFF" stroke="#8C7F64" stroke-width="0.4"/><path d="M343.6 155.3V153.5M343.6 155.3L344.5 155.8" stroke="#3B3A36" stroke-width="0.35"/>
+<polygon points="347.1,158.2 338.8,153.4 338.8,151.9 347.1,156.7" fill="#E7DDC6"/>
+<polygon points="355.4,153.4 347.1,158.2 347.1,156.7 355.4,151.9" fill="#CDBF9F"/>
+<polygon points="347.1,147.1 355.4,151.9 347.1,156.7 338.8,151.9" fill="#F3EDDF"/>
 </g>
 <g id="livello-MIA010100S-aula-sud" data-livello="piani" data-piano="MIA010100S">
 <polygon points="380,231.4 345.7,251.2 345.7,246.2 380,226.4" fill="#9C9A92"/>
@@ -671,33 +671,31 @@
 <polygon points="255.8,194 225.7,211.4 225.7,206.4 255.8,189" fill="#D8CCB0"/>
 <polygon points="225.7,211.4 208,201.2 208,196.2 225.7,206.4" fill="#EFE7D5"/>
 <polygon points="208,196.2 238.2,178.8 255.8,189 225.7,206.4" fill="#F3EDDF"/>
+<polygon points="211.1,196.2 238.2,180.6 252.7,189 225.7,204.6" fill="#A9A79F"/>
 <path d="M254.6 193.9V190.7M253.3 194.6V191.4M252.1 195.4V192.2M250.8 196.1V192.9M249.5 196.8V193.6M248.3 197.6V194.3M247 198.3V195.1M245.8 199V195.8M244.5 199.7V196.5M243.3 200.4V197.2M242 201.2V198M240.8 201.9V198.7M239.5 202.6V199.4M238.2 203.3V200.1M237 204.1V200.9M235.7 204.8V201.6M234.5 205.5V202.3M233.2 206.2V203.1M232 207V203.8M230.7 207.7V204.5M229.5 208.4V205.2M228.2 209.1V205.9M226.9 209.9V206.7M224.4 209.9V206.7M223.2 209.1V205.9M221.9 208.4V205.2M220.6 207.7V204.5M219.4 207V203.8M218.1 206.2V203M216.9 205.5V202.3M215.6 204.8V201.6M214.3 204V200.8M213.1 203.3V200.1M211.8 202.6V199.4M210.5 201.9V198.7M209.3 201.1V197.9" stroke="#BFB297" stroke-width="0.3"/>
-<circle cx="255.8" cy="187.9" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="245.8" cy="193.7" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="235.7" cy="199.5" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="225.7" cy="205.3" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="225.7" cy="205.3" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="216.9" cy="200.2" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="208" cy="195.1" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<rect x="255.1" y="187.8" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="255.8" cy="187" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="245.1" y="193.6" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="245.8" cy="192.8" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="235" y="199.4" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="235.7" cy="198.6" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="225" y="205.2" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="225.7" cy="204.4" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="225" y="205.2" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="225.7" cy="204.4" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="216.2" y="200.1" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="216.9" cy="199.3" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="207.3" y="195" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="208" cy="194.2" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
 </g>
 <g id="livello-balaustra-testa-nord-acceso" data-livello="piani" data-piano="balaustra" data-acceso="true" style="display: none">
 <polygon points="255.8,194 225.7,211.4 225.7,206.4 255.8,189" fill="#D8CCB0"/>
 <polygon points="225.7,211.4 208,201.2 208,196.2 225.7,206.4" fill="#EFE7D5"/>
 <polygon points="208,196.2 238.2,178.8 255.8,189 225.7,206.4" fill="#F3EDDF"/>
+<polygon points="211.1,196.2 238.2,180.6 252.7,189 225.7,204.6" fill="#A9A79F"/>
 <path d="M254.6 193.9V190.7M253.3 194.6V191.4M252.1 195.4V192.2M250.8 196.1V192.9M249.5 196.8V193.6M248.3 197.6V194.3M247 198.3V195.1M245.8 199V195.8M244.5 199.7V196.5M243.3 200.4V197.2M242 201.2V198M240.8 201.9V198.7M239.5 202.6V199.4M238.2 203.3V200.1M237 204.1V200.9M235.7 204.8V201.6M234.5 205.5V202.3M233.2 206.2V203.1M232 207V203.8M230.7 207.7V204.5M229.5 208.4V205.2M228.2 209.1V205.9M226.9 209.9V206.7M224.4 209.9V206.7M223.2 209.1V205.9M221.9 208.4V205.2M220.6 207.7V204.5M219.4 207V203.8M218.1 206.2V203M216.9 205.5V202.3M215.6 204.8V201.6M214.3 204V200.8M213.1 203.3V200.1M211.8 202.6V199.4M210.5 201.9V198.7M209.3 201.1V197.9" stroke="#BFB297" stroke-width="0.3"/>
-<circle cx="255.8" cy="187.9" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="245.8" cy="193.7" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="235.7" cy="199.5" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="225.7" cy="205.3" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="225.7" cy="205.3" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="216.9" cy="200.2" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="208" cy="195.1" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<rect x="255.1" y="187.8" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="255.8" cy="187" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="245.1" y="193.6" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="245.8" cy="192.8" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="235" y="199.4" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="235.7" cy="198.6" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="225" y="205.2" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="225.7" cy="204.4" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="225" y="205.2" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="225.7" cy="204.4" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="216.2" y="200.1" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="216.9" cy="199.3" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="207.3" y="195" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="208" cy="194.2" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
 </g>
 <g id="livello-tetto-testa-nord" data-livello="edifici">
-<polygon points="255.8,189 225.7,206.4 225.7,202.4 255.8,185" fill="#D4D8DF"/>
-<polygon points="225.7,206.4 208,196.2 208,192.2 225.7,202.4" fill="#F2F3F6"/>
-<polygon points="208,192.2 238.2,174.8 255.8,185 225.7,202.4" fill="#FFFFFF"/>
-<polygon points="213.6,192.2 238.2,178 250.3,185 225.7,199.2" fill="#EEF0F3"/>
 </g>
 <g id="livello-ornati-testa-nord" data-livello="edifici">
 <polygon points="207.7,206.2 207.7,206.2 207.8,204.7 208.3,203.5 209.1,202.6 210.2,202 211.5,201.8 213,201.9 214.6,202.4 216.3,203.2 218,204.3 219.6,205.7 221.1,207.3 222.5,209.1 223.5,210.9 224.3,212.8 224.8,214.5 225,216.2 225,216.2" fill="#E4DFD3" stroke="#B9B2A2" stroke-width="0.4"/>
@@ -1030,31 +1028,33 @@
 <polygon points="267.4,235.5 225.7,211.4 225.7,206.4 267.4,230.5" fill="#EFE7D5"/>
 <polygon points="297.6,218.1 267.4,235.5 267.4,230.5 297.6,213.1" fill="#D8CCB0"/>
 <polygon points="225.7,206.4 255.8,189 297.6,213.1 267.4,230.5" fill="#F3EDDF"/>
+<polygon points="228.8,206.4 255.8,190.8 294.4,213.1 267.4,228.7" fill="#A9A79F"/>
 <path d="M266.2 234V230.8M265 233.3V230.1M263.7 232.6V229.4M262.5 231.9V228.7M261.3 231.2V228M260.1 230.4V227.2M258.8 229.7V226.5M257.6 229V225.8M256.4 228.3V225.1M255.2 227.6V224.4M253.9 226.9V223.7M252.7 226.2V223M251.5 225.5V222.3M250.2 224.8V221.6M249 224.1V220.9M247.8 223.4V220.2M246.6 222.6V219.4M245.3 221.9V218.7M244.1 221.2V218M242.9 220.5V217.3M241.6 219.8V216.6M240.4 219.1V215.9M239.2 218.4V215.2M238 217.7V214.5M236.7 217V213.8M235.5 216.3V213.1M234.3 215.6V212.4M233.1 214.9V211.7M231.8 214.1V210.9M230.6 213.4V210.2M229.4 212.7V209.5M228.1 212V208.8M226.9 211.3V208.1M296.3 218V214.8M295.1 218.8V215.6M293.8 219.5V216.3M292.5 220.2V217M291.3 220.9V217.7M290 221.6V218.4M288.8 222.4V219.2M287.5 223.1V219.9M286.3 223.8V220.6M285 224.5V221.3M283.8 225.3V222.1M282.5 226V222.8M281.2 226.7V223.5M280 227.4V224.2M278.7 228.2V225M277.5 228.9V225.7M276.2 229.6V226.4M275 230.3V227.1M273.7 231.1V227.9M272.5 231.8V228.6M271.2 232.5V229.3M269.9 233.2V230M268.7 234V230.8" stroke="#BFB297" stroke-width="0.3"/>
-<circle cx="267.4" cy="229.4" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="257" cy="223.4" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="246.6" cy="217.3" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="236.1" cy="211.3" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="225.7" cy="205.3" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="297.6" cy="212" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="287.5" cy="217.8" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="277.5" cy="223.6" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="267.4" cy="229.4" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<rect x="266.7" y="229.3" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="267.4" cy="228.5" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="256.3" y="223.3" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="257" cy="222.5" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="245.9" y="217.2" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="246.6" cy="216.4" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="235.4" y="211.2" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="236.1" cy="210.4" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="225" y="205.2" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="225.7" cy="204.4" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="296.9" y="211.9" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="297.6" cy="211.1" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="286.8" y="217.7" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="287.5" cy="216.9" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="276.8" y="223.5" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="277.5" cy="222.7" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="266.7" y="229.3" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="267.4" cy="228.5" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
 </g>
 <g id="livello-balaustra-fronte-acceso" data-livello="piani" data-piano="balaustra" data-acceso="true" style="display: none">
 <polygon points="267.4,235.5 225.7,211.4 225.7,206.4 267.4,230.5" fill="#EFE7D5"/>
 <polygon points="297.6,218.1 267.4,235.5 267.4,230.5 297.6,213.1" fill="#D8CCB0"/>
 <polygon points="225.7,206.4 255.8,189 297.6,213.1 267.4,230.5" fill="#F3EDDF"/>
+<polygon points="228.8,206.4 255.8,190.8 294.4,213.1 267.4,228.7" fill="#A9A79F"/>
 <path d="M266.2 234V230.8M265 233.3V230.1M263.7 232.6V229.4M262.5 231.9V228.7M261.3 231.2V228M260.1 230.4V227.2M258.8 229.7V226.5M257.6 229V225.8M256.4 228.3V225.1M255.2 227.6V224.4M253.9 226.9V223.7M252.7 226.2V223M251.5 225.5V222.3M250.2 224.8V221.6M249 224.1V220.9M247.8 223.4V220.2M246.6 222.6V219.4M245.3 221.9V218.7M244.1 221.2V218M242.9 220.5V217.3M241.6 219.8V216.6M240.4 219.1V215.9M239.2 218.4V215.2M238 217.7V214.5M236.7 217V213.8M235.5 216.3V213.1M234.3 215.6V212.4M233.1 214.9V211.7M231.8 214.1V210.9M230.6 213.4V210.2M229.4 212.7V209.5M228.1 212V208.8M226.9 211.3V208.1M296.3 218V214.8M295.1 218.8V215.6M293.8 219.5V216.3M292.5 220.2V217M291.3 220.9V217.7M290 221.6V218.4M288.8 222.4V219.2M287.5 223.1V219.9M286.3 223.8V220.6M285 224.5V221.3M283.8 225.3V222.1M282.5 226V222.8M281.2 226.7V223.5M280 227.4V224.2M278.7 228.2V225M277.5 228.9V225.7M276.2 229.6V226.4M275 230.3V227.1M273.7 231.1V227.9M272.5 231.8V228.6M271.2 232.5V229.3M269.9 233.2V230M268.7 234V230.8" stroke="#BFB297" stroke-width="0.3"/>
-<circle cx="267.4" cy="229.4" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="257" cy="223.4" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="246.6" cy="217.3" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="236.1" cy="211.3" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="225.7" cy="205.3" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="297.6" cy="212" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="287.5" cy="217.8" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="277.5" cy="223.6" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="267.4" cy="229.4" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<rect x="266.7" y="229.3" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="267.4" cy="228.5" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="256.3" y="223.3" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="257" cy="222.5" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="245.9" y="217.2" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="246.6" cy="216.4" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="235.4" y="211.2" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="236.1" cy="210.4" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="225" y="205.2" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="225.7" cy="204.4" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="296.9" y="211.9" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="297.6" cy="211.1" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="286.8" y="217.7" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="287.5" cy="216.9" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="276.8" y="223.5" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="277.5" cy="222.7" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="266.7" y="229.3" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="267.4" cy="228.5" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
 </g>
 <g id="livello-tetto-fronte" data-livello="edifici">
 <polygon points="223.6,206.4 255.8,187.8 255.8,193 239.5,202.4" fill="#D58A63"/>
@@ -1070,6 +1070,13 @@
 <path d="M247.3 266.9V257.9M246.1 266.2V257.2M245 265.6V256.6" stroke="#5B636D" stroke-width="0.35"/>
 <polygon points="239.9,262.6 235.4,260 235.4,251 235.6,250.1 236,249.5 236.8,249.4 237.6,249.7 238.5,250.4 239.2,251.4 239.7,252.5 239.9,253.6" fill="#2C3138" stroke="#E9E4D8" stroke-width="0.6"/>
 <path d="M238.8 261.9V252.9M237.6 261.3V252.3M236.5 260.6V251.6" stroke="#5B636D" stroke-width="0.35"/>
+<text transform="matrix(0.9 0.5 0 1 246 231.1)" font-family="Georgia, serif" font-size="2.5" letter-spacing="0.15" text-anchor="middle" fill="#6E6450">1863 · POLITECNICO DI MILANO</text>
+<path d="M243.8 250.2L236.9 248.2" stroke="#4A4A48" stroke-width="0.35"/>
+<polygon points="237.2,248 239.8,249.7 239.8,253.1 237.2,251.3" fill="#2E8B57" stroke="#8A8A86" stroke-width="0.12"/>
+<polygon points="239.8,249.7 242.4,251.5 242.4,254.8 239.8,253.1" fill="#FFFFFF" stroke="#8A8A86" stroke-width="0.12"/>
+<polygon points="242.4,251.5 245,253.3 245,256.6 242.4,254.8" fill="#C8102E" stroke="#8A8A86" stroke-width="0.12"/>
+<path d="M247.9 252.6L241 250.6" stroke="#4A4A48" stroke-width="0.35"/>
+<polygon points="241.4,250.4 249.2,255.7 249.2,259 241.4,253.7" fill="#1F3F94" stroke="#8A8A86" stroke-width="0.12"/>
 <polygon points="273.4,299.4 207.6,261.4 207.6,255.4 273.4,293.4" fill="#C9C7BF"/>
 <polygon points="279.5,295.9 273.4,299.4 273.4,293.4 279.5,289.9" fill="#B1AFA7"/>
 <polygon points="273.4,293.4 207.6,255.4 213.6,251.9 279.5,289.9" fill="#D8D6CF"/>
@@ -1242,33 +1249,31 @@
 <polygon points="315.2,228.3 285.1,245.7 285.1,240.7 315.2,223.3" fill="#D8CCB0"/>
 <polygon points="285.1,245.7 267.4,235.5 267.4,230.5 285.1,240.7" fill="#EFE7D5"/>
 <polygon points="267.4,230.5 297.6,213.1 315.2,223.3 285.1,240.7" fill="#F3EDDF"/>
+<polygon points="270.5,230.5 297.6,214.9 312.1,223.3 285.1,238.9" fill="#A9A79F"/>
 <path d="M314 228.2V225M312.7 228.9V225.8M311.5 229.7V226.5M310.2 230.4V227.2M309 231.1V227.9M307.7 231.8V228.6M306.4 232.6V229.4M305.2 233.3V230.1M303.9 234V230.8M302.7 234.8V231.6M301.4 235.5V232.3M300.2 236.2V233M298.9 236.9V233.7M297.7 237.6V234.4M296.4 238.4V235.2M295.1 239.1V235.9M293.9 239.8V236.6M292.6 240.6V237.4M291.4 241.3V238.1M290.1 242V238.8M288.9 242.7V239.5M287.6 243.4V240.2M286.4 244.2V241M283.8 244.2V241M282.6 243.4V240.2M281.3 242.7V239.5M280 242V238.8M278.8 241.3V238.1M277.5 240.5V237.3M276.3 239.8V236.6M275 239.1V235.9M273.7 238.3V235.1M272.5 237.6V234.4M271.2 236.9V233.7M270 236.2V233M268.7 235.4V232.2" stroke="#BFB297" stroke-width="0.3"/>
-<circle cx="315.2" cy="222.2" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="305.2" cy="228" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="295.1" cy="233.8" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="285.1" cy="239.6" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="285.1" cy="239.6" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="276.3" cy="234.5" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="267.4" cy="229.4" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<rect x="314.5" y="222.1" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="315.2" cy="221.3" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="304.5" y="227.9" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="305.2" cy="227.1" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="294.4" y="233.7" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="295.1" cy="232.9" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="284.4" y="239.5" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="285.1" cy="238.7" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="284.4" y="239.5" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="285.1" cy="238.7" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="275.6" y="234.4" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="276.3" cy="233.6" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="266.7" y="229.3" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="267.4" cy="228.5" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
 </g>
 <g id="livello-balaustra-testa-sud-acceso" data-livello="piani" data-piano="balaustra" data-acceso="true" style="display: none">
 <polygon points="315.2,228.3 285.1,245.7 285.1,240.7 315.2,223.3" fill="#D8CCB0"/>
 <polygon points="285.1,245.7 267.4,235.5 267.4,230.5 285.1,240.7" fill="#EFE7D5"/>
 <polygon points="267.4,230.5 297.6,213.1 315.2,223.3 285.1,240.7" fill="#F3EDDF"/>
+<polygon points="270.5,230.5 297.6,214.9 312.1,223.3 285.1,238.9" fill="#A9A79F"/>
 <path d="M314 228.2V225M312.7 228.9V225.8M311.5 229.7V226.5M310.2 230.4V227.2M309 231.1V227.9M307.7 231.8V228.6M306.4 232.6V229.4M305.2 233.3V230.1M303.9 234V230.8M302.7 234.8V231.6M301.4 235.5V232.3M300.2 236.2V233M298.9 236.9V233.7M297.7 237.6V234.4M296.4 238.4V235.2M295.1 239.1V235.9M293.9 239.8V236.6M292.6 240.6V237.4M291.4 241.3V238.1M290.1 242V238.8M288.9 242.7V239.5M287.6 243.4V240.2M286.4 244.2V241M283.8 244.2V241M282.6 243.4V240.2M281.3 242.7V239.5M280 242V238.8M278.8 241.3V238.1M277.5 240.5V237.3M276.3 239.8V236.6M275 239.1V235.9M273.7 238.3V235.1M272.5 237.6V234.4M271.2 236.9V233.7M270 236.2V233M268.7 235.4V232.2" stroke="#BFB297" stroke-width="0.3"/>
-<circle cx="315.2" cy="222.2" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="305.2" cy="228" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="295.1" cy="233.8" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="285.1" cy="239.6" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="285.1" cy="239.6" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="276.3" cy="234.5" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
-<circle cx="267.4" cy="229.4" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<rect x="314.5" y="222.1" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="315.2" cy="221.3" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="304.5" y="227.9" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="305.2" cy="227.1" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="294.4" y="233.7" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="295.1" cy="232.9" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="284.4" y="239.5" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="285.1" cy="238.7" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="284.4" y="239.5" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="285.1" cy="238.7" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="275.6" y="234.4" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="276.3" cy="233.6" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="266.7" y="229.3" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="267.4" cy="228.5" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
 </g>
 <g id="livello-tetto-testa-sud" data-livello="edifici">
-<polygon points="315.2,223.3 285.1,240.7 285.1,236.7 315.2,219.3" fill="#D4D8DF"/>
-<polygon points="285.1,240.7 267.4,230.5 267.4,226.5 285.1,236.7" fill="#F2F3F6"/>
-<polygon points="267.4,226.5 297.6,209.1 315.2,219.3 285.1,236.7" fill="#FFFFFF"/>
-<polygon points="273,226.5 297.6,212.3 309.7,219.3 285.1,233.5" fill="#EEF0F3"/>
 </g>
 <g id="livello-ornati-testa-sud" data-livello="edifici">
 <polygon points="266,239.9 266,239.9 266.2,238.4 266.7,237.2 267.5,236.3 268.6,235.7 269.9,235.5 271.4,235.6 273,236.1 274.7,236.9 276.4,238 278,239.4 279.5,241 280.8,242.8 281.9,244.6 282.7,246.5 283.2,248.2 283.4,249.9 283.4,249.9" fill="#E4DFD3" stroke="#B9B2A2" stroke-width="0.4"/>

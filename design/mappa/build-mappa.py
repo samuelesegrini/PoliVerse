@@ -833,6 +833,47 @@ def ornaments(part, own, turn, top, z0):
             bars = "".join(f'M{fmt(iso(*at(t + dt, zb)[:2], zb)[0])} {fmt(iso(*at(t + dt, zb)[:2], zb)[1])}'
                            f'V{fmt(iso(*at(t + dt, zb)[:2], zb + hz)[1])}' for dt in (-0.65, 0, 0.65))
             out.append(f'<path d="{bars}" stroke="#5B636D" stroke-width="0.35"/>')
+    def frame(p):
+        q, a, c, _ = nearest_edge(turn(tuple(p)), [own])
+        n = outward(a, c, own)
+        L = math.dist(a, c)
+        u = ((c[0] - a[0]) / L, (c[1] - a[1]) / L)
+        if (u[0] - u[1]) < 0:
+            u = (-u[0], -u[1])
+        return q, u, n
+    for b in part.get("balconi_extra", []):
+        # A stone balcony over a door: a slab out from the wall, a balustrade on it.
+        q, u, n = frame(b["punto"])
+        w, zb, d = b.get("larghezza", 6) / 2, z0 + b["z"], b.get("sporto", 1.6)
+        slab = [(q[0] + u[0] * t + n[0] * o, q[1] + u[1] * t + n[1] * o) for t, o in ((-w, 0), (w, 0), (w, d), (-w, d))]
+        out += prism(ccw(slab), zb, zb + 0.8, ("#E7DECB", "#CDBF9F"), "#F1EADB")
+        front = [(q[0] + u[0] * t + n[0] * d, q[1] + u[1] * t + n[1] * d) for t in (-w, w)]
+        out.append(f'<polygon points="{iso_poly([(*front[0], zb + 0.8), (*front[1], zb + 0.8), (*front[1], zb + 3), (*front[0], zb + 3)])}" '
+                   f'fill="#EDE5D3" stroke="#BFB297" stroke-width="0.3" stroke-dasharray="0.3 0.5"/>')
+    if part.get("scritta"):
+        # Lettering along the frieze, set on the wall's plane.
+        t = part["scritta"]
+        q, u, n = frame(t["punto"])
+        px, py = iso(q[0] + n[0] * 0.3, q[1] + n[1] * 0.3, z0 + t["z"])
+        ax, ay = (u[0] - u[1]) * COS30, (u[0] + u[1]) * SIN30
+        out.append(f'<text transform="matrix({fmt(ax)} {fmt(ay)} 0 1 {fmt(px)} {fmt(py)})" font-family="Georgia, serif" '
+                   f'font-size="{t.get("corpo", 2.6)}" letter-spacing="0.15" text-anchor="middle" fill="#6E6450">{t["testo"]}</text>')
+    for f in part.get("bandiere", []):
+        # Flagpoles slanting out from the balcony, the flags hanging from them.
+        q, u, n = frame(f["punto"])
+        zb = z0 + f["z"]
+        for k, cols in enumerate(f["colori"]):
+            dt = (k - (len(f["colori"]) - 1) / 2) * 2.4
+            foot = (q[0] + u[0] * dt + n[0] * 0.4, q[1] + u[1] * dt + n[1] * 0.4, zb)
+            tip = (foot[0] + n[0] * 4, foot[1] + n[1] * 4, zb + 6)
+            (fx, fy), (tx, ty) = iso(*foot), iso(*tip)
+            out.append(f'<path d="M{fmt(fx)} {fmt(fy)}L{fmt(tx)} {fmt(ty)}" stroke="#4A4A48" stroke-width="0.35"/>')
+            stripes = len(cols)
+            for i, col in enumerate(cols):
+                s0, s1 = i / stripes, (i + 1) / stripes
+                pt = lambda s, dz: iso(tip[0] - n[0] * 0.2 + u[0] * 4.5 * s, tip[1] - n[1] * 0.2 + u[1] * 4.5 * s, tip[2] - dz * 1.4 - s * 0.8)
+                quad = [pt(s0, 0), pt(s1, 0), pt(s1, 2.4), pt(s0, 2.4)]
+                out.append(f'<polygon points="{" ".join(f"{fmt(a)},{fmt(b)}" for a, b in quad)}" fill="{col}" stroke="#8A8A86" stroke-width="0.12"/>')
     out += pinnacles(part, turn, top)
     if part.get("scalinata"):
         s = part["scalinata"]
@@ -1074,6 +1115,8 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
             if kind == "balaustra":
                 # The parapet: a stone balustrade, its posts and balusters.
                 out = prism(own, z, z + h, ("#EFE7D5", "#D8CCB0"), "#F3EDDF")
+                # The flat terrace behind it, leaded and darker than the stone.
+                out.append(f'<polygon points="{iso_poly([(x, y, z + h) for x, y in offset(own, -0.9)])}" fill="#A9A79F"/>')
                 bars = []
                 for a, c, _, _ in faces(own, 0, 1):
                     k = max(1, int(math.dist(a, c) / 0.7))
@@ -1087,8 +1130,9 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
                     k = max(1, int(math.dist(a, c) / band.get("passo_sfere", 4.9)))
                     for i in range(k + 1):
                         x, y = a[0] + (c[0] - a[0]) * i / k, a[1] + (c[1] - a[1]) * i / k
-                        px, py = iso(x, y, z + h + 1.1)
-                        out.append(f'<circle cx="{fmt(px)}" cy="{fmt(py)}" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>')
+                        px, py = iso(x, y, z + h)
+                        out.append(f'<rect x="{fmt(px - 0.7)}" y="{fmt(py - 1.2)}" width="1.4" height="1.2" fill="#E2D8C2"/>'
+                                   f'<circle cx="{fmt(px)}" cy="{fmt(py - 2.0)}" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>')
                 return out
             if kind == "opalino":
                 # Milky white glass panels between thin mullions; lit, they glow.
@@ -1212,6 +1256,8 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
             q = [(a[0], a[1], z - 7), (c[0], c[1], z - 7), (c[0], c[1], z), (a[0], a[1], z)]
             roof.append(f'<polygon points="{iso_poly(q)}" fill="{SHADOW}" opacity="0.3"/>')
         roof += prism(offset(below, b["gronda"]), z, z + 2.2, ("#B9BDC4", "#A3A8B0"), "#E3E5E8")
+    elif bands[-1]["tipo"] == "balaustra":
+        roof = []  # a terrace behind the balustrade, drawn with it
     else:
         roof = prism(below, z, z + ISO_SLAB, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
         roof.append(f'<polygon points="{iso_poly([(x, y, z + ISO_SLAB) for x, y in offset(below, -1.6)])}" fill="{ISO_ROOF_INNER}"/>')
@@ -1387,7 +1433,8 @@ def draw_iso(campus, b):
                 steel += sculpture_a(own, turn(tuple(ent["punto"])), ztop)
             if steel:
                 strati.append(Strato(f"struttura-{part['nome']}", "edifici", steel))
-            if part.get("pinnacoli") or part.get("orologio") or part.get("frontone") or part.get("scalinata"):
+            if part.get("pinnacoli") or part.get("orologio") or part.get("frontone") or part.get("scalinata") \
+                    or part.get("scritta") or part.get("bandiere") or part.get("portoni") or part.get("balconi_extra"):
                 strati.append(Strato(f"ornati-{part['nome']}", "edifici", ornaments(part, own, turn, ztop, base_h)))
             top = max(top, ztop)
     elif b.get("profilo"):

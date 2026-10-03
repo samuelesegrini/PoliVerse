@@ -547,7 +547,7 @@
               "lucernario": true
             }
           ],
-          "orologio": [-4.6, 209.4]
+          "orologio": [-9, 209.4]
         },
         {
           "nome": "aula-nord",
@@ -808,7 +808,23 @@
             "profondita": 3.5,
             "gradini": 3
           },
-          "ingresso": true
+          "ingresso": true,
+          "scritta": {
+            "punto": [-67.3, 209.65],
+            "z": 40.2,
+            "testo": "1863 · POLITECNICO DI MILANO",
+            "corpo": 2.5
+          },
+          "bandiere": [
+            {
+              "punto": [-67.3, 209.65],
+              "z": 20,
+              "colori": [
+                ["#2E8B57", "#FFFFFF", "#C8102E"],
+                ["#1F3F94"]
+              ]
+            }
+          ]
         },
         {
           "nome": "testa-sud",
