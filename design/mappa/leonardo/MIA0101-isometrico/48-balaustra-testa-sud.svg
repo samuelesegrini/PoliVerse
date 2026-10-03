@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="177.8 90.4 250.5 233.8" width="501" height="467.6">
+<defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient></defs>
+<polygon points="315.2,228.3 285.1,245.7 285.1,240.7 315.2,223.3" fill="#D8CCB0"/>
+<polygon points="285.1,245.7 267.4,235.5 267.4,230.5 285.1,240.7" fill="#EFE7D5"/>
+<polygon points="267.4,230.5 297.6,213.1 315.2,223.3 285.1,240.7" fill="#F3EDDF"/>
+<path d="M314 228.2V225M312.7 228.9V225.8M311.5 229.7V226.5M310.2 230.4V227.2M309 231.1V227.9M307.7 231.8V228.6M306.4 232.6V229.4M305.2 233.3V230.1M303.9 234V230.8M302.7 234.8V231.6M301.4 235.5V232.3M300.2 236.2V233M298.9 236.9V233.7M297.7 237.6V234.4M296.4 238.4V235.2M295.1 239.1V235.9M293.9 239.8V236.6M292.6 240.6V237.4M291.4 241.3V238.1M290.1 242V238.8M288.9 242.7V239.5M287.6 243.4V240.2M286.4 244.2V241M283.8 244.2V241M282.6 243.4V240.2M281.3 242.7V239.5M280 242V238.8M278.8 241.3V238.1M277.5 240.5V237.3M276.3 239.8V236.6M275 239.1V235.9M273.7 238.3V235.1M272.5 237.6V234.4M271.2 236.9V233.7M270 236.2V233M268.7 235.4V232.2" stroke="#BFB297" stroke-width="0.3"/>
+<circle cx="315.2" cy="222.2" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<circle cx="305.2" cy="228" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<circle cx="295.1" cy="233.8" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<circle cx="285.1" cy="239.6" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<circle cx="285.1" cy="239.6" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<circle cx="276.3" cy="234.5" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<circle cx="267.4" cy="229.4" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+</svg>

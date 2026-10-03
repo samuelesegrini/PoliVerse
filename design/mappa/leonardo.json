@@ -145,14 +145,20 @@
       "piani": 3,
       "badge": [53.0, -12.0],
       "pianta": [
-        [51.4, -22.9],
-        [61.8, -22.9],
-        [61.8, -6.5],
-        [51.4, -6.5]
+        [62.5, -4.3],
+        [68.7, -4.4],
+        [68.6, -8.4],
+        [61.9, -8.3],
+        [61.9, -23.2],
+        [51.3, -23.2],
+        [51.4, -5.0],
+        [54.7, -8.2],
+        [58.5, -4.7],
+        [60.5, -6.4]
       ],
-      "livelli": ["MIA020900S", "MIA0209000", "MIA0209001", "MIA0209002"],
+      "livelli": ["MIA020900S", "MIA0209000", "MIA0209001"],
       "riquadro": [-10, -83, 124, 53],
-      "piani_3d": ["MIA0209000", "MIA0209001", "MIA0209002"]
+      "piani_3d": ["MIA0209000", "MIA0209001"]
     },
     {
       "csie": "MIA0205",
@@ -488,50 +494,145 @@
       "numero": "1",
       "badge": [-65.3, 189.4],
       "nome": "Rettorato",
-      "livelli": ["MIA010100S", "MIA0101000", "MIA0101S00", "MIA0101001", "MIA0101S01", "MIA0101002"],
+      "livelli": ["MIA0101000", "MIA0101001", "MIA0101002"],
       "piani_3d": ["MIA0101000", "MIA0101001", "MIA0101002"],
       "riquadro": [-102, 142, 32, 278],
       "vista": "sud-ovest",
       "ingresso": {"lato": 24, "t": 0.5},
       "parti": [
         {
-          "nome": "corpo-est",
+          "nome": "aula-magna",
           "pianta": [
-            [-39.4, 190.7],
-            [-2.2, 190.7],
-            [-2.1, 228.3],
-            [-39.1, 228.3]
+            [-39.4, 192.7],
+            [-2.1, 192.7],
+            [-2.1, 226.1],
+            [-39.4, 226.1]
           ],
           "profilo": [
             {
               "piano": "MIA010100S",
               "tipo": "pieno",
               "rivestimento": "pietra",
-              "h": 6
+              "h": 5
             },
             {
               "piano": "MIA0101000",
               "tipo": "palazzo",
+              "rivestimento": "stucco",
               "finestre": "archi",
-              "bugnato": true,
-              "h": 16,
-              "rivestimento": "intonaco"
+              "campata": 4.6,
+              "ordine": true,
+              "h": 16
             },
             {
               "piano": "MIA0101001",
               "tipo": "palazzo",
-              "finestre": "archi",
-              "h": 18,
-              "rivestimento": "intonaco"
+              "rivestimento": "stucco",
+              "finestre": "rette",
+              "campata": 4.6,
+              "ordine": true,
+              "h": 17
             },
             {
               "piano": "cornicione",
               "tipo": "cornicione",
               "decoro": true,
-              "sporto": 0.6,
+              "sporto": 0.8,
               "h": 2
             },
-            {"tipo": "coppi", "h": 9, "rientro": 5}
+            {
+              "tipo": "coppi",
+              "h": 10,
+              "rientro": 10,
+              "lucernario": true
+            }
+          ],
+          "orologio": [-4.6, 209.4]
+        },
+        {
+          "nome": "aula-nord",
+          "pianta": [
+            [-29.4, 190.7],
+            [-9.6, 190.7],
+            [-9.6, 192.8],
+            [-29.4, 192.8]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010100S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 5
+            },
+            {
+              "piano": "MIA0101000",
+              "tipo": "palazzo",
+              "rivestimento": "stucco",
+              "finestre": "archi",
+              "campata": 4.6,
+              "ordine": true,
+              "h": 16
+            },
+            {
+              "piano": "MIA0101001",
+              "tipo": "palazzo",
+              "rivestimento": "stucco",
+              "finestre": "rette",
+              "campata": 4.6,
+              "ordine": true,
+              "h": 17
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 0.8,
+              "h": 2
+            },
+            {"tipo": "coppi", "h": 3, "rientro": 1}
+          ]
+        },
+        {
+          "nome": "aula-sud",
+          "pianta": [
+            [-28.8, 226.0],
+            [-9.0, 226.0],
+            [-9.0, 228.4],
+            [-28.8, 228.4]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010100S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 5
+            },
+            {
+              "piano": "MIA0101000",
+              "tipo": "palazzo",
+              "rivestimento": "stucco",
+              "finestre": "archi",
+              "campata": 4.6,
+              "ordine": true,
+              "h": 16
+            },
+            {
+              "piano": "MIA0101001",
+              "tipo": "palazzo",
+              "rivestimento": "stucco",
+              "finestre": "rette",
+              "campata": 4.6,
+              "ordine": true,
+              "h": 17
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 0.8,
+              "h": 2
+            },
+            {"tipo": "coppi", "h": 3, "rientro": 1}
           ]
         },
         {
@@ -547,38 +648,173 @@
               "piano": "MIA010100S",
               "tipo": "pieno",
               "rivestimento": "pietra",
-              "h": 6
+              "h": 5
             },
             {
               "piano": "MIA0101000",
               "tipo": "palazzo",
+              "rivestimento": "intonaco",
               "finestre": "archi",
-              "bugnato": true,
-              "h": 16,
-              "rivestimento": "intonaco"
+              "campata": 4.2,
+              "h": 14
             },
             {
               "piano": "MIA0101001",
               "tipo": "palazzo",
-              "finestre": "archi",
-              "h": 18,
-              "rivestimento": "intonaco"
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "campata": 4.2,
+              "h": 13
             },
             {
               "piano": "cornicione",
               "tipo": "cornicione",
               "decoro": true,
-              "sporto": 0.6,
-              "h": 2
+              "sporto": 0.5,
+              "h": 1.5
             },
-            {"tipo": "coppi", "h": 9, "rientro": 5}
+            {"tipo": "coppi", "h": 7, "rientro": 3.5}
+          ]
+        },
+        {
+          "nome": "testa-nord",
+          "pianta": [
+            [-67.3, 187.4],
+            [-49.9, 187.4],
+            [-49.9, 197.6],
+            [-67.3, 197.6]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010100S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 5
+            },
+            {
+              "piano": "MIA0101000",
+              "tipo": "palazzo",
+              "finestre": "rette",
+              "bugnato": true,
+              "campata": 4.9,
+              "ordine": true,
+              "h": 14
+            },
+            {
+              "piano": "MIA0101001",
+              "tipo": "palazzo",
+              "finestre": "balconi",
+              "campata": 4.9,
+              "ordine": true,
+              "h": 20
+            },
+            {
+              "piano": "fregio",
+              "tipo": "pieno",
+              "rivestimento": "stucco",
+              "decoro": true,
+              "h": 6
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 1.0,
+              "h": 2.5
+            },
+            {
+              "piano": "balaustra",
+              "tipo": "balaustra",
+              "decoro": true,
+              "h": 5
+            }
+          ],
+          "frontone": {
+            "punto": [-67.3, 192.8],
+            "larghezza": 10,
+            "sotto": 9,
+            "freccia": 8
+          },
+          "pinnacoli": [
+            [-66.6, 188.0, 9],
+            [-66.6, 190.2],
+            [-66.6, 195.4]
           ]
         },
         {
           "nome": "fronte",
           "pianta": [
-            [-67.3, 187.4],
-            [-49.9, 187.4],
+            [-67.3, 197.6],
+            [-49.9, 197.6],
+            [-49.9, 221.7],
+            [-67.3, 221.7]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010100S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 5
+            },
+            {
+              "piano": "MIA0101000",
+              "tipo": "palazzo",
+              "finestre": "rette",
+              "bugnato": true,
+              "campata": 4.9,
+              "ordine": true,
+              "h": 14
+            },
+            {
+              "piano": "MIA0101001",
+              "tipo": "palazzo",
+              "finestre": "balconi",
+              "campata": 4.9,
+              "ordine": true,
+              "h": 20
+            },
+            {
+              "piano": "fregio",
+              "tipo": "pieno",
+              "rivestimento": "stucco",
+              "decoro": true,
+              "h": 6
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 1.0,
+              "h": 2.5
+            },
+            {
+              "piano": "balaustra",
+              "tipo": "balaustra",
+              "decoro": true,
+              "h": 5
+            },
+            {"tipo": "coppi", "h": 4, "rientro": 4}
+          ],
+          "portoni": {
+            "punto": [-67.3, 209.65],
+            "n": 3,
+            "passo": 4.9,
+            "h": 9,
+            "da": 5
+          },
+          "scalinata": {
+            "punto": [-67.3, 209.65],
+            "larghezza": 38,
+            "profondita": 3.5,
+            "gradini": 3
+          },
+          "ingresso": true
+        },
+        {
+          "nome": "testa-sud",
+          "pianta": [
+            [-67.3, 221.7],
+            [-49.9, 221.7],
             [-49.9, 231.9],
             [-67.3, 231.9]
           ],
@@ -627,40 +863,17 @@
               "h": 5
             }
           ],
-          "frontone": [
-            {
-              "punto": [-67.3, 192.3],
-              "larghezza": 9,
-              "sotto": 7.5,
-              "freccia": 5
-            },
-            {
-              "punto": [-67.3, 227.0],
-              "larghezza": 9,
-              "sotto": 7.5,
-              "freccia": 5
-            }
-          ],
-          "portoni": {
-            "punto": [-67.3, 209.65],
-            "n": 3,
-            "passo": 4.9,
-            "h": 9,
-            "da": 5
+          "frontone": {
+            "punto": [-67.3, 226.5],
+            "larghezza": 10,
+            "sotto": 9,
+            "freccia": 8
           },
           "pinnacoli": [
-            [-66.6, 188.6],
-            [-66.6, 196.0],
-            [-66.6, 223.3],
-            [-66.6, 230.7]
-          ],
-          "scalinata": {
-            "punto": [-67.3, 209.65],
-            "larghezza": 38,
-            "profondita": 3.5,
-            "gradini": 3
-          },
-          "ingresso": true
+            [-66.6, 224.0],
+            [-66.6, 229.2],
+            [-66.6, 231.3, 9]
+          ]
         }
       ]
     },

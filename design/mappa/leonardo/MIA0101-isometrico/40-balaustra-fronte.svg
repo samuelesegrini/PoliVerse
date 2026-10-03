@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="177.8 90.4 250.5 233.8" width="501" height="467.6">
+<defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient></defs>
+<polygon points="267.4,235.5 225.7,211.4 225.7,206.4 267.4,230.5" fill="#EFE7D5"/>
+<polygon points="297.6,218.1 267.4,235.5 267.4,230.5 297.6,213.1" fill="#D8CCB0"/>
+<polygon points="225.7,206.4 255.8,189 297.6,213.1 267.4,230.5" fill="#F3EDDF"/>
+<path d="M266.2 234V230.8M265 233.3V230.1M263.7 232.6V229.4M262.5 231.9V228.7M261.3 231.2V228M260.1 230.4V227.2M258.8 229.7V226.5M257.6 229V225.8M256.4 228.3V225.1M255.2 227.6V224.4M253.9 226.9V223.7M252.7 226.2V223M251.5 225.5V222.3M250.2 224.8V221.6M249 224.1V220.9M247.8 223.4V220.2M246.6 222.6V219.4M245.3 221.9V218.7M244.1 221.2V218M242.9 220.5V217.3M241.6 219.8V216.6M240.4 219.1V215.9M239.2 218.4V215.2M238 217.7V214.5M236.7 217V213.8M235.5 216.3V213.1M234.3 215.6V212.4M233.1 214.9V211.7M231.8 214.1V210.9M230.6 213.4V210.2M229.4 212.7V209.5M228.1 212V208.8M226.9 211.3V208.1M296.3 218V214.8M295.1 218.8V215.6M293.8 219.5V216.3M292.5 220.2V217M291.3 220.9V217.7M290 221.6V218.4M288.8 222.4V219.2M287.5 223.1V219.9M286.3 223.8V220.6M285 224.5V221.3M283.8 225.3V222.1M282.5 226V222.8M281.2 226.7V223.5M280 227.4V224.2M278.7 228.2V225M277.5 228.9V225.7M276.2 229.6V226.4M275 230.3V227.1M273.7 231.1V227.9M272.5 231.8V228.6M271.2 232.5V229.3M269.9 233.2V230M268.7 234V230.8" stroke="#BFB297" stroke-width="0.3"/>
+<circle cx="267.4" cy="229.4" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<circle cx="257" cy="223.4" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<circle cx="246.6" cy="217.3" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<circle cx="236.1" cy="211.3" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<circle cx="225.7" cy="205.3" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<circle cx="297.6" cy="212" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<circle cx="287.5" cy="217.8" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<circle cx="277.5" cy="223.6" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+<circle cx="267.4" cy="229.4" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>
+</svg>

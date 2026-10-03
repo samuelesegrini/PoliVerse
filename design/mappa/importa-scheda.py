@@ -512,6 +512,7 @@ def main(csie):
         if not f["shell"] and f["rooms"]:
             print(f"{c}: no outline drawn, the widest floor's is used")
             f["shell"] = widest
+            f["borrowed"] = True
     rooms = osm_rooms(bbox, (lat0, lon0))
 
     # Which OpenStreetMap level is which floor: room numbers repeat on every floor, so
@@ -570,7 +571,7 @@ def main(csie):
         prior = (statistics.median(k["th"] for k in known), statistics.median(k["s"] for k in known)) if known else None
         tries = []
         for c in drawn:
-            if drawn[c]["shell"]:
+            if drawn[c]["shell"] and not drawn[c].get("borrowed"):   # a borrowed outline places nothing
                 shell = max(drawn[c]["shell"], key=lambda r: abs(area(r)))
                 # Most drawings share one orientation, but some are drawn a quarter turn round:
                 # each quarter is tried.

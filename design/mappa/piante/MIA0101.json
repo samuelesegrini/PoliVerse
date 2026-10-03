@@ -2,18 +2,8 @@
   "csie": "MIA0101",
   "piani": [
     {
-      "csip": "MIA010100S",
-      "nome": "Seminterrato",
-      "aule": {}
-    },
-    {
       "csip": "MIA0101000",
       "nome": "Terra",
-      "aule": {}
-    },
-    {
-      "csip": "MIA0101S00",
-      "nome": "Terra Soppalco",
       "aule": {}
     },
     {
@@ -26,11 +16,6 @@
           "dotazioni": []
         }
       }
-    },
-    {
-      "csip": "MIA0101S01",
-      "nome": "Primo Soppalco",
-      "aule": {}
     },
     {
       "csip": "MIA0101002",

@@ -1,9 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="70 -73.5 116.7 153.8" width="233.3" height="307.6">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="66.1 -55.9 123.4 145.3" width="246.7" height="290.6">
 <defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient></defs>
-<polygon points="146.7,14.9 118.3,31.3 118.3,27.3 146.7,10.9" fill="#D4D8DF"/>
-<polygon points="118.3,31.3 100.3,20.9 100.3,16.9 118.3,27.3" fill="#F2F3F6"/>
-<polygon points="128.7,0.5 146.7,10.9 118.3,27.3 100.3,16.9" fill="#FFFFFF"/>
-<polygon points="145.3,10.9 118.3,26.5 118.3,12.5 145.3,-3.1" fill="url(#iso-glass-r)"/>
-<polygon points="118.3,26.5 101.7,16.9 101.7,2.9 118.3,12.5" fill="url(#iso-glass-l)"/>
-<path d="M136.3 16.1V2.1M127.3 21.3V7.3M110 21.7V7.7" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>
+<polygon points="147.4,14.7 121.6,29.6 121.6,25.6 147.4,10.7" fill="#D4D8DF"/>
+<polygon points="108.9,22.5 97.7,22.4 97.7,18.4 108.9,18.5" fill="#F2F3F6"/>
+<polygon points="109.5,29.8 108.9,22.5 108.9,18.5 109.5,25.8" fill="#F2F3F6"/>
+<polygon points="115.9,30.1 109.5,29.8 109.5,25.8 115.9,26.1" fill="#F2F3F6"/>
+<polygon points="126.6,40.3 115.7,34.2 115.7,30.2 126.6,36.3" fill="#F2F3F6"/>
+<polygon points="133.4,36.2 126.6,40.3 126.6,36.3 133.4,32.2" fill="#D4D8DF"/>
+<polygon points="115.9,26.1 109.5,25.8 108.9,18.5 97.7,18.4 129,0.1 147.4,10.7 121.6,25.6 133.4,32.2 126.6,36.3 115.7,30.2" fill="#FFFFFF"/>
+<polygon points="109.9,17.9 100,17.9 100,3.9 109.9,3.9" fill="url(#iso-glass-l)"/>
+<polygon points="146,10.7 120.2,25.6 120.2,11.6 146,-3.3" fill="url(#iso-glass-r)"/>
+<polygon points="110.4,25.3 109.9,17.9 109.9,3.9 110.4,11.3" fill="url(#iso-glass-l)"/>
+<polygon points="116.9,25.6 110.4,25.3 110.4,11.3 116.9,11.6" fill="url(#iso-glass-l)"/>
+<polygon points="126.6,35.5 116.7,30 116.7,16 126.6,21.5" fill="url(#iso-glass-l)"/>
+<polygon points="132,32.2 126.6,35.5 126.6,21.5 132,18.2" fill="url(#iso-glass-r)"/>
+<path d="M137.4 15.7V1.7M128.8 20.6V6.6" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>
 </svg>

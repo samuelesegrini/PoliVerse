@@ -852,14 +852,15 @@ def ornaments(part, own, turn, top, z0):
 def pinnacles(b, turn, top):
     """Stone obelisks on the roof's corners and a clock turret, farthest first."""
     out = []
-    items = [("obelisco", turn(tuple(p))) for p in b.get("pinnacoli", [])]
+    # A pinnacle is [x, y] or [x, y, height above the roof].
+    items = [("obelisco", turn(tuple(p[:2])), p[2] if len(p) > 2 else 16) for p in b.get("pinnacoli", [])]
     if b.get("orologio"):
-        items.append(("orologio", turn(tuple(b["orologio"]))))
-    for kind, (x, y) in sorted(items, key=lambda it: it[1][0] + it[1][1]):
+        items.append(("orologio", turn(tuple(b["orologio"])), 0))
+    for kind, (x, y), tall in sorted(items, key=lambda it: it[1][0] + it[1][1]):
         if kind == "obelisco":
             out += prism([(x - 0.7, y - 0.7), (x + 0.7, y - 0.7), (x + 0.7, y + 0.7), (x - 0.7, y + 0.7)],
                          top, top + 3, ("#EFE7D5", "#D3C7AB"), "#F3EDDF")
-            tip = iso(x, y, top + 16)
+            tip = iso(x, y, top + tall)
             l, r, f = iso(x - 0.5, y + 0.5, top + 3), iso(x + 0.5, y - 0.5, top + 3), iso(x + 0.5, y + 0.5, top + 3)
             out.append(f'<polygon points="{fmt(l[0])},{fmt(l[1])} {fmt(f[0])},{fmt(f[1])} {fmt(tip[0])},{fmt(tip[1])}" fill="#E9E0CB"/>')
             out.append(f'<polygon points="{fmt(f[0])},{fmt(f[1])} {fmt(r[0])},{fmt(r[1])} {fmt(tip[0])},{fmt(tip[1])}" fill="#CFC2A4"/>')
@@ -1081,6 +1082,13 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
                         (px, py0), (_, py1) = iso(x, y, z + 0.8), iso(x, y, z + h - 1)
                         bars.append(f"M{fmt(px)} {fmt(py0)}V{fmt(py1)}")
                 out.append(f'<path d="{"".join(bars)}" stroke="#BFB297" stroke-width="0.3"/>')
+                # A stone ball on a post every few metres along the front.
+                for a, c, _, _ in faces(own, 0, 1):
+                    k = max(1, int(math.dist(a, c) / band.get("passo_sfere", 4.9)))
+                    for i in range(k + 1):
+                        x, y = a[0] + (c[0] - a[0]) * i / k, a[1] + (c[1] - a[1]) * i / k
+                        px, py = iso(x, y, z + h + 1.1)
+                        out.append(f'<circle cx="{fmt(px)}" cy="{fmt(py)}" r="1.1" fill="#E9E1CF" stroke="#C9BC9E" stroke-width="0.3"/>')
                 return out
             if kind == "opalino":
                 # Milky white glass panels between thin mullions; lit, they glow.
@@ -1172,11 +1180,30 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
         eaves, ridge = offset(below, 0.6), offset(below, -tiles.get("rientro", 4.0))
         zr = z + tiles["h"]
         roof = []
-        for a, c, left, _ in faces(eaves, 0, 1):
-            i, j = eaves.index(a), eaves.index(c)
-            q = [(*a, z), (*c, z), (*ridge[j], zr), (*ridge[i], zr)]
-            roof.append(f'<polygon points="{iso_poly(q)}" fill="{"#C2704A" if left else "#A85A38"}"/>')
-        roof.append(f'<polygon points="{iso_poly([(x, y, zr) for x, y in ridge])}" fill="#CF7E57"/>')
+        # Every slope shows from above, the far ones too: drawn far first, lit by their aspect.
+        slopes = []
+        for i in range(len(eaves)):
+            j = (i + 1) % len(eaves)
+            a, c = eaves[i], eaves[j]
+            nx, ny = outward(a, c, eaves)
+            fill = "#C2704A" if ny > nx and nx + ny > 0 else "#A85A38" if nx + ny > 0 else "#D58A63"
+            slopes.append(((a[0] + c[0] + a[1] + c[1]) / 2, [(*a, z), (*c, z), (*ridge[j], zr), (*ridge[i], zr)], fill))
+        for _, q, fill in sorted(slopes, key=lambda s: s[0]):
+            roof.append(f'<polygon points="{iso_poly(q)}" fill="{fill}"/>')
+        if tiles.get("lucernario"):
+            # The middle of the roof is glass: a skylit hall below, ribbed in steel.
+            roof.append(f'<polygon points="{iso_poly([(x, y, zr) for x, y in ridge])}" fill="#8EA3B7" stroke="#5E6B78" stroke-width="0.6"/>')
+            xs, ys = [p[0] for p in ridge], [p[1] for p in ridge]
+            ribs = []
+            for k in range(1, 6):
+                x = min(xs) + (max(xs) - min(xs)) * k / 6
+                (a0, b0), (a1, b1) = iso(x, min(ys), zr), iso(x, max(ys), zr)
+                ribs.append(f"M{fmt(a0)} {fmt(b0)}L{fmt(a1)} {fmt(b1)}")
+            (a0, b0), (a1, b1) = iso(min(xs), (min(ys) + max(ys)) / 2, zr), iso(max(xs), (min(ys) + max(ys)) / 2, zr)
+            ribs.append(f"M{fmt(a0)} {fmt(b0)}L{fmt(a1)} {fmt(b1)}")
+            roof.append(f'<path d="{"".join(ribs)}" stroke="#E8ECEF" stroke-width="0.7"/>')
+        else:
+            roof.append(f'<polygon points="{iso_poly([(x, y, zr) for x, y in ridge])}" fill="#CF7E57"/>')
         z = zr
     elif b.get("gronda"):
         # A thin pale roof overhanging every side by `gronda` metres, its shadow on the wall.
