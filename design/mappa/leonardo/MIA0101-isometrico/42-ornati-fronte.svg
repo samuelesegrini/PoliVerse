@@ -1,17 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="177.8 90.4 250.5 233.8" width="501" height="467.6">
-<polygon points="256.9,272.4 252.4,269.8 252.4,260.8 252.5,259.9 253,259.3 253.7,259.2 254.6,259.5 255.5,260.2 256.2,261.2 256.7,262.3 256.9,263.4" fill="#2C3138" stroke="#E9E4D8" stroke-width="0.6"/>
-<path d="M255.7 271.8V262.8M254.6 271.1V262.1M253.5 270.4V261.4" stroke="#5B636D" stroke-width="0.35"/>
-<polygon points="248.4,267.5 243.9,264.9 243.9,255.9 244,255 244.5,254.4 245.3,254.3 246.1,254.6 247,255.3 247.7,256.3 248.2,257.4 248.4,258.5" fill="#2C3138" stroke="#E9E4D8" stroke-width="0.6"/>
-<path d="M247.3 266.9V257.9M246.1 266.2V257.2M245 265.6V256.6" stroke="#5B636D" stroke-width="0.35"/>
-<polygon points="239.9,262.6 235.4,260 235.4,251 235.6,250.1 236,249.5 236.8,249.4 237.6,249.7 238.5,250.4 239.2,251.4 239.7,252.5 239.9,253.6" fill="#2C3138" stroke="#E9E4D8" stroke-width="0.6"/>
-<path d="M238.8 261.9V252.9M237.6 261.3V252.3M236.5 260.6V251.6" stroke="#5B636D" stroke-width="0.35"/>
 <text transform="matrix(0.9 0.5 0 1 246 231.1)" font-family="Georgia, serif" font-size="2.5" letter-spacing="0.15" text-anchor="middle" fill="#6E6450">1863 · POLITECNICO DI MILANO</text>
-<path d="M243.8 250.2L236.9 248.2" stroke="#4A4A48" stroke-width="0.35"/>
-<polygon points="237.2,248 239.8,249.7 239.8,253.1 237.2,251.3" fill="#2E8B57" stroke="#8A8A86" stroke-width="0.12"/>
-<polygon points="239.8,249.7 242.4,251.5 242.4,254.8 239.8,253.1" fill="#FFFFFF" stroke="#8A8A86" stroke-width="0.12"/>
-<polygon points="242.4,251.5 245,253.3 245,256.6 242.4,254.8" fill="#C8102E" stroke="#8A8A86" stroke-width="0.12"/>
-<path d="M247.9 252.6L241 250.6" stroke="#4A4A48" stroke-width="0.35"/>
-<polygon points="241.4,250.4 249.2,255.7 249.2,259 241.4,253.7" fill="#1F3F94" stroke="#8A8A86" stroke-width="0.12"/>
+<path d="M244.7 252.1L240.8 247.2" stroke="#55534E" stroke-width="0.4"/>
+<polygon points="240.8,247.2 243.2,250.2 243.2,252.2 240.8,249.2" fill="#2E8B57" stroke="#9A9893" stroke-width="0.1"/>
+<polygon points="240.8,249.2 243.2,252.2 243.2,254.2 240.8,251.2" fill="#FFFFFF" stroke="#9A9893" stroke-width="0.1"/>
+<polygon points="240.8,251.2 243.2,254.2 243.2,256.2 240.8,253.2" fill="#C8102E" stroke="#9A9893" stroke-width="0.1"/>
 <polygon points="273.4,299.4 207.6,261.4 207.6,255.4 273.4,293.4" fill="#C9C7BF"/>
 <polygon points="279.5,295.9 273.4,299.4 273.4,293.4 279.5,289.9" fill="#B1AFA7"/>
 <polygon points="273.4,293.4 207.6,255.4 213.6,251.9 279.5,289.9" fill="#D8D6CF"/>

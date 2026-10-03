@@ -859,21 +859,21 @@ def ornaments(part, own, turn, top, z0):
         out.append(f'<text transform="matrix({fmt(ax)} {fmt(ay)} 0 1 {fmt(px)} {fmt(py)})" font-family="Georgia, serif" '
                    f'font-size="{t.get("corpo", 2.6)}" letter-spacing="0.15" text-anchor="middle" fill="#6E6450">{t["testo"]}</text>')
     for f in part.get("bandiere", []):
-        # Flagpoles slanting out from the balcony, the flags hanging from them.
+        # A flagpole slanting out from the balcony, the flag hanging from its tip, its
+        # stripes one under the other.
         q, u, n = frame(f["punto"])
-        zb = z0 + f["z"]
-        for k, cols in enumerate(f["colori"]):
-            dt = (k - (len(f["colori"]) - 1) / 2) * 2.4
-            foot = (q[0] + u[0] * dt + n[0] * 0.4, q[1] + u[1] * dt + n[1] * 0.4, zb)
-            tip = (foot[0] + n[0] * 4, foot[1] + n[1] * 4, zb + 6)
-            (fx, fy), (tx, ty) = iso(*foot), iso(*tip)
-            out.append(f'<path d="M{fmt(fx)} {fmt(fy)}L{fmt(tx)} {fmt(ty)}" stroke="#4A4A48" stroke-width="0.35"/>')
-            stripes = len(cols)
-            for i, col in enumerate(cols):
-                s0, s1 = i / stripes, (i + 1) / stripes
-                pt = lambda s, dz: iso(tip[0] - n[0] * 0.2 + u[0] * 4.5 * s, tip[1] - n[1] * 0.2 + u[1] * 4.5 * s, tip[2] - dz * 1.4 - s * 0.8)
-                quad = [pt(s0, 0), pt(s1, 0), pt(s1, 2.4), pt(s0, 2.4)]
-                out.append(f'<polygon points="{" ".join(f"{fmt(a)},{fmt(b)}" for a, b in quad)}" fill="{col}" stroke="#8A8A86" stroke-width="0.12"/>')
+        foot = (q[0] + n[0] * 1.1, q[1] + n[1] * 1.1, z0 + f["z"])
+        tip = (foot[0] + n[0] * 2.2, foot[1] + n[1] * 2.2, foot[2] + 7)
+        (fx, fy), (tx, ty) = iso(*foot), iso(*tip)
+        out.append(f'<path d="M{fmt(fx)} {fmt(fy)}L{fmt(tx)} {fmt(ty)}" stroke="#55534E" stroke-width="0.4"/>')
+        cols = f["colori"][0]
+        width, drop = 3.0, 6.0
+        for i, col in enumerate(cols):
+            pt = lambda s_, dz: iso(tip[0] - n[0] * width * s_ / 3.2 + u[0] * 0.4 * s_, tip[1] - n[1] * width * s_ / 3.2 + u[1] * 0.4 * s_,
+                                    tip[2] - 7 * width * s_ / 2.2 * 0.3 - dz)
+            d0, d1 = drop * i / len(cols), drop * (i + 1) / len(cols)
+            quad = [pt(0, d0), pt(1, d0 + 0.6), pt(1, d1 + 0.6), pt(0, d1)]
+            out.append(f'<polygon points="{" ".join(f"{fmt(a_)},{fmt(b_)}" for a_, b_ in quad)}" fill="{col}" stroke="#9A9893" stroke-width="0.1"/>')
     out += pinnacles(part, turn, top)
     if part.get("scalinata"):
         s = part["scalinata"]
@@ -963,10 +963,12 @@ def lamellae(b, pts, turn, z0, top):
     return out
 
 
-def palazzo(pts, z, h, lit, colors, finestre, bugnato=False, bay=4.4, ordine=False):
+def palazzo(pts, z, h, lit, colors, finestre, bugnato=False, bay=4.4, ordine=False, porte=0):
     """An eclectic palazzo storey, face by face, far ones first: the wall, its rusticated
     joints, a lighter pilaster at each bay, and in each bay a window, `archi` (round
-    arched), `balconi` (arched, over a little balustraded balcony) or `rette` (square)."""
+    arched), `balconi` (arched, over a little balustraded balcony) or `rette` (square).
+    `porte` central bays of a face with an odd number of bays are arched doorways with
+    iron gates instead."""
     out = []
     glass = "#F2D492" if lit else "#3E4652"
     frame = "#F7F2E6"
@@ -990,24 +992,97 @@ def palazzo(pts, z, h, lit, colors, finestre, bugnato=False, bay=4.4, ordine=Fal
             wp = 0.55 if ordine else 0.3           # a giant order: broad pilasters, a capital on top
             p = [at(t - wp, z, 0.2), at(t + wp, z, 0.2), at(t + wp, z + h, 0.2), at(t - wp, z + h, 0.2)]
             out.append(f'<polygon points="{iso_poly(p)}" fill="{colors[2]}" opacity="0.9"/>')
-            if ordine:
-                cap = [at(t - wp - 0.25, z + h - 1.6, 0.3), at(t + wp + 0.25, z + h - 1.6, 0.3), at(t + wp + 0.25, z + h, 0.3), at(t - wp - 0.25, z + h, 0.3)]
-                out.append(f'<polygon points="{iso_poly(cap)}" fill="#D3CCBC"/>')
+            if ordine and not bugnato:
+                # A capital: an abacus over a band of volutes (a giant order runs through the
+                # rusticated floor below without one).
+                cap = [at(t - wp - 0.3, z + h - 1.8, 0.3), at(t + wp + 0.3, z + h - 1.8, 0.3), at(t + wp + 0.3, z + h, 0.3), at(t - wp - 0.3, z + h, 0.3)]
+                out.append(f'<polygon points="{iso_poly(cap)}" fill="#D9D2C2" stroke="#B9AD92" stroke-width="0.25"/>')
+                for dt in (-wp, wp):
+                    vx, vy = iso(*at(t + dt, z + h - 1.0, 0.35)[:2], z + h - 1.0)
+                    out.append(f'<circle cx="{fmt(vx)}" cy="{fmt(vy)}" r="0.45" fill="none" stroke="#9E927A" stroke-width="0.3"/>')
+        doors = set()
+        if porte and k % 2 == 1 and k >= porte:
+            doors = set(range((k - porte) // 2, (k + porte) // 2))
         for i in range(k):
             t = pad + i * bay + bay / 2
-            w = 0.8 if finestre != "rette" else 0.7
+            if i in doors:
+                # An arched doorway in a moulded frame, an iron gate in it.
+                w, z0, z1 = 1.2, z, z + h * 0.72
+                ring = lambda ww, zz, o: [at(t + ww * math.cos(th), zz + ww * ISO_SCALE * math.sin(th), o) for th in [math.pi * j / 10 for j in range(11)]]
+                frame_ = [at(t - w - 0.35, z0, 0.1), at(t + w + 0.35, z0, 0.1), *ring(w + 0.35, z1, 0.1), at(t - w - 0.35, z0, 0.1)]
+                out.append(f'<polygon points="{iso_poly(frame_)}" fill="#E9E3D4" stroke="#BFB297" stroke-width="0.3"/>')
+                hole = [at(t - w, z0), at(t + w, z0), *ring(w, z1, 0.05)]
+                out.append(f'<polygon points="{iso_poly(hole)}" fill="#24282D"/>')
+                bars = []
+                for j in range(1, 6):
+                    tt = t - w + 2 * w * j / 6
+                    top = z1 + math.sqrt(max(0, w * w - (tt - t) ** 2)) * ISO_SCALE
+                    (x0, y0), (_, y1) = iso(*at(tt, z0)[:2], z0), iso(*at(tt, z0)[:2], top)
+                    bars.append(f"M{fmt(x0)} {fmt(y0)}V{fmt(y1)}")
+                for zz in (z0 + 2, z1 - 1):
+                    (x0, y0), (x1, y1) = iso(*at(t - w, zz)[:2], zz), iso(*at(t + w, zz)[:2], zz)
+                    bars.append(f"M{fmt(x0)} {fmt(y0)}L{fmt(x1)} {fmt(y1)}")
+                out.append(f'<path d="{"".join(bars)}" stroke="#5B636D" stroke-width="0.3"/>')
+                kx, ky = iso(*at(t, z1 + w * ISO_SCALE + 0.3, 0.3)[:2], z1 + w * ISO_SCALE + 0.3)
+                out.append(f'<rect x="{fmt(kx - 0.5)}" y="{fmt(ky - 1.4)}" width="1" height="1.6" fill="#D6CEBC" stroke="#AFA389" stroke-width="0.2"/>')
+                continue
+            big = finestre == "balconi"
+            w = 1.15 if big else (0.8 if finestre != "rette" else 0.7)
             z0, z1 = z + h * (0.18 if finestre != "rette" else 0.25), z + h * (0.68 if finestre != "rette" else 0.8)
+            if big:
+                z0, z1 = z + h * 0.16, z + h * 0.62
             shape = [at(t - w, z0), at(t + w, z0), at(t + w, z1)]
             if finestre != "rette":
                 r = w * ISO_SCALE
                 shape += [at(t + w * math.cos(th), z1 + r * math.sin(th)) for th in [math.pi * j / 8 for j in range(1, 8)]]
             shape += [at(t - w, z1)]
+            if big:
+                # The piano nobile: a tall window in an arched recess, its glass
+                # divided in small panes, a keystone over it.
+                rw = w + 0.55
+                recess = [at(t - rw, z0 - 0.4), at(t + rw, z0 - 0.4), at(t + rw, z1)]
+                recess += [at(t + rw * math.cos(th), z1 + rw * ISO_SCALE * math.sin(th)) for th in [math.pi * j / 10 for j in range(1, 10)]]
+                recess += [at(t - rw, z1)]
+                out.append(f'<polygon points="{iso_poly(recess)}" fill="{colors[1]}" stroke="#C9BC9E" stroke-width="0.35"/>')
+                pane = "#F2D492" if lit else "#93A9BC"
+                out.append(f'<polygon points="{iso_poly(shape)}" fill="{pane}" stroke="{frame}" stroke-width="0.6"/>')
+                bars = []
+                for j in (1, 2):
+                    tt = t - w + 2 * w * j / 3
+                    (x0, y0), (_, y1) = iso(*at(tt, z0)[:2], z0), iso(*at(tt, z0)[:2], z1 + w * ISO_SCALE * 0.8)
+                    bars.append(f"M{fmt(x0)} {fmt(y0)}V{fmt(y1)}")
+                for zz in [z0 + (z1 - z0) * f for f in (0.25, 0.5, 0.75, 1.0)]:
+                    (x0, y0), (x1, y1) = iso(*at(t - w, zz)[:2], zz), iso(*at(t + w, zz)[:2], zz)
+                    bars.append(f"M{fmt(x0)} {fmt(y0)}L{fmt(x1)} {fmt(y1)}")
+                out.append(f'<path d="{"".join(bars)}" stroke="{frame}" stroke-width="0.35"/>')
+                kz = z1 + rw * ISO_SCALE
+                kx, ky = iso(*at(t, kz)[:2], kz)
+                out.append(f'<rect x="{fmt(kx - 0.6)}" y="{fmt(ky - 0.6)}" width="1.2" height="1.9" fill="#E3DBC8" stroke="#AFA389" stroke-width="0.2"/>')
+                # The balcony: a slab on two brackets, a balustrade along its front.
+                bw, d = w + 0.9, 1.1
+                slab = [at(t - bw, z0 - 0.9, 0.05), at(t + bw, z0 - 0.9, 0.05), at(t + bw, z0 - 0.9, d), at(t - bw, z0 - 0.9, d)]
+                out.append(f'<polygon points="{iso_poly(slab)}" fill="#EFE8D8" stroke="#C9BC9E" stroke-width="0.25"/>')
+                for dt in (-bw + 0.4, bw - 0.4):
+                    br = [at(t + dt, z0 - 0.9, d - 0.2), at(t + dt, z0 - 0.9, 0.05), at(t + dt, z0 - 3.2, 0.05)]
+                    out.append(f'<polygon points="{iso_poly(br)}" fill="#D6CDB9"/>')
+                rail = [at(t - bw, z0 - 0.9, d), at(t + bw, z0 - 0.9, d), at(t + bw, z0 + 2.4, d), at(t - bw, z0 + 2.4, d)]
+                out.append(f'<polygon points="{iso_poly(rail)}" fill="#EDE5D3" stroke="#C9BC9E" stroke-width="0.3"/>')
+                bal = []
+                for j in range(1, 9):
+                    tt = t - bw + 2 * bw * j / 9
+                    (x0, y0), (_, y1) = iso(*at(tt, z0 - 0.9, d)[:2], z0 - 0.3), iso(*at(tt, z0, d)[:2], z0 + 1.8)
+                    bal.append(f"M{fmt(x0)} {fmt(y0)}V{fmt(y1)}")
+                out.append(f'<path d="{"".join(bal)}" stroke="#BFB297" stroke-width="0.55"/>')
+                continue
             out.append(f'<polygon points="{iso_poly(shape)}" fill="{glass}" stroke="{frame}" stroke-width="0.7"/>')
-            if finestre == "balconi":
-                sill = [at(t - w - 0.5, z0, 0.05), at(t + w + 0.5, z0, 0.05), at(t + w + 0.5, z0, 0.9), at(t - w - 0.5, z0, 0.9)]
-                out.append(f'<polygon points="{iso_poly(sill)}" fill="{colors[2]}"/>')
-                rail = [at(t - w - 0.5, z0, 0.9), at(t + w + 0.5, z0, 0.9), at(t + w + 0.5, z0 + 3, 0.9), at(t - w - 0.5, z0 + 3, 0.9)]
-                out.append(f'<polygon points="{iso_poly(rail)}" fill="{colors[2]}" stroke="#C9BC9E" stroke-width="0.3"/>')
+            if finestre == "rette" and bugnato:
+                # Iron bars across the ground floor's windows.
+                bars = []
+                for j in (1, 2):
+                    tt = t - w + 2 * w * j / 3
+                    (x0, y0), (_, y1) = iso(*at(tt, z0)[:2], z0), iso(*at(tt, z0)[:2], z1)
+                    bars.append(f"M{fmt(x0)} {fmt(y0)}V{fmt(y1)}")
+                out.append(f'<path d="{"".join(bars)}" stroke="#6B7178" stroke-width="0.3"/>')
     out.append(f'<polygon points="{iso_poly([(x, y, z + h) for x, y in pts])}" fill="{colors[2]}"/>')
     return out
 
@@ -1104,14 +1179,26 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
             if kind == "palazzo":
                 colors = CLADDING[band.get("rivestimento", "stucco")]
                 return palazzo(own, z, h, lit, colors, band.get("finestre", "archi"), band.get("bugnato", False),
-                               band.get("campata", 4.4), band.get("ordine", False))
+                               band.get("campata", 4.4), band.get("ordine", False), band.get("porte", 0))
             if kind == "cornicione":
                 # A heavy cornice running out over the wall, its shadow beneath.
                 out = []
                 for a, c, _, _ in faces(below, 0, 1):
                     q = [(a[0], a[1], z - 3), (c[0], c[1], z - 3), (c[0], c[1], z), (a[0], a[1], z)]
                     out.append(f'<polygon points="{iso_poly(q)}" fill="{SHADOW}" opacity="0.25"/>')
-                return out + prism(offset(own, band.get("sporto", 0.8)), z, z + h, ("#F1EADB", "#D9CDB2"), "#F5F0E4")
+                out += prism(offset(own, band.get("sporto", 0.8)), z, z + h, ("#F1EADB", "#D9CDB2"), "#F5F0E4")
+                if band.get("mensole"):
+                    # Modillions: small brackets in a row under the cornice's lip.
+                    blocks = []
+                    for a, c, _, _ in faces(own, 0, 1):
+                        n = outward(a, c, own)
+                        k = max(1, int(math.dist(a, c) / band["mensole"]))
+                        for i in range(k + 1):
+                            x, y = a[0] + (c[0] - a[0]) * i / k + n[0] * 0.5, a[1] + (c[1] - a[1]) * i / k + n[1] * 0.5
+                            (px, py) = iso(x, y, z)
+                            blocks.append(f'<rect x="{fmt(px - 0.25)}" y="{fmt(py)}" width="0.5" height="0.9" fill="#D9CFB8"/>')
+                    out += blocks
+                return out
             if kind == "balaustra":
                 # The parapet: a stone balustrade, its posts and balusters.
                 out = prism(own, z, z + h, ("#EFE7D5", "#D8CCB0"), "#F3EDDF")

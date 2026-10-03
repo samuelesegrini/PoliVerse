@@ -3,25 +3,23 @@
 <polygon points="315.2,270.8 285.1,288.2 285.1,274.2 315.2,256.8" fill="#CAC4B5"/>
 <path d="M315.3 268.5L285.2 285.9M315.3 266.1L285.2 283.4M315.3 263.7L285.2 281.1M315.3 261.2L285.2 278.6" stroke="#B9AD92" stroke-width="0.35"/>
 <polygon points="314.2,271.8 312.3,272.9 312.3,258.9 314.2,257.8" fill="#EEEAE1" opacity="0.9"/>
-<polygon points="314.8,259.3 312,260.9 312,259.2 314.8,257.7" fill="#D3CCBC"/>
 <polygon points="305.7,276.7 303.8,277.8 303.8,263.8 305.7,262.7" fill="#EEEAE1" opacity="0.9"/>
-<polygon points="306.3,264.2 303.5,265.8 303.5,264.2 306.3,262.6" fill="#D3CCBC"/>
 <polygon points="297.2,281.6 295.3,282.7 295.3,268.7 297.2,267.6" fill="#EEEAE1" opacity="0.9"/>
-<polygon points="297.8,269.1 295.1,270.7 295.1,269.1 297.8,267.5" fill="#D3CCBC"/>
 <polygon points="288.7,286.5 286.8,287.6 286.8,273.6 288.7,272.5" fill="#EEEAE1" opacity="0.9"/>
-<polygon points="289.3,274 286.6,275.6 286.6,274 289.3,272.4" fill="#D3CCBC"/>
 <polygon points="310,270.5 307.5,271.9 307.5,264.2 310,262.8" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<path d="M309.1 270.9V263.2M308.3 271.4V263.7" stroke="#6B7178" stroke-width="0.3"/>
 <polygon points="301.5,275.4 299,276.8 299,269.1 301.5,267.7" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<path d="M300.7 275.8V268.1M299.8 276.3V268.6" stroke="#6B7178" stroke-width="0.3"/>
 <polygon points="293,280.2 290.6,281.6 290.6,273.9 293,272.6" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<path d="M292.2 280.7V273M291.4 281.2V273.5" stroke="#6B7178" stroke-width="0.3"/>
 <polygon points="285.1,288.2 267.4,278 267.4,264 285.1,274.2" fill="#E4DFD3"/>
 <path d="M285 285.9L267.3 275.6M285 283.4L267.3 273.2M285 281.1L267.3 270.8M285 278.6L267.3 268.4" stroke="#B9AD92" stroke-width="0.35"/>
 <polygon points="285.4,288.8 283.5,287.6 283.5,273.6 285.4,274.8" fill="#EEEAE1" opacity="0.9"/>
-<polygon points="285.6,276.7 282.8,275.1 282.8,273.5 285.6,275.1" fill="#D3CCBC"/>
 <polygon points="276.9,283.9 275,282.8 275,268.8 276.9,269.9" fill="#EEEAE1" opacity="0.9"/>
-<polygon points="277.1,271.8 274.4,270.2 274.4,268.6 277.1,270.2" fill="#D3CCBC"/>
 <polygon points="268.4,278.9 266.5,277.9 266.5,263.9 268.4,264.9" fill="#EEEAE1" opacity="0.9"/>
-<polygon points="268.6,266.9 265.9,265.3 265.9,263.7 268.6,265.3" fill="#D3CCBC"/>
 <polygon points="281.6,282.8 279.2,281.4 279.2,273.7 281.6,275.1" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<path d="M280.8 282.3V274.6M280 281.9V274.2" stroke="#6B7178" stroke-width="0.3"/>
 <polygon points="273.1,277.9 270.7,276.5 270.7,268.8 273.1,270.2" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<path d="M272.3 277.4V269.7M271.5 277V269.3" stroke="#6B7178" stroke-width="0.3"/>
 <polygon points="267.4,264 297.6,246.6 315.2,256.8 285.1,274.2" fill="#EEEAE1"/>
 </svg>

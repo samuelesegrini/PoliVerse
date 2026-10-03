@@ -720,7 +720,8 @@
               "tipo": "cornicione",
               "decoro": true,
               "sporto": 1.0,
-              "h": 2.5
+              "h": 2.5,
+              "mensole": 0.9
             },
             {
               "piano": "balaustra",
@@ -761,15 +762,16 @@
               "tipo": "palazzo",
               "finestre": "rette",
               "bugnato": true,
-              "campata": 4.9,
+              "campata": 4.8,
               "ordine": true,
-              "h": 14
+              "h": 14,
+              "porte": 3
             },
             {
               "piano": "MIA0101001",
               "tipo": "palazzo",
               "finestre": "balconi",
-              "campata": 4.9,
+              "campata": 4.8,
               "ordine": true,
               "h": 20
             },
@@ -785,23 +787,18 @@
               "tipo": "cornicione",
               "decoro": true,
               "sporto": 1.0,
-              "h": 2.5
+              "h": 2.5,
+              "mensole": 0.9
             },
             {
               "piano": "balaustra",
               "tipo": "balaustra",
               "decoro": true,
-              "h": 5
+              "h": 5,
+              "passo_sfere": 4.8
             },
             {"tipo": "coppi", "h": 4, "rientro": 4}
           ],
-          "portoni": {
-            "punto": [-67.3, 209.65],
-            "n": 3,
-            "passo": 4.9,
-            "h": 9,
-            "da": 5
-          },
           "scalinata": {
             "punto": [-67.3, 209.65],
             "larghezza": 38,
@@ -820,8 +817,7 @@
               "punto": [-67.3, 209.65],
               "z": 20,
               "colori": [
-                ["#2E8B57", "#FFFFFF", "#C8102E"],
-                ["#1F3F94"]
+                ["#2E8B57", "#FFFFFF", "#C8102E"]
               ]
             }
           ]
@@ -870,7 +866,8 @@
               "tipo": "cornicione",
               "decoro": true,
               "sporto": 1.0,
-              "h": 2.5
+              "h": 2.5,
+              "mensole": 0.9
             },
             {
               "piano": "balaustra",
