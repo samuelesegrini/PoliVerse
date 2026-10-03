@@ -2236,6 +2236,95 @@
           ]
         }
       ]
+    },
+    {
+      "csie": "MIA0104",
+      "numero": "4",
+      "nome": "Giulio De Marchi",
+      "piani": 2,
+      "pianta": [
+        [-7.2, 92.5],
+        [-6.9, 101.3],
+        [7.2, 101.2],
+        [7.3, 104.8],
+        [9.0, 106.6],
+        [10.4, 106.5],
+        [10.6, 117.6],
+        [9.5, 117.5],
+        [9.8, 148.3],
+        [10.0, 162.2],
+        [21.2, 162.1],
+        [21.1, 161.6],
+        [23.3, 161.6],
+        [23.3, 171.2],
+        [26.0, 173.7],
+        [39.8, 173.6],
+        [42.5, 170.9],
+        [42.3, 161.3],
+        [44.1, 161.3],
+        [44.3, 162.2],
+        [55.3, 162.1],
+        [54.9, 117.3],
+        [54.0, 117.3],
+        [54.1, 109.4],
+        [52.1, 109.4],
+        [52.1, 107.4],
+        [59.8, 107.4],
+        [59.6, 95.6],
+        [51.9, 95.8],
+        [52.1, 92.0],
+        [41.8, 92.1],
+        [41.5, 95.8],
+        [23.3, 95.9],
+        [23.2, 92.2]
+      ],
+      "badge": [50, 96],
+      "livelli": ["MIA010400S", "MIA0104000", "MIA0104001", "MIA0104002"],
+      "riquadro": [-40, 60, 90, 205],
+      "vista": "sud-ovest",
+      "spostamenti": {"MIA0104001": [7.0, -0.5]},
+      "piani_3d": ["MIA0104000", "MIA0104001", "MIA0104002"],
+      "profilo": [
+        {
+          "piano": "MIA010400S",
+          "tipo": "pieno",
+          "rivestimento": "pietra",
+          "h": 4
+        },
+        {
+          "piano": "MIA0104000",
+          "tipo": "palazzo",
+          "rivestimento": "intonaco",
+          "finestre": "archi",
+          "bugnato": true,
+          "campata": 4.2,
+          "h": 14
+        },
+        {
+          "piano": "MIA0104001",
+          "tipo": "palazzo",
+          "rivestimento": "intonaco",
+          "finestre": "rette",
+          "campata": 4.2,
+          "h": 13
+        },
+        {
+          "piano": "MIA0104002",
+          "tipo": "palazzo",
+          "rivestimento": "intonaco",
+          "finestre": "rette",
+          "campata": 4.2,
+          "h": 12
+        },
+        {
+          "piano": "cornicione",
+          "tipo": "cornicione",
+          "decoro": true,
+          "sporto": 0.6,
+          "h": 1.8
+        },
+        {"tipo": "terrazza", "colore": "#A3A19A"}
+      ]
     }
   ],
   "contesto": {
