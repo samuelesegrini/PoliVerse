@@ -1472,23 +1472,23 @@
 <rect x="78.5" y="138.2" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="79.2" cy="137.4" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
 </g>
 <g id="livello-tetto-pad-nord" data-livello="edifici">
-<polygon points="50.4,124 76.6,108.9 76.6,114.6 68.1,119.5" fill="#D58A63"/>
-<polygon points="76.6,108.9 105.3,125.5 87.6,121 76.6,114.6" fill="#D58A63"/>
-<polygon points="79.2,140.6 50.4,124 68.1,119.5 79.2,125.9" fill="#C2704A"/>
-<polygon points="105.3,125.5 79.2,140.6 79.2,125.9 87.6,121" fill="#A85A38"/>
-<polygon points="68.1,119.5 76.6,114.6 87.6,121 79.2,125.9" fill="#CF7E57"/>
+<polygon points="55.9,128.5 76.6,116.6 76.6,115.6 68.1,120.5" fill="#D58A63"/>
+<polygon points="76.6,116.6 99.8,130 87.6,122 76.6,115.6" fill="#D58A63"/>
+<polygon points="79.2,141.9 55.9,128.5 68.1,120.5 79.2,126.9" fill="#C2704A"/>
+<polygon points="99.8,130 79.2,141.9 79.2,126.9 87.6,122" fill="#A85A38"/>
+<polygon points="68.1,120.5 76.6,115.6 87.6,122 79.2,126.9" fill="#CF7E57"/>
 </g>
 <g id="livello-ornati-pad-nord" data-livello="edifici">
-<polygon points="57,119.5 54.6,120.9 54.6,117.9 57,116.5" fill="#D3C7AB"/>
-<polygon points="54.6,120.9 52.1,119.5 52.1,116.5 54.6,117.9" fill="#EFE7D5"/>
-<polygon points="54.6,115.1 57,116.5 54.6,117.9 52.1,116.5" fill="#F3EDDF"/>
-<polygon points="52.8,116.5 54.6,117.5 54.6,107.5" fill="#E9E0CB"/>
-<polygon points="54.6,117.5 56.3,116.5 54.6,107.5" fill="#CFC2A4"/>
-<polygon points="81.6,133.7 79.2,135.1 79.2,132.1 81.6,130.7" fill="#D3C7AB"/>
-<polygon points="79.2,135.1 76.7,133.7 76.7,130.7 79.2,132.1" fill="#EFE7D5"/>
-<polygon points="79.2,129.3 81.6,130.7 79.2,132.1 76.7,130.7" fill="#F3EDDF"/>
-<polygon points="77.4,130.7 79.2,131.7 79.2,121.7" fill="#E9E0CB"/>
-<polygon points="79.2,131.7 80.9,130.7 79.2,121.7" fill="#CFC2A4"/>
+<polygon points="57,120.5 54.6,121.9 54.6,118.9 57,117.5" fill="#D3C7AB"/>
+<polygon points="54.6,121.9 52.1,120.5 52.1,117.5 54.6,118.9" fill="#EFE7D5"/>
+<polygon points="54.6,116.1 57,117.5 54.6,118.9 52.1,117.5" fill="#F3EDDF"/>
+<polygon points="52.8,117.5 54.6,118.5 54.6,108.5" fill="#E9E0CB"/>
+<polygon points="54.6,118.5 56.3,117.5 54.6,108.5" fill="#CFC2A4"/>
+<polygon points="81.6,134.7 79.2,136.1 79.2,133.1 81.6,131.7" fill="#D3C7AB"/>
+<polygon points="79.2,136.1 76.7,134.7 76.7,131.7 79.2,133.1" fill="#EFE7D5"/>
+<polygon points="79.2,130.3 81.6,131.7 79.2,133.1 76.7,131.7" fill="#F3EDDF"/>
+<polygon points="77.4,131.7 79.2,132.7 79.2,122.7" fill="#E9E0CB"/>
+<polygon points="79.2,132.7 80.9,131.7 79.2,122.7" fill="#CFC2A4"/>
 </g>
 <g id="livello-MIA010200S-torre-sud" data-livello="piani" data-piano="MIA010200S">
 <polygon points="226,189.1 205.1,177 205.1,172 226,184.1" fill="#B4B2AA"/>
@@ -2439,11 +2439,11 @@
 <rect x="166.6" y="189.1" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="167.3" cy="188.3" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
 </g>
 <g id="livello-tetto-pad-sud" data-livello="edifici">
-<polygon points="136.5,173.7 162.6,158.6 162.6,164.3 154.2,169.2" fill="#D58A63"/>
-<polygon points="162.6,158.6 193.5,176.4 175.8,171.9 162.6,164.3" fill="#D58A63"/>
-<polygon points="167.3,191.5 136.5,173.7 154.2,169.2 167.3,176.8" fill="#C2704A"/>
-<polygon points="193.5,176.4 167.3,191.5 167.3,176.8 175.8,171.9" fill="#A85A38"/>
-<polygon points="154.2,169.2 162.6,164.3 175.8,171.9 167.3,176.8" fill="#CF7E57"/>
+<polygon points="142,178.2 162.6,166.3 162.6,165.3 154.2,170.2" fill="#D58A63"/>
+<polygon points="162.6,166.3 187.9,180.9 175.8,172.9 162.6,165.3" fill="#D58A63"/>
+<polygon points="167.3,192.8 142,178.2 154.2,170.2 167.3,177.8" fill="#C2704A"/>
+<polygon points="187.9,180.9 167.3,192.8 167.3,177.8 175.8,172.9" fill="#A85A38"/>
+<polygon points="154.2,170.2 162.6,165.3 175.8,172.9 167.3,177.8" fill="#CF7E57"/>
 </g>
 <g id="livello-ornati-pad-sud" data-livello="edifici">
 <polygon points="182,219 177.5,221.6 177.5,211.6 177.7,210.5 178.2,209.4 178.9,208.4 179.8,207.7 180.6,207.4 181.4,207.5 181.9,208.1 182,209" fill="#2C3138" stroke="#E9E4D8" stroke-width="0.6"/>
@@ -2452,16 +2452,16 @@
 <polygon points="176.9,210.7 174.2,209.1 174.2,208.2 176.9,209.8" fill="#E7DECB"/>
 <polygon points="174.2,208.2 184.6,202.2 187.3,203.8 176.9,209.8" fill="#F1EADB"/>
 <polygon points="176.9,209.8 187.3,203.8 187.3,201.7 176.9,207.7" fill="#EDE5D3" stroke="#BFB297" stroke-width="0.3" stroke-dasharray="0.3 0.5"/>
-<polygon points="143.1,169.2 140.6,170.6 140.6,167.6 143.1,166.2" fill="#D3C7AB"/>
-<polygon points="140.6,170.6 138.2,169.2 138.2,166.2 140.6,167.6" fill="#EFE7D5"/>
-<polygon points="140.6,164.8 143.1,166.2 140.6,167.6 138.2,166.2" fill="#F3EDDF"/>
-<polygon points="138.9,166.2 140.6,167.2 140.6,157.2" fill="#E9E0CB"/>
-<polygon points="140.6,167.2 142.4,166.2 140.6,157.2" fill="#CFC2A4"/>
-<polygon points="169.7,184.6 167.3,186 167.3,183 169.7,181.6" fill="#D3C7AB"/>
-<polygon points="167.3,186 164.9,184.6 164.9,181.6 167.3,183" fill="#EFE7D5"/>
-<polygon points="167.3,180.2 169.7,181.6 167.3,183 164.9,181.6" fill="#F3EDDF"/>
-<polygon points="165.6,181.6 167.3,182.6 167.3,172.6" fill="#E9E0CB"/>
-<polygon points="167.3,182.6 169,181.6 167.3,172.6" fill="#CFC2A4"/>
+<polygon points="143.1,170.2 140.6,171.6 140.6,168.6 143.1,167.2" fill="#D3C7AB"/>
+<polygon points="140.6,171.6 138.2,170.2 138.2,167.2 140.6,168.6" fill="#EFE7D5"/>
+<polygon points="140.6,165.8 143.1,167.2 140.6,168.6 138.2,167.2" fill="#F3EDDF"/>
+<polygon points="138.9,167.2 140.6,168.2 140.6,158.2" fill="#E9E0CB"/>
+<polygon points="140.6,168.2 142.4,167.2 140.6,158.2" fill="#CFC2A4"/>
+<polygon points="169.7,185.6 167.3,187 167.3,184 169.7,182.6" fill="#D3C7AB"/>
+<polygon points="167.3,187 164.9,185.6 164.9,182.6 167.3,184" fill="#EFE7D5"/>
+<polygon points="167.3,181.2 169.7,182.6 167.3,184 164.9,182.6" fill="#F3EDDF"/>
+<polygon points="165.6,182.6 167.3,183.6 167.3,173.6" fill="#E9E0CB"/>
+<polygon points="167.3,183.6 169,182.6 167.3,173.6" fill="#CFC2A4"/>
 </g>
 <g id="livello-impianti" data-livello="impianti">
 </g>

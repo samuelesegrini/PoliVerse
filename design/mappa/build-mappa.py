@@ -833,6 +833,8 @@ def ornaments(part, own, turn, top, z0):
         d = part["portoni"]
         q, a, c, _ = nearest_edge(turn(tuple(d["punto"])), [own])
         n = outward(a, c, own)
+        if n[0] + n[1] <= 0:
+            d = {"n": 0}  # on a wall facing away: there, but not seen from here
         L = math.dist(a, c)
         u = ((c[0] - a[0]) / L, (c[1] - a[1]) / L)
         k, step, hz, zb = d.get("n", 3), d.get("passo", 4.9), d.get("h", 10), z0 + d.get("da", 4)
@@ -858,6 +860,8 @@ def ornaments(part, own, turn, top, z0):
     for b in part.get("balconi_extra", []):
         # A stone balcony over a door: a slab out from the wall, a balustrade on it.
         q, u, n = frame(b["punto"])
+        if n[0] + n[1] <= 0:
+            continue
         w, zb, d = b.get("larghezza", 6) / 2, z0 + b["z"], b.get("sporto", 1.6)
         slab = [(q[0] + u[0] * t + n[0] * o, q[1] + u[1] * t + n[1] * o) for t, o in ((-w, 0), (w, 0), (w, d), (-w, d))]
         out += prism(ccw(slab), zb, zb + 0.8, ("#E7DECB", "#CDBF9F"), "#F1EADB")
@@ -1362,7 +1366,13 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
         below = own
     if tiles:
         # A hipped roof in red tiles: each side slopes up from the eaves to a ridge set in.
-        eaves, ridge = offset(below, 0.6), offset(below, -tiles.get("rientro", 4.0))
+        if tiles.get("dietro"):
+            # A roof behind a balustrade: its eaves start at the cornice, inside the
+            # parapet, so its slopes line up with the roofs of the plain wings beside it.
+            z -= tiles["dietro"]
+            eaves, ridge = offset(below, -1.0), offset(below, -tiles.get("rientro", 4.0))
+        else:
+            eaves, ridge = offset(below, 0.6), offset(below, -tiles.get("rientro", 4.0))
         zr = z + tiles["h"]
         roof = []
         # Every slope shows from above, the far ones too: drawn far first, lit by their aspect.

@@ -1218,11 +1218,25 @@
               "h": 4.5,
               "passo_sfere": 3.8
             },
-            {"tipo": "coppi", "h": 4.5, "rientro": 4.5}
+            {
+              "tipo": "coppi",
+              "h": 8,
+              "rientro": 4.5,
+              "dietro": 4.5
+            }
           ],
           "pinnacoli": [
             [-70.1, 101.6, 12],
             [-70.1, 115.8, 12]
+          ],
+          "portoni": {
+            "punto": [-63.75, 101.0],
+            "n": 1,
+            "h": 10,
+            "da": 5
+          },
+          "balconi_extra": [
+            {"punto": [-63.75, 101.0], "z": 19, "larghezza": 6}
           ]
         },
         {
@@ -1462,7 +1476,12 @@
               "h": 4.5,
               "passo_sfere": 3.8
             },
-            {"tipo": "coppi", "h": 4.5, "rientro": 4.5}
+            {
+              "tipo": "coppi",
+              "h": 8,
+              "rientro": 4.5,
+              "dietro": 4.5
+            }
           ],
           "pinnacoli": [
             [-70.1, 151.3, 12],
