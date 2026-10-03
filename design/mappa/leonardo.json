@@ -938,7 +938,7 @@
       "badge": [-5.2, 106.5]
     },
     {
-      "csie": "osm-1141445880",
+      "csie": "MIA0115",
       "piani": 3,
       "pianta": [
         [-3.5, 269.8],
@@ -955,7 +955,108 @@
         [8.9, 269.9]
       ],
       "numero": "3A",
-      "badge": [-7.5, 271.8]
+      "badge": [-7.5, 271.8],
+      "nome": "Lerici",
+      "livelli": ["MIA011500S", "MIA0115000", "MIA0115001"],
+      "piani_3d": ["MIA0115000", "MIA0115001"],
+      "riquadro": [-60, 240, 50, 350],
+      "vista": "sud-ovest",
+      "parti": [
+        {
+          "nome": "nord",
+          "pianta": [
+            [-3.5, 269.8],
+            [8.9, 269.9],
+            [9.0, 290.5],
+            [-3.2, 290.5]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA011500S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 3
+            },
+            {
+              "piano": "MIA0115000",
+              "tipo": "pieno",
+              "rivestimento": "cemento",
+              "finestre": "grandi",
+              "h": 13
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "sporto": 0.3,
+              "h": 1
+            },
+            {
+              "tipo": "terrazza",
+              "colore": "#9E9C95",
+              "verde": [
+                [-1.5, 272, 4, 7],
+                [3.5, 272, 4, 7],
+                [-1.5, 281, 9, 6]
+              ]
+            }
+          ]
+        },
+        {
+          "nome": "sud",
+          "pianta": [
+            [-3.2, 290.5],
+            [7.8, 290.5],
+            [8.2, 323.7],
+            [-2.6, 323.8],
+            [-2.6, 325.9],
+            [-9.5, 325.9],
+            [-9.5, 319.2],
+            [-5.1, 319.1],
+            [-5.1, 304.6],
+            [-2.8, 304.5]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA011500S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 3
+            },
+            {
+              "piano": "MIA0115000",
+              "tipo": "pieno",
+              "rivestimento": "cemento",
+              "finestre": "grandi",
+              "h": 13
+            },
+            {
+              "piano": "MIA0115001",
+              "tipo": "pieno",
+              "rivestimento": "cemento",
+              "finestre": "grandi",
+              "h": 13
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "sporto": 0.3,
+              "h": 1
+            },
+            {
+              "tipo": "terrazza",
+              "colore": "#9E9C95",
+              "verde": [
+                [-1, 293, 7, 8],
+                [-1, 304, 7, 8],
+                [-1, 314, 7, 7]
+              ],
+              "impianti": [
+                [-8, 320.5, 4, 4, 2.5]
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "csie": "MIA0102",

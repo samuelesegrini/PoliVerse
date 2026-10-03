@@ -1461,9 +1461,13 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
         boxes = []
         for x, y, w, d, hh in flat.get("impianti", []):
             c = [turn(p) for p in ((x, y), (x + w, y), (x + w, y + d), (x, y + d))]
-            boxes.append((sum(p[0] + p[1] for p in c), ccw(c), hh))
-        for _, c, hh in sorted(boxes, key=lambda t: t[0]):
-            roof += prism(c, z + ISO_SLAB, z + ISO_SLAB + hh, ("#C9CDD2", "#AEB3BA"), "#E4E7EA")
+            boxes.append((sum(p[0] + p[1] for p in c), ccw(c), hh, ("#C9CDD2", "#AEB3BA"), "#E4E7EA"))
+        # A roof garden: low planters [x, y, w, d], grass on top.
+        for x, y, w, d in flat.get("verde", []):
+            c = [turn(p) for p in ((x, y), (x + w, y), (x + w, y + d), (x, y + d))]
+            boxes.append((sum(p[0] + p[1] for p in c), ccw(c), 1.2, ("#B9B5AA", "#A29E93"), "#8DB06E"))
+        for _, c, hh, sides, top_ in sorted(boxes, key=lambda t: t[0]):
+            roof += prism(c, z + ISO_SLAB, z + ISO_SLAB + hh, sides, top_)
     strati.append(Strato("tetto" + tag, "edifici", roof))
     for c, lights in skylights:
         strati.append(Strato(f"{c}-lucernari{tag}", "piani", lights(False), piano=c, lit=lights(True)))
