@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="7.5 3.3 313.8 265.4" width="627.6" height="530.8">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="79.2,143.9 52.5,128.5 52.5,124 79.2,139.4" fill="#EFE7D5"/>
+<polygon points="103.2,130 79.2,143.9 79.2,139.4 103.2,125.5" fill="#D8CCB0"/>
+<polygon points="52.5,124 76.6,110.1 103.2,125.5 79.2,139.4" fill="#F3EDDF"/>
+<polygon points="55.6,124 76.6,111.9 100.1,125.5 79.2,137.6" fill="#A9A79F"/>
+<path d="M77.9 142.4V139.7M76.7 141.7V139M75.5 141V138.3M74.3 140.3V137.6M73.1 139.6V136.9M71.9 138.9V136.2M70.7 138.2V135.5M69.5 137.5V134.8M68.2 136.8V134.1M67 136.1V133.4M65.8 135.4V132.7M64.6 134.7V132M63.4 134V131.3M62.2 133.3V130.6M61 132.6V129.9M59.8 131.9V129.2M58.5 131.2V128.5M57.3 130.5V127.8M56.1 129.8V127.1M54.9 129.1V126.4M53.7 128.4V125.7M102 129.9V127.2M100.7 130.7V128M99.4 131.4V128.7M98.2 132.1V129.4M96.9 132.9V130.2M95.6 133.6V130.9M94.4 134.3V131.6M93.1 135.1V132.4M91.8 135.8V133.1M90.6 136.5V133.8M89.3 137.2V134.5M88 138V135.3M86.8 138.7V136M85.5 139.4V136.7M84.2 140.2V137.5M83 140.9V138.2M81.7 141.6V138.9M80.4 142.4V139.7" stroke="#BFB297" stroke-width="0.3"/>
+<rect x="78.5" y="138.2" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="79.2" cy="137.4" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="71.8" y="134.4" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="72.5" cy="133.6" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="65.1" y="130.5" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="65.8" cy="129.7" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="58.4" y="126.7" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="59.1" cy="125.9" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="51.8" y="122.8" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="52.5" cy="122" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="102.5" y="124.3" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="103.2" cy="123.5" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="94.5" y="128.9" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="95.2" cy="128.1" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="86.5" y="133.6" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="87.2" cy="132.8" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="78.5" y="138.2" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="79.2" cy="137.4" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+</svg>

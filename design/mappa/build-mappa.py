@@ -1194,7 +1194,7 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
     below, roofed, skylights = pts, False, []
     bands = profilo or b["profilo"]
     tiles = next((x for x in bands if x["tipo"] == "coppi"), None)
-    for band in [x for x in bands if x is not tiles]:
+    for band in [x for x in bands if x is not tiles and x["tipo"] != "terrazza"]:
         csip, kind, h = band.get("piano"), band["tipo"], band["h"]
         own = pts
         if band.get("sagoma") == "propria":
@@ -1373,8 +1373,27 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
             nx, ny = outward(a, c, eaves)
             fill = "#C2704A" if ny > nx and nx + ny > 0 else "#A85A38" if nx + ny > 0 else "#D58A63"
             slopes.append(((a[0] + c[0] + a[1] + c[1]) / 2, [(*a, z), (*c, z), (*ridge[j], zr), (*ridge[i], zr)], fill))
+        if tiles.get("fotovoltaico"):
+            # A low roof in pale sheet metal, every long slope covered in solar panels.
+            sand = {"#C2704A": "#C9B48F", "#A85A38": "#B09A74", "#D58A63": "#D9C7A4"}
+            slopes = [(k, q, sand[f]) for k, q, f in slopes]
         for _, q, fill in sorted(slopes, key=lambda s: s[0]):
             roof.append(f'<polygon points="{iso_poly(q)}" fill="{fill}"/>')
+            if tiles.get("fotovoltaico") and math.dist(q[0][:2], q[1][:2]) > 20:
+                lerp = lambda p, r, t: tuple(p[i] + (r[i] - p[i]) * t for i in range(3))
+                at = lambda u, v: lerp(lerp(q[0], q[1], u), lerp(q[3], q[2], u), v)
+                cells = []
+                for u0, u1 in ((0.06, 0.34), (0.38, 0.62), (0.66, 0.94)):
+                    roof.append(f'<polygon points="{iso_poly([at(u0, 0.12), at(u1, 0.12), at(u1, 0.88), at(u0, 0.88)])}" fill="#2F3B57" stroke="#8A93A6" stroke-width="0.3"/>')
+                    k = max(2, int(math.dist(q[0][:2], q[1][:2]) * (u1 - u0) / 1.7))
+                    for i in range(1, k):
+                        uu = u0 + (u1 - u0) * i / k
+                        (x0, y0), (x1, y1) = iso(*at(uu, 0.12)), iso(*at(uu, 0.88))
+                        cells.append(f"M{fmt(x0)} {fmt(y0)}L{fmt(x1)} {fmt(y1)}")
+                    for v in (0.31, 0.5, 0.69):
+                        (x0, y0), (x1, y1) = iso(*at(u0, v)), iso(*at(u1, v))
+                        cells.append(f"M{fmt(x0)} {fmt(y0)}L{fmt(x1)} {fmt(y1)}")
+                roof.append(f'<path d="{"".join(cells)}" stroke="#7D879C" stroke-width="0.2"/>')
         if tiles.get("lucernario"):
             # The middle of the roof is glass: a skylit hall below, ribbed in steel.
             roof.append(f'<polygon points="{iso_poly([(x, y, zr) for x, y in ridge])}" fill="#8EA3B7" stroke="#5E6B78" stroke-width="0.6"/>')
@@ -1388,7 +1407,7 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
             ribs.append(f"M{fmt(a0)} {fmt(b0)}L{fmt(a1)} {fmt(b1)}")
             roof.append(f'<path d="{"".join(ribs)}" stroke="#E8ECEF" stroke-width="0.7"/>')
         else:
-            roof.append(f'<polygon points="{iso_poly([(x, y, zr) for x, y in ridge])}" fill="#CF7E57"/>')
+            roof.append(f'<polygon points="{iso_poly([(x, y, zr) for x, y in ridge])}" fill="{"#D3C2A0" if tiles.get("fotovoltaico") else "#CF7E57"}"/>')
         z = zr
     elif b.get("gronda"):
         # A thin pale roof overhanging every side by `gronda` metres, its shadow on the wall.
@@ -1400,8 +1419,16 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
     elif bands[-1]["tipo"] == "balaustra":
         roof = []  # a terrace behind the balustrade, drawn with it
     else:
+        flat = next((x for x in bands if x["tipo"] == "terrazza"), {})
         roof = prism(below, z, z + ISO_SLAB, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
-        roof.append(f'<polygon points="{iso_poly([(x, y, z + ISO_SLAB) for x, y in offset(below, -1.6)])}" fill="{ISO_ROOF_INNER}"/>')
+        roof.append(f'<polygon points="{iso_poly([(x, y, z + ISO_SLAB) for x, y in offset(below, -1.6)])}" fill="{flat.get("colore", ISO_ROOF_INNER)}"/>')
+        # Plant on the roof: boxes [x, y, w, d, h] in plan, far ones first.
+        boxes = []
+        for x, y, w, d, hh in flat.get("impianti", []):
+            c = [turn(p) for p in ((x, y), (x + w, y), (x + w, y + d), (x, y + d))]
+            boxes.append((sum(p[0] + p[1] for p in c), ccw(c), hh))
+        for _, c, hh in sorted(boxes, key=lambda t: t[0]):
+            roof += prism(c, z + ISO_SLAB, z + ISO_SLAB + hh, ("#C9CDD2", "#AEB3BA"), "#E4E7EA")
     strati.append(Strato("tetto" + tag, "edifici", roof))
     for c, lights in skylights:
         strati.append(Strato(f"{c}-lucernari{tag}", "piani", lights(False), piano=c, lit=lights(True)))
@@ -1608,6 +1635,16 @@ def draw_iso(campus, b):
     for x, y, w, h in sorted(plant, key=lambda u: u[0] + u[1]):
         units += box(x, y, w, h, top + ISO_SLAB, 7, ISO_PLANT)
     strati.append(Strato("impianti", "impianti", units))
+    # A tree in a courtyard rises over the roofs around it: only its crown shows.
+    crowns = []
+    for x, y, r, zc in b.get("alberi_cortile", []):
+        px, py = iso(*turn((x, y)), zc)
+        s_ = ISO_SCALE * r
+        crowns.append(f'<circle cx="{fmt(px)}" cy="{fmt(py)}" r="{fmt(s_)}" fill="url(#iso-tree)"/>'
+                      f'<circle cx="{fmt(px - s_ * 0.45)}" cy="{fmt(py + s_ * 0.35)}" r="{fmt(s_ * 0.7)}" fill="url(#iso-tree)"/>'
+                      f'<circle cx="{fmt(px + s_ * 0.5)}" cy="{fmt(py + s_ * 0.3)}" r="{fmt(s_ * 0.65)}" fill="url(#iso-tree)"/>')
+    if crowns:
+        strati.append(Strato("alberi-cortile", "alberi", crowns, ["iso-tree"]))
     strati.append(Strato("alberi-davanti", "alberi", [iso_tree(*t) for t in front], ["iso-tree"]))
 
     # Floor tags beside the right-most corner, one per storey.
