@@ -1432,6 +1432,20 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
         flat = next((x for x in bands if x["tipo"] == "terrazza"), {})
         roof = prism(below, z, z + ISO_SLAB, (ISO_SLAB_LEFT, ISO_SLAB_RIGHT), ISO_SLAB_TOP)
         roof.append(f'<polygon points="{iso_poly([(x, y, z + ISO_SLAB) for x, y in offset(below, -1.6)])}" fill="{flat.get("colore", ISO_ROOF_INNER)}"/>')
+        if flat.get("fotovoltaico"):
+            # Rows of solar panels laid flat, a walkway left round the edge.
+            xs, ys = [p[0] for p in below], [p[1] for p in below]
+            m_, zt = flat.get("margine", 2.5), z + ISO_SLAB + 0.6
+            x0, x1, y0, y1 = min(xs) + m_, max(xs) - m_, min(ys) + m_, max(ys) - m_
+            roof.append(f'<polygon points="{iso_poly([(x0, y0, zt), (x1, y0, zt), (x1, y1, zt), (x0, y1, zt)])}" fill="#2F3B57" stroke="#8A93A6" stroke-width="0.4"/>')
+            cells = []
+            for k in range(1, int((x1 - x0) / 1.7)):
+                (a0, b0), (a1, b1) = iso(x0 + k * 1.7, y0, zt), iso(x0 + k * 1.7, y1, zt)
+                cells.append(f"M{fmt(a0)} {fmt(b0)}L{fmt(a1)} {fmt(b1)}")
+            for k in range(1, int((y1 - y0) / 1.0)):
+                (a0, b0), (a1, b1) = iso(x0, y0 + k * 1.0, zt), iso(x1, y0 + k * 1.0, zt)
+                cells.append(f"M{fmt(a0)} {fmt(b0)}L{fmt(a1)} {fmt(b1)}")
+            roof.append(f'<path d="{"".join(cells)}" stroke="#7D879C" stroke-width="0.2"/>')
         # Plant on the roof: boxes [x, y, w, d, h] in plan, far ones first.
         boxes = []
         for x, y, w, d, hh in flat.get("impianti", []):

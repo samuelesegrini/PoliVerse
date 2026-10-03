@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="273.7 152.7 314.3 268.2" width="628.6" height="536.4">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="273.7 158.2 314.3 262.7" width="628.6" height="525.4">
 <defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
 <polygon points="494,325.2 442.2,355.1 442.2,339.1 494,309.2" fill="#C5B38B"/>
 <polygon points="494.4,325.3 493.4,325.9 493.4,309.9 494.4,309.3" fill="#E8DCC0" opacity="0.9"/>

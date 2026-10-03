@@ -1617,11 +1617,15 @@
             {
               "piano": "cornicione",
               "tipo": "cornicione",
-              "decoro": true,
-              "sporto": 0.6,
-              "h": 2
+              "sporto": 0.4,
+              "h": 1.5
             },
-            {"tipo": "coppi", "h": 7, "rientro": 5}
+            {
+              "tipo": "terrazza",
+              "colore": "#E4E4DF",
+              "fotovoltaico": true,
+              "margine": 2.2
+            }
           ]
         },
         {
