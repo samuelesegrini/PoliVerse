@@ -1650,7 +1650,9 @@ def draw_iso(campus, b):
     for x, y, r, zc in b.get("alberi_cortile", []):
         px, py = iso(*turn((x, y)), zc)
         s_ = ISO_SCALE * r
-        crowns.append(f'<circle cx="{fmt(px)}" cy="{fmt(py)}" r="{fmt(s_)}" fill="url(#iso-tree)"/>'
+        crowns.append(f'<rect x="{fmt(px - 1.4)}" y="{fmt(py)}" width="2.8" height="{fmt(s_ * 1.6)}" rx="1" fill="{TRUNK}"/>'
+                      f'<path d="M{fmt(px)} {fmt(py + s_ * 0.4)}l{fmt(-s_ * 0.45)} {fmt(-s_ * 0.5)}M{fmt(px)} {fmt(py + s_ * 0.6)}l{fmt(s_ * 0.5)} {fmt(-s_ * 0.55)}" stroke="{TRUNK}" stroke-width="1.1"/>'
+                      f'<circle cx="{fmt(px)}" cy="{fmt(py)}" r="{fmt(s_)}" fill="url(#iso-tree)"/>'
                       f'<circle cx="{fmt(px - s_ * 0.45)}" cy="{fmt(py + s_ * 0.35)}" r="{fmt(s_ * 0.7)}" fill="url(#iso-tree)"/>'
                       f'<circle cx="{fmt(px + s_ * 0.5)}" cy="{fmt(py + s_ * 0.3)}" r="{fmt(s_ * 0.65)}" fill="url(#iso-tree)"/>')
     if crowns:
