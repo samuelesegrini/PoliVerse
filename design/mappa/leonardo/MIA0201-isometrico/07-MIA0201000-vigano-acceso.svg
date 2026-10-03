@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-260.8 -95.5 322.3 289.1" width="644.5" height="578.2">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="-132.5,10.5 -90.8,34.6 -85.9,31.8 -72.7,39.2 -76.9,41.4 -5.9,82.4 -104.2,139.2 -230.4,66.2" fill="#C3C8CF"/>
+<polygon points="-83.4,39.1 -87.5,41.3 -87.5,37.3 -83.4,35.1" fill="#D4D8DF"/>
+<polygon points="-104.2,133.1 -219.9,66.2 -219.9,62.2 -104.2,129.1" fill="#F2F3F6"/>
+<polygon points="-16.3,82.4 -104.2,133.1 -104.2,129.1 -16.3,78.4" fill="#D4D8DF"/>
+<polygon points="-132.5,12.5 -90.8,36.6 -85.8,33.8 -83.4,35.1 -87.5,37.3 -16.3,78.4 -104.2,129.1 -219.9,62.2" fill="#FFFFFF"/>
+<polygon points="-84.9,39.1 -88.9,41.2 -88.9,37.2 -84.9,35.1" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-84.9,35.1 -88.9,37.2 -88.9,23.2 -84.9,21.1" fill="url(#iso-lit-r)"/>
+<polygon points="-84.9,35.1 -88.9,37.2 -88.9,23.2 -84.9,21.1" fill="#B87A24" opacity="0.14"/>
+<polygon points="-84.9,28.1 -88.9,30.2 -88.9,23.2 -84.9,21.1" fill="url(#iso-lit-glow)"/>
+<polygon points="-104.2,132.3 -218.5,66.2 -218.5,62.2 -104.2,128.3" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-104.2,128.3 -218.5,62.2 -218.5,48.2 -104.2,114.3" fill="url(#iso-lit-l)"/>
+<polygon points="-121.8,118.2 -130.6,113.1 -130.6,99.1 -121.8,104.2" fill="#B87A24" opacity="0.14"/>
+<polygon points="-130.6,113.1 -139.4,108 -139.4,94 -130.6,99.1" fill="#B87A24" opacity="0.14"/>
+<polygon points="-157,97.8 -165.8,92.7 -165.8,78.7 -157,83.8" fill="#FFFFFF" opacity="0.18"/>
+<polygon points="-183.4,82.6 -192.2,77.5 -192.2,63.5 -183.4,68.6" fill="#B87A24" opacity="0.14"/>
+<polygon points="-192.2,77.5 -201,72.4 -201,58.4 -192.2,63.5" fill="#B87A24" opacity="0.14"/>
+<polygon points="-104.2,121.3 -218.5,55.2 -218.5,48.2 -104.2,114.3" fill="url(#iso-lit-glow)"/>
+<polygon points="-17.7,82.4 -104.2,132.3 -104.2,128.3 -17.7,78.4" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-17.7,78.4 -104.2,128.3 -104.2,114.3 -17.7,64.4" fill="url(#iso-lit-r)"/>
+<polygon points="-35,88.4 -43.6,93.4 -43.6,79.4 -35,74.4" fill="#FFFFFF" opacity="0.18"/>
+<polygon points="-60.9,103.4 -69.6,108.4 -69.6,94.4 -60.9,89.4" fill="#B87A24" opacity="0.14"/>
+<polygon points="-69.6,108.4 -78.2,113.4 -78.2,99.4 -69.6,94.4" fill="#B87A24" opacity="0.14"/>
+<polygon points="-95.5,123.4 -104.2,128.3 -104.2,114.3 -95.5,109.4" fill="#FFFFFF" opacity="0.18"/>
+<polygon points="-17.7,71.4 -104.2,121.3 -104.2,114.3 -17.7,64.4" fill="url(#iso-lit-glow)"/>
+<path d="M-84.9 31.9L-88.9 34M-104.2 125.1L-218.5 59M-17.7 75.2L-104.2 125.1" stroke="#D9963A" stroke-width="1.1" opacity="0.4"/>
+<path d="M-113 123.3V109.3M-121.8 118.2V104.2M-130.6 113.1V99.1M-139.4 108V94M-148.2 102.9V88.9M-157 97.8V83.8M-165.8 92.7V78.7M-174.6 87.7V73.7M-183.4 82.6V68.6M-192.2 77.5V63.5M-201 72.4V58.4M-209.7 67.3V53.3M-26.3 83.4V69.4M-35 88.4V74.4M-43.6 93.4V79.4M-52.3 98.4V84.4M-60.9 103.4V89.4M-69.6 108.4V94.4M-78.2 113.4V99.4M-86.9 118.4V104.4M-95.5 123.4V109.4" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+<polygon points="-83.4,39.1 -87.5,41.3 -76.9,41.4 -78.3,36.1" fill="#F3D9A0" opacity="0.55"/>
+<polygon points="-104.2,133.1 -219.9,66.2 -225.1,69.2 -99,136.1" fill="#F3D9A0" opacity="0.55"/>
+<polygon points="-16.3,82.4 -104.2,133.1 -99,136.1 -11.1,79.4" fill="#F3D9A0" opacity="0.55"/>
+<path d="M-77 25.6L-81.2 27.7M-104.2 123.1L-226.2 52.6M-10 68.8L-104.2 123.1" stroke="#9AA2AC" stroke-width="1.8" fill="none"/>
+<path d="M-77 23.4L-81.2 25.5M-104.2 120.9L-226.2 50.4M-10 66.6L-104.2 120.9" stroke="#C9CED5" stroke-width="1.8" fill="none"/>
+<path d="M-72.7 37L-76.9 39.2M-72.7 35L-76.9 37.2M-104.2 137L-230.4 64M-104.2 135L-230.4 62M-5.9 80.2L-104.2 137M-5.9 78.2L-104.2 135" stroke="#E2672A" stroke-width="0.9" fill="none"/>
+</svg>
