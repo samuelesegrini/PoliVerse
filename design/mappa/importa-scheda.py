@@ -622,6 +622,11 @@ def main(csie):
                 shift[c] = (dx, dy)
             else:
                 print(f"{c}: no lifts, and its outline matches nothing: left where its drawing puts it")
+    # A floor no rule places (no lifts, an outline unlike the anchor's) can be given its
+    # shift by hand in the campus file, measured once against the anchor floor.
+    for c, d in building.get("spostamenti", {}).items():
+        if c in shift:
+            shift[c] = tuple(d)
     print("moved:", {c: (r2(dx), r2(dy)) for c, (dx, dy) in shift.items() if math.hypot(dx, dy) > 0.05})
 
     out = {"csie": csie, "fonte": "onlineservices.polimi.it/maps_rest, piano/<csip>/svg/pub",

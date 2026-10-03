@@ -1,15 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="39 -35.5 41.6 43.2" width="416.3" height="431.6">
-<path id="MIA0209001001" data-tipo="locale" d="M51.5 -23L51.5 -21.8L51.9 -21.8L51.9 -21.4L51.8 -21.4L51.8 -18.6L51.9 -18.6L51.9 -18.2L56.6 -18.2L56.6 -18.8L57.5 -19.9L57.5 -22.7L57.1 -22.7L57.1 -23L53.1 -23L53.1 -22.7L52.8 -22.6L52.8 -23Z" fill="#F3F4F7" fill-rule="evenodd"/>
-<path id="MIA0209001002" data-tipo="locale" d="M56.6 -15.7L56.6 -18.1L51.5 -18.1L51.5 -13.8L51.9 -13.8L51.9 -13.4L56.6 -13.4Z" fill="#F3F4F7" fill-rule="evenodd"/>
-<path id="MIA0209001003" data-tipo="locale" d="M56.6 -11.9L56.6 -13.3L51.5 -13.2L51.5 -8.9L51.9 -8.9L53.4 -7.3L56.6 -10.4Z" fill="#F3F4F7" fill-rule="evenodd"/>
-<path id="MIA0209001004" data-tipo="locale" d="M53.2 -7.4L52.8 -7.8L52.8 -7.9L52.4 -8.3L52.4 -8.3L51.9 -8.8L51.9 -8.6L51.6 -8.6L51.6 -5.7L52.1 -6.1L51.9 -6.3Z" fill="#F3F4F7" fill-rule="evenodd"/>
-<path id="MIA0209001005" data-tipo="locale" d="M61.8 -22.6L61.4 -22.6L61.4 -23L57.6 -23L57.6 -19.9L58.5 -19.1L58.5 -18.2L61.3 -18.2L61.3 -18.6L61.8 -18.6Z" fill="#F3F4F7" fill-rule="evenodd"/>
-<path id="MIA0209001006a" data-tipo="locale" d="M61.5 -7.8L61.6 -7.8L58.4 -11.2L58.4 -13.2L58.5 -13.2L58.5 -14L58.4 -14L58.4 -15.2L58.5 -15.2L58.5 -15.8L58.4 -15.8L58.4 -19L58.3 -19.1L58.4 -19.2L57.8 -19.8L57.7 -19.7L57.5 -19.8L57.4 -19.7L57.3 -19.8L56.8 -19.1L56.9 -19.1L56.9 -19L56.9 -16.5L56.6 -16.5L56.6 -15.7L56.9 -15.7L56.9 -11.9L56.6 -11.9L56.6 -11.1L56.9 -11.1L56.9 -10.6L60.5 -6.8Z" fill="#F3F4F7" fill-rule="evenodd"/>
-<path id="MIA0209001006b" data-tipo="locale" d="M58.8 -8.5L58.8 -8.6L57.2 -10.2L56.9 -6.3L57.1 -6.2L57 -6.1L58.5 -4.7L60 -6.1L59.9 -6.2L60.5 -6.8Z" fill="#F3F4F7" fill-rule="evenodd"/>
-<path id="MIA0209001007" data-tipo="locale" d="M64 -5.5L61.8 -7.8L61.7 -7.6L61.6 -7.7L61.6 -7.6L61.5 -7.7L60.6 -6.8L60.6 -6.8L60.6 -6.7L60.7 -6.7L60.5 -6.5L60.6 -6.5L60.5 -6.4L61.1 -5.9L60.9 -5.7L61.6 -4.9L61.8 -5.1L62.3 -4.7L62.3 -4.8L62.5 -4.5L62.5 -4.5L64 -4.5Z" fill="#F3F4F7" fill-rule="evenodd"/>
-<path id="MIA0209001008" data-tipo="scale" d="M68.6 -8.2L68.6 -4.6L64.1 -4.5L64.1 -6.9L64 -6.9L63.4 -6.3L63.3 -6.4L63.2 -6.3L62.4 -7.2L62.4 -7.3L62.4 -7.4L63.1 -8.1ZM67.4 -7L67.4 -5.7L65.2 -5.7L65.2 -7Z" fill="#E9EBEF" fill-rule="evenodd"/>
-<path id="MIA0209001009" data-tipo="locale" d="M61.8 -11.9L61.8 -13.3L61.1 -13.3L61.1 -13.8L61.6 -13.8L61.6 -15L58.5 -15L58.5 -11.3L60.7 -8.9L61.8 -8.9Z" fill="#F3F4F7" fill-rule="evenodd"/>
-<path id="MIA0209001010a" data-tipo="locale" d="M60.1 -17.5L60.1 -17.6L58.5 -17.6L58.5 -15.1L60.1 -15.1Z" fill="#F3F4F7" fill-rule="evenodd"/>
-<path id="MIA0209001010b" data-tipo="tecnico" d="M61.6 -17.6L60.3 -17.6L60.3 -17.4L60.1 -17.4L60.1 -16.8L60.3 -16.8L60.3 -16.3L61.6 -16.3Z" fill="#E4E7EC" fill-rule="evenodd"/>
-<path id="MIA0209001010c" data-tipo="tecnico" d="M61.6 -16.2L60.3 -16.2L60.3 -16L60.1 -16L60.1 -15.4L60.3 -15.4L60.3 -15.1L61.6 -15.1Z" fill="#E4E7EC" fill-rule="evenodd"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="39.1 -35.5 41.6 43.2" width="416.3" height="431.6">
+<path id="MIA0209001001" data-tipo="locale" d="M51.5 -23L51.5 -21.8L51.9 -21.8L51.9 -21.4L51.8 -21.4L51.9 -18.6L51.9 -18.6L51.9 -18.2L56.6 -18.2L56.6 -18.9L57.5 -20L57.5 -22.7L57.1 -22.7L57.1 -23.1L53.1 -23L53.1 -22.7L52.8 -22.7L52.8 -23Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0209001002" data-tipo="locale" d="M56.6 -15.7L56.6 -18.1L51.5 -18.1L51.6 -13.8L51.9 -13.8L51.9 -13.4L56.6 -13.4Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0209001003" data-tipo="locale" d="M56.6 -12L56.6 -13.3L51.6 -13.3L51.6 -8.9L51.9 -8.9L53.4 -7.4L56.6 -10.4Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0209001004" data-tipo="locale" d="M53.2 -7.4L52.8 -7.9L52.8 -7.9L52.4 -8.3L52.4 -8.3L51.9 -8.8L51.9 -8.6L51.6 -8.6L51.6 -5.7L52.1 -6.2L52 -6.3Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0209001005" data-tipo="locale" d="M61.8 -22.6L61.4 -22.6L61.4 -23.1L57.6 -23.1L57.6 -20L58.5 -19.1L58.5 -18.2L61.3 -18.3L61.3 -18.6L61.8 -18.6Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0209001006a" data-tipo="locale" d="M61.6 -7.8L61.6 -7.8L58.4 -11.2L58.4 -13.2L58.5 -13.2L58.5 -14L58.4 -14L58.4 -15.2L58.5 -15.2L58.5 -15.8L58.4 -15.8L58.4 -19L58.3 -19.1L58.4 -19.2L57.8 -19.8L57.8 -19.7L57.6 -19.9L57.5 -19.7L57.4 -19.8L56.9 -19.1L57 -19.1L56.9 -19L56.9 -16.5L56.6 -16.5L56.6 -15.7L56.9 -15.7L56.9 -12L56.6 -12L56.6 -11.2L56.9 -11.2L56.9 -10.6L60.5 -6.8Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0209001006b" data-tipo="locale" d="M58.8 -8.5L58.9 -8.6L57.3 -10.2L57 -6.4L57.1 -6.2L57 -6.1L58.5 -4.7L60 -6.1L59.9 -6.2L60.5 -6.8Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0209001007" data-tipo="locale" d="M64 -5.5L61.9 -7.8L61.7 -7.6L61.6 -7.7L61.6 -7.7L61.5 -7.7L60.6 -6.9L60.7 -6.8L60.6 -6.7L60.7 -6.7L60.5 -6.5L60.6 -6.5L60.6 -6.4L61.1 -5.9L60.9 -5.7L61.7 -4.9L61.9 -5.1L62.3 -4.7L62.3 -4.8L62.6 -4.6L62.6 -4.5L64 -4.5Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0209001008" data-tipo="scale" d="M68.6 -8.2L68.6 -4.6L64.2 -4.6L64.2 -6.9L64 -6.9L63.4 -6.3L63.3 -6.4L63.2 -6.3L62.4 -7.2L62.5 -7.3L62.4 -7.4L63.2 -8.2ZM67.4 -7L67.4 -5.7L65.3 -5.7L65.3 -7Z" fill="#E9EBEF" fill-rule="evenodd"/>
+<path id="MIA0209001009" data-tipo="locale" d="M61.8 -11.9L61.8 -13.3L61.1 -13.3L61.1 -13.8L61.7 -13.8L61.7 -15L58.5 -15L58.6 -11.3L60.8 -9L61.8 -9Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0209001010a" data-tipo="locale" d="M60.2 -17.5L60.2 -17.6L58.5 -17.6L58.5 -15.1L60.2 -15.2Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0209001010b" data-tipo="tecnico" d="M61.7 -17.6L60.3 -17.6L60.3 -17.4L60.2 -17.4L60.2 -16.8L60.3 -16.8L60.3 -16.4L61.7 -16.4Z" fill="#E4E7EC" fill-rule="evenodd"/>
+<path id="MIA0209001010c" data-tipo="tecnico" d="M61.7 -16.2L60.3 -16.2L60.3 -16L60.2 -16L60.2 -15.4L60.3 -15.4L60.3 -15.2L61.7 -15.2Z" fill="#E4E7EC" fill-rule="evenodd"/>
 </svg>

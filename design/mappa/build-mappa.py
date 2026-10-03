@@ -808,18 +808,26 @@ def ornaments(part, own, turn, top, z0):
             u = ((c[0] - a[0]) / L, (c[1] - a[1]) / L)
             w, zb, rise = f.get("larghezza", 10) / 2, top - f.get("sotto", 0), f.get("freccia", 6)
             at = lambda t, zz, o=0.6: (q[0] + u[0] * t + n[0] * o, q[1] + u[1] * t + n[1] * o, zz)
-            arc = [at(w * math.cos(th), zb + rise * math.sin(th)) for th in [math.pi * k / 16 for k in range(17)]]
-            inner = [at(0.82 * w * math.cos(th), zb + rise * 0.72 * math.sin(th)) for th in [math.pi * k / 16 for k in range(16, -1, -1)]]
-            out.append(f'<polygon points="{iso_poly([at(w, zb), *arc, at(-w, zb)])}" fill="#E4DFD3" stroke="#9F9580" stroke-width="0.7"/>')
-            out.append(f'<polygon points="{iso_poly(arc[1:-1] + inner[1:-1])}" fill="#EFEBE2" stroke="#C7C0B0" stroke-width="0.25"/>')
-            # The coat of arms: a shield in a scrolled cartouche, hanging from the
-            # pediment down over the frieze.
-            scroll = [at(-2.6, zb - 2), at(-1.6, zb - 6.5), at(0, zb - 8), at(1.6, zb - 6.5), at(2.6, zb - 2), at(1.8, zb + 3.2), at(0, zb + 4.4), at(-1.8, zb + 3.2)]
+            ths = [math.pi * k / 20 for k in range(21)]
+            ring = lambda r, o, ww=w: [at(ww * r * math.cos(th), zb + rise * r * math.sin(th), o) for th in ths]
+            # A segmental pediment in depth: its back face, the thick moulded arch
+            # standing out in front, the recessed tympanum inside it, the base cornice.
+            out.append(f'<polygon points="{iso_poly(ring(1.0, 0.0))}" fill="#CFC6B2" stroke="#9F9580" stroke-width="0.4"/>')
+            out.append(f'<polygon points="{iso_poly(ring(1.0, 0.7))}" fill="#EEE8DA" stroke="#9F9580" stroke-width="0.6"/>')
+            out.append(f'<polygon points="{iso_poly(ring(0.78, 0.7))}" fill="#E1D9C7" stroke="#B3A992" stroke-width="0.35"/>')
+            out.append(f'<polyline points="{iso_poly(ring(0.9, 0.75))}" fill="none" stroke="#C4BAA4" stroke-width="0.3"/>')
+            base = [at(-w - 0.4, zb - 1.0, 0.9), at(w + 0.4, zb - 1.0, 0.9), at(w + 0.4, zb, 0.9), at(-w - 0.4, zb, 0.9)]
+            out.append(f'<polygon points="{iso_poly(base)}" fill="#F1EADB" stroke="#9F9580" stroke-width="0.35"/>')
+            # The coat of arms: a shield in a scrolled cartouche, from the tympanum
+            # down over the frieze.
+            k_ = 0.75
+            scroll = [at(-2.6 * k_, zb - 2 * k_, 0.9), at(-1.6 * k_, zb - 6.5 * k_, 0.9), at(0, zb - 8 * k_, 0.9), at(1.6 * k_, zb - 6.5 * k_, 0.9),
+                      at(2.6 * k_, zb - 2 * k_, 0.9), at(1.8 * k_, zb + 3.2 * k_, 0.9), at(0, zb + 4.4 * k_, 0.9), at(-1.8 * k_, zb + 3.2 * k_, 0.9)]
             out.append(f'<polygon points="{iso_poly(scroll)}" fill="#D8D0BE" stroke="#A9A291" stroke-width="0.3"/>')
-            shield = [at(-1.2, zb + 2.6, 0.8), at(1.2, zb + 2.6, 0.8), at(1.2, zb - 2.5, 0.8), at(0, zb - 5, 0.8), at(-1.2, zb - 2.5, 0.8)]
+            shield = [at(-1.2 * k_, zb + 2.6 * k_, 1.0), at(1.2 * k_, zb + 2.6 * k_, 1.0), at(1.2 * k_, zb - 2.5 * k_, 1.0), at(0, zb - 5 * k_, 1.0), at(-1.2 * k_, zb - 2.5 * k_, 1.0)]
             out.append(f'<polygon points="{iso_poly(shield)}" fill="#E6DFCE" stroke="#9E957F" stroke-width="0.35"/>')
-            hx, hy = iso(*at(0, zb + 4.2, 0.8)[:2], zb + 4.2)
-            out.append(f'<ellipse cx="{fmt(hx)}" cy="{fmt(hy)}" rx="1.1" ry="0.8" fill="#D2C9B5" stroke="#9E957F" stroke-width="0.3"/>')
+            hx, hy = iso(*at(0, zb + 4.2 * k_, 1.0)[:2], zb + 4.2 * k_)
+            out.append(f'<ellipse cx="{fmt(hx)}" cy="{fmt(hy)}" rx="0.9" ry="0.65" fill="#D2C9B5" stroke="#9E957F" stroke-width="0.3"/>')
     if part.get("portoni"):
         # Arched doorways in the middle of the front, iron gates in them.
         d = part["portoni"]
@@ -928,7 +936,7 @@ def lamellae(b, pts, turn, z0, top):
     roof, tied at the top; along `ciechi` (edges of `pianta`) a blind white wall
     instead, out to the same line and from the ground."""
     cfg = b["lamelle"]
-    d, step, above = cfg.get("distanza", 2.0), cfg.get("passo", 0.6), cfg.get("sopra", 8)
+    d, step, above = cfg.get("distanza", 0.9), cfg.get("passo", 0.6), cfg.get("sopra", 8)
     z1 = z0 + cfg.get("da", 18)
     shell = offset(pts, d)
     raw = [turn(p) for p in b["pianta"]]
@@ -1312,7 +1320,7 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
                 for a, c, _, _ in faces(below, 0, 1):
                     q = [(a[0], a[1], z - h * 0.45), (c[0], c[1], z - h * 0.45), (c[0], c[1], z), (a[0], a[1], z)]
                     out.append(f'<polygon points="{iso_poly(q)}" fill="{SHADOW}" opacity="0.22"/>')
-                shape = offset(own, band.get("sporto", 2.0))
+                shape = offset(own, band.get("sporto", 0.9))
                 out += prism(shape, z, z + h, *(lambda c: (c[:2], c[2]))(CLADDING[band.get("rivestimento", "mattone")]))
                 return out
             colors = CLADDING["fessura" if kind == "fessura" else band.get("rivestimento", "ceramica")]
@@ -1349,7 +1357,7 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
                                f'fill="{SKYLIGHT_LIT if lit else SKYLIGHT}" opacity="{0.95 if lit else 0.8}"/>')
                 return out
             skylights.append((csip, lights))
-            own = offset(own, band.get("sporto", 2.0))
+            own = offset(own, band.get("sporto", 0.9))
         z += h
         below = own
     if tiles:
@@ -1411,7 +1419,7 @@ def draw_iso(campus, b):
     xs, ys = [p[0] for p in pts], [p[1] for p in pts]
     lot = ccw([(min(xs) - 7, min(ys) - 7), (max(xs) + 7, min(ys) - 7),
                (max(xs) + 7, max(ys) + 7), (min(xs) - 7, max(ys) + 7)])
-    base = offset(pts, 2.0)
+    base = offset(pts, 0.9)
     base_h = 6.0
     top = base_h + floors * ISO_FLOOR
 

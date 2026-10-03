@@ -15,12 +15,12 @@
 <ellipse cx="150.2" cy="122.3" rx="8" ry="3.6" fill="#1D2B40" opacity="0.16"/><rect x="148.7" y="102.3" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="150.2" cy="101.9" r="7.3" fill="url(#iso-tree)"/>
 </g>
 <g id="livello-basamento" data-livello="edifici">
-<polygon points="137.5,117.5 110.2,133.7 110.2,127.7 137.5,111.5" fill="#AEB4BE"/>
-<polygon points="120.7,139.6 95.4,154.6 95.4,148.6 120.7,133.6" fill="#AEB4BE"/>
-<polygon points="65.9,159.6 24.6,136.5 24.6,130.5 65.9,153.6" fill="#C9CED6"/>
-<polygon points="95.4,154.6 84.6,148.6 84.6,142.6 95.4,148.6" fill="#C9CED6"/>
-<polygon points="84.6,148.6 65.9,159.6 65.9,153.6 84.6,142.6" fill="#AEB4BE"/>
-<polygon points="95.7,88.1 137.5,111.5 110.2,127.7 120.7,133.6 95.4,148.6 84.6,142.6 65.9,153.6 24.6,130.5" fill="#E9EBEF"/>
+<polygon points="133.7,117.6 106.4,133.8 106.4,127.8 133.7,111.6" fill="#AEB4BE"/>
+<polygon points="116.9,139.7 95.3,152.4 95.3,146.4 116.9,133.7" fill="#AEB4BE"/>
+<polygon points="65.9,157.4 28.4,136.4 28.4,130.4 65.9,151.4" fill="#C9CED6"/>
+<polygon points="95.3,152.4 84.6,146.4 84.6,140.4 95.3,146.4" fill="#C9CED6"/>
+<polygon points="84.6,146.4 65.9,157.4 65.9,151.4 84.6,140.4" fill="#AEB4BE"/>
+<polygon points="95.7,90.3 133.7,111.6 106.4,127.8 116.9,133.7 95.3,146.4 84.6,140.4 65.9,151.4 28.4,130.4" fill="#E9EBEF"/>
 </g>
 <g id="livello-MIA021500S" data-livello="piani" data-piano="MIA021500S">
 <polygon points="130.6,111.6 103.2,127.8 103.2,123.8 130.6,107.6" fill="#D4D8DF"/>

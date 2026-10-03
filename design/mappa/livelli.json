@@ -1232,7 +1232,7 @@
     },
     "leonardo/MIA0209-isometrico": {
       "file": "leonardo/MIA0209-isometrico.svg",
-      "viewBox": "66.1 -55.9 123.4 145.3",
+      "viewBox": "66.4 -55.8 123 145.1",
       "strati": [
         {
           "file": "leonardo/MIA0209-isometrico/01-ombra.svg",
@@ -1290,7 +1290,7 @@
     },
     "leonardo/MIA020900S-pianta": {
       "file": "leonardo/MIA020900S-pianta.svg",
-      "viewBox": "44 -30 47.2 44.3",
+      "viewBox": "39.4 -35.5 47.2 44.3",
       "strati": [
         {
           "file": "leonardo/MIA020900S-pianta/01-fondo.svg",
@@ -1422,7 +1422,7 @@
     },
     "leonardo/MIA0209001-pianta": {
       "file": "leonardo/MIA0209001-pianta.svg",
-      "viewBox": "39 -35.5 41.6 43.2",
+      "viewBox": "39.1 -35.5 41.6 43.2",
       "strati": [
         {
           "file": "leonardo/MIA0209001-pianta/01-fondo.svg",

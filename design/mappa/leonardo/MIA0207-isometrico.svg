@@ -13,9 +13,9 @@
 <g id="livello-alberi-dietro" data-livello="alberi">
 </g>
 <g id="livello-basamento" data-livello="edifici">
-<polygon points="287.7,113.7 262.3,128.6 262.3,122.6 287.7,107.7" fill="#AEB4BE"/>
-<polygon points="262.3,128.6 237,114 237,108 262.3,122.6" fill="#C9CED6"/>
-<polygon points="262.3,122.6 237,108 262.2,93.2 287.7,107.7" fill="#E9EBEF"/>
+<polygon points="283.9,113.7 262.2,126.4 262.2,120.4 283.9,107.7" fill="#AEB4BE"/>
+<polygon points="262.2,126.4 240.8,114 240.8,108 262.2,120.4" fill="#C9CED6"/>
+<polygon points="262.2,120.4 240.8,108 262.2,95.4 283.9,107.7" fill="#E9EBEF"/>
 </g>
 <g id="livello-MIA0207000" data-livello="piani" data-piano="MIA0207000">
 <polygon points="280.8,107.7 262.2,118.6 262.2,114.6 280.8,103.7" fill="#D4D8DF"/>
