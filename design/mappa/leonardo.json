@@ -720,11 +720,77 @@
         [-70.4, 167.1]
       ],
       "badge": [-68.0, 104.0],
-      "livelli": ["MIA010200S", "MIA0102000", "MIA0102S00", "MIA0102001", "MIA0102002"],
+      "livelli": ["MIA010200S", "MIA0102000", "MIA0102001", "MIA0102002"],
       "piani_3d": ["MIA0102000", "MIA0102001", "MIA0102002"],
       "riquadro": [-107, 65, 27, 201],
       "vista": "sud-ovest",
       "parti": [
+        {
+          "nome": "aula-sud",
+          "pianta": [
+            [-50.5, 144.3],
+            [-31.7, 144.3],
+            [-31.7, 151.6],
+            [-50.5, 151.6]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010200S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 5
+            },
+            {
+              "piano": "MIA0102000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "archi",
+              "bugnato": true,
+              "campata": 4.2,
+              "h": 14
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 0.4,
+              "h": 1.5
+            }
+          ]
+        },
+        {
+          "nome": "aula-nord",
+          "pianta": [
+            [-51.2, 115.4],
+            [-31.4, 115.4],
+            [-31.4, 123.7],
+            [-51.2, 123.7]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010200S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 5
+            },
+            {
+              "piano": "MIA0102000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "archi",
+              "bugnato": true,
+              "campata": 4.2,
+              "h": 14
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 0.4,
+              "h": 1.5
+            }
+          ]
+        },
         {
           "nome": "est",
           "pianta": [
@@ -929,7 +995,7 @@
               "decoro": true,
               "h": 4.5
             },
-            {"tipo": "coppi", "h": 7, "rientro": 3}
+            {"tipo": "coppi", "h": 6, "rientro": 2.5}
           ],
           "pinnacoli": [
             [-70.4, 101.4],
@@ -946,6 +1012,31 @@
           },
           "ingresso": true
         }
+      ],
+      "cortili": [
+        [
+          [-56.8, 117.0],
+          [-52.7, 117.0],
+          [-52.7, 121.6],
+          [-50.3, 123.8],
+          [-32.9, 123.7],
+          [-31.6, 121.3],
+          [-29.8, 121.3],
+          [-29.8, 115.5],
+          [-26.9, 115.4],
+          [-26.7, 130.4],
+          [-30.9, 130.4],
+          [-30.9, 137.7],
+          [-26.6, 137.7],
+          [-26.5, 151.2],
+          [-30.3, 151.2],
+          [-30.5, 146.7],
+          [-32.8, 144.4],
+          [-50.1, 144.3],
+          [-52.4, 146.8],
+          [-52.3, 151.6],
+          [-56.5, 151.6]
+        ]
       ]
     }
   ],

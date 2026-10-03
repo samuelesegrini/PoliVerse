@@ -42,10 +42,10 @@ FOUNTAIN_TAG = 5                                      # BEVERINO
 LINE_LAYERS = {"scale": ["SCALE", "ARC_Scale rampe e ringhiere"],
                "arredi": ["LAYOUT_ARREDI", "ARC_Arredi ON"],
                "sanitari": ["IDR_*"],
-               "finestre": ["FINESTRE", "ARC_Finestre"],
+               "finestre": ["FINESTRE", "ARC_Finestre", "INFISSI"],
                "ringhiere": ["RINGHIERA"],
                "esterni": ["ESTERNI", "ARC_Contesto esterno"],
-               "ascensori": ["ASCENSORI", "TOV_6.3.2.A*", "TOV_ASCENSORI"]}
+               "ascensori": ["ASCENSORI", "TOV_6.3.2.A*", "TOV_ASCENSORI", "VANO_ASCENSORE"]}
 DOOR_LAYERS = ["PORTE", "ARC_Porte"]
 
 
@@ -591,9 +591,10 @@ def main(csie):
     anchor = next((c for c in anchors if drawn[c]["shell"]), None)
     # Placed by its outline, every floor goes onto the building's footprint; placed by its rooms,
     # onto the floor OpenStreetMap placed.
-    anchor_shell = ([tuple(p) for p in building["pianta"]] if not fitted else
-                    [apply(t, flipped(p)) for p in max(drawn[anchor]["shell"], key=lambda r: abs(area(r)))]
-                    if anchor else None)
+    # Every other floor goes onto the anchor floor's own outline, wherever that was placed:
+    # the building's footprint is only a rough sketch of it.
+    anchor_shell = ([apply(t, flipped(p)) for p in max(drawn[anchor]["shell"], key=lambda r: abs(area(r)))]
+                    if anchor else [tuple(p) for p in building["pianta"]])
     placed = [p for c in anchors for p in lifts[c]]
     shift = {}
     for c in drawn:
@@ -607,7 +608,9 @@ def main(csie):
                 n = sum(1 for a in lifts[c] if any(math.dist((a[0] + dx, a[1] + dy), b) < 0.6 for b in placed))
                 if n > best[0] or (n == best[0] and math.hypot(dx, dy) < math.hypot(*best[1:] or (0, 0))):
                     best = (n, dx, dy)
-        if best[0] >= 2:
+        # Floors drawn apart sit a few metres off at most: a bigger jump means the lifts paired
+        # up wrongly (two shafts the same distance apart elsewhere), so the outline decides.
+        if best[0] >= 2 and math.hypot(*best[1:]) < 8:
             shift[c] = best[1:]
         elif drawn[c]["shell"] and anchor_shell:
             # No lifts: the floor's outline onto the anchor's, by a shift only.

@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-79.8 80.4 92 106.7" width="920.1" height="1066.8">
-<circle cx="-38.4" cy="159.3" r="0.9" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.15"/><rect x="-38.8" y="159" width="0.9" height="0.5" rx="0.1" fill="#1C6BAD"/><circle cx="-38.2" cy="159.3" r="0.1" fill="#FFFFFF"/><path d="M-38.7 159.5V159.7M-38.1 159.5V159.7" stroke="#1C6BAD" stroke-width="0.1" stroke-linecap="round"/>
-<circle cx="-36.3" cy="159.3" r="0.9" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.15"/><rect x="-36.4" y="158.8" width="0.3" height="0.6" rx="0.1" fill="#1C6BAD"/><path d="M-36.6 159.2A0.3 0.3 0 0 0 -36 159.2M-36.3 159.5V159.7M-36.5 159.7H-36.1" fill="none" stroke="#1C6BAD" stroke-width="0.1" stroke-linecap="round"/>
-<circle cx="-34.2" cy="159.3" r="0.9" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.15"/><path d="M-34.1 158.8L-34.4 159.3L-34.2 159.3L-34.3 159.8L-33.9 159.2L-34.2 159.2Z" fill="#D9963A"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-84.6 79.6 92 106.7" width="920.1" height="1067.4">
+<circle cx="-43.2" cy="158.5" r="0.9" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.15"/><rect x="-43.6" y="158.3" width="0.9" height="0.5" rx="0.1" fill="#1C6BAD"/><circle cx="-43" cy="158.5" r="0.1" fill="#FFFFFF"/><path d="M-43.4 158.8V159M-42.9 158.8V159" stroke="#1C6BAD" stroke-width="0.1" stroke-linecap="round"/>
+<circle cx="-41.1" cy="158.5" r="0.9" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.15"/><rect x="-41.2" y="158" width="0.3" height="0.6" rx="0.1" fill="#1C6BAD"/><path d="M-41.3 158.4A0.3 0.3 0 0 0 -40.8 158.4M-41.1 158.7V159M-41.2 159H-40.9" fill="none" stroke="#1C6BAD" stroke-width="0.1" stroke-linecap="round"/>
+<circle cx="-39" cy="158.5" r="0.9" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.15"/><path d="M-38.9 158L-39.2 158.6L-39 158.6L-39.1 159L-38.7 158.4L-38.9 158.4Z" fill="#D9963A"/>
 </svg>

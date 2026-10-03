@@ -434,6 +434,7 @@ def write_drawing(dest, name, view, width, height, strati):
 # ---------------------------------------------------------------- top-down
 
 WOOD, WOOD_EDGE = "#C9A57A", "#A9865C"
+COURTYARD = "#E4E6E1"
 
 
 def glyph_text(label, size=0.95):
@@ -538,6 +539,12 @@ def draw_map(campus, focus):
             plant.append(f'<rect x="{fmt(x)}" y="{fmt(y)}" width="{fmt(w)}" height="{fmt(h)}" rx="0.8" fill="{PLANT}"/>'
                          f'<rect x="{fmt(x)}" y="{fmt(y + h - 0.6)}" width="{fmt(w)}" height="1" fill="{PLANT_LIP}"/>')
     strati.append(Strato("ombre", "ombre", shade))
+    # A courtyard is open ground inside the building: paved, the walls round it shading it.
+    for b, _ in buildings:
+        for yard in b.get("cortili", []):
+            ring = ccw([tuple(p) for p in yard])
+            body.append(f'<path d="{rounded(ring, 0.8)}" fill="{COURTYARD}"/>'
+                        f'<path d="{rounded(ring, 0.8)}" fill="none" stroke="{SHADOW}" stroke-opacity="0.12" stroke-width="1.6"/>')
     strati.append(Strato("edifici", "edifici", body, ["mp-roof", "mp-wall"]))
     strati.append(Strato("impianti", "impianti", plant))
 
