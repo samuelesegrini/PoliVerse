@@ -1438,6 +1438,15 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
             m_, zt = flat.get("margine", 2.5), z + ISO_SLAB + 0.6
             x0, x1, y0, y1 = min(xs) + m_, max(xs) - m_, min(ys) + m_, max(ys) - m_
             roof.append(f'<polygon points="{iso_poly([(x0, y0, zt), (x1, y0, zt), (x1, y1, zt), (x0, y1, zt)])}" fill="#2F3B57" stroke="#8A93A6" stroke-width="0.4"/>')
+            # A walkway across the field at each of `divisioni` (fractions along its length).
+            gaps = []
+            for f_ in flat.get("divisioni", []):
+                if x1 - x0 > y1 - y0:
+                    g0 = x0 + (x1 - x0) * f_
+                    gaps.append([(g0 - 0.8, y0 - 0.1, zt), (g0 + 0.8, y0 - 0.1, zt), (g0 + 0.8, y1 + 0.1, zt), (g0 - 0.8, y1 + 0.1, zt)])
+                else:
+                    g0 = y0 + (y1 - y0) * f_
+                    gaps.append([(x0 - 0.1, g0 - 0.8, zt), (x1 + 0.1, g0 - 0.8, zt), (x1 + 0.1, g0 + 0.8, zt), (x0 - 0.1, g0 + 0.8, zt)])
             cells = []
             for k in range(1, int((x1 - x0) / 1.7)):
                 (a0, b0), (a1, b1) = iso(x0 + k * 1.7, y0, zt), iso(x0 + k * 1.7, y1, zt)
@@ -1446,6 +1455,8 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
                 (a0, b0), (a1, b1) = iso(x0, y0 + k * 1.0, zt), iso(x1, y0 + k * 1.0, zt)
                 cells.append(f"M{fmt(a0)} {fmt(b0)}L{fmt(a1)} {fmt(b1)}")
             roof.append(f'<path d="{"".join(cells)}" stroke="#7D879C" stroke-width="0.2"/>')
+            for g in gaps:
+                roof.append(f'<polygon points="{iso_poly(g)}" fill="{flat.get("colore", ISO_ROOF_INNER)}"/>')
         # Plant on the roof: boxes [x, y, w, d, h] in plan, far ones first.
         boxes = []
         for x, y, w, d, hh in flat.get("impianti", []):

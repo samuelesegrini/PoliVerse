@@ -1624,7 +1624,8 @@
               "tipo": "terrazza",
               "colore": "#E4E4DF",
               "fotovoltaico": true,
-              "margine": 2.2
+              "margine": 2.2,
+              "divisioni": [0.7]
             }
           ]
         },
