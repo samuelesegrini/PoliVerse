@@ -918,7 +918,7 @@
       ]
     },
     {
-      "csie": "osm-688888661",
+      "csie": "MIA0114",
       "piani": 1,
       "pianta": [
         [-5.2, 104.6],
@@ -935,7 +935,48 @@
         [5.5, 104.5]
       ],
       "numero": "2A",
-      "badge": [-5.2, 106.5]
+      "badge": [-5.2, 106.5],
+      "nome": "Sala Lettura",
+      "livelli": ["MIA011402I", "MIA011401I", "MIA011400S", "MIA0114000"],
+      "piani_3d": ["MIA0114000"],
+      "riquadro": [-60, 75, 50, 200],
+      "vista": "sud-ovest",
+      "profilo": [
+        {
+          "piano": "MIA011400S",
+          "tipo": "pieno",
+          "rivestimento": "pietra",
+          "h": 3
+        },
+        {
+          "piano": "MIA0114000",
+          "tipo": "pieno",
+          "rivestimento": "cemento",
+          "finestre": "grandi",
+          "h": 14
+        },
+        {
+          "piano": "cornicione",
+          "tipo": "cornicione",
+          "sporto": 0.3,
+          "h": 1
+        },
+        {
+          "tipo": "terrazza",
+          "colore": "#9C9A93",
+          "impianti": [
+            [-3.5, 112, 7, 2.2, 2.2],
+            [-3.5, 118, 7, 2.2, 2.2],
+            [-3.5, 124, 7, 2.2, 2.2],
+            [-3.5, 130, 7, 2.2, 2.2],
+            [-3.5, 136, 7, 2.2, 2.2],
+            [-3.5, 142, 7, 2.2, 2.2],
+            [-2.5, 151, 6.5, 2.2, 2.2],
+            [-2.5, 157, 6.5, 2.2, 2.2],
+            [-2.5, 163, 6.5, 2.2, 2.2]
+          ]
+        }
+      ]
     },
     {
       "csie": "MIA0115",

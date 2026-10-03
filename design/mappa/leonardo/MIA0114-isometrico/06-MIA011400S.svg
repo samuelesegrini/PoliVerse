@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="138.3 33 204.8 168.4" width="409.7" height="336.8">
+<defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient></defs>
+<polygon points="181.3,108.9 172.2,103.8 172.2,100.8 181.3,105.9" fill="#B4B2AA"/>
+<polygon points="240.8,147 177.7,111 177.7,108 240.8,144" fill="#B4B2AA"/>
+<polygon points="269.7,134.9 266.9,136.5 266.9,133.5 269.7,131.9" fill="#9C9A92"/>
+<polygon points="244.7,144.7 240.8,147 240.8,144 244.7,141.7" fill="#9C9A92"/>
+<polygon points="285.1,167.8 244.7,144.7 244.7,141.7 285.1,164.8" fill="#B4B2AA"/>
+<polygon points="303.1,157.2 285.1,167.8 285.1,164.8 303.1,154.2" fill="#9C9A92"/>
+<polygon points="190.5,90 199.9,95.2 202.6,93.6 269.7,131.9 266.9,133.5 303.1,154.2 285.1,164.8 244.7,141.7 240.8,144 177.7,108 181.3,105.9 172.2,100.8" fill="#C6C4BC"/>
+<path d="" stroke="#FFFFFF" stroke-width="0.5" opacity="0.35"/>
+</svg>
