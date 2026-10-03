@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="273.7 152.7 314.3 268.2" width="628.6" height="536.4">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="340.9,293 316.6,279 316.6,274.5 340.9,288.5" fill="#EFE7D5"/>
+<polygon points="353.5,285.7 340.9,293 340.9,288.5 353.5,281.2" fill="#D8CCB0"/>
+<polygon points="316.6,274.5 329.3,267.2 353.5,281.2 340.9,288.5" fill="#F3EDDF"/>
+<polygon points="319.7,274.5 329.3,269 350.4,281.2 340.9,286.7" fill="#A9A79F"/>
+<path d="M339.7 291.5V288.8M338.4 290.8V288.1M337.2 290.1V287.4M336 289.4V286.7M334.8 288.7V286M333.6 288V285.3M332.4 287.3V284.6M331.2 286.6V283.9M330 285.9V283.2M328.7 285.2V282.5M327.5 284.5V281.8M326.3 283.8V281.1M325.1 283.1V280.4M323.9 282.4V279.7M322.7 281.7V279M321.5 281V278.3M320.3 280.3V277.6M319 279.6V276.9M317.8 278.9V276.2M352.2 285.6V282.9M351 286.4V283.7M349.7 287.1V284.4M348.5 287.8V285.1M347.2 288.6V285.9M345.9 289.3V286.6M344.7 290V287.3M343.4 290.7V288M342.1 291.5V288.8" stroke="#BFB297" stroke-width="0.3"/>
+<rect x="340.2" y="287.3" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="340.9" cy="286.5" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="332.1" y="282.6" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="332.8" cy="281.8" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="324" y="278" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="324.7" cy="277.2" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="315.9" y="273.3" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="316.6" cy="272.5" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="352.8" y="280" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="353.5" cy="279.2" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+<rect x="340.2" y="287.3" width="1.4" height="1.2" fill="#E2D8C2"/><circle cx="340.9" cy="286.5" r="1.15" fill="#EFE8D8" stroke="#B9AC8E" stroke-width="0.35"/>
+</svg>
