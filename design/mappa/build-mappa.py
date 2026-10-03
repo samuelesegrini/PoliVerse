@@ -810,10 +810,16 @@ def ornaments(part, own, turn, top, z0):
             at = lambda t, zz, o=0.6: (q[0] + u[0] * t + n[0] * o, q[1] + u[1] * t + n[1] * o, zz)
             arc = [at(w * math.cos(th), zb + rise * math.sin(th)) for th in [math.pi * k / 16 for k in range(17)]]
             inner = [at(0.82 * w * math.cos(th), zb + rise * 0.72 * math.sin(th)) for th in [math.pi * k / 16 for k in range(16, -1, -1)]]
-            out.append(f'<polygon points="{iso_poly([at(w, zb), *arc, at(-w, zb)])}" fill="#E4DFD3" stroke="#B9B2A2" stroke-width="0.4"/>')
+            out.append(f'<polygon points="{iso_poly([at(w, zb), *arc, at(-w, zb)])}" fill="#E4DFD3" stroke="#9F9580" stroke-width="0.7"/>')
             out.append(f'<polygon points="{iso_poly(arc[1:-1] + inner[1:-1])}" fill="#EFEBE2" stroke="#C7C0B0" stroke-width="0.25"/>')
-            crest = [at(-1.3, zb - 4), at(1.3, zb - 4), at(1.5, zb + 1.5), at(0, zb + 4), at(-1.5, zb + 1.5)]
-            out.append(f'<polygon points="{iso_poly(crest)}" fill="#CFC8B7" stroke="#A9A291" stroke-width="0.3"/>')
+            # The coat of arms: a shield in a scrolled cartouche, hanging from the
+            # pediment down over the frieze.
+            scroll = [at(-2.6, zb - 2), at(-1.6, zb - 6.5), at(0, zb - 8), at(1.6, zb - 6.5), at(2.6, zb - 2), at(1.8, zb + 3.2), at(0, zb + 4.4), at(-1.8, zb + 3.2)]
+            out.append(f'<polygon points="{iso_poly(scroll)}" fill="#D8D0BE" stroke="#A9A291" stroke-width="0.3"/>')
+            shield = [at(-1.2, zb + 2.6, 0.8), at(1.2, zb + 2.6, 0.8), at(1.2, zb - 2.5, 0.8), at(0, zb - 5, 0.8), at(-1.2, zb - 2.5, 0.8)]
+            out.append(f'<polygon points="{iso_poly(shield)}" fill="#E6DFCE" stroke="#9E957F" stroke-width="0.35"/>')
+            hx, hy = iso(*at(0, zb + 4.2, 0.8)[:2], zb + 4.2)
+            out.append(f'<ellipse cx="{fmt(hx)}" cy="{fmt(hy)}" rx="1.1" ry="0.8" fill="#D2C9B5" stroke="#9E957F" stroke-width="0.3"/>')
     if part.get("portoni"):
         # Arched doorways in the middle of the front, iron gates in them.
         d = part["portoni"]
@@ -963,12 +969,13 @@ def lamellae(b, pts, turn, z0, top):
     return out
 
 
-def palazzo(pts, z, h, lit, colors, finestre, bugnato=False, bay=4.4, ordine=False, porte=0):
+def palazzo(pts, z, h, lit, colors, finestre, bugnato=False, bay=4.4, ordine=False, porte=0, nicchie=()):
     """An eclectic palazzo storey, face by face, far ones first: the wall, its rusticated
     joints, a lighter pilaster at each bay, and in each bay a window, `archi` (round
     arched), `balconi` (arched, over a little balustraded balcony) or `rette` (square).
     `porte` central bays of a face with an odd number of bays are arched doorways with
-    iron gates instead."""
+    iron gates instead. A bay by one of the `nicchie` points is the end bays' showpiece:
+    a statue in an arched niche on a rusticated floor, a framed square window above."""
     out = []
     glass = "#F2D492" if lit else "#3E4652"
     frame = "#F7F2E6"
@@ -1005,6 +1012,44 @@ def palazzo(pts, z, h, lit, colors, finestre, bugnato=False, bay=4.4, ordine=Fal
             doors = set(range((k - porte) // 2, (k + porte) // 2))
         for i in range(k):
             t = pad + i * bay + bay / 2
+            mid = at(t, z)[:2]
+            if any(math.dist(mid, p) < bay / 2 for p in nicchie):
+                if bugnato:
+                    # An arched niche, a bronze statue on a stone pedestal in it.
+                    w, z0, z1 = 1.25, z + 0.6, z + h * 0.62
+                    ring = lambda ww, zz, o: [at(t + ww * math.cos(th), zz + ww * ISO_SCALE * math.sin(th), o) for th in [math.pi * j / 10 for j in range(11)]]
+                    out.append(f'<polygon points="{iso_poly([at(t - w - 0.35, z0, 0.1), at(t + w + 0.35, z0, 0.1), *ring(w + 0.35, z1, 0.1)])}" fill="#E9E3D4" stroke="#BFB297" stroke-width="0.3"/>')
+                    out.append(f'<polygon points="{iso_poly([at(t - w, z0), at(t + w, z0), *ring(w, z1, 0.05)])}" fill="#A69D8A"/>')
+                    out.append(f'<polygon points="{iso_poly([at(t - w, z0), at(t + w, z0), at(t + w, z1), *ring(w, z1, 0.05)[5:]])}" fill="#8F8673" opacity="0.6"/>')
+                    ped = [(t - 0.7, z0 - 0.6), (t + 0.7, z0 - 0.6), (t + 0.7, z0 + 3.2), (t - 0.7, z0 + 3.2)]
+                    out.append(f'<polygon points="{iso_poly([at(tt, zz, 0.9) for tt, zz in ped])}" fill="#9E998E" stroke="#7E796E" stroke-width="0.2"/>')
+                    zs = z0 + 3.2
+                    fig = [(-0.35, 0), (0.35, 0), (0.4, 3.5), (0.55, 5.6), (0.25, 6.2), (0.25, 6.9), (-0.25, 6.9), (-0.25, 6.2), (-0.55, 5.6), (-0.45, 3.5)]
+                    out.append(f'<polygon points="{iso_poly([at(t + dx, zs + dz, 0.9) for dx, dz in fig])}" fill="#4F5B4F"/>')
+                    hx, hy = iso(*at(t, zs + 7.5, 0.9)[:2], zs + 7.5)
+                    out.append(f'<circle cx="{fmt(hx)}" cy="{fmt(hy)}" r="0.55" fill="#4F5B4F"/>')
+                else:
+                    # A square window in an aedicule: little pilasters, a cornice over it;
+                    # the balcony as on the other bays.
+                    w, z0, z1 = 0.9, z + h * 0.16, z + h * 0.5
+                    out.append(f'<polygon points="{iso_poly([at(t - w - 0.7, z0 - 0.3, 0.1), at(t + w + 0.7, z0 - 0.3, 0.1), at(t + w + 0.7, z1 + 1.6, 0.1), at(t - w - 0.7, z1 + 1.6, 0.1)])}" fill="#E7E0CF" stroke="#BFB297" stroke-width="0.3"/>')
+                    for dt in (-w - 0.45, w + 0.45):
+                        out.append(f'<polygon points="{iso_poly([at(t + dt - 0.22, z0, 0.2), at(t + dt + 0.22, z0, 0.2), at(t + dt + 0.22, z1 + 0.8, 0.2), at(t + dt - 0.22, z1 + 0.8, 0.2)])}" fill="#D9D0BC"/>')
+                    out.append(f'<polygon points="{iso_poly([at(t - w - 1.0, z1 + 0.9, 0.35), at(t + w + 1.0, z1 + 0.9, 0.35), at(t + w + 1.0, z1 + 1.9, 0.35), at(t - w - 1.0, z1 + 1.9, 0.35)])}" fill="#EFE8D8" stroke="#BFB297" stroke-width="0.25"/>')
+                    pane = "#F2D492" if lit else "#93A9BC"
+                    out.append(f'<polygon points="{iso_poly([at(t - w, z0), at(t + w, z0), at(t + w, z1), at(t - w, z1)])}" fill="{pane}" stroke="{frame}" stroke-width="0.5"/>')
+                    (x0, y0), (_, y1) = iso(*at(t, z0)[:2], z0), iso(*at(t, z0)[:2], z1)
+                    out.append(f'<path d="M{fmt(x0)} {fmt(y0)}V{fmt(y1)}" stroke="{frame}" stroke-width="0.35"/>')
+                    bw, d = w + 1.0, 1.1
+                    out.append(f'<polygon points="{iso_poly([at(t - bw, z0 - 0.9, 0.05), at(t + bw, z0 - 0.9, 0.05), at(t + bw, z0 - 0.9, d), at(t - bw, z0 - 0.9, d)])}" fill="#EFE8D8" stroke="#C9BC9E" stroke-width="0.25"/>')
+                    out.append(f'<polygon points="{iso_poly([at(t - bw, z0 - 0.9, d), at(t + bw, z0 - 0.9, d), at(t + bw, z0 + 2.4, d), at(t - bw, z0 + 2.4, d)])}" fill="#EDE5D3" stroke="#C9BC9E" stroke-width="0.3"/>')
+                    bal = []
+                    for j in range(1, 9):
+                        tt = t - bw + 2 * bw * j / 9
+                        (x0, y0), (_, y1) = iso(*at(tt, z0 - 0.9, d)[:2], z0 - 0.3), iso(*at(tt, z0, d)[:2], z0 + 1.8)
+                        bal.append(f"M{fmt(x0)} {fmt(y0)}V{fmt(y1)}")
+                    out.append(f'<path d="{"".join(bal)}" stroke="#BFB297" stroke-width="0.55"/>')
+                continue
             if i in doors:
                 # An arched doorway in a moulded frame, an iron gate in it.
                 w, z0, z1 = 1.2, z, z + h * 0.72
@@ -1179,7 +1224,8 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
             if kind == "palazzo":
                 colors = CLADDING[band.get("rivestimento", "stucco")]
                 return palazzo(own, z, h, lit, colors, band.get("finestre", "archi"), band.get("bugnato", False),
-                               band.get("campata", 4.4), band.get("ordine", False), band.get("porte", 0))
+                               band.get("campata", 4.4), band.get("ordine", False), band.get("porte", 0),
+                               [turn(tuple(p)) for p in band.get("nicchie", [])])
             if kind == "cornicione":
                 # A heavy cornice running out over the wall, its shadow beneath.
                 out = []

@@ -696,17 +696,23 @@
               "tipo": "palazzo",
               "finestre": "rette",
               "bugnato": true,
-              "campata": 4.9,
+              "campata": 5.0,
               "ordine": true,
-              "h": 14
+              "h": 14,
+              "nicchie": [
+                [-67.3, 195.05]
+              ]
             },
             {
               "piano": "MIA0101001",
               "tipo": "palazzo",
               "finestre": "balconi",
-              "campata": 4.9,
+              "campata": 5.0,
               "ordine": true,
-              "h": 20
+              "h": 20,
+              "nicchie": [
+                [-67.3, 195.05]
+              ]
             },
             {
               "piano": "fregio",
@@ -731,15 +737,24 @@
             }
           ],
           "frontone": {
-            "punto": [-67.3, 192.8],
-            "larghezza": 10,
-            "sotto": 9,
-            "freccia": 8
+            "punto": [-67.3, 195.05],
+            "larghezza": 8,
+            "sotto": 5,
+            "freccia": 7
           },
           "pinnacoli": [
-            [-66.6, 188.0, 9],
-            [-66.6, 190.2],
-            [-66.6, 195.4]
+            [-66.6, 192.55],
+            [-66.6, 197.55],
+            [-66.6, 188.0, 9]
+          ],
+          "bandiere": [
+            {
+              "punto": [-67.3, 195.05],
+              "z": 20,
+              "colori": [
+                ["#FFFFFF", "#C8102E", "#FFFFFF"]
+              ]
+            }
           ]
         },
         {
@@ -842,17 +857,23 @@
               "tipo": "palazzo",
               "finestre": "rette",
               "bugnato": true,
-              "campata": 4.9,
+              "campata": 5.0,
               "ordine": true,
-              "h": 14
+              "h": 14,
+              "nicchie": [
+                [-67.3, 224.25]
+              ]
             },
             {
               "piano": "MIA0101001",
               "tipo": "palazzo",
               "finestre": "balconi",
-              "campata": 4.9,
+              "campata": 5.0,
               "ordine": true,
-              "h": 20
+              "h": 20,
+              "nicchie": [
+                [-67.3, 224.25]
+              ]
             },
             {
               "piano": "fregio",
@@ -877,15 +898,24 @@
             }
           ],
           "frontone": {
-            "punto": [-67.3, 226.5],
-            "larghezza": 10,
-            "sotto": 9,
-            "freccia": 8
+            "punto": [-67.3, 224.25],
+            "larghezza": 8,
+            "sotto": 5,
+            "freccia": 7
           },
           "pinnacoli": [
-            [-66.6, 224.0],
-            [-66.6, 229.2],
+            [-66.6, 221.75],
+            [-66.6, 226.75],
             [-66.6, 231.3, 9]
+          ],
+          "bandiere": [
+            {
+              "punto": [-67.3, 224.25],
+              "z": 20,
+              "colori": [
+                ["#FFFFFF", "#C8102E", "#FFFFFF"]
+              ]
+            }
           ]
         }
       ]
