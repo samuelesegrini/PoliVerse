@@ -3106,6 +3106,50 @@
           ]
         }
       ]
+    },
+    {
+      "csie": "MIA0113",
+      "numero": "9A",
+      "nome": "Poli.Radio",
+      "piani": 2,
+      "badge": [139, 317],
+      "livelli": ["MIA0113000", "MIA0113001"],
+      "piani_3d": ["MIA0113000", "MIA0113001"],
+      "riquadro": [111.0, 284.1, 166.2, 349.5],
+      "vista": "sud-ovest",
+      "pianta": [
+        [136.1, 324.5],
+        [141.2, 324.4],
+        [141.0, 309.2],
+        [136.0, 309.1]
+      ],
+      "profilo": [
+        {
+          "piano": "MIA0113000",
+          "tipo": "palazzo",
+          "rivestimento": "intonaco",
+          "finestre": "rette",
+          "bugnato": false,
+          "campata": 3.6,
+          "h": 10
+        },
+        {
+          "piano": "MIA0113001",
+          "tipo": "palazzo",
+          "rivestimento": "intonaco",
+          "finestre": "rette",
+          "bugnato": false,
+          "campata": 3.6,
+          "h": 9
+        },
+        {
+          "piano": "cornicione",
+          "tipo": "cornicione",
+          "sporto": 0.5,
+          "h": 1.2
+        },
+        {"tipo": "coppi", "h": 3}
+      ]
     }
   ],
   "contesto": {
