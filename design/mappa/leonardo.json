@@ -2652,6 +2652,67 @@
           ]
         }
       ]
+    },
+    {
+      "csie": "MIA0107",
+      "numero": "7",
+      "nome": "Carlo Erba",
+      "piani": 2,
+      "pianta": [
+        [101.1, 188.4],
+        [101.4, 227.3],
+        [104.9, 227.3],
+        [105.0, 243.5],
+        [115.0, 243.5],
+        [115.0, 247.3],
+        [134.7, 247.2],
+        [134.1, 168.6],
+        [119.5, 168.7],
+        [119.4, 165.3],
+        [103.8, 165.4],
+        [104.0, 179.2],
+        [104.6, 179.2],
+        [104.7, 188.4]
+      ],
+      "badge": [106, 168],
+      "livelli": ["MIA010700S", "MIA0107000", "MIA0107001"],
+      "piani_3d": ["MIA0107000", "MIA0107001"],
+      "riquadro": [70, 135, 165, 280],
+      "vista": "sud-ovest",
+      "profilo": [
+        {
+          "piano": "MIA010700S",
+          "tipo": "pieno",
+          "rivestimento": "pietra",
+          "h": 4
+        },
+        {
+          "piano": "MIA0107000",
+          "tipo": "palazzo",
+          "rivestimento": "intonaco",
+          "finestre": "archi",
+          "bugnato": true,
+          "campata": 4.2,
+          "h": 14
+        },
+        {
+          "piano": "MIA0107001",
+          "tipo": "palazzo",
+          "rivestimento": "intonaco",
+          "finestre": "rette",
+          "campata": 4.2,
+          "h": 13
+        },
+        {
+          "piano": "cornicione",
+          "tipo": "cornicione",
+          "decoro": true,
+          "sporto": 0.6,
+          "h": 1.8
+        },
+        {"tipo": "terrazza", "colore": "#A3A19A"}
+      ],
+      "spostamenti": {"MIA010700S": [-7.76, 0.0]}
     }
   ],
   "contesto": {
