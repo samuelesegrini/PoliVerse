@@ -2379,6 +2379,97 @@
         },
         {"tipo": "coppi", "h": 7, "rientro": 4}
       ]
+    },
+    {
+      "csie": "MIA0105",
+      "numero": "5",
+      "nome": "Arturo Danusso",
+      "piani": 3,
+      "pianta": [
+        [11.7, 256.3],
+        [11.8, 266.5],
+        [12.5, 266.5],
+        [12.5, 289.7],
+        [12.1, 289.7],
+        [12.0, 299.7],
+        [14.8, 299.7],
+        [14.9, 310.0],
+        [14.6, 310.0],
+        [14.4, 321.5],
+        [15.0, 321.5],
+        [15.0, 325.7],
+        [24.8, 325.6],
+        [24.8, 320.8],
+        [44.1, 320.8],
+        [44.1, 325.4],
+        [82.6, 325.0],
+        [82.6, 305.9],
+        [77.9, 305.9],
+        [77.8, 276.6],
+        [61.5, 276.6],
+        [61.5, 289.5],
+        [55.4, 289.5],
+        [55.3, 266.1],
+        [55.9, 266.1],
+        [55.9, 256.1],
+        [45.9, 256.1],
+        [45.9, 256.9],
+        [42.7, 256.9],
+        [42.7, 246.6],
+        [40.5, 244.6],
+        [27.0, 244.6],
+        [24.9, 246.7],
+        [24.9, 256.8],
+        [21.8, 256.8],
+        [21.8, 256.3]
+      ],
+      "badge": [14, 258],
+      "livelli": ["MIA010500S", "MIA0105000", "MIA0105001", "MIA0105002", "MIA0105003"],
+      "piani_3d": ["MIA0105000", "MIA0105001", "MIA0105002"],
+      "riquadro": [-25, 215, 115, 355],
+      "vista": "sud-ovest",
+      "profilo": [
+        {
+          "piano": "MIA010500S",
+          "tipo": "pieno",
+          "rivestimento": "pietra",
+          "h": 4
+        },
+        {
+          "piano": "MIA0105000",
+          "tipo": "palazzo",
+          "rivestimento": "intonaco",
+          "finestre": "archi",
+          "bugnato": true,
+          "campata": 4.2,
+          "h": 14
+        },
+        {
+          "piano": "MIA0105001",
+          "tipo": "palazzo",
+          "rivestimento": "intonaco",
+          "finestre": "rette",
+          "campata": 4.2,
+          "h": 13
+        },
+        {
+          "piano": "MIA0105002",
+          "tipo": "palazzo",
+          "rivestimento": "intonaco",
+          "finestre": "rette",
+          "campata": 4.2,
+          "h": 12
+        },
+        {
+          "piano": "cornicione",
+          "tipo": "cornicione",
+          "decoro": true,
+          "sporto": 0.6,
+          "h": 1.8
+        },
+        {"tipo": "terrazza", "colore": "#A3A19A"}
+      ],
+      "spostamenti": {"MIA0105002": [9.5, 0.0], "MIA0105003": [9.5, 0.0]}
     }
   ],
   "contesto": {
