@@ -2713,6 +2713,157 @@
         {"tipo": "terrazza", "colore": "#A3A19A"}
       ],
       "spostamenti": {"MIA010700S": [-7.76, 0.0]}
+    },
+    {
+      "csie": "MIA0108",
+      "numero": "8",
+      "nome": "Alessandro Amerio",
+      "piani": 3,
+      "pianta": [
+        [91.1, 106.2],
+        [97.5, 106.2],
+        [97.5, 103.9],
+        [113.0, 103.8],
+        [113.1, 106.1],
+        [119.8, 106.1],
+        [119.9, 119.9],
+        [122.2, 122.0],
+        [136.0, 122.1],
+        [135.9, 130.2],
+        [134.3, 130.2],
+        [134.2, 142.2],
+        [136.0, 142.2],
+        [135.8, 150.7],
+        [125.6, 150.8],
+        [123.9, 152.7],
+        [117.3, 152.7],
+        [115.6, 151.1],
+        [104.7, 151.1],
+        [94.7, 161.0],
+        [90.9, 161.2],
+        [81.0, 151.6],
+        [81.0, 148.0],
+        [91.1, 137.9]
+      ],
+      "badge": [93, 108],
+      "livelli": ["MIA010800S", "MIA0108000", "MIA0108001", "MIA0108002"],
+      "piani_3d": ["MIA0108000", "MIA0108001", "MIA0108002"],
+      "riquadro": [50, 75, 165, 190],
+      "vista": "sud-ovest",
+      "parti": [
+        {
+          "nome": "corpo",
+          "pianta": [
+            [91.1, 106.2],
+            [97.5, 106.2],
+            [97.5, 103.9],
+            [113.0, 103.8],
+            [113.1, 106.1],
+            [119.8, 106.1],
+            [119.9, 119.9],
+            [122.2, 122.0],
+            [136.0, 122.1],
+            [135.9, 130.2],
+            [134.3, 130.2],
+            [134.2, 142.2],
+            [136.0, 142.2],
+            [135.8, 150.7],
+            [125.6, 150.8],
+            [123.9, 152.7],
+            [117.3, 152.7],
+            [115.6, 151.1],
+            [104.7, 151.1],
+            [94.7, 161.0],
+            [90.9, 161.2],
+            [81.0, 151.6],
+            [81.0, 148.0],
+            [91.1, 137.9]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010800S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 4
+            },
+            {
+              "piano": "MIA0108000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "archi",
+              "bugnato": true,
+              "campata": 4.2,
+              "h": 14
+            },
+            {
+              "piano": "MIA0108001",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "campata": 4.2,
+              "h": 13
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 0.6,
+              "h": 1.8
+            },
+            {"tipo": "coppi", "h": 7, "rientro": 4}
+          ]
+        },
+        {
+          "nome": "centro",
+          "pianta": [
+            [96.4, 109.4],
+            [117.6, 109.4],
+            [117.6, 140.0],
+            [96.4, 140.0]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010800S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 4
+            },
+            {
+              "piano": "MIA0108000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "archi",
+              "bugnato": true,
+              "campata": 4.2,
+              "h": 14
+            },
+            {
+              "piano": "MIA0108001",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "campata": 4.2,
+              "h": 13
+            },
+            {
+              "piano": "MIA0108002",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "campata": 4.2,
+              "h": 12
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 0.6,
+              "h": 1.8
+            },
+            {"tipo": "coppi", "h": 7, "rientro": 4}
+          ]
+        }
+      ]
     }
   ],
   "contesto": {
