@@ -2325,6 +2325,60 @@
         },
         {"tipo": "terrazza", "colore": "#A3A19A"}
       ]
+    },
+    {
+      "csie": "MIA0112",
+      "numero": "4A",
+      "nome": "Gaudenzio Fantoli",
+      "piani": 2,
+      "pianta": [
+        [63.8, 149.2],
+        [77.6, 149.1],
+        [77.6, 140.5],
+        [79.1, 140.5],
+        [82.9, 135.1],
+        [82.8, 102.2],
+        [83.0, 91.8],
+        [63.8, 91.9]
+      ],
+      "badge": [66, 95],
+      "livelli": ["MIA011200S", "MIA0112000", "MIA0112001"],
+      "piani_3d": ["MIA0112000", "MIA0112001"],
+      "riquadro": [30, 60, 115, 180],
+      "vista": "sud-ovest",
+      "profilo": [
+        {
+          "piano": "MIA011200S",
+          "tipo": "pieno",
+          "rivestimento": "pietra",
+          "h": 4
+        },
+        {
+          "piano": "MIA0112000",
+          "tipo": "palazzo",
+          "rivestimento": "intonaco",
+          "finestre": "archi",
+          "bugnato": true,
+          "campata": 4.2,
+          "h": 14
+        },
+        {
+          "piano": "MIA0112001",
+          "tipo": "palazzo",
+          "rivestimento": "intonaco",
+          "finestre": "rette",
+          "campata": 4.2,
+          "h": 13
+        },
+        {
+          "piano": "cornicione",
+          "tipo": "cornicione",
+          "decoro": true,
+          "sporto": 0.6,
+          "h": 1.8
+        },
+        {"tipo": "coppi", "h": 7, "rientro": 4}
+      ]
     }
   ],
   "contesto": {
