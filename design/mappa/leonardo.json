@@ -2470,6 +2470,188 @@
         {"tipo": "terrazza", "colore": "#A3A19A"}
       ],
       "spostamenti": {"MIA0105002": [9.5, 0.0], "MIA0105003": [9.5, 0.0]}
+    },
+    {
+      "csie": "MIA0106",
+      "numero": "6",
+      "nome": "Giulio Natta",
+      "piani": 7,
+      "pianta": [
+        [40.9, 201.9],
+        [41.1, 215.8],
+        [44.0, 218.4],
+        [53.4, 218.3],
+        [53.5, 223.9],
+        [52.8, 223.9],
+        [52.9, 233.7],
+        [69.5, 233.5],
+        [69.5, 237.6],
+        [68.1, 237.6],
+        [68.3, 251.7],
+        [89.9, 251.4],
+        [89.7, 237.4],
+        [86.0, 237.5],
+        [85.3, 185.3],
+        [90.3, 185.2],
+        [90.3, 187.4],
+        [96.7, 187.3],
+        [96.4, 169.0],
+        [67.7, 169.4],
+        [67.9, 183.6],
+        [52.4, 183.8],
+        [52.5, 193.5],
+        [53.2, 193.5],
+        [53.3, 199.1],
+        [43.3, 199.2]
+      ],
+      "badge": [70, 172],
+      "livelli": ["MIA010600S", "MIA0106000", "MIA010600R", "MIA0106001", "MIA0106002", "MIA0106003", "MIA0106004", "MIA0106005", "MIA0106006"],
+      "piani_3d": ["MIA010600R", "MIA0106001", "MIA0106002", "MIA0106003", "MIA0106004", "MIA0106005", "MIA0106006"],
+      "riquadro": [10, 140, 130, 280],
+      "vista": "sud-ovest",
+      "spostamenti": {"MIA0106003": [-2.04, 9.69], "MIA0106004": [-2.04, 9.69], "MIA0106006": [-2.04, 9.69]},
+      "parti": [
+        {
+          "nome": "corpo",
+          "pianta": [
+            [40.9, 201.9],
+            [41.1, 215.8],
+            [44.0, 218.4],
+            [53.4, 218.3],
+            [53.5, 223.9],
+            [52.8, 223.9],
+            [52.9, 233.7],
+            [69.5, 233.5],
+            [69.5, 237.6],
+            [68.1, 237.6],
+            [68.3, 251.7],
+            [89.9, 251.4],
+            [89.7, 237.4],
+            [86.0, 237.5],
+            [85.3, 185.3],
+            [90.3, 185.2],
+            [90.3, 187.4],
+            [96.7, 187.3],
+            [96.4, 169.0],
+            [67.7, 169.4],
+            [67.9, 183.6],
+            [52.4, 183.8],
+            [52.5, 193.5],
+            [53.2, 193.5],
+            [53.3, 199.1],
+            [43.3, 199.2]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010600S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 4
+            },
+            {
+              "piano": "MIA010600R",
+              "tipo": "pieno",
+              "rivestimento": "cemento",
+              "finestre": "grandi",
+              "h": 13
+            },
+            {
+              "piano": "MIA0106001",
+              "tipo": "pieno",
+              "rivestimento": "cemento",
+              "finestre": "grandi",
+              "h": 12
+            },
+            {
+              "piano": "MIA0106002",
+              "tipo": "pieno",
+              "rivestimento": "cemento",
+              "finestre": "grandi",
+              "h": 12
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "sporto": 0.3,
+              "h": 1.2
+            },
+            {"tipo": "terrazza", "colore": "#A3A19A"}
+          ]
+        },
+        {
+          "nome": "torre",
+          "pianta": [
+            [67.8, 169.4],
+            [96.4, 169.0],
+            [96.7, 187.3],
+            [67.9, 187.5]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010600S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 4
+            },
+            {
+              "piano": "MIA010600R",
+              "tipo": "pieno",
+              "rivestimento": "cemento",
+              "finestre": "grandi",
+              "h": 13
+            },
+            {
+              "piano": "MIA0106001",
+              "tipo": "pieno",
+              "rivestimento": "cemento",
+              "finestre": "grandi",
+              "h": 12
+            },
+            {
+              "piano": "MIA0106002",
+              "tipo": "pieno",
+              "rivestimento": "cemento",
+              "finestre": "grandi",
+              "h": 12
+            },
+            {
+              "piano": "MIA0106003",
+              "tipo": "pieno",
+              "rivestimento": "cemento",
+              "finestre": "grandi",
+              "h": 12
+            },
+            {
+              "piano": "MIA0106004",
+              "tipo": "pieno",
+              "rivestimento": "cemento",
+              "finestre": "grandi",
+              "h": 12
+            },
+            {
+              "piano": "MIA0106005",
+              "tipo": "pieno",
+              "rivestimento": "cemento",
+              "finestre": "grandi",
+              "h": 12
+            },
+            {
+              "piano": "MIA0106006",
+              "tipo": "pieno",
+              "rivestimento": "cemento",
+              "finestre": "grandi",
+              "h": 12
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "sporto": 0.3,
+              "h": 1.2
+            },
+            {"tipo": "terrazza", "colore": "#A3A19A"}
+          ]
+        }
+      ]
     }
   ],
   "contesto": {
