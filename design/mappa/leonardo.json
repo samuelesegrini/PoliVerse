@@ -3150,6 +3150,77 @@
         },
         {"tipo": "coppi", "h": 3}
       ]
+    },
+    {
+      "csie": "MIA0110",
+      "numero": "10",
+      "nome": "Posta",
+      "piani": 1,
+      "badge": [131, 111],
+      "livelli": ["MIA0110000"],
+      "piani_3d": ["MIA0110000"],
+      "riquadro": [97.3, 81.5, 164.3, 140.8],
+      "vista": "sud-ovest",
+      "pianta": [
+        [122.3, 106.5],
+        [122.3, 115.8],
+        [139.3, 115.8],
+        [139.3, 106.5]
+      ],
+      "profilo": [
+        {
+          "piano": "MIA0110000",
+          "tipo": "palazzo",
+          "rivestimento": "intonaco",
+          "finestre": "rette",
+          "bugnato": false,
+          "campata": 3.6,
+          "h": 5
+        },
+        {
+          "piano": "cornicione",
+          "tipo": "cornicione",
+          "sporto": 0.4,
+          "h": 0.8
+        },
+        {"tipo": "terrazza", "colore": "#A3A19A"}
+      ]
+    },
+    {
+      "csie": "MIA0109",
+      "numero": "CT1",
+      "nome": "Centralino",
+      "piani": 1,
+      "badge": [110, 96],
+      "livelli": ["MIA0109000"],
+      "piani_3d": ["MIA0109000"],
+      "riquadro": [74.5, 66.5, 141.3, 124.3],
+      "vista": "sud-ovest",
+      "pianta": [
+        [99.5, 99.3],
+        [116.2, 99.3],
+        [116.2, 97.1],
+        [116.3, 91.5],
+        [99.5, 91.7]
+      ],
+      "profilo": [
+        {
+          "piano": "MIA0109000",
+          "tipo": "palazzo",
+          "rivestimento": "intonaco",
+          "finestre": "rette",
+          "bugnato": false,
+          "campata": 3.6,
+          "h": 4.5
+        },
+        {
+          "piano": "cornicione",
+          "tipo": "cornicione",
+          "sporto": 0.4,
+          "h": 0.8
+        },
+        {"tipo": "terrazza", "colore": "#A3A19A"}
+      ]
     }
   ],
   "contesto": {
