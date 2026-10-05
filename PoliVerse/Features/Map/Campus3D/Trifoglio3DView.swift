@@ -103,8 +103,15 @@ final class Trifoglio3DScene {
     @ObservationIgnored private var tweens: [Tween] = []
     /// Seconds since the scene started, advanced once a frame.
     @ObservationIgnored private var clock: Double = 0
-    /// The lit classroom, its materials before it was lit, and when it was lit.
-    @ObservationIgnored private var lit: (entity: Entity, materials: [any RealityKit.Material], since: Double)?
+    /// The lit classroom and when it was lit.
+    @ObservationIgnored private var lit: (entity: Entity, since: Double)?
+    /// Every classroom ever lit, with its materials from before the first time. Kept
+    /// apart from ``lit`` so a room lit twice is never "restored" to its own glow, and
+    /// every room but the current one can be put back at once.
+    @ObservationIgnored private var originals: [ObjectIdentifier: (entity: Entity, materials: [any RealityKit.Material])] = [:]
+    /// Whether a move is under way. Taps and buttons wait for it to end rather than
+    /// start a second move that fights the first over the camera and the fades.
+    @ObservationIgnored private var isMoving = false
 
     /// One running animation.
     private struct Tween {
@@ -184,18 +191,26 @@ final class Trifoglio3DScene {
 
     // MARK: - The walk
 
-    /// Walks the whole way, from the campus to classroom T.1.2 on the ground floor.
+    /// Walks to classroom T.1.2 on the ground floor from wherever the camera is: through
+    /// the building and the floor from the campus, straight across from another room on
+    /// the same floor, and nowhere at all when T.1.2 is already on screen.
     func tour() async {
-        await go(to: .campus)
-        await go(to: .building)
-        await go(to: .floor("MIA0203000"))
         await go(to: .room(floor: "MIA0203000", room: "MIA0203000030"))
     }
 
-    /// Animates to a level and waits until the move has finished.
+    /// Animates to a level and waits until the move has finished. Does nothing when the
+    /// camera is already there, or while another move is under way.
     ///
     /// - Parameter next: Where to go.
     func go(to next: Trifoglio3DLevel) async {
+        guard !isMoving, next != level else { return }
+        isMoving = true
+        defer { isMoving = false }
+        await move(to: next)
+    }
+
+    /// The steps of ``go(to:)``, which call each other to pass through the levels between.
+    private func move(to next: Trifoglio3DLevel) async {
         guard campus != nil, let building else { return }
         switch next {
         case .campus:
@@ -216,7 +231,7 @@ final class Trifoglio3DScene {
             frame(shell, polar: 1.0, margin: 1.15)
 
         case .floor(let csip):
-            if level == .campus { await go(to: .building) }
+            if level == .campus { await move(to: .building) }
             unlight()
             level = next
             let order = floors(of: building).map(\.name)
@@ -238,7 +253,7 @@ final class Trifoglio3DScene {
             frame(floors(of: building)[safe: chosen], polar: 0.6, margin: 1.0)
 
         case .room(let csip, let csiv):
-            if level != .floor(csip), !isRoom(on: csip) { await go(to: .floor(csip)) }
+            if level != .floor(csip), !isRoom(on: csip) { await move(to: .floor(csip)) }
             unlight()
             level = next
             guard let room = building.findEntity(named: csiv) else { return }
@@ -407,7 +422,9 @@ final class Trifoglio3DScene {
     /// Lights a classroom in the warm colour of the illustrations' lit floors.
     private func light(_ room: Entity) {
         guard var model = room.components[ModelComponent.self] else { return }
-        lit = (room, model.materials, clock)
+        let key = ObjectIdentifier(room)
+        if originals[key] == nil { originals[key] = (room, model.materials) }
+        lit = (room, clock)
         var glow = PhysicallyBasedMaterial()
         glow.baseColor = .init(tint: .init(red: 0.91, green: 0.64, blue: 0.23, alpha: 1))
         glow.emissiveColor = .init(color: .init(red: 0.91, green: 0.64, blue: 0.23, alpha: 1))
@@ -416,11 +433,12 @@ final class Trifoglio3DScene {
         room.components.set(model)
     }
 
-    /// Puts the lit classroom back as it was.
+    /// Puts every lit classroom back as it was.
     private func unlight() {
-        if let lit, var model = lit.entity.components[ModelComponent.self] {
-            model.materials = lit.materials
-            lit.entity.components.set(model)
+        for (room, materials) in originals.values {
+            guard var model = room.components[ModelComponent.self] else { continue }
+            model.materials = materials
+            room.components.set(model)
         }
         lit = nil
         labelPoint = nil
