@@ -114,10 +114,11 @@ def ring(pts):
 # ---------------------------------------------------------------- guscio
 
 # Il Trifoglio come nelle foto del restauro (Coprat, TeamWork Italy), ad altezze reali.
-FESSURA = 1.2        # il seminterrato che affiora: il terra è rialzato di tanto
-BASE_H = 4.5         # il terra: pareti inclinate di cemento grezzo e vetrate
-MOSAICO_H = 9.0      # il volume in mosaico delle aule ad anfiteatro, sopra
-RIENTRO = 1.6        # di quanto le vetrate del terra stanno sotto il mosaico che sporge
+# Il seminterrato è a quota piazza: nella pianta ha 21 porte verso l'esterno, il terra 5.
+BASE_H = 4.0         # il seminterrato: lo zoccolo chiaro di cemento grezzo
+MOSAICO_H = 9.0      # terra e primo, nel volume in mosaico delle aule ad anfiteatro
+RIENTRO = 0.25       # di quanto lo zoccolo sta sotto il mosaico
+RAMPA = 2.0          # dove arriva la rampa: dalle foto, più dei 1,2 m del disegno
 SPORTO = 1.8         # la lastra del tetto oltre il mosaico
 ALA = 1.1            # quanto salgono le punte delle ali del tetto
 GLASS, GLASS_DARK, FRAME_GREY, WHITE = "#8FA6BA", "#5C6E80", "#80868E", "#F4F5F7"
@@ -146,10 +147,20 @@ class Solidi:
         self.tri(key, [pts[0], pts[2], pts[3]], want, [uvs[0], uvs[2], uvs[3]] if uvs else None)
 
     def solid(self, key, m):
-        """Una mesh trimesh già chiusa e girata bene."""
+        """Una mesh trimesh già chiusa e girata bene. Se ha una texture, la proietta faccia
+        per faccia: dall'alto sulle facce orizzontali, di lato sulle altre."""
         for face in m.faces:
             p = m.vertices[face]
-            self.tri(key, p, np.cross(p[1] - p[0], p[2] - p[0]))
+            n = np.cross(p[1] - p[0], p[2] - p[0])
+            uvs = None
+            if key in TEX:
+                k = np.linalg.norm(n) or 1
+                if abs(n[2]) / k > 0.7:
+                    uvs = [(q[0], q[1]) for q in p]
+                else:
+                    h = np.array([-n[1], n[0], 0]) / (np.linalg.norm(n[:2]) or 1)
+                    uvs = [(float(np.dot(q, h)), q[2]) for q in p]
+            self.tri(key, p, n, uvs)
 
     def meshes(self):
         out = {}
@@ -318,48 +329,81 @@ def stair_glazing(b, pts):
     return out
 
 
+def exits(b, pts):
+    """Le porte esterne del seminterrato, per lato: {indice del lato: [(t0, t1)]}, le porte
+    a meno di 2 m l'una dall'altra unite in un'unica apertura."""
+    geo = SRC / "piante" / f"{b['csie']}-geometria.json"
+    if not geo.exists():
+        return {}
+    floor = json.loads(geo.read_text())["piani"].get(b["csie"] + "00S", {})
+    es = edges(pts)
+    hits = {}
+    for d in floor.get("porte", []):
+        if not d.get("esterna"):
+            continue
+        p = np.array(d["cardine"])
+        best = min(range(len(es)), key=lambda i: LineString([es[i][0], es[i][1]]).distance(Polygon([p, p + 1e-3, p + [0, 1e-3]]).centroid))
+        a, c, u, n, L, _ = es[best]
+        t = (p[0] - a[0]) * u[0] + (p[1] - a[1]) * u[1]
+        hits.setdefault(best, []).append(min(max(t, 1.0), L - 1.0))
+    out = {}
+    for i, ts in hits.items():
+        ts.sort()
+        groups = [[ts[0], ts[0]]]
+        for t in ts[1:]:
+            if t - groups[-1][1] < 2.0:
+                groups[-1][1] = t
+            else:
+                groups.append([t, t])
+        out[i] = [(max(0.6, g0 - 0.9), min(es[i][4] - 0.6, g1 + 0.9)) for g0, g1 in groups]
+    return out
+
+
 def ingresso(b, S, zg):
-    """Il terra rialzato: pianerottolo davanti alla porta, due rampe lungo i muri con il
-    parapetto in metallo, sotto il pianerottolo l'ingresso vetrato del seminterrato."""
+    """La rampa: un blocco pieno di cemento grezzo che sale lungo il muro dalla piazza al
+    pianerottolo, chiuso da un parapetto pieno con il corrimano in metallo sopra."""
     ent = b.get("ingresso") or {}
     r = ent.get("rampa")
     if not r or "lato" not in ent:
         return
+    poly = ring(b["pianta"]).buffer(0)
     raw = [tuple(p) for p in b["pianta"]]
     a, c = raw[ent["lato"]], raw[(ent["lato"] + 1) % len(raw)]
-    pts = ring_ccw(ring(b["pianta"]).buffer(0))
+    pts = ring_ccw(poly)
     e = min(edges(pts), key=lambda e: min(math.dist(e[0], a) + math.dist(e[1], c), math.dist(e[0], c) + math.dist(e[1], a)))
-    L = e[4]
-    mid = ent["t"] * L if math.dist(e[0], a) < math.dist(e[0], c) else (1 - ent["t"]) * L
+    mid = ent["t"] * e[4] if math.dist(e[0], a) < math.dist(e[0], c) else (1 - ent["t"]) * e[4]
     land = Polygon(r["pianerottolo"]).buffer(0)
-    S.solid(PALE, trimesh.creation.extrude_polygon(land, 0.3).apply_translation([0, 0, zg - 0.3]))
-    rail = []
+    S.solid("cemento", trimesh.creation.extrude_polygon(land, zg))
+    walls = []
+    ring_ = ring_ccw(land)
+    for p0, p1 in zip(ring_, ring_[1:] + ring_[:1]):
+        midp = ((p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2)
+        if poly.exterior.distance(Polygon([midp, (midp[0] + 1e-3, midp[1]), (midp[0], midp[1] + 1e-3)]).centroid) > 1.0 \
+                and math.dist(p0, p1) > 3:
+            walls.append(((*p0, zg), (*p1, zg)))             # il lato verso la piazza
     for q in r["rampe"]:
         # I primi due vertici toccano il pianerottolo, gli ultimi due il suolo.
         top = [(*q[0], zg), (*q[1], zg), (*q[2], 0.02), (*q[3], 0.02)]
-        S.solid(PALE, hexa([(x, y, zz - 0.3) for x, y, zz in top], top))
-        rail += [((*q[0], zg), (*q[3], 0.02)), ((*q[1], zg), (*q[2], 0.02))]
-    ring_ = list(land.exterior.coords)[:-1]
-    edge = max(zip(ring_, ring_[1:] + ring_[:1]), key=lambda s: math.dist(*s))
-    rail.append(((*edge[0], zg), (*edge[1], zg)))
-    for p0, p1 in rail:
+        S.solid("cemento", hexa([(x, y, 0.0) for x, y, _ in top], top))
+        far = max(((q[0], q[3]), (q[1], q[2])), key=lambda s_: poly.exterior.distance(LineString([s_[0], s_[1]])))
+        walls.append(((*far[0], zg), (*far[1], 0.02)))
+    for p0, p1 in walls:
         p0, p1 = np.array(p0), np.array(p1)
         L2 = np.linalg.norm(p1[:2] - p0[:2])
-        side = np.array([-(p1[1] - p0[1]), p1[0] - p0[0], 0]) / L2 * 0.03
-        top0, top1 = p0 + [0, 0, 1.0], p1 + [0, 0, 1.0]
-        S.solid(METAL, hexa([top0 - side, top1 - side, top1 + side, top0 + side],
-                            [top0 - side + [0, 0, 0.05], top1 - side + [0, 0, 0.05], top1 + side + [0, 0, 0.05], top0 + side + [0, 0, 0.05]]))
-        for i in range(int(L2 / 1.2) + 1):
-            p = p0 + (p1 - p0) * (i / max(1, int(L2 / 1.2)))
-            post = trimesh.creation.box(extents=[0.04, 0.04, 1.0]).apply_translation(p + [0, 0, 0.5])
-            S.solid(METAL, post)
-    S.solid(ENTRY, box3(e[0], e[1], e[3], mid - r.get("sotto", 3.5), mid + r.get("sotto", 3.5), 0, zg - 0.35, -RIENTRO, -RIENTRO + 0.06))
+        side = np.array([-(p1[1] - p0[1]), p1[0] - p0[0], 0]) / L2 * 0.12
+        foot0, foot1 = np.array([*p0[:2], 0.0]), np.array([*p1[:2], 0.0])
+        # Il parapetto pieno, alto 1 m sul piano della rampa, fino a terra.
+        S.solid("cemento", hexa([foot0 - side, foot1 - side, foot1 + side, foot0 + side],
+                                [p0 - side + [0, 0, 1.0], p1 - side + [0, 0, 1.0], p1 + side + [0, 0, 1.0], p0 + side + [0, 0, 1.0]]))
+        # Il corrimano in metallo, poco sopra.
+        rail = side / 0.12 * 0.03
+        h0, h1 = p0 + [0, 0, 1.1], p1 + [0, 0, 1.1]
+        S.solid(METAL, hexa([h0 - rail, h1 - rail, h1 + rail, h0 + rail],
+                            [h0 - rail + [0, 0, 0.05], h1 - rail + [0, 0, 0.05], h1 + rail + [0, 0, 0.05], h0 + rail + [0, 0, 0.05]]))
+        for k in range(int(L2 / 1.5) + 1):
+            p = h0 + (h1 - h0) * (k / max(1, int(L2 / 1.5)))
+            S.solid(METAL, trimesh.creation.box(extents=[0.04, 0.04, 0.12]).apply_translation(p - [0, 0, 0.05]))
     S.solid(DOOR, box3(e[0], e[1], e[3], mid - 1.5, mid + 1.5, zg, zg + 2.6, -RIENTRO, -RIENTRO + 0.08))
-    for i in range(5):
-        f = (i + 0.5) / 5
-        x, y = edge[0][0] + (edge[1][0] - edge[0][0]) * f, edge[0][1] + (edge[1][1] - edge[0][1]) * f
-        col = trimesh.creation.cylinder(radius=0.18, height=zg - 0.3, sections=8)
-        S.solid(PALE, col.apply_translation([x, y, (zg - 0.3) / 2]))
 
 
 def hexa(bottom, top):
@@ -387,8 +431,8 @@ def box3(a, c, n, t0, t1, z0, z1, d0, d1):
 def guscio(b):
     """L'esterno del Trifoglio come nelle foto: {chiave: mesh}, e la quota del tetto.
 
-    Dal basso: la fessura vetrata scura del seminterrato e il terra, rientrati sotto il
-    mosaico, con le pareti inclinate di cemento grezzo fra le vetrate; il volume delle aule
+    Dal basso: lo zoccolo del seminterrato, a quota piazza, in cemento grezzo con finestre,
+    porte vetrate e portali fra pareti inclinate; il volume di terra e primo
     in mosaico a punta di diamante con le finestre esagonali di Ponti e il vetrocemento; le
     vetrate a griglia bianca dei vani scala; la lastra bianca del tetto, che sale verso le
     punte delle ali; gli impianti; l'ingresso con le rampe."""
@@ -396,43 +440,51 @@ def guscio(b):
     poly = ring(b["pianta"]).buffer(0)
     pts = ring_ccw(poly)
     up = np.array([0, 0, 1.0])
-    z_base, z_mos = FESSURA + BASE_H, FESSURA + BASE_H + MOSAICO_H
+    z_base, z_mos = BASE_H, BASE_H + MOSAICO_H
     centre = np.array(poly.centroid.coords[0])
     reach = max(math.dist(p, centre) for p in offset_ring(pts, SPORTO))
     lift = lambda p: ALA * (math.dist(p, centre) / reach) ** 2
 
-    # Lo zoccolo, la fessura e le vetrate del terra, rientrate sotto il mosaico.
-    inner = poly.buffer(-RIENTRO, join_style=2)
-    S.solid(BASE, trimesh.creation.extrude_polygon(poly.buffer(0.3, join_style=2), 0.15))
-    S.solid(GLASS_DARK, trimesh.creation.extrude_polygon(inner, FESSURA))
-    S.solid(GLASS, trimesh.creation.extrude_polygon(inner, BASE_H).apply_translation([0, 0, FESSURA]))
-    for e in edges(ring_ccw(inner)):
-        k = max(1, round(e[4] / 1.5))
-        for i in range(1, k):       # montanti e traversi delle vetrate
-            S.solid(FRAME_GREY, box3(e[0], e[1], e[3], e[4] * i / k - 0.04, e[4] * i / k + 0.04, FESSURA, z_base, 0, 0.06))
-        S.solid(FRAME_GREY, box3(e[0], e[1], e[3], 0, e[4], FESSURA - 0.05, FESSURA + 0.08, 0, 0.06))
-    # Le pareti inclinate di cemento: partono dal suolo dietro la vetrata e si allargano
-    # fino a reggere il mosaico, a campate alterne.
-    for i, e in enumerate(edges(pts)):
+    # Lo zoccolo del seminterrato, appena rientrato sotto il mosaico: cemento grezzo con le
+    # sue finestre, le porte vetrate dove la pianta ha le porte esterne, e dove le porte
+    # sono vicine un portale largo vetrato fra due pareti inclinate.
+    base = poly.buffer(-RIENTRO, join_style=2)
+    bpts = ring_ccw(base)
+    S.solid(BASE, trimesh.creation.extrude_polygon(poly.buffer(0.3, join_style=2), 0.12))
+    doors = exits(b, bpts)
+    for i, e in enumerate(edges(bpts)):
         a, c, u, n, L, t_start = e
-        k = int((L - 1.5) / 6.0)
-        if k < 1:
-            continue
-        pad = (L - k * 6.0) / 2
+        S.quad("cemento", [(*a, 0), (*c, 0), (*c, z_base), (*a, z_base)], np.array([n[0], n[1], 0]),
+               [(t_start, 0), (t_start + L, 0), (t_start + L, z_base), (t_start, z_base)])
+        spans = doors.get(i, [])
+        for t0, t1 in spans:
+            portal = t1 - t0 > 3
+            top = 3.3 if portal else 2.6
+            panel(S, ENTRY, e, Polygon([(t0, 0.12), (t1, 0.12), (t1, top), (t0, top)]), 0.0, 0.04)
+            k = max(1, round((t1 - t0) / 1.2))
+            bars = [Polygon([(t0 + (t1 - t0) * j / k - 0.04, 0.12), (t0 + (t1 - t0) * j / k + 0.04, 0.12),
+                             (t0 + (t1 - t0) * j / k + 0.04, top), (t0 + (t1 - t0) * j / k - 0.04, top)]) for j in range(k + 1)]
+            bars.append(Polygon([(t0, top - 0.06), (t1, top - 0.06), (t1, top + 0.06), (t0, top + 0.06)]))
+            panel(S, FRAME_GREY, e, unary_union(bars), 0.0, 0.08)
+            if portal:
+                # Le pareti inclinate ai lati del portale, che si allargano fino al mosaico.
+                for side, t in ((-1, t0), (1, t1)):
+                    w0, w1 = (t - 0.9, t) if side < 0 else (t, t + 0.9)
+                    bottom = [on_face(e, w0, 0.0, 0), on_face(e, w1, 0.0, 0), on_face(e, w1, 0.5, 0), on_face(e, w0, 0.5, 0)]
+                    topq = [on_face(e, w0, 0.0, z_base), on_face(e, w1, 0.0, z_base),
+                            on_face(e, w1, RIENTRO + 0.05, z_base), on_face(e, w0, RIENTRO + 0.05, z_base)]
+                    S.solid("cemento", hexa(bottom, topq))
+        # Le finestre dello zoccolo, una ogni 4,2 m dove non ci sono porte.
+        k = int((L - 2) / 4.2)
+        pad = (L - k * 4.2) / 2 if k else 0
         for j in range(k):
-            t = pad + j * 6.0
-            w = 4.2 if (i * 3 + j) % 3 == 0 else 1.0               # un muro pieno o un pilastro
-            t0, t1 = t + (6.0 - w) / 2, t + (6.0 + w) / 2
-            bottom = [on_face(e, t0, -RIENTRO - 0.1, 0), on_face(e, t1, -RIENTRO - 0.1, 0),
-                      on_face(e, t1, -RIENTRO - 0.5, 0), on_face(e, t0, -RIENTRO - 0.5, 0)]
-            top = [on_face(e, t0, -0.15, z_base), on_face(e, t1, -0.15, z_base),
-                   on_face(e, t1, -0.55, z_base), on_face(e, t0, -0.55, z_base)]
-            uv_t = lambda q: (t_start + (q[0] - a[0]) * u[0] + (q[1] - a[1]) * u[1], q[2])
-            corners = bottom + top
-            for face, want in (((0, 1, 5, 4), n), ((1, 2, 6, 5), u), ((3, 0, 4, 7), (-u[0], -u[1])), ((4, 5, 6, 7), (0, 0, 1))):
-                q = [corners[x] for x in face]
-                S.quad("cemento", q, np.array([*want[:2], want[2] if len(want) > 2 else 0]), [uv_t(p) for p in q])
-    # Il sottosquadro del mosaico, sopra le vetrate.
+            t = pad + j * 4.2
+            if any(t0 - 0.6 < t + 4.2 and t < t1 + 0.6 for t0, t1 in spans) or (i + j) % 3 == 1:
+                continue
+            w0, w1 = t + 1.2, t + 3.0
+            panel(S, FRAME_GREY, e, Polygon([(w0 - 0.08, 1.92), (w1 + 0.08, 1.92), (w1 + 0.08, 3.08), (w0 - 0.08, 3.08)]), 0.0, 0.05)
+            panel(S, GLASS, e, Polygon([(w0, 2.0), (w1, 2.0), (w1, 3.0), (w0, 3.0)]), 0.0, 0.07)
+    # Il sottosquadro del mosaico, sopra lo zoccolo.
     soffit_v, soffit_f = trimesh.creation.triangulate_polygon(poly, engine="earcut")
     for f in soffit_f:
         q = [(*soffit_v[i], z_base) for i in f]
@@ -495,7 +547,7 @@ def guscio(b):
     for x, y, w, d in b.get("impianti", []):
         zr = z_mos + lift((x + w / 2, y + d / 2)) + 0.3
         S.solid(PLANT, trimesh.creation.box(extents=[w, d, 1.6]).apply_translation([x + w / 2, y + d / 2, zr + 0.8]))
-    ingresso(b, S, FESSURA)
+    ingresso(b, S, RAMPA)
     return S.meshes(), z_mos + ALA
 
 
@@ -574,15 +626,13 @@ def campus(c):
 # ---------------------------------------------------------------- piani
 
 def quote(b):
-    """Quota (m) del pavimento di ogni piano: il terra (…000) a zero, o rialzato sulla
-    fessura del seminterrato dove il guscio la disegna."""
+    """Quota (m) del pavimento di ogni piano: il terra (…000) a zero, o sopra lo zoccolo
+    del seminterrato dove il guscio lo disegna."""
     liv = b.get("livelli", [])
     g = next((i for i, c in enumerate(liv) if c.endswith("000")), 0)
     if dettagliato(b):
-        # Il terra sulla fessura, il primo sopra il basamento alto.
-        z = {c: FESSURA + (i - g) * PIANO for i, c in enumerate(liv) if i <= g}
-        z.update({c: FESSURA + BASE_H + (i - g - 1) * MOSAICO_H for i, c in enumerate(liv) if i > g})
-        return z
+        # Il seminterrato a quota piazza, terra e primo nel mosaico, sopra lo zoccolo.
+        return {c: BASE_H + (i - g) * PIANO for i, c in enumerate(liv)}
     return {c: (i - g) * PIANO for i, c in enumerate(liv)}
 
 

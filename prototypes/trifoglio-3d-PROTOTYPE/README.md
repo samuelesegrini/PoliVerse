@@ -44,20 +44,22 @@ Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
 ## Il guscio del Trifoglio
 
 Nel campus il Trifoglio non è un'estrusione piatta: `guscio()` lo costruisce come nelle foto
-del restauro (Coprat, TeamWork Italy), ad altezze reali:
+del restauro e della piazza (Coprat, TeamWork Italy, Urbanfile, Arketipo), ad altezze reali:
 
-- la fessura vetrata scura del seminterrato (1,2 m) e il terra (4,5 m), rientrati di 1,6 m
-  sotto il mosaico, con le pareti inclinate di cemento grezzo fra le vetrate;
-- il volume delle aule ad anfiteatro (9 m) in mosaico a punta di diamante, con le finestre
+- il seminterrato è a quota piazza (nella pianta ha 21 porte verso l'esterno, il terra 5):
+  uno zoccolo di 4 m in cemento grezzo con le sue finestre, porte vetrate dove la pianta
+  ha le porte esterne e, dove sono vicine, portali larghi fra due pareti inclinate;
+- terra e primo stanno nel volume di 9 m in mosaico a punta di diamante, con le finestre
   esagonali di Ponti su tre file e qualche fila di vetrocemento;
 - le vetrate alte a griglia bianca sui vani scala della pianta che toccano il perimetro;
 - la lastra bianca del tetto, che sporge di 1,8 m e sale verso le punte delle ali;
-- gli impianti e l'ingresso con pianerottolo, rampe e parapetti in metallo.
+- la rampa: blocchi pieni di cemento che salgono lungo il muro fino a 2 m (dalle foto; il
+  disegno dice 1,2 m), con parapetto pieno e corrimano in metallo, e la porta in cima.
 
 Il mosaico (tessere da 5 cm) e il cemento bocciardato sono texture generate dallo script,
 colore e normali, ripetute in metri: il campus passa da 0,3 a 1 MB. Le piante dei piani
-seguono le quote del guscio: il terra a 1,2 m, il primo a 5,7 m. Gli altri edifici restano
-estrusioni.
+seguono le quote del guscio: seminterrato a 0, terra a 4 m, primo a 8 m. Gli altri edifici
+restano estrusioni.
 
 ## Cosa manca
 
