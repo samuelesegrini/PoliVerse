@@ -17,7 +17,7 @@ Dipendenze: shapely, trimesh, mapbox_earcut, numpy, usd-core.
 import argparse, json, math, pathlib
 import numpy as np
 import trimesh
-from shapely.geometry import Polygon, LineString, Point
+from shapely.geometry import Polygon, LineString, Point, box
 from shapely.ops import unary_union, polygonize
 
 ARGS = argparse.ArgumentParser()
@@ -1042,6 +1042,48 @@ def scalette(poly, segs, height, out):
             out[CORRIMANO].append(hexa([(*p_, zt) for p_ in post], [(*p_, zt + 0.9) for p_ in post]))
 
 
+# L'Aula Magna Giampiero Pesenti (2020): due aule e l'atrio fra loro, uniti. Le piante del
+# Politecnico non la nominano; la riconosciamo al primo piano, dove T.2.1 e T.2.2 si guardano
+# con i pilastri tondi davanti, come nelle foto: colonne bianche, sedute bianche sciolte sul
+# pavimento piano in mezzo, le gradonate ai lati, il palco con il leggio e lo schermo.
+AULA_MAGNA = ("MIA0203001006", "MIA0203001026")
+POLTRONA, TELO = "#F6F6F4", "#ECEEF0"
+
+
+def aula_magna(fronti, atrio, colonne, z, out):
+    """Le poltrone bianche in file sul piano fra le due aule, rivolte al palco a ovest."""
+    if len(fronti) < 2:
+        return Polygon()
+    a, b = fronti[0][0].centroid, fronti[1][0].centroid
+    piano = unary_union([g for g, _ in fronti] + [atrio.intersection(box(min(a.x, b.x) - 8, min(a.y, b.y), max(a.x, b.x) + 2, max(a.y, b.y)))])
+    piano = piano.buffer(0.3).buffer(-0.3)
+    zf = max(zz for _, zz in fronti)
+    x0, y0, x1, y1 = piano.bounds
+    # il palco: 3 m all'estremo ovest, alto 30 cm, con il leggio e lo schermo
+    palco = piano.intersection(box(x0, y0, x0 + 3.0, y1))
+    for g in clean(palco):
+        out[POLTRONA].append(trimesh.creation.extrude_polygon(g, 0.3).apply_translation([0, 0, zf]))
+    yc = (y0 + y1) / 2
+    out[DESK].append(box_z(x0 + 1.6, yc + 1.2, 0.5, 0.7, zf + 0.3, zf + 1.45))
+    out[TELO].append(box_z(x0 + 0.4, yc, 0.06, 4.0, zf + 1.5, zf + 1.5 + 2.2))     # il telo bianco appeso
+    libero = piano.buffer(-0.5).difference(unary_union(colonne).buffer(0.5) if colonne else Polygon())
+    x = x0 + 4.5
+    while x < x1 - 0.6:
+        y = y0
+        while y < y1:
+            if abs(y + 0.3 - yc) > 0.7 and libero.contains(box(x, y, x + 0.6, y + 0.6)):
+                out[POLTRONA].append(box_z(x + 0.3, y + 0.3, 0.55, 0.58, zf, zf + 0.45))
+                out[POLTRONA].append(box_z(x + 0.52, y + 0.3, 0.12, 0.58, zf + 0.45, zf + 0.95))
+            y += 0.62
+        x += 0.95
+    return piano
+
+
+def box_z(cx, cy, dx, dy, z0, z1):
+    q = [(cx - dx / 2, cy - dy / 2), (cx + dx / 2, cy - dy / 2), (cx + dx / 2, cy + dy / 2), (cx - dx / 2, cy + dy / 2)]
+    return hexa([(*p, z0) for p in q], [(*p, z1) for p in q])
+
+
 def cattedra(poly, rows, height, out):
     """Davanti alla prima fila: il leggio e, sulla parete di fondo, lo schermo scuro."""
     prime = [(r, n) for r, n, k, _ in rows if k == 0]
@@ -1282,10 +1324,10 @@ def edificio(b, aule_info):
         shell = unary_union([ring(r).buffer(0) for r in f["contorno"]])
         rooms, by_type = [], {}
         lin = f.get("linee", {})
-        arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], SCHERMO: [], COL["scale"]: [], VETRO: [], PILASTRO: [], CORRIMANO: [], SCALINO: []}
+        arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], SCHERMO: [], COL["scale"]: [], VETRO: [], PILASTRO: [], CORRIMANO: [], SCALINO: [], POLTRONA: [], TELO: []}
         locali = sc.gruppo(csip + "_Locali", gp)
         stanze, colonne = [], []
-        palladiana, palladiana_aule = [], []
+        palladiana, palladiana_aule, fronti = [], [], []
         for v in f["vani"]:
             poly = shape_of(v)
             if poly.is_empty:
@@ -1305,10 +1347,13 @@ def edificio(b, aule_info):
                 m, height = gradoni(poly, z, lin.get("arredi", []))
                 if getattr(height, "fronte", None) is not None:
                     palladiana_aule.append(height.fronte)
+                    if v["csiv"] in AULA_MAGNA:
+                        fronti.append(height.fronte)
                 rows = file_di_banchi(poly, lin.get("arredi", []))
                 if rows:
                     banchi(rows[1], height, arredi)
-                    cattedra(poly, rows[1], height, arredi)
+                    if v["csiv"] not in AULA_MAGNA:      # l'Aula Magna ha un palco solo, sotto
+                        cattedra(poly, rows[1], height, arredi)
                     scalette(poly, lin.get("scale", []), height, arredi)
                 sc.mesh(v["csiv"], locali, m)
                 c = poly.representative_point()
@@ -1338,6 +1383,11 @@ def edificio(b, aule_info):
         sc.mesh(csip + "_Soletta", gp, slab(shell.difference(foro), z, z + SOLETTA, COL["soletta"]))
         for hex_, polys in by_type.items():
             sc.mesh(f"{csip}_Locali_{hex_.lstrip('#')}", locali, slab(unary_union(polys).difference(foro), z + SOLETTA, z + SOLETTA + 0.04, hex_))
+        atrio = unary_union([shape_of(v) for v in f["vani"] if v.get("tipo") in ("corridoio", "locale") and shape_of(v).area > 100
+                             and v["csiv"] not in aule])
+        magna = aula_magna(fronti, atrio, colonne, z, arredi) if fronti else Polygon()
+        if fronti:
+            palladiana_aule.append((atrio.intersection(unary_union([g for g, _ in fronti]).convex_hull), max(zz for _, zz in fronti)))
         # I cubetti di pietra chiara delle foto: nei corridoi e nell'atrio, e davanti alla prima
         # fila delle aule. Una pellicola di 1 cm sopra il pavimento, fuori da _Locali: il tocco e la luce
         # gialla restano sull'aula.
@@ -1359,8 +1409,8 @@ def edificio(b, aule_info):
         # Le scale, le porte aperte come le disegna la pianta, i parapetti.
         for d in f.get("porte", []):
             h, o = np.array(d["cardine"]), np.array(d["aperta"])
-            if np.linalg.norm(o - h) < 0.3:
-                continue
+            if np.linalg.norm(o - h) < 0.3 or magna.buffer(0.5).contains(Point(h)):
+                continue      # nell'Aula Magna le pareti mobili fra le aule sono aperte
             nrm = np.array([-(o - h)[1], (o - h)[0]]) / np.linalg.norm(o - h) * 0.025
             q = [tuple(h - nrm), tuple(o - nrm), tuple(o + nrm), tuple(h + nrm)]
             arredi[LEAF].append(hexa([(*p, z + SOLETTA) for p in q], [(*p, z + SOLETTA + MURO) for p in q]))

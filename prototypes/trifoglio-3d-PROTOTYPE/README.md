@@ -92,6 +92,11 @@ Gli interni seguono le linee della pianta, piano per piano:
   texture generata come il mosaico; è una pellicola fuori da `_Locali`, così il tocco e la
   luce restano sull'aula. La moquette blu di alcune foto del cantiere è di altri edifici del
   campus, non del Trifoglio;
+- l'Aula Magna Giampiero Pesenti (2020) unisce due aule e l'atrio fra loro; le piante non la
+  nominano, la riconosciamo al primo piano, dove T.2.1 e T.2.2 si guardano con i pilastri
+  tondi davanti, come nelle foto: sul piano in mezzo poltrone bianche in file con il
+  corridoio centrale, il palco a ovest con il leggio e il telo bianco, le pareti mobili fra
+  le aule aperte; le gradonate restano ai lati;
 - i pilastri sono gli anelli piccoli che la pianta disegna dentro un locale: quadrati come
   disegnati nell'atrio del seminterrato, tondi dove la pianta li disegna ottagoni (il fronte
   delle aule T.2.1 e T.2.2, che con l'atrio fra loro sono l'Aula Magna), bianchi come nelle
