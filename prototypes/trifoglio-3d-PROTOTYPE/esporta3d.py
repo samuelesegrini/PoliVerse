@@ -306,8 +306,18 @@ def plan_floor(b, csip):
     return json.loads(geo.read_text())["piani"].get(csip, {}) if geo.exists() else {}
 
 
+def pilastri(v):
+    """I pilastri di un locale: gli anelli piccoli (sotto 1,5 m²) che la pianta disegna
+    dentro il suo contorno. Quadrati nell'atrio del seminterrato, tondi (ottagoni) nelle
+    aule del primo."""
+    rings = [ring(r).buffer(0) for r in v["forma"]]
+    return [r for r in rings if r.area < 1.5 and any(o is not r and o.area > 5 and o.contains(r) for o in rings)]
+
+
 def shape_of(v):
-    return unary_union([ring(r).buffer(0) for r in v["forma"]])
+    cols = pilastri(v)
+    rings = [r for r in (ring(q).buffer(0) for q in v["forma"]) if not any(r.equals(c) for c in cols)]
+    return unary_union(rings).difference(unary_union(cols)) if cols else unary_union(rings)
 
 
 def plan_windows(b, csip, pts, reach=1.2):
@@ -827,6 +837,7 @@ def quote(b):
 
 DESK, SEAT, LEAF, LIFT = "#F1F1EF", "#D6D9D2", "#B9BDC4", "#C9CED6"
 SCHERMO = "#3A3E44"
+PILASTRO = "#F3F3F0"      # pilastri intonacati bianchi, come nelle foto delle aule
 METALLO, VETRO = "#8E949B", "#BFD3E3"
 RISE = 0.17          # alzata di una fila di gradoni
 
@@ -1184,14 +1195,23 @@ def edificio(b, aule_info):
         shell = unary_union([ring(r).buffer(0) for r in f["contorno"]])
         rooms, by_type = [], {}
         lin = f.get("linee", {})
-        arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], SCHERMO: [], COL["scale"]: [], VETRO: []}
+        arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], SCHERMO: [], COL["scale"]: [], VETRO: [], PILASTRO: []}
         locali = sc.gruppo(csip + "_Locali", gp)
-        stanze = []
+        stanze, colonne = [], []
         for v in f["vani"]:
-            poly = unary_union([ring(r).buffer(0) for r in v["forma"]])
+            poly = shape_of(v)
             if poly.is_empty:
                 continue
             rooms.append(poly)
+            for col in pilastri(v):
+                colonne.append(col)
+                tondo = len(col.exterior.coords) - 1 >= 8     # la pianta disegna i tondi come ottagoni
+                if tondo:
+                    m = trimesh.creation.cylinder(radius=math.sqrt(col.area / math.pi), height=MURO, sections=20)
+                    m.apply_translation([col.centroid.x, col.centroid.y, z + SOLETTA + MURO / 2])
+                else:
+                    m = trimesh.creation.extrude_polygon(col, MURO).apply_translation([0, 0, z + SOLETTA])
+                arredi[PILASTRO].append(m)
             tipo = "aula" if v["csiv"] in aule else v["tipo"]
             if v["csiv"] in aule:
                 m, height = gradoni(poly, z, lin.get("arredi", []))
@@ -1225,7 +1245,7 @@ def edificio(b, aule_info):
         sc.mesh(csip + "_Soletta", gp, slab(shell.difference(foro), z, z + SOLETTA, COL["soletta"]))
         for hex_, polys in by_type.items():
             sc.mesh(f"{csip}_Locali_{hex_.lstrip('#')}", locali, slab(unary_union(polys).difference(foro), z + SOLETTA, z + SOLETTA + 0.04, hex_))
-        muri = shell.difference(unary_union(rooms).buffer(0.0)).difference(aperture(f))
+        muri = shell.difference(unary_union(rooms + colonne).buffer(0.0)).difference(aperture(f))
         # Le finestre della pianta nei muri: davanzale pieno fino a 0,9 m, vetro sopra.
         vetri = unary_union([LineString([s_[:2], s_[2:4]]).buffer(0.3, cap_style=2) for s_ in lin.get("finestre", [])
                              if math.dist(s_[:2], s_[2:4]) > 0.2]).intersection(muri) if lin.get("finestre") else Polygon()

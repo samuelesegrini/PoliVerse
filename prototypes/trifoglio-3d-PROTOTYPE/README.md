@@ -83,6 +83,10 @@ Gli interni seguono le linee della pianta, piano per piano:
   corrimano in metallo che seguono la pendenza, come nelle foto; il solaio del piano sopra
   è aperto dove le scale arrivano, e all'ultimo piano le rampe disegnate sono l'arrivo di
   quelle sotto;
+- i pilastri sono gli anelli piccoli che la pianta disegna dentro un locale: quadrati come
+  disegnati nell'atrio del seminterrato, tondi dove la pianta li disegna ottagoni (il fronte
+  delle aule T.2.1 e T.2.2, che con l'atrio fra loro sono l'Aula Magna), bianchi come nelle
+  foto e tagliati all'altezza dei muri;
 - gli ascensori sono vani pieni, le porte hanno l'anta aperta come nella pianta, i parapetti
   (`linee.ringhiere`) un corrimano;
 - nei muri tagliati sono aperti i varchi delle porte, e dove la pianta disegna le finestre il
