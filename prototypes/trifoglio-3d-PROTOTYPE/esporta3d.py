@@ -1070,11 +1070,12 @@ def aula_magna(fronti, atrio, colonne, z, out):
     piano = piano.buffer(0.3).buffer(-0.3)
     zf = max(zz for _, zz in fronti)
     x0, y0, x1, y1 = piano.bounds
+    yc = (y0 + y1) / 2
+    x0 = asse_magna(piano, yc)[0]      # l'estremo ovest della fascia fra le due aule
     # il palco: 3 m all'estremo ovest, alto 30 cm, con il leggio e lo schermo
-    palco = piano.intersection(box(x0, y0, x0 + 3.0, y1))
+    palco = piano.intersection(box(x0 - 10, yc - 5, x0 + 3.0, yc + 5))
     for g in clean(palco):
         out[PALCO].append(trimesh.creation.extrude_polygon(g, 0.3).apply_translation([0, 0, zf]))
-    yc = (y0 + y1) / 2
     out[DESK].append(box_z(x0 + 1.6, yc + 1.2, 0.5, 0.7, zf + 0.3, zf + 1.45))
     out[TELO].append(box_z(x0 + 0.4, yc, 0.06, 4.0, zf + 1.5, zf + 1.5 + 2.2))     # il telo bianco appeso
     libero = piano.buffer(-0.5).difference(unary_union(colonne).buffer(0.5) if colonne else Polygon())
@@ -1088,6 +1089,18 @@ def aula_magna(fronti, atrio, colonne, z, out):
             y += 0.62
         x += 0.95
     return piano
+
+
+def asse_magna(piano, yc):
+    """Dove la linea di mezzo dell'Aula Magna (y = yc) entra ed esce dalla sala: (ovest, est)."""
+    x0, _, x1, _ = piano.bounds
+    tratto = piano.intersection(LineString([(x0 - 1, yc), (x1 + 1, yc)]))
+    tratti = [g for g in getattr(tratto, "geoms", [tratto]) if g.length > 0]
+    if not tratti:
+        return x0, x1
+    lungo = max(tratti, key=lambda g: g.length)
+    xs = [c[0] for c in lungo.coords]
+    return min(xs), max(xs)
 
 
 def box_z(cx, cy, dx, dy, z0, z1):
@@ -1347,6 +1360,66 @@ def blocco(u, n, l0, l1, q0, q1, z0, z1):
 CEMENTO_SOFF, LUCE = "#D8D7D2", "#FBFBF8"
 
 
+def fodera(poly, z, top, porte, vetri, out, muro=None, maschera=None):
+    """I muri di un locale a tutta altezza: una fodera di 6 cm dentro, così non tocca i muri
+    tagliati, con i varchi delle porte (muro sopra i 2,3 m) e le finestre (davanzale a 0,9 m,
+    vetro fino a 2,05 m)."""
+    muro = muro or COL["muri"]
+    f_ = poly.difference(poly.buffer(-0.06, join_style=2))
+    if maschera is not None:          # solo un tratto, per un muro di altro colore
+        f_ = f_.intersection(maschera)
+    varchi = f_.intersection(porte.buffer(0.1)) if not porte.is_empty else Polygon()
+    vetrate = f_.intersection(vetri.buffer(0.3)).difference(varchi) if not vetri.is_empty else Polygon()
+    for q in clean(f_.difference(varchi).difference(vetrate)):
+        out[muro].append(trimesh.creation.extrude_polygon(q, top - z).apply_translation([0, 0, z]))
+    for q in clean(varchi):
+        out[muro].append(trimesh.creation.extrude_polygon(q, top - z - 2.3).apply_translation([0, 0, z + 2.3]))
+    for q in clean(vetrate):
+        out[muro].append(trimesh.creation.extrude_polygon(q, 0.9).apply_translation([0, 0, z]))
+        out[VETRO].append(trimesh.creation.extrude_polygon(q, 1.15).apply_translation([0, 0, z + 0.9]))
+        out[muro].append(trimesh.creation.extrude_polygon(q, top - z - 2.05).apply_translation([0, 0, z + 2.05]))
+
+
+def griglia(region, passo, largo, angolo):
+    """Strisce parallele e incrociate su una regione, ruotate di un angolo (gradi)."""
+    from shapely import affinity
+    c = region.centroid
+    r = affinity.rotate(region, -angolo, origin=c)
+    x0, y0, x1, y1 = r.bounds
+    linee = [LineString([(x, y0 - 1), (x, y1 + 1)]).buffer(largo / 2, cap_style=2) for x in np.arange(x0, x1, passo)]
+    return [affinity.rotate(g, angolo, origin=c) for g in linee]
+
+
+CEMENTO_PARETE = "#A8A7A2"     # i pannelli di cemento della parete dell'Aula Magna
+
+
+def interno_magna(sala, piano, z, z_tetto, porte, vetri):
+    """L'Aula Magna da dentro, come nelle foto: il soffitto a cassettoni in cemento in
+    diagonale con le luci lineari che lo attraversano, i muri bianchi a tutta altezza e la
+    parete di pannelli di cemento vicino al palco, a ovest. L'occhio in fondo, nel corridoio
+    centrale fra le poltrone, verso il palco."""
+    out = {COL["muri"]: [], CEMENTO_SOFF: [], LUCE: [], VETRO: [], CEMENTO_PARETE: []}
+    top = z_tetto
+    for q in clean(sala):
+        out[CEMENTO_SOFF].append(trimesh.creation.extrude_polygon(q, 0.25).apply_translation([0, 0, top - 0.25]))
+    dentro = sala.buffer(-0.1)
+    nerv = unary_union(griglia(sala, 1.3, 0.16, 45) + griglia(sala, 1.3, 0.16, -45)).intersection(dentro)
+    for q in clean(nerv):
+        out[CEMENTO_SOFF].append(trimesh.creation.extrude_polygon(q, 0.4).apply_translation([0, 0, top - 0.65]))
+    for g_ in griglia(sala, 5.2, 0.08, 30):
+        for q in clean(g_.intersection(sala.buffer(-1.0))):
+            out[LUCE].append(trimesh.creation.extrude_polygon(q, 0.05).apply_translation([0, 0, top - 0.75]))
+    _, y0, _, y1 = piano.bounds
+    yc = (y0 + y1) / 2
+    x0, x1 = asse_magna(piano, yc)
+    palco = box(x0 - 10, yc - 6, x0 + 4, yc + 6)
+    fodera(sala, z, top, porte, vetri, out, maschera=sala.buffer(1).difference(palco))
+    fodera(sala, z, top, porte, vetri, out, CEMENTO_PARETE, maschera=palco)
+    occhio = [round(x1 - 1.2, 2), round(z + 1.65, 2), round(yc, 2)]
+    guarda = [round(x0 + 0.5, 2), round(z + 2.2, 2), round(yc, 2)]
+    return out, occhio, guarda
+
+
 def interno(poly, height, sopra, z, z_tetto, porte, vetri):
     """Quello che si vede entrando in un'aula a gradoni (le foto delle aule e dell'Aula
     Magna): i muri a tutta altezza, foderati da dentro, con le porte e le finestre; il
@@ -1396,19 +1469,7 @@ def interno(poly, height, sopra, z, z_tetto, porte, vetri):
             for q in clean(LineString([(x0, y), (x1, y)]).buffer(0.05, cap_style=2).intersection(g_.buffer(-1.0))):
                 if zc - 0.5 - height(tuple(q.representative_point().coords[0])) > 2.4:
                     out[LUCE].append(trimesh.creation.extrude_polygon(q, 0.05).apply_translation([0, 0, zc - 0.5]))
-    # i muri a tutta altezza: una fodera di 6 cm dentro l'aula, così non tocca i muri tagliati
-    top = max(zc for _, zc in pezzi)
-    fodera = poly.difference(poly.buffer(-0.06, join_style=2))
-    varchi = fodera.intersection(porte.buffer(0.1)) if not porte.is_empty else Polygon()
-    vetrate = fodera.intersection(vetri.buffer(0.3)).difference(varchi) if not vetri.is_empty else Polygon()
-    for q in clean(fodera.difference(varchi).difference(vetrate)):
-        out[COL["muri"]].append(trimesh.creation.extrude_polygon(q, top - z).apply_translation([0, 0, z]))
-    for q in clean(varchi):
-        out[COL["muri"]].append(trimesh.creation.extrude_polygon(q, top - z - 2.3).apply_translation([0, 0, z + 2.3]))
-    for q in clean(vetrate):
-        out[COL["muri"]].append(trimesh.creation.extrude_polygon(q, 0.9).apply_translation([0, 0, z]))
-        out[VETRO].append(trimesh.creation.extrude_polygon(q, 1.15).apply_translation([0, 0, z + 0.9]))
-        out[COL["muri"]].append(trimesh.creation.extrude_polygon(q, top - z - 2.05).apply_translation([0, 0, z + 2.05]))
+    fodera(poly, z, max(zc for _, zc in pezzi), porte, vetri, out)
     fronte, z_f = levels[0]
     k_max = max(levels)
     fondo, z_b = levels[k_max]
@@ -1466,7 +1527,7 @@ def edificio(b, aule_info):
         lin = f.get("linee", {})
         arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], SCHERMO: [], COL["scale"]: [], VETRO: [], PILASTRO: [], CORRIMANO: [], SCALINO: [], POLTRONA: [], TELO: [], PALCO: [], CABINA: [], COL["muri"]: [], FRAME_GREY: []}
         locali = sc.gruppo(csip + "_Locali", gp)
-        stanze, colonne, dentro_aule = [], [], []
+        stanze, colonne, dentro_aule, magna_aule = [], [], [], []
         palladiana, palladiana_aule, fronti = [], [], []
         for v in f["vani"]:
             poly = shape_of(v)
@@ -1498,6 +1559,8 @@ def edificio(b, aule_info):
                 sc.mesh(v["csiv"], locali, m)
                 if v["csiv"] not in AULA_MAGNA:
                     dentro_aule.append((v["csiv"], poly, height))
+                else:
+                    magna_aule.append(poly)
                 c = poly.representative_point()
                 stanze.append({"csiv": v["csiv"], "sigla": aule[v["csiv"]]["sigla"],
                                "posti": aule[v["csiv"]].get("posti"), "centro": [round(c.x, 2), round(z + 1, 2), round(c.y, 2)]})
@@ -1627,6 +1690,18 @@ def edificio(b, aule_info):
             for st in stanze:
                 if st["csiv"] == csiv:
                     st["interno"] = {"occhio": occhio, "guarda": guarda}
+        if len(magna_aule) == 2 and not magna.is_empty:
+            sala = unary_union(magna_aule + [magna]).buffer(0.3).buffer(-0.3)
+            parti, occhio, guarda = interno_magna(sala, magna, z + SOLETTA, z_tetto, porte, vetri)
+            gi = sc.gruppo("Aula_Magna_Interno", gp)
+            for hex_, ms in parti.items():
+                if ms:
+                    m = trimesh.util.concatenate(ms)
+                    m.apply_transform(YUP)
+                    sc.mesh(f"Aula_Magna_Interno_{hex_.lstrip('#')}", gi, colour(m, hex_))
+            for st in stanze:
+                if st["csiv"] in AULA_MAGNA:
+                    st["interno"] = {"occhio": occhio, "guarda": guarda, "nodo": "Aula_Magna_Interno"}
         ga = sc.gruppo(csip + "_Arredi", gp)
         for hex_, parts in arredi.items():
             if parts:

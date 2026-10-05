@@ -59,6 +59,9 @@ struct Trifoglio3DPlan: Decodable {
         let occhio: [Float]
         /// The point it looks at, over the lectern: x, height, z.
         let guarda: [Float]
+        /// The entity holding the walls, ceiling and lights, when it is not named after the
+        /// room: the Aula Magna's two rooms share one.
+        let nodo: String?
         /// ``occhio`` as a point.
         var eye: SIMD3<Float> { SIMD3(occhio[0], occhio[1], occhio[2]) }
         /// ``guarda`` as a point.
@@ -304,8 +307,8 @@ final class Trifoglio3DScene {
             if level != .room(floor: csip, room: csiv) { await move(to: .room(floor: csip, room: csiv)) }
             unlight()
             level = next
-            nearPlane(0.1)
-            fade(building.findEntity(named: csiv + Self.interiorSuffix), to: 1, duration: 0.9)
+            setLens(near: 0.1, fieldOfView: 60)
+            fade(interiorEntity(csiv), to: 1, duration: 0.9)
             let offset = view.eye - view.look
             let distance = length(offset)
             fly(to: view.look, distance: distance, polar: acos(offset.y / distance),
@@ -329,15 +332,23 @@ final class Trifoglio3DScene {
 
     /// Hides a classroom's interior again as the camera leaves it.
     private func leave(_ csiv: String) {
-        fade(building?.findEntity(named: csiv + Self.interiorSuffix), to: 0, duration: 0.5)
-        nearPlane(1)
+        fade(interiorEntity(csiv), to: 0, duration: 0.5)
+        setLens(near: 1, fieldOfView: fieldOfView)
     }
 
-    /// Sets how near the camera still draws: a tenth of a metre inside a room, where the
-    /// desks are close, a metre outside, where it keeps far surfaces from flickering.
-    private func nearPlane(_ metres: Float) {
+    /// A classroom's walls, ceiling and lights.
+    private func interiorEntity(_ csiv: String) -> Entity? {
+        building?.findEntity(named: interior(csiv)?.nodo ?? csiv + Self.interiorSuffix)
+    }
+
+    /// Sets how near the camera still draws and how wide it sees: inside a room a tenth of
+    /// a metre, where the desks are close, and a wide view, as a person standing in it;
+    /// outside a metre, which keeps far surfaces from flickering, and the narrow view the
+    /// framing is computed for.
+    private func setLens(near: Float, fieldOfView degrees: Float) {
         guard var lens = camera.components[PerspectiveCameraComponent.self] else { return }
-        lens.near = metres
+        lens.near = near
+        lens.fieldOfViewInDegrees = degrees
         camera.components.set(lens)
     }
 

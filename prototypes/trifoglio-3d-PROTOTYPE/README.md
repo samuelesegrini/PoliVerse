@@ -119,7 +119,12 @@ Dentro le aule a gradoni (`<csiv>_Interno`, spento finché non si entra): una fo
 a tutta altezza con i varchi delle porte e le finestre, il soffitto e le luci lineari accese.
 Sotto il tetto il soffitto è piano a cassettoni in cemento, come nella foto dell'Aula Magna;
 sotto un'altra aula è il retro delle sue gradonate, a gradini, mai a meno di 2,6 m dal
-gradino sotto. Nel JSON ogni aula porta `interno.occhio` e `interno.guarda`. Dove la pianta
+gradino sotto. Nel JSON ogni aula porta `interno.occhio` e `interno.guarda`.
+L'Aula Magna ha un interno solo per le due aule (`Aula_Magna_Interno`, indicato da
+`interno.nodo`): il soffitto a cassettoni in diagonale con le luci lineari che lo
+attraversano e la parete di pannelli di cemento intorno al palco, come nelle foto; si entra
+dal fondo del corridoio centrale fra le poltrone, verso il palco. Dentro la camera vede a
+60° invece di 35°, come una persona in piedi nella sala. Dove la pianta
 lascia lo stesso spazio davanti e dietro le file, le file salgono verso le punte delle ali:
 così le aule sovrapposte salgono nello stesso verso (T.0.1 e T.0.2 sotto T.1.1, T.1.3 sotto
 T.2.3), e le scale di sicurezza sulle punte escono in cima alle gradonate.
@@ -136,7 +141,7 @@ restano estrusioni.
 - Le file di banchi sono continue: la pianta non disegna le singole sedute.
 - I bagni restano vuoti: le piante del Trifoglio non disegnano i sanitari (`linee.sanitari`
   è vuota).
-- Le aule piane e l'Aula Magna non hanno ancora la vista da dentro. Le alzate dei gradoni
+- La scritta "AULA MAGNA" e il logo sulla parete di cemento non ci sono. Le alzate dei gradoni
   sono stimate (17 cm a fila): in qualche aula sovrapposta il soffitto a gradini resta basso
   dietro, e la verifica dell'altezza lo alza a 2,6 m.
 - Le alzate delle scale sono ricavate dal numero di pedate disegnate e dall'altezza del
