@@ -103,12 +103,10 @@ final class Trifoglio3DScene {
     @ObservationIgnored private var tweens: [Tween] = []
     /// Seconds since the scene started, advanced once a frame.
     @ObservationIgnored private var clock: Double = 0
-    /// The lit classroom and when it was lit.
-    @ObservationIgnored private var lit: (entity: Entity, since: Double)?
-    /// Every classroom ever lit, with its materials from before the first time. Kept
-    /// apart from ``lit`` so a room lit twice is never "restored" to its own glow, and
-    /// every room but the current one can be put back at once.
-    @ObservationIgnored private var originals: [ObjectIdentifier: (entity: Entity, materials: [any RealityKit.Material])] = [:]
+    /// The lit classroom, the glowing copy laid over it, and when it was lit.
+    @ObservationIgnored private var lit: (room: Entity, glow: ModelEntity, since: Double)?
+    /// The name of the glowing copies, so every one can be found and removed.
+    private static let glowName = "Trifoglio3D_Luce"
     /// Whether a move is under way. Taps and buttons wait for it to end rather than
     /// start a second move that fights the first over the camera and the fades.
     @ObservationIgnored private var isMoving = false
@@ -420,38 +418,44 @@ final class Trifoglio3DScene {
     // MARK: - The lit room
 
     /// Lights a classroom in the warm colour of the illustrations' lit floors.
+    ///
+    /// The room itself is never touched: a glowing copy of its mesh is laid just over it,
+    /// and switching off only removes that copy. Swapping the room's own materials and
+    /// putting them back left earlier rooms yellow.
     private func light(_ room: Entity) {
-        guard var model = room.components[ModelComponent.self] else { return }
-        let key = ObjectIdentifier(room)
-        if originals[key] == nil { originals[key] = (room, model.materials) }
-        lit = (room, clock)
-        var glow = PhysicallyBasedMaterial()
-        glow.baseColor = .init(tint: .init(red: 0.91, green: 0.64, blue: 0.23, alpha: 1))
-        glow.emissiveColor = .init(color: .init(red: 0.91, green: 0.64, blue: 0.23, alpha: 1))
-        glow.emissiveIntensity = 0.5
-        model.materials = [glow]
-        room.components.set(model)
+        unlight()
+        var source: Entity?
+        visit(room) { if source == nil, $0.components.has(ModelComponent.self) { source = $0 } }
+        guard let source, let model = source.components[ModelComponent.self] else { return }
+        var material = PhysicallyBasedMaterial()
+        material.baseColor = .init(tint: .init(red: 0.91, green: 0.64, blue: 0.23, alpha: 1))
+        material.emissiveColor = .init(color: .init(red: 0.91, green: 0.64, blue: 0.23, alpha: 1))
+        material.emissiveIntensity = 0.5
+        let glow = ModelEntity(mesh: model.mesh, materials: [material])
+        glow.name = Self.glowName
+        source.addChild(glow)
+        // Just above the room's 5 cm slab, so the two never flicker into each other.
+        glow.setPosition(source.position(relativeTo: nil) + [0, 0.06, 0], relativeTo: nil)
+        lit = (room, glow, clock)
     }
 
-    /// Puts every lit classroom back as it was.
+    /// Removes every glowing copy, so no classroom stays lit.
     private func unlight() {
-        for (room, materials) in originals.values {
-            guard var model = room.components[ModelComponent.self] else { continue }
-            model.materials = materials
-            room.components.set(model)
-        }
+        var glows: [Entity] = []
+        if let building { visit(building) { if $0.name == Self.glowName { glows.append($0) } } }
+        glows.forEach { $0.removeFromParent() }
         lit = nil
         labelPoint = nil
     }
 
     /// Breathes the lit classroom's glow and keeps its label over it.
     private func pulse() {
-        guard let lit, var model = lit.entity.components[ModelComponent.self],
-              var glow = model.materials.first as? PhysicallyBasedMaterial else { return }
-        glow.emissiveIntensity = 0.35 + 0.3 * Float(sin((clock - lit.since) * 4))
-        model.materials = [glow]
-        lit.entity.components.set(model)
-        var top = lit.entity.visualBounds(relativeTo: nil).center
+        guard let lit, var model = lit.glow.components[ModelComponent.self],
+              var material = model.materials.first as? PhysicallyBasedMaterial else { return }
+        material.emissiveIntensity = 0.35 + 0.3 * Float(sin((clock - lit.since) * 4))
+        model.materials = [material]
+        lit.glow.components.set(model)
+        var top = lit.room.visualBounds(relativeTo: nil).center
         top.y += 1
         labelPoint = project(top)
     }
