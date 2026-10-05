@@ -1084,6 +1084,44 @@ def box_z(cx, cy, dx, dy, z0, z1):
     return hexa([(*p, z0) for p in q], [(*p, z1) for p in q])
 
 
+CABINA = "#858C95"        # le cabine in acciaio
+
+
+def ascensori(segs, corridoi, z, out):
+    """Gli ascensori: la pianta disegna su ogni piano la croce del vano (linee.ascensori).
+    Ogni croce è un vano: pareti sottili tutt'intorno, la porta sul lato che dà sul corridoio
+    (o sul lato lungo), la cabina in acciaio dentro. Tagliati all'altezza dei muri."""
+    if not segs:
+        return []
+    croci = unary_union([LineString([s_[:2], s_[2:4]]).buffer(0.05) for s_ in segs])
+    vani = []
+    for g in getattr(croci, "geoms", [croci]):
+        h = g.convex_hull
+        if h.area < 1.0:
+            continue
+        rect = h.minimum_rotated_rectangle
+        vani.append(rect)
+        c = list(rect.exterior.coords)[:4]
+        lati = [(c[k], c[(k + 1) % 4]) for k in range(4)]
+        centro = np.array(rect.centroid.coords[0])
+
+        def fuori(lato, d=0.7):
+            m = (np.array(lato[0]) + np.array(lato[1])) / 2
+            v = m - centro
+            return Point(*(m + v / (np.linalg.norm(v) or 1) * d))
+        porta = max(lati, key=lambda l_: (corridoi.contains(fuori(l_)), math.dist(*l_)))
+        pareti = rect.buffer(0.12, join_style=2).difference(rect)
+        a_, b_ = np.array(porta[0]), np.array(porta[1])
+        m = (a_ + b_) / 2
+        u = (b_ - a_) / np.linalg.norm(b_ - a_)
+        varco = LineString([tuple(m - u * 0.45), tuple(m + u * 0.45)]).buffer(0.3, cap_style=2)
+        for q in clean(pareti.difference(varco)):
+            out[COL["muri"]].append(trimesh.creation.extrude_polygon(q, MURO).apply_translation([0, 0, z]))
+        for q in clean(rect.buffer(-0.08, join_style=2)):
+            out[CABINA].append(trimesh.creation.extrude_polygon(q, MURO - 0.05).apply_translation([0, 0, z]))
+    return vani
+
+
 def cattedra(poly, rows, height, out):
     """Davanti alla prima fila: il leggio e, sulla parete di fondo, lo schermo scuro."""
     prime = [(r, n) for r, n, k, _ in rows if k == 0]
@@ -1324,7 +1362,7 @@ def edificio(b, aule_info):
         shell = unary_union([ring(r).buffer(0) for r in f["contorno"]])
         rooms, by_type = [], {}
         lin = f.get("linee", {})
-        arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], SCHERMO: [], COL["scale"]: [], VETRO: [], PILASTRO: [], CORRIMANO: [], SCALINO: [], POLTRONA: [], TELO: [], PALCO: [], COL["muri"]: [], FRAME_GREY: []}
+        arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], SCHERMO: [], COL["scale"]: [], VETRO: [], PILASTRO: [], CORRIMANO: [], SCALINO: [], POLTRONA: [], TELO: [], PALCO: [], CABINA: [], COL["muri"]: [], FRAME_GREY: []}
         locali = sc.gruppo(csip + "_Locali", gp)
         stanze, colonne = [], []
         palladiana, palladiana_aule, fronti = [], [], []
@@ -1360,9 +1398,7 @@ def edificio(b, aule_info):
                 stanze.append({"csiv": v["csiv"], "sigla": aule[v["csiv"]]["sigla"],
                                "posti": aule[v["csiv"]].get("posti"), "centro": [round(c.x, 2), round(z + 1, 2), round(c.y, 2)]})
             elif tipo == "ascensore":
-                m = trimesh.creation.extrude_polygon(clean(poly.buffer(-0.05))[0], MURO + 0.3) if clean(poly.buffer(-0.05)) else None
-                if m is not None:
-                    arredi[LIFT].append(m.apply_translation([0, 0, z + SOLETTA]))
+                pass                      # i vani veri vengono dalle croci della pianta, sotto
             else:
                 by_type.setdefault(COL.get(tipo, COL["locale"]), []).append(poly.buffer(-0.02))
                 if tipo == "corridoio":
@@ -1397,7 +1433,11 @@ def edificio(b, aule_info):
                 P.solid("cubetti", trimesh.creation.extrude_polygon(q_, 0.01, engine="earcut").apply_translation([0, 0, zf]))
         for m in P.meshes().values():
             sc.mesh(f"{csip}_Pavimento", gp, m)
-        muri = shell.difference(unary_union(rooms + colonne).buffer(0.0)).difference(aperture(f))
+        # Gli ascensori dalle croci della pianta: al terra e al primo il vano non è un locale e
+        # starebbe dentro i muri pieni, quindi lo si toglie dai muri.
+        vani_asc = ascensori(lin.get("ascensori", []), unary_union([shape_of(v) for v in f["vani"] if v.get("tipo") in ("corridoio", "locale")]),
+                             z + SOLETTA, arredi)
+        muri = shell.difference(unary_union(rooms + colonne + [g_.buffer(0.12, join_style=2) for g_ in vani_asc]).buffer(0.0)).difference(aperture(f))
         # Le finestre della pianta nei muri. Al terra e al primo sono gli esagoni di Ponti del
         # guscio, nelle stesse campate (plan_windows): davanzale pieno fino a 1,2 m dal solaio,
         # poi la metà bassa dell'esagono, che si allarga fino al taglio dei muri, con i

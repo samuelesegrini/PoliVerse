@@ -101,7 +101,10 @@ Gli interni seguono le linee della pianta, piano per piano:
   disegnati nell'atrio del seminterrato, tondi dove la pianta li disegna ottagoni (il fronte
   delle aule T.2.1 e T.2.2, che con l'atrio fra loro sono l'Aula Magna), bianchi come nelle
   foto e tagliati all'altezza dei muri;
-- gli ascensori sono vani pieni, le porte hanno l'anta aperta come nella pianta, i parapetti
+- gli ascensori vengono dalle croci che la pianta disegna su ogni piano (`linee.ascensori`):
+  pareti sottili, la porta sul lato del corridoio, la cabina in acciaio dentro; al terra e al
+  primo il vano è tolto dai muri pieni che lo coprivano;
+- le porte hanno l'anta aperta come nella pianta, i parapetti
   (`linee.ringhiere`) un corrimano;
 - nei muri tagliati sono aperti i varchi delle porte, e dove la pianta disegna le finestre il
   muro diventa davanzale con il vetro sopra: al terra e al primo sono gli esagoni di Ponti
@@ -119,6 +122,9 @@ restano estrusioni.
 - Solo il Trifoglio ha il guscio: per gli altri edifici le forme di `build-mappa.py` (falde,
   volte, sheds, vetrate) non sono ancora portate nell'esportatore.
 - Le file di banchi sono continue: la pianta non disegna le singole sedute.
+- I bagni restano vuoti: le piante del Trifoglio non disegnano i sanitari (`linee.sanitari`
+  è vuota). I soffitti a cassettoni delle foto non ci sono: con i muri tagliati a 1,5 m
+  nessuna vista dell'app li mostrerebbe.
 - Le alzate delle scale sono ricavate dal numero di pedate disegnate e dall'altezza del
   piano; le piante non le quotano. Le scale della torre vengono ripide (20 cm) perché la
   pianta disegna 9 pedate per rampa.
