@@ -64,7 +64,7 @@ del restauro e della piazza (Coprat, TeamWork Italy, Urbanfile, Arketipo), ad al
   esagonali a metà di terra e primo, con qualche fila di vetrocemento nelle aule alte.
 
 Il mosaico (tessere da 5 cm) e il cemento bocciardato sono texture generate dallo script,
-colore e normali, ripetute in metri: il campus passa da 0,3 a 1 MB. Dentro, le aule da 100 posti in su hanno le gradonate: le file
+colore e normali, ripetute in metri: il campus passa da 0,3 a 1,4 MB. Dentro, le aule da 100 posti in su hanno le gradonate: le file
 salgono dalla cattedra, verso il centro dell'edificio, alla punta del ventaglio. Nei muri
 tagliati sono aperti i varchi delle porte della pianta. Le piante dei piani
 seguono le quote del guscio: seminterrato a 0, terra a 3,5 m, primo a 7,5 m. Gli altri edifici
