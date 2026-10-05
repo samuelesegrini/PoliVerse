@@ -43,19 +43,21 @@ Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
 
 ## Il guscio del Trifoglio
 
-Nel campus il Trifoglio non è più un'estrusione piatta: `guscio()` segue il suo `profilo`
-come l'isometrico di `build-mappa.py`, ma ad altezze reali (una fascia di 4 m per piano
-invece delle unità esagerate del disegno):
+Nel campus il Trifoglio non è un'estrusione piatta: `guscio()` lo costruisce come nelle foto
+del restauro (Coprat, TeamWork Italy), ad altezze reali:
 
-- zoccolo chiaro e la fessura vetrata scura del seminterrato, alta 1,2 m: il terra è
-  rialzato di tanto, e le piante dei piani salgono con lui;
-- il terra in cemento con le finestre grandi, il primo in mosaico con tre file di
-  finestrelle e le strisce di vetrocemento, con lo stesso schema di `punched()`;
-- il tetto che sporge di `gronda` m e i volumi degli impianti;
-- l'ingresso: pianerottolo, le due rampe con il corrimano, i pilastri, la vetrata del
-  seminterrato sotto e la porta sopra.
+- la fessura vetrata scura del seminterrato (1,2 m) e il terra (4,5 m), rientrati di 1,6 m
+  sotto il mosaico, con le pareti inclinate di cemento grezzo fra le vetrate;
+- il volume delle aule ad anfiteatro (9 m) in mosaico a punta di diamante, con le finestre
+  esagonali di Ponti su tre file e qualche fila di vetrocemento;
+- le vetrate alte a griglia bianca sui vani scala della pianta che toccano il perimetro;
+- la lastra bianca del tetto, che sporge di 1,8 m e sale verso le punte delle ali;
+- gli impianti e l'ingresso con pianerottolo, rampe e parapetti in metallo.
 
-Finestre e cornici sono geometria, non texture. Gli altri edifici restano estrusioni.
+Il mosaico (tessere da 5 cm) e il cemento bocciardato sono texture generate dallo script,
+colore e normali, ripetute in metri: il campus passa da 0,3 a 1 MB. Le piante dei piani
+seguono le quote del guscio: il terra a 1,2 m, il primo a 5,7 m. Gli altri edifici restano
+estrusioni.
 
 ## Cosa manca
 
