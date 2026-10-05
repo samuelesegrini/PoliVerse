@@ -14,7 +14,7 @@ Politecnico, così l'app trova un'aula per csiv: <csie>/Piani/<csip>/<csip>_Loca
 
 Dipendenze: shapely, trimesh, mapbox_earcut, numpy, usd-core.
 """
-import argparse, json, math, pathlib
+import argparse, json, math, pathlib, sys
 import numpy as np
 import trimesh
 from shapely.geometry import Polygon, LineString, Point, box
@@ -799,6 +799,24 @@ def guscio(b):
     return S.meshes(), z_mos + ALA
 
 
+# Gli edifici con un esterno costruito a mano fuori da questo file hanno un modulo ciascuno
+# qui accanto, edificio<numero>.py: CSIE, guscio(b, E) → ({chiave: mesh}, quota più alta),
+# quote(b, E) → {csip: quota} e tetto(b, E), sotto il tetto dell'ultimo piano; se c'è,
+# piante(b, geo, aule, E) → geo, per completare le piante, e ritocca(sc, meta, E), per
+# cambiare i colori del modello dei piani. E è questo modulo, per le sue
+# funzioni. Il guscio va nel campus anche senza --edifici.
+GUSCI = {}
+
+
+def carica_gusci():
+    import importlib, sys
+    qui = pathlib.Path(__file__).resolve().parent
+    sys.path.insert(0, str(qui))
+    for f in sorted(qui.glob("edificio*.py")):
+        m = importlib.import_module(f.stem)
+        GUSCI[m.CSIE] = m
+
+
 def dettagliato(b):
     return b["csie"] in ARGS.edifici.split(",") and [p["tipo"] for p in b.get("profilo", [])][:1] == ["fessura"]
 
@@ -1083,6 +1101,10 @@ def campus(c):
             sc.mesh(b["csie"].replace("-", "_") + "_Esterno", g, slab(ring(b["pianta"]), 0, b.get("piani", 3) * PIANO, "#DADDE3"))
             continue
         g = sc.gruppo(b["csie"], ed)
+        if b["csie"] in GUSCI:
+            for key, m in GUSCI[b["csie"]].guscio(b, sys.modules[__name__])[0].items():
+                sc.mesh(f"{b['csie']}_Esterno_{key.lstrip('#')}", g, m)
+            continue
         if dettagliato(b) or profilato(b):
             for key, m in (guscio(b) if dettagliato(b) else profilo_3d(b))[0].items():
                 sc.mesh(f"{b['csie']}_Esterno_{key.lstrip('#')}", g, m)
@@ -1098,6 +1120,8 @@ def campus(c):
 def quote(b):
     """Quota (m) del pavimento di ogni piano: il terra (…000) a zero, o sopra lo zoccolo
     del seminterrato dove il guscio lo disegna."""
+    if b["csie"] in GUSCI:
+        return GUSCI[b["csie"]].quote(b, sys.modules[__name__])
     liv = b.get("livelli", [])
     g = next((i for i, c in enumerate(liv) if c.endswith("000")), 0)
     if dettagliato(b):
@@ -2100,6 +2124,8 @@ def aperture(f):
 
 def edificio(b, aule_info):
     geo = json.loads((SRC / "piante" / f"{b['csie']}-geometria.json").read_text())["piani"]
+    if hasattr(GUSCI.get(b["csie"]), "piante"):      # quello che un modulo aggiunge alle piante
+        geo = GUSCI[b["csie"]].piante(b, geo, aule_info, sys.modules[__name__])
     sc = Scena(b["csie"])
     piani = sc.gruppo("Piani", b["csie"])
     zs = quote(b)
@@ -2203,7 +2229,10 @@ def edificio(b, aule_info):
         pieno = shell.difference(unary_union(rooms + colonne).buffer(0.05))
         vuoti = unary_union([g_ for g_ in clean(pieno.buffer(-0.8, join_style=2).buffer(0.8, join_style=2)) if g_.area > 20])
         foro = foro.union(vuoti) if not vuoti.is_empty else foro
+        cortili = unary_union([ring(c_).buffer(0) for c_ in b.get("cortili", [])])
         for g_ in clean(vuoti):
+            if not cortili.is_empty and g_.intersection(cortili).area > 0.5 * g_.area:
+                continue      # un cortile all'aperto, non un pozzo: niente parapetto
             for a_, c_ in zip(g_.exterior.coords, g_.exterior.coords[1:]):
                 if math.dist(a_, c_) < 0.2:
                     continue
@@ -2334,7 +2363,8 @@ def edificio(b, aule_info):
             arredi[METALLO].append(hexa([(*p, z + SOLETTA + 0.95) for p in q], [(*p, z + SOLETTA + 1.0) for p in q]))
         # Dentro le aule: muri interi, soffitto, luci. Nascosto finché non si entra.
         sopra_csip = min(((zz, cc) for cc, zz in zs.items() if zz > z), default=(None, None))[1]
-        z_tetto = min(nxt) if nxt else BASE_H + MOSAICO_H - 0.35
+        z_tetto = min(nxt) if nxt else (GUSCI[b["csie"]].tetto(b, sys.modules[__name__]) if b["csie"] in GUSCI
+                                         else BASE_H + MOSAICO_H - 0.35)
         porte = aperture(f)
         for csiv, poly, height in dentro_aule:
             r_ = interno(poly, height, gradonate.get(sopra_csip, []), z + SOLETTA, z_tetto, porte, vetri, travi=profilato(b))
@@ -2467,6 +2497,7 @@ def usdz(sc, path):
 
 
 def main():
+    carica_gusci()
     c = json.loads((SRC / "leonardo.json").read_text())
     cs = campus(c)
     usdz(cs, OUT / "campus.usdz")
@@ -2477,8 +2508,11 @@ def main():
         info = SRC / "piante" / f"{csie}.json"
         aule = {f["csip"]: f.get("aule", {}) for f in json.loads(info.read_text())["piani"]} if info.exists() else {}
         sc, meta = edificio(b, aule)
+        if hasattr(GUSCI.get(csie), "ritocca"):    # i colori delle aule come nelle foto
+            GUSCI[csie].ritocca(sc, meta, sys.modules[__name__])
         meta["centro"] = [round(v, 2) for v in ring(b["pianta"]).centroid.coords[0]]
-        meta["altezza"] = round(guscio(b)[1] if dettagliato(b) else profilo_3d(b)[1] if profilato(b)
+        meta["altezza"] = round(GUSCI[csie].guscio(b, sys.modules[__name__])[1] if csie in GUSCI
+                                else guscio(b)[1] if dettagliato(b) else profilo_3d(b)[1] if profilato(b)
                                 else max(h for _, h, _ in volumi(b)), 2)
         usdz(sc, OUT / f"{csie}.usdz")
         if ARGS.glb:
