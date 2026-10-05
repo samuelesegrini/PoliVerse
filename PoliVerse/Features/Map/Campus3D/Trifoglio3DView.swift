@@ -93,7 +93,9 @@ final class Trifoglio3DScene {
     @ObservationIgnored private var target: SIMD3<Float> = [30, 0, 150]
     @ObservationIgnored private var distance: Float = 520
     @ObservationIgnored private var polar: Float = 0.95
-    @ObservationIgnored private var azimuth: Float = -.pi / 4      // from the south-west, as the isometric drawings
+    @ObservationIgnored private var azimuth: Float = Trifoglio3DScene.southWest
+    /// The side every flight looks from: the south-west, as the isometric drawings.
+    private static let southWest: Float = -.pi / 4
     /// The camera's vertical field of view, in degrees.
     private let fieldOfView: Float = 35
 
@@ -202,7 +204,7 @@ final class Trifoglio3DScene {
             exteriors.forEach { fade($0, to: 1) }
             fade(building, to: 0)
             trees.forEach { fade($0, to: 1) }
-            fly(to: [30, 0, 150], distance: 520, polar: 0.95)
+            frame(campus?.findEntity(named: "Edifici"), polar: 0.95, margin: 0.9)
 
         case .building:
             unlight()
@@ -211,8 +213,7 @@ final class Trifoglio3DScene {
             fade(building, to: 0)
             trees.forEach { fade($0, to: 1) }
             floors(of: building).forEach { lift($0, to: 0) }
-            let box = shell?.visualBounds(relativeTo: nil)
-            fly(to: box?.center ?? .zero, distance: 70 + (box?.extents.y ?? 14) * 2.2, polar: 1.0)
+            frame(shell, polar: 1.0, margin: 1.15)
 
         case .floor(let csip):
             if level == .campus { await go(to: .building) }
@@ -234,10 +235,7 @@ final class Trifoglio3DScene {
                     fade(floor, to: index == chosen ? 1 : 0.12, duration: 0.8)
                 }
             }
-            let quota = plan?.piani.first { $0.csip == csip }?.quota ?? 0
-            var centre = shell?.visualBounds(relativeTo: nil).center ?? .zero
-            centre.y = quota
-            fly(to: centre, distance: 74, polar: 0.72)
+            frame(floors(of: building)[safe: chosen], polar: 0.6, margin: 1.0)
 
         case .room(let csip, let csiv):
             if level != .floor(csip), !isRoom(on: csip) { await go(to: .floor(csip)) }
@@ -245,9 +243,8 @@ final class Trifoglio3DScene {
             level = next
             guard let room = building.findEntity(named: csiv) else { return }
             light(room)
-            var centre = room.visualBounds(relativeTo: nil).center
-            centre.y -= 0.5
-            fly(to: centre, distance: 60, polar: 0.62, duration: 1.1)
+            // Wider than the room, so the corridors that lead to it stay in view.
+            frame(room, polar: 0.5, margin: 2.4, duration: 1.1)
         }
         await settle()
     }
@@ -329,14 +326,41 @@ final class Trifoglio3DScene {
         animate(duration) { k in floor.position.y = from + (height - from) * k }
     }
 
-    /// Flies the camera along its orbit to look at a point from a distance and an angle.
+    /// Flies the camera so an entity fills the view, whatever the view's shape.
+    ///
+    /// The entity's bounds are taken as a sphere and fitted inside the narrower of the
+    /// two fields of view, so a phone held upright frames it as fully as a wide window.
+    ///
+    /// - Parameters:
+    ///   - entity: What to frame; nothing happens when `nil`.
+    ///   - polar: The camera's angle from vertical, in radians.
+    ///   - margin: How much bigger than the entity the frame is; 1 is a tight fit.
+    ///   - duration: How long the flight takes, in seconds.
+    private func frame(_ entity: Entity?, polar: Float, margin: Float, duration: Double = 1.3) {
+        guard let entity else { return }
+        let box = entity.visualBounds(relativeTo: nil)
+        guard !box.isEmpty else { return }
+        let radius = max(length(box.extents) / 2, 4) * margin
+        let vertical = fieldOfView * .pi / 180
+        let aspect = viewSize.height > 0 ? Float(viewSize.width / viewSize.height) : 1
+        let horizontal = 2 * atan(tan(vertical / 2) * aspect)
+        let distance = radius / sin(min(vertical, horizontal) / 2)
+        fly(to: box.center, distance: distance, polar: polar, duration: duration)
+    }
+
+    /// Flies the camera along its orbit to look at a point from a distance and an angle,
+    /// turning back to the south-west if the orbit was dragged elsewhere.
     private func fly(to point: SIMD3<Float>, distance: Float, polar: Float, duration: Double = 1.3) {
         let (t0, d0, p0) = (target, self.distance, self.polar)
+        // The shortest way round to the south-west.
+        let a0 = azimuth
+        let turn = remainder(Self.southWest - a0, 2 * .pi)
         animate(duration) { [self] k in
             target = t0 + (point - t0) * k
             // Further out in the middle, so the camera lifts and settles.
             self.distance = d0 + (distance - d0) * k + sin(.pi * k) * abs(distance - d0) * 0.15
             self.polar = p0 + (polar - p0) * k
+            azimuth = a0 + turn * k
             aim()
         }
     }
@@ -584,6 +608,11 @@ struct Trifoglio3DView: View {
     private func roomName(_ csiv: String) -> String {
         scene.plan?.piani.flatMap(\.aule).first { $0.csiv == csiv }?.sigla ?? csiv
     }
+}
+
+private extension Array {
+    /// The element at an index, or `nil` when the index is out of range.
+    subscript(safe index: Int) -> Element? { indices.contains(index) ? self[index] : nil }
 }
 
 #Preview("Trifoglio 3D") {
