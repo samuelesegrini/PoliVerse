@@ -1227,7 +1227,9 @@ def barrel_vault(pts, z, v):
         slope = -(2 * tm - 1)       # facing the low side of the box, or the high one
         light = 0.5 + 0.5 * slope * (1 if along_x else -1)
         panel = pv and (0.06 < tm < 0.45 or 0.55 < tm < 0.94)
-        if panel:
+        if v.get("vetro"):
+            fill = f"rgb({int(168 + 40 * light)},{int(186 + 34 * light)},{int(190 + 30 * light)})"
+        elif panel:
             fill = f"rgb({int(40 + 22 * light)},{int(52 + 24 * light)},{int(82 + 26 * light)})"
         else:
             fill = f"rgb({int(214 + 24 * light)},{int(208 + 24 * light)},{int(194 + 24 * light)})"

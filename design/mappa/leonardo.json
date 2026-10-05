@@ -3318,32 +3318,12 @@
       "vista": "sud-ovest",
       "parti": [
         {
-          "nome": "corpo",
+          "nome": "ovest",
           "pianta": [
             [91.1, 106.2],
-            [97.5, 106.2],
-            [97.5, 103.9],
-            [113.0, 103.8],
-            [113.1, 106.1],
-            [119.8, 106.1],
-            [119.9, 119.9],
-            [122.2, 122.0],
-            [136.0, 122.1],
-            [135.9, 130.2],
-            [134.3, 130.2],
-            [134.2, 142.2],
-            [136.0, 142.2],
-            [135.8, 150.7],
-            [125.6, 150.8],
-            [123.9, 152.7],
-            [117.3, 152.7],
-            [115.6, 151.1],
-            [104.7, 151.1],
-            [94.7, 161.0],
-            [90.9, 161.2],
-            [81.0, 151.6],
-            [81.0, 148.0],
-            [91.1, 137.9]
+            [101.5, 106.2],
+            [101.5, 140],
+            [91.1, 140]
           ],
           "profilo": [
             {
@@ -3358,7 +3338,7 @@
               "rivestimento": "intonaco",
               "finestre": "archi",
               "bugnato": true,
-              "campata": 4.2,
+              "campata": 3.8,
               "h": 14
             },
             {
@@ -3366,7 +3346,8 @@
               "tipo": "palazzo",
               "rivestimento": "intonaco",
               "finestre": "rette",
-              "campata": 4.2,
+              "bugnato": false,
+              "campata": 3.8,
               "h": 13
             },
             {
@@ -3374,18 +3355,18 @@
               "tipo": "cornicione",
               "decoro": true,
               "sporto": 0.6,
-              "h": 1.8
+              "h": 1.4
             },
-            {"tipo": "coppi", "h": 7, "rientro": 4}
+            {"tipo": "coppi", "h": 7, "rientro": 4.6}
           ]
         },
         {
-          "nome": "centro",
+          "nome": "terrazza",
           "pianta": [
-            [96.4, 109.4],
-            [117.6, 109.4],
-            [117.6, 140.0],
-            [96.4, 140.0]
+            [101.5, 103.9],
+            [113, 103.9],
+            [113, 118],
+            [101.5, 118]
           ],
           "profilo": [
             {
@@ -3400,7 +3381,7 @@
               "rivestimento": "intonaco",
               "finestre": "archi",
               "bugnato": true,
-              "campata": 4.2,
+              "campata": 3.8,
               "h": 14
             },
             {
@@ -3408,7 +3389,8 @@
               "tipo": "palazzo",
               "rivestimento": "intonaco",
               "finestre": "rette",
-              "campata": 4.2,
+              "bugnato": false,
+              "campata": 3.8,
               "h": 13
             },
             {
@@ -3416,19 +3398,364 @@
               "tipo": "palazzo",
               "rivestimento": "intonaco",
               "finestre": "rette",
-              "campata": 4.2,
-              "h": 12
+              "bugnato": false,
+              "campata": 3.8,
+              "h": 9
+            },
+            {
+              "tipo": "terrazza",
+              "colore": "#8E7B6A",
+              "verde": [
+                [102.2, 104.6, 10, 1],
+                [102.2, 105.6, 1, 11.5],
+                [102.5, 116.5, 10, 0.9]
+              ],
+              "impianti": [
+                [106, 108, 5.5, 4, 4],
+                [104, 111, 3, 5, 1],
+                [106.5, 113, 5, 2.8, 3.2],
+                [111.3, 113, 1.6, 3, 5]
+              ]
+            }
+          ]
+        },
+        {
+          "nome": "nord-est",
+          "pianta": [
+            [113, 106.1],
+            [119.9, 106.1],
+            [119.9, 122.1],
+            [113, 122.1]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010800S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 4
+            },
+            {
+              "piano": "MIA0108000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "archi",
+              "bugnato": true,
+              "campata": 3.8,
+              "h": 14
+            },
+            {
+              "piano": "MIA0108001",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "bugnato": false,
+              "campata": 3.8,
+              "h": 13
             },
             {
               "piano": "cornicione",
               "tipo": "cornicione",
               "decoro": true,
               "sporto": 0.6,
-              "h": 1.8
+              "h": 1.4
             },
-            {"tipo": "coppi", "h": 7, "rientro": 4}
+            {"tipo": "coppi", "h": 6, "rientro": 3.3}
+          ]
+        },
+        {
+          "nome": "est",
+          "pianta": [
+            [117, 122.1],
+            [127.5, 122.1],
+            [127.5, 150.7],
+            [117, 150.7]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010800S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 4
+            },
+            {
+              "piano": "MIA0108000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "archi",
+              "bugnato": true,
+              "campata": 3.8,
+              "h": 14
+            },
+            {
+              "piano": "MIA0108001",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "bugnato": false,
+              "campata": 3.8,
+              "h": 13
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 0.6,
+              "h": 1.4
+            },
+            {"tipo": "coppi", "h": 7, "rientro": 4.6}
+          ]
+        },
+        {
+          "nome": "est-piano",
+          "pianta": [
+            [127.5, 122.1],
+            [136, 122.1],
+            [136, 150.7],
+            [127.5, 150.7]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010800S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 4
+            },
+            {
+              "piano": "MIA0108000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "archi",
+              "bugnato": true,
+              "campata": 3.8,
+              "h": 14
+            },
+            {
+              "piano": "MIA0108001",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "bugnato": false,
+              "campata": 3.8,
+              "h": 13
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 0.6,
+              "h": 1.4
+            },
+            {
+              "tipo": "terrazza",
+              "colore": "#7E8183",
+              "impianti": [
+                [134, 128, 1.5, 14, 2]
+              ]
+            }
+          ]
+        },
+        {
+          "nome": "sud",
+          "pianta": [
+            [101.5, 138],
+            [117, 138],
+            [117, 151.1],
+            [101.5, 151.1]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010800S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 4
+            },
+            {
+              "piano": "MIA0108000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "archi",
+              "bugnato": true,
+              "campata": 3.8,
+              "h": 14
+            },
+            {
+              "piano": "MIA0108001",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "bugnato": false,
+              "campata": 3.8,
+              "h": 13
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 0.6,
+              "h": 1.4
+            },
+            {"tipo": "coppi", "h": 7, "rientro": 4.6}
+          ]
+        },
+        {
+          "nome": "avancorpo",
+          "pianta": [
+            [115.6, 138],
+            [125.6, 138],
+            [125.6, 152.7],
+            [115.6, 152.7]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010800S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 4
+            },
+            {
+              "piano": "MIA0108000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "archi",
+              "bugnato": true,
+              "campata": 3.8,
+              "h": 14
+            },
+            {
+              "piano": "MIA0108001",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "bugnato": false,
+              "campata": 3.8,
+              "h": 13
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 0.6,
+              "h": 1.4
+            },
+            {"tipo": "coppi", "h": 8, "rientro": 4.8}
+          ]
+        },
+        {
+          "nome": "diagonale",
+          "pianta": [
+            [81, 148],
+            [91.1, 137.9],
+            [104.7, 151.1],
+            [94.7, 161]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010800S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 4
+            },
+            {
+              "piano": "MIA0108000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "archi",
+              "bugnato": true,
+              "campata": 3.8,
+              "h": 14
+            },
+            {
+              "piano": "MIA0108001",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "bugnato": false,
+              "campata": 3.8,
+              "h": 13
+            },
+            {
+              "piano": "cornicione",
+              "tipo": "cornicione",
+              "decoro": true,
+              "sporto": 0.6,
+              "h": 1.4
+            },
+            {"tipo": "coppi", "h": 7, "rientro": 5}
+          ]
+        },
+        {
+          "nome": "cortile",
+          "pianta": [
+            [116.2, 131.6],
+            [112.2, 136.2],
+            [106.4, 136.2],
+            [102.4, 131.6],
+            [102.4, 125.0],
+            [106.4, 120.4],
+            [112.2, 120.4],
+            [116.2, 125.0]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010800S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 4
+            },
+            {
+              "piano": "MIA0108000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "bugnato": false,
+              "campata": 3.8,
+              "h": 12
+            },
+            {
+              "tipo": "terrazza",
+              "colore": "#E3DACB",
+              "impianti": [
+                [102.5, 125, 2.5, 5, 2.5],
+                [113.5, 123, 2, 2, 2]
+              ]
+            }
+          ]
+        },
+        {
+          "nome": "lucernario",
+          "pianta": [
+            [110, 118.5],
+            [117.4, 118.5],
+            [117.4, 125.5],
+            [110, 125.5]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA010800S",
+              "tipo": "pieno",
+              "rivestimento": "pietra",
+              "h": 4
+            },
+            {
+              "piano": "MIA0108000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "bugnato": false,
+              "campata": 3.8,
+              "h": 12
+            },
+            {"tipo": "volta", "h": 5, "vetro": true}
           ]
         }
+      ],
+      "cortili": [
+        [
+          [101.5, 118],
+          [117, 118],
+          [117, 138],
+          [101.5, 138]
+        ]
       ]
     },
     {
