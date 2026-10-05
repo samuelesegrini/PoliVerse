@@ -14,7 +14,7 @@ Politecnico, così l'app trova un'aula per csiv: <csie>/Piani/<csip>/<csip>_Loca
 
 Dipendenze: shapely, trimesh, mapbox_earcut, numpy, usd-core.
 """
-import argparse, json, math, pathlib
+import argparse, json, math, pathlib, sys
 import numpy as np
 import trimesh
 from shapely.geometry import Polygon, LineString, Point, box
@@ -795,8 +795,25 @@ def profilo_parti(b):
 
 def profilato(b):
     """Gli edifici portati in 3D dalle fasce della mappa (`profilo`, `parti`), come le
-    disegna build-mappa.py, tranne il Trifoglio che ha il suo guscio."""
-    return b["csie"] in ARGS.edifici.split(",") and not dettagliato(b) and bool(b.get("parti") or b.get("profilo"))
+    disegna build-mappa.py, tranne il Trifoglio e quelli con un guscio proprio."""
+    return b["csie"] in ARGS.edifici.split(",") and not dettagliato(b) and not proprio(b) \
+        and bool(b.get("parti") or b.get("profilo"))
+
+
+# Gli edifici con il guscio in un modulo a parte: guscio(b, E) e quote(b).
+import edificio2
+GUSCI = {edificio2.CSIE: edificio2}
+
+
+def proprio(b):
+    return b["csie"] in ARGS.edifici.split(",") and b["csie"] in GUSCI
+
+
+def esterno(b):
+    """({colore: mesh}, quota del tetto) di un edificio esportato con l'esterno dettagliato."""
+    if proprio(b):
+        return GUSCI[b["csie"]].guscio(b, sys.modules[__name__])
+    return guscio(b) if dettagliato(b) else profilo_3d(b)
 
 
 def quote_profilo(b):
@@ -1036,8 +1053,8 @@ def campus(c):
             sc.mesh(b["csie"].replace("-", "_") + "_Esterno", g, slab(ring(b["pianta"]), 0, b.get("piani", 3) * PIANO, "#DADDE3"))
             continue
         g = sc.gruppo(b["csie"], ed)
-        if dettagliato(b) or profilato(b):
-            for key, m in (guscio(b) if dettagliato(b) else profilo_3d(b))[0].items():
+        if dettagliato(b) or profilato(b) or proprio(b):
+            for key, m in esterno(b)[0].items():
                 sc.mesh(f"{b['csie']}_Esterno_{key.lstrip('#')}", g, m)
             continue
         for i, (poly, h, hex_) in enumerate(volumi(b)):
@@ -1058,6 +1075,8 @@ def quote(b):
         return {c: BASE_H + (i - g) * PIANO if i >= g else BASE_H * (i - g + 1) for i, c in enumerate(liv)}
     if profilato(b):
         return quote_profilo(b)
+    if proprio(b):
+        return GUSCI[b["csie"]].quote(b)
     return {c: (i - g) * PIANO for i, c in enumerate(liv)}
 
 
@@ -1779,6 +1798,8 @@ def aperture(f):
 
 def edificio(b, aule_info):
     geo = json.loads((SRC / "piante" / f"{b['csie']}-geometria.json").read_text())["piani"]
+    if proprio(b) and hasattr(GUSCI[b["csie"]], "completa_piante"):
+        GUSCI[b["csie"]].completa_piante(geo, aule_info)
     sc = Scena(b["csie"])
     piani = sc.gruppo("Piani", b["csie"])
     zs = quote(b)
@@ -2113,7 +2134,7 @@ def main():
         aule = {f["csip"]: f.get("aule", {}) for f in json.loads(info.read_text())["piani"]} if info.exists() else {}
         sc, meta = edificio(b, aule)
         meta["centro"] = [round(v, 2) for v in ring(b["pianta"]).centroid.coords[0]]
-        meta["altezza"] = round(guscio(b)[1] if dettagliato(b) else profilo_3d(b)[1] if profilato(b)
+        meta["altezza"] = round(esterno(b)[1] if dettagliato(b) or profilato(b) or proprio(b)
                                 else max(h for _, h, _ in volumi(b)), 2)
         usdz(sc, OUT / f"{csie}.usdz")
         if ARGS.glb:
