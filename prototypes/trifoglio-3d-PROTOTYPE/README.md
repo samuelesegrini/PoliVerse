@@ -17,7 +17,8 @@ Si apre in Xcode: `PoliVerse/Features/Map/Campus3D/Trifoglio3DView.swift`, previ
    alla cattedra; compaiono i muri a tutta altezza, il soffitto e le luci. "Esci dall'aula"
    torna alla vista dall'alto.
 
-"Portami all'aula T.1.2" fa tutto il percorso. Si può anche toccare l'edificio e le aule sul
+Dal campus si sceglie il Trifoglio o l'Edificio 11. "Portami all'aula T.1.2" fa tutto il
+percorso. Si può anche toccare l'edificio e le aule sul
 modello, trascinare per ruotare e pizzicare per lo zoom.
 
 ## I modelli
@@ -31,6 +32,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `campus.usdz` | terreno, alberi, volumi di tutti gli edifici sotto `Campus/Edifici/<csie>` |
 | `MIA0203.usdz` | i piani del Trifoglio: `MIA0203/Piani/<csip>` con soletta, muri tagliati a 1,5 m, locali e arredi (`<csip>_Arredi`); ogni aula è un nodo chiamato con il suo `csiv` |
 | `MIA0203.json` | piani, quote e aule (sigla, posti) per l'interfaccia |
+| `MIA0201.usdz`, `MIA0201.json` | lo stesso per l'Edificio 11 |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
 trova il nodo da accendere senza tabelle in più.
@@ -39,7 +41,7 @@ Per rigenerarli, con il ramo della mappa estratto:
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203
+python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -134,10 +136,37 @@ seleziona sempre l'aula intera. Le piante dei piani
 seguono le quote del guscio: seminterrato a 0, terra a 3,5 m, primo a 7,5 m (prima il seminterrato delle piante stava mezzo metro sotto la piazza). Gli altri edifici
 restano estrusioni.
 
+## L'Edificio 11
+
+Gli edifici esportati che nella mappa hanno un `profilo` (o `parti` con un profilo ciascuna)
+prendono l'esterno da lì, fascia per fascia come lo disegna `build-mappa.py`, in metri veri
+(18 unità della mappa = un piano da 4 m): `vetro` (bordo del solaio, vetro arretrato,
+montanti ogni 5 m, neri e vetro fumé dove c'è il `telaio`), `portico` (vetro arretrato di
+`arretrato` m, parapetti arancio, condotti sotto il soffitto), `pieno` e `fessura`, `sporto`,
+`sagoma: propria` (il piano sul suo contorno, sul tetto di quello sotto). Per l'Edificio 11:
+la parte di Viganò con l'esoscheletro in acciaio nero (pilastri a croce staccati dalla
+facciata, coronamento con le V, travi sul tetto) e la A rossa e nera davanti all'ingresso di
+via Ampère; la parte di Ponti in ceramica con il primo piano in mattone che sporge.
+
+Le quote dei piani vengono dalle fasce della parte con l'ingresso: il terra a 1,1 m sopra la
+fessura del seminterrato, che sta sotto terra.
+
+Dentro, le stesse regole del Trifoglio, più due:
+
+- dove la pianta non disegna locali per più dello spessore di un muro il solaio è aperto,
+  con un parapetto: al terra è il pozzo sul seminterrato sotto la A;
+- le file a 60 cm sono i due bordi dei tavoli, non gradoni: le aule dell'Edificio 11 sono
+  piane, con tavoli e sedie dietro. Anche lì si entra, dal fondo verso il lato da cui
+  partono le file.
+
 ## Cosa manca
 
-- Solo il Trifoglio ha il guscio: per gli altri edifici le forme di `build-mappa.py` (falde,
-  volte, sheds, vetrate) non sono ancora portate nell'esportatore.
+- Solo il Trifoglio e l'Edificio 11 hanno l'esterno dettagliato; gli altri edifici restano
+  estrusioni. Del profilo mancano ancora coppi, volte, denti, cornicioni, balaustre,
+  finestre forate e lucernari.
+- Le quote dell'Edificio 11 seguono una parte sola: la parte di Ponti ha fasce di altezze
+  diverse, e lì piani e facciata non coincidono del tutto. Le aule ROGERS e IV e le aule A-F
+  del primo non hanno file disegnate e restano vuote.
 - Le file di banchi sono continue: la pianta non disegna le singole sedute.
 - I bagni restano vuoti: le piante del Trifoglio non disegnano i sanitari (`linee.sanitari`
   è vuota).

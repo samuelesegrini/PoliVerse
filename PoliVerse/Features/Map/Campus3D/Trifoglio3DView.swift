@@ -4,8 +4,9 @@ import SwiftUI
 
 // PROTOTYPE — debug builds only, reached from the preview at the bottom and nowhere in the app.
 //
-// The walk from the campus to a classroom in 3D, on the Trifoglio (Edificio 13) alone:
-// campus → building → floor → room, each step an animated camera move plus fades.
+// The walk from the campus to a classroom in 3D, on the Trifoglio (Edificio 13) and on
+// Edificio 11: campus → building → floor → room, each step an animated camera move plus
+// fades.
 // The models come from `prototypes/trifoglio-3d-PROTOTYPE/esporta3d.py`, which extrudes
 // the same outlines and CAD floor plans the map illustrations are drawn from. Their
 // entities carry the Politecnico codes as names, so a room is found by its `csiv` —
@@ -15,8 +16,8 @@ import SwiftUI
 enum Trifoglio3DLevel: Equatable {
     /// The whole campus from above.
     case campus
-    /// The Trifoglio, with the other buildings faded.
-    case building
+    /// One building, by its `csie`, with the other buildings faded.
+    case building(String)
     /// One floor, by its `csip`: the shell gone, the floors above lifted away.
     case floor(String)
     /// One classroom, by its floor's `csip` and its own `csiv`.
@@ -25,7 +26,7 @@ enum Trifoglio3DLevel: Equatable {
     case inside(floor: String, room: String)
 }
 
-/// The Trifoglio's floors and classrooms, as the exporter writes them next to the models.
+/// A building's floors and classrooms, as the exporter writes them next to the models.
 struct Trifoglio3DPlan: Decodable {
     /// One floor of the building.
     struct Floor: Decodable, Identifiable {
@@ -83,8 +84,10 @@ struct Trifoglio3DPlan: Decodable {
 final class Trifoglio3DScene {
     /// Where the camera is now.
     private(set) var level: Trifoglio3DLevel = .campus
-    /// The floors and classrooms, once loaded.
-    private(set) var plan: Trifoglio3DPlan?
+    /// Every building's floors and classrooms, by `csie`, once loaded.
+    private(set) var plans: [String: Trifoglio3DPlan] = [:]
+    /// The floors and classrooms of the building the camera is on.
+    var plan: Trifoglio3DPlan? { plans[csie] }
     /// Why the scene could not load, if it could not.
     private(set) var failure: String?
     /// Where the lit classroom's label sits on screen, or `nil` when there is none in view.
@@ -94,16 +97,20 @@ final class Trifoglio3DScene {
     /// When on, every animation jumps to its end.
     var reduceMotion = false
 
-    /// The building every step of the walk goes to.
-    let csie = "MIA0203"
+    /// The buildings that have floors to walk into, in the order the campus offers them.
+    static let buildings = ["MIA0203", "MIA0201"]
+    /// The building the camera is on, or was on last.
+    private(set) var csie = "MIA0203"
     /// Everything the scene adds to the view hangs from here.
     @ObservationIgnored private let root = Entity()
     /// The camera every move animates.
     @ObservationIgnored private let camera = Entity()
     /// The campus: terrain, trees and every building's outer shell.
     @ObservationIgnored private var campus: Entity?
-    /// The Trifoglio's floors, each with its slab, cut walls and rooms.
-    @ObservationIgnored private var building: Entity?
+    /// Every building's floors, each with its slab, cut walls and rooms, by `csie`.
+    @ObservationIgnored private var models: [String: Entity] = [:]
+    /// The floors of the building the camera is on.
+    private var building: Entity? { models[csie] }
     /// Keeps the per-frame callback alive.
     @ObservationIgnored private var subscription: EventSubscription?
 
@@ -171,26 +178,29 @@ final class Trifoglio3DScene {
         content.add(root)
 
         do {
-            guard let campusURL = Bundle.main.url(forResource: "campus", withExtension: "usdz"),
-                  let buildingURL = Bundle.main.url(forResource: csie, withExtension: "usdz"),
-                  let planURL = Bundle.main.url(forResource: csie, withExtension: "json")
+            guard let campusURL = Bundle.main.url(forResource: "campus", withExtension: "usdz")
             else { failure = "Modelli non trovati nel bundle (Preview Content/Trifoglio3D)."; return }
-            plan = try JSONDecoder().decode(Trifoglio3DPlan.self, from: Data(contentsOf: planURL))
             let campus = try await Entity(contentsOf: campusURL)
-            let building = try await Entity(contentsOf: buildingURL)
             tappable(campus.findEntity(named: "Edifici"))
-            for floor in floors(of: building) {
-                await tappableExactly(floor.findEntity(named: floor.name + "_Locali"))
-            }
-            // Each tiered classroom's full walls, ceiling and lights stay hidden until the
-            // camera goes inside: from above they would cover the room.
-            visit(building) { if $0.name.hasSuffix(Self.interiorSuffix) { $0.isEnabled = false } }
-            building.components.set(OpacityComponent(opacity: 0))
-            building.isEnabled = false
             root.addChild(campus)
-            root.addChild(building)
             self.campus = campus
-            self.building = building
+            for csie in Self.buildings {
+                guard let buildingURL = Bundle.main.url(forResource: csie, withExtension: "usdz"),
+                      let planURL = Bundle.main.url(forResource: csie, withExtension: "json")
+                else { failure = "Modelli di \(csie) non trovati nel bundle."; continue }
+                plans[csie] = try JSONDecoder().decode(Trifoglio3DPlan.self, from: Data(contentsOf: planURL))
+                let building = try await Entity(contentsOf: buildingURL)
+                for floor in floors(of: building) {
+                    await tappableExactly(floor.findEntity(named: floor.name + "_Locali"))
+                }
+                // Each tiered classroom's full walls, ceiling and lights stay hidden until the
+                // camera goes inside: from above they would cover the room.
+                visit(building) { if $0.name.hasSuffix(Self.interiorSuffix) { $0.isEnabled = false } }
+                building.components.set(OpacityComponent(opacity: 0))
+                building.isEnabled = false
+                root.addChild(building)
+                models[csie] = building
+            }
         } catch {
             failure = "Modelli non caricati: \(error.localizedDescription)"
         }
@@ -251,28 +261,33 @@ final class Trifoglio3DScene {
 
     /// The steps of ``go(to:)``, which call each other to pass through the levels between.
     private func move(to next: Trifoglio3DLevel) async {
-        guard campus != nil, let building else { return }
+        guard campus != nil else { return }
         if case .inside(_, let csiv) = level { leave(csiv) }
+        // Another building: through its outside first, the floors of the last one put away.
+        if let other = Self.buildingCode(of: next), other != csie || level == .campus {
+            if case .building = next {} else { await move(to: .building(other)) }
+        }
+        guard let building else { return }
         switch next {
         case .campus:
             unlight()
             level = next
             exteriors.forEach { fade($0, to: 1) }
-            fade(building, to: 0)
+            models.values.forEach { fade($0, to: 0) }
             trees.forEach { fade($0, to: 1) }
             frame(campus?.findEntity(named: "Edifici"), polar: 0.95, margin: 0.9)
 
-        case .building:
+        case .building(let csie):
             unlight()
             level = next
+            self.csie = csie
             exteriors.forEach { fade($0, to: $0.name == csie ? 1 : 0.18) }
-            fade(building, to: 0)
+            models.values.forEach { fade($0, to: 0) }
             trees.forEach { fade($0, to: 1) }
-            floors(of: building).forEach { lift($0, to: 0) }
+            if let building = self.building { floors(of: building).forEach { lift($0, to: 0) } }
             frame(shell, polar: 1.0, margin: 1.15)
 
         case .floor(let csip):
-            if level == .campus { await move(to: .building) }
             unlight()
             level = next
             let order = floors(of: building).map(\.name)
@@ -315,6 +330,15 @@ final class Trifoglio3DScene {
                 azimuth: atan2(offset.x, offset.z), duration: 1.6)
         }
         await settle()
+    }
+
+    /// The building a level is in, by the first seven characters of its codes: `MIA0203`.
+    private static func buildingCode(of level: Trifoglio3DLevel) -> String? {
+        switch level {
+        case .campus: nil
+        case .building(let csie): csie
+        case .floor(let csip), .room(let csip, _), .inside(let csip, _): String(csip.prefix(7))
+        }
     }
 
     /// Whether the camera is already on, or in, a room of this floor.
@@ -361,7 +385,7 @@ final class Trifoglio3DScene {
             // Climb to the building's group under "Edifici".
             var node: Entity? = entity
             while let current = node, current.parent?.name != "Edifici" { node = current.parent }
-            if node?.name == csie { await go(to: .building) }
+            if let name = node?.name, models[name] != nil { await go(to: .building(name)) }
         case .floor(let csip), .room(let csip, _):
             let rooms = plan?.piani.first { $0.csip == csip }?.aule ?? []
             if rooms.contains(where: { $0.csiv == entity.name }) {
@@ -395,7 +419,7 @@ final class Trifoglio3DScene {
 
     /// Every building's outer shell on the campus.
     private var exteriors: [Entity] { campus?.findEntity(named: "Edifici").map { Array($0.children) } ?? [] }
-    /// The Trifoglio's outer shell on the campus.
+    /// The outer shell, on the campus, of the building the camera is on.
     private var shell: Entity? { exteriors.first { $0.name == csie } }
     /// The campus trees, crowns and trunks, which would stand in the way inside a floor.
     private var trees: [Entity] { ["Chiome", "Tronchi"].compactMap { campus?.findEntity(named: $0) } }
@@ -529,7 +553,7 @@ final class Trifoglio3DScene {
     /// Removes every glowing copy, so no classroom stays lit.
     private func unlight() {
         var glows: [Entity] = []
-        if let building { visit(building) { if $0.name == Self.glowName { glows.append($0) } } }
+        for building in models.values { visit(building) { if $0.name == Self.glowName { glows.append($0) } } }
         glows.forEach { $0.removeFromParent() }
         lit = nil
         labelPoint = nil
@@ -635,7 +659,7 @@ struct Trifoglio3DView: View {
             HStack(spacing: 8) {
                 crumb("Campus", to: .campus)
                 if scene.level != .campus {
-                    crumb("Edificio 13", to: .building)
+                    crumb(buildingName(scene.csie), to: .building(scene.csie))
                 }
                 if let csip = currentFloor {
                     crumb(floorName(csip), to: .floor(csip))
@@ -695,8 +719,10 @@ struct Trifoglio3DView: View {
     private var choices: some View {
         switch scene.level {
         case .campus:
-            Button("Edificio 13 · Trifoglio") { Task { await scene.go(to: .building) } }
-                .buttonStyle(.glass)
+            ForEach(Trifoglio3DScene.buildings, id: \.self) { csie in
+                Button(buildingName(csie, full: true)) { Task { await scene.go(to: .building(csie)) } }
+                    .buttonStyle(.glass)
+            }
         case .building:
             ForEach((scene.plan?.piani ?? []).reversed()) { floor in
                 Button(floorName(floor.csip)) { Task { await scene.go(to: .floor(floor.csip)) } }
@@ -727,11 +753,20 @@ struct Trifoglio3DView: View {
         }
     }
 
+    /// A building's name for a button: its number, and with `full` its name too.
+    private func buildingName(_ csie: String, full: Bool = false) -> String {
+        let plan = scene.plans[csie]
+        let number = "Edificio \(plan?.numero ?? csie)"
+        guard full, let name = plan?.nome else { return number }
+        return "\(number) · \(name)"
+    }
+
     /// A floor's name from the last characters of its code.
     private func floorName(_ csip: String) -> String {
         switch csip.suffix(3) {
         case "00S": "Seminterrato"
         case "000": "Piano terra"
+        case "S00": "Soppalco"
         default: "Piano \(Int(csip.suffix(3)) ?? 0)"
         }
     }
