@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="333.3 -59.6 300.4 295.4" width="600.8" height="590.8">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="491,119.5 472,130.5 472,116.5 491,105.5" fill="#B1B4B6"/>
+<polygon points="489,121.1 487.9,121.7 487.9,107.7 489,107.1" fill="#D9DBDC" opacity="0.9"/>
+<polygon points="482.4,124.9 481.3,125.5 481.3,111.5 482.4,110.9" fill="#D9DBDC" opacity="0.9"/>
+<polygon points="475.8,128.7 474.8,129.3 474.8,115.3 475.8,114.7" fill="#D9DBDC" opacity="0.9"/>
+<polygon points="486.3,119.8 483.5,121.4 483.5,114.4 483.6,113.8 483.9,113.1 484.4,112.5 484.9,112 485.4,111.8 485.9,111.9 486.2,112.3 486.3,112.8" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="479.7,123.6 476.9,125.2 476.9,118.2 477,117.6 477.3,116.9 477.8,116.3 478.3,115.8 478.8,115.6 479.3,115.7 479.6,116.1 479.7,116.6" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="472,130.5 453.8,120 453.8,106 472,116.5" fill="#CDCFD0"/>
+<polygon points="469.6,129.6 468.6,128.9 468.6,114.9 469.6,115.6" fill="#D9DBDC" opacity="0.9"/>
+<polygon points="463.1,125.8 462,125.1 462,111.1 463.1,111.8" fill="#D9DBDC" opacity="0.9"/>
+<polygon points="456.5,121.9 455.4,121.4 455.4,107.4 456.5,107.9" fill="#D9DBDC" opacity="0.9"/>
+<polygon points="467.5,125.5 464.7,123.9 464.7,116.9 464.8,116.3 465.1,116 465.6,115.9 466.1,116.1 466.6,116.5 467.1,117.1 467.4,117.8 467.5,118.5" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="460.9,121.7 458.1,120.1 458.1,113.1 458.2,112.5 458.5,112.2 459,112.1 459.5,112.3 460,112.7 460.5,113.3 460.8,114 460.9,114.7" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="453.8,106 472.8,95 491,105.5 472,116.5" fill="#D9DBDC"/>
+</svg>

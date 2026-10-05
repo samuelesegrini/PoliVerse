@@ -1202,6 +1202,35 @@ def punched(pts, z, h, rows, lit, colors, big=False):
     return out
 
 
+def sawtooth(pts, z, v):
+    """A sawtooth roof over the outline's box: teeth repeated along its longer side, each a
+    tiled slope rising to a glazed upright face, its gable ends in the wall's render."""
+    xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+    x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+    along_x = x1 - x0 >= y1 - y0
+    L = (x1 - x0) if along_x else (y1 - y0)
+    n = max(1, round(L / v.get("passo", 4.8)))
+    h, rev = v["h"], v.get("verso", 1) < 0
+    P = lambda u, w, zz: (x0 + (x1 - x0) * u, y0 + (y1 - y0) * w, zz) if along_x else (x0 + (x1 - x0) * w, y0 + (y1 - y0) * u, zz)
+    out = [f'<polygon points="{iso_poly([(x, y, z) for x, y in pts])}" fill="#B9B4AA"/>']
+    teeth = []
+    for i in range(n):
+        a, c = i / n, (i + 1) / n
+        lo, hi = (c, a) if rev else (a, c)          # the slope rises from lo to hi; the glass stands at hi
+        slope = [P(lo, 0, z), P(lo, 1, z), P(hi, 1, z + h), P(hi, 0, z + h)]
+        glass = [P(hi, 0, z), P(hi, 1, z), P(hi, 1, z + h), P(hi, 0, z + h)]
+        g0 = [P(lo, 0, z), P(hi, 0, z), P(hi, 0, z + h)]
+        g1 = [P(lo, 1, z), P(hi, 1, z), P(hi, 1, z + h)]
+        dep = lambda q: sum(p[0] + p[1] for p in q) / len(q)
+        pieces = sorted([(dep(g0), g0, "#D6D0C4"), (dep(g1), g1, "#D6D0C4"), (dep(slope), slope, "#C46F48"),
+                         (dep(glass), glass, "#9FB3C2")], key=lambda t: t[0])
+        teeth.append((dep(slope), pieces))
+    for _, pieces in sorted(teeth, key=lambda t: t[0]):
+        for _, q, fill in pieces:
+            out.append(f'<polygon points="{iso_poly(q)}" fill="{fill}" stroke="#8C8478" stroke-width="0.25"/>')
+    return out
+
+
 def barrel_vault(pts, z, v):
     """A barrel vault over the outline's box: its axis along the longer side, the curved
     roof in strips shaded by their slope, solar panels down both sides of a pale crest,
@@ -1262,8 +1291,8 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
     below, roofed, skylights = pts, False, []
     bands = profilo or b["profilo"]
     tiles = next((x for x in bands if x["tipo"] == "coppi"), None)
-    vault = next((x for x in bands if x["tipo"] == "volta"), None)
-    for band in [x for x in bands if x is not tiles and x["tipo"] not in ("terrazza", "volta")]:
+    vault = next((x for x in bands if x["tipo"] in ("volta", "denti")), None)
+    for band in [x for x in bands if x is not tiles and x["tipo"] not in ("terrazza", "volta", "denti")]:
         csip, kind, h = band.get("piano"), band["tipo"], band["h"]
         own = pts
         if band.get("sagoma") == "propria":
@@ -1430,7 +1459,7 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
         z += h
         below = own
     if vault:
-        roof = barrel_vault(below, z, vault)
+        roof = (sawtooth if vault["tipo"] == "denti" else barrel_vault)(below, z, vault)
         z += vault["h"]
     elif tiles:
         # A hipped roof in red tiles: each side slopes up from the eaves to a ridge set in.
