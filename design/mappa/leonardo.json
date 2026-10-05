@@ -2840,38 +2840,110 @@
       "piani_3d": ["MIA0112000", "MIA0112001"],
       "riquadro": [30, 60, 115, 180],
       "vista": "sud-ovest",
-      "profilo": [
+      "parti": [
         {
-          "piano": "MIA011200S",
-          "tipo": "pieno",
-          "rivestimento": "pietra",
-          "h": 4
+          "nome": "aula",
+          "pianta": [
+            [63.8, 110],
+            [82.9, 110],
+            [82.9, 149.2],
+            [63.8, 149.2]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA0112000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "archi",
+              "bugnato": false,
+              "campata": 3.8,
+              "h": 14
+            },
+            {
+              "piano": "MIA0112001",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "bugnato": false,
+              "campata": 3.8,
+              "h": 13
+            },
+            {
+              "tipo": "volta",
+              "h": 9,
+              "fotovoltaico": true,
+              "costole": [0.5]
+            }
+          ]
         },
         {
-          "piano": "MIA0112000",
-          "tipo": "palazzo",
-          "rivestimento": "intonaco",
-          "finestre": "archi",
-          "bugnato": true,
-          "campata": 4.2,
-          "h": 14
+          "nome": "volta-nord",
+          "pianta": [
+            [70.5, 92],
+            [82.9, 92],
+            [82.9, 110],
+            [70.5, 110]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA0112000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "archi",
+              "bugnato": false,
+              "campata": 3.8,
+              "h": 14
+            },
+            {
+              "piano": "MIA0112001",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "bugnato": false,
+              "campata": 3.8,
+              "h": 9
+            },
+            {"tipo": "volta", "h": 6, "fotovoltaico": true}
+          ]
         },
         {
-          "piano": "MIA0112001",
-          "tipo": "palazzo",
-          "rivestimento": "intonaco",
-          "finestre": "rette",
-          "campata": 4.2,
-          "h": 13
-        },
-        {
-          "piano": "cornicione",
-          "tipo": "cornicione",
-          "decoro": true,
-          "sporto": 0.6,
-          "h": 1.8
-        },
-        {"tipo": "coppi", "h": 7, "rientro": 4}
+          "nome": "terrazza",
+          "pianta": [
+            [63.8, 92],
+            [70.5, 92],
+            [70.5, 110],
+            [63.8, 110]
+          ],
+          "profilo": [
+            {
+              "piano": "MIA0112000",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "bugnato": false,
+              "campata": 3.8,
+              "h": 14
+            },
+            {
+              "piano": "MIA0112001",
+              "tipo": "palazzo",
+              "rivestimento": "intonaco",
+              "finestre": "rette",
+              "bugnato": false,
+              "campata": 3.8,
+              "h": 9
+            },
+            {
+              "tipo": "terrazza",
+              "colore": "#A3A5A6",
+              "impianti": [
+                [64.8, 101, 2.6, 3.5, 3],
+                [64.8, 105.5, 2.4, 2.4, 2.5],
+                [67.8, 106, 2, 2.6, 2]
+              ]
+            }
+          ]
+        }
       ]
     },
     {

@@ -1202,6 +1202,50 @@ def punched(pts, z, h, rows, lit, colors, big=False):
     return out
 
 
+def barrel_vault(pts, z, v):
+    """A barrel vault over the outline's box: its axis along the longer side, the curved
+    roof in strips shaded by their slope, solar panels down both sides of a pale crest,
+    raised ribs across it at `costole` (fractions of its length), and its curved end walls."""
+    xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+    x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+    along_x = x1 - x0 >= y1 - y0
+    rise, n = v["h"], 18
+    P = lambda t, u, dz=0.0: ((x0 + (x1 - x0) * u, y0 + (y1 - y0) * t) if along_x else (x0 + (x1 - x0) * t, y0 + (y1 - y0) * u)) + \
+        (z + rise * math.sqrt(max(0.0, 1 - (2 * t - 1) ** 2)) ** 0.8 + dz,)
+    pv = v.get("fotovoltaico")
+    out = []
+    end_far, end_near = [P(i / n, 0) for i in range(n + 1)], [P(i / n, 1) for i in range(n + 1)]
+    if sum(end_far[0][:2]) > sum(end_near[0][:2]):
+        end_far, end_near = end_near, end_far
+    base = lambda e: [e[0][:2] + (z,)] + e + [e[-1][:2] + (z,)]
+    out.append(f'<polygon points="{iso_poly(base(end_far))}" fill="#E6E1D6"/>')
+    strips = []
+    for i in range(n):
+        t0, t1 = i / n, (i + 1) / n
+        q = [P(t0, 0), P(t0, 1), P(t1, 1), P(t1, 0)]
+        tm = (t0 + t1) / 2
+        slope = -(2 * tm - 1)       # facing the low side of the box, or the high one
+        light = 0.5 + 0.5 * slope * (1 if along_x else -1)
+        panel = pv and (0.06 < tm < 0.45 or 0.55 < tm < 0.94)
+        if panel:
+            fill = f"rgb({int(40 + 22 * light)},{int(52 + 24 * light)},{int(82 + 26 * light)})"
+        else:
+            fill = f"rgb({int(214 + 24 * light)},{int(208 + 24 * light)},{int(194 + 24 * light)})"
+        strips.append((sum(p[0] + p[1] for p in q), q, fill, panel, t0, t1))
+    for _, q, fill, panel, t0, t1 in sorted(strips, key=lambda s_: s_[0]):
+        out.append(f'<polygon points="{iso_poly(q)}" fill="{fill}" stroke="{fill}" stroke-width="0.3"/>')
+        if panel:
+            k = int((max(x1 - x0, y1 - y0)) / 1.7)
+            cells = "".join(f"M{fmt(iso(*P(t0, j / k))[0])} {fmt(iso(*P(t0, j / k))[1])}L{fmt(iso(*P(t1, j / k))[0])} {fmt(iso(*P(t1, j / k))[1])}" for j in range(1, k))
+            edge = f"M{fmt(iso(*q[0])[0])} {fmt(iso(*q[0])[1])}L{fmt(iso(*q[1])[0])} {fmt(iso(*q[1])[1])}"
+            out.append(f'<path d="{cells}{edge}" stroke="#9AA6BC" stroke-width="0.25"/>')
+    for f_ in [0.0, 1.0] + list(v.get("costole", [])):
+        rib = [P(i / n, f_, 0.5) for i in range(n + 1)]
+        out.append(f'<polyline points="{iso_poly(rib)}" fill="none" stroke="#F2EEE5" stroke-width="2.2"/>')
+    out.append(f'<polygon points="{iso_poly(base(end_near))}" fill="#D9D3C6"/>')
+    return out
+
+
 def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, parte=""):
     """Draws the bands of `profilo`, bottom up, from height z; returns the top.
 
@@ -1216,7 +1260,8 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
     below, roofed, skylights = pts, False, []
     bands = profilo or b["profilo"]
     tiles = next((x for x in bands if x["tipo"] == "coppi"), None)
-    for band in [x for x in bands if x is not tiles and x["tipo"] != "terrazza"]:
+    vault = next((x for x in bands if x["tipo"] == "volta"), None)
+    for band in [x for x in bands if x is not tiles and x["tipo"] not in ("terrazza", "volta")]:
         csip, kind, h = band.get("piano"), band["tipo"], band["h"]
         own = pts
         if band.get("sagoma") == "propria":
@@ -1382,7 +1427,10 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
             own = offset(own, band.get("sporto", 0.9))
         z += h
         below = own
-    if tiles:
+    if vault:
+        roof = barrel_vault(below, z, vault)
+        z += vault["h"]
+    elif tiles:
         # A hipped roof in red tiles: each side slopes up from the eaves to a ridge set in.
         if tiles.get("dietro"):
             # A roof behind a balustrade: its eaves start at the cornice, inside the
