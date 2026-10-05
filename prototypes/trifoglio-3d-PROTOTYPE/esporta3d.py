@@ -124,7 +124,7 @@ ALA = 1.1            # quanto salgono le punte delle ali del tetto
 GLASS, GLASS_DARK, FRAME_GREY, WHITE = "#8FA6BA", "#5C6E80", "#80868E", "#F4F5F7"
 BLOCK, METAL, ROOF, PLANT = "#D3DEE7", "#8E949B", "#F2F3F4", "#E3E6EB"
 PALE, DOOR, ENTRY, BASE = "#E9E6E0", "#2D3B4F", "#2B3644", "#C9CED6"
-TEX = {"mosaico": 1.0, "cemento": 1.5}   # metri coperti da una ripetizione della texture
+TEX = {"mosaico": 1.0, "cemento": 1.5, "cubetti": 1.2}   # metri coperti da una ripetizione
 
 
 class Solidi:
@@ -184,7 +184,8 @@ _TEXTURES = {}
 
 def texture(name):
     """(colore, normali) come immagini PIL, generate: il mosaico a punta di diamante di Ponti,
-    tessere da 5 cm grigio scuro, e il cemento bocciardato del basamento."""
+    tessere da 5 cm grigio scuro, il cemento bocciardato del basamento e i cubetti chiari dei
+    pavimenti interni."""
     if name in _TEXTURES:
         return _TEXTURES[name]
     from PIL import Image, ImageFilter
@@ -203,6 +204,27 @@ def texture(name):
         rgb[grout] = [0.55, 0.55, 0.55]
         height[grout] = 0
         strength = 3.0
+    elif name == "cubetti":
+        # Il pavimento delle aule e dell'Aula Magna nelle foto: cubetti di pietra chiara a
+        # correre, file da 10 cm e pezzi da 12-26 cm, chiari e poco contrastati, giunti sottili.
+        size, rows = 384, 12                       # 1,2 m: 12 file da 10 cm
+        rh = size // rows
+        rgb = np.zeros((size, size, 3))
+        height = np.ones((size, size))
+        for r in range(rows):
+            x0 = int(rng.integers(0, 40))
+            cuts = [x0]
+            while cuts[-1] < x0 + size:
+                cuts.append(cuts[-1] + int(rng.integers(38, 84)))
+            cuts[-1] = x0 + size                   # la fila si richiude sul bordo
+            for a_, b_ in zip(cuts, cuts[1:]):
+                tone = np.array([0.90, 0.90, 0.88]) + rng.normal(0, 0.025)
+                cols = np.arange(a_, b_) % size
+                rgb[r * rh:(r + 1) * rh, cols] = tone
+                height[r * rh:(r + 1) * rh, a_ % size] = 0
+            height[r * rh, :] = 0
+        rgb[height == 0] = [0.80, 0.80, 0.78]
+        strength = 1.5
     else:
         size = 256
         noise = Image.fromarray((rng.random((size, size)) * 255).astype(np.uint8))
@@ -934,6 +956,7 @@ def gradoni(poly, z, segs):
                 return floor + 0.05 + k * rise
         return floor + 0.05
     height.rise = rise
+    height.fronte = (levels[0], floor + 0.05)      # il piano della cattedra, davanti alle file
     return colour(trimesh.util.concatenate(parts), COL["aula"]), height
 
 
@@ -1262,6 +1285,7 @@ def edificio(b, aule_info):
         arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], SCHERMO: [], COL["scale"]: [], VETRO: [], PILASTRO: [], CORRIMANO: [], SCALINO: []}
         locali = sc.gruppo(csip + "_Locali", gp)
         stanze, colonne = [], []
+        palladiana, palladiana_aule = [], []
         for v in f["vani"]:
             poly = shape_of(v)
             if poly.is_empty:
@@ -1279,6 +1303,8 @@ def edificio(b, aule_info):
             tipo = "aula" if v["csiv"] in aule else v["tipo"]
             if v["csiv"] in aule:
                 m, height = gradoni(poly, z, lin.get("arredi", []))
+                if getattr(height, "fronte", None) is not None:
+                    palladiana_aule.append(height.fronte)
                 rows = file_di_banchi(poly, lin.get("arredi", []))
                 if rows:
                     banchi(rows[1], height, arredi)
@@ -1294,6 +1320,8 @@ def edificio(b, aule_info):
                     arredi[LIFT].append(m.apply_translation([0, 0, z + SOLETTA]))
             else:
                 by_type.setdefault(COL.get(tipo, COL["locale"]), []).append(poly.buffer(-0.02))
+                if tipo == "corridoio":
+                    palladiana.append(poly.buffer(-0.02))
         torre = unary_union([shape_of(v) for v in f["vani"] if is_tower(shape_of(v)) and not shell.contains(shape_of(v).representative_point())])
         dentro = shell.buffer(0.2).union(torre.buffer(0.3)).difference(unary_union([shape_of(v) for v in f["vani"] if v["csiv"] in aule]))
         corridoi = unary_union([shape_of(v) for v in f["vani"] if v.get("tipo") == "corridoio"])
@@ -1310,6 +1338,15 @@ def edificio(b, aule_info):
         sc.mesh(csip + "_Soletta", gp, slab(shell.difference(foro), z, z + SOLETTA, COL["soletta"]))
         for hex_, polys in by_type.items():
             sc.mesh(f"{csip}_Locali_{hex_.lstrip('#')}", locali, slab(unary_union(polys).difference(foro), z + SOLETTA, z + SOLETTA + 0.04, hex_))
+        # I cubetti di pietra chiara delle foto: nei corridoi e nell'atrio, e davanti alla prima
+        # fila delle aule. Una pellicola di 1 cm sopra il pavimento, fuori da _Locali: il tocco e la luce
+        # gialla restano sull'aula.
+        P = Solidi()
+        for g_, zf in [(unary_union(palladiana).difference(foro), z + SOLETTA + 0.04)] + palladiana_aule:
+            for q_ in clean(g_):
+                P.solid("cubetti", trimesh.creation.extrude_polygon(q_, 0.01, engine="earcut").apply_translation([0, 0, zf]))
+        for m in P.meshes().values():
+            sc.mesh(f"{csip}_Pavimento", gp, m)
         muri = shell.difference(unary_union(rooms + colonne).buffer(0.0)).difference(aperture(f))
         # Le finestre della pianta nei muri: davanzale pieno fino a 0,9 m, vetro sopra.
         vetri = unary_union([LineString([s_[:2], s_[2:4]]).buffer(0.3, cap_style=2) for s_ in lin.get("finestre", [])

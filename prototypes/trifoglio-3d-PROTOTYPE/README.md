@@ -87,6 +87,11 @@ Gli interni seguono le linee della pianta, piano per piano:
   corrimano in metallo che seguono la pendenza, come nelle foto; il solaio del piano sopra
   è aperto dove le scale arrivano, e all'ultimo piano le rampe disegnate sono l'arrivo di
   quelle sotto;
+- i corridoi, l'atrio e il piano davanti alla prima fila delle aule hanno il pavimento delle
+  foto (Aula Magna, aule restaurate): cubetti di pietra chiara a correre, file da 10 cm, una
+  texture generata come il mosaico; è una pellicola fuori da `_Locali`, così il tocco e la
+  luce restano sull'aula. La moquette blu di alcune foto del cantiere è di altri edifici del
+  campus, non del Trifoglio;
 - i pilastri sono gli anelli piccoli che la pianta disegna dentro un locale: quadrati come
   disegnati nell'atrio del seminterrato, tondi dove la pianta li disegna ottagoni (il fronte
   delle aule T.2.1 e T.2.2, che con l'atrio fra loro sono l'Aula Magna), bianchi come nelle
