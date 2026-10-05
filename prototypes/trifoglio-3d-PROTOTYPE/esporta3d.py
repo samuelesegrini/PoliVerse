@@ -1401,8 +1401,8 @@ def edificio(b, aule_info):
                 pass                      # i vani veri vengono dalle croci della pianta, sotto
             else:
                 by_type.setdefault(COL.get(tipo, COL["locale"]), []).append(poly.buffer(-0.02))
-                if tipo == "corridoio":
-                    palladiana.append(poly.buffer(-0.02))
+                if tipo == "corridoio" or (tipo == "locale" and poly.area > 400):
+                    palladiana.append(poly.buffer(-0.02))       # corridoi e atri (S011, 001023)
         torre = unary_union([shape_of(v) for v in f["vani"] if is_tower(shape_of(v)) and not shell.contains(shape_of(v).representative_point())])
         dentro = shell.buffer(0.2).union(torre.buffer(0.3)).difference(unary_union([shape_of(v) for v in f["vani"] if v["csiv"] in aule]))
         corridoi = unary_union([shape_of(v) for v in f["vani"] if v.get("tipo") == "corridoio"])

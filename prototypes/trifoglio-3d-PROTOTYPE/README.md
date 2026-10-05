@@ -87,7 +87,7 @@ Gli interni seguono le linee della pianta, piano per piano:
   corrimano in metallo che seguono la pendenza, come nelle foto; il solaio del piano sopra
   è aperto dove le scale arrivano, e all'ultimo piano le rampe disegnate sono l'arrivo di
   quelle sotto;
-- i corridoi, l'atrio e il piano davanti alla prima fila delle aule hanno il pavimento delle
+- i corridoi, gli atri (quello coi pilastri del seminterrato, quello del primo) e il piano davanti alla prima fila delle aule hanno il pavimento delle
   foto (Aula Magna, aule restaurate): cubetti di pietra chiara a correre, file da 10 cm, una
   texture generata come il mosaico; è una pellicola fuori da `_Locali`, così il tocco e la
   luce restano sull'aula. La moquette blu di alcune foto del cantiere è di altri edifici del
