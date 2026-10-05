@@ -692,6 +692,22 @@ def main(csie):
         print(f"{c}: {len(vani)} rooms, {len(doors)} doors ({sum(d['esterna'] for d in doors)} outside, "
               f"{unread} without a drawn leaf), "
               f"{len(f['route'])} route segments, {len(f['fountains'])} fountains")
+    # A floor whose drawing outlines more than the floor itself (the roofs of the lower wings,
+    # seen from a tower's upper floor) is cut back, by hand, to the box it really covers.
+    for c, (x0, y0, x1, y1) in building.get("ritaglio", {}).items():
+        if c in out["piani"]:
+            box = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+            out["piani"][c]["contorno"] = [[T_ for T_ in ring] for ring in out["piani"][c]["contorno"]
+                                           if all(x0 - 0.5 <= p[0] <= x1 + 0.5 and y0 - 0.5 <= p[1] <= y1 + 0.5 for p in ring)] \
+                or [[list(p) for p in box]]
+            inbox = lambda p: x0 - 1 <= p[0] <= x1 + 1 and y0 - 1 <= p[1] <= y1 + 1
+            # Lines drawn outside it (a fire stair of a lower wing, a path) belong to other floors.
+            out["piani"][c]["linee"] = {k: [s_ for s_ in v if inbox(s_[:2]) and inbox(s_[2:4])] for k, v in out["piani"][c]["linee"].items()}
+            # No door up here opens to the ground.
+            for d in out["piani"][c]["porte"]:
+                d["esterna"] = False
+            out["piani"][c]["vuoti"] = [ring for ring in out["piani"][c]["vuoti"]
+                                        if all(x0 - 0.5 <= p[0] <= x1 + 0.5 and y0 - 0.5 <= p[1] <= y1 + 0.5 for p in ring)]
     dest = HERE / "piante" / f"{csie}-geometria.json"
     dest.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")) + "\n")
     print(f"wrote {dest.relative_to(HERE)}")
