@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="116.6 -56.8 318.1 262.7" width="636.1" height="525.4">
-<defs><radialGradient id="iso-tree" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#9FD08A"/><stop offset="1" stop-color="#4F9A5E"/></radialGradient></defs>
-<ellipse cx="325.5" cy="163.9" rx="8" ry="3.6" fill="#1D2B40" opacity="0.16"/><rect x="324" y="143.9" width="3" height="20" rx="1.5" fill="#8A6A48"/><circle cx="325.5" cy="143.5" r="7.3" fill="url(#iso-tree)"/>
-</svg>

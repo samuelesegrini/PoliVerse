@@ -545,6 +545,23 @@ def draw_map(campus, focus):
             ring = ccw([tuple(p) for p in yard])
             body.append(f'<path d="{rounded(ring, 0.8)}" fill="{COURTYARD}"/>'
                         f'<path d="{rounded(ring, 0.8)}" fill="none" stroke="{SHADOW}" stroke-opacity="0.12" stroke-width="1.6"/>')
+    # A court between buildings: its paving, its pergolas and the footbridge over it.
+    for b, _ in buildings:
+        c = b.get("corte")
+        if not c:
+            continue
+        if c.get("pianta"):
+            body.append(f'<path d="{rounded(ccw([tuple(p) for p in c["pianta"]]), 0.6)}" fill="#DCDDDA"/>')
+        for x, y, w, d in c.get("pergole", []):
+            body.append(f'<rect x="{fmt(x)}" y="{fmt(y)}" width="{fmt(w)}" height="{fmt(d)}" rx="0.3" fill="#9DA2A8"/>')
+        if c.get("ponte"):
+            body.append(f'<path d="{rounded(ccw([tuple(p) for p in c["ponte"]]), 0.3)}" fill="#C9C5BD" stroke="#A9A49B" stroke-width="0.3"/>')
+    for b, _ in buildings:
+        for p in b.get("parti", []):
+            if p.get("ciminiera"):
+                x, y = p["ciminiera"]["punto"]
+                body.append(f'<circle cx="{fmt(x)}" cy="{fmt(y)}" r="2.6" fill="#C9CDD2" stroke="#A3A9B0" stroke-width="0.3"/>'
+                            f'<circle cx="{fmt(x)}" cy="{fmt(y)}" r="1.1" fill="#8A4A32"/>')
     strati.append(Strato("edifici", "edifici", body, ["mp-roof", "mp-wall"]))
     strati.append(Strato("impianti", "impianti", plant))
 
@@ -676,6 +693,7 @@ CLADDING = {"ceramica": ("#E6E0D4", "#CDC5B6", "#F1EDE5"),
             "stucco": ("#E4DFD3", "#CAC4B5", "#EEEAE1"),      # the Rettorato's grey-beige stone
             "pietra": ("#B4B2AA", "#9C9A92", "#C6C4BC"),
             "intonaco": ("#ECE7DC", "#D4CEC0", "#F2EFE8"),
+            "grigio": ("#CDCFD0", "#B1B4B6", "#D9DBDC"),     # the plain grey blocks of the 1950s
             "ocra": ("#DDCCA6", "#C5B38B", "#E8DCC0")}         # the side blocks' warmer stone    # the courtyard wings' pale render     # and its grey glass mosaic
 WINDOW_FRAME = "#F4F5F7"
 STEEL = "#23272E"             # Viganò's black steel
@@ -1474,6 +1492,92 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
     return z
 
 
+def cylinder(x, y, r0, r1, z0, z1, sides, top):
+    """An upright round shaft, tapering from r0 to r1: its silhouette, shaded across, and its top."""
+    ring = lambda r, z: [iso(x + r * math.cos(t * math.pi / 12), y + r * math.sin(t * math.pi / 12), z) for t in range(24)]
+    lo, hi = ring(r0, z0), ring(r1, z1)
+    left, right = min(lo, key=lambda p: p[0]), max(lo, key=lambda p: p[0])
+    tl, tr = min(hi, key=lambda p: p[0]), max(hi, key=lambda p: p[0])
+    front = sorted([p for p in lo if p[1] >= (left[1] + right[1]) / 2 - 0.01], key=lambda p: p[0])
+    body = [tl, *[p for p in front], tr]
+    gid = f"cyl-{sides[0][1:]}-{sides[1][1:]}"
+    pts_ = " ".join(f"{fmt(px)},{fmt(py)}" for px, py in [tl, left, *front, right, tr])
+    return [f'<linearGradient id="{gid}" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="{sides[0]}"/>'
+            f'<stop offset="1" stop-color="{sides[1]}"/></linearGradient>',
+            f'<polygon points="{pts_}" fill="url(#{gid})"/>',
+            f'<polygon points="{" ".join(f"{fmt(px)},{fmt(py)}" for px, py in hi)}" fill="{top}"/>']
+
+
+def chimney(spec, turn):
+    """A factory chimney in brick: a tapering shaft, its courses faint, a water tank
+    round it part way up on a gallery, and a crown at the top."""
+    x, y = turn(tuple(spec["punto"]))
+    h, r = spec["h"], spec.get("r", 1.5)
+    rt = r * 0.7
+    out = cylinder(x, y, r, rt, 0, h, ("#B0684A", "#7A3F2A"), "#4A2A20")
+    rr = lambda z: r + (rt - r) * z / h
+    courses = []
+    for k in range(1, int(h / 4)):
+        z = k * 4
+        (a0, b0), (a1, b1) = iso(x - rr(z) * 0.72, y + rr(z) * 0.72, z), iso(x + rr(z) * 0.72, y - rr(z) * 0.72, z)
+        courses.append(f"M{fmt(a0)} {fmt(b0 + 0.4)}Q{fmt((a0 + a1) / 2)} {fmt(b0 + rr(z) * ISO_SCALE * 0.6)} {fmt(a1)} {fmt(b1 + 0.4)}")
+    out.append(f'<path d="{"".join(courses)}" stroke="#5E3022" stroke-width="0.35" fill="none" opacity="0.5"/>')
+    t = spec.get("serbatoio")
+    if t:
+        z0, z1, rt_ = t["z"], t["z"] + t["h"], t["r"]
+        out += cylinder(x, y, rt_ * 0.55, rt_, z0 - 4, z0, ("#B9BEC3", "#8F959B"), "#C8CCD0")
+        out += cylinder(x, y, rt_, rt_, z0, z1, ("#D6D9DC", "#A5AAB0"), "#BFC3C7")
+        out += cylinder(x, y, rr(z1), rr(z1), z1, z1 + 1, ("#B0684A", "#7A3F2A"), "#4A2A20")[1:]
+    out += cylinder(x, y, rt * 1.35, rt * 1.35, h, h + 2.2, ("#C8CCD0", "#9DA3A9"), "#3A2620")
+    return out
+
+
+def courtyard_between(c, turn):
+    """An open court between two buildings: its paving, the paths drawn on it, low
+    pergolas, steps at its ends and a footbridge across it, at first-floor height."""
+    T = lambda pts: ccw([turn(tuple(p)) for p in pts])
+    out = [f'<polygon points="{iso_poly([(x, y, 0.05) for x, y in T(c["pianta"])])}" fill="#9EA1A3"/>'] if c.get("pianta") else []
+    for p in c.get("percorsi", []):
+        q = [turn(tuple(v)) for v in p]
+        d = "".join(f'{"M" if i == 0 else "L"}{fmt(iso(*v, 0.1)[0])} {fmt(iso(*v, 0.1)[1])}' for i, v in enumerate(q))
+        out.append(f'<path d="{d}" stroke="#E4E4E0" stroke-width="1.1" fill="none" stroke-linejoin="round"/>')
+    for p in c.get("scale", []):
+        q = T(p)
+        out += prism(q, 0, 1.2, ("#B5B6B4", "#A2A3A1"), "#C9CAC7")
+        (x0, y0), (x1, y1) = q[0], q[2]
+        lines = "".join(f'M{fmt(iso(x0 + (x1 - x0) * k / 8, y0, 1.2)[0])} {fmt(iso(x0 + (x1 - x0) * k / 8, y0, 1.2)[1])}'
+                        f'L{fmt(iso(x0 + (x1 - x0) * k / 8, y1, 1.2)[0])} {fmt(iso(x0 + (x1 - x0) * k / 8, y1, 1.2)[1])}' for k in range(1, 8))
+        out.append(f'<path d="{lines}" stroke="#8E8F8D" stroke-width="0.4"/>')
+    items = []
+    for x, y, w, d in c.get("pergole", []):
+        q = T([(x, y), (x + w, y), (x + w, y + d), (x, y + d)])
+        posts = "".join(f'M{fmt(iso(*v, 0)[0])} {fmt(iso(*v, 0)[1])}V{fmt(iso(*v, 7)[1])}' for v in offset(q, -0.3))
+        slats = []
+        for k in range(1, 7):
+            a = (q[0][0] + (q[1][0] - q[0][0]) * k / 7, q[0][1] + (q[1][1] - q[0][1]) * k / 7)
+            b_ = (q[3][0] + (q[2][0] - q[3][0]) * k / 7, q[3][1] + (q[2][1] - q[3][1]) * k / 7)
+            slats.append(f'M{fmt(iso(*a, 7.6)[0])} {fmt(iso(*a, 7.6)[1])}L{fmt(iso(*b_, 7.6)[0])} {fmt(iso(*b_, 7.6)[1])}')
+        items.append((sum(v[0] + v[1] for v in q),
+                      [f'<path d="{posts}" stroke="#55595E" stroke-width="0.8"/>']
+                      + prism(q, 7, 7.6, ("#6E7378", "#5A5F64"), "#7F858B")
+                      + [f'<path d="{"".join(slats)}" stroke="#4B4F54" stroke-width="0.5"/>']))
+    for x, y, w, d, h in c.get("arredi", []):
+        q = T([(x, y), (x + w, y), (x + w, y + d), (x, y + d)])
+        items.append((sum(v[0] + v[1] for v in q), prism(q, 0, h, ("#7B8085", "#666B70"), "#8D9297")))
+    if c.get("ponte"):
+        q, z = T(c["ponte"]), c.get("ponte_z", 16)
+        under = [f'<polygon points="{iso_poly([(x, y, 0.15) for x, y in q])}" fill="#000000" opacity="0.12"/>']
+        rail = "".join(f'M{fmt(iso(*a, z + 4.2)[0])} {fmt(iso(*a, z + 4.2)[1])}L{fmt(iso(*b_, z + 4.2)[0])} {fmt(iso(*b_, z + 4.2)[1])}'
+                       for a, b_, _, _ in faces(q, 0, 1))
+        items.append((sum(v[0] + v[1] for v in q), under + prism(q, z, z + 1.8, ("#A7A39C", "#8F8B84"), "#B9B4AB")
+                      + prism(offset(q, -0.2), z + 1.8, z + 4.2, ("#9C9890", "#87837C"), "#C2BDB4")[:0]
+                      + [f'<path d="{rail}" stroke="#77736C" stroke-width="0.7"/>']))
+    for _, piece in sorted(items, key=lambda t: t[0]):
+        out += piece
+    # Set on a roof, the whole court is raised to it.
+    return [f'<g transform="translate(0 {fmt(-c.get("quota", 0))})">', *out, "</g>"]
+
+
 def draw_iso(campus, b):
     turn = view(b)
     pts = ccw([turn(p) for p in b["pianta"]])
@@ -1632,6 +1736,9 @@ def draw_iso(campus, b):
         parts.sort(key=lambda pp: sum(x + y for x, y in pp[1]) / len(pp[1]))
         top = 0
         for part, own in parts:
+            if part.get("ciminiera"):
+                strati.append(Strato(f"ciminiera-{part['nome']}", "edifici", chimney(part["ciminiera"], turn)))
+                continue
             ztop = draw_profile(b, own, turn, base_h, storey, door, strati, zmid, part["profilo"], part["nome"])
             others = [o for p2, o in parts if p2 is not part]
             steel = exoskeleton(own, ztop, others) if part.get("esoscheletro") else []
@@ -1686,6 +1793,8 @@ def draw_iso(campus, b):
                       f'<circle cx="{fmt(px + s_ * 0.5)}" cy="{fmt(py + s_ * 0.3)}" r="{fmt(s_ * 0.65)}" fill="url(#iso-tree)"/>')
     if crowns:
         strati.append(Strato("alberi-cortile", "alberi", crowns, ["iso-tree"]))
+    if b.get("corte"):
+        strati.append(Strato("corte", "percorsi", courtyard_between(b["corte"], turn)))
     strati.append(Strato("alberi-davanti", "alberi", [iso_tree(*t) for t in front], ["iso-tree"]))
 
     # Floor tags beside the right-most corner, one per storey.
