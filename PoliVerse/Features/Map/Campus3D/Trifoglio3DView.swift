@@ -695,12 +695,15 @@ struct Trifoglio3DView: View {
             }
             .scrollIndicators(.hidden)
             if case let (csip, csiv)? = currentRoom, scene.interior(csiv) != nil {
+                // The Edificio 11's sunken patio is entered like a classroom.
+                let place = scene.plan?.piani.flatMap(\.aule).first { $0.csiv == csiv }?.sigla == "Patio" ? "nel patio" : "nell'aula"
+                let leave = place == "nel patio" ? "dal patio" : "dall'aula"
                 if case .inside = scene.level {
-                    Button("Esci dall'aula") { Task { await scene.go(to: .room(floor: csip, room: csiv)) } }
+                    Button("Esci \(leave)") { Task { await scene.go(to: .room(floor: csip, room: csiv)) } }
                         .buttonStyle(.glassProminent)
                         .frame(maxWidth: .infinity)
                 } else {
-                    Button("Entra nell'aula") { Task { await scene.go(to: .inside(floor: csip, room: csiv)) } }
+                    Button("Entra \(place)") { Task { await scene.go(to: .inside(floor: csip, room: csiv)) } }
                         .buttonStyle(.glassProminent)
                         .frame(maxWidth: .infinity)
                 }
