@@ -26,7 +26,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | File | Cosa contiene |
 |---|---|
 | `campus.usdz` | terreno, alberi, volumi di tutti gli edifici sotto `Campus/Edifici/<csie>` |
-| `MIA0203.usdz` | i piani del Trifoglio: `MIA0203/Piani/<csip>` con soletta, muri tagliati a 1,5 m e locali; ogni aula è un nodo chiamato con il suo `csiv` |
+| `MIA0203.usdz` | i piani del Trifoglio: `MIA0203/Piani/<csip>` con soletta, muri tagliati a 1,5 m, locali e arredi (`<csip>_Arredi`); ogni aula è un nodo chiamato con il suo `csiv` |
 | `MIA0203.json` | piani, quote e aule (sigla, posti) per l'interfaccia |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
@@ -64,9 +64,22 @@ del restauro e della piazza (Coprat, TeamWork Italy, Urbanfile, Arketipo), ad al
   esagonali a metà di terra e primo, con qualche fila di vetrocemento nelle aule alte.
 
 Il mosaico (tessere da 5 cm) e il cemento bocciardato sono texture generate dallo script,
-colore e normali, ripetute in metri: il campus passa da 0,3 a 1,4 MB. Dentro, le aule da 100 posti in su hanno le gradonate: le file
-salgono dalla cattedra, verso il centro dell'edificio, alla punta del ventaglio. Nei muri
-tagliati sono aperti i varchi delle porte della pianta. Le piante dei piani
+colore e normali, ripetute in metri: il campus passa da 0,3 a 1,4 MB.
+
+Gli interni seguono le linee della pianta, piano per piano:
+
+- le aule hanno le file di banchi disegnate (`linee.arredi`): ogni fila diventa banco e
+  seduta, su un gradino che sale di 17 cm da quello davanti. Le file si contano dalla
+  cattedra (il lato con più spazio libero) e nelle aule a ventaglio ogni settore ha la sua
+  direzione; le aule senza file restano piane;
+- le scale (`linee.scale`) sono rampe gradino per gradino, che salgono dal lato della porta;
+- gli ascensori sono vani pieni, le porte hanno l'anta aperta come nella pianta, i parapetti
+  (`linee.ringhiere`) un corrimano;
+- nei muri tagliati sono aperti i varchi delle porte, e dove la pianta disegna le finestre il
+  muro diventa davanzale fino a 0,9 m con il vetro sopra.
+
+Banchi, scale, ante e corrimano stanno in `<csip>_Arredi`, fuori da `_Locali`, così il tocco
+seleziona sempre l'aula intera. Le piante dei piani
 seguono le quote del guscio: seminterrato a 0, terra a 3,5 m, primo a 7,5 m. Gli altri edifici
 restano estrusioni.
 
@@ -74,5 +87,6 @@ restano estrusioni.
 
 - Solo il Trifoglio ha il guscio: per gli altri edifici le forme di `build-mappa.py` (falde,
   volte, sheds, vetrate) non sono ancora portate nell'esportatore.
-- Le gradonate seguono una regola (le file salgono verso la punta), non i gradini disegnati
-  nella pianta; le scale interne restano pavimenti piani.
+- Le file di banchi sono continue: la pianta non disegna le singole sedute.
+- Le scale salgono di 17 cm a pedata dal pavimento del piano, senza pianerottoli: la pianta
+  non dice a che quota sta ogni rampa.

@@ -17,7 +17,7 @@ Dipendenze: shapely, trimesh, mapbox_earcut, numpy, usd-core.
 import argparse, json, math, pathlib
 import numpy as np
 import trimesh
-from shapely.geometry import Polygon, LineString
+from shapely.geometry import Polygon, LineString, Point
 from shapely.ops import unary_union
 
 ARGS = argparse.ArgumentParser()
@@ -825,33 +825,155 @@ def quote(b):
     return {c: (i - g) * PIANO for i, c in enumerate(liv)}
 
 
-def gradoni(poly, z, centre, posti):
-    """Il pavimento di un'aula ad anfiteatro: le file salgono dal fondo verso la punta del
-    ventaglio, lontano dal centro dell'edificio dove sta la cattedra. Sotto i 100 posti
-    l'aula resta piana. Una mesh Z-up."""
-    floor = z + SOLETTA
-    if (posti or 0) < 100:
-        return slab(poly.buffer(-0.02), floor, floor + 0.05, COL["aula"])
-    c = np.array(poly.centroid.coords[0])
-    axis = c - centre
-    axis /= np.linalg.norm(axis) or 1
+DESK, SEAT, LEAF, LIFT = "#F1F1EF", "#C9CDD3", "#B9BDC4", "#C9CED6"
+METALLO, VETRO = "#8E949B", "#BFD3E3"
+RISE = 0.17          # alzata di una fila di gradoni
+
+
+def band(axis, a0, a1, big=300):
     normal = np.array([-axis[1], axis[0]])
-    proj = [float(np.dot(np.array(p), axis)) for p in poly.exterior.coords]
-    s0, s1 = min(proj) + 3.0, max(proj)          # i primi 3 m piani, per la cattedra
-    rows = max(1, int((s1 - s0) / 0.95))
-    rise = min(0.17, 2.4 / rows)
-    parts = []
-    big = 300
-    for k in range(-1, rows):
-        a0 = (min(proj) - 1) if k < 0 else s0 + k * 0.95
-        a1 = s0 if k < 0 else (s1 + 1 if k == rows - 1 else s0 + (k + 1) * 0.95)
-        band = Polygon([tuple(axis * a0 + normal * big), tuple(axis * a1 + normal * big),
-                        tuple(axis * a1 - normal * big), tuple(axis * a0 - normal * big)])
-        m = slab(poly.buffer(-0.02).intersection(band), floor, floor + 0.05 + max(0, k + 1) * rise, COL["aula"])
-        if m is not None:
-            parts.append(m)
-    m = trimesh.util.concatenate(parts)
-    return colour(m, COL["aula"])
+    return Polygon([tuple(axis * a0 + normal * big), tuple(axis * a1 + normal * big),
+                    tuple(axis * a1 - normal * big), tuple(axis * a0 - normal * big)])
+
+
+def file_di_banchi(poly, segs):
+    """Le file di banchi disegnate in un'aula: (asse dalla cattedra verso il fondo, file).
+    Ogni fila è (segmento, normale verso il fondo, indice): i settori a ventaglio hanno
+    ciascuno la sua direzione, e in ogni settore le file si contano dalla cattedra, che sta
+    dal lato con più spazio libero."""
+    inner = poly.buffer(-0.05)
+    rows = [tuple(s_[:4]) for s_ in segs if math.dist(s_[:2], s_[2:4]) > 0.8 and inner.contains(LineString([s_[:2], s_[2:4]]).centroid)]
+    if len(rows) < 3:
+        return None
+    unit = lambda r: (np.array(r[2:4]) - np.array(r[:2])) / math.dist(r[:2], r[2:4])
+    d = np.zeros(2)
+    for r in rows:
+        d += unit(r) if np.dot(unit(r), d) >= 0 else -unit(r)
+    d /= np.linalg.norm(d)
+    axis = np.array([-d[1], d[0]])
+    mid = lambda r: (np.array(r[:2]) + np.array(r[2:4])) / 2
+    pos = [float(np.dot(mid(r), axis)) for r in rows]
+    ext = [float(np.dot(np.array(p), axis)) for p in poly.exterior.coords]
+    if min(pos) - min(ext) < max(ext) - max(pos):
+        axis = -axis
+    # settori: file parallele che si sovrappongono lungo la loro direzione
+    sectors = []
+    for r in rows:
+        u = unit(r)
+        for sec in sectors:
+            v = unit(sec[0])
+            span = lambda q: sorted([float(np.dot(np.array(q[:2]), v)), float(np.dot(np.array(q[2:4]), v))])
+            a, b = span(r), span(sec[0])
+            if abs(np.dot(u, v)) > 0.995 and min(a[1], b[1]) - max(a[0], b[0]) > 0.5:
+                sec.append(r)
+                break
+        else:
+            sectors.append([r])
+    out = []
+    for sec in sectors:
+        u = unit(sec[0])
+        n = np.array([-u[1], u[0]])
+        n = n if np.dot(n, axis) >= 0 else -n
+        sec.sort(key=lambda r: float(np.dot(mid(r), n)))
+        k, last = 0, None
+        for r in sec:
+            q = float(np.dot(mid(r), n))
+            if last is not None and q - last > 0.35:
+                k += 1
+            last = q
+            out.append((r, n, k, k == 0))
+        out = [(r, n_, k_, k_ == k) if n_ is n else (r, n_, k_, last_) for r, n_, k_, last_ in out]
+    return axis, out
+
+
+def gradoni(poly, z, segs):
+    """Il pavimento di un'aula: piano, o a gradoni se la pianta disegna le file di banchi.
+    Ogni fila sta su un gradino che sale di RISE da quello davanti; davanti alla prima fila
+    il piano della cattedra. Torna (mesh, quota di un punto)."""
+    floor = z + SOLETTA
+    rows = file_di_banchi(poly, segs)
+    base = poly.buffer(-0.02)
+    if not rows:
+        return slab(base, floor, floor + 0.05, COL["aula"]), (lambda p: floor + 0.05)
+    _, out = rows
+    rise = min(RISE, 2.6 / (1 + max(k for _, _, k, _ in out)))
+    strips = {}
+    for r, n, k, last in out:
+        a, c = np.array(r[:2]), np.array(r[2:4])
+        u = (c - a) / np.linalg.norm(c - a)
+        a, c = a - u * 0.7, c + u * 0.7          # i corridoi tra i settori salgono con le file
+        depth = 6 if last else 0.95
+        strips.setdefault(k + 1, []).append(Polygon([tuple(a - n * 0.05), tuple(c - n * 0.05), tuple(c + n * depth), tuple(a + n * depth)]))
+    levels, taken = {}, Polygon()
+    for k in sorted(strips, reverse=True):
+        reg = unary_union(strips[k]).intersection(base).difference(taken)
+        taken = taken.union(reg)
+        levels[k] = reg
+    levels[0] = base.difference(taken)
+    parts = [slab(reg, floor, floor + 0.05 + k * rise, COL["aula"]) for k, reg in levels.items() if not reg.is_empty]
+    parts = [m for m in parts if m is not None]
+
+    def height(p):
+        pt = Point(p[:2])
+        for k, reg in levels.items():
+            if reg.distance(pt) < 0.01:
+                return floor + 0.05 + k * rise
+        return floor + 0.05
+    return colour(trimesh.util.concatenate(parts), COL["aula"]), height
+
+
+def banchi(rows, height, out):
+    """Banco e seduta lungo ogni fila: il piano del banco sulla linea, la seduta dietro."""
+    for (x0, y0, x1, y1), n, _, _ in rows:
+        a, c = np.array([x0, y0]), np.array([x1, y1])
+        zf = height((a + c) / 2 + n * 0.5)
+        q = lambda d0, d1: [tuple(a + n * d0), tuple(c + n * d0), tuple(c + n * d1), tuple(a + n * d1)]
+        out[DESK].append(hexa([(*p, zf + 0.72) for p in q(-0.05, 0.4)], [(*p, zf + 0.76) for p in q(-0.05, 0.4)]))
+        out[DESK].append(hexa([(*p, zf) for p in q(-0.05, 0.0)], [(*p, zf + 0.72) for p in q(-0.05, 0.0)]))
+        out[SEAT].append(hexa([(*p, zf + 0.42) for p in q(0.45, 0.9)], [(*p, zf + 0.47) for p in q(0.45, 0.9)]))
+        out[SEAT].append(hexa([(*p, zf + 0.47) for p in q(0.88, 0.93)], [(*p, zf + 0.9) for p in q(0.88, 0.93)]))
+
+
+def scale_interne(segs, inside, doors, floor, out):
+    """Le rampe di scale disegnate nella pianta, gradino per gradino: le pedate vicine e
+    parallele formano una rampa, che sale di 0,17 m a pedata partendo dal lato più vicino a
+    una porta, dove si entra."""
+    treads = [s_ for s_ in segs if 0.7 < math.dist(s_[:2], s_[2:4]) < 3.5 and inside.contains(LineString([s_[:2], s_[2:4]]).centroid)]
+    used = [False] * len(treads)
+    for i, t in enumerate(treads):
+        if used[i]:
+            continue
+        u = np.array(t[2:4]) - np.array(t[:2])
+        u /= np.linalg.norm(u)
+        n = np.array([-u[1], u[0]])
+        group, frontier = [i], [i]
+        used[i] = True
+        while frontier:
+            k = frontier.pop()
+            mk = (np.array(treads[k][:2]) + np.array(treads[k][2:4])) / 2
+            for j, o in enumerate(treads):
+                if used[j]:
+                    continue
+                v = np.array(o[2:4]) - np.array(o[:2])
+                v /= np.linalg.norm(v)
+                mj = (np.array(o[:2]) + np.array(o[2:4])) / 2
+                if abs(np.dot(u, v)) > 0.95 and np.linalg.norm(mj - mk) < 0.6:
+                    used[j] = True
+                    group.append(j)
+                    frontier.append(j)
+        if len(group) < 4:
+            continue
+        mids = [(np.array(treads[g][:2]) + np.array(treads[g][2:4])) / 2 for g in group]
+        order = sorted(range(len(group)), key=lambda g: float(np.dot(mids[g], n)))
+        first, last = mids[order[0]], mids[order[-1]]
+        near = lambda p: min((math.dist(p, d["cardine"]) for d in doors), default=0)
+        if near(last) < near(first):
+            order.reverse()
+        for step, g in enumerate(order):
+            a, c = np.array(treads[group[g]][:2]), np.array(treads[group[g]][2:4])
+            sgn = 1 if np.dot(mids[order[-1]] - mids[order[0]], n) >= 0 else -1
+            q = [tuple(a), tuple(c), tuple(c + n * sgn * 0.28), tuple(a + n * sgn * 0.28)]
+            out[COL["scale"]].append(hexa([(*p, floor) for p in q], [(*p, floor + 0.17 * (step + 1)) for p in q]))
 
 
 def aperture(f):
@@ -881,6 +1003,8 @@ def edificio(b, aule_info):
         gp = sc.gruppo(csip, piani)
         shell = unary_union([ring(r).buffer(0) for r in f["contorno"]])
         rooms, by_type = [], {}
+        lin = f.get("linee", {})
+        arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], COL["scale"]: [], VETRO: [], COL["muri"]: []}
         locali = sc.gruppo(csip + "_Locali", gp)
         stanze = []
         for v in f["vani"]:
@@ -890,18 +1014,56 @@ def edificio(b, aule_info):
             rooms.append(poly)
             tipo = "aula" if v["csiv"] in aule else v["tipo"]
             if v["csiv"] in aule:
-                m = gradoni(poly, z, centre, aule[v["csiv"]].get("posti"))
+                m, height = gradoni(poly, z, lin.get("arredi", []))
+                rows = file_di_banchi(poly, lin.get("arredi", []))
+                if rows:
+                    banchi(rows[1], height, arredi)
                 sc.mesh(v["csiv"], locali, m)
                 c = poly.representative_point()
                 stanze.append({"csiv": v["csiv"], "sigla": aule[v["csiv"]]["sigla"],
                                "posti": aule[v["csiv"]].get("posti"), "centro": [round(c.x, 2), round(z + 1, 2), round(c.y, 2)]})
+            elif tipo == "ascensore":
+                m = trimesh.creation.extrude_polygon(clean(poly.buffer(-0.05))[0], MURO + 0.3) if clean(poly.buffer(-0.05)) else None
+                if m is not None:
+                    arredi[LIFT].append(m.apply_translation([0, 0, z + SOLETTA]))
             else:
                 by_type.setdefault(COL.get(tipo, COL["locale"]), []).append(poly.buffer(-0.02))
         for hex_, polys in by_type.items():
             sc.mesh(f"{csip}_Locali_{hex_.lstrip('#')}", locali, slab(unary_union(polys), z + SOLETTA, z + SOLETTA + 0.04, hex_))
         sc.mesh(csip + "_Soletta", gp, slab(shell, z, z + SOLETTA, COL["soletta"]))
         muri = shell.difference(unary_union(rooms).buffer(0.0)).difference(aperture(f))
-        sc.mesh(csip + "_Muri", gp, slab(muri, z + SOLETTA, z + SOLETTA + MURO, COL["muri"]))
+        # Le finestre della pianta nei muri: davanzale pieno fino a 0,9 m, vetro sopra.
+        vetri = unary_union([LineString([s_[:2], s_[2:4]]).buffer(0.3, cap_style=2) for s_ in lin.get("finestre", [])
+                             if math.dist(s_[:2], s_[2:4]) > 0.2]).intersection(muri) if lin.get("finestre") else Polygon()
+        pieni = muri.difference(vetri)
+        sc.mesh(csip + "_Muri", gp, slab(pieni, z + SOLETTA, z + SOLETTA + MURO, COL["muri"]))
+        if not vetri.is_empty:
+            sc.mesh(csip + "_Davanzali", gp, slab(vetri, z + SOLETTA, z + SOLETTA + 0.9, COL["muri"]))
+            sc.mesh(csip + "_Finestre", gp, slab(vetri, z + SOLETTA + 0.9, z + SOLETTA + MURO, VETRO))
+        # Le scale, le porte aperte come le disegna la pianta, i parapetti.
+        scale_interne(lin.get("scale", []), shell.buffer(0.2).difference(unary_union(
+            [shape_of(v) for v in f["vani"] if v["csiv"] in aule])), f.get("porte", []), z + SOLETTA, arredi)
+        for d in f.get("porte", []):
+            h, o = np.array(d["cardine"]), np.array(d["aperta"])
+            if np.linalg.norm(o - h) < 0.3:
+                continue
+            nrm = np.array([-(o - h)[1], (o - h)[0]]) / np.linalg.norm(o - h) * 0.025
+            q = [tuple(h - nrm), tuple(o - nrm), tuple(o + nrm), tuple(h + nrm)]
+            arredi[LEAF].append(hexa([(*p, z + SOLETTA) for p in q], [(*p, z + SOLETTA + MURO) for p in q]))
+        for x0, y0, x1, y1 in (s_[:4] for s_ in lin.get("ringhiere", [])):
+            if math.dist((x0, y0), (x1, y1)) < 0.3 or not shell.buffer(0.3).contains(Polygon([(x0, y0), (x1, y1), (x1 + 1e-3, y1)]).centroid):
+                continue
+            a, c = np.array([x0, y0]), np.array([x1, y1])
+            nrm = np.array([-(c - a)[1], (c - a)[0]]) / np.linalg.norm(c - a) * 0.025
+            q = [tuple(a - nrm), tuple(c - nrm), tuple(c + nrm), tuple(a + nrm)]
+            arredi[METALLO].append(hexa([(*p, z + SOLETTA + 0.95) for p in q], [(*p, z + SOLETTA + 1.0) for p in q]))
+        ga = sc.gruppo(csip + "_Arredi", gp)
+        for hex_, parts in arredi.items():
+            if parts:
+                m = trimesh.util.concatenate(parts)
+                m.apply_transform(YUP)
+                m.invert() if m.volume < 0 else None
+                sc.mesh(f"{csip}_Arredi_{hex_.lstrip('#')}", ga, colour(m, hex_))
         meta["piani"].append({"csip": csip, "quota": z, "aule": stanze})
     return sc, meta
 
