@@ -821,7 +821,7 @@ def quote(b):
     g = next((i for i, c in enumerate(liv) if c.endswith("000")), 0)
     if dettagliato(b):
         # Il seminterrato a quota piazza, terra e primo nel mosaico, sopra lo zoccolo.
-        return {c: BASE_H + (i - g) * PIANO for i, c in enumerate(liv)}
+        return {c: BASE_H + (i - g) * PIANO if i >= g else BASE_H * (i - g + 1) for i, c in enumerate(liv)}
     return {c: (i - g) * PIANO for i, c in enumerate(liv)}
 
 
@@ -966,46 +966,193 @@ def cattedra(poly, rows, height, out):
         out[key].append(hexa([(*p, z0) for p in base], [(*p, z0 + h) for p in base]))
 
 
-def scale_interne(segs, inside, doors, floor, out):
-    """Le rampe di scale disegnate nella pianta, gradino per gradino: le pedate vicine e
-    parallele formano una rampa, che sale di 0,17 m a pedata partendo dal lato più vicino a
-    una porta, dove si entra."""
-    treads = [s_ for s_ in segs if 0.7 < math.dist(s_[:2], s_[2:4]) < 3.5 and inside.contains(LineString([s_[:2], s_[2:4]]).centroid)]
-    used = [False] * len(treads)
-    for i, t in enumerate(treads):
+def rampe(segs, inside):
+    """Le rampe disegnate nella pianta: pedate parallele, una dietro l'altra a 25-45 cm, che
+    si sovrappongono per tutta la larghezza. Ogni rampa: direzione delle pedate u, direzione
+    di salita n, estensione [lo, hi] lungo u e posizione q di ogni pedata lungo n."""
+    T = []
+    for s_ in segs:
+        a, c = np.array(s_[:2], float), np.array(s_[2:4], float)
+        L = float(np.linalg.norm(c - a))
+        if not 0.7 < L < 4.5 or not inside.contains(Point((a + c) / 2)):
+            continue
+        u = (c - a) / L
+        if u[int(abs(u[1]) > abs(u[0]))] < 0:
+            a, c, u = c, a, -u
+        T.append((a, c, u, L))
+    used, out = [False] * len(T), []
+    for i in range(len(T)):
         if used[i]:
             continue
-        u = np.array(t[2:4]) - np.array(t[:2])
-        u /= np.linalg.norm(u)
-        n = np.array([-u[1], u[0]])
-        group, frontier = [i], [i]
         used[i] = True
+        group, frontier = [i], [i]
         while frontier:
-            k = frontier.pop()
-            mk = (np.array(treads[k][:2]) + np.array(treads[k][2:4])) / 2
-            for j, o in enumerate(treads):
-                if used[j]:
+            a, c, u, L = T[frontier.pop()]
+            n = np.array([-u[1], u[0]])
+            span = sorted([float(np.dot(a, u)), float(np.dot(c, u))])
+            for j, (b, e, v, M) in enumerate(T):
+                if used[j] or abs(np.dot(u, v)) < 0.99:
                     continue
-                v = np.array(o[2:4]) - np.array(o[:2])
-                v /= np.linalg.norm(v)
-                mj = (np.array(o[:2]) + np.array(o[2:4])) / 2
-                if abs(np.dot(u, v)) > 0.95 and np.linalg.norm(mj - mk) < 0.6:
+                if not 0.15 < abs(float(np.dot((b + e) / 2 - (a + c) / 2, n))) < 0.45:
+                    continue
+                other = sorted([float(np.dot(b, u)), float(np.dot(e, u))])
+                if min(span[1], other[1]) - max(span[0], other[0]) > 0.75 * min(L, M):
                     used[j] = True
                     group.append(j)
                     frontier.append(j)
-        if len(group) < 4:
+        u = T[group[0]][2]
+        n = np.array([-u[1], u[0]])
+        qs = []
+        for q in sorted(float(np.dot((T[k][0] + T[k][1]) / 2, n)) for k in group):
+            if not qs or q - qs[-1] > 0.15:      # pedate disegnate due volte
+                qs.append(q)
+        if len(qs) < 3:
             continue
-        mids = [(np.array(treads[g][:2]) + np.array(treads[g][2:4])) / 2 for g in group]
-        order = sorted(range(len(group)), key=lambda g: float(np.dot(mids[g], n)))
-        first, last = mids[order[0]], mids[order[-1]]
-        near = lambda p: min((math.dist(p, d["cardine"]) for d in doors), default=0)
-        if near(last) < near(first):
-            order.reverse()
-        for step, g in enumerate(order):
-            a, c = np.array(treads[group[g]][:2]), np.array(treads[group[g]][2:4])
-            sgn = 1 if np.dot(mids[order[-1]] - mids[order[0]], n) >= 0 else -1
-            q = [tuple(a), tuple(c), tuple(c + n * sgn * 0.28), tuple(a + n * sgn * 0.28)]
-            out[COL["scale"]].append(hexa([(*p, floor) for p in q], [(*p, floor + 0.17 * (step + 1)) for p in q]))
+        ends = [float(np.dot(p_, u)) for k in group for p_ in T[k][:2]]
+        out.append({"u": u, "n": n, "lo": min(ends), "hi": max(ends), "q": qs,
+                    "t": float(np.median(np.diff(qs)))})
+    return out
+
+
+def _sovrapposti(a0, a1, b0, b1):
+    return min(a1, b1) - max(a0, b0)
+
+
+def scale(segs, inside, corridoi, z, H, out):
+    """Le scale vere, dalle rampe della pianta. Rampe allineate una dopo l'altra fanno una
+    scala dritta con i pianerottoli in mezzo; due scale affiancate fanno una scala a due
+    rampe (a U) quando insieme salgono un piano con alzate di 15-24 cm: la prima sale dal lato
+    aperto verso il corridoio, il pianerottolo a metà piano, la seconda torna indietro e
+    arriva al piano di sopra. Le altre salgono da sole, con alzate fra 12 e 18 cm. Gradini
+    pieni in pietra chiara, corrimano in metallo su entrambi i lati. Torna le impronte."""
+    F = rampe(segs, inside)
+    # scale dritte: rampe in fila lungo la salita
+    runs = [[f] for f in F]
+    merged = True
+    while merged:
+        merged = False
+        for a in runs:
+            for b in runs:
+                if a is b:
+                    continue
+                fa, fb = a[-1], b[0]
+                if abs(np.dot(fa["n"], fb["n"])) < 0.99 or _sovrapposti(fa["lo"], fa["hi"], fb["lo"], fb["hi"]) < 0.5 * min(fa["hi"] - fa["lo"], fb["hi"] - fb["lo"]):
+                    continue
+                if fb["n"].dot(fa["n"]) < 0:
+                    fb.update(n=-fb["n"], u=-fb["u"], q=sorted(-q for q in fb["q"]), lo=-fb["hi"], hi=-fb["lo"])
+                if -0.5 < fb["q"][0] - fa["q"][-1] <= 0.4:
+                    # la stessa rampa spezzata dalla linea di taglio della pianta
+                    qs = []
+                    for q in sorted(fa["q"] + fb["q"]):
+                        if not qs or q - qs[-1] > 0.15:
+                            qs.append(q)
+                    fa.update(q=qs, lo=min(fa["lo"], fb["lo"]), hi=max(fa["hi"], fb["hi"]))
+                    a.extend(b[1:])
+                    runs = [r for r in runs if r is not b]
+                    merged = True
+                    break
+                if 0.4 < fb["q"][0] - fa["q"][-1] < 3.0:
+                    a.extend(b)
+                    runs = [r for r in runs if r is not b]
+                    merged = True
+                    break
+            if merged:
+                break
+    alzate = lambda r: sum(len(f["q"]) + 1 for f in r) - sum(1 for x, y in zip(r, r[1:]) if y["q"][0] - x["q"][-1] - x["t"] < 0.3)
+    span = lambda r: (r[0]["q"][0], r[-1]["q"][-1] + r[-1]["t"])
+    lat = lambda r: (min(f["lo"] for f in r), max(f["hi"] for f in r))
+    n_of = lambda r: r[0]["n"]
+    R = H / 0.17
+    coppie, sole = [], list(runs)
+    for a in runs:
+        for b in runs:
+            if a is b or not any(r is a for r in sole) or not any(r is b for r in sole) or abs(np.dot(n_of(a), n_of(b))) < 0.99:
+                continue
+            if np.dot(n_of(a), n_of(b)) < 0:
+                continue
+            la, lb = lat(a), lat(b)
+            sa, sb = span(a), span(b)
+            gap = max(la[0], lb[0]) - min(la[1], lb[1])
+            if -0.1 < gap < 1.0 and _sovrapposti(*sa, *sb) > 0.5 * min(sa[1] - sa[0], sb[1] - sb[0]) \
+                    and 0.7 * R <= alzate(a) + alzate(b) <= 1.4 * R:
+                coppie.append((a, b))
+                sole = [r for r in sole if r is not a and r is not b]
+    impronte = []
+
+    def gradini(run, z0, rise, d, lat_):
+        """Una scala dritta che sale nel verso d (+1 lungo n, -1 contro) da quota z0."""
+        u, n = run[0]["u"], run[0]["n"]
+        fl = run if d > 0 else list(reversed(run))
+        h, prev = z0, None
+        for f in fl:
+            qs = f["q"] if d > 0 else sorted(f["q"], reverse=True)
+            if prev is not None and abs(qs[0] - prev) > 0.3:
+                land = sorted([prev, qs[0] if d > 0 else qs[0] - f["t"]])   # pianerottolo intermedio
+                out[COL["scale"]].append(blocco(u, n, f["lo"], f["hi"], land[0], land[1], z, h))
+            for q in qs:
+                if d < 0:
+                    q -= f["t"]
+                h += rise
+                out[COL["scale"]].append(blocco(u, n, f["lo"], f["hi"], q, q + f["t"], z, h))
+            prev = qs[-1] + d * f["t"]
+            # corrimano sui due lati della rampa, inclinato come i gradini
+            for side in (f["lo"] + 0.05, f["hi"] - 0.05):
+                q0, q1 = qs[0], qs[-1]
+                h0, h1 = h - rise * (len(qs) - 1), h
+                bar = [tuple(u * (side - 0.025) + n * q0), tuple(u * (side - 0.025) + n * q1),
+                       tuple(u * (side + 0.025) + n * q1), tuple(u * (side + 0.025) + n * q0)]
+                zz = [h0, h1, h1, h0]
+                out[METALLO].append(hexa([(*p, zh + 0.9) for p, zh in zip(bar, zz)], [(*p, zh + 0.95) for p, zh in zip(bar, zz)]))
+                for qq, hh in ((q0, h0), (q1, h1)):
+                    post = [tuple(u * (side - 0.02) + n * (qq - 0.02)), tuple(u * (side + 0.02) + n * (qq - 0.02)),
+                            tuple(u * (side + 0.02) + n * (qq + 0.02)), tuple(u * (side - 0.02) + n * (qq + 0.02))]
+                    out[METALLO].append(hexa([(*p, hh) for p in post], [(*p, hh + 0.9) for p in post]))
+        return h
+
+    def lato_aperto(q_lo, q_hi, centre_lat, u, n):
+        """+1 se il lato aperto (verso il corridoio) è quello in basso lungo n."""
+        pt = lambda q: Point(*(u * centre_lat + n * q))
+        d_lo = corridoi.distance(pt(q_lo - 0.8)) if not corridoi.is_empty else 0
+        d_hi = corridoi.distance(pt(q_hi + 0.8)) if not corridoi.is_empty else 1
+        return 1 if d_lo <= d_hi else -1
+
+    for a, b in coppie:
+        u, n = a[0]["u"], n_of(a)
+        lo = min(span(a)[0], span(b)[0])
+        hi = max(span(a)[1], span(b)[1])
+        la, lb = lat(a), lat(b)
+        d = lato_aperto(lo, hi, (min(la[0], lb[0]) + max(la[1], lb[1])) / 2, u, n)
+        rise = H / (alzate(a) + alzate(b))
+        mid = gradini(a, z, rise, d, la)
+        # pianerottolo a metà piano, in fondo alle due rampe
+        depth = min(1.8, max(la[1] - la[0], lb[1] - lb[0]))
+        land = (hi, hi + depth) if d > 0 else (lo - depth, lo)
+        land_poly = Polygon([tuple(u * min(la[0], lb[0]) + n * land[0]), tuple(u * max(la[1], lb[1]) + n * land[0]),
+                             tuple(u * max(la[1], lb[1]) + n * land[1]), tuple(u * min(la[0], lb[0]) + n * land[1])])
+        if inside.buffer(0.5).contains(land_poly.centroid):
+            out[COL["scale"]].append(blocco(u, n, min(la[0], lb[0]), max(la[1], lb[1]), land[0], land[1], z, mid + rise))
+        gradini(b, mid + rise, rise, -d, lb)
+        impronte.append(unary_union([poly_run(a), poly_run(b), land_poly]))
+    for r in sole:
+        u, n = r[0]["u"], r[0]["n"]
+        s0, s1 = span(r)
+        l0, l1 = lat(r)
+        rise = min(0.18, max(0.12, H / alzate(r))) if len(r) > 1 or sum(len(f["q"]) for f in r) > 6 else 0.17
+        top = gradini(r, z, rise, lato_aperto(s0, s1, (l0 + l1) / 2, u, n), (l0, l1))
+        impronte.append(poly_run(r))
+    return impronte
+
+
+def poly_run(run):
+    u, n = run[0]["u"], run[0]["n"]
+    q0, q1 = run[0]["q"][0], run[-1]["q"][-1] + run[-1]["t"]
+    l0, l1 = min(f["lo"] for f in run), max(f["hi"] for f in run)
+    return Polygon([tuple(u * l0 + n * q0), tuple(u * l1 + n * q0), tuple(u * l1 + n * q1), tuple(u * l0 + n * q1)])
+
+
+def blocco(u, n, l0, l1, q0, q1, z0, z1):
+    q = [tuple(u * l0 + n * q0), tuple(u * l1 + n * q0), tuple(u * l1 + n * q1), tuple(u * l0 + n * q1)]
+    return hexa([(*p, z0) for p in q], [(*p, z1) for p in q])
 
 
 def aperture(f):
@@ -1027,6 +1174,7 @@ def edificio(b, aule_info):
     zs = quote(b)
     centre = np.array(ring(b["pianta"]).centroid.coords[0])
     meta = {"csie": b["csie"], "nome": b.get("nome"), "numero": b.get("numero"), "piani": []}
+    sotto = []
     for csip, z in zs.items():
         if csip not in geo:
             continue
@@ -1061,9 +1209,22 @@ def edificio(b, aule_info):
                     arredi[LIFT].append(m.apply_translation([0, 0, z + SOLETTA]))
             else:
                 by_type.setdefault(COL.get(tipo, COL["locale"]), []).append(poly.buffer(-0.02))
+        torre = unary_union([shape_of(v) for v in f["vani"] if is_tower(shape_of(v)) and not shell.contains(shape_of(v).representative_point())])
+        dentro = shell.buffer(0.2).union(torre.buffer(0.3)).difference(unary_union([shape_of(v) for v in f["vani"] if v["csiv"] in aule]))
+        corridoi = unary_union([shape_of(v) for v in f["vani"] if v.get("tipo") == "corridoio"])
+        nxt = [zz for cc, zz in zs.items() if zz > z]
+        H = (min(nxt) - z) if nxt else PIANO
+        # All'ultimo piano le rampe disegnate sopra le scale del piano sotto ne sono l'arrivo.
+        arrivo = unary_union(sotto) if sotto else Polygon()
+        impronte = scale(lin.get("scale", []), dentro if nxt else dentro.difference(arrivo.buffer(0.2)),
+                         corridoi, z + SOLETTA, H, arredi)
+        # Il solaio si apre sopra le scale che salgono dal piano sotto.
+        foro = arrivo.buffer(-0.05).difference(unary_union(impronte)) if not arrivo.is_empty else Polygon()
+        sotto = impronte
+        vano_scale = unary_union(impronte + [arrivo]).buffer(0.3) if impronte or not arrivo.is_empty else Polygon()
+        sc.mesh(csip + "_Soletta", gp, slab(shell.difference(foro), z, z + SOLETTA, COL["soletta"]))
         for hex_, polys in by_type.items():
-            sc.mesh(f"{csip}_Locali_{hex_.lstrip('#')}", locali, slab(unary_union(polys), z + SOLETTA, z + SOLETTA + 0.04, hex_))
-        sc.mesh(csip + "_Soletta", gp, slab(shell, z, z + SOLETTA, COL["soletta"]))
+            sc.mesh(f"{csip}_Locali_{hex_.lstrip('#')}", locali, slab(unary_union(polys).difference(foro), z + SOLETTA, z + SOLETTA + 0.04, hex_))
         muri = shell.difference(unary_union(rooms).buffer(0.0)).difference(aperture(f))
         # Le finestre della pianta nei muri: davanzale pieno fino a 0,9 m, vetro sopra.
         vetri = unary_union([LineString([s_[:2], s_[2:4]]).buffer(0.3, cap_style=2) for s_ in lin.get("finestre", [])
@@ -1074,8 +1235,6 @@ def edificio(b, aule_info):
             sc.mesh(csip + "_Davanzali", gp, slab(vetri, z + SOLETTA, z + SOLETTA + 0.9, COL["muri"]))
             sc.mesh(csip + "_Finestre", gp, slab(vetri, z + SOLETTA + 0.9, z + SOLETTA + MURO, VETRO))
         # Le scale, le porte aperte come le disegna la pianta, i parapetti.
-        scale_interne(lin.get("scale", []), shell.buffer(0.2).difference(unary_union(
-            [shape_of(v) for v in f["vani"] if v["csiv"] in aule])), f.get("porte", []), z + SOLETTA, arredi)
         for d in f.get("porte", []):
             h, o = np.array(d["cardine"]), np.array(d["aperta"])
             if np.linalg.norm(o - h) < 0.3:
@@ -1086,6 +1245,8 @@ def edificio(b, aule_info):
         for x0, y0, x1, y1 in (s_[:4] for s_ in lin.get("ringhiere", [])):
             if math.dist((x0, y0), (x1, y1)) < 0.3 or not shell.buffer(0.3).contains(Polygon([(x0, y0), (x1, y1), (x1 + 1e-3, y1)]).centroid):
                 continue
+            if vano_scale.contains(LineString([(x0, y0), (x1, y1)]).centroid):
+                continue      # i corrimano delle scale seguono i gradini
             a, c = np.array([x0, y0]), np.array([x1, y1])
             nrm = np.array([-(c - a)[1], (c - a)[0]]) / np.linalg.norm(c - a) * 0.025
             q = [tuple(a - nrm), tuple(c - nrm), tuple(c + nrm), tuple(a + nrm)]

@@ -74,7 +74,15 @@ Gli interni seguono le linee della pianta, piano per piano:
   davanti alla prima fila stanno il leggio e, sulla parete di fondo, lo schermo scuro. Le file si contano dalla
   cattedra (il lato con più spazio libero) e nelle aule a ventaglio ogni settore ha la sua
   direzione; le aule senza file restano piane;
-- le scale (`linee.scale`) sono rampe gradino per gradino, che salgono dal lato della porta;
+- le scale (`linee.scale`) si leggono rampa per rampa (pedate parallele a 31 cm) e salgono
+  davvero al piano di sopra: rampe in fila fanno una scala dritta con il pianerottolo in
+  mezzo (lo scalone a sud del terra, due rampe parallele); due scale affiancate fanno una
+  scala a U quando insieme salgono un piano con alzate di 15-24 cm (la scala nord, le due
+  scale della torre vetrata, lo scalone del seminterrato), con la prima rampa che parte dal
+  lato verso il corridoio e il pianerottolo a metà piano. Gradini pieni in pietra chiara e
+  corrimano in metallo che seguono la pendenza, come nelle foto; il solaio del piano sopra
+  è aperto dove le scale arrivano, e all'ultimo piano le rampe disegnate sono l'arrivo di
+  quelle sotto;
 - gli ascensori sono vani pieni, le porte hanno l'anta aperta come nella pianta, i parapetti
   (`linee.ringhiere`) un corrimano;
 - nei muri tagliati sono aperti i varchi delle porte, e dove la pianta disegna le finestre il
@@ -82,7 +90,7 @@ Gli interni seguono le linee della pianta, piano per piano:
 
 Banchi, scale, ante e corrimano stanno in `<csip>_Arredi`, fuori da `_Locali`, così il tocco
 seleziona sempre l'aula intera. Le piante dei piani
-seguono le quote del guscio: seminterrato a 0, terra a 3,5 m, primo a 7,5 m. Gli altri edifici
+seguono le quote del guscio: seminterrato a 0, terra a 3,5 m, primo a 7,5 m (prima il seminterrato delle piante stava mezzo metro sotto la piazza). Gli altri edifici
 restano estrusioni.
 
 ## Cosa manca
@@ -90,5 +98,6 @@ restano estrusioni.
 - Solo il Trifoglio ha il guscio: per gli altri edifici le forme di `build-mappa.py` (falde,
   volte, sheds, vetrate) non sono ancora portate nell'esportatore.
 - Le file di banchi sono continue: la pianta non disegna le singole sedute.
-- Le scale salgono di 17 cm a pedata dal pavimento del piano, senza pianerottoli: la pianta
-  non dice a che quota sta ogni rampa.
+- Le alzate delle scale sono ricavate dal numero di pedate disegnate e dall'altezza del
+  piano; le piante non le quotano. Le scale della torre vengono ripide (20 cm) perché la
+  pianta disegna 9 pedate per rampa.
