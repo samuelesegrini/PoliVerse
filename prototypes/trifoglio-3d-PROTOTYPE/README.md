@@ -149,6 +149,19 @@ la parte di Viganò con l'esoscheletro in acciaio nero (pilastri a croce staccat
 facciata, coronamento con le V, travi sul tetto) e la A rossa e nera davanti all'ingresso di
 via Ampère; la parte di Ponti in ceramica con il primo piano in mattone che sporge.
 
+Poi, dalle foto (MiBACT 2020 per l'Atlante dell'architettura contemporanea, Urbanfile
+2021-22 sul restauro):
+
+- l'esoscheletro come è: i pilastri a croce salgono 6 m sopra il tetto e finiscono in punta;
+  in cima a ognuno una trave lungo la facciata, larga 4 m, su due puntoni, da cui pendono i
+  due tiranti che reggono i piani; dalla cima una trave obliqua torna sul tetto;
+- sotto il portico i tre grossi condotti argentati, i montanti delle vetrate fitti (1,25 m);
+- la parte di Ponti com'è dopo il restauro: piastrelle chiare da 20 x 10 cm lisce, a punta di
+  diamante o rigate (una texture generata), e il volume in alto che sporge con le facce che
+  si aprono salendo, con l'intradosso bianco sopra la fascia vetrata;
+- nelle aule: piani grigi su gambe nere, sedie nere con qualcuna rossa o verde, soffitto
+  bianco con le travi nere a vista e pilastri neri.
+
 Le quote dei piani vengono dalle fasce della parte con l'ingresso: il terra a 1,1 m sopra la
 fessura del seminterrato, che sta sotto terra.
 
@@ -159,6 +172,25 @@ Dentro, le stesse regole del Trifoglio, più due:
 - le file a 60 cm sono i due bordi dei tavoli, non gradoni: le aule dell'Edificio 11 sono
   piane, con tavoli e sedie dietro. Anche lì si entra, dal fondo verso il lato da cui
   partono le file.
+
+### Il patio
+
+Il cortile interno di Viganò è il locale S068a del seminterrato, sotto il vuoto di 490 m²
+del piano terra: alto due piani, dal seminterrato al soffitto sotto il primo. Si sceglie
+come un'aula ("Patio") e si entra ("Entra nel patio"). Dalle foto del MiBACT (2020) e di
+Urbanfile (2018):
+
+- i pilastri cruciformi neri sulle file a 8,5 m; la pianta ne disegna il piede (un quadrato
+  di 2 m, nella linea delle scale) solo lungo i bordi, e le file in mezzo si ricavano dal
+  passo; sui pilastri del vuoto i grappoli di quattro faretti, a due altezze;
+- il soffitto nero con le travi sulle file dei pilastri, il ballatoio del terra tutto
+  intorno al vuoto col parapetto nero, vetrate nere sui due livelli;
+- i tavolini come li disegna la pianta (60 × 106 cm), con sedie rosse, arancio e verdi;
+- la scala elicoidale in cemento con la lamiera arancio fuori: sale in senso antiorario per
+  300° e arriva sul lato del vuoto più vicino, con un pianerottolo fino al ballatoio.
+
+Nella vista per piani i pilastri e la scala sono tagliati all'altezza dei muri; il resto è
+nascosto finché non si entra.
 
 ## L'Edificio 3
 
@@ -207,6 +239,9 @@ intorno ai vuoti che stanno in un `cortili` della mappa.
 - Le quote dell'Edificio 11 seguono una parte sola: la parte di Ponti ha fasce di altezze
   diverse, e lì piani e facciata non coincidono del tutto. Le aule ROGERS e IV e le aule A-F
   del primo non hanno file disegnate e restano vuote.
+- Nel patio il bordo esterno (vetrate a 5 m dal vuoto) è un'approssimazione: la pianta lo
+  apre su atri e corridoi. Mancano le pedane con i parapetti arancio intorno ai tavoli, il
+  bar BCL, lo schermo e la trincea all'aperto lungo via Ampère (Urbanfile 2018).
 - Le file di banchi sono continue: la pianta non disegna le singole sedute.
 - I bagni restano vuoti: le piante del Trifoglio non disegnano i sanitari (`linee.sanitari`
   è vuota).

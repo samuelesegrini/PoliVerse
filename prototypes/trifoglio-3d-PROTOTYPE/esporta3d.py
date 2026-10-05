@@ -124,7 +124,7 @@ ALA = 1.1            # quanto salgono le punte delle ali del tetto
 GLASS, GLASS_DARK, FRAME_GREY, WHITE = "#8FA6BA", "#5C6E80", "#80868E", "#F4F5F7"
 BLOCK, METAL, ROOF, PLANT = "#D3DEE7", "#8E949B", "#F2F3F4", "#E3E6EB"
 PALE, DOOR, ENTRY, BASE = "#E9E6E0", "#2D3B4F", "#2B3644", "#C9CED6"
-TEX = {"mosaico": 1.0, "cemento": 1.5, "cubetti": 1.2}   # metri coperti da una ripetizione
+TEX = {"mosaico": 1.0, "cemento": 1.5, "cubetti": 1.2, "piastrelle": 1.2}   # metri coperti da una ripetizione
 
 
 class Solidi:
@@ -225,6 +225,33 @@ def texture(name):
             height[r * rh, :] = 0
         rgb[height == 0] = [0.80, 0.80, 0.78]
         strength = 1.5
+    elif name == "piastrelle":
+        # Il rivestimento dell'Edificio 11 di Ponti, restaurato nel 2021 (foto Urbanfile):
+        # piastrelle chiare da 20 x 10 cm a correre, lisce, a punta di diamante o rigate.
+        px = 32                                    # 10 cm
+        size, rows, cols = 12 * px, 12, 6          # 1,2 m
+        rgb = np.zeros((size, size, 3))
+        height = np.zeros((size, size))
+        y, x = np.mgrid[0:px, 0:2 * px]
+        for r in range(rows):
+            off = (r % 2) * px
+            for c in range(cols):
+                kind = int(rng.integers(0, 5))
+                tone = np.array([0.88, 0.85, 0.79]) + rng.normal(0, 0.025)
+                if kind <= 1:                      # punta di diamante, 8 x 4 punte
+                    fx, fy = (x % 8) / 8 - 0.5, (y % 8) / 8 - 0.5
+                    h = 1 - 2 * np.maximum(np.abs(fx), np.abs(fy))
+                elif kind == 2:                    # rigata
+                    h = ((y // 4) % 2).astype(float)
+                else:
+                    h = np.ones_like(x, float) * 0.6
+                h = h.copy()
+                h[:, :2] = h[:, -2:] = h[:2, :] = h[-2:, :] = 0      # il giunto
+                xs = (np.arange(2 * px) + c * 2 * px + off) % size
+                rgb[r * px:(r + 1) * px][:, xs] = tone * (0.92 + 0.12 * h)[..., None]
+                height[r * px:(r + 1) * px][:, xs] = h
+        rgb[height == 0] = [0.78, 0.76, 0.71]
+        strength = 2.0
     else:
         size = 256
         noise = Image.fromarray((rng.random((size, size)) * 255).astype(np.uint8))
@@ -862,25 +889,27 @@ def prisma(S, key, pts, z0, z1):
 
 
 def piano_vetro(S, pts, z, h, telaio=None):
-    """Un piano vetrato come nella mappa: il bordo bianco del solaio, il vetro arretrato di
-    40 cm, i montanti ogni 5 m (neri dove la mappa dà il telaio)."""
+    """Un piano vetrato: il bordo bianco del solaio, il vetro arretrato di 40 cm, i montanti
+    sottili ogni 1,25 m e più grossi ogni 5 m (neri dove la mappa dà il telaio)."""
     prisma(S, SOLAIO_BORDO, pts, z, z + 0.5)
     vetro = ring_ccw(Polygon(pts).buffer(-0.4, join_style=2)) if Polygon(pts).buffer(-0.4).area > 1 else pts
     prisma(S, VETRO_SCURO if telaio else VETRO, vetro, z + 0.5, z + h)
     col = telaio or "#FFFFFF"
     for a, c, u, n, L, _ in edges(ring_ccw(Polygon(pts).buffer(-0.35, join_style=2))):
-        k = max(1, round(L / 5.0))
+        k = max(1, round(L / 1.25))           # i montanti fitti delle foto, ogni 1,25 m circa
         for i in range(k + 1):
             x, y = a[0] + u[0] * L * i / k, a[1] + u[1] * L * i / k
-            trave(S, col, (x, y, z + 0.5), (x, y, z + h), 0.12)
+            trave(S, col, (x, y, z + 0.5), (x, y, z + h), 0.08 if i % 4 else 0.14)
         trave(S, col, (*a, z + h - 0.06), (*c, z + h - 0.06), 0.12)
 
 
-def esoscheletro(S, pts, top, altre):
-    """L'acciaio di Viganò: pilastri a croce staccati di 1,8 m dalle facciate libere, che
-    salgono oltre il tetto fino a un telaio di coronamento con i controventi a V, e le travi
-    che tornano indietro sopra il tetto; sotto il tetto la trave da cui pendono i piani."""
-    zt = top + 0.9 + 3.6
+def esoscheletro(S, pts, top, altre, z_tiranti=4.5):
+    """L'acciaio di Viganò, come nelle foto (MiBACT 2020): pilastri a croce staccati di
+    1,8 m dalle facciate libere, che salgono 6 m sopra il tetto; in cima a ognuno una trave
+    lungo la facciata, larga 4 m, retta da due puntoni, da cui pendono i due tiranti che
+    reggono i piani; dalla cima una trave torna giù obliqua sul tetto; sotto il tetto la trave
+    longitudinale da pilastro a pilastro."""
+    zt = top + 6.0
     for a, c, u, n, L, _ in edges(pts):
         mid = Point((a[0] + c[0]) / 2, (a[1] + c[1]) / 2)
         if L < 6 or any(o.exterior.distance(mid) < 1.0 for o in altre):
@@ -890,17 +919,19 @@ def esoscheletro(S, pts, top, altre):
         for i in range(k + 1):
             t = i * L / k
             x, y = a[0] + u[0] * t + n[0] * 1.8, a[1] + u[1] * t + n[1] * 1.8
-            for d in ((0.35, 0.09), (0.09, 0.35)):        # il pilastro a croce
+            for d in ((0.32, 0.08), (0.08, 0.32)):        # il pilastro a croce, con la punta
                 q = [(x - d[0], y - d[1]), (x + d[0], y - d[1]), (x + d[0], y + d[1]), (x - d[0], y + d[1])]
-                prisma(S, STEEL, q, 0, zt)
-            trave(S, STEEL, (x, y, zt), (x - n[0] * 5.5, y - n[1] * 5.5, zt), 0.25)
-            trave(S, STEEL, (x, y, zt), (x - n[0] * 1.8, y - n[1] * 1.8, top + 0.4), 0.18)
+                prisma(S, STEEL, q, 0, zt + 1.0)
+            zc = zt - 0.6
+            ends = [(x - u[0] * 2.0, y - u[1] * 2.0), (x + u[0] * 2.0, y + u[1] * 2.0)]
+            trave(S, STEEL, (*ends[0], zc), (*ends[1], zc), 0.3)
+            for e in ends:
+                trave(S, STEEL, (x, y, zc - 2.6), (*e, zc), 0.18)       # i puntoni
+                trave(S, STEEL, (*e, zc), (*e, z_tiranti), 0.16)       # i tiranti
+                trave(S, STEEL, (*e, zc + 0.1), (*e, zc + 0.9), 0.14)  # le punte dei tiranti
+            trave(S, STEEL, (x, y, zc), (x - n[0] * 7.0, y - n[1] * 7.0, top + 0.4), 0.22)
             teste.append((x, y))
         for p_, q_ in zip(teste, teste[1:]):
-            m = ((p_[0] + q_[0]) / 2, (p_[1] + q_[1]) / 2)
-            trave(S, STEEL, (*p_, zt), (*q_, zt), 0.3)
-            trave(S, STEEL, (*p_, zt), (*m, zt - 2.2), 0.14)
-            trave(S, STEEL, (*m, zt - 2.2), (*q_, zt), 0.14)
             trave(S, STEEL, (*p_, top - 0.9), (*q_, top - 0.9), 0.35)
 
 
@@ -967,19 +998,35 @@ def profilo_3d(b):
                 prisma(S, "#C3C8CF", own, z, z + 0.05)
                 dentro = ring_ccw(Polygon(own).buffer(-band.get("arretrato", 3.0), join_style=2))
                 piano_vetro(S, dentro, z, h, band.get("telaio"))
-                mezzo = ring_ccw(Polygon(own).buffer(-1.2, join_style=2))
-                for a, c, *_ in edges(mezzo):
-                    trave(S, CONDOTTI[0], (*a, z + h - 0.5), (*c, z + h - 0.5), 0.35)
-                    trave(S, CONDOTTI[1], (*a, z + h - 1.0), (*c, z + h - 1.0), 0.35)
+                # i grossi condotti argentati sotto il soffitto del portico (foto MiBACT)
+                for k_, d_ in enumerate((0.7, 1.5, 2.3)):
+                    giro = ring_ccw(Polygon(own).buffer(-d_, join_style=2))
+                    for a, c, *_ in edges(giro):
+                        S.solid(CONDOTTI[k_ % 2], trimesh.creation.cylinder(
+                            radius=0.36, segment=[(*a, z + h - 0.5), (*c, z + h - 0.5)], sections=10))
                 for a, c, *_ in edges(own):
                     for zz in (0.5, 0.95):
                         trave(S, ARANCIO, (*a, z + zz), (*c, z + zz), 0.06)
             elif kind == "sporto":
-                fuori = ring_ccw(Polygon(own).buffer(band.get("sporto", 0.9), join_style=2))
-                prisma(S, CLADDING[band.get("rivestimento", "mattone")], fuori, z, z + h)
-                own = fuori
+                # Come nelle foto della parte di Ponti: il volume sporge e le sue facce si
+                # aprono salendo, di 1 m in tutta l'altezza; sotto, l'intradosso bianco.
+                sp = band.get("sporto", 0.9)
+                giu = offset_ring(own, sp)
+                su = offset_ring(own, sp + 1.0)
+                chiave = "piastrelle" if band.get("rivestimento") in ("mattone", "ceramica") else CLADDING[band.get("rivestimento", "mattone")]
+                for i_ in range(len(own)):
+                    j_ = (i_ + 1) % len(own)
+                    nn = normal_out(giu[i_], giu[j_])
+                    quad = [(*giu[i_], z), (*giu[j_], z), (*su[j_], z + h), (*su[i_], z + h)]
+                    S.quad(chiave, quad, (nn[0], nn[1], 0.15),
+                           [(0, z), (math.dist(giu[i_], giu[j_]), z), (math.dist(giu[i_], giu[j_]), z + h), (0, z + h)])
+                prisma(S, "#F2F2EF", giu, z - 0.02, z)
+                prisma(S, COL["tetto"], su, z + h - 0.01, z + h)
+                own = su
             else:
                 colore = CLADDING["fessura" if kind == "fessura" else band.get("rivestimento", "ceramica")]
+                if kind == "pieno" and band.get("rivestimento", "ceramica") in ("ceramica", "mattone"):
+                    colore = "piastrelle"
                 prisma(S, colore, own, z, z + h)
             z += h
             below = own
@@ -1172,8 +1219,13 @@ def passo_file(out):
     return float(np.median(gaps)) if gaps else 1.0
 
 
+TAVOLO, SEDIA_ROSSA, SEDIA_VERDE = "#C4C7C8", "#C8463A", "#4E9A5B"
+
+
 def tavoli(rows, height, out):
-    """Le aule con i tavoli: due linee a 60 cm sono i bordi di un tavolo; dietro, le sedie."""
+    """Le aule con i tavoli: due linee a 60 cm sono i bordi di un tavolo; dietro, le sedie.
+    Come nella foto delle aule dell'Edificio 11 (MiBACT 2020): piani grigi su gambe nere,
+    sedie nere con qualcuna rossa o verde."""
     per_n = {}
     for seg, n, k, _ in rows:
         per_n.setdefault(id(n), (n, []))[1].append(seg)
@@ -1195,16 +1247,17 @@ def tavoli(rows, height, out):
             u = (c - a) / L
             zf = height((a + c) / 2)
             q = lambda d0, d1: [tuple(a + n * d0), tuple(c + n * d0), tuple(c + n * d1), tuple(a + n * d1)]
-            out[DESK].append(hexa([(*p, zf + 0.72) for p in q(0, depth)], [(*p, zf + 0.76) for p in q(0, depth)]))
+            out[TAVOLO].append(hexa([(*p, zf + 0.72) for p in q(0, depth)], [(*p, zf + 0.76) for p in q(0, depth)]))
             for e in (a + n * depth / 2 + u * 0.05, c + n * depth / 2 - u * 0.05):
-                out[METALLO].append(box_z(e[0], e[1], 0.05, 0.05, zf, zf + 0.72))
+                out[CORRIMANO].append(box_z(e[0], e[1], 0.05, 0.05, zf, zf + 0.72))
             posti = max(1, int(L / 0.6))
             for j in range(posti):
                 b = a + u * (L / posti * (j + 0.5) - 0.22)
                 e = b + u * 0.44
                 rr = lambda d0, d1: [tuple(b + n * d0), tuple(e + n * d0), tuple(e + n * d1), tuple(b + n * d1)]
-                out[SEAT].append(hexa([(*p, zf + 0.42) for p in rr(depth + 0.15, depth + 0.6)], [(*p, zf + 0.47) for p in rr(depth + 0.15, depth + 0.6)]))
-                out[SEAT].append(hexa([(*p, zf + 0.47) for p in rr(depth + 0.55, depth + 0.6)], [(*p, zf + 0.9) for p in rr(depth + 0.55, depth + 0.6)]))
+                sedia = (SEDIA_ROSSA, SEDIA_VERDE, *[CORRIMANO] * 8)[int(abs(b[0] * 7.3 + b[1] * 3.1)) % 10]
+                out[sedia].append(hexa([(*p, zf + 0.42) for p in rr(depth + 0.15, depth + 0.6)], [(*p, zf + 0.47) for p in rr(depth + 0.15, depth + 0.6)]))
+                out[sedia].append(hexa([(*p, zf + 0.47) for p in rr(depth + 0.55, depth + 0.6)], [(*p, zf + 0.9) for p in rr(depth + 0.55, depth + 0.6)]))
 
 
 def gradoni(poly, z, segs):
@@ -1679,6 +1732,7 @@ def griglia(region, passo, largo, angolo):
 
 
 CEMENTO_PARETE = "#A8A7A2"     # i pannelli di cemento della parete dell'Aula Magna
+PATIO = "#8F9295"              # il pavimento grigio scuro del patio dell'Edificio 11
 
 
 def interno_magna(sala, piano, z, z_tetto, porte, vetri):
@@ -1708,14 +1762,14 @@ def interno_magna(sala, piano, z, z_tetto, porte, vetri):
     return out, occhio, guarda
 
 
-def interno(poly, height, sopra, z, z_tetto, porte, vetri):
+def interno(poly, height, sopra, z, z_tetto, porte, vetri, travi=False):
     """Quello che si vede entrando in un'aula a gradoni (le foto delle aule e dell'Aula
     Magna): i muri a tutta altezza, foderati da dentro, con le porte e le finestre; il
     soffitto, a cassettoni in cemento dove sopra c'è il tetto, altrimenti il sotto delle
     gradonate dell'aula di sopra, che salgono come queste; le luci lineari appese.
     Torna ({colore: [mesh]}, occhio, guarda): l'occhio in piedi dietro l'ultima fila, lo
     sguardo sulla cattedra."""
-    out = {COL["muri"]: [], CEMENTO_SOFF: [], LUCE: [], VETRO: []}
+    out = {COL["muri"]: [], CEMENTO_SOFF: [], LUCE: [], VETRO: [], STEEL: [], "#F4F4F1": []}
     levels = getattr(height, "levels", None)
     if not levels:
         return None
@@ -1740,10 +1794,22 @@ def interno(poly, height, sopra, z, z_tetto, porte, vetri):
         pezzi = [(poly, max(zc for _, zc in pezzi))]
     for g_, zc in pezzi:
         for q in clean(g_):
-            out[CEMENTO_SOFF].append(trimesh.creation.extrude_polygon(q, 0.25).apply_translation([0, 0, zc - 0.25]))
+            out["#F4F4F1" if travi else CEMENTO_SOFF].append(trimesh.creation.extrude_polygon(q, 0.25).apply_translation([0, 0, zc - 0.25]))
+    if travi and getattr(height, "asse", None) is not None:
+        # Le aule dell'Edificio 11 (foto MiBACT): soffitto bianco e travi d'acciaio nere a
+        # vista, di traverso alle file, ogni 3,6 m.
+        asse = height.asse
+        c0 = np.array(poly.centroid.coords[0])
+        lato = np.array([-asse[1], asse[0]])
+        for t in np.arange(-40, 40, 3.6):
+            a_, b_ = c0 + asse * t - lato * 60, c0 + asse * t + lato * 60
+            for g_, zc in pezzi:
+                for q in clean(LineString([tuple(a_), tuple(b_)]).buffer(0.15, cap_style=2).intersection(g_)):
+                    out[STEEL].append(trimesh.creation.extrude_polygon(q, 0.35).apply_translation([0, 0, zc - 0.6]))
+    piatto_ok = not travi
     piatto = resto if coperto.is_empty else Polygon()
     z_cass = max((zc for _, zc in pezzi), default=z_tetto)
-    if piatto.area > 10:
+    if piatto.area > 10 and piatto_ok:
         # i cassettoni: nervature ogni 1,2 m nelle due direzioni delle file
         x0, y0, x1, y1 = piatto.bounds
         ribs = [LineString([(x, y0 - 1), (x, y1 + 1)]).buffer(0.09) for x in np.arange(x0, x1, 1.2)]
@@ -1789,6 +1855,261 @@ def interno(poly, height, sopra, z, z_tetto, porte, vetri):
     return out, occhio, guarda
 
 
+def vuoti_di(f, shell=None):
+    """Dove la pianta non disegna locali per più di un muro (oltre 1,6 m di spessore): il
+    piano è aperto su quello sotto, come il pozzo sotto la A di Viganò o il patio."""
+    shell = shell if shell is not None else unary_union([ring(r).buffer(0) for r in f["contorno"]])
+    rooms = [shape_of(v) for v in f["vani"] if not shape_of(v).is_empty]
+    cols = [c for v in f["vani"] for c in pilastri(v)]
+    pieno = shell.difference(unary_union(rooms + cols).buffer(0.05))
+    return unary_union([g_ for g_ in clean(pieno.buffer(-0.8, join_style=2).buffer(0.8, join_style=2)) if g_.area > 20])
+
+
+def griglia_pilastri(piani):
+    """Le file dei pilastri cruciformi dell'Edificio 11: la pianta del seminterrato ne
+    disegna il piede, nella linea delle scale, come due squadre che fanno un quadrato di
+    circa 2 m, ma solo lungo i bordi. Piano per piano, perché le linee degli altri piani non
+    li tocchino. Torna (xs, ys): le file, a passo costante."""
+    squadre = []
+    for linee in piani:
+        u = unary_union([LineString([s[:2], s[2:4]]).buffer(0.03) for s in linee if math.dist(s[:2], s[2:4]) > 0.01])
+        squadre += [c for c in getattr(u, "geoms", [u]) if c.area < 0.6
+                    and 1.6 < c.bounds[2] - c.bounds[0] < 2.4 and 1.6 < c.bounds[3] - c.bounds[1] < 2.4]
+    centri, presi = [], set()
+    for i, a in enumerate(squadre):
+        if i in presi:
+            continue
+        gruppo = [b_ for j, b_ in enumerate(squadre) if j not in presi and a.centroid.distance(b_.centroid) < 3.0]
+        presi.update(j for j, b_ in enumerate(squadre) if b_ in gruppo)
+        x0, y0, x1, y1 = unary_union(gruppo).bounds
+        if abs((x1 - x0) - (y1 - y0)) < 0.4 and x1 - x0 < 2.6:
+            centri.append(((x0 + x1) / 2, (y0 + y1) / 2))
+
+    def file(vs):
+        # una fila per ogni gruppo di piedi allineati; dove fra due file ne mancano (la
+        # pianta disegna il piede solo lungo i bordi), le file a passo costante, 8,5 m
+        vs, gr = sorted(vs), []
+        for v in vs:
+            if gr and v - gr[-1][-1] < 0.8:
+                gr[-1].append(v)
+            else:
+                gr.append([v])
+        fs = [sum(g_) / len(g_) for g_ in gr]
+        passi = sorted(b_ - a_ for a_, b_ in zip(fs, fs[1:]) if b_ - a_ > 5)
+        if not passi:
+            return fs
+        passo = passi[len(passi) // 2]
+        # un piede isolato fuori dal passo di tutte le altre file non fa una fila
+        a_passo = lambda d: d > 5 and abs(d / passo - round(d / passo)) * passo < 0.4
+        fs = [f_ for f_, g_ in zip(fs, gr) if len(g_) >= 2 or any(a_passo(abs(f_ - o)) for o in fs)]
+        out = fs[:1]
+        for a_, b_ in zip(fs, fs[1:]):
+            n = round((b_ - a_) / passo)
+            if n >= 2 and abs((b_ - a_) / n - passo) < 0.3:
+                out += [a_ + (b_ - a_) * i / n for i in range(1, n)]
+            out.append(b_)
+        return out
+    return file([c[0] for c in centri]), file([c[1] for c in centri])
+
+
+def cruciforme(x, y, z0, z1, largo=0.9, spesso=0.22):
+    """Un pilastro a croce, due lame incrociate (quelli neri del patio, fatti di squadre)."""
+    return [box3d(x - largo / 2, y - spesso / 2, x + largo / 2, y + spesso / 2, z0, z1),
+            box3d(x - spesso / 2, y - largo / 2, x + spesso / 2, y + largo / 2, z0, z1)]
+
+
+def box3d(x0, y0, x1, y1, z0, z1):
+    return trimesh.creation.box(extents=[x1 - x0, y1 - y0, z1 - z0]).apply_translation([(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2])
+
+
+def vetrata(g, z0, z1, out, passo=1.25):
+    """Una vetrata lungo il bordo di una regione: vetro, montanti neri ogni passo, uno
+    zoccolo di cemento di 30 cm."""
+    for q in clean(g):
+        cs = list(q.exterior.coords)
+        for a, c in zip(cs, cs[1:]):
+            L = math.dist(a, c)
+            if L < 0.3:
+                continue
+            seg = LineString([a, c])
+            for p_ in clean(seg.buffer(0.03, cap_style=2)):
+                out[VETRO].append(trimesh.creation.extrude_polygon(p_, z1 - z0 - 0.3).apply_translation([0, 0, z0 + 0.3]))
+            for p_ in clean(seg.buffer(0.12, cap_style=2)):
+                out[CEMENTO_SOFF].append(trimesh.creation.extrude_polygon(p_, 0.3).apply_translation([0, 0, z0]))
+            for k in range(int(L / passo) + 1):
+                x_, y_ = a[0] + (c[0] - a[0]) * k * passo / L, a[1] + (c[1] - a[1]) * k * passo / L
+                trave_z(out[STEEL], (x_, y_, z0), (x_, y_, z1), 0.08)
+            trave_z(out[STEEL], (*a, z1 - 0.05), (*c, z1 - 0.05), 0.12)
+
+
+def tavoli_patio(linee, P, z, out):
+    """I tavolini del patio, come li disegna la pianta (60 × 106 cm, a coppie o a
+    quattro): piano grigio su gambe nere, e una sedia su ogni lato lungo libero, rossa,
+    arancio o verde come nelle foto del MiBACT."""
+    ls = [LineString([s[:2], s[2:4]]) for s in linee if math.dist(s[:2], s[2:4]) > 0.05]
+    ls = [l_ for l_ in ls if P.intersects(l_)]
+    piani = []
+    for q in polygonize(unary_union(ls)) if ls else []:
+        r = q.minimum_rotated_rectangle
+        c = list(r.exterior.coords)
+        a, b_ = sorted((math.dist(c[0], c[1]), math.dist(c[1], c[2])))
+        if 0.5 < a < 1.0 and 0.9 < b_ < 1.6 and q.area / r.area > 0.95 and P.buffer(-0.3).contains(q.centroid):
+            piani.append(r)
+    tutti = unary_union(piani).buffer(0.05) if piani else Polygon()
+    for r in piani:
+        c = [np.array(p_) for p_ in r.exterior.coords[:4]]
+        lati = sorted(range(4), key=lambda i: -np.linalg.norm(c[(i + 1) % 4] - c[i]))[:2]
+        out[TAVOLO].append(trimesh.creation.extrude_polygon(r, 0.04).apply_translation([0, 0, z + 0.72]))
+        for p_ in r.buffer(-0.06, join_style=2).exterior.coords[:4]:
+            out[CORRIMANO].append(box_z(p_[0], p_[1], 0.04, 0.04, z, z + 0.72))
+        m_ = np.array(r.centroid.coords[0])
+        for i in lati:
+            a, e = c[i], c[(i + 1) % 4]
+            mid = (a + e) / 2
+            n = (mid - m_) / (np.linalg.norm(mid - m_) or 1)
+            s = mid + n * 0.35
+            if tutti.contains(Point(*s)):
+                continue                     # il lato tocca un altro tavolo
+            u = (e - a) / np.linalg.norm(e - a)
+            sedia = (SEDIA_ROSSA, SEDIA_VERDE, ARANCIO)[int(abs(s[0] * 7.3 + s[1] * 3.1)) % 3]
+            rr = lambda d0, d1: [tuple(s - u * 0.21 + n * d0), tuple(s + u * 0.21 + n * d0), tuple(s + u * 0.21 + n * d1), tuple(s - u * 0.21 + n * d1)]
+            out[sedia].append(hexa([(*p_, z + 0.42) for p_ in rr(-0.2, 0.2)], [(*p_, z + 0.47) for p_ in rr(-0.2, 0.2)]))
+            out[sedia].append(hexa([(*p_, z + 0.47) for p_ in rr(0.16, 0.21)], [(*p_, z + 0.88) for p_ in rr(0.16, 0.21)]))
+            for d_ in (-0.15, 0.15):
+                for v_ in (-0.17, 0.17):
+                    g_ = s + u * v_ + n * d_
+                    out[CORRIMANO].append(box_z(g_[0], g_[1], 0.02, 0.02, z, z + 0.42))
+
+
+def togli(g, h):
+    """g senza h; senza toccare g quando h è vuoto (gli altri edifici restano identici)."""
+    return g.difference(h) if not h.is_empty else g
+
+
+def tonda(g):
+    """Se una pianta è più o meno un cerchio (o un settore): la scala elicoidale."""
+    x0, y0, x1, y1 = g.bounds
+    w, h = x1 - x0, y1 - y0
+    return w > 3 and abs(w - h) < 0.25 * max(w, h) and g.area > 0.45 * math.pi * (max(w, h) / 2) ** 2
+
+
+CEMENTO_SCALA = "#B4B2AC"      # il cemento a vista della scala elicoidale del patio
+
+
+def elica(g, P, z0, z1, basso, alto, giro=300):
+    """La scala elicoidale del patio dell'Edificio 11, come nella foto del MiBACT: gradini
+    di cemento a sbalzo su una soletta che sale a spirale, il parapetto esterno in lamiera
+    arancio e quello interno in cemento. Sale in senso antiorario per `giro` gradi e
+    arriva sul lato del vuoto più vicino, dove un pianerottolo la lega al ballatoio.
+    I gradini fino all'altezza dei muri tagliati vanno in `basso` (la casa delle bambole),
+    gli altri in `alto` (l'interno del patio)."""
+    for d_ in (basso, alto):
+        for k_ in (CEMENTO_SCALA, ARANCIO, STEEL):
+            d_.setdefault(k_, [])
+    x0, y0, x1, y1 = g.bounds
+    c = np.array([(x0 + x1) / 2, (y0 + y1) / 2])
+    r1 = max(x1 - x0, y1 - y0) / 2
+    r0 = 0.8
+    bordo = P.exterior
+    q = bordo.interpolate(bordo.project(Point(*c)))
+    th1 = math.atan2(q.y - c[1], q.x - c[0])
+    n = max(8, round((z1 - z0) / 0.175))
+    h = (z1 - z0) / n
+    dth = math.radians(giro) / n
+    taglio = z0 + MURO
+    P2 = lambda r, th: tuple(c + r * np.array([math.cos(th), math.sin(th)]))
+    for i in range(n):
+        a, b_ = th1 - (n - i) * dth, th1 - (n - i - 1) * dth
+        zt = z0 + (i + 1) * h
+        out = basso if zt <= taglio else alto
+        za, zb = z0 + i * h, zt          # la spirale sotto e i parapetti salgono lisci
+        # il gradino sulla soletta: sopra piano, sotto inclinato, spesso 35 cm
+        sotto_a, sotto_b = max(z0, za - 0.35), max(z0, zb - 0.35)
+        pts = [P2(r0, a), P2(r1, a), P2(r1, b_), P2(r0, b_)]
+        out[CEMENTO_SCALA].append(hexa([(*pts[0], sotto_a), (*pts[1], sotto_a), (*pts[2], sotto_b), (*pts[3], sotto_b)],
+                                       [(*p_, zt) for p_ in pts]))
+        # i parapetti, alti 90 cm sulla linea dei gradini: fuori la lamiera arancio, dentro il cemento
+        alto_a, alto_b = za + 0.9, zb + 0.9
+        if out is basso:
+            alto_a, alto_b = min(alto_a, taglio), min(alto_b, taglio)
+        for ra, rb, col in ((r1 - 0.05, r1, ARANCIO), (r0, r0 + 0.12, CEMENTO_SCALA)):
+            q_ = [P2(ra, a), P2(rb, a), P2(rb, b_), P2(ra, b_)]
+            out[col].append(hexa([(*q_[0], za), (*q_[1], za), (*q_[2], zb), (*q_[3], zb)],
+                                 [(*q_[0], alto_a), (*q_[1], alto_a), (*q_[2], alto_b), (*q_[3], alto_b)]))
+        if out is alto:
+            trave_z(out[STEEL], (*P2(r1 - 0.1, a), za + 0.95), (*P2(r1 - 0.1, b_), zb + 0.95), 0.05)
+    # il pianerottolo d'arrivo, dal bordo della scala al ballatoio, coi parapetti arancio
+    u = np.array([math.cos(th1), math.sin(th1)])
+    v = np.array([-u[1], u[0]])
+    p0 = c + u * (r0 + 0.1)
+    p1 = np.array(q.coords[0]) + u * 0.3
+    pian = Polygon([tuple(p0 + v * 0.1), tuple(p1 + v * 0.1), tuple(p1 - v * (r1 - r0)), tuple(p0 - v * (r1 - r0))])
+    alto[CEMENTO_SCALA].append(trimesh.creation.extrude_polygon(pian, 0.45).apply_translation([0, 0, z1 - 0.45]))
+    for s_ in (0.1, -(r1 - r0)):
+        lato = LineString([tuple(p0 + v * s_), tuple(p1 + v * s_)]).buffer(0.025, cap_style=2)
+        alto[ARANCIO].append(trimesh.creation.extrude_polygon(lato, 1.0).apply_translation([0, 0, z1]))
+
+
+def interno_patio(P, sopra, z, z_sopra, z_tetto, xs, ys):
+    """Il patio ribassato dell'Edificio 11 da dentro, come nelle foto del MiBACT: alto due
+    piani, dal seminterrato al soffitto nero sotto il primo piano, con le travi nere sulle
+    file dei pilastri; i pilastri cruciformi neri, con i grappoli di faretti; il ballatoio del
+    piano terra tutto intorno al vuoto, con il parapetto; vetrate nere sui due livelli.
+    Il bordo esterno (5 m oltre il vuoto) è un'approssimazione: la pianta lo apre su atri
+    e corridoi. Torna ({colore: [mesh]}, occhio, guarda)."""
+    out = {STEEL: [], METALLO: [], VETRO: [], CEMENTO_SOFF: [], LUCE: [], CONDOTTI[0]: [], COL["soletta"]: []}
+    E = P.buffer(5, join_style=2).intersection(sopra.union(P))
+    gall = E.difference(P)
+    for q in clean(gall):
+        out[COL["soletta"]].append(trimesh.creation.extrude_polygon(q, SOLETTA).apply_translation([0, 0, z_sopra]))
+        out[STEEL].append(trimesh.creation.extrude_polygon(q, 0.02).apply_translation([0, 0, z_sopra - 0.02]))
+    # il parapetto sul vuoto: corrimano nero a 1 m, montanti ogni 1,5 m
+    zg = z_sopra + SOLETTA
+    for q in clean(P):
+        cs = list(q.exterior.coords)
+        for a, c in zip(cs, cs[1:]):
+            if math.dist(a, c) < 0.2:
+                continue
+            trave_z(out[STEEL], (*a, zg + 1.0), (*c, zg + 1.0), 0.06)
+            trave_z(out[METALLO], (*a, zg + 0.5), (*c, zg + 0.5), 0.03)
+            k_ = max(1, int(math.dist(a, c) / 1.5))
+            for j in range(k_):
+                x_, y_ = a[0] + (c[0] - a[0]) * j / k_, a[1] + (c[1] - a[1]) * j / k_
+                trave_z(out[STEEL], (x_, y_, zg), (x_, y_, zg + 1.0), 0.05)
+    # le vetrate tutto intorno, sotto il ballatoio e sopra
+    vetrata(E, z, z_sopra, out)
+    vetrata(E, zg, z_tetto, out)
+    # il soffitto nero e le travi sulle file dei pilastri
+    for q in clean(E):
+        out[STEEL].append(trimesh.creation.extrude_polygon(q, 0.1).apply_translation([0, 0, z_tetto - 0.1]))
+    x0, y0, x1, y1 = E.bounds
+    linee = [LineString([(x, y0), (x, y1)]) for x in xs if x0 < x < x1] + [LineString([(x0, y), (x1, y)]) for y in ys if y0 < y < y1]
+    for l_ in linee:
+        for q in clean(l_.buffer(0.2, cap_style=2).intersection(E.buffer(-0.1))):
+            out[STEEL].append(trimesh.creation.extrude_polygon(q, 0.7).apply_translation([0, 0, z_tetto - 0.8]))
+    # i pilastri, e sui pilastri del vuoto i grappoli di quattro faretti
+    for x in xs:
+        for y in ys:
+            if not E.buffer(-0.5).contains(Point(x, y)):
+                continue
+            out[STEEL].extend(cruciforme(x, y, z, z_tetto - 0.8))
+            if P.buffer(-0.5).contains(Point(x, y)):
+                for zf in (z + 4.2, zg + 3.5):
+                    for dx, dy in ((0.35, 0.35), (-0.35, 0.35), (0.35, -0.35), (-0.35, -0.35)):
+                        out[CONDOTTI[0]].append(trimesh.creation.cylinder(radius=0.09, height=0.45, sections=12).apply_translation([x + dx, y + dy, zf]))
+                        out[LUCE].append(trimesh.creation.cylinder(radius=0.07, height=0.02, sections=12).apply_translation([x + dx, y + dy, zf - 0.235]))
+    # in piedi in un angolo del vuoto, verso quello opposto: la scala elicoidale in mezzo
+    x0, y0, x1, y1 = P.bounds
+    dentro = P.buffer(-2.0)
+    pts_ = [Point(x, y) for x in np.arange(x0, x1, 0.5) for y in np.arange(y0, y1, 0.5) if dentro.contains(Point(x, y))]
+    lontani = [q for q in pts_ if all(q.distance(Point(x, y)) > 3.0 for x in xs for y in ys)] or pts_
+    a = max(lontani, key=lambda q: q.x + q.y)
+    b_ = min(pts_, key=lambda q: q.x + q.y)
+    occhio = [round(a.x, 2), round(z + 1.65, 2), round(a.y, 2)]
+    guarda = [round(b_.x, 2), round(z + 3.5, 2), round(b_.y, 2)]
+    return out, occhio, guarda
+
+
 def aperture(f):
     """Le porte della pianta come varchi nei muri: larghe quanto l'anta, profonde 0,9 m."""
     cuts = []
@@ -1822,6 +2143,10 @@ def edificio(b, aule_info):
                 if v["csiv"] in ai and not shape_of(v).is_empty:
                     _, h_ = gradoni(shape_of(v), z, geo[csip].get("linee", {}).get("arredi", []))
                     gradonate.setdefault(csip, []).extend(getattr(h_, "levels", {}).values())
+    # I patii: i vuoti grandi del piano sopra (oltre 300 m²), che fanno di un locale un
+    # cortile alto due piani. Solo nell'Edificio 11, con i suoi pilastri cruciformi.
+    aperti = {csip: vuoti_di(geo[csip]) for csip in zs if csip in geo}
+    griglia = griglia_pilastri([f_.get("linee", {}).get("scale", []) for f_ in geo.values()]) if profilato(b) else ([], [])
     for csip, z in zs.items():
         if csip not in geo:
             continue
@@ -1831,7 +2156,7 @@ def edificio(b, aule_info):
         shell = unary_union([ring(r).buffer(0) for r in f["contorno"]])
         rooms, by_type = [], {}
         lin = f.get("linee", {})
-        arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], SCHERMO: [], COL["scale"]: [], VETRO: [], PILASTRO: [], CORRIMANO: [], SCALINO: [], POLTRONA: [], TELO: [], PALCO: [], CABINA: [], COL["muri"]: [], FRAME_GREY: []}
+        arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], SCHERMO: [], COL["scale"]: [], VETRO: [], PILASTRO: [], CORRIMANO: [], SCALINO: [], POLTRONA: [], TELO: [], PALCO: [], CABINA: [], COL["muri"]: [], FRAME_GREY: [], STEEL: [], TAVOLO: [], SEDIA_ROSSA: [], SEDIA_VERDE: []}
         locali = sc.gruppo(csip + "_Locali", gp)
         stanze, colonne, dentro_aule, magna_aule = [], [], [], []
         palladiana, palladiana_aule, fronti = [], [], []
@@ -1848,7 +2173,7 @@ def edificio(b, aule_info):
                     m.apply_translation([col.centroid.x, col.centroid.y, z + SOLETTA + MURO / 2])
                 else:
                     m = trimesh.creation.extrude_polygon(col, MURO).apply_translation([0, 0, z + SOLETTA])
-                arredi[PILASTRO].append(m)
+                arredi[STEEL if profilato(b) else PILASTRO].append(m)      # neri nell'Edificio 11, come nelle foto
             tipo = "aula" if v["csiv"] in aule else v["tipo"]
             if v["csiv"] in aule:
                 m, height = gradoni(poly, z, lin.get("arredi", []))
@@ -1880,6 +2205,16 @@ def edificio(b, aule_info):
         dentro = shell.buffer(0.2).union(torre.buffer(0.3)).difference(unary_union([shape_of(v) for v in f["vani"] if v["csiv"] in aule]))
         corridoi = unary_union([shape_of(v) for v in f["vani"] if v.get("tipo") == "corridoio"])
         nxt = [zz for cc, zz in zs.items() if zz > z]
+        sopra_csip = min(((zz, cc) for cc, zz in zs.items() if zz > z), default=(None, None))[1]
+        # il vuoto del piano sopra lascia fuori la scala elicoidale che vi sale: chiuso di
+        # 4 m, il patio la comprende; la scala la disegna elica(), non scale()
+        patii = [g_.buffer(4, join_style=2).buffer(-4, join_style=2).intersection(shell)
+                 for g_ in clean(aperti.get(sopra_csip, Polygon())) if g_.area > 300] if griglia[0] else []
+        orma = unary_union(patii) if patii else Polygon()
+        eliche = [shape_of(v) for v in f["vani"] if v.get("tipo") == "scale" and orma.buffer(1).contains(shape_of(v).centroid)
+                  and tonda(shape_of(v))]
+        if eliche:
+            dentro = dentro.difference(unary_union(eliche).buffer(0.3))
         H = (min(nxt) - z) if nxt else PIANO
         # All'ultimo piano le rampe disegnate sopra le scale del piano sotto ne sono l'arrivo.
         arrivo = unary_union(sotto) if sotto else Polygon()
@@ -1908,7 +2243,34 @@ def edificio(b, aule_info):
                     trave_z(arredi[METALLO], (x_, y_, z + SOLETTA), (x_, y_, z + SOLETTA + 1.0), 0.04)
         sc.mesh(csip + "_Soletta", gp, slab(shell.difference(foro), z, z + SOLETTA, COL["soletta"]))
         for hex_, polys in by_type.items():
-            sc.mesh(f"{csip}_Locali_{hex_.lstrip('#')}", locali, slab(unary_union(polys).difference(foro), z + SOLETTA, z + SOLETTA + 0.04, hex_))
+            sc.mesh(f"{csip}_Locali_{hex_.lstrip('#')}", locali, slab(togli(unary_union(polys).difference(foro), orma), z + SOLETTA, z + SOLETTA + 0.04, hex_))
+        for P_ in patii:
+            # il pavimento del patio, toccabile come un'aula, col nome del locale che ne
+            # copre di più; i piedi dei pilastri, tagliati come i muri
+            csiv = max(f["vani"], key=lambda v: shape_of(v).intersection(P_).area)["csiv"]
+            el_ = [e_ for e_ in eliche if P_.contains(e_.centroid)]
+            sc.mesh(csiv, locali, slab(P_.difference(vano_scale), z + SOLETTA, z + SOLETTA + 0.05, PATIO))
+            for x_ in griglia[0]:
+                for y_ in griglia[1]:
+                    if P_.buffer(-0.5).contains(Point(x_, y_)):
+                        arredi[STEEL].extend(cruciforme(x_, y_, z + SOLETTA, z + SOLETTA + MURO))
+            arredi.setdefault(ARANCIO, [])
+            tavoli_patio(lin.get("arredi", []), P_, z + SOLETTA + 0.05, arredi)
+            z_s = zs[sopra_csip]
+            z_t = min((zz for zz in zs.values() if zz > z_s), default=z_s + PIANO)
+            parti, occhio, guarda = interno_patio(P_, unary_union([ring(r).buffer(0) for r in geo[sopra_csip]["contorno"]]),
+                                                  z + SOLETTA, z_s, z_t, *griglia)
+            for e_ in el_:
+                elica(e_, P_, z + SOLETTA, z_s + SOLETTA, arredi, parti)
+            gi = sc.gruppo(csiv + "_Interno", gp)
+            for hex_, ms in parti.items():
+                if ms:
+                    m = trimesh.util.concatenate(ms)
+                    m.apply_transform(YUP)
+                    sc.mesh(f"{csiv}_Interno_{hex_.lstrip('#')}", gi, colour(m, hex_))
+            c = P_.representative_point()
+            stanze.append({"csiv": csiv, "sigla": "Patio", "posti": None, "centro": [round(c.x, 2), round(z + 1, 2), round(c.y, 2)],
+                           "interno": {"occhio": occhio, "guarda": guarda}})
         atrio = unary_union([shape_of(v) for v in f["vani"] if v.get("tipo") in ("corridoio", "locale") and shape_of(v).area > 100
                              and v["csiv"] not in aule])
         magna = aula_magna(fronti, atrio, colonne, z, arredi) if fronti else Polygon()
@@ -1918,7 +2280,7 @@ def edificio(b, aule_info):
         # fila delle aule. Una pellicola di 1 cm sopra il pavimento, fuori da _Locali: il tocco e la luce
         # gialla restano sull'aula.
         P = Solidi()
-        for g_, zf in [(unary_union(palladiana).difference(foro), z + SOLETTA + 0.04)] + palladiana_aule:
+        for g_, zf in [(togli(unary_union(palladiana).difference(foro), orma), z + SOLETTA + 0.04)] + palladiana_aule:
             for q_ in clean(g_):
                 P.solid("cubetti", trimesh.creation.extrude_polygon(q_, 0.01, engine="earcut").apply_translation([0, 0, zf]))
         for m in P.meshes().values():
@@ -1929,6 +2291,9 @@ def edificio(b, aule_info):
                              z + SOLETTA, arredi)
         muri = shell.difference(unary_union(rooms + colonne + [g_.buffer(0.12, join_style=2) for g_ in vani_asc]).buffer(0.0)).difference(aperture(f))
         muri = muri.difference(vuoti.buffer(0.05)) if not vuoti.is_empty else muri
+        # nel patio la pianta divide il cortile in locali e chiude i pilastri in quadrati
+        # pieni: nelle foto è un'aula unica, coi pilastri neri
+        muri = muri.difference(orma.buffer(-0.3, join_style=2)) if not orma.is_empty else muri
         # Le finestre della pianta nei muri. Al terra e al primo sono gli esagoni di Ponti del
         # guscio, nelle stesse campate (plan_windows): davanzale pieno fino a 1,2 m dal solaio,
         # poi la metà bassa dell'esagono, che si allarga fino al taglio dei muri, con i
@@ -2002,7 +2367,7 @@ def edificio(b, aule_info):
                                          else BASE_H + MOSAICO_H - 0.35)
         porte = aperture(f)
         for csiv, poly, height in dentro_aule:
-            r_ = interno(poly, height, gradonate.get(sopra_csip, []), z + SOLETTA, z_tetto, porte, vetri)
+            r_ = interno(poly, height, gradonate.get(sopra_csip, []), z + SOLETTA, z_tetto, porte, vetri, travi=profilato(b))
             if not r_:
                 continue
             parti, occhio, guarda = r_
