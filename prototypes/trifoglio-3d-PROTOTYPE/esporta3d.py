@@ -300,6 +300,169 @@ def glass_blocks(S, e, t0, t1, z0, z1):
             panel(S, BLOCK, e, Polygon([(x, y), (x + 0.16, y), (x + 0.16, y + 0.16), (x, y + 0.16)]), 0.0, 0.04)
 
 
+def plan_floor(b, csip):
+    """La geometria di un piano dalle piante, o {} se manca."""
+    geo = SRC / "piante" / f"{b['csie']}-geometria.json"
+    return json.loads(geo.read_text())["piani"].get(csip, {}) if geo.exists() else {}
+
+
+def shape_of(v):
+    return unary_union([ring(r).buffer(0) for r in v["forma"]])
+
+
+def plan_windows(b, csip, pts, reach=1.2):
+    """Le finestre della pianta di un piano, portate sul lato del guscio più vicino:
+    {indice del lato: [(t0, t1)]}, le linee vicine unite, le aperture lunghe divise in
+    finestre da circa 2,8 m come nelle foto."""
+    lines = plan_floor(b, csip).get("linee", {}).get("finestre", [])
+    es = edges(pts)
+    hits = {}
+    for x0, y0, x1, y1 in (s_[:4] for s_ in lines):
+        seg = LineString([(x0, y0), (x1, y1)])
+        if seg.length < 0.2:
+            continue
+        i = min(range(len(es)), key=lambda k: LineString([es[k][0], es[k][1]]).distance(seg))
+        a, c, u, n, L, _ = es[i]
+        if LineString([a, c]).distance(seg) > reach:
+            continue
+        d = ((x1 - x0) * u[0] + (y1 - y0) * u[1]) / seg.length
+        if abs(d) < 0.9:
+            continue                                  # non parallela al muro
+        ts = sorted(((x0 - a[0]) * u[0] + (y0 - a[1]) * u[1], (x1 - a[0]) * u[0] + (y1 - a[1]) * u[1]))
+        hits.setdefault(i, []).append((max(0.5, ts[0]), min(L - 0.5, ts[1])))
+    out = {}
+    for i, spans in hits.items():
+        spans.sort()
+        merged = [list(spans[0])]
+        for t0, t1 in spans[1:]:
+            if t0 - merged[-1][1] < 0.4:
+                merged[-1][1] = max(merged[-1][1], t1)
+            else:
+                merged.append([t0, t1])
+        for t0, t1 in merged:
+            if t1 - t0 < 0.6:
+                continue
+            k = max(1, round((t1 - t0) / 3.2))
+            w = (t1 - t0) / k
+            for j in range(k):
+                out.setdefault(i, []).append((t0 + j * w + (0.2 if k > 1 else 0), t0 + (j + 1) * w - (0.2 if k > 1 else 0)))
+    return out
+
+
+def outside_parts(b, csip):
+    """I vani della pianta di un piano fuori dal contorno dell'edificio, tolti quelli della
+    rampa e del pianerottolo: la torre scale a nord con il suo ponte, le scale di
+    sicurezza e i balconi sulle punte."""
+    poly = ring(b["pianta"]).buffer(0)
+    r = (b.get("ingresso") or {}).get("rampa") or {}
+    ramp = unary_union([Polygon(q) for q in r.get("rampe", [])] + ([Polygon(r["pianerottolo"])] if r else []))
+    ramp = ramp.buffer(1.0) if not ramp.is_empty else ramp
+    out = []
+    for v in plan_floor(b, csip).get("vani", []):
+        g = shape_of(v)
+        if g.is_empty or poly.contains(g.representative_point()):
+            continue
+        if not ramp.is_empty and ramp.intersects(g):
+            continue
+        out.append(g.difference(poly).buffer(0))
+    return [g for g in out if not g.is_empty and g.area > 1.5]
+
+
+def is_tower(g):
+    """La torre scale a nord e il suo ponte: dove le piante disegnano le due rampe di scale
+    fuori dall'edificio, oltre la facciata nord."""
+    x0, y0, x1, y1 = g.bounds
+    return y1 < -9 and 7 < (x0 + x1) / 2 < 25
+
+
+def glazed_storey(S, g, z0, z1, roof=False):
+    """Un piano vetrato a griglia bianca sulla pianta g: soletta, vetri, montanti, traversi."""
+    for part in getattr(g, "geoms", [g]):
+        part = part.simplify(0.25).buffer(0)
+        if part.is_empty or part.area < 1:
+            continue
+        S.solid(BASE, trimesh.creation.extrude_polygon(part, 0.25).apply_translation([0, 0, z0]))
+        for e in edges(ring_ccw(part)):
+            L = e[4]
+            panel(S, GLASS, e, Polygon([(0, z0 + 0.25), (L, z0 + 0.25), (L, z1), (0, z1)]), -0.06, 0.0)
+            cols = max(1, round(L / 1.2))
+            grid = [Polygon([(L * j / cols - 0.05, z0 + 0.25), (L * j / cols + 0.05, z0 + 0.25),
+                             (L * j / cols + 0.05, z1), (L * j / cols - 0.05, z1)]) for j in range(cols + 1)]
+            grid += [Polygon([(0, zz - 0.05), (L, zz - 0.05), (L, zz + 0.05), (0, zz + 0.05)])
+                     for zz in (z0 + 0.3, (z0 + z1) / 2, z1 - 0.05)]
+            panel(S, WHITE, e, unary_union(grid).intersection(Polygon([(0, z0), (L, z0), (L, z1 + 0.1), (0, z1 + 0.1)])), 0.0, 0.1)
+        if roof:
+            S.solid(ROOF, trimesh.creation.extrude_polygon(part.buffer(0.3, join_style=2), 0.3).apply_translation([0, 0, z1]))
+
+
+def railing(S, p0, p1):
+    """Un parapetto in metallo da p0 a p1 (punti 3D sul piano di calpestio)."""
+    p0, p1 = np.array(p0, float), np.array(p1, float)
+    L = np.linalg.norm(p1[:2] - p0[:2])
+    if L < 0.3:
+        return
+    side = np.array([-(p1[1] - p0[1]), p1[0] - p0[0], 0]) / L * 0.03
+    h0, h1 = p0 + [0, 0, 1.05], p1 + [0, 0, 1.05]
+    S.solid(METAL, hexa([h0 - side, h1 - side, h1 + side, h0 + side],
+                        [h0 - side + [0, 0, 0.05], h1 - side + [0, 0, 0.05], h1 + side + [0, 0, 0.05], h0 + side + [0, 0, 0.05]]))
+    k = max(1, int(L / 1.2))
+    for j in range(k + 1):
+        q = p0 + (p1 - p0) * (j / k)
+        S.solid(METAL, trimesh.creation.box(extents=[0.05, 0.05, 1.05]).apply_translation(q + [0, 0, 0.525]))
+
+
+def outer_edges(g, poly, near=0.6):
+    """I lati di g che non toccano l'edificio."""
+    pts = ring_ccw(g.simplify(0.2).buffer(0))
+    for a, c in zip(pts, pts[1:] + pts[:1]):
+        if LineString([a, c]).distance(poly) > near or LineString([a, c]).length > 0 and \
+                poly.exterior.distance(LineString([a, c]).interpolate(0.5, normalized=True)) > near:
+            yield a, c
+
+
+def balcony(S, g, z, poly):
+    """Un balcone sulla punta: soletta e parapetto in metallo sui lati liberi."""
+    S.solid("cemento", trimesh.creation.extrude_polygon(g.simplify(0.2).buffer(0), 0.3).apply_translation([0, 0, z - 0.3]))
+    for a, c in outer_edges(g, poly):
+        railing(S, (*a, z), (*c, z))
+
+
+def outdoor_stair(S, g, z_top, poly, centre):
+    """Una scala di sicurezza sulla punta: scende lungo il suo lato lungo dal piano z_top
+    fino alla piazza, dalla parte verso il centro dell'edificio a quella verso la punta."""
+    rect = g.minimum_rotated_rectangle
+    c = list(rect.exterior.coords)[:4]
+    sides = [(c[i], c[(i + 1) % 4]) for i in range(4)]
+    long_ = max(sides, key=lambda s_: math.dist(*s_))
+    axis = np.array(long_[1]) - np.array(long_[0])
+    axis /= np.linalg.norm(axis)
+    proj = [float(np.dot(np.array(p), axis)) for p in c]
+    s0, s1 = min(proj), max(proj)
+    # La parte alta è quella più vicina al centro dell'edificio.
+    if abs(float(np.dot(centre, axis)) - s0) > abs(float(np.dot(centre, axis)) - s1):
+        axis, s0, s1 = -axis, -s1, -s0
+    n_steps = max(4, round(z_top / 0.175))
+    normal = np.array([-axis[1], axis[0]])
+    big = 200
+    for k in range(n_steps):
+        a0 = s0 + (s1 - s0) * k / n_steps
+        a1 = s0 + (s1 - s0) * (k + 1) / n_steps
+        band = Polygon([tuple(axis * a0 + normal * big), tuple(axis * a1 + normal * big),
+                        tuple(axis * a1 - normal * big), tuple(axis * a0 - normal * big)])
+        tread = g.intersection(band)
+        top = z_top * (1 - k / n_steps)
+        for part in getattr(tread, "geoms", [tread]):
+            if part.geom_type == "Polygon" and part.area > 0.05:
+                S.solid("cemento", trimesh.creation.extrude_polygon(part, max(0.2, top)))
+    # I parapetti lungo i due lati lunghi, inclinati come la scala.
+    for sgn in (1, -1):
+        edge_pts = sorted(c, key=lambda p: float(np.dot(np.array(p), normal)) * sgn)[-2:]
+        p_hi = min(edge_pts, key=lambda p: float(np.dot(np.array(p), axis)))
+        p_lo = max(edge_pts, key=lambda p: float(np.dot(np.array(p), axis)))
+        if LineString([p_hi, p_lo]).distance(poly) > 0.5:
+            railing(S, (*p_hi, z_top), (*p_lo, 0.2))
+
+
 def stair_glazing(b, pts):
     """Le vetrate alte a griglia bianca dei vani scala che toccano il perimetro, per lato:
     {indice del lato: [(t0, t1)]}."""
@@ -318,7 +481,7 @@ def stair_glazing(b, pts):
             a, c, u, n, L, _ = e
             if LineString([a, c]).distance(poly) > 1.5:
                 continue
-            ts = [((x - a[0]) * u[0] + (y - a[1]) * u[1]) for x, y in poly.exterior.coords] if poly.geom_type == "Polygon" else []
+            ts = [((x - a[0]) * u[0] + (y - a[1]) * u[1]) for part in getattr(poly, "geoms", [poly]) for x, y in part.exterior.coords]
             if not ts:
                 continue
             t0, t1 = max(0.8, min(ts)), min(L - 0.8, max(ts))
@@ -472,6 +635,7 @@ def guscio(b):
     bpts = ring_ccw(base)
     S.solid(BASE, trimesh.creation.extrude_polygon(poly.buffer(0.3, join_style=2), 0.12))
     doors = exits(b, bpts)
+    base_windows = plan_windows(b, b["csie"] + "00S", bpts, reach=1.5)
     for i, e in enumerate(edges(bpts)):
         a, c, u, n, L, t_start = e
         S.quad("cemento", [(*a, 0), (*c, 0), (*c, z_base), (*a, z_base)], np.array([n[0], n[1], 0]),
@@ -494,16 +658,12 @@ def guscio(b):
                     topq = [on_face(e, w0, 0.0, z_base), on_face(e, w1, 0.0, z_base),
                             on_face(e, w1, RIENTRO + 0.05, z_base), on_face(e, w0, RIENTRO + 0.05, z_base)]
                     S.solid("cemento", hexa(bottom, topq))
-        # Le finestre dello zoccolo, una ogni 4,2 m dove non ci sono porte.
-        k = int((L - 2) / 4.2)
-        pad = (L - k * 4.2) / 2 if k else 0
-        for j in range(k):
-            t = pad + j * 4.2
-            if any(t0 - 0.6 < t + 4.2 and t < t1 + 0.6 for t0, t1 in spans) or (i + j) % 3 == 1:
+        # Le finestre dello zoccolo, dove la pianta del seminterrato le disegna.
+        for w0, w1 in base_windows.get(i, []):
+            if any(t0 - 0.3 < w1 and w0 < t1 + 0.3 for t0, t1 in spans):
                 continue
-            w0, w1 = t + 1.2, t + 3.0
-            panel(S, FRAME_GREY, e, Polygon([(w0 - 0.08, 1.92), (w1 + 0.08, 1.92), (w1 + 0.08, 3.08), (w0 - 0.08, 3.08)]), 0.0, 0.05)
-            panel(S, GLASS, e, Polygon([(w0, 2.0), (w1, 2.0), (w1, 3.0), (w0, 3.0)]), 0.0, 0.07)
+            panel(S, FRAME_GREY, e, Polygon([(w0 - 0.08, 1.02), (w1 + 0.08, 1.02), (w1 + 0.08, 2.48), (w0 - 0.08, 2.48)]), 0.0, 0.05)
+            panel(S, GLASS, e, Polygon([(w0, 1.1), (w1, 1.1), (w1, 2.4), (w0, 2.4)]), 0.0, 0.07)
     # Il sottosquadro del mosaico, sopra lo zoccolo.
     soffit_v, soffit_f = trimesh.creation.triangulate_polygon(poly, engine="earcut")
     for f in soffit_f:
@@ -512,6 +672,7 @@ def guscio(b):
 
     # Il volume in mosaico, con la sommità che segue il tetto.
     glazing = stair_glazing(b, pts)
+    mosaic_windows = [plan_windows(b, b["csie"] + "000", pts), plan_windows(b, b["csie"] + "001", pts)]
     for i, e in enumerate(edges(pts)):
         a, c, u, n, L, t_start = e
         za, zc = z_mos + lift(a), z_mos + lift(c)
@@ -529,25 +690,16 @@ def guscio(b):
             grid += [Polygon([(t0, zz - 0.05), (t1, zz - 0.05), (t1, zz + 0.05), (t0, zz + 0.05)])
                      for zz in np.arange(1.5, top, 1.5)]
             panel(S, WHITE, e, unary_union(grid), 0.0, 0.12)
-        # Le finestre: campate da 3,2 m su tre file, esagoni di larghezze diverse, qualche
-        # campata cieca e qualche fila di vetrocemento, sempre nello stesso ordine.
-        step = 3.2
-        k = int((L - 1.6) / step)
-        pad = (L - k * step) / 2 if k else 0
-        for j in range(k):
-            t = pad + j * step
-            if any(t0 - 0.5 < t + step and t < t1 + 0.5 for t0, t1 in spans):
-                continue
-            seed = (i * 7 + j * 5 + int(L)) % 11
-            for r, zr in enumerate((z_base + 1.3, z_base + 4.1, z_base + 6.9)):
-                s = (seed + r * 4) % 11
-                if s in (0, 3, 7):
-                    continue                                              # cieca
-                if s == 5:
-                    glass_blocks(S, e, t + 0.4, t + 2.8, zr + 0.2, zr + 0.6)
+        # Le finestre, dove le piante di terra e primo le disegnano: esagoni di Ponti a metà
+        # di ogni piano; nelle aule alte del primo, dove il muro sopra è cieco, una fila di
+        # vetrocemento ogni tanto, come nelle foto.
+        for row, (csip, zf) in enumerate(((b["csie"] + "000", z_base), (b["csie"] + "001", z_base + PIANO))):
+            for w0, w1 in mosaic_windows[row].get(i, []):
+                if any(t0 - 0.5 < w1 and w0 < t1 + 0.5 for t0, t1 in spans):
                     continue
-                w = (1.6, 2.4, 2.8)[s % 3]
-                window(S, e, t + (step - w) / 2, t + (step + w) / 2, zr, zr + 1.15)
+                window(S, e, w0, w1, zf + 1.2, zf + 2.35)
+                if row == 1 and int(w0 * 7 + i) % 3 == 0 and z_mos - (zf + 3.3) > 1.0:
+                    glass_blocks(S, e, (w0 + w1) / 2 - 1.2, (w0 + w1) / 2 + 1.2, zf + 3.3, zf + 3.7)
 
     # Il tetto: una lastra bianca sottile oltre il mosaico, che sale verso le punte.
     eave = offset_ring(pts, SPORTO)
@@ -568,6 +720,23 @@ def guscio(b):
         zr = z_mos + lift((x + w / 2, y + d / 2)) + 0.3
         S.solid(PLANT, trimesh.creation.box(extents=[w, d, 1.6]).apply_translation([x + w / 2, y + d / 2, zr + 0.8]))
     ingresso(b, S, RAMPA)
+    # Fuori dal contorno, come nelle piante: la torre scale vetrata a nord con il suo ponte,
+    # le scale di sicurezza sulle punte al terra e i balconi del primo.
+    levels = [(b["csie"] + "00S", 0.0), (b["csie"] + "000", z_base), (b["csie"] + "001", z_base + PIANO)]
+    tower_top = {}
+    for k, (csip, zf) in enumerate(levels):
+        for g in outside_parts(b, csip):
+            if is_tower(g):
+                glazed_storey(S, g, zf, zf + (levels[k + 1][1] - zf if k + 1 < len(levels) else PIANO))
+                tower_top[k] = g
+            elif k == 1:
+                outdoor_stair(S, g, zf, poly, centre)
+            elif k == 2:
+                balcony(S, g, zf, poly)
+    if tower_top:
+        k = max(tower_top)
+        top = levels[k][1] + PIANO
+        S.solid(ROOF, trimesh.creation.extrude_polygon(tower_top[k].simplify(0.25).buffer(0.3, join_style=2), 0.3).apply_translation([0, 0, top]))
     return S.meshes(), z_mos + ALA
 
 
@@ -656,11 +825,53 @@ def quote(b):
     return {c: (i - g) * PIANO for i, c in enumerate(liv)}
 
 
+def gradoni(poly, z, centre, posti):
+    """Il pavimento di un'aula ad anfiteatro: le file salgono dal fondo verso la punta del
+    ventaglio, lontano dal centro dell'edificio dove sta la cattedra. Sotto i 100 posti
+    l'aula resta piana. Una mesh Z-up."""
+    floor = z + SOLETTA
+    if (posti or 0) < 100:
+        return slab(poly.buffer(-0.02), floor, floor + 0.05, COL["aula"])
+    c = np.array(poly.centroid.coords[0])
+    axis = c - centre
+    axis /= np.linalg.norm(axis) or 1
+    normal = np.array([-axis[1], axis[0]])
+    proj = [float(np.dot(np.array(p), axis)) for p in poly.exterior.coords]
+    s0, s1 = min(proj) + 3.0, max(proj)          # i primi 3 m piani, per la cattedra
+    rows = max(1, int((s1 - s0) / 0.95))
+    rise = min(0.17, 2.4 / rows)
+    parts = []
+    big = 300
+    for k in range(-1, rows):
+        a0 = (min(proj) - 1) if k < 0 else s0 + k * 0.95
+        a1 = s0 if k < 0 else (s1 + 1 if k == rows - 1 else s0 + (k + 1) * 0.95)
+        band = Polygon([tuple(axis * a0 + normal * big), tuple(axis * a1 + normal * big),
+                        tuple(axis * a1 - normal * big), tuple(axis * a0 - normal * big)])
+        m = slab(poly.buffer(-0.02).intersection(band), floor, floor + 0.05 + max(0, k + 1) * rise, COL["aula"])
+        if m is not None:
+            parts.append(m)
+    m = trimesh.util.concatenate(parts)
+    return colour(m, COL["aula"])
+
+
+def aperture(f):
+    """Le porte della pianta come varchi nei muri: larghe quanto l'anta, profonde 0,9 m."""
+    cuts = []
+    for d in f.get("porte", []):
+        h, c = d["cardine"], d["chiusa"]
+        ux, uy = c[0] - h[0], c[1] - h[1]
+        n = math.hypot(ux, uy) or 1
+        nx, ny = -uy / n * 0.45, ux / n * 0.45
+        cuts.append(Polygon([(h[0] + nx, h[1] + ny), (c[0] + nx, c[1] + ny), (c[0] - nx, c[1] - ny), (h[0] - nx, h[1] - ny)]))
+    return unary_union(cuts) if cuts else Polygon()
+
+
 def edificio(b, aule_info):
     geo = json.loads((SRC / "piante" / f"{b['csie']}-geometria.json").read_text())["piani"]
     sc = Scena(b["csie"])
     piani = sc.gruppo("Piani", b["csie"])
     zs = quote(b)
+    centre = np.array(ring(b["pianta"]).centroid.coords[0])
     meta = {"csie": b["csie"], "nome": b.get("nome"), "numero": b.get("numero"), "piani": []}
     for csip, z in zs.items():
         if csip not in geo:
@@ -679,7 +890,7 @@ def edificio(b, aule_info):
             rooms.append(poly)
             tipo = "aula" if v["csiv"] in aule else v["tipo"]
             if v["csiv"] in aule:
-                m = slab(poly.buffer(-0.02), z + SOLETTA, z + SOLETTA + 0.05, COL["aula"])
+                m = gradoni(poly, z, centre, aule[v["csiv"]].get("posti"))
                 sc.mesh(v["csiv"], locali, m)
                 c = poly.representative_point()
                 stanze.append({"csiv": v["csiv"], "sigla": aule[v["csiv"]]["sigla"],
@@ -689,7 +900,7 @@ def edificio(b, aule_info):
         for hex_, polys in by_type.items():
             sc.mesh(f"{csip}_Locali_{hex_.lstrip('#')}", locali, slab(unary_union(polys), z + SOLETTA, z + SOLETTA + 0.04, hex_))
         sc.mesh(csip + "_Soletta", gp, slab(shell, z, z + SOLETTA, COL["soletta"]))
-        muri = shell.difference(unary_union(rooms).buffer(0.0))
+        muri = shell.difference(unary_union(rooms).buffer(0.0)).difference(aperture(f))
         sc.mesh(csip + "_Muri", gp, slab(muri, z + SOLETTA, z + SOLETTA + MURO, COL["muri"]))
         meta["piani"].append({"csip": csip, "quota": z, "aule": stanze})
     return sc, meta

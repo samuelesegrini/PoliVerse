@@ -57,8 +57,16 @@ del restauro e della piazza (Coprat, TeamWork Italy, Urbanfile, Arketipo), ad al
   rampe piene di cemento lungo il muro, con parapetto pieno e corrimano in metallo; al
   seminterrato, a quota piazza, dalla vetrata sotto il pianerottolo, che sta sui pilastri.
 
+- quello che le piante disegnano fuori dal contorno: la torre scale vetrata a nord con il
+  ponte verso il terra e il primo, le scale di sicurezza che scendono dalle punte del terra
+  alla piazza, i balconi del primo sulle punte;
+- le finestre dove le piante le disegnano (`linee.finestre`): rettangolari nello zoccolo,
+  esagonali a metà di terra e primo, con qualche fila di vetrocemento nelle aule alte.
+
 Il mosaico (tessere da 5 cm) e il cemento bocciardato sono texture generate dallo script,
-colore e normali, ripetute in metri: il campus passa da 0,3 a 1 MB. Le piante dei piani
+colore e normali, ripetute in metri: il campus passa da 0,3 a 1 MB. Dentro, le aule da 100 posti in su hanno le gradonate: le file
+salgono dalla cattedra, verso il centro dell'edificio, alla punta del ventaglio. Nei muri
+tagliati sono aperti i varchi delle porte della pianta. Le piante dei piani
 seguono le quote del guscio: seminterrato a 0, terra a 3,5 m, primo a 7,5 m. Gli altri edifici
 restano estrusioni.
 
@@ -66,5 +74,5 @@ restano estrusioni.
 
 - Solo il Trifoglio ha il guscio: per gli altri edifici le forme di `build-mappa.py` (falde,
   volte, sheds, vetrate) non sono ancora portate nell'esportatore.
-- Porte e vani scala non tagliati nei muri.
-- I tocchi usano forme di collisione convesse: in un'aula a L il tocco può prendere la vicina.
+- Le gradonate seguono una regola (le file salgono verso la punta), non i gradini disegnati
+  nella pianta; le scale interne restano pavimenti piani.

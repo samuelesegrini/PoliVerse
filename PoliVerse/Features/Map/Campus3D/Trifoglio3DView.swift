@@ -159,7 +159,7 @@ final class Trifoglio3DScene {
             let building = try await Entity(contentsOf: buildingURL)
             tappable(campus.findEntity(named: "Edifici"))
             for floor in floors(of: building) {
-                tappable(floor.findEntity(named: floor.name + "_Locali"))
+                await tappableExactly(floor.findEntity(named: floor.name + "_Locali"))
             }
             building.components.set(OpacityComponent(opacity: 0))
             building.isEnabled = false
@@ -185,6 +185,24 @@ final class Trifoglio3DScene {
         guard let entity else { return }
         entity.generateCollisionShapes(recursive: true)
         visit(entity) { $0.components.set(InputTargetComponent()) }
+    }
+
+    /// Lets taps reach every mesh under an entity by its exact shape, so a tap on an
+    /// L-shaped classroom, or on its tiers, never lands on the room next to it.
+    ///
+    /// - Parameter entity: The entity whose meshes become tappable; nothing when `nil`.
+    private func tappableExactly(_ entity: Entity?) async {
+        guard let entity else { return }
+        var meshes: [(Entity, MeshResource)] = []
+        visit(entity) { if let model = $0.components[ModelComponent.self] { meshes.append(($0, model.mesh)) } }
+        for (part, mesh) in meshes {
+            if let shape = try? await ShapeResource.generateStaticMesh(from: mesh) {
+                part.components.set(CollisionComponent(shapes: [shape]))
+            } else {
+                part.generateCollisionShapes(recursive: false)
+            }
+            part.components.set(InputTargetComponent())
+        }
     }
 
     // MARK: - The walk
