@@ -983,6 +983,9 @@ def profilo_3d(b):
 # Un edificio può avere l'esterno disegnato a mano in gusci/<csie>.py, con
 #   guscio(b, E) -> ({colore: mesh}, quota del tetto)   E è questo modulo, con i suoi attrezzi
 #   quote(b, E)  -> {csip: quota}                       facoltativo: le quote dei piani
+#   arredi(b, E, csip, z, piano) -> {colore: [mesh]}    facoltativo: arredi in più su un piano
+#   interno(b, E, csiv, poly, z, porte) -> come interno() facoltativo: l'interno di un'aula
+#                                                       senza file nella pianta
 GUSCI = pathlib.Path(__file__).resolve().parent / "gusci"
 
 
@@ -2008,6 +2011,8 @@ def edificio(b, aule_info):
         porte = aperture(f)
         for csiv, poly, height in dentro_aule:
             r_ = interno(poly, height, gradonate.get(sopra_csip, []), z + SOLETTA, z_tetto, porte, vetri)
+            if not r_ and hasattr(guscio_proprio(b), "interno"):       # un interno disegnato a mano
+                r_ = guscio_proprio(b).interno(b, sys.modules[__name__], csiv, poly, z + SOLETTA, porte)
             if not r_:
                 continue
             parti, occhio, guarda = r_
@@ -2032,6 +2037,9 @@ def edificio(b, aule_info):
             for st in stanze:
                 if st["csiv"] in AULA_MAGNA:
                     st["interno"] = {"occhio": occhio, "guarda": guarda, "nodo": "Aula_Magna_Interno"}
+        if hasattr(guscio_proprio(b), "arredi"):                         # arredi disegnati a mano
+            for hex_, ms in guscio_proprio(b).arredi(b, sys.modules[__name__], csip, z + SOLETTA, f).items():
+                arredi.setdefault(hex_, []).extend(ms)
         ga = sc.gruppo(csip + "_Arredi", gp)
         for hex_, parts in arredi.items():
             if parts:

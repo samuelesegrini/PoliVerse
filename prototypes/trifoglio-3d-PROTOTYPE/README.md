@@ -41,7 +41,7 @@ Per rigenerarli, con il ramo della mappa estratto:
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201
+python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -176,3 +176,7 @@ Dentro, le stesse regole del Trifoglio, più due:
 - Le alzate delle scale sono ricavate dal numero di pedate disegnate e dall'altezza del
   piano; le piante non le quotano. Le scale della torre vengono ripide (20 cm) perché la
   pianta disegna 9 pedate per rampa.
+
+## Edificio 1 (Rettorato, MIA0101)
+
+L'esterno è in `gusci/MIA0101.py`: `esporta3d.py` carica `gusci/<csie>.py` quando l'edificio è in `--edifici` e ne usa `guscio()`, `quote()` e, se ci sono, `interno()` e `arredi()`. Facciata e tetti sono ridisegnati dall'ortofoto (zoom 21) e dalle foto; le campate seguono le porte dei balconi della pianta. L'interno dell'Aula Magna (MIA0101001023: palco, presidenza, ~228 poltrone, boiserie, lampadari) è dedotto, non rilevato.
