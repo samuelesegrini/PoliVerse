@@ -1508,27 +1508,52 @@ def cylinder(x, y, r0, r1, z0, z1, sides, top):
             f'<polygon points="{" ".join(f"{fmt(px)},{fmt(py)}" for px, py in hi)}" fill="{top}"/>']
 
 
-def chimney(spec, turn):
-    """A factory chimney in brick: a tapering shaft, its courses faint, a water tank
-    round it part way up on a gallery, and a crown at the top."""
+def chimney(spec, turn, z0=0.0):
+    """A factory chimney: a square tower of concrete piers and brick panels rising from
+    the courtyard to a round water tank with a rounded underside, and from the tank's
+    top the brick shaft, tapering, ringed with darker courses, a thin railing at its top."""
     x, y = turn(tuple(spec["punto"]))
+    t = spec["serbatoio"]
+    zt0, zt1, rt_ = t["z"], t["z"] + t["h"], t["r"]
+    w = spec.get("torre", 2.3)
+    out = []
+    # The tower: brick panels between piers, banded every few metres.
+    sq = ccw([(x - w, y - w), (x + w, y - w), (x + w, y + w), (x - w, y + w)])
+    out += prism(sq, z0, zt0 - 2.5, ("#8E5038", "#6E3B29"), "#8E5038")
+    grid = []
+    for a, c, _, _ in faces(sq, 0, 1):
+        for k in range(4):
+            px, py = a[0] + (c[0] - a[0]) * k / 3, a[1] + (c[1] - a[1]) * k / 3
+            grid.append(f"M{fmt(iso(px, py, z0)[0])} {fmt(iso(px, py, z0)[1])}V{fmt(iso(px, py, zt0 - 2.5)[1])}")
+        zz = z0 + 6
+        while zz < zt0 - 3:
+            grid.append(f"M{fmt(iso(*a, zz)[0])} {fmt(iso(*a, zz)[1])}L{fmt(iso(*c, zz)[0])} {fmt(iso(*c, zz)[1])}")
+            zz += 6
+    out.append(f'<path d="{"".join(grid)}" stroke="#D6D1C7" stroke-width="1.1" fill="none"/>')
+    # The tank, its underside curving in to the tower.
+    out += cylinder(x, y, w * 1.25, rt_ * 0.92, zt0 - 3, zt0, ("#C4C8CC", "#979DA3"), "#C4C8CC")
+    out += cylinder(x, y, rt_, rt_, zt0, zt1, ("#DADDDF", "#A9AEB3"), "#C9CDD0")
+    # The shaft, from the tank's top.
     h, r = spec["h"], spec.get("r", 1.5)
-    rt = r * 0.7
-    out = cylinder(x, y, r, rt, 0, h, ("#B0684A", "#7A3F2A"), "#4A2A20")
-    rr = lambda z: r + (rt - r) * z / h
+    rt = r * 0.62
+    out += cylinder(x, y, r, rt, zt1, h, ("#A8644A", "#6E3A28"), "#3B231B")
+    rr = lambda z: r + (rt - r) * (z - zt1) / (h - zt1)
     courses = []
-    for k in range(1, int(h / 4)):
-        z = k * 4
-        (a0, b0), (a1, b1) = iso(x - rr(z) * 0.72, y + rr(z) * 0.72, z), iso(x + rr(z) * 0.72, y - rr(z) * 0.72, z)
-        courses.append(f"M{fmt(a0)} {fmt(b0 + 0.4)}Q{fmt((a0 + a1) / 2)} {fmt(b0 + rr(z) * ISO_SCALE * 0.6)} {fmt(a1)} {fmt(b1 + 0.4)}")
-    out.append(f'<path d="{"".join(courses)}" stroke="#5E3022" stroke-width="0.35" fill="none" opacity="0.5"/>')
-    t = spec.get("serbatoio")
-    if t:
-        z0, z1, rt_ = t["z"], t["z"] + t["h"], t["r"]
-        out += cylinder(x, y, rt_ * 0.55, rt_, z0 - 4, z0, ("#B9BEC3", "#8F959B"), "#C8CCD0")
-        out += cylinder(x, y, rt_, rt_, z0, z1, ("#D6D9DC", "#A5AAB0"), "#BFC3C7")
-        out += cylinder(x, y, rr(z1), rr(z1), z1, z1 + 1, ("#B0684A", "#7A3F2A"), "#4A2A20")[1:]
-    out += cylinder(x, y, rt * 1.35, rt * 1.35, h, h + 2.2, ("#C8CCD0", "#9DA3A9"), "#3A2620")
+    z = zt1 + 5
+    while z < h - 1:
+        q = rr(z)
+        pts_ = [iso(x + q * math.cos(k * math.pi / 12), y + q * math.sin(k * math.pi / 12), z) for k in range(24)]
+        lo = sorted(pts_, key=lambda p: p[0])
+        mid = (lo[0][1] + lo[-1][1]) / 2
+        front = sorted([p for p in pts_ if p[1] >= mid - 0.01], key=lambda p: p[0])
+        courses.append("M" + "L".join(f"{fmt(px)} {fmt(py)}" for px, py in front))
+        z += 7
+    out.append(f'<path d="{"".join(courses)}" stroke="#4E2A1E" stroke-width="0.6" fill="none" opacity="0.4"/>')
+    # The railing at the top, a thin ring round the mouth on short posts.
+    ring = [iso(x + rt * 1.9 * math.cos(k * math.pi / 12), y + rt * 1.9 * math.sin(k * math.pi / 12), h + 1.6) for k in range(24)]
+    posts = "".join(f"M{fmt(px)} {fmt(py)}v1.6" for px, py in ring[::3])
+    out.append(f'<path d="{posts}" stroke="#C9CDD2" stroke-width="0.4"/>'
+               f'<polygon points="{" ".join(f"{fmt(px)},{fmt(py)}" for px, py in ring)}" fill="none" stroke="#E3E6E9" stroke-width="0.6"/>')
     return out
 
 
@@ -1737,7 +1762,7 @@ def draw_iso(campus, b):
         top = 0
         for part, own in parts:
             if part.get("ciminiera"):
-                strati.append(Strato(f"ciminiera-{part['nome']}", "edifici", chimney(part["ciminiera"], turn)))
+                strati.append(Strato(f"ciminiera-{part['nome']}", "edifici", chimney(part["ciminiera"], turn, base_h)))
                 continue
             ztop = draw_profile(b, own, turn, base_h, storey, door, strati, zmid, part["profilo"], part["nome"])
             others = [o for p2, o in parts if p2 is not part]
