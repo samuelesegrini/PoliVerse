@@ -39,11 +39,27 @@ python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
 python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203
 ```
 
-Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m, terra a quota zero.
+Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
+
+## Il guscio del Trifoglio
+
+Nel campus il Trifoglio non è più un'estrusione piatta: `guscio()` segue il suo `profilo`
+come l'isometrico di `build-mappa.py`, ma ad altezze reali (una fascia di 4 m per piano
+invece delle unità esagerate del disegno):
+
+- zoccolo chiaro e la fessura vetrata scura del seminterrato, alta 1,2 m: il terra è
+  rialzato di tanto, e le piante dei piani salgono con lui;
+- il terra in cemento con le finestre grandi, il primo in mosaico con tre file di
+  finestrelle e le strisce di vetrocemento, con lo stesso schema di `punched()`;
+- il tetto che sporge di `gronda` m e i volumi degli impianti;
+- l'ingresso: pianerottolo, le due rampe con il corrimano, i pilastri, la vetrata del
+  seminterrato sotto e la porta sopra.
+
+Finestre e cornici sono geometria, non texture. Gli altri edifici restano estrusioni.
 
 ## Cosa manca
 
-- Volumi senza tetti né facciate: le forme di `build-mappa.py` (falde, volte, sheds) non sono
-  ancora portate nell'esportatore.
+- Solo il Trifoglio ha il guscio: per gli altri edifici le forme di `build-mappa.py` (falde,
+  volte, sheds, vetrate) non sono ancora portate nell'esportatore.
 - Porte e vani scala non tagliati nei muri.
 - I tocchi usano forme di collisione convesse: in un'aula a L il tocco può prendere la vicina.

@@ -14,7 +14,7 @@ Politecnico, così l'app trova un'aula per csiv: <csie>/Piani/<csip>/<csip>_Loca
 
 Dipendenze: shapely, trimesh, mapbox_earcut, numpy, usd-core.
 """
-import argparse, json, pathlib
+import argparse, json, math, pathlib
 import numpy as np
 import trimesh
 from shapely.geometry import Polygon, LineString
@@ -111,6 +111,164 @@ def ring(pts):
     return Polygon([tuple(p) for p in pts])
 
 
+# ---------------------------------------------------------------- guscio
+
+# Altezze reali (m) delle fasce del profilo, al posto delle unità esagerate del disegno.
+FESSURA = 1.2        # il seminterrato che affiora: il piano terra è rialzato di tanto
+GLASS, FRAME = "#9DB4CC", "#F4F5F7"
+PLANT, ROOF, ROOF_EDGE = "#E3E6EB", "#E3E5E8", "#B9BDC4"
+PALE, DOOR, ENTRY = "#E9E6E0", "#2D3B4F", "#2B3644"
+BASE = "#C9CED6"
+
+
+def hexa(bottom, top):
+    """Un solido a sei facce da quattro angoli in basso e i quattro sopra, nello stesso giro."""
+    v = np.array(list(bottom) + list(top), float)
+    f = [[0, 2, 1], [0, 3, 2], [4, 5, 6], [4, 6, 7]]
+    for i in range(4):
+        j = (i + 1) % 4
+        f += [[i, j, j + 4], [i, j + 4, i + 4]]
+    m = trimesh.Trimesh(v, f, process=False)
+    m.invert() if m.volume < 0 else None
+    return m
+
+
+def box3(a, c, n, t0, t1, z0, z1, d0, d1):
+    """Una lastra appoggiata alla faccia a→c: da t0 a t1 lungo la faccia, da z0 a z1 in
+    altezza, da d0 a d1 verso l'esterno (n). Coordinate Z-up."""
+    L = math.dist(a, c)
+    u = ((c[0] - a[0]) / L, (c[1] - a[1]) / L)
+    at = lambda t, d: (a[0] + u[0] * t + n[0] * d, a[1] + u[1] * t + n[1] * d)
+    q = [at(t0, d0), at(t1, d0), at(t1, d1), at(t0, d1)]
+    return hexa([(*p, z0) for p in q], [(*p, z1) for p in q])
+
+
+def faces_of(poly):
+    """Ogni lato del contorno con la sua normale verso l'esterno."""
+    pts = list(poly.exterior.coords)[:-1]
+    out = []
+    for a, c in zip(pts, pts[1:] + pts[:1]):
+        L = math.dist(a, c)
+        if L < 0.3:
+            continue
+        n = ((c[1] - a[1]) / L, -(c[0] - a[0]) / L)
+        mid = ((a[0] + c[0]) / 2 + n[0] * 0.2, (a[1] + c[1]) / 2 + n[1] * 0.2)
+        if poly.contains(Polygon([mid, (mid[0] + 1e-3, mid[1]), (mid[0], mid[1] + 1e-3)]).centroid):
+            n = (-n[0], -n[1])
+        out.append((a, c, n, L))
+    return out
+
+
+def windows(poly, z, h, rows, big, parts):
+    """Le finestre di una fascia piena, con lo stesso schema di punched() in build-mappa.py:
+    una campata ogni 4,2 m; al terra una finestra grande per campata, sopra `rows` file
+    di finestrelle e ogni tanto una striscia alta di vetrocemento."""
+    for a, c, n, L in faces_of(poly):
+        step = 4.2
+        k = int((L - 2) / step)
+        if k < 1:
+            continue
+        pad = (L - k * step) / 2
+        def pane(t0, t1, z0, z1):
+            parts[FRAME].append(box3(a, c, n, t0 - 0.12, t1 + 0.12, z0 - 0.12, z1 + 0.12, -0.02, 0.08))
+            parts[GLASS].append(box3(a, c, n, t0, t1, z0, z1, 0.0, 0.1))
+        for i in range(k):
+            t = pad + i * step
+            if big:
+                pane(t + 0.6, t + step - 0.6, z + h * 0.18, z + h * 0.78)
+                continue
+            seed = (i * 7 + int(L)) % 9
+            if seed == 4:
+                pane(t + 1.8, t + 2.4, z + h * 0.12, z + h * 0.88)          # vetrocemento
+                continue
+            for r in range(rows):
+                if (seed + r * 3) % 5 == 0:
+                    continue                                                # cieca qui
+                zr = z + h * (r + 0.42) / rows
+                w = 2.6 if (seed + r) % 3 else 1.4
+                pane(t + 0.8, t + 0.8 + w, zr, zr + h / rows * 0.32)
+
+
+def ingresso(b, poly, zg, parts):
+    """Il terra rialzato: pianerottolo davanti alla porta, due rampe lungo i muri, sotto il
+    pianerottolo l'ingresso vetrato del seminterrato, e la porta scura sopra."""
+    ent = b.get("ingresso") or {}
+    r = ent.get("rampa")
+    if not r or "lato" not in ent:
+        return
+    raw = [tuple(p) for p in b["pianta"]]
+    a, c = raw[ent["lato"]], raw[(ent["lato"] + 1) % len(raw)]
+    n = next(f[2] for f in faces_of(poly) if math.dist(f[0], a) < 0.5 or math.dist(f[1], c) < 0.5)
+    L = math.dist(a, c)
+    mid = ent["t"] * L
+    land = Polygon(r["pianerottolo"]).buffer(0)
+    parts[PALE].append(trimesh.creation.extrude_polygon(land, 0.3).apply_translation([0, 0, zg - 0.3]))
+    for q in r["rampe"]:
+        # I primi due vertici toccano il pianerottolo, gli ultimi due il suolo.
+        top = [(*q[0], zg), (*q[1], zg), (*q[2], 0.02), (*q[3], 0.02)]
+        parts[PALE].append(hexa([(x, y, zz - 0.3) for x, y, zz in top], top))
+        for p0, p1 in ((q[0], q[3]), (q[1], q[2])):        # corrimano
+            dx, dy = p1[0] - p0[0], p1[1] - p0[1]
+            k = math.hypot(dx, dy)
+            w = (-dy / k * 0.04, dx / k * 0.04)
+            q4 = [(p0[0] - w[0], p0[1] - w[1], zg), (p1[0] - w[0], p1[1] - w[1], 0.0),
+                  (p1[0] + w[0], p1[1] + w[1], 0.0), (p0[0] + w[0], p0[1] + w[1], zg)]
+            parts[FRAME].append(hexa([(x, y, zz + 0.9) for x, y, zz in q4], [(x, y, zz + 0.97) for x, y, zz in q4]))
+    half = r.get("sotto", 3.5)
+    parts[ENTRY].append(box3(a, c, n, mid - half, mid + half, 0, zg - 0.35, 0, 0.06))
+    parts[DOOR].append(box3(a, c, n, mid - 1.5, mid + 1.5, zg, zg + 2.6, 0, 0.08))
+    # I pilastri sotto il bordo esterno del pianerottolo.
+    ring_ = list(land.exterior.coords)[:-1]
+    edge = max(zip(ring_, ring_[1:] + ring_[:1]), key=lambda e: math.dist(*e))
+    for i in range(5):
+        f = (i + 0.5) / 5
+        x, y = edge[0][0] + (edge[1][0] - edge[0][0]) * f, edge[0][1] + (edge[1][1] - edge[0][1]) * f
+        col = trimesh.creation.cylinder(radius=0.18, height=zg - 0.3, sections=8)
+        parts[FRAME].append(col.apply_translation([x - n[0] * 0.5, y - n[1] * 0.5, (zg - 0.3) / 2]))
+
+
+def guscio(b):
+    """L'esterno come nell'isometrico, ad altezze reali: {colore: [mesh Z-up]}.
+
+    Per gli edifici con profilo fessura + pieni + gronda (il Trifoglio): zoccolo, la
+    fessura vetrata del seminterrato, una fascia per piano nel suo rivestimento con le
+    sue finestre, il tetto che sporge di `gronda` m con gli impianti, e l'ingresso."""
+    poly = ring(b["pianta"]).buffer(0)
+    parts = {k: [] for k in (BASE, GLASS, FRAME, PLANT, ROOF, ROOF_EDGE, PALE, DOOR, ENTRY, CLADDING["fessura"])}
+    ext = lambda g, z0, z1: trimesh.creation.extrude_polygon(g, z1 - z0).apply_translation([0, 0, z0])
+    parts[BASE].append(ext(poly.buffer(0.6, join_style=2), 0, 0.25))
+    z = 0.0
+    for band in b["profilo"]:
+        if band["tipo"] == "fessura":
+            parts[CLADDING["fessura"]].append(ext(poly.buffer(-0.25, join_style=2), z, z + FESSURA))
+            z += FESSURA
+            continue
+        colore = CLADDING.get(band.get("rivestimento"), COL["edificio"])
+        parts.setdefault(colore, []).append(ext(poly, z, z + PIANO))
+        if band.get("finestre"):
+            windows(poly, z, PIANO, band.get("file", 1), band["finestre"] == "grandi", parts)
+        z += PIANO
+    g = b.get("gronda", 0.6)
+    eave = poly.buffer(g, join_style=2)
+    parts[ROOF_EDGE].append(ext(eave, z, z + 0.45))
+    parts[ROOF].append(ext(eave.buffer(-0.05, join_style=2), z + 0.45, z + 0.5))
+    for x, y, w, d in b.get("impianti", []):
+        parts[PLANT].append(trimesh.creation.box(extents=[w, d, 1.6]).apply_translation([x + w / 2, y + d / 2, z + 0.5 + 0.8]))
+    ingresso(b, poly, FESSURA, parts)
+    out = {}
+    for hex_, ms in parts.items():
+        if ms:
+            m = trimesh.util.concatenate(ms)
+            m.apply_transform(YUP)
+            m.invert() if m.volume < 0 else None
+            out[hex_] = colour(m, hex_)
+    return out, z + 0.5
+
+
+def dettagliato(b):
+    return b["csie"] in ARGS.edifici.split(",") and [p["tipo"] for p in b.get("profilo", [])][:1] == ["fessura"]
+
+
 # ---------------------------------------------------------------- campus
 
 def volumi(b):
@@ -169,6 +327,10 @@ def campus(c):
             sc.mesh(b["csie"].replace("-", "_") + "_Esterno", g, slab(ring(b["pianta"]), 0, b.get("piani", 3) * PIANO, "#DADDE3"))
             continue
         g = sc.gruppo(b["csie"], ed)
+        if dettagliato(b):
+            for hex_, m in guscio(b)[0].items():
+                sc.mesh(f"{b['csie']}_Esterno_{hex_.lstrip('#')}", g, m)
+            continue
         for i, (poly, h, hex_) in enumerate(volumi(b)):
             sc.mesh(f"{b['csie']}_Esterno_{i}", g, slab(poly, 0, h, hex_))
             sc.mesh(f"{b['csie']}_Tetto_{i}", g, slab(poly.buffer(-0.6), h, h + 0.35, COL["tetto"]))
@@ -178,10 +340,12 @@ def campus(c):
 # ---------------------------------------------------------------- piani
 
 def quote(b):
-    """Quota (m) del pavimento di ogni piano: il terra (…000) a zero."""
+    """Quota (m) del pavimento di ogni piano: il terra (…000) a zero, o rialzato sulla
+    fessura del seminterrato dove il guscio la disegna."""
     liv = b.get("livelli", [])
     g = next((i for i, c in enumerate(liv) if c.endswith("000")), 0)
-    return {c: (i - g) * PIANO for i, c in enumerate(liv)}
+    terra = FESSURA if dettagliato(b) else 0.0
+    return {c: terra + (i - g) * PIANO for i, c in enumerate(liv)}
 
 
 def edificio(b, aule_info):
@@ -285,7 +449,7 @@ def main():
         aule = {f["csip"]: f.get("aule", {}) for f in json.loads(info.read_text())["piani"]} if info.exists() else {}
         sc, meta = edificio(b, aule)
         meta["centro"] = [round(v, 2) for v in ring(b["pianta"]).centroid.coords[0]]
-        meta["altezza"] = round(max(h for _, h, _ in volumi(b)), 2)
+        meta["altezza"] = round(guscio(b)[1] if dettagliato(b) else max(h for _, h, _ in volumi(b)), 2)
         usdz(sc, OUT / f"{csie}.usdz")
         if ARGS.glb:
             sc.s.export(OUT / f"{csie}.glb")
