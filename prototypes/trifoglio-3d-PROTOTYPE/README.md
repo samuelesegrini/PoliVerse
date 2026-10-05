@@ -13,6 +13,9 @@ Si apre in Xcode: `PoliVerse/Features/Map/Campus3D/Trifoglio3DView.swift`, previ
 3. **Piano:** l'involucro sparisce, i piani sopra salgono e svaniscono, quelli sotto restano
    in trasparenza.
 4. **Aula:** l'aula si accende con il colore delle illustrazioni e un'etichetta la segue.
+5. **Dentro:** "Entra nell'aula" porta la camera in piedi dietro l'ultima fila, rivolta
+   alla cattedra; compaiono i muri a tutta altezza, il soffitto e le luci. "Esci dall'aula"
+   torna alla vista dall'alto.
 
 "Portami all'aula T.1.2" fa tutto il percorso. Si può anche toccare l'edificio e le aule sul
 modello, trascinare per ruotare e pizzicare per lo zoom.
@@ -112,6 +115,15 @@ Gli interni seguono le linee della pianta, piano per piano:
   (davanzale a 1,2 m dal solaio, spigoli smussati, montanti grigi); nel seminterrato
   finestre rettangolari con il davanzale a 0,9 m.
 
+Dentro le aule a gradoni (`<csiv>_Interno`, spento finché non si entra): una fodera di muro
+a tutta altezza con i varchi delle porte e le finestre, il soffitto e le luci lineari accese.
+Sotto il tetto il soffitto è piano a cassettoni in cemento, come nella foto dell'Aula Magna;
+sotto un'altra aula è il retro delle sue gradonate, a gradini, mai a meno di 2,6 m dal
+gradino sotto. Nel JSON ogni aula porta `interno.occhio` e `interno.guarda`. Dove la pianta
+lascia lo stesso spazio davanti e dietro le file, le file salgono verso le punte delle ali:
+così le aule sovrapposte salgono nello stesso verso (T.0.1 e T.0.2 sotto T.1.1, T.1.3 sotto
+T.2.3), e le scale di sicurezza sulle punte escono in cima alle gradonate.
+
 Banchi, scale, ante e corrimano stanno in `<csip>_Arredi`, fuori da `_Locali`, così il tocco
 seleziona sempre l'aula intera. Le piante dei piani
 seguono le quote del guscio: seminterrato a 0, terra a 3,5 m, primo a 7,5 m (prima il seminterrato delle piante stava mezzo metro sotto la piazza). Gli altri edifici
@@ -123,8 +135,10 @@ restano estrusioni.
   volte, sheds, vetrate) non sono ancora portate nell'esportatore.
 - Le file di banchi sono continue: la pianta non disegna le singole sedute.
 - I bagni restano vuoti: le piante del Trifoglio non disegnano i sanitari (`linee.sanitari`
-  è vuota). I soffitti a cassettoni delle foto non ci sono: con i muri tagliati a 1,5 m
-  nessuna vista dell'app li mostrerebbe.
+  è vuota).
+- Le aule piane e l'Aula Magna non hanno ancora la vista da dentro. Le alzate dei gradoni
+  sono stimate (17 cm a fila): in qualche aula sovrapposta il soffitto a gradini resta basso
+  dietro, e la verifica dell'altezza lo alza a 2,6 m.
 - Le alzate delle scale sono ricavate dal numero di pedate disegnate e dall'altezza del
   piano; le piante non le quotano. Le scale della torre vengono ripide (20 cm) perché la
   pianta disegna 9 pedate per rampa.

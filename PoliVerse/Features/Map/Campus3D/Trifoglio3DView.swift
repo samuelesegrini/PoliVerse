@@ -21,6 +21,8 @@ enum Trifoglio3DLevel: Equatable {
     case floor(String)
     /// One classroom, by its floor's `csip` and its own `csiv`.
     case room(floor: String, room: String)
+    /// Inside a classroom, standing behind the last row and looking at the lectern.
+    case inside(floor: String, room: String)
 }
 
 /// The Trifoglio's floors and classrooms, as the exporter writes them next to the models.
@@ -45,8 +47,22 @@ struct Trifoglio3DPlan: Decodable {
         let sigla: String
         /// How many seats it has, where recorded.
         let posti: Int?
+        /// Where to stand inside it, for tiered classrooms.
+        let interno: Interior?
         /// The room's code.
         var id: String { csiv }
+    }
+
+    /// The view from inside a classroom, in the scene's metres.
+    struct Interior: Decodable {
+        /// The eye, standing behind the last row: x, height, z.
+        let occhio: [Float]
+        /// The point it looks at, over the lectern: x, height, z.
+        let guarda: [Float]
+        /// ``occhio`` as a point.
+        var eye: SIMD3<Float> { SIMD3(occhio[0], occhio[1], occhio[2]) }
+        /// ``guarda`` as a point.
+        var look: SIMD3<Float> { SIMD3(guarda[0], guarda[1], guarda[2]) }
     }
 
     /// The building's code, `csie`.
@@ -107,6 +123,8 @@ final class Trifoglio3DScene {
     @ObservationIgnored private var lit: (room: Entity, glow: ModelEntity, since: Double)?
     /// The name of the glowing copies, so every one can be found and removed.
     private static let glowName = "Trifoglio3D_Luce"
+    /// The end of the name of a classroom's interior: `<csiv>_Interno`.
+    private static let interiorSuffix = "_Interno"
     /// Whether a move is under way. Taps and buttons wait for it to end rather than
     /// start a second move that fights the first over the camera and the fades.
     @ObservationIgnored private var isMoving = false
@@ -161,6 +179,9 @@ final class Trifoglio3DScene {
             for floor in floors(of: building) {
                 await tappableExactly(floor.findEntity(named: floor.name + "_Locali"))
             }
+            // Each tiered classroom's full walls, ceiling and lights stay hidden until the
+            // camera goes inside: from above they would cover the room.
+            visit(building) { if $0.name.hasSuffix(Self.interiorSuffix) { $0.isEnabled = false } }
             building.components.set(OpacityComponent(opacity: 0))
             building.isEnabled = false
             root.addChild(campus)
@@ -228,6 +249,7 @@ final class Trifoglio3DScene {
     /// The steps of ``go(to:)``, which call each other to pass through the levels between.
     private func move(to next: Trifoglio3DLevel) async {
         guard campus != nil, let building else { return }
+        if case .inside(_, let csiv) = level { leave(csiv) }
         switch next {
         case .campus:
             unlight()
@@ -276,14 +298,47 @@ final class Trifoglio3DScene {
             light(room)
             // Wider than the room, so the corridors that lead to it stay in view.
             frame(room, polar: 0.5, margin: 2.4, duration: 1.1)
+
+        case .inside(let csip, let csiv):
+            guard let view = interior(csiv) else { return }
+            if level != .room(floor: csip, room: csiv) { await move(to: .room(floor: csip, room: csiv)) }
+            unlight()
+            level = next
+            nearPlane(0.1)
+            fade(building.findEntity(named: csiv + Self.interiorSuffix), to: 1, duration: 0.9)
+            let offset = view.eye - view.look
+            let distance = length(offset)
+            fly(to: view.look, distance: distance, polar: acos(offset.y / distance),
+                azimuth: atan2(offset.x, offset.z), duration: 1.6)
         }
         await settle()
     }
 
-    /// Whether the camera is already on a room of this floor.
+    /// Whether the camera is already on, or in, a room of this floor.
     private func isRoom(on csip: String) -> Bool {
-        if case .room(let floor, _) = level { return floor == csip }
-        return false
+        switch level {
+        case .room(let floor, _), .inside(let floor, _): floor == csip
+        default: false
+        }
+    }
+
+    /// Where to stand inside a classroom, when it has an interior.
+    func interior(_ csiv: String) -> Trifoglio3DPlan.Interior? {
+        plan?.piani.flatMap(\.aule).first { $0.csiv == csiv }?.interno
+    }
+
+    /// Hides a classroom's interior again as the camera leaves it.
+    private func leave(_ csiv: String) {
+        fade(building?.findEntity(named: csiv + Self.interiorSuffix), to: 0, duration: 0.5)
+        nearPlane(1)
+    }
+
+    /// Sets how near the camera still draws: a tenth of a metre inside a room, where the
+    /// desks are close, a metre outside, where it keeps far surfaces from flickering.
+    private func nearPlane(_ metres: Float) {
+        guard var lens = camera.components[PerspectiveCameraComponent.self] else { return }
+        lens.near = metres
+        camera.components.set(lens)
     }
 
     /// Goes where a tap on the model points: a building on the campus, a room on a floor.
@@ -301,6 +356,8 @@ final class Trifoglio3DScene {
             if rooms.contains(where: { $0.csiv == entity.name }) {
                 await go(to: .room(floor: csip, room: entity.name))
             }
+        case .inside:
+            break      // inside, a tap lands on the tiers under the camera
         }
     }
 
@@ -380,18 +437,19 @@ final class Trifoglio3DScene {
     }
 
     /// Flies the camera along its orbit to look at a point from a distance and an angle,
-    /// turning back to the south-west if the orbit was dragged elsewhere.
-    private func fly(to point: SIMD3<Float>, distance: Float, polar: Float, duration: Double = 1.3) {
+    /// turning back to the south-west, or to another side, if the orbit was dragged elsewhere.
+    private func fly(to point: SIMD3<Float>, distance: Float, polar: Float,
+                     azimuth: Float = Trifoglio3DScene.southWest, duration: Double = 1.3) {
         let (t0, d0, p0) = (target, self.distance, self.polar)
-        // The shortest way round to the south-west.
-        let a0 = azimuth
-        let turn = remainder(Self.southWest - a0, 2 * .pi)
+        // The shortest way round.
+        let a0 = self.azimuth
+        let turn = remainder(azimuth - a0, 2 * .pi)
         animate(duration) { [self] k in
             target = t0 + (point - t0) * k
             // Further out in the middle, so the camera lifts and settles.
             self.distance = d0 + (distance - d0) * k + sin(.pi * k) * abs(distance - d0) * 0.15
             self.polar = p0 + (polar - p0) * k
-            azimuth = a0 + turn * k
+            self.azimuth = a0 + turn * k
             aim()
         }
     }
@@ -571,8 +629,11 @@ struct Trifoglio3DView: View {
                 if let csip = currentFloor {
                     crumb(floorName(csip), to: .floor(csip))
                 }
-                if case .room(_, let csiv) = scene.level {
-                    crumb(roomName(csiv), to: scene.level)
+                if case let (csip, csiv)? = currentRoom {
+                    crumb(roomName(csiv), to: .room(floor: csip, room: csiv))
+                }
+                if case .inside = scene.level {
+                    crumb("Dentro", to: scene.level)
                 }
             }
             .padding(.horizontal, 16)
@@ -598,9 +659,21 @@ struct Trifoglio3DView: View {
                 HStack(spacing: 8) { choices }
             }
             .scrollIndicators(.hidden)
-            Button("Portami all'aula T.1.2") { Task { await scene.tour() } }
-                .buttonStyle(.glassProminent)
-                .frame(maxWidth: .infinity)
+            if case let (csip, csiv)? = currentRoom, scene.interior(csiv) != nil {
+                if case .inside = scene.level {
+                    Button("Esci dall'aula") { Task { await scene.go(to: .room(floor: csip, room: csiv)) } }
+                        .buttonStyle(.glassProminent)
+                        .frame(maxWidth: .infinity)
+                } else {
+                    Button("Entra nell'aula") { Task { await scene.go(to: .inside(floor: csip, room: csiv)) } }
+                        .buttonStyle(.glassProminent)
+                        .frame(maxWidth: .infinity)
+                }
+            } else {
+                Button("Portami all'aula T.1.2") { Task { await scene.tour() } }
+                    .buttonStyle(.glassProminent)
+                    .frame(maxWidth: .infinity)
+            }
         }
         .controlSize(.large)
         .padding(16)
@@ -618,7 +691,7 @@ struct Trifoglio3DView: View {
                 Button(floorName(floor.csip)) { Task { await scene.go(to: .floor(floor.csip)) } }
                     .buttonStyle(.glass)
             }
-        case .floor(let csip), .room(let csip, _):
+        case .floor(let csip), .room(let csip, _), .inside(let csip, _):
             ForEach(scene.plan?.piani.first { $0.csip == csip }?.aule ?? []) { room in
                 Button(room.sigla) { Task { await scene.go(to: .room(floor: csip, room: room.csiv)) } }
                     .buttonStyle(.glass)
@@ -630,7 +703,15 @@ struct Trifoglio3DView: View {
     /// The floor the camera is on, if it is on one.
     private var currentFloor: String? {
         switch scene.level {
-        case .floor(let csip), .room(let csip, _): csip
+        case .floor(let csip), .room(let csip, _), .inside(let csip, _): csip
+        default: nil
+        }
+    }
+
+    /// The classroom the camera is on or in, if any: its floor's code and its own.
+    private var currentRoom: (String, String)? {
+        switch scene.level {
+        case .room(let csip, let csiv), .inside(let csip, let csiv): (csip, csiv)
         default: nil
         }
     }

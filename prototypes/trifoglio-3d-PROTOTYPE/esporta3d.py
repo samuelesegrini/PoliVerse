@@ -872,6 +872,9 @@ def band(axis, a0, a1, big=300):
                     tuple(axis * a1 - normal * big), tuple(axis * a0 - normal * big)])
 
 
+CENTRO = None       # il centro dell'edificio in esportazione
+
+
 def file_di_banchi(poly, segs):
     """Le file di banchi disegnate in un'aula: (asse dalla cattedra verso il fondo, file).
     Ogni fila è (segmento, normale verso il fondo, indice): i settori a ventaglio hanno
@@ -890,7 +893,14 @@ def file_di_banchi(poly, segs):
     mid = lambda r: (np.array(r[:2]) + np.array(r[2:4])) / 2
     pos = [float(np.dot(mid(r), axis)) for r in rows]
     ext = [float(np.dot(np.array(p), axis)) for p in poly.exterior.coords]
-    if min(pos) - min(ext) < max(ext) - max(pos):
+    davanti, dietro = min(pos) - min(ext), max(ext) - max(pos)
+    if abs(davanti - dietro) < 1.0 and CENTRO is not None:
+        # spazio pari ai due lati: le file salgono verso l'esterno dell'edificio, come le aule
+        # sopra e sotto (altrimenti il gradino in cima finirebbe sotto il fronte dell'aula di
+        # sopra) e come le ali del tetto
+        if np.dot(np.array(poly.centroid.coords[0]) - CENTRO, axis) < 0:
+            axis = -axis
+    elif davanti < dietro:
         axis = -axis
     # settori: file parallele che si sovrappongono lungo la loro direzione
     sectors = []
@@ -956,6 +966,7 @@ def gradoni(poly, z, segs):
                 return floor + 0.05 + k * rise
         return floor + 0.05
     height.rise = rise
+    height.levels = {k: (reg, floor + 0.05 + k * rise) for k, reg in levels.items()}
     height.fronte = (levels[0], floor + 0.05)      # il piano della cattedra, davanti alle file
     return colour(trimesh.util.concatenate(parts), COL["aula"]), height
 
@@ -1333,6 +1344,86 @@ def blocco(u, n, l0, l1, q0, q1, z0, z1):
     return hexa([(*p, z0) for p in q], [(*p, z1) for p in q])
 
 
+CEMENTO_SOFF, LUCE = "#D8D7D2", "#FBFBF8"
+
+
+def interno(poly, height, sopra, z, z_tetto, porte, vetri):
+    """Quello che si vede entrando in un'aula a gradoni (le foto delle aule e dell'Aula
+    Magna): i muri a tutta altezza, foderati da dentro, con le porte e le finestre; il
+    soffitto, a cassettoni in cemento dove sopra c'è il tetto, altrimenti il sotto delle
+    gradonate dell'aula di sopra, che salgono come queste; le luci lineari appese.
+    Torna ({colore: [mesh]}, occhio, guarda): l'occhio in piedi dietro l'ultima fila, lo
+    sguardo sulla cattedra."""
+    out = {COL["muri"]: [], CEMENTO_SOFF: [], LUCE: [], VETRO: []}
+    levels = getattr(height, "levels", None)
+    if not levels:
+        return None
+    # il soffitto: sotto le gradonate dell'aula di sopra, o piano sotto il tetto; mai a meno
+    # di 2,6 m dal gradino sotto (le piante non quotano le alzate, che qui sono stimate)
+    pezzi, coperto = [], Polygon()
+    for reg_up, z_up in sopra:
+        part = reg_up.intersection(poly)
+        if part.area > 0.5:
+            coperto = coperto.union(part)
+            for reg, z_low in levels.values():
+                pp = part.intersection(reg)
+                if pp.area > 0.05:
+                    pezzi.append((pp, max(z_up - 0.4, z_low + 2.6)))
+    resto = poly.difference(coperto)
+    if resto.area > 0.5:
+        for reg, z_low in levels.values():
+            pp = resto.intersection(reg)
+            if pp.area > 0.05:
+                pezzi.append((pp, max(z_tetto, z_low + 2.6)))
+    if coperto.is_empty:          # sotto il tetto: un soffitto piano unico, a cassettoni
+        pezzi = [(poly, max(zc for _, zc in pezzi))]
+    for g_, zc in pezzi:
+        for q in clean(g_):
+            out[CEMENTO_SOFF].append(trimesh.creation.extrude_polygon(q, 0.25).apply_translation([0, 0, zc - 0.25]))
+    piatto = resto if coperto.is_empty else Polygon()
+    z_cass = max((zc for _, zc in pezzi), default=z_tetto)
+    if piatto.area > 10:
+        # i cassettoni: nervature ogni 1,2 m nelle due direzioni delle file
+        x0, y0, x1, y1 = piatto.bounds
+        ribs = [LineString([(x, y0 - 1), (x, y1 + 1)]).buffer(0.09) for x in np.arange(x0, x1, 1.2)]
+        ribs += [LineString([(x0 - 1, y), (x1 + 1, y)]).buffer(0.09) for y in np.arange(y0, y1, 1.2)]
+        for q in clean(unary_union(ribs).intersection(piatto.buffer(-0.1))):
+            out[CEMENTO_SOFF].append(trimesh.creation.extrude_polygon(q, 0.4).apply_translation([0, 0, z_cass - 0.65]))
+    # le luci lineari, appese 45 cm sotto il soffitto, dove resta spazio sopra le teste
+    x0, y0, x1, y1 = poly.bounds
+    for g_, zc in pezzi:
+        for y in np.arange(y0 + 1.5, y1 - 1, 2.4):
+            for q in clean(LineString([(x0, y), (x1, y)]).buffer(0.05, cap_style=2).intersection(g_.buffer(-1.0))):
+                if zc - 0.5 - height(tuple(q.representative_point().coords[0])) > 2.4:
+                    out[LUCE].append(trimesh.creation.extrude_polygon(q, 0.05).apply_translation([0, 0, zc - 0.5]))
+    # i muri a tutta altezza: una fodera di 6 cm dentro l'aula, così non tocca i muri tagliati
+    top = max(zc for _, zc in pezzi)
+    fodera = poly.difference(poly.buffer(-0.06, join_style=2))
+    varchi = fodera.intersection(porte.buffer(0.1)) if not porte.is_empty else Polygon()
+    vetrate = fodera.intersection(vetri.buffer(0.3)).difference(varchi) if not vetri.is_empty else Polygon()
+    for q in clean(fodera.difference(varchi).difference(vetrate)):
+        out[COL["muri"]].append(trimesh.creation.extrude_polygon(q, top - z).apply_translation([0, 0, z]))
+    for q in clean(varchi):
+        out[COL["muri"]].append(trimesh.creation.extrude_polygon(q, top - z - 2.3).apply_translation([0, 0, z + 2.3]))
+    for q in clean(vetrate):
+        out[COL["muri"]].append(trimesh.creation.extrude_polygon(q, 0.9).apply_translation([0, 0, z]))
+        out[VETRO].append(trimesh.creation.extrude_polygon(q, 1.15).apply_translation([0, 0, z + 0.9]))
+        out[COL["muri"]].append(trimesh.creation.extrude_polygon(q, top - z - 2.05).apply_translation([0, 0, z + 2.05]))
+    fronte, z_f = levels[0]
+    k_max = max(levels)
+    fondo, z_b = levels[k_max]
+    # in piedi in cima, dietro l'ultima fila: il punto dell'ultimo gradino più lontano dalla
+    # cattedra, mezzo metro verso di essa
+    f_c = fronte.representative_point()
+    bordo = [Point(q) for g_ in clean(fondo.buffer(-0.4)) for q in g_.exterior.coords] or [fondo.representative_point()]
+    b_c = max(bordo, key=lambda q: q.distance(f_c))
+    d_ = np.array([f_c.x - b_c.x, f_c.y - b_c.y])
+    b_xy = np.array([b_c.x, b_c.y]) + d_ / (np.linalg.norm(d_) or 1) * 0.5
+    guarda = [round(f_c.x, 2), round(z_f + 1.2, 2), round(f_c.y, 2)]
+    occhio = [round(float(b_xy[0]), 2), round(z_b + 1.65, 2), round(float(b_xy[1]), 2)]
+    return out, occhio, guarda
+
+
 def aperture(f):
     """Le porte della pianta come varchi nei muri: larghe quanto l'anta, profonde 0,9 m."""
     cuts = []
@@ -1351,8 +1442,19 @@ def edificio(b, aule_info):
     piani = sc.gruppo("Piani", b["csie"])
     zs = quote(b)
     centre = np.array(ring(b["pianta"]).centroid.coords[0])
+    global CENTRO
+    CENTRO = centre
     meta = {"csie": b["csie"], "nome": b.get("nome"), "numero": b.get("numero"), "piani": []}
     sotto = []
+    # Le gradonate di ogni piano, per il soffitto delle aule sotto.
+    gradonate = {}
+    for csip, z in zs.items():
+        if csip in geo:
+            ai = aule_info.get(csip, {})
+            for v in geo[csip]["vani"]:
+                if v["csiv"] in ai and not shape_of(v).is_empty:
+                    _, h_ = gradoni(shape_of(v), z, geo[csip].get("linee", {}).get("arredi", []))
+                    gradonate.setdefault(csip, []).extend(getattr(h_, "levels", {}).values())
     for csip, z in zs.items():
         if csip not in geo:
             continue
@@ -1364,7 +1466,7 @@ def edificio(b, aule_info):
         lin = f.get("linee", {})
         arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], SCHERMO: [], COL["scale"]: [], VETRO: [], PILASTRO: [], CORRIMANO: [], SCALINO: [], POLTRONA: [], TELO: [], PALCO: [], CABINA: [], COL["muri"]: [], FRAME_GREY: []}
         locali = sc.gruppo(csip + "_Locali", gp)
-        stanze, colonne = [], []
+        stanze, colonne, dentro_aule = [], [], []
         palladiana, palladiana_aule, fronti = [], [], []
         for v in f["vani"]:
             poly = shape_of(v)
@@ -1394,6 +1496,8 @@ def edificio(b, aule_info):
                         cattedra(poly, rows[1], height, arredi)
                     scalette(poly, lin.get("scale", []), height, arredi)
                 sc.mesh(v["csiv"], locali, m)
+                if v["csiv"] not in AULA_MAGNA:
+                    dentro_aule.append((v["csiv"], poly, height))
                 c = poly.representative_point()
                 stanze.append({"csiv": v["csiv"], "sigla": aule[v["csiv"]]["sigla"],
                                "posti": aule[v["csiv"]].get("posti"), "centro": [round(c.x, 2), round(z + 1, 2), round(c.y, 2)]})
@@ -1505,6 +1609,24 @@ def edificio(b, aule_info):
             nrm = np.array([-(c - a)[1], (c - a)[0]]) / np.linalg.norm(c - a) * 0.025
             q = [tuple(a - nrm), tuple(c - nrm), tuple(c + nrm), tuple(a + nrm)]
             arredi[METALLO].append(hexa([(*p, z + SOLETTA + 0.95) for p in q], [(*p, z + SOLETTA + 1.0) for p in q]))
+        # Dentro le aule: muri interi, soffitto, luci. Nascosto finché non si entra.
+        sopra_csip = min(((zz, cc) for cc, zz in zs.items() if zz > z), default=(None, None))[1]
+        z_tetto = min(nxt) if nxt else BASE_H + MOSAICO_H - 0.35
+        porte = aperture(f)
+        for csiv, poly, height in dentro_aule:
+            r_ = interno(poly, height, gradonate.get(sopra_csip, []), z + SOLETTA, z_tetto, porte, vetri)
+            if not r_:
+                continue
+            parti, occhio, guarda = r_
+            gi = sc.gruppo(csiv + "_Interno", gp)
+            for hex_, ms in parti.items():
+                if ms:
+                    m = trimesh.util.concatenate(ms)
+                    m.apply_transform(YUP)
+                    sc.mesh(f"{csiv}_Interno_{hex_.lstrip('#')}", gi, colour(m, hex_))
+            for st in stanze:
+                if st["csiv"] == csiv:
+                    st["interno"] = {"occhio": occhio, "guarda": guarda}
         ga = sc.gruppo(csip + "_Arredi", gp)
         for hex_, parts in arredi.items():
             if parts:
@@ -1565,6 +1687,8 @@ def usdz(sc, path):
             sh.CreateIdAttr("UsdPreviewSurface")
             sh.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(*linear(hex_)))
             sh.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.9)
+            if hex_ == LUCE:          # le luci delle aule: accese
+                sh.CreateInput("emissiveColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(1.0, 0.98, 0.92))
             m.CreateSurfaceOutput().ConnectToSource(sh.ConnectableAPI(), "surface")
             mats[hex_] = m
         return mats[hex_]
