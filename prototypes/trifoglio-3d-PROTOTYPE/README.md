@@ -148,6 +148,19 @@ la parte di Viganò con l'esoscheletro in acciaio nero (pilastri a croce staccat
 facciata, coronamento con le V, travi sul tetto) e la A rossa e nera davanti all'ingresso di
 via Ampère; la parte di Ponti in ceramica con il primo piano in mattone che sporge.
 
+Poi, dalle foto (MiBACT 2020 per l'Atlante dell'architettura contemporanea, Urbanfile
+2021-22 sul restauro):
+
+- l'esoscheletro come è: i pilastri a croce salgono 6 m sopra il tetto e finiscono in punta;
+  in cima a ognuno una trave lungo la facciata, larga 4 m, su due puntoni, da cui pendono i
+  due tiranti che reggono i piani; dalla cima una trave obliqua torna sul tetto;
+- sotto il portico i tre grossi condotti argentati, i montanti delle vetrate fitti (1,25 m);
+- la parte di Ponti com'è dopo il restauro: piastrelle chiare da 20 x 10 cm lisce, a punta di
+  diamante o rigate (una texture generata), e il volume in alto che sporge con le facce che
+  si aprono salendo, con l'intradosso bianco sopra la fascia vetrata;
+- nelle aule: piani grigi su gambe nere, sedie nere con qualcuna rossa o verde, soffitto
+  bianco con le travi nere a vista e pilastri neri.
+
 Le quote dei piani vengono dalle fasce della parte con l'ingresso: il terra a 1,1 m sopra la
 fessura del seminterrato, che sta sotto terra.
 
