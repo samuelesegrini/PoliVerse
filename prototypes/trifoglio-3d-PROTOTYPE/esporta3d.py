@@ -1047,7 +1047,7 @@ def scalette(poly, segs, height, out):
 # con i pilastri tondi davanti, come nelle foto: colonne bianche, sedute bianche sciolte sul
 # pavimento piano in mezzo, le gradonate ai lati, il palco con il leggio e lo schermo.
 AULA_MAGNA = ("MIA0203001006", "MIA0203001026")
-POLTRONA, TELO = "#F6F6F4", "#ECEEF0"
+POLTRONA, TELO, PALCO = "#F6F6F4", "#ECEEF0", "#2A2C2F"    # il palco è nero nelle foto
 
 
 def aula_magna(fronti, atrio, colonne, z, out):
@@ -1062,7 +1062,7 @@ def aula_magna(fronti, atrio, colonne, z, out):
     # il palco: 3 m all'estremo ovest, alto 30 cm, con il leggio e lo schermo
     palco = piano.intersection(box(x0, y0, x0 + 3.0, y1))
     for g in clean(palco):
-        out[POLTRONA].append(trimesh.creation.extrude_polygon(g, 0.3).apply_translation([0, 0, zf]))
+        out[PALCO].append(trimesh.creation.extrude_polygon(g, 0.3).apply_translation([0, 0, zf]))
     yc = (y0 + y1) / 2
     out[DESK].append(box_z(x0 + 1.6, yc + 1.2, 0.5, 0.7, zf + 0.3, zf + 1.45))
     out[TELO].append(box_z(x0 + 0.4, yc, 0.06, 4.0, zf + 1.5, zf + 1.5 + 2.2))     # il telo bianco appeso
@@ -1324,7 +1324,7 @@ def edificio(b, aule_info):
         shell = unary_union([ring(r).buffer(0) for r in f["contorno"]])
         rooms, by_type = [], {}
         lin = f.get("linee", {})
-        arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], SCHERMO: [], COL["scale"]: [], VETRO: [], PILASTRO: [], CORRIMANO: [], SCALINO: [], POLTRONA: [], TELO: []}
+        arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], SCHERMO: [], COL["scale"]: [], VETRO: [], PILASTRO: [], CORRIMANO: [], SCALINO: [], POLTRONA: [], TELO: [], PALCO: [], COL["muri"]: [], FRAME_GREY: []}
         locali = sc.gruppo(csip + "_Locali", gp)
         stanze, colonne = [], []
         palladiana, palladiana_aule, fronti = [], [], []
@@ -1398,14 +1398,56 @@ def edificio(b, aule_info):
         for m in P.meshes().values():
             sc.mesh(f"{csip}_Pavimento", gp, m)
         muri = shell.difference(unary_union(rooms + colonne).buffer(0.0)).difference(aperture(f))
-        # Le finestre della pianta nei muri: davanzale pieno fino a 0,9 m, vetro sopra.
-        vetri = unary_union([LineString([s_[:2], s_[2:4]]).buffer(0.3, cap_style=2) for s_ in lin.get("finestre", [])
-                             if math.dist(s_[:2], s_[2:4]) > 0.2]).intersection(muri) if lin.get("finestre") else Polygon()
-        pieni = muri.difference(vetri)
-        sc.mesh(csip + "_Muri", gp, slab(pieni, z + SOLETTA, z + SOLETTA + MURO, COL["muri"]))
-        if not vetri.is_empty:
-            sc.mesh(csip + "_Davanzali", gp, slab(vetri, z + SOLETTA, z + SOLETTA + 0.9, COL["muri"]))
-            sc.mesh(csip + "_Finestre", gp, slab(vetri, z + SOLETTA + 0.9, z + SOLETTA + MURO, VETRO))
+        # Le finestre della pianta nei muri. Al terra e al primo sono gli esagoni di Ponti del
+        # guscio, nelle stesse campate (plan_windows): davanzale pieno fino a 1,2 m dal solaio,
+        # poi la metà bassa dell'esagono, che si allarga fino al taglio dei muri, con i
+        # montanti grigi. Nel seminterrato finestre rettangolari, davanzale a 0,9 m.
+        if z >= BASE_H - 0.01 and dettagliato(b):
+            pts_g = ring_ccw(ring(b["pianta"]).buffer(0))
+            es = edges(pts_g)
+            pezzi = []
+            for i_, spans in plan_windows(b, csip, pts_g).items():
+                a_, _, u_, n_, _, _ = es[i_]
+                a_, u_ = np.array(a_), np.array(u_)
+                for t0, t1 in spans:
+                    foot = LineString([tuple(a_ + u_ * t0), tuple(a_ + u_ * t1)]).buffer(0.6, cap_style=2).intersection(muri)
+                    foot = max(getattr(foot, "geoms", [foot]), key=lambda g_: g_.area) if not foot.is_empty else foot
+                    if foot.geom_type == "Polygon" and foot.area > 0.1:
+                        pezzi.append((foot, a_, u_, t0, t1))
+            vetri = unary_union([p_[0] for p_ in pezzi]) if pezzi else Polygon()
+            pieni = muri.difference(vetri)
+            sc.mesh(csip + "_Muri", gp, slab(pieni, z + SOLETTA, z + SOLETTA + MURO, COL["muri"]))
+            if pezzi:
+                sc.mesh(csip + "_Davanzali", gp, slab(vetri, z + SOLETTA, z + 1.2, COL["muri"]))
+                taglio, k = z + SOLETTA + MURO, 0.3
+                for foot, a_, u_, t0, t1 in pezzi:
+                    nn = np.array([-u_[1], u_[0]])
+                    ns = [float(np.dot(np.array(q), nn)) for q in foot.exterior.coords]
+                    n0, n1 = min(ns), max(ns)
+                    base = a_ - nn * float(np.dot(a_, nn))          # il lato, riportato a n = 0
+                    P = lambda t, nv: tuple(base + u_ * t + nn * nv)
+                    nm = (n0 + n1) / 2
+                    vetro = hexa([(*P(t0 + k, nm - 0.05), z + 1.2), (*P(t1 - k, nm - 0.05), z + 1.2), (*P(t1 - k, nm + 0.05), z + 1.2), (*P(t0 + k, nm + 0.05), z + 1.2)],
+                                 [(*P(t0, nm - 0.05), taglio), (*P(t1, nm - 0.05), taglio), (*P(t1, nm + 0.05), taglio), (*P(t0, nm + 0.05), taglio)])
+                    arredi[VETRO].append(vetro)
+                    for e0, e1 in ((t0, t0 + k), (t1 - k, t1)):     # gli spigoli smussati, pieni
+                        lo = e0 if e0 == t0 else e1
+                        arredi[COL["muri"]].append(hexa(
+                            [(*P(e0, n0), z + 1.2), (*P(e1, n0), z + 1.2), (*P(e1, n1), z + 1.2), (*P(e0, n1), z + 1.2)],
+                            [(*P(lo - 0.005, n0), taglio), (*P(lo + 0.005, n0), taglio), (*P(lo + 0.005, n1), taglio), (*P(lo - 0.005, n1), taglio)]))
+                    bars = max(1, round((t1 - t0) / 0.8))
+                    for j_ in range(1, bars):
+                        t = t0 + (t1 - t0) * j_ / bars
+                        arredi[FRAME_GREY].append(hexa([(*P(t - 0.03, nm - 0.04), z + 1.2), (*P(t + 0.03, nm - 0.04), z + 1.2), (*P(t + 0.03, nm + 0.04), z + 1.2), (*P(t - 0.03, nm + 0.04), z + 1.2)],
+                                                       [(*P(t - 0.03, nm - 0.04), taglio), (*P(t + 0.03, nm - 0.04), taglio), (*P(t + 0.03, nm + 0.04), taglio), (*P(t - 0.03, nm + 0.04), taglio)]))
+        else:
+            vetri = unary_union([LineString([s_[:2], s_[2:4]]).buffer(0.3, cap_style=2) for s_ in lin.get("finestre", [])
+                                 if math.dist(s_[:2], s_[2:4]) > 0.2]).intersection(muri) if lin.get("finestre") else Polygon()
+            pieni = muri.difference(vetri)
+            sc.mesh(csip + "_Muri", gp, slab(pieni, z + SOLETTA, z + SOLETTA + MURO, COL["muri"]))
+            if not vetri.is_empty:
+                sc.mesh(csip + "_Davanzali", gp, slab(vetri, z + SOLETTA, z + SOLETTA + 0.9, COL["muri"]))
+                sc.mesh(csip + "_Finestre", gp, slab(vetri, z + SOLETTA + 0.9, z + SOLETTA + MURO, VETRO))
         # Le scale, le porte aperte come le disegna la pianta, i parapetti.
         for d in f.get("porte", []):
             h, o = np.array(d["cardine"]), np.array(d["aperta"])

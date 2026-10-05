@@ -104,7 +104,10 @@ Gli interni seguono le linee della pianta, piano per piano:
 - gli ascensori sono vani pieni, le porte hanno l'anta aperta come nella pianta, i parapetti
   (`linee.ringhiere`) un corrimano;
 - nei muri tagliati sono aperti i varchi delle porte, e dove la pianta disegna le finestre il
-  muro diventa davanzale fino a 0,9 m con il vetro sopra.
+  muro diventa davanzale con il vetro sopra: al terra e al primo sono gli esagoni di Ponti
+  del guscio, nelle stesse campate, e sotto il taglio dei muri si vede la loro metà bassa
+  (davanzale a 1,2 m dal solaio, spigoli smussati, montanti grigi); nel seminterrato
+  finestre rettangolari con il davanzale a 0,9 m.
 
 Banchi, scale, ante e corrimano stanno in `<csip>_Arredi`, fuori da `_Locali`, così il tocco
 seleziona sempre l'aula intera. Le piante dei piani
