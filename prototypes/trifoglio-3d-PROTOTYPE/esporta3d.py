@@ -18,7 +18,7 @@ import argparse, json, math, pathlib
 import numpy as np
 import trimesh
 from shapely.geometry import Polygon, LineString, Point
-from shapely.ops import unary_union
+from shapely.ops import unary_union, polygonize
 
 ARGS = argparse.ArgumentParser()
 ARGS.add_argument("mappa", type=pathlib.Path)
@@ -837,6 +837,8 @@ def quote(b):
 
 DESK, SEAT, LEAF, LIFT = "#F1F1EF", "#D6D9D2", "#B9BDC4", "#C9CED6"
 SCHERMO = "#3A3E44"
+CORRIMANO = "#2B2D30"     # i corrimano neri dei corridoi nelle aule
+SCALINO = "#5E6268"       # i gradini grigio scuro dei corridoi nelle aule
 PILASTRO = "#F3F3F0"      # pilastri intonacati bianchi, come nelle foto delle aule
 METALLO, VETRO = "#8E949B", "#BFD3E3"
 RISE = 0.17          # alzata di una fila di gradoni
@@ -931,6 +933,7 @@ def gradoni(poly, z, segs):
             if reg.distance(pt) < 0.01:
                 return floor + 0.05 + k * rise
         return floor + 0.05
+    height.rise = rise
     return colour(trimesh.util.concatenate(parts), COL["aula"]), height
 
 
@@ -953,6 +956,67 @@ def banchi(rows, height, out):
             r = lambda d0, d1: [tuple(b + n * d0), tuple(e + n * d0), tuple(e + n * d1), tuple(b + n * d1)]
             out[SEAT].append(hexa([(*p, zf + 0.42) for p in r(0.5, 0.95)], [(*p, zf + 0.47) for p in r(0.5, 0.95)]))
             out[SEAT].append(hexa([(*p, zf + 0.47) for p in r(0.9, 0.95)], [(*p, zf + 0.92) for p in r(0.9, 0.95)]))
+
+
+def scalette(poly, segs, height, out):
+    """I corridoi delle aule a gradoni: la pianta disegna in ogni fila un rettangolo (circa
+    1,3 x 0,3 m), il gradino intermedio che divide in due l'alzata della fila. Come nelle foto,
+    i gradini del corridoio sono grigio scuro e il corrimano nero corre sul lato dei banchi,
+    lontano dal muro, su un montante per gradino. La riga in mezzo ai rettangoli è la freccia
+    di percorrenza della pianta, non un corrimano."""
+    rise = getattr(height, "rise", 0)
+    if not rise:
+        return
+    inner = poly.buffer(-0.05)
+    lines = [LineString([s_[:2], s_[2:4]]) for s_ in segs if inner.contains(LineString([s_[:2], s_[2:4]]).centroid)]
+    pezzi = [g for g in polygonize(unary_union(lines)) if 0.1 < g.area < 1.0]
+    if not pezzi:
+        return
+    uniti = unary_union([g.buffer(0.03) for g in pezzi]).buffer(-0.03)
+    steps = [g for g in getattr(uniti, "geoms", [uniti]) if 0.25 < g.area < 1.0 and g.minimum_rotated_rectangle.area < 1.3 * g.area]
+    posti = []
+    for g in steps:
+        corners = list(g.minimum_rotated_rectangle.exterior.coords)[:4]
+        z0 = min(height(c) for c in corners)          # il gradino sta sul gradone davanti
+        top = z0 + rise / 2
+        m = trimesh.creation.extrude_polygon(clean(g)[0], top - (z0 - 0.05)).apply_translation([0, 0, z0 - 0.05])
+        out[SCALINO].append(m)
+        # il lato lungo del gradino; il corrimano sta all'estremo più lontano dal muro
+        sides = [(corners[k], corners[(k + 1) % 4]) for k in range(4)]
+        a_, b_ = max(sides, key=lambda s_: math.dist(*s_))
+        mid_short = lambda p_, q_: ((p_[0] + q_[0]) / 2, (p_[1] + q_[1]) / 2)
+        e0 = mid_short(corners[0], corners[3]) if math.dist(corners[0], corners[1]) > math.dist(corners[1], corners[2]) else mid_short(corners[0], corners[1])
+        e1 = mid_short(corners[1], corners[2]) if math.dist(corners[0], corners[1]) > math.dist(corners[1], corners[2]) else mid_short(corners[2], corners[3])
+        far = max((e0, e1), key=lambda e: poly.exterior.distance(Point(e)))
+        c = g.centroid
+        posti.append((c.x + (far[0] - c.x) * 0.85, c.y + (far[1] - c.y) * 0.85, top))
+    # i gradini dello stesso corridoio, uno per fila, a meno di 1,3 m l'uno dall'altro
+    left = list(range(len(posti)))
+    while left:
+        chain = [left.pop(0)]
+        frontier = list(chain)
+        while frontier:
+            k = frontier.pop()
+            for j_ in [j_ for j_ in left if math.dist(posti[k][:2], posti[j_][:2]) < 1.3]:
+                left.remove(j_)
+                chain.append(j_)
+                frontier.append(j_)
+        if len(chain) < 3:
+            continue
+        chain.sort(key=lambda j_: posti[j_][2])
+        for a_, b_ in zip(chain, chain[1:]):
+            (x0, y0, z0), (x1, y1, z1) = posti[a_], posti[b_]
+            d = np.array([x1 - x0, y1 - y0])
+            if np.linalg.norm(d) < 0.3:
+                continue
+            nrm = np.array([-d[1], d[0]]) / np.linalg.norm(d) * 0.025
+            q = [(x0 - nrm[0], y0 - nrm[1]), (x1 - nrm[0], y1 - nrm[1]), (x1 + nrm[0], y1 + nrm[1]), (x0 + nrm[0], y0 + nrm[1])]
+            zz = [z0, z1, z1, z0]
+            out[CORRIMANO].append(hexa([(*p_, h + 0.88) for p_, h in zip(q, zz)], [(*p_, h + 0.92) for p_, h in zip(q, zz)]))
+        for j_ in chain:
+            x, y, zt = posti[j_]
+            post = [(x - 0.02, y - 0.02), (x + 0.02, y - 0.02), (x + 0.02, y + 0.02), (x - 0.02, y + 0.02)]
+            out[CORRIMANO].append(hexa([(*p_, zt) for p_ in post], [(*p_, zt + 0.9) for p_ in post]))
 
 
 def cattedra(poly, rows, height, out):
@@ -1195,7 +1259,7 @@ def edificio(b, aule_info):
         shell = unary_union([ring(r).buffer(0) for r in f["contorno"]])
         rooms, by_type = [], {}
         lin = f.get("linee", {})
-        arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], SCHERMO: [], COL["scale"]: [], VETRO: [], PILASTRO: []}
+        arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], SCHERMO: [], COL["scale"]: [], VETRO: [], PILASTRO: [], CORRIMANO: [], SCALINO: []}
         locali = sc.gruppo(csip + "_Locali", gp)
         stanze, colonne = [], []
         for v in f["vani"]:
@@ -1219,6 +1283,7 @@ def edificio(b, aule_info):
                 if rows:
                     banchi(rows[1], height, arredi)
                     cattedra(poly, rows[1], height, arredi)
+                    scalette(poly, lin.get("scale", []), height, arredi)
                 sc.mesh(v["csiv"], locali, m)
                 c = poly.representative_point()
                 stanze.append({"csiv": v["csiv"], "sigla": aule[v["csiv"]]["sigla"],

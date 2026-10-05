@@ -71,7 +71,11 @@ Gli interni seguono le linee della pianta, piano per piano:
 - le aule hanno le file di banchi disegnate (`linee.arredi`): ogni fila diventa il parapetto
   bianco sul bordo del gradino, il piano del banco e le sedie una per una (50 cm l'una, come
   nelle foto delle aule rinnovate), su un gradino che sale di 17 cm da quello davanti;
-  davanti alla prima fila stanno il leggio e, sulla parete di fondo, lo schermo scuro. Le file si contano dalla
+  davanti alla prima fila stanno il leggio e, sulla parete di fondo, lo schermo scuro.
+  Nei corridoi fra i settori la pianta disegna un rettangolo per fila: è il gradino
+  intermedio, grigio scuro come nelle foto, a metà dell'alzata; il corrimano nero corre sul
+  lato dei banchi, lontano dal muro (la riga in mezzo ai rettangoli è la freccia di
+  percorrenza, non un corrimano). Le file si contano dalla
   cattedra (il lato con più spazio libero) e nelle aule a ventaglio ogni settore ha la sua
   direzione; le aule senza file restano piane;
 - le scale (`linee.scale`) si leggono rampa per rampa (pedate parallele a 31 cm) e salgono
