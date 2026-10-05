@@ -825,7 +825,8 @@ def quote(b):
     return {c: (i - g) * PIANO for i, c in enumerate(liv)}
 
 
-DESK, SEAT, LEAF, LIFT = "#F1F1EF", "#C9CDD3", "#B9BDC4", "#C9CED6"
+DESK, SEAT, LEAF, LIFT = "#F1F1EF", "#D6D9D2", "#B9BDC4", "#C9CED6"
+SCHERMO = "#3A3E44"
 METALLO, VETRO = "#8E949B", "#BFD3E3"
 RISE = 0.17          # alzata di una fila di gradoni
 
@@ -923,15 +924,46 @@ def gradoni(poly, z, segs):
 
 
 def banchi(rows, height, out):
-    """Banco e seduta lungo ogni fila: il piano del banco sulla linea, la seduta dietro."""
+    """Quello che le foto mostrano in ogni fila: il parapetto bianco del banco sul bordo del
+    gradino, il piano del banco, e dietro le sedie una per una, larghe mezzo metro."""
     for (x0, y0, x1, y1), n, _, _ in rows:
         a, c = np.array([x0, y0]), np.array([x1, y1])
+        L = np.linalg.norm(c - a)
+        u = (c - a) / L
         zf = height((a + c) / 2 + n * 0.5)
         q = lambda d0, d1: [tuple(a + n * d0), tuple(c + n * d0), tuple(c + n * d1), tuple(a + n * d1)]
         out[DESK].append(hexa([(*p, zf + 0.72) for p in q(-0.05, 0.4)], [(*p, zf + 0.76) for p in q(-0.05, 0.4)]))
-        out[DESK].append(hexa([(*p, zf) for p in q(-0.05, 0.0)], [(*p, zf + 0.72) for p in q(-0.05, 0.0)]))
-        out[SEAT].append(hexa([(*p, zf + 0.42) for p in q(0.45, 0.9)], [(*p, zf + 0.47) for p in q(0.45, 0.9)]))
-        out[SEAT].append(hexa([(*p, zf + 0.47) for p in q(0.88, 0.93)], [(*p, zf + 0.9) for p in q(0.88, 0.93)]))
+        out[DESK].append(hexa([(*p, zf) for p in q(-0.08, -0.04)], [(*p, zf + 0.72) for p in q(-0.08, -0.04)]))
+        posti = max(1, int(L / 0.6))
+        passo = L / posti
+        for i in range(posti):
+            b = a + u * (passo * (i + 0.5) - 0.23)
+            e = b + u * 0.46
+            r = lambda d0, d1: [tuple(b + n * d0), tuple(e + n * d0), tuple(e + n * d1), tuple(b + n * d1)]
+            out[SEAT].append(hexa([(*p, zf + 0.42) for p in r(0.5, 0.95)], [(*p, zf + 0.47) for p in r(0.5, 0.95)]))
+            out[SEAT].append(hexa([(*p, zf + 0.47) for p in r(0.9, 0.95)], [(*p, zf + 0.92) for p in r(0.9, 0.95)]))
+
+
+def cattedra(poly, rows, height, out):
+    """Davanti alla prima fila: il leggio e, sulla parete di fondo, lo schermo scuro."""
+    prime = [(r, n) for r, n, k, _ in rows if k == 0]
+    if not prime:
+        return
+    r, n = max(prime, key=lambda t: math.dist(t[0][:2], t[0][2:4]))
+    a, c = np.array(r[:2]), np.array(r[2:4])
+    u = (c - a) / np.linalg.norm(c - a)
+    mid = (a + c) / 2
+    dentro = poly.buffer(-0.25)
+    muro = max((t / 10 for t in range(10, 150) if dentro.contains(Point(mid - n * t / 10))), default=0)
+    for dist_, (w, d, h, key) in ((2.0, (0.7, 0.35, 1.15, DESK)), (muro, (3.2, 0.12, 1.6, SCHERMO))):
+        p0 = mid - n * dist_
+        if dist_ < 1.5 or not dentro.contains(Point(p0)):
+            continue
+        zf = height(p0)
+        base = [tuple(p0 - u * w / 2 - n * d / 2), tuple(p0 + u * w / 2 - n * d / 2),
+                tuple(p0 + u * w / 2 + n * d / 2), tuple(p0 - u * w / 2 + n * d / 2)]
+        z0 = zf + (1.0 if key is SCHERMO else 0)
+        out[key].append(hexa([(*p, z0) for p in base], [(*p, z0 + h) for p in base]))
 
 
 def scale_interne(segs, inside, doors, floor, out):
@@ -1004,7 +1036,7 @@ def edificio(b, aule_info):
         shell = unary_union([ring(r).buffer(0) for r in f["contorno"]])
         rooms, by_type = [], {}
         lin = f.get("linee", {})
-        arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], COL["scale"]: [], VETRO: [], COL["muri"]: []}
+        arredi = {DESK: [], SEAT: [], LEAF: [], LIFT: [], METALLO: [], SCHERMO: [], COL["scale"]: [], VETRO: []}
         locali = sc.gruppo(csip + "_Locali", gp)
         stanze = []
         for v in f["vani"]:
@@ -1018,6 +1050,7 @@ def edificio(b, aule_info):
                 rows = file_di_banchi(poly, lin.get("arredi", []))
                 if rows:
                     banchi(rows[1], height, arredi)
+                    cattedra(poly, rows[1], height, arredi)
                 sc.mesh(v["csiv"], locali, m)
                 c = poly.representative_point()
                 stanze.append({"csiv": v["csiv"], "sigla": aule[v["csiv"]]["sigla"],
