@@ -1480,8 +1480,8 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
             nx, ny = outward(a, c, eaves)
             fill = "#C2704A" if ny > nx and nx + ny > 0 else "#A85A38" if nx + ny > 0 else "#D58A63"
             slopes.append(((a[0] + c[0] + a[1] + c[1]) / 2, [(*a, z), (*c, z), (*ridge[j], zr), (*ridge[i], zr)], fill))
-        if tiles.get("fotovoltaico"):
-            # A low roof in pale sheet metal, every long slope covered in solar panels.
+        if tiles.get("fotovoltaico") or tiles.get("lamiera"):
+            # A low roof in pale sheet metal (`lamiera`), with `fotovoltaico` every long slope covered in solar panels.
             sand = {"#C2704A": "#C9B48F", "#A85A38": "#B09A74", "#D58A63": "#D9C7A4"}
             slopes = [(k, q, sand[f]) for k, q, f in slopes]
         for _, q, fill in sorted(slopes, key=lambda s: s[0]):
@@ -1514,7 +1514,7 @@ def draw_profile(b, pts, turn, z, storey, door, strati, zmid, profilo=None, part
             ribs.append(f"M{fmt(a0)} {fmt(b0)}L{fmt(a1)} {fmt(b1)}")
             roof.append(f'<path d="{"".join(ribs)}" stroke="#E8ECEF" stroke-width="0.7"/>')
         else:
-            roof.append(f'<polygon points="{iso_poly([(x, y, zr) for x, y in ridge])}" fill="{"#D3C2A0" if tiles.get("fotovoltaico") else "#CF7E57"}"/>')
+            roof.append(f'<polygon points="{iso_poly([(x, y, zr) for x, y in ridge])}" fill="{"#D3C2A0" if tiles.get("fotovoltaico") or tiles.get("lamiera") else "#CF7E57"}"/>')
         z = zr
     elif b.get("gronda"):
         # A thin pale roof overhanging every side by `gronda` metres, its shadow on the wall.

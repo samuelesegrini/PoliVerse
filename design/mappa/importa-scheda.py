@@ -365,9 +365,13 @@ def fit(pairs):
     return {"mx": mx, "my": my, "nx": nx, "ny": ny, "s": math.hypot(a, b) / var, "th": math.atan2(b, a)}
 
 
+MIRRORED = False   # set per building by `specchio`: its drawing is the mirror image of the others
+
+
 def flipped(p):
-    """CAD points have y up; the campus frame has y south."""
-    return (p[0], -p[1])
+    """CAD points have y up; the campus frame has y south. A drawing saved mirrored
+    (`specchio` in the campus file) already has y south, so it is taken as it is."""
+    return (p[0], p[1]) if MIRRORED else (p[0], -p[1])
 
 
 def apply(t, q):
@@ -494,6 +498,8 @@ def main(csie):
                        and csie in f.read_text())
     campus = json.loads(campus_file.read_text())
     building = next(b for b in campus["edifici"] if b["csie"] == csie)
+    global MIRRORED
+    MIRRORED = bool(building.get("specchio"))
     floors = building["livelli"]
     lat0, lon0 = campus["origine"]
     xs = [p[0] for p in building["pianta"]]

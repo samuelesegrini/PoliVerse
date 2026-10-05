@@ -80,6 +80,9 @@ Floor plans are drawn from exact geometry, not traced:
      fitted on the rooms both number the same. At least one floor must be mapped
      there. A floor drawn with its own origin is moved until its lifts sit on a
      placed floor's; the importer says when a floor has no lifts to go by.
+   - A few drawings are saved mirrored north–south (Edificio 9's): set
+     `specchio: true` on the building and the importer takes them as they are.
+     Check a new building's plan against an aerial photo before trusting it.
    - Rooms are typed from OpenStreetMap where it says; otherwise a room with
      toilet fixtures is a toilet, one with lift lines a lift, and so on.
 2. Run `python3 strumenti/aule.py <csie>`. It writes `piante/<csie>.json`, one

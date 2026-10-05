@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="413.7 98.2 332.3 240.8" width="664.6" height="481.6">
+<defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient></defs>
+<polygon points="486,234 464.4,221.5 464.4,208.5 486,221" fill="#E4DFD3"/>
+<polygon points="482.6,232.5 481.6,231.8 481.6,218.8 482.6,219.5" fill="#EEEAE1" opacity="0.9"/>
+<polygon points="475.4,228.3 474.3,227.7 474.3,214.7 475.4,215.3" fill="#EEEAE1" opacity="0.9"/>
+<polygon points="468.1,224.1 467,223.5 467,210.5 468.1,211.1" fill="#EEEAE1" opacity="0.9"/>
+<polygon points="480.1,228.4 477.4,226.8 477.4,220.3 477.5,219.7 477.8,219.4 478.2,219.3 478.7,219.5 479.3,219.9 479.7,220.5 480,221.2 480.1,221.9" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="472.8,224.2 470.1,222.6 470.1,216.1 470.2,215.5 470.5,215.2 470.9,215.1 471.5,215.3 472,215.7 472.4,216.3 472.7,217 472.8,217.7" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="503.9,223.7 486,234 486,221 503.9,210.7" fill="#CAC4B5"/>
+<polygon points="503.1,224.6 502,225.2 502,212.2 503.1,211.6" fill="#EEEAE1" opacity="0.9"/>
+<polygon points="495.8,228.8 494.8,229.3 494.8,216.3 495.8,215.8" fill="#EEEAE1" opacity="0.9"/>
+<polygon points="488.5,232.9 487.5,233.6 487.5,220.6 488.5,219.9" fill="#EEEAE1" opacity="0.9"/>
+<polygon points="500,223.7 497.3,225.3 497.3,218.8 497.4,218.1 497.7,217.4 498.1,216.8 498.7,216.4 499.2,216.2 499.6,216.3 499.9,216.6 500,217.2" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="492.8,227.9 490,229.5 490,223 490.1,222.3 490.4,221.6 490.9,221 491.4,220.6 491.9,220.4 492.4,220.5 492.7,220.8 492.8,221.4" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="464.4,208.5 482.2,198.2 503.9,210.7 486,221" fill="#EEEAE1"/>
+</svg>
