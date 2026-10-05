@@ -194,9 +194,9 @@ nascosto finché non si entra.
 
 ## L'Edificio 2
 
-Il guscio dell'Edificio 2 (Bruno Finzi) sta in un modulo suo, `edificio2.py`: l'esportatore
-lo chiama per gli edifici in `GUSCI` (`guscio(b, E)` per l'esterno, `quote(b)` per i piani,
-`completa_piante(geo, aule)` per i banchi). È rifatto dalla foto aerea (Esri World Imagery)
+Il guscio dell'Edificio 2 (Bruno Finzi) sta in un modulo suo, `gusci/MIA0102.py`, che
+l'esportatore carica come gli altri gusci propri (`guscio(b, E)` per l'esterno, `quote(b, E)`
+per i piani, `piante(b, E, geo, aule)` per i banchi). È rifatto dalla foto aerea (Esri World Imagery)
 e dalle foto della piazza; le fasce della mappa dicono solo quale parte ha quali finestre,
 rivestimento, cornicione e copertura. Le altezze sono vere: zoccolo di pietra fino a 1,6 m
 con le finestrelle del seminterrato (che sta sotto la piazza, a -2,2 m), terra bugnato
@@ -219,7 +219,7 @@ alto 5,6 m, piano nobile 5,4 m, secondo piano solo nell'ala est e nelle torri.
   camminamento lungo il parapetto e tre campi di pannelli fotovoltaici (`TETTI_PIANI`).
 - Bugnato, coppi e fotovoltaico sono texture generate come il mosaico del Trifoglio.
 
-Le piante dell'Edificio 2 non disegnano i banchi: `completa_piante` li ricava per ogni aula
+Le piante dell'Edificio 2 non disegnano i banchi: `piante()` li ricava per ogni aula
 (non per l'EDUCAFE) dalla forma, dalle porte e dai posti. Oltre 0,75 posti al m² l'aula è a
 gradoni con file ogni 90 cm (2.0.1, 2.0.2, 2.1.1-2.1.5), altrimenti piana con tavoli da
 50 cm ogni 1,25 m (2.2.1-2.2.5); le due aule a ventaglio hanno la cattedra sul lato

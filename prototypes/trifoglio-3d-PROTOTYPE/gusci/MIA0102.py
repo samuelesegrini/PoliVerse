@@ -19,8 +19,9 @@ rivestimento, cornicione e copertura; le altezze sono quelle vere, non le unità
 mappa, e i piani delle piante stanno alle stesse quote (`quote()`). Le finestre seguono le
 finestre delle piante dove su una facciata sono in fila regolare, altrimenti la campata.
 
-Si usa dall'esportatore: `guscio(b, E)` torna ({colore o texture: mesh}, quota del tetto),
-dove E è il modulo esporta3d con le sue primitive.
+L'esportatore lo carica da gusci/<csie>.py: `guscio(b, E)` torna ({colore o texture: mesh},
+quota del tetto), `quote(b, E)` le quote dei piani, `piante(b, E, geo, aule)` aggiunge le
+file di banchi alle piante; E è il modulo esporta3d con le sue primitive.
 """
 import math
 import numpy as np
@@ -62,7 +63,7 @@ TEXTURE = {   # metri coperti da una ripetizione
     "coppi": 0.8, "fotovoltaico": 1.0, "bugnato_ocra": 1.0, "bugnato_chiaro": 1.0}
 
 
-def quote(b):
+def quote(b, E=None):
     return {c: QUOTE[c] for c in b.get("livelli", []) if c in QUOTE}
 
 
@@ -709,6 +710,33 @@ def file_aula(poly, posti, porte):
         sv += passo
         k += 1
     return [[round(v, 2) for v in sg] for sg in segs]
+
+
+def togli_cortile(b, geo):
+    """Le piante disegnano il contorno dei piani sopra la corte, che è all'aperto: senza
+    toglierla l'esportatore vi aprirebbe un vuoto con il parapetto (o un patio). La corte
+    tolta lascia un buco nel contorno; gli anelli non ne portano, quindi il contorno si
+    taglia in due lungo la corte e i due pezzi la circondano."""
+    from shapely.ops import split
+    corte = unary_union([Polygon(c).buffer(0) for c in b.get("cortili", [])] or [Polygon()])
+    if corte.is_empty:
+        return
+    x = corte.centroid.x
+    taglio = LineString([(x, -1e4), (x, 1e4)])
+    for f in geo.values():
+        shell = unary_union([Polygon(r).buffer(0) for r in f["contorno"]])
+        if shell.intersection(corte).area < 0.5 * corte.area:
+            continue
+        resto = shell.difference(corte.buffer(-0.3, join_style=2))
+        pezzi = []
+        for g in getattr(resto, "geoms", [resto]):
+            pezzi += list(split(g, taglio).geoms) if g.interiors else [g]
+        f["contorno"] = [[list(map(float, q)) for q in g.exterior.coords[:-1]] for g in pezzi if g.area > 1]
+
+
+def piante(b, E, geo, aule_info):
+    togli_cortile(b, geo)
+    completa_piante(geo, aule_info)
 
 
 def completa_piante(geo, aule_info):
