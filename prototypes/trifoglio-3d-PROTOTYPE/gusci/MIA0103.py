@@ -23,8 +23,6 @@ import trimesh
 from shapely.geometry import Polygon, LineString, Point, box
 from shapely.ops import unary_union
 
-CSIE = "MIA0103"
-
 Z_S, Z_T, Z_1, Z_2 = 0.0, 3.6, 9.0, 14.4
 QUOTE = {"MIA010300S": Z_S, "MIA0103000": Z_T, "MIA0103001": Z_1, "MIA0103002": Z_2}
 ZOCCOLO = 1.3          # lo zoccolo in granito, con le bocche del seminterrato

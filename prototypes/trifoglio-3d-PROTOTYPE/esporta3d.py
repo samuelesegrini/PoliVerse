@@ -799,24 +799,6 @@ def guscio(b):
     return S.meshes(), z_mos + ALA
 
 
-# Gli edifici con un esterno costruito a mano fuori da questo file hanno un modulo ciascuno
-# qui accanto, edificio<numero>.py: CSIE, guscio(b, E) → ({chiave: mesh}, quota più alta),
-# quote(b, E) → {csip: quota} e tetto(b, E), sotto il tetto dell'ultimo piano; se c'è,
-# piante(b, geo, aule, E) → geo, per completare le piante, e ritocca(sc, meta, E), per
-# cambiare i colori del modello dei piani. E è questo modulo, per le sue
-# funzioni. Il guscio va nel campus anche senza --edifici.
-GUSCI = {}
-
-
-def carica_gusci():
-    import importlib, sys
-    qui = pathlib.Path(__file__).resolve().parent
-    sys.path.insert(0, str(qui))
-    for f in sorted(qui.glob("edificio*.py")):
-        m = importlib.import_module(f.stem)
-        GUSCI[m.CSIE] = m
-
-
 def dettagliato(b):
     return b["csie"] in ARGS.edifici.split(",") and [p["tipo"] for p in b.get("profilo", [])][:1] == ["fessura"]
 
@@ -1043,6 +1025,45 @@ def profilo_3d(b):
 
 
 
+# ---------------------------------------------------------------- gusci propri
+
+# Un edificio può avere l'esterno disegnato a mano in gusci/<csie>.py, con
+#   guscio(b, E) -> ({colore: mesh}, quota del tetto)   E è questo modulo, con i suoi attrezzi
+#   quote(b, E)  -> {csip: quota}                       facoltativo: le quote dei piani
+#   arredi(b, E, csip, z, piano) -> {colore: [mesh]}    facoltativo: arredi in più su un piano
+#   interno(b, E, csiv, poly, z, porte) -> come interno() facoltativo: l'interno di un'aula
+#                                                       senza file nella pianta
+#   tetto(b, E) -> quota                                facoltativo: sotto il tetto dell'ultimo piano
+#   piante(b, geo, aule, E) -> geo                      facoltativo: le piante completate
+#   ritocca(sc, meta, E)                                facoltativo: colori del modello dei piani
+GUSCI = pathlib.Path(__file__).resolve().parent / "gusci"
+
+
+def guscio_proprio(b):
+    """Il modulo gusci/<csie>.py dell'edificio, se esiste e l'edificio è fra quelli esportati."""
+    p = GUSCI / f"{b['csie']}.py"
+    if b["csie"] not in ARGS.edifici.split(",") or not p.exists():
+        return None
+    if p.stem not in sys.modules:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(p.stem, p)
+        sys.modules[p.stem] = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sys.modules[p.stem])
+    return sys.modules[p.stem]
+
+
+_ESTERNI = {}
+
+
+def esterno(b):
+    """({colore: mesh}, quota del tetto) dell'esterno dettagliato, o None per le estrusioni."""
+    if b["csie"] not in _ESTERNI:
+        _ESTERNI[b["csie"]] = (guscio_proprio(b).guscio(b, sys.modules[__name__]) if guscio_proprio(b)
+                               else guscio(b) if dettagliato(b) else profilo_3d(b) if profilato(b) else None)
+    return _ESTERNI[b["csie"]]
+
+
+
 # ---------------------------------------------------------------- campus
 
 def volumi(b):
@@ -1101,12 +1122,8 @@ def campus(c):
             sc.mesh(b["csie"].replace("-", "_") + "_Esterno", g, slab(ring(b["pianta"]), 0, b.get("piani", 3) * PIANO, "#DADDE3"))
             continue
         g = sc.gruppo(b["csie"], ed)
-        if b["csie"] in GUSCI:
-            for key, m in GUSCI[b["csie"]].guscio(b, sys.modules[__name__])[0].items():
-                sc.mesh(f"{b['csie']}_Esterno_{key.lstrip('#')}", g, m)
-            continue
-        if dettagliato(b) or profilato(b):
-            for key, m in (guscio(b) if dettagliato(b) else profilo_3d(b))[0].items():
+        if esterno(b):
+            for key, m in esterno(b)[0].items():
                 sc.mesh(f"{b['csie']}_Esterno_{key.lstrip('#')}", g, m)
             continue
         for i, (poly, h, hex_) in enumerate(volumi(b)):
@@ -1120,10 +1137,10 @@ def campus(c):
 def quote(b):
     """Quota (m) del pavimento di ogni piano: il terra (…000) a zero, o sopra lo zoccolo
     del seminterrato dove il guscio lo disegna."""
-    if b["csie"] in GUSCI:
-        return GUSCI[b["csie"]].quote(b, sys.modules[__name__])
     liv = b.get("livelli", [])
     g = next((i for i, c in enumerate(liv) if c.endswith("000")), 0)
+    if guscio_proprio(b) and hasattr(guscio_proprio(b), "quote"):
+        return guscio_proprio(b).quote(b, sys.modules[__name__])
     if dettagliato(b):
         # Il seminterrato a quota piazza, terra e primo nel mosaico, sopra lo zoccolo.
         return {c: BASE_H + (i - g) * PIANO if i >= g else BASE_H * (i - g + 1) for i, c in enumerate(liv)}
@@ -2124,8 +2141,8 @@ def aperture(f):
 
 def edificio(b, aule_info):
     geo = json.loads((SRC / "piante" / f"{b['csie']}-geometria.json").read_text())["piani"]
-    if hasattr(GUSCI.get(b["csie"]), "piante"):      # quello che un modulo aggiunge alle piante
-        geo = GUSCI[b["csie"]].piante(b, geo, aule_info, sys.modules[__name__])
+    if hasattr(guscio_proprio(b), "piante"):         # quello che un guscio aggiunge alle piante
+        geo = guscio_proprio(b).piante(b, geo, aule_info, sys.modules[__name__])
     sc = Scena(b["csie"])
     piani = sc.gruppo("Piani", b["csie"])
     zs = quote(b)
@@ -2363,7 +2380,7 @@ def edificio(b, aule_info):
             arredi[METALLO].append(hexa([(*p, z + SOLETTA + 0.95) for p in q], [(*p, z + SOLETTA + 1.0) for p in q]))
         # Dentro le aule: muri interi, soffitto, luci. Nascosto finché non si entra.
         sopra_csip = min(((zz, cc) for cc, zz in zs.items() if zz > z), default=(None, None))[1]
-        z_tetto = min(nxt) if nxt else (GUSCI[b["csie"]].tetto(b, sys.modules[__name__]) if b["csie"] in GUSCI
+        z_tetto = min(nxt) if nxt else (guscio_proprio(b).tetto(b, sys.modules[__name__]) if hasattr(guscio_proprio(b), "tetto")
                                          else BASE_H + MOSAICO_H - 0.35)
         porte = aperture(f)
         for csiv, poly, height in dentro_aule:
@@ -2497,7 +2514,6 @@ def usdz(sc, path):
 
 
 def main():
-    carica_gusci()
     c = json.loads((SRC / "leonardo.json").read_text())
     cs = campus(c)
     usdz(cs, OUT / "campus.usdz")
@@ -2508,12 +2524,10 @@ def main():
         info = SRC / "piante" / f"{csie}.json"
         aule = {f["csip"]: f.get("aule", {}) for f in json.loads(info.read_text())["piani"]} if info.exists() else {}
         sc, meta = edificio(b, aule)
-        if hasattr(GUSCI.get(csie), "ritocca"):    # i colori delle aule come nelle foto
-            GUSCI[csie].ritocca(sc, meta, sys.modules[__name__])
+        if hasattr(guscio_proprio(b), "ritocca"):        # i colori delle aule come nelle foto
+            guscio_proprio(b).ritocca(sc, meta, sys.modules[__name__])
         meta["centro"] = [round(v, 2) for v in ring(b["pianta"]).centroid.coords[0]]
-        meta["altezza"] = round(GUSCI[csie].guscio(b, sys.modules[__name__])[1] if csie in GUSCI
-                                else guscio(b)[1] if dettagliato(b) else profilo_3d(b)[1] if profilato(b)
-                                else max(h for _, h, _ in volumi(b)), 2)
+        meta["altezza"] = round(esterno(b)[1] if esterno(b) else max(h for _, h, _ in volumi(b)), 2)
         usdz(sc, OUT / f"{csie}.usdz")
         if ARGS.glb:
             sc.s.export(OUT / f"{csie}.glb")

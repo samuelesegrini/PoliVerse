@@ -194,10 +194,10 @@ nascosto finché non si entra.
 
 ## L'Edificio 3
 
-L'esterno del Cassinis è rifatto da zero in `edificio3.py`, un modulo a parte: ogni
-`edificio<numero>.py` accanto a `esporta3d.py` con `CSIE`, `guscio`, `quote` e `tetto` (e se
-servono `piante` e `ritocca`) sostituisce l'estrusione di quell'edificio, nel campus anche
-senza `--edifici`. Le fonti sono l'ortofoto (Esri World Imagery) e le foto di Wikimedia
+L'esterno del Cassinis è rifatto da zero in `gusci/MIA0103.py`, un guscio proprio come
+quelli degli altri edifici in `gusci/`: oltre a `guscio` e `quote` ha `tetto` (la quota sotto
+il tetto dell'ultimo piano), `piante` (le file di banchi che le piante non disegnano) e
+`ritocca` (i colori delle aule), tutti facoltativi in `esporta3d.py`. Le fonti sono l'ortofoto (Esri World Imagery) e le foto di Wikimedia
 Commons dal piazzale del Rettorato, dal portico e dal cortile:
 
 - le ali nord e sud e le due aule sul cortile in intonaco grigio-beige, con il tetto a
