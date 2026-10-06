@@ -39,6 +39,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0104.usdz`, `MIA0104.json` | lo stesso per l'Edificio 4 |
 | `MIA0106.usdz`, `MIA0106.json` | lo stesso per l'Edificio 6 |
 | `MIA0314.usdz`, `MIA0314.json` | lo stesso per l'Edificio 41 (campus Bassini, da `bassini.json`) |
+| `MIA0403.usdz`, `MIA0403.json` | lo stesso per l'Edificio 25 (campus di via Golgi, da `bassini.json`) |
 | `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py` (vedi `giuriati/README.md`) |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
@@ -48,7 +49,7 @@ Per rigenerarli, da questa cartella (circa 3 minuti):
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314
+python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -334,6 +335,27 @@ più alta con le fasce degli impianti a lamelle e il fotovoltaico, il tunnel vet
 l'Edificio 20A e il ponte del primo piano verso il 21. Piano terra a 4,8 m, gli altri a 4,4 m.
 Il contorno di Edificio 41 in `giuriati.usdz` si salta perché c'è il guscio. Sono dedotti
 l'annesso basso a est e la posizione della rampa del parcheggio.
+
+## Gli edifici fatti col kit (`gusci/_kit.py`)
+
+Gli edifici più semplici hanno un guscio corto che descrive l'esterno con gli attrezzi comuni
+di `gusci/_kit.py`: il contorno di ogni piano dalle piante, per ogni lato il rivestimento e
+le finestre (dove le piante le disegnano, o a passo regolare), i marcapiano, le porte esterne
+della pianta, poi il tetto (piano col parapetto, a padiglione o a capanna in coppi, a botte),
+gli impianti e il fotovoltaico. Le aule senza banchi nelle piante li ricevono come
+nell'Edificio 2 (`completa_piante`). Gli edifici fuori da `leonardo.json` stanno in
+`bassini.json` con la sagoma di OSM (da `giuriati/giuriati.json` o da Overture).
+
+Le fonti di ognuno sono nel docstring del suo guscio; dove non c'è una foto, la facciata è
+dedotta dalle piante e dalle descrizioni, e lo dice.
+
+### Edificio 25 (Emilio Massa, MIA0403)
+
+Il quadrato di via Secondo (1996-2000, supervisione artistica di Luigi Caccia Dominioni):
+facciate in pannelli di fibrocemento a bugnato grigi (scheda di CSA Studio), le finestre
+delle piante su tre piani da 4,5 m, il tetto a padiglione scuro con il lucernario tondo
+sulla falda nord (ortofoto), il seminterrato sotto la strada con la scala esterna a ovest.
+Il seminterrato nel servizio è spostato: `spostamenti` lo riporta sul terra.
 
 ## Cosa manca
 
