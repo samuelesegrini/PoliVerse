@@ -1,0 +1,40 @@
+{
+  "csie": "MIA0314",
+  "piani": [
+    {
+      "csip": "MIA031400S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0314000",
+      "nome": "Terra",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0314001",
+      "nome": "Primo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0314002",
+      "nome": "Secondo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0314003",
+      "nome": "Terzo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0314004",
+      "nome": "Quarto",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0314005",
+      "nome": "Quinto",
+      "aule": {}
+    }
+  ]
+}

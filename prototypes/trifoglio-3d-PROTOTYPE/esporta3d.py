@@ -1087,7 +1087,9 @@ def volumi(b):
     return [(ring(b["pianta"]), n * PIANO, COL["edificio"])]
 
 
-def campus(c):
+def campus(c, altri=()):
+    """altri: gli edifici di altri file nello stesso frame (bassini.json), solo con il loro
+    esterno: il suolo e il contesto restano quelli di leonardo.json."""
     sc = Scena("Campus")
     terr = sc.gruppo("Terreno", "Campus")
     ed = sc.gruppo("Edifici", "Campus")
@@ -1130,6 +1132,10 @@ def campus(c):
         for i, (poly, h, hex_) in enumerate(volumi(b)):
             sc.mesh(f"{b['csie']}_Esterno_{i}", g, slab(poly, 0, h, hex_))
             sc.mesh(f"{b['csie']}_Tetto_{i}", g, slab(poly.buffer(-0.6), h, h + 0.35, COL["tetto"]))
+    for b in altri:
+        g = sc.gruppo(b["csie"], ed)
+        for key, m in (esterno(b) or ({}, 0))[0].items():
+            sc.mesh(f"{b['csie']}_Esterno_{key.lstrip('#')}", g, m)
     return sc
 
 
@@ -2521,12 +2527,15 @@ def usdz(sc, path):
 
 def main():
     c = json.loads((SRC / "leonardo.json").read_text())
-    cs = campus(c)
+    # Gli edifici esportati che stanno in un altro file dello stesso frame (bassini.json).
+    altri = [e for f in sorted(SRC.glob("*.json")) if f.name not in ("leonardo.json", "livelli.json")
+             for e in json.loads(f.read_text())["edifici"] if e["csie"] in ARGS.edifici.split(",")]
+    cs = campus(c, altri)
     usdz(cs, OUT / "campus.usdz")
     if ARGS.glb:
         cs.s.export(OUT / "campus.glb")
     for csie in ARGS.edifici.split(","):
-        b = next(e for e in c["edifici"] if e["csie"] == csie)
+        b = next(e for e in c["edifici"] + altri if e["csie"] == csie)
         info = SRC / "piante" / f"{csie}.json"
         aule = {f["csip"]: f.get("aule", {}) for f in json.loads(info.read_text())["piani"]} if info.exists() else {}
         sc, meta = edificio(b, aule)

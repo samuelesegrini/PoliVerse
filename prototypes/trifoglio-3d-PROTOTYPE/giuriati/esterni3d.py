@@ -226,9 +226,11 @@ def main():
         pan.append(t)
     oggetti(sc, arredi, "Panchine", pan, COL["panchina"])
 
-    # gli edifici: per ora solo l'impronta, chiamata col csie quando si conosce
+    # gli edifici: per ora solo l'impronta, chiamata col csie quando si conosce; quelli con un
+    # guscio proprio (gusci/<csie>.py) stanno in campus.usdz con il loro esterno
+    gusci = pathlib.Path(__file__).resolve().parent.parent / "gusci"
     for i, e in enumerate(d["edifici"]):
-        if "pianta" not in e:
+        if "pianta" not in e or (e.get("csie") and (gusci / f"{e['csie']}.py").exists()):
             continue
         nome = (e.get("csie") or f"osm_{(e.get('osm') or str(i)).lstrip('wr')}").replace("-", "_")
         if e.get("nome") == "Giuriati Gym":

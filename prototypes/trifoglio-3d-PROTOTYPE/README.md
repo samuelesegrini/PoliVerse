@@ -38,6 +38,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0103.usdz`, `MIA0103.json` | lo stesso per l'Edificio 3 |
 | `MIA0104.usdz`, `MIA0104.json` | lo stesso per l'Edificio 4 |
 | `MIA0106.usdz`, `MIA0106.json` | lo stesso per l'Edificio 6 |
+| `MIA0314.usdz`, `MIA0314.json` | lo stesso per l'Edificio 41 (campus Bassini, da `bassini.json`) |
 | `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py` (vedi `giuriati/README.md`) |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
@@ -47,13 +48,15 @@ Per rigenerarli, da questa cartella (circa 3 minuti):
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106
+python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
 
 `--edifici` va dato sempre con tutti gli edifici modellati: un guscio proprio entra anche in
 `campus.usdz` solo se il suo edificio è nell'elenco, altrimenti lì resta l'estrusione.
+Gli edifici dell'elenco che non sono in `leonardo.json` si cercano negli altri file del campus
+in `design/mappa` (per ora `bassini.json`): in `campus.usdz` entra solo il loro esterno.
 
 ### Aggiungere un edificio
 
@@ -317,12 +320,27 @@ piano: le file in tre settori a ventaglio sono aggiunte da `piante()` seguendo i
 a gradini della pianta, legno rossiccio e muri bianchi dalla foto. Nella foto le file salgono
 più ripide dei 17 cm per fila dell'esportatore.
 
+## Edificio 41 (DEIB e DCMIC, MIA0314)
+
+È nel campus Bassini, oltre il Giuriati: la scheda è in `design/mappa/bassini.json` (contorno
+di OSM, stesso frame di `leonardo.json`) e le piante sono quelle del Politecnico, seminterrato
+compreso. Il seminterrato nel servizio è spostato: `spostamenti` lo riporta sulle tre scale che
+ha in comune col piano terra, e così cade sullo scavo del 2021 nelle foto aeree.
+
+L'esterno è in `gusci/MIA0314.py`, ridisegnato dalle foto di Urbanfile e del Politecnico (drone
+e piazza): pettine di tre corpi neri a pannelli verso sud, due connettori vetrati verso Largo
+Volontari del Sangue con il portale a tre fornici al piano terra, quinto piano chiuso, corona
+più alta con le fasce degli impianti a lamelle e il fotovoltaico, il tunnel vetrato verso
+l'Edificio 20A e il ponte del primo piano verso il 21. Piano terra a 4,8 m, gli altri a 4,4 m.
+Il contorno di Edificio 41 in `giuriati.usdz` si salta perché c'è il guscio. Sono dedotti
+l'annesso basso a est e la posizione della rampa del parcheggio.
+
 ## Cosa manca
 
 - Edificio 3: le facciate verso l'esterno del corpo est e il lato sud delle ali non hanno
   foto; sono disegnate come quelle in vista. Le file del primo e del secondo sono stimate, e
   i colori dei banchi valgono per piano, non per aula.
-- Solo il Trifoglio e gli Edifici 11, 1, 2, 3, 4 e 6 hanno l'esterno dettagliato; gli altri
+- Solo il Trifoglio e gli Edifici 11, 1, 2, 3, 4, 6 e 41 hanno l'esterno dettagliato; gli altri
   edifici restano estrusioni. Del profilo mancano ancora coppi, volte, denti, cornicioni, balaustre,
   finestre forate e lucernari.
 - Le quote dell'Edificio 11 seguono una parte sola: la parte di Ponti ha fasce di altezze

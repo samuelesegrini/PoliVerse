@@ -62,7 +62,7 @@ edifici di OSM per posizione; altezze e piani sono quelli di OSM, dove ci sono.
 | Edificio | Codice | Cosa è | Stato |
 |---|---|---|---|
 | Giuriati Gym | — | palestra con parete da arrampicata, 1700 m² coperti, due campi polivalenti (calcetto, tennis) sul tetto, rampe e ascensore esterno | inaugurata l'8 settembre 2026; in OSM c'è ancora il cantiere (2914 m², lato sud della pista), usato come impronta |
-| Edificio 41 | MIA0314 | nuovo edificio del DCMIC (Chimica, Materiali e Ing. Chimica) e del DEIB: pianta a pettine con tre ali verso sud, 7 piani in OSM, pannelli neri e connettori vetrati | finito, inaugurato a dicembre 2025 (campus di via Bassini) |
+| Edificio 41 | MIA0314 | nuovo edificio del DCMIC (Chimica, Materiali e Ing. Chimica) e del DEIB: pianta a pettine con tre ali verso sud, 7 piani in OSM, pannelli neri e connettori vetrati | modellato con il guscio proprio (`gusci/MIA0314.py`, scheda in `design/mappa/bassini.json`): qui la sua impronta non si disegna più |
 | Edificio 20A | MIA0319 | ampliamento del DEIB unito all'Edificio 20 "Carlo Pascal", 4 piani, facciata bianca lunga sul giardino con frangisole | finito, dicembre 2025 |
 | Edificio 45 | MIA0320 | nel catalogo, non in OSM; sta sopra i campi da padel coperti, quindi probabilmente è la loro copertura | da verificare |
 | Edificio 42 | MIA0315 | "Giuriati Fit Center", 2 piani | in OSM |

@@ -519,7 +519,11 @@ def main(csie):
             print(f"{c}: no outline drawn, the widest floor's is used")
             f["shell"] = widest
             f["borrowed"] = True
-    rooms = osm_rooms(bbox, (lat0, lon0))
+    try:
+        rooms = osm_rooms(bbox, (lat0, lon0))
+    except OSError as error:      # OpenStreetMap not reachable: the outline places the building
+        print(f"OpenStreetMap not reachable ({error}), the outline is used")
+        rooms = []
 
     # Which OpenStreetMap level is which floor: room numbers repeat on every floor, so
     # each level goes to the one floor it shares the most numbers with, and only when
