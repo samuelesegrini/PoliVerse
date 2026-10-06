@@ -17,7 +17,7 @@ Si apre in Xcode: `PoliVerse/Features/Map/Campus3D/Trifoglio3DView.swift`, previ
    alla cattedra; compaiono i muri a tutta altezza, il soffitto e le luci. "Esci dall'aula"
    torna alla vista dall'alto.
 
-Dal campus si sceglie il Trifoglio o l'Edificio 11. "Portami all'aula T.1.2" fa tutto il
+Dal campus si sceglie il Trifoglio, l'Edificio 11 o l'Edificio 2. "Portami all'aula T.1.2" fa tutto il
 percorso. Si può anche toccare l'edificio e le aule sul
 modello, trascinare per ruotare e pizzicare per lo zoom.
 
@@ -33,6 +33,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0203.usdz` | i piani del Trifoglio: `MIA0203/Piani/<csip>` con soletta, muri tagliati a 1,5 m, locali e arredi (`<csip>_Arredi`); ogni aula è un nodo chiamato con il suo `csiv` |
 | `MIA0203.json` | piani, quote e aule (sigla, posti) per l'interfaccia |
 | `MIA0201.usdz`, `MIA0201.json` | lo stesso per l'Edificio 11 |
+| `MIA0102.usdz`, `MIA0102.json` | lo stesso per l'Edificio 2 |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
 trova il nodo da accendere senza tabelle in più.
@@ -41,7 +42,7 @@ Per rigenerarli, con il ramo della mappa estratto:
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101
+python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -191,9 +192,43 @@ Urbanfile (2018):
 Nella vista per piani i pilastri e la scala sono tagliati all'altezza dei muri; il resto è
 nascosto finché non si entra.
 
+## L'Edificio 2
+
+Il guscio dell'Edificio 2 (Bruno Finzi) sta in un modulo suo, `gusci/MIA0102.py`, che
+l'esportatore carica come gli altri gusci propri (`guscio(b, E)` per l'esterno, `quote(b, E)`
+per i piani, `piante(b, E, geo, aule)` per i banchi). È rifatto dalla foto aerea (Esri World Imagery)
+e dalle foto della piazza; le fasce della mappa dicono solo quale parte ha quali finestre,
+rivestimento, cornicione e copertura. Le altezze sono vere: zoccolo di pietra fino a 1,6 m
+con le finestrelle del seminterrato (che sta sotto la piazza, a -2,2 m), terra bugnato
+alto 5,6 m, piano nobile 5,4 m, secondo piano solo nell'ala est e nelle torri.
+
+- I due padiglioni sulla piazza: lesene dell'ordine gigante a ogni campata, base e
+  capitello; finestre ad arco con la chiave al terra, porte finestre ad arco con il
+  balconcino al primo; cornicione su mensole, balaustra con le sfere sui pilastrini e gli
+  obelischi sugli spigoli verso la piazza; il portone ad arco sul lato corto con il balcone
+  grande sopra, su tre mensole.
+- Il fronte fra i padiglioni, le ali e le aule che sporgono nella corte: ocra, terra
+  bugnato con gli archi, primo con finestre ad arco (la specchiatura sotto il davanzale) o
+  rettangolari con la cimasa. Le finestre seguono quelle delle piante dove su una facciata
+  sono in fila regolare (il fronte e l'ala est, ogni 2,8 m), altrimenti la campata della
+  mappa; sono le stesse su tutti i piani, come in un palazzo. Verso la corte niente cornici
+  intorno alle finestre né dentelli.
+- I tetti: in coppi a padiglione su ali e aule, e padiglione e ala sotto un tetto solo come
+  nella foto aerea, che parte dietro la balaustra; piano con gli impianti sul fronte e sulle
+  torri. La foto aerea corregge la mappa sull'ala est: il tetto è piano, chiaro, con il
+  camminamento lungo il parapetto e tre campi di pannelli fotovoltaici (`TETTI_PIANI`).
+- Bugnato, coppi e fotovoltaico sono texture generate come il mosaico del Trifoglio.
+
+Le piante dell'Edificio 2 non disegnano i banchi: `piante()` li ricava per ogni aula
+(non per l'EDUCAFE) dalla forma, dalle porte e dai posti. Oltre 0,75 posti al m² l'aula è a
+gradoni con file ogni 90 cm (2.0.1, 2.0.2, 2.1.1-2.1.5), altrimenti piana con tavoli da
+50 cm ogni 1,25 m (2.2.1-2.2.5); le due aule a ventaglio hanno la cattedra sul lato
+stretto, le altre sul lato corto lontano dalle porte; corridoi ai lati e in mezzo nelle
+aule larghe più di 11 m. Così ogni aula ha file, cattedra e interno, e si entra.
+
 ## Cosa manca
 
-- Solo il Trifoglio e l'Edificio 11 hanno l'esterno dettagliato; gli altri edifici restano
+- Solo il Trifoglio, l'Edificio 11 e l'Edificio 2 hanno l'esterno dettagliato; gli altri edifici restano
   estrusioni. Del profilo mancano ancora coppi, volte, denti, cornicioni, balaustre,
   finestre forate e lucernari.
 - Le quote dell'Edificio 11 seguono una parte sola: la parte di Ponti ha fasce di altezze
@@ -203,6 +238,10 @@ nascosto finché non si entra.
   apre su atri e corridoi. Mancano le pedane con i parapetti arancio intorno ai tavoli, il
   bar BCL, lo schermo e la trincea all'aperto lungo via Ampère (Urbanfile 2018).
 - Le file di banchi sono continue: la pianta non disegna le singole sedute.
+- Edificio 2: i banchi sono dedotti, non disegnati (gradoni o tavoli, verso della cattedra),
+  e nessuna foto degli interni li conferma. La forma dei tetti fra padiglioni, ali e aule è
+  semplificata in rettangoli; le finestre delle facciate senza file regolari nelle piante
+  seguono la campata della mappa. L'occhio dentro le aule a volte sta vicino a un muro.
 - I bagni restano vuoti: le piante del Trifoglio non disegnano i sanitari (`linee.sanitari`
   è vuota).
 - La scritta "AULA MAGNA" e il logo sulla parete di cemento non ci sono. Le alzate dei gradoni

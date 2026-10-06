@@ -1033,6 +1033,8 @@ def profilo_3d(b):
 #   arredi(b, E, csip, z, piano) -> {colore: [mesh]}    facoltativo: arredi in più su un piano
 #   interno(b, E, csiv, poly, z, porte) -> come interno() facoltativo: l'interno di un'aula
 #                                                       senza file nella pianta
+#   piante(b, E, geo, aule) -> None                     facoltativo: completa le piante prima
+#                                                       dell'esportazione (es. le file di banchi)
 GUSCI = pathlib.Path(__file__).resolve().parent / "gusci"
 
 
@@ -2138,6 +2140,8 @@ def aperture(f):
 
 def edificio(b, aule_info):
     geo = json.loads((SRC / "piante" / f"{b['csie']}-geometria.json").read_text())["piani"]
+    if hasattr(guscio_proprio(b), "piante"):                      # piante completate a mano
+        guscio_proprio(b).piante(b, sys.modules[__name__], geo, aule_info)
     sc = Scena(b["csie"])
     piani = sc.gruppo("Piani", b["csie"])
     zs = quote(b)
