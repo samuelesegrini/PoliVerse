@@ -144,18 +144,21 @@ class Stile:
     cornice    colore di una cornice intorno a ogni finestra (None: niente)
     marcapiano (altezza, sporgenza, colore) di una fascia in basso, sul filo del solaio
     lesene     (sporgenza, larghezza, colore) delle alette verticali ai lati delle finestre
+    ripiego    (passo, larghezza, lato minimo): finestre a passo regolare sui lati lunghi
+               dove la pianta non ne disegna
     tende      colore delle tende da sole avvolte sopra le finestre (None: niente)
     passo_montanti  per 'nastro' e 'vetrata'
     """
 
     def __init__(self, muro="#D8D4CC", finestre="pianta", davanzale=0.9, architrave=2.7,
                  telaio=TELAIO, vetro=VETRO, sguincio=0.18, cornice=None, marcapiano=None,
-                 tende=None, passo_montanti=1.5, minima=0.6, montante=1.4, reach=1.2, lesene=None):
+                 tende=None, passo_montanti=1.5, minima=0.6, montante=1.4, reach=1.2, lesene=None, ripiego=None):
         self.muro, self.finestre, self.davanzale, self.architrave = muro, finestre, davanzale, architrave
         self.telaio, self.vetro, self.sguincio, self.cornice = telaio, vetro, sguincio, cornice
         self.marcapiano, self.tende, self.passo_montanti = marcapiano, tende, passo_montanti
         self.minima, self.montante, self.reach = minima, montante, reach
         self.lesene = lesene
+        self.ripiego = ripiego
 
     def con(self, **kw):
         s = Stile.__new__(Stile)
@@ -356,6 +359,8 @@ class Kit:
             iv = [(0.25, L - 0.25)] if L > 1.2 else []
         elif st.finestre == "pianta":
             iv = self.finestre_pianta(csip, e, st.reach, st.minima) if csip else []
+            if not iv and st.ripiego and L > st.ripiego[2]:
+                iv = self.finestre_passo(L, st.ripiego[0], st.ripiego[1])
         elif isinstance(st.finestre, tuple) and st.finestre[0] == "passo":
             iv = self.finestre_passo(L, st.finestre[1], st.finestre[2])
         elif isinstance(st.finestre, list):

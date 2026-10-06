@@ -42,6 +42,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0403.usdz`, `MIA0403.json` | lo stesso per l'Edificio 25 (campus di via Golgi, da `bassini.json`) |
 | `MIA1401.usdz`, `MIA1401.json` | lo stesso per l'Edificio 26 (da `citta-studi.json`) |
 | `MIA0306.usdz`, `MIA0306.json` | lo stesso per l'Edificio 21 (da `bassini.json`) |
+| `MIA0301.usdz`, `MIA0301.json` | lo stesso per l'Edificio 20 (da `bassini.json`) |
 | `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py` (vedi `giuriati/README.md`) |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
@@ -51,7 +52,7 @@ Per rigenerarli, da questa cartella (circa 3 minuti):
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306
+python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -366,6 +367,10 @@ Via Golgi 20, le aule L26 e la mensa nel seminterrato. È in `design/mappa/citta
 ### Edificio 21 (MIA0306)
 
 Via Golgi 39, il Dipartimento di Chimica e le aule EG. Sette piani da 3,6 m (dal terra al sesto, più il seminterrato): il terra ha il suo contorno, i piani dal primo al sesto un corpo solo a L, squadrato dalle piante. Calcestruzzo grigio con le alette verticali fra le finestre, a passo regolare, e i locali degli impianti e le canne dei laboratori sul tetto: dedotti dall'ortofoto, senza foto delle facciate. L'altezza di OSM (14,9 m) è troppo bassa per sette piani.
+
+### Edificio 20 (MIA0301)
+
+Via Ponzio 34/5, la stecca del DEIB lungo via Bassini, con l'aula 20.S.1. Quattro piani da 4,5 m (18 m come in OSM), la torre delle scale vetrata girata di 45° sul lato nord col tetto a piramide, il tetto bianco con due file di fotovoltaico e la testata est scura con gli impianti (ortofoto). Facciate senza foto: intonaco chiaro con le finestre delle piante, e a passo regolare (`ripiego` del kit) sui lati lunghi dove le piante non le disegnano. Terra e seminterrato nel servizio sono spostati di 2 m e 1,5 m verso nord: `spostamenti`.
 
 ## Cosa manca
 
