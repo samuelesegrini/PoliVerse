@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="116.6 -48.4 318.1 254.3" width="636.1" height="508.6">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="187.9,69.1 163,83.5 163,74.5 187.9,60.1" fill="#B1B4B6"/>
+<polygon points="186.2,70.5 185.2,71.1 185.2,62.1 186.2,61.5" fill="#D9DBDC" opacity="0.9"/>
+<polygon points="179.6,74.3 178.6,74.9 178.6,65.9 179.6,65.3" fill="#D9DBDC" opacity="0.9"/>
+<polygon points="173,78.1 172,78.7 172,69.7 173,69.1" fill="#D9DBDC" opacity="0.9"/>
+<polygon points="166.5,81.9 165.4,82.5 165.4,73.5 166.5,72.9" fill="#D9DBDC" opacity="0.9"/>
+<polygon points="183.3,69.6 180.9,71 180.9,66 183.3,64.6" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="176.8,73.4 174.3,74.8 174.3,69.8 176.8,68.4" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="170.2,77.2 167.7,78.6 167.7,73.6 170.2,72.2" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="163,83.5 147.7,74.7 147.7,65.7 163,74.5" fill="#CDCFD0"/>
+<polygon points="162.1,83.4 161.1,82.8 161.1,73.8 162.1,74.4" fill="#D9DBDC" opacity="0.9"/>
+<polygon points="155.5,79.6 154.5,79 154.5,70 155.5,70.6" fill="#D9DBDC" opacity="0.9"/>
+<polygon points="149,75.8 147.9,75.2 147.9,66.2 149,66.8" fill="#D9DBDC" opacity="0.9"/>
+<polygon points="159.8,79.5 157.4,78.1 157.4,73.1 159.8,74.5" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="153.2,75.7 150.8,74.3 150.8,69.3 153.2,70.8" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="147.7,65.7 172.7,51.3 187.9,60.1 163,74.5" fill="#D9DBDC"/>
+</svg>

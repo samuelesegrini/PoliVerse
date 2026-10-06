@@ -1,0 +1,73 @@
+{
+  "csie": "MIA0111",
+  "piani": [
+    {
+      "csip": "MIA011100S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0111000",
+      "nome": "Terra",
+      "aule": {
+        "MIA0111000040": {
+          "sigla": "9.0.1",
+          "posti": 280,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0111000043": {
+          "sigla": "9.0.2",
+          "posti": 80,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile"
+          ]
+        },
+        "MIA0111000008": {
+          "sigla": "9.0.3",
+          "posti": 90,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0111000003": {
+          "sigla": "9.0.4",
+          "posti": 20,
+          "dotazioni": []
+        }
+      }
+    },
+    {
+      "csip": "MIA0111001",
+      "nome": "Primo",
+      "aule": {
+        "MIA0111001045": {
+          "sigla": "9.1.2",
+          "posti": 288,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0111002",
+      "nome": "Secondo",
+      "aule": {}
+    }
+  ]
+}

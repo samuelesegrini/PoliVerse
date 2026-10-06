@@ -1,0 +1,285 @@
+{
+  "csie": "MIA0205",
+  "piani": [
+    {
+      "csip": "MIA020500S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0205000",
+      "nome": "Terra",
+      "aule": {},
+      "principale": [
+        67.6,
+        26.6
+      ],
+      "ingressi": [
+        [
+          68.9,
+          13.3
+        ]
+      ]
+    },
+    {
+      "csip": "MIA0205001",
+      "nome": "Primo",
+      "aule": {
+        "MIA0205001002a": {
+          "sigla": "B.2.1",
+          "posti": 93,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0205001002b": {
+          "sigla": "B.2.2",
+          "posti": 93,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0205001003a": {
+          "sigla": "B.2.3",
+          "posti": 93,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0205001003b": {
+          "sigla": "B.2.4",
+          "posti": 164,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0205002",
+      "nome": "Secondo",
+      "aule": {
+        "MIA0205002003a": {
+          "sigla": "B.3.1",
+          "posti": 93,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0205002003b": {
+          "sigla": "B.3.2",
+          "posti": 93,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0205002002a": {
+          "sigla": "B.3.3",
+          "posti": 93,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0205002002b": {
+          "sigla": "B.3.4",
+          "posti": 164,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0205003",
+      "nome": "Terzo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0205004",
+      "nome": "Quarto",
+      "aule": {
+        "MIA0205004005a": {
+          "sigla": "B.4.1",
+          "posti": 93,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "prese"
+          ]
+        },
+        "MIA0205004005b": {
+          "sigla": "B.4.2",
+          "posti": 93,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0205004004": {
+          "sigla": "B.4.3",
+          "posti": 93,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0205004002a": {
+          "sigla": "B.4.4",
+          "posti": 164,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0205005",
+      "nome": "Quinto",
+      "aule": {
+        "MIA0205005005": {
+          "sigla": "B.5.1",
+          "posti": 80,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0205005004": {
+          "sigla": "B.5.2",
+          "posti": 82,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0205005003": {
+          "sigla": "B.5.3",
+          "posti": 82,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0205005002a": {
+          "sigla": "B.5.4",
+          "posti": 70,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0205006",
+      "nome": "Sesto",
+      "aule": {
+        "MIA0205006006": {
+          "sigla": "B.6.1",
+          "posti": 73,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0205006005": {
+          "sigla": "B.6.2",
+          "posti": 104,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0205006003": {
+          "sigla": "B.6.3",
+          "posti": 104,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0205006002a": {
+          "sigla": "B.6.4",
+          "posti": 35,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0205007",
+      "nome": "Settimo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0205008",
+      "nome": "Ottavo",
+      "aule": {}
+    }
+  ]
+}

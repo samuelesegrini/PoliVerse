@@ -1,0 +1,88 @@
+{
+  "csie": "MIA0105",
+  "piani": [
+    {
+      "csip": "MIA010500S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0105000",
+      "nome": "Terra",
+      "aule": {
+        "MIA0105000003": {
+          "sigla": "5.0.1",
+          "posti": 284,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIA0105000062a": {
+          "sigla": "5.02",
+          "posti": 174,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0105000028": {
+          "sigla": "5.03",
+          "posti": 230,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0105000052": {
+          "sigla": "BELTRAMI",
+          "posti": 66,
+          "dotazioni": [
+            "proiettore"
+          ]
+        },
+        "MIA0105000059": {
+          "sigla": "CASTIGLIANO",
+          "posti": 60,
+          "dotazioni": [
+            "proiettore"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0105001",
+      "nome": "Primo",
+      "aule": {
+        "MIA0105001005a": {
+          "sigla": "5.1.1",
+          "posti": 290,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0105002",
+      "nome": "Secondo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0105003",
+      "nome": "Terzo",
+      "aule": {}
+    }
+  ]
+}

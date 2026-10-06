@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="213.5 37.2 107.3 112.4" width="214.6" height="224.8">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="280.8,107.7 262.2,118.6 262.2,114.6 280.8,103.7" fill="#D4D8DF"/>
+<polygon points="262.2,118.6 243.9,108 243.9,104 262.2,114.6" fill="#F2F3F6"/>
+<polygon points="262.2,114.6 243.9,104 262.2,93.2 280.8,103.7" fill="#FFFFFF"/>
+<polygon points="279.4,107.7 262.2,117.8 262.2,113.8 279.4,103.7" fill="#FFD98A" opacity="0.55"/>
+<polygon points="279.4,103.7 262.2,113.8 262.2,99.8 279.4,89.7" fill="url(#iso-lit-r)"/>
+<polygon points="279.4,103.7 270.8,108.8 270.8,94.8 279.4,89.7" fill="#B87A24" opacity="0.14"/>
+<polygon points="279.4,96.7 262.2,106.8 262.2,99.8 279.4,89.7" fill="url(#iso-lit-glow)"/>
+<polygon points="262.2,117.8 245.3,108 245.3,104 262.2,113.8" fill="#FFD98A" opacity="0.55"/>
+<polygon points="262.2,113.8 245.3,104 245.3,90 262.2,99.8" fill="url(#iso-lit-l)"/>
+<polygon points="262.2,106.8 245.3,97 245.3,90 262.2,99.8" fill="url(#iso-lit-glow)"/>
+<path d="M279.4 100.5L262.2 110.6M262.2 110.6L245.3 100.8" stroke="#D9963A" stroke-width="1.1" opacity="0.4"/>
+<path d="M270.8 108.8V94.8M253.7 108.9V94.9" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+</svg>

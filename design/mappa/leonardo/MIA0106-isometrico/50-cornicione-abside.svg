@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="333.3 -59.6 300.4 295.4" width="600.8" height="590.8">
+<defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient></defs>
+<polygon points="420.5,127 420,121.9 420,118.9 420.5,124" fill="#4E5566" opacity="0.25"/>
+<polygon points="445,140.7 420.5,127 420.5,124 445,137.7" fill="#4E5566" opacity="0.25"/>
+<polygon points="470.1,131.4 454.5,140.4 454.5,137.4 470.1,128.4" fill="#4E5566" opacity="0.25"/>
+<polygon points="454.5,140.4 445,140.7 445,137.7 454.5,137.4" fill="#4E5566" opacity="0.25"/>
+<polygon points="419.1,124.4 418.5,118.6 418.5,117.2 419.1,123" fill="#F1EADB"/>
+<polygon points="444.4,138.6 419.1,124.4 419.1,123 444.4,137.2" fill="#F1EADB"/>
+<polygon points="472.2,128.4 455.1,138.2 455.1,136.8 472.2,127" fill="#D9CDB2"/>
+<polygon points="455.1,138.2 444.4,138.6 444.4,137.2 455.1,136.8" fill="#D9CDB2"/>
+<polygon points="444.4,137.2 419.1,123 418.5,117.2 436.6,106.5 472.2,127 455.1,136.8" fill="#F5F0E4"/>
+</svg>
