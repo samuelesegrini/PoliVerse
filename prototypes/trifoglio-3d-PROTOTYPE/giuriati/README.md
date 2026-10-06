@@ -12,15 +12,18 @@ sono riconosciuti ed elencati qui sotto, nel modello sono solo l'impronta.
 | `importa.py` | scarica i dati di OpenStreetMap (dalla copia di Overture Maps) e scrive `giuriati.json` |
 | `giuriati.json` | verde, alberi, filari, campi, piste, percorsi, strade, recinzioni, muri, arredi, edifici, nel frame del campus |
 | `esterni3d.py` | da `giuriati.json` a `giuriati.usdz` (e `giuriati.png` con `--png`) |
-| `giuriati.usdz` | `Giuriati/Terreno`, `Sport`, `Verde`, `Arredi`, `Edifici/<csie>_Impronta` |
+| `PoliVerse/Preview Content/Trifoglio3D/giuriati.usdz` | `Giuriati/Terreno`, `Sport`, `Verde`, `Arredi`, `Edifici/<csie>_Impronta` |
 
 Stesso frame di `leonardo.json` e di `campus.usdz`: metri, X verso est, Y in alto, Z verso
-sud, origine 45.48, 9.22803. Il file si sovrappone al campus senza spostamenti.
+sud, origine 45.48, 9.22803. Il file si sovrappone al campus senza spostamenti: la preview
+"Trifoglio 3D" lo carica accanto a `campus.usdz`, e ne nasconde gli alberi dentro i piani
+come quelli del campus.
 
 ```
 python3 -m pip install pyarrow shapely trimesh mapbox_earcut numpy usd-core matplotlib
 python3 importa.py giuriati.json --leonardo ../../../design/mappa/leonardo.json
-python3 esterni3d.py giuriati.json . --png --leonardo ../../../design/mappa/leonardo.json
+python3 esterni3d.py giuriati.json "../../../PoliVerse/Preview Content/Trifoglio3D" --leonardo ../../../design/mappa/leonardo.json
+python3 esterni3d.py giuriati.json . --png --leonardo ../../../design/mappa/leonardo.json   # solo per giuriati.png
 ```
 
 `--leonardo` salta alberi, prati e percorsi che il file del campus ha già. Le chiavi di

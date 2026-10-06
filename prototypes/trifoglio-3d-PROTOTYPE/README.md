@@ -38,6 +38,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0103.usdz`, `MIA0103.json` | lo stesso per l'Edificio 3 |
 | `MIA0104.usdz`, `MIA0104.json` | lo stesso per l'Edificio 4 |
 | `MIA0106.usdz`, `MIA0106.json` | lo stesso per l'Edificio 6 |
+| `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py` (vedi `giuriati/README.md`) |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
 trova il nodo da accendere senza tabelle in più.

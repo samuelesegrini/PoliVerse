@@ -107,6 +107,9 @@ final class Trifoglio3DScene {
     @ObservationIgnored private let camera = Entity()
     /// The campus: terrain, trees and every building's outer shell.
     @ObservationIgnored private var campus: Entity?
+    /// The Giuriati sports centre and its block east of the campus: ground, pitches, track,
+    /// trees and building footprints, in the campus frame. Optional.
+    @ObservationIgnored private var giuriati: Entity?
     /// Every building's floors, each with its slab, cut walls and rooms, by `csie`.
     @ObservationIgnored private var models: [String: Entity] = [:]
     /// The floors of the building the camera is on.
@@ -184,6 +187,11 @@ final class Trifoglio3DScene {
             tappable(campus.findEntity(named: "Edifici"))
             root.addChild(campus)
             self.campus = campus
+            if let giuriatiURL = Bundle.main.url(forResource: "giuriati", withExtension: "usdz") {
+                let giuriati = try await Entity(contentsOf: giuriatiURL)
+                root.addChild(giuriati)
+                self.giuriati = giuriati
+            }
             for csie in Self.buildings {
                 guard let buildingURL = Bundle.main.url(forResource: csie, withExtension: "usdz"),
                       let planURL = Bundle.main.url(forResource: csie, withExtension: "json")
@@ -422,7 +430,11 @@ final class Trifoglio3DScene {
     /// The outer shell, on the campus, of the building the camera is on.
     private var shell: Entity? { exteriors.first { $0.name == csie } }
     /// The campus trees, crowns and trunks, which would stand in the way inside a floor.
-    private var trees: [Entity] { ["Chiome", "Tronchi"].compactMap { campus?.findEntity(named: $0) } }
+    private var trees: [Entity] {
+        ["Chiome", "Tronchi"].compactMap { campus?.findEntity(named: $0) }
+            + ["Alberi_Chiome", "Alberi_Tronchi", "Filari_Chiome", "Filari_Tronchi"]
+                .compactMap { giuriati?.findEntity(named: $0) }
+    }
 
     /// A building's floors, lowest first.
     private func floors(of building: Entity) -> [Entity] {
