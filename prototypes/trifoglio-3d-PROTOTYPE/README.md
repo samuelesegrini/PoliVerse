@@ -41,6 +41,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0314.usdz`, `MIA0314.json` | lo stesso per l'Edificio 41 (campus Bassini, da `bassini.json`) |
 | `MIA0403.usdz`, `MIA0403.json` | lo stesso per l'Edificio 25 (campus di via Golgi, da `bassini.json`) |
 | `MIA1401.usdz`, `MIA1401.json` | lo stesso per l'Edificio 26 (da `citta-studi.json`) |
+| `MIA0306.usdz`, `MIA0306.json` | lo stesso per l'Edificio 21 (da `bassini.json`) |
 | `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py` (vedi `giuriati/README.md`) |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
@@ -50,7 +51,7 @@ Per rigenerarli, da questa cartella (circa 3 minuti):
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401
+python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -361,6 +362,10 @@ Il seminterrato nel servizio è spostato: `spostamenti` lo riporta sul terra.
 ### Edificio 26 (MIA1401)
 
 Via Golgi 20, le aule L26 e la mensa nel seminterrato. È in `design/mappa/citta-studi.json`, il file nuovo per gli edifici di Città Studi fuori dai campus di piazza Leonardo, via Bonardi e via Bassini-Golgi 40 (sagome di OSM da Overture). Il terra rialzato su tutta la sagoma, il primo solo sulla parte sud come nelle piante e nell'ortofoto; i tetti piani coperti di file di fotovoltaico est-ovest, il blocco degli impianti al centro (ortofoto). Le piante nel servizio sono disegnate girate di mezzo giro: il terra è messo sulla sagoma con l'ingresso verso via Golgi. Le facciate non hanno foto: intonaco chiaro con le finestre delle piante.
+
+### Edificio 21 (MIA0306)
+
+Via Golgi 39, il Dipartimento di Chimica e le aule EG. Sette piani da 3,6 m (dal terra al sesto, più il seminterrato): il terra ha il suo contorno, i piani dal primo al sesto un corpo solo a L, squadrato dalle piante. Calcestruzzo grigio con le alette verticali fra le finestre, a passo regolare, e i locali degli impianti e le canne dei laboratori sul tetto: dedotti dall'ortofoto, senza foto delle facciate. L'altezza di OSM (14,9 m) è troppo bassa per sette piani.
 
 ## Cosa manca
 

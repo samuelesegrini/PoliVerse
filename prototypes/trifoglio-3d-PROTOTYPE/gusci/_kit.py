@@ -143,17 +143,19 @@ class Stile:
     sguincio   quanto è arretrato il vetro (m)
     cornice    colore di una cornice intorno a ogni finestra (None: niente)
     marcapiano (altezza, sporgenza, colore) di una fascia in basso, sul filo del solaio
+    lesene     (sporgenza, larghezza, colore) delle alette verticali ai lati delle finestre
     tende      colore delle tende da sole avvolte sopra le finestre (None: niente)
     passo_montanti  per 'nastro' e 'vetrata'
     """
 
     def __init__(self, muro="#D8D4CC", finestre="pianta", davanzale=0.9, architrave=2.7,
                  telaio=TELAIO, vetro=VETRO, sguincio=0.18, cornice=None, marcapiano=None,
-                 tende=None, passo_montanti=1.5, minima=0.6, montante=1.4, reach=1.2):
+                 tende=None, passo_montanti=1.5, minima=0.6, montante=1.4, reach=1.2, lesene=None):
         self.muro, self.finestre, self.davanzale, self.architrave = muro, finestre, davanzale, architrave
         self.telaio, self.vetro, self.sguincio, self.cornice = telaio, vetro, sguincio, cornice
         self.marcapiano, self.tende, self.passo_montanti = marcapiano, tende, passo_montanti
         self.minima, self.montante, self.reach = minima, montante, reach
+        self.lesene = lesene
 
     def con(self, **kw):
         s = Stile.__new__(Stile)
@@ -364,6 +366,12 @@ class Kit:
         self.muro(e, z0, z1, st.muro, buchi)
         for t0, t1 in iv:
             (self.nastro if st.finestre == "nastro" else self.foro)(e, t0, t1, zf0, zf1, st)
+        if st.lesene:
+            sp, w, col = st.lesene
+            ts = sorted({round(t, 2) for t0, t1 in iv for t in (t0 - w / 2 - 0.02, t1 + w / 2 + 0.02)})
+            for t in ts:
+                if w / 2 < t < L - w / 2:
+                    self.pannello(col, e, rett(t - w / 2, t + w / 2, z0, z1), 0.0, sp)
         if st.marcapiano:
             h, sp, col = st.marcapiano
             self.pannello(col, e, rett(0.0, L, z0 - h / 2, z0 + h / 2), 0.0, sp)
