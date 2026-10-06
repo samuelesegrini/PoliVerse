@@ -43,6 +43,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA1401.usdz`, `MIA1401.json` | lo stesso per l'Edificio 26 (da `citta-studi.json`) |
 | `MIA0306.usdz`, `MIA0306.json` | lo stesso per l'Edificio 21 (da `bassini.json`) |
 | `MIA0301.usdz`, `MIA0301.json` | lo stesso per l'Edificio 20 (da `bassini.json`) |
+| `MIA0302.usdz`, `MIA0302.json` | lo stesso per l'Edificio 19 (da `bassini.json`) |
 | `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py` (vedi `giuriati/README.md`) |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
@@ -52,7 +53,7 @@ Per rigenerarli, da questa cartella (circa 3 minuti):
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301
+python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -371,6 +372,10 @@ Via Golgi 39, il Dipartimento di Chimica e le aule EG. Sette piani da 3,6 m (dal
 ### Edificio 20 (MIA0301)
 
 Via Ponzio 34/5, la stecca del DEIB lungo via Bassini, con l'aula 20.S.1. Quattro piani da 4,5 m (18 m come in OSM), la torre delle scale vetrata girata di 45° sul lato nord col tetto a piramide, il tetto bianco con due file di fotovoltaico e la testata est scura con gli impianti (ortofoto). Facciate senza foto: intonaco chiaro con le finestre delle piante, e a passo regolare (`ripiego` del kit) sui lati lunghi dove le piante non le disegnano. Terra e seminterrato nel servizio sono spostati di 2 m e 1,5 m verso nord: `spostamenti`.
+
+### Edificio 19 "Mario Silvestri" (`MIA0302`)
+
+La stecca di via Ponzio 34/3: tre piani da 3,4 m con le finestre delle piante (dove le piante non ne disegnano su un tratto lungo, una fila a passo regolare), il tetto bianco a padiglione quasi piano dell'ortofoto. Il corpo basso a nord, che OSM mette nella stessa sagoma e le piante non disegnano, è un volume di due piani col tetto scuro. Le facciate sono dedotte: nessuna foto.
 
 ## Cosa manca
 
