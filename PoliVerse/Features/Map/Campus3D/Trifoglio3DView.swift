@@ -98,7 +98,7 @@ final class Trifoglio3DScene {
     var reduceMotion = false
 
     /// The buildings that have floors to walk into, in the order the campus offers them.
-    static let buildings = ["MIA0203", "MIA0201", "MIA0101", "MIA0102", "MIA0103", "MIA0104", "MIA0106", "MIA0314", "MIA0403", "MIA1401", "MIA0306", "MIA0301", "MIA0302", "MIA0402", "MIA0601", "MIA0603", "MIA0901", "MIA0202", "MIA0206", "MIA0207", "MIA0208"]
+    static let buildings = ["MIA0203", "MIA0201", "MIA0101", "MIA0102", "MIA0103", "MIA0104", "MIA0106", "MIA0314", "MIA0403", "MIA1401", "MIA0306", "MIA0301", "MIA0302", "MIA0402", "MIA0601", "MIA0603", "MIA0901", "MIA0202", "MIA0206", "MIA0207", "MIA0208", "MIA0209"]
     /// The building the camera is on, or was on last.
     private(set) var csie = "MIA0203"
     /// Everything the scene adds to the view hangs from here.

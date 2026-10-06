@@ -52,6 +52,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0206.usdz`, `MIA0206.json` | lo stesso per l'Edificio 15 (da `leonardo.json`) |
 | `MIA0207.usdz`, `MIA0207.json` | lo stesso per l'Edificio 18 (da `leonardo.json`) |
 | `MIA0208.usdz`, `MIA0208.json` | lo stesso per l'Edificio 14A (da `leonardo.json`) |
+| `MIA0209.usdz`, `MIA0209.json` | lo stesso per l'Edificio 14B (da `leonardo.json`) |
 | `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py` (vedi `giuriati/README.md`) |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
@@ -61,7 +62,7 @@ Per rigenerarli, da questa cartella (circa 3 minuti):
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901,MIA0202,MIA0206,MIA0207,MIA0208
+python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901,MIA0202,MIA0206,MIA0207,MIA0208,MIA0209
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -416,6 +417,10 @@ La palazzina quadrata a un piano fra gli alberi dietro al Trifoglio: il tetto a 
 ### Edificio 14A (`MIA0208`)
 
 Il corpo seminterrato davanti al 14: le piante hanno solo il seminterrato e il soppalco, quindi il tetto sta a 1,2 m sopra il cortile, col lungo lucernario dell'ortofoto, e la facciata sud vetrata scende nella trincea in ombra. Nessuna foto.
+
+### Edificio 14B (`MIA0209`)
+
+La palazzina a L di due piani all'angolo del 14, con l'angolo tagliato in diagonale delle piante, le finestre delle piante e il tetto piano scuro dell'ortofoto. Piani da 4 m, facciate dedotte, nessuna foto.
 
 ## Cosa manca
 
