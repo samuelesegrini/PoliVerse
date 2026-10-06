@@ -190,6 +190,27 @@ class Kit:
             g = g.buffer(chiudi, join_style=2).buffer(-chiudi, join_style=2)
         return g
 
+    @staticmethod
+    def squadra(g, passo=0.5, angolo=None):
+        """Il contorno ridisegnato ad angoli retti, nell'orientamento dell'edificio, con il
+        passo dato: toglie i lati storti e i dentini di pochi centimetri delle piante."""
+        if angolo is None:
+            r = g.minimum_rotated_rectangle
+            c = list(r.exterior.coords)
+            l = max(((c[i], c[i + 1]) for i in range(4)), key=lambda s: math.dist(*s))
+            angolo = math.degrees(math.atan2(l[1][1] - l[0][1], l[1][0] - l[0][0]))
+        o = g.centroid
+        q = affinity.rotate(g, -angolo, origin=o)
+        x0, y0, x1, y1 = q.bounds
+        celle = []
+        for i in range(int((x1 - x0) / passo) + 1):
+            for j in range(int((y1 - y0) / passo) + 1):
+                cx, cy = x0 + (i + 0.5) * passo, y0 + (j + 0.5) * passo
+                if q.contains(Point(cx, cy)):
+                    celle.append(box(cx - passo / 2, cy - passo / 2, cx + passo / 2, cy + passo / 2))
+        u = unary_union(celle).buffer(0.01, join_style=2).buffer(-0.01, join_style=2).simplify(0.02)
+        return affinity.rotate(u, angolo, origin=o)
+
     def pezzi(self, g, minimo=1.0):
         return [p for p in self.E.clean(g) if p.area > minimo]
 

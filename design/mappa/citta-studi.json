@@ -1,0 +1,43 @@
+{
+ "campus": "Città Studi",
+ "origine": [
+  45.48,
+  9.22803
+ ],
+ "nota": "Gli edifici di Città Studi fuori dai campus di piazza Leonardo, via Bonardi, via Bassini e via Golgi 40 (via Golgi 20, via Colombo, via Pascoli, viale Romagna, via Mancinelli), nello stesso frame di leonardo.json (metri, x verso est, y verso sud). Sagome di OpenStreetMap, lette da Overture Maps.",
+ "edifici": [
+  {
+   "csie": "MIA1401",
+   "numero": "26",
+   "piani": 2,
+   "pianta": [
+    [
+     511.7,
+     453.1
+    ],
+    [
+     512.1,
+     498.3
+    ],
+    [
+     580.3,
+     497.7
+    ],
+    [
+     579.9,
+     452.6
+    ]
+   ],
+   "osm": "w26013442",
+   "livelli": [
+    "MIA140100S",
+    "MIA1401000",
+    "MIA1401001"
+   ],
+   "piani_3d": [
+    "MIA1401000",
+    "MIA1401001"
+   ]
+  }
+ ]
+}

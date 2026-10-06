@@ -40,6 +40,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0106.usdz`, `MIA0106.json` | lo stesso per l'Edificio 6 |
 | `MIA0314.usdz`, `MIA0314.json` | lo stesso per l'Edificio 41 (campus Bassini, da `bassini.json`) |
 | `MIA0403.usdz`, `MIA0403.json` | lo stesso per l'Edificio 25 (campus di via Golgi, da `bassini.json`) |
+| `MIA1401.usdz`, `MIA1401.json` | lo stesso per l'Edificio 26 (da `citta-studi.json`) |
 | `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py` (vedi `giuriati/README.md`) |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
@@ -49,7 +50,7 @@ Per rigenerarli, da questa cartella (circa 3 minuti):
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403
+python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -356,6 +357,10 @@ facciate in pannelli di fibrocemento a bugnato grigi (scheda di CSA Studio), le 
 delle piante su tre piani da 4,5 m, il tetto a padiglione scuro con il lucernario tondo
 sulla falda nord (ortofoto), il seminterrato sotto la strada con la scala esterna a ovest.
 Il seminterrato nel servizio è spostato: `spostamenti` lo riporta sul terra.
+
+### Edificio 26 (MIA1401)
+
+Via Golgi 20, le aule L26 e la mensa nel seminterrato. È in `design/mappa/citta-studi.json`, il file nuovo per gli edifici di Città Studi fuori dai campus di piazza Leonardo, via Bonardi e via Bassini-Golgi 40 (sagome di OSM da Overture). Il terra rialzato su tutta la sagoma, il primo solo sulla parte sud come nelle piante e nell'ortofoto; i tetti piani coperti di file di fotovoltaico est-ovest, il blocco degli impianti al centro (ortofoto). Le piante nel servizio sono disegnate girate di mezzo giro: il terra è messo sulla sagoma con l'ingresso verso via Golgi. Le facciate non hanno foto: intonaco chiaro con le finestre delle piante.
 
 ## Cosa manca
 
