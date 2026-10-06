@@ -49,6 +49,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0603.usdz`, `MIA0603.json` | lo stesso per l'Edificio 32.3 (da `citta-studi.json`) |
 | `MIA0901.usdz`, `MIA0901.json` | lo stesso per l'Casa dello Studente (da `citta-studi.json`) |
 | `MIA0202.usdz`, `MIA0202.json` | lo stesso per l'Edificio 12 (da `leonardo.json`) |
+| `MIA0206.usdz`, `MIA0206.json` | lo stesso per l'Edificio 15 (da `leonardo.json`) |
 | `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py` (vedi `giuriati/README.md`) |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
@@ -58,7 +59,7 @@ Per rigenerarli, da questa cartella (circa 3 minuti):
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901,MIA0202
+python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901,MIA0202,MIA0206
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -401,6 +402,10 @@ La residenza di viale Romagna con l'aula auditorium al terra: ogni piano col suo
 ### Edificio 12 (`MIA0202`)
 
 La torre di via Bonardi, senza aule. Le piante dal primo al sesto erano disegnate con un'origine loro: ora stanno sul rialzato con gli `spostamenti` in `leonardo.json`, misurati facendo coincidere la scala. Rialzato a un metro, cinque piani da 3,3 m un po' più stretti del rialzato, l'attico sul lato ovest, i tetti piani con gli impianti. Facciate dedotte, nessuna foto.
+
+### Edificio 15 (`MIA0206`)
+
+I laboratori a E di via Bonardi, senza aule: il terra su tutta la E, il primo sulla C, il secondo sulla sola manica sud, ognuno col tetto piano su ciò che il piano sopra non copre (in ghiaia chiara sulla manica nord, come nell'ortofoto). Il terra e il seminterrato erano disegnati 27 m più a est: stanno sul primo con gli `spostamenti` in `leonardo.json`. Piani da 4 m, facciate dedotte, nessuna foto.
 
 ## Cosa manca
 
