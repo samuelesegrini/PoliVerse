@@ -5424,6 +5424,7 @@
       "piani": 2,
       "badge": [139, 317],
       "livelli": ["MIA0113000", "MIA0113001"],
+      "spostamenti": {"MIA0113000": [3.1,0.0]},
       "piani_3d": ["MIA0113000", "MIA0113001"],
       "riquadro": [111.0, 284.1, 166.2, 349.5],
       "vista": "sud-ovest",

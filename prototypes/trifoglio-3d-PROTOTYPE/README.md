@@ -54,6 +54,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0208.usdz`, `MIA0208.json` | lo stesso per l'Edificio 14A (da `leonardo.json`) |
 | `MIA0209.usdz`, `MIA0209.json` | lo stesso per l'Edificio 14B (da `leonardo.json`) |
 | `MIA0214.usdz`, `MIA0214.json` | lo stesso per l'Edificio 16A (da `leonardo.json`) |
+| `MIA0113.usdz`, `MIA0113.json` | lo stesso per l'Edificio 9A (da `leonardo.json`) |
 | `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py` (vedi `giuriati/README.md`) |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
@@ -63,7 +64,7 @@ Per rigenerarli, da questa cartella (circa 3 minuti):
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901,MIA0202,MIA0206,MIA0207,MIA0208,MIA0209,MIA0214
+python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901,MIA0202,MIA0206,MIA0207,MIA0208,MIA0209,MIA0214,MIA0113
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -426,6 +427,10 @@ La palazzina a L di due piani all'angolo del 14, con l'angolo tagliato in diagon
 ### Edificio 16A (`MIA0214`)
 
 Il corpo sotto la piazza fra il Trifoglio e il 14: il seminterrato affiora sulle bocche di lupo con un nastro di finestre, sopra c'è la piazza pavimentata dell'ortofoto con le fioriere, gli alberi e il lucernario quadrato; i due ingressi a sud, dove il terra esce dal rettangolo, sono padiglioni vetrati bassi. Nessuna foto.
+
+### Edificio 9A Poli.Radio (`MIA0113`)
+
+La palazzina stretta di due piani a est del 9: il terra era disegnato 3 m più a ovest del primo e ci sta sopra con lo `spostamento` in `leonardo.json`; intonaco, finestre delle piante, cornicione e tetto in coppi come nel `profilo` e nell'ortofoto. Nessuna foto.
 
 ## Cosa manca
 

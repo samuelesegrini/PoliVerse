@@ -1,0 +1,22 @@
+{
+ "csie": "MIA0113",
+ "nome": "Poli.Radio",
+ "numero": "9A",
+ "piani": [
+  {
+   "csip": "MIA0113000",
+   "quota": 0.0,
+   "aule": []
+  },
+  {
+   "csip": "MIA0113001",
+   "quota": 3.8,
+   "aule": []
+  }
+ ],
+ "centro": [
+  138.57,
+  316.83
+ ],
+ "altezza": 8.93
+}
