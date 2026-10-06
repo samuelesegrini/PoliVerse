@@ -48,6 +48,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0601.usdz`, `MIA0601.json` | lo stesso per l'Edificio 32.1 (da `citta-studi.json`) |
 | `MIA0603.usdz`, `MIA0603.json` | lo stesso per l'Edificio 32.3 (da `citta-studi.json`) |
 | `MIA0901.usdz`, `MIA0901.json` | lo stesso per l'Casa dello Studente (da `citta-studi.json`) |
+| `MIA0202.usdz`, `MIA0202.json` | lo stesso per l'Edificio 12 (da `leonardo.json`) |
 | `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py` (vedi `giuriati/README.md`) |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
@@ -57,7 +58,7 @@ Per rigenerarli, da questa cartella (circa 3 minuti):
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901
+python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901,MIA0202
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -396,6 +397,10 @@ Il padiglione a un piano di via Colombo con le aule E.P.1, E.P.2 ed E.P.3. Il se
 ### Casa dello Studente (`MIA0901`)
 
 La residenza di viale Romagna con l'aula auditorium al terra: ogni piano col suo contorno, perché le maniche cambiano da un piano all'altro (il corpo di mezzo c'è solo dal secondo al quinto, il sesto è ridotto), e il tetto piano su ciò che il piano sopra non copre. Il terra da 3,8 m, i piani delle camere da 2,95 m per stare nei 20,5 m di OSM. Facciate dedotte, nessuna foto: intonaco caldo con le finestre delle piante.
+
+### Edificio 12 (`MIA0202`)
+
+La torre di via Bonardi, senza aule. Le piante dal primo al sesto erano disegnate con un'origine loro: ora stanno sul rialzato con gli `spostamenti` in `leonardo.json`, misurati facendo coincidere la scala. Rialzato a un metro, cinque piani da 3,3 m un po' più stretti del rialzato, l'attico sul lato ovest, i tetti piani con gli impianti. Facciate dedotte, nessuna foto.
 
 ## Cosa manca
 
