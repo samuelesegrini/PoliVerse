@@ -7,6 +7,7 @@ import SwiftUI
 // The walk from the campus to a classroom in 3D, on the Trifoglio (Edificio 13), on
 // Edificio 11 and on Edificio 2: campus → building → floor → room, each step an animated
 // Edificio 11 and on Edificio 3: campus → building → floor → room, each step an animated
+// Edificio 11 and on Edificio 4: campus → building → floor → room, each step an animated
 // camera move plus fades.
 // The models come from `prototypes/trifoglio-3d-PROTOTYPE/esporta3d.py`, which extrudes
 // the same outlines and CAD floor plans the map illustrations are drawn from. Their
@@ -99,7 +100,7 @@ final class Trifoglio3DScene {
     var reduceMotion = false
 
     /// The buildings that have floors to walk into, in the order the campus offers them.
-    static let buildings = ["MIA0203", "MIA0201", "MIA0101", "MIA0102", "MIA0103"]
+    static let buildings = ["MIA0203", "MIA0201", "MIA0101", "MIA0102", "MIA0103", "MIA0104"]
     /// The building the camera is on, or was on last.
     private(set) var csie = "MIA0203"
     /// Everything the scene adds to the view hangs from here.

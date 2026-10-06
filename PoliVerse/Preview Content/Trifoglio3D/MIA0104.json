@@ -1,0 +1,55 @@
+{
+ "csie": "MIA0104",
+ "nome": "Giulio De Marchi",
+ "numero": "4",
+ "piani": [
+  {
+   "csip": "MIA010400S",
+   "quota": -3.4,
+   "aule": []
+  },
+  {
+   "csip": "MIA0104000",
+   "quota": 1.2,
+   "aule": [
+    {
+     "csiv": "MIA0104000026",
+     "sigla": "4.0.1",
+     "posti": 310,
+     "centro": [
+      32.06,
+      2.2,
+      165.6
+     ],
+     "interno": {
+      "occhio": [
+       32.06,
+       5.24,
+       158.3
+      ],
+      "guarda": [
+       32.06,
+       2.8,
+       171.0
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "csip": "MIA0104001",
+   "quota": 7.0,
+   "aule": []
+  },
+  {
+   "csip": "MIA0104002",
+   "quota": 12.0,
+   "aule": []
+  }
+ ],
+ "centro": [
+  31.34,
+  128.69
+ ],
+ "altezza": 48.92
+}

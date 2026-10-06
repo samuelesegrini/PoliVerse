@@ -44,7 +44,7 @@ Per rigenerarli, con il ramo della mappa estratto:
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103
+python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -298,3 +298,19 @@ intorno ai vuoti che stanno in un `cortili` della mappa.
 ## Edificio 1 (Rettorato, MIA0101)
 
 L'esterno è in `gusci/MIA0101.py`: `esporta3d.py` carica `gusci/<csie>.py` quando l'edificio è in `--edifici` e ne usa `guscio()`, `quote()` e, se ci sono, `interno()` e `arredi()`. Facciata e tetti sono ridisegnati dall'ortofoto (zoom 21) e dalle foto; le campate seguono le porte dei balconi della pianta. L'interno dell'Aula Magna (MIA0101001023: palco, presidenza, ~228 poltrone, boiserie, lampadari) è dedotto, non rilevato.
+
+## Edificio 4 (Giulio De Marchi, MIA0104)
+
+L'esterno è in `gusci/MIA0104.py`, con l'interfaccia dei gusci propri (`guscio`, `quote`,
+`tetto`, `piante`, `ritocca`). Dall'ortofoto (Google, z20-21): l'ala su
+via Bonardi con il tetto in coppi e la fascia di lucernari sulla falda nord, i due
+padiglioni sulla strada, il corpo grigio a tetto piano sull'angolo ovest con la torre delle
+scale, i blocchi degli impianti, il chiostro a quattro ali con le finestre a tetto e l'aula
+a sud con la testata smussata. Dalle foto del restauro (B&B Progetti) e da "Ciminiera neve"
+(Wikimedia Commons): la ciminiera del cortile, in mattoni con le costole in cemento e il
+serbatoio tondo, e le finestre ad arco del cortile. Le finestre seguono quelle delle piante.
+
+Dedotti, non rilevati: la facciata su via Bonardi (nessuna foto trovata), le quote (terra
+rialzato a 1,2 m, primo a 7, sottotetto a 12, gronda a 13,2) e l'altezza della ciminiera
+(48 m, dallo spostamento della cima nell'ortofoto). L'aula 4.0.1 (310 posti) non ha le file
+nella pianta: `piante()` ne mette 12 da 26 posti rivolte alla testata sud.
