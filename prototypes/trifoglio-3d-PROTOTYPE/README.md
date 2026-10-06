@@ -44,7 +44,7 @@ Per rigenerarli, con il ramo della mappa estratto:
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104
+python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -314,3 +314,19 @@ Dedotti, non rilevati: la facciata su via Bonardi (nessuna foto trovata), le quo
 rialzato a 1,2 m, primo a 7, sottotetto a 12, gronda a 13,2) e l'altezza della ciminiera
 (48 m, dallo spostamento della cima nell'ortofoto). L'aula 4.0.1 (310 posti) non ha le file
 nella pianta: `piante()` ne mette 12 da 26 posti rivolte alla testata sud.
+## Edificio 6 (Giulio Natta, MIA0106)
+
+L'esterno è in `gusci/MIA0106.py` (stessa interfaccia degli altri gusci propri): il corpo
+storico in coppi intorno ai due pozzi di luce, l'ottagono a ovest, il blocco sud, la spina
+bassa e la torre dei laboratori. Tetti e masse vengono dall'ortofoto (zoom 21; il tetto della
+torre vi appare spostato di 4,4 m verso nord ed è riportato sulla pianta), la torre dalla foto
+"Ciminiera neve" di Wikimedia Commons (finestre in griglia con le tende, la striscia vetrata
+della scala sul lato ovest, i camini delle cappe). Le facciate del corpo storico non hanno
+foto: seguono le altre ali di Brusconi.
+
+Le quote sono dedotte dalle scale delle piante: il rialzato a 1,5 m (le scale esterne hanno
+8-10 alzate), il piano 000, che esiste solo nella torre, 1,5 m sotto il giardino sul cortile
+ribassato a nord, il seminterrato sotto. L'aula 6.0.1 è l'Aula Natta, nell'ottagono del primo
+piano: le file in tre settori a ventaglio sono aggiunte da `piante()` seguendo i due corridoi
+a gradini della pianta, legno rossiccio e muri bianchi dalla foto. Nella foto le file salgono
+più ripide dei 17 cm per fila dell'esportatore.
