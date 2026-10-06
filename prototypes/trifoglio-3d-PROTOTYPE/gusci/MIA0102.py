@@ -20,7 +20,7 @@ mappa, e i piani delle piante stanno alle stesse quote (`quote()`). Le finestre 
 finestre delle piante dove su una facciata sono in fila regolare, altrimenti la campata.
 
 L'esportatore lo carica da gusci/<csie>.py: `guscio(b, E)` torna ({colore o texture: mesh},
-quota del tetto), `quote(b, E)` le quote dei piani, `piante(b, E, geo, aule)` aggiunge le
+quota del tetto), `quote(b, E)` le quote dei piani, `piante(b, geo, aule, E)` aggiunge le
 file di banchi alle piante; E è il modulo esporta3d con le sue primitive.
 """
 import math
@@ -734,9 +734,10 @@ def togli_cortile(b, geo):
         f["contorno"] = [[list(map(float, q)) for q in g.exterior.coords[:-1]] for g in pezzi if g.area > 1]
 
 
-def piante(b, E, geo, aule_info):
+def piante(b, geo, aule_info, E):
     togli_cortile(b, geo)
     completa_piante(geo, aule_info)
+    return geo
 
 
 def completa_piante(geo, aule_info):

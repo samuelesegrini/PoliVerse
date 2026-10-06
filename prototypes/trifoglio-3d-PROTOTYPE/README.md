@@ -18,6 +18,7 @@ Si apre in Xcode: `PoliVerse/Features/Map/Campus3D/Trifoglio3DView.swift`, previ
    torna alla vista dall'alto.
 
 Dal campus si sceglie il Trifoglio, l'Edificio 11 o l'Edificio 2. "Portami all'aula T.1.2" fa tutto il
+Dal campus si sceglie il Trifoglio, l'Edificio 11 o l'Edificio 3. "Portami all'aula T.1.2" fa tutto il
 percorso. Si può anche toccare l'edificio e le aule sul
 modello, trascinare per ruotare e pizzicare per lo zoom.
 
@@ -34,6 +35,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0203.json` | piani, quote e aule (sigla, posti) per l'interfaccia |
 | `MIA0201.usdz`, `MIA0201.json` | lo stesso per l'Edificio 11 |
 | `MIA0102.usdz`, `MIA0102.json` | lo stesso per l'Edificio 2 |
+| `MIA0103.usdz`, `MIA0103.json` | lo stesso per l'Edificio 3 |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
 trova il nodo da accendere senza tabelle in più.
@@ -42,7 +44,7 @@ Per rigenerarli, con il ramo della mappa estratto:
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102
+python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -229,6 +231,48 @@ aule larghe più di 11 m. Così ogni aula ha file, cattedra e interno, e si entr
 ## Cosa manca
 
 - Solo il Trifoglio, l'Edificio 11 e l'Edificio 2 hanno l'esterno dettagliato; gli altri edifici restano
+## L'Edificio 3
+
+L'esterno del Cassinis è rifatto da zero in `gusci/MIA0103.py`, un guscio proprio come
+quelli degli altri edifici in `gusci/`: oltre a `guscio` e `quote` ha `tetto` (la quota sotto
+il tetto dell'ultimo piano), `piante` (le file di banchi che le piante non disegnano) e
+`ritocca` (i colori delle aule), tutti facoltativi in `esporta3d.py`. Le fonti sono l'ortofoto (Esri World Imagery) e le foto di Wikimedia
+Commons dal piazzale del Rettorato, dal portico e dal cortile:
+
+- le ali nord e sud e le due aule sul cortile in intonaco grigio-beige, con il tetto a
+  padiglione in coppi (una texture generata, come il mosaico); zoccolo in granito con le
+  bocche del seminterrato, terra bugnato con le finestre ad arco e la chiave, la fascia
+  marcapiano, il primo liscio con gli archi, il fregio e il cornicione;
+- i padiglioni d'angolo a ovest più caldi, con le paraste e i capitelli, i balaustrini sotto
+  le finestre del primo, il cornicione a mensole, l'attico e la balaustra con le sfere; sul
+  fianco nord e sud l'avancorpo d'ingresso con il portale ad arco, il balcone e i due
+  obelischi (a sud la scalinata che sale dal giardino al terra);
+- il fronte ovest più chiaro e liscio, con le finestre rette e la lunetta cieca al primo e
+  il tetto piano scuro con gli impianti dell'ortofoto; la bocca di lupo con la ringhiera;
+- il corpo est: sul cortile la loggia (archi a terra davanti al corridoio, finestre ad arco
+  con i balaustrini al primo), sopra il secondo piano vetrato bianco della sopraelevazione,
+  sul tetto i pannelli in due campi e i tetti scuri delle testate con gli impianti, il cubo
+  di vetro sopra la torre sud; il ponte coperto verso est, al terra;
+- il cortile è un prato rialzato a 2,8 m con il bordo in lastre, l'ippocastano e le due scale
+  di sicurezza bianche agli angoli verso la loggia.
+
+Quote: seminterrato a 0, terra a 3,6 m, primo a 9 m, secondo (solo il corpo est) a 14,4 m;
+il cornicione a 14,4 m, il tetto del corpo est a 18 m.
+
+Dentro: la sala De Donato ha le poltrone disegnate una per una, e le file si ricavano da
+lì (le sedute a meno di 70 cm fanno una fila); le aule del primo e del secondo non hanno file
+nelle piante, e `piante()` le aggiunge ogni 95 cm, con la cattedra a sud nel corpo est, a nord
+nell'ala ovest e verso il cortile nelle due aule sopra le sale del terra. Colori dalle foto:
+al terra poltrone rosse, banchi scuri e pareti nere nella De Donato; al primo e al secondo
+banchi in legno e pareti bianche (aula S.1.4). Il cortile non è un pozzo: niente parapetto
+intorno ai vuoti che stanno in un `cortili` della mappa.
+
+## Cosa manca
+
+- Edificio 3: le facciate verso l'esterno del corpo est e il lato sud delle ali non hanno
+  foto; sono disegnate come quelle in vista. Le file del primo e del secondo sono stimate, e
+  i colori dei banchi valgono per piano, non per aula.
+- Solo il Trifoglio, l'Edificio 11 e l'Edificio 3 hanno l'esterno dettagliato; gli altri edifici restano
   estrusioni. Del profilo mancano ancora coppi, volte, denti, cornicioni, balaustre,
   finestre forate e lucernari.
 - Le quote dell'Edificio 11 seguono una parte sola: la parte di Ponti ha fasce di altezze
