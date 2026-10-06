@@ -47,6 +47,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0402.usdz`, `MIA0402.json` | lo stesso per l'Edificio 23 (da `bassini.json`) |
 | `MIA0601.usdz`, `MIA0601.json` | lo stesso per l'Edificio 32.1 (da `citta-studi.json`) |
 | `MIA0603.usdz`, `MIA0603.json` | lo stesso per l'Edificio 32.3 (da `citta-studi.json`) |
+| `MIA0901.usdz`, `MIA0901.json` | lo stesso per l'Casa dello Studente (da `citta-studi.json`) |
 | `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py` (vedi `giuriati/README.md`) |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
@@ -56,7 +57,7 @@ Per rigenerarli, da questa cartella (circa 3 minuti):
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603
+python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -391,6 +392,10 @@ La palazzina a L di via Colombo con le aule E.P.6 ed E.P.7: quattro piani da 3,6
 ### Edificio 32.3 (`MIA0603`)
 
 Il padiglione a un piano di via Colombo con le aule E.P.1, E.P.2 ed E.P.3. Il seminterrato sta sulla L di OSM, il terra disegna un'altra forma, e una sola trasformazione non le mette d'accordo: il guscio prende l'unione della sagoma di OSM e del terra, un piano da 4,5 m col tetto piano scuro e i lucernari dell'ortofoto. Forma e facciate sono dedotte, nessuna foto.
+
+### Casa dello Studente (`MIA0901`)
+
+La residenza di viale Romagna con l'aula auditorium al terra: ogni piano col suo contorno, perché le maniche cambiano da un piano all'altro (il corpo di mezzo c'è solo dal secondo al quinto, il sesto è ridotto), e il tetto piano su ciò che il piano sopra non copre. Il terra da 3,8 m, i piani delle camere da 2,95 m per stare nei 20,5 m di OSM. Facciate dedotte, nessuna foto: intonaco caldo con le finestre delle piante.
 
 ## Cosa manca
 
