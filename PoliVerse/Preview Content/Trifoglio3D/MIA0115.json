@@ -1,0 +1,27 @@
+{
+ "csie": "MIA0115",
+ "nome": "Lerici",
+ "numero": "3A",
+ "piani": [
+  {
+   "csip": "MIA011500S",
+   "quota": -2.6,
+   "aule": []
+  },
+  {
+   "csip": "MIA0115000",
+   "quota": 1.0,
+   "aule": []
+  },
+  {
+   "csip": "MIA0115001",
+   "quota": 4.6,
+   "aule": []
+  }
+ ],
+ "centro": [
+  1.77,
+  298.54
+ ],
+ "altezza": 9.06
+}
