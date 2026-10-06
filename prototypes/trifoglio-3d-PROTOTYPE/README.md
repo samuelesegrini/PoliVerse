@@ -17,14 +17,13 @@ Si apre in Xcode: `PoliVerse/Features/Map/Campus3D/Trifoglio3DView.swift`, previ
    alla cattedra; compaiono i muri a tutta altezza, il soffitto e le luci. "Esci dall'aula"
    torna alla vista dall'alto.
 
-Dal campus si sceglie il Trifoglio, l'Edificio 11 o l'Edificio 2. "Portami all'aula T.1.2" fa tutto il
-Dal campus si sceglie il Trifoglio, l'Edificio 11 o l'Edificio 3. "Portami all'aula T.1.2" fa tutto il
-percorso. Si può anche toccare l'edificio e le aule sul
+Dal campus si sceglie il Trifoglio, l'Edificio 11 o uno degli Edifici 1, 2, 3, 4 e 6.
+"Portami all'aula T.1.2" fa tutto il percorso. Si può anche toccare l'edificio e le aule sul
 modello, trascinare per ruotare e pizzicare per lo zoom.
 
 ## I modelli
 
-`esporta3d.py` estrude i dati di `design/mappa/` (ramo `feat/laughing-planck-ul1yj3`):
+`esporta3d.py` estrude i dati di `design/mappa/`, in questo stesso ramo:
 i contorni di `leonardo.json` per i volumi e le piante CAD di `piante/<csie>-geometria.json`
 per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 
@@ -34,20 +33,36 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0203.usdz` | i piani del Trifoglio: `MIA0203/Piani/<csip>` con soletta, muri tagliati a 1,5 m, locali e arredi (`<csip>_Arredi`); ogni aula è un nodo chiamato con il suo `csiv` |
 | `MIA0203.json` | piani, quote e aule (sigla, posti) per l'interfaccia |
 | `MIA0201.usdz`, `MIA0201.json` | lo stesso per l'Edificio 11 |
+| `MIA0101.usdz`, `MIA0101.json` | lo stesso per l'Edificio 1 (Rettorato) |
 | `MIA0102.usdz`, `MIA0102.json` | lo stesso per l'Edificio 2 |
 | `MIA0103.usdz`, `MIA0103.json` | lo stesso per l'Edificio 3 |
+| `MIA0104.usdz`, `MIA0104.json` | lo stesso per l'Edificio 4 |
+| `MIA0106.usdz`, `MIA0106.json` | lo stesso per l'Edificio 6 |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
 trova il nodo da accendere senza tabelle in più.
 
-Per rigenerarli, con il ramo della mappa estratto:
+Per rigenerarli, da questa cartella (circa 3 minuti):
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106
+python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
+
+`--edifici` va dato sempre con tutti gli edifici modellati: un guscio proprio entra anche in
+`campus.usdz` solo se il suo edificio è nell'elenco, altrimenti lì resta l'estrusione.
+
+### Aggiungere un edificio
+
+1. L'esterno va in `gusci/<csie>.py` (l'interfaccia è descritta in `esporta3d.py`, sopra
+   `GUSCI`): `guscio()` serve sempre, il resto è facoltativo.
+2. `python3 esporta3d.py ../../design/mappa <cartella> --edifici=<csie>` scrive
+   `<csie>.usdz` e `<csie>.json`, da copiare in `PoliVerse/Preview Content/Trifoglio3D/`.
+3. Il `<csie>` va aggiunto a `Trifoglio3DScene.buildings` e all'elenco `--edifici` qui sopra;
+   poi si rigenera `campus.usdz` con tutti gli edifici, una volta sola, per non avere
+   conflitti sul file binario.
 
 ## Il guscio del Trifoglio
 
@@ -198,7 +213,7 @@ nascosto finché non si entra.
 
 Il guscio dell'Edificio 2 (Bruno Finzi) sta in un modulo suo, `gusci/MIA0102.py`, che
 l'esportatore carica come gli altri gusci propri (`guscio(b, E)` per l'esterno, `quote(b, E)`
-per i piani, `piante(b, E, geo, aule)` per i banchi). È rifatto dalla foto aerea (Esri World Imagery)
+per i piani, `piante(b, geo, aule, E)` per i banchi). È rifatto dalla foto aerea (Esri World Imagery)
 e dalle foto della piazza; le fasce della mappa dicono solo quale parte ha quali finestre,
 rivestimento, cornicione e copertura. Le altezze sono vere: zoccolo di pietra fino a 1,6 m
 con le finestrelle del seminterrato (che sta sotto la piazza, a -2,2 m), terra bugnato
@@ -228,9 +243,6 @@ gradoni con file ogni 90 cm (2.0.1, 2.0.2, 2.1.1-2.1.5), altrimenti piana con ta
 stretto, le altre sul lato corto lontano dalle porte; corridoi ai lati e in mezzo nelle
 aule larghe più di 11 m. Così ogni aula ha file, cattedra e interno, e si entra.
 
-## Cosa manca
-
-- Solo il Trifoglio, l'Edificio 11 e l'Edificio 2 hanno l'esterno dettagliato; gli altri edifici restano
 ## L'Edificio 3
 
 L'esterno del Cassinis è rifatto da zero in `gusci/MIA0103.py`, un guscio proprio come
@@ -267,13 +279,50 @@ al terra poltrone rosse, banchi scuri e pareti nere nella De Donato; al primo e 
 banchi in legno e pareti bianche (aula S.1.4). Il cortile non è un pozzo: niente parapetto
 intorno ai vuoti che stanno in un `cortili` della mappa.
 
+## Edificio 1 (Rettorato, MIA0101)
+
+L'esterno è in `gusci/MIA0101.py`: `esporta3d.py` carica `gusci/<csie>.py` quando l'edificio è in `--edifici` e ne usa `guscio()`, `quote()` e, se ci sono, `interno()` e `arredi()`. Facciata e tetti sono ridisegnati dall'ortofoto (zoom 21) e dalle foto; le campate seguono le porte dei balconi della pianta. L'interno dell'Aula Magna (MIA0101001023: palco, presidenza, ~228 poltrone, boiserie, lampadari) è dedotto, non rilevato.
+
+## Edificio 4 (Giulio De Marchi, MIA0104)
+
+L'esterno è in `gusci/MIA0104.py`, con l'interfaccia dei gusci propri (`guscio`, `quote`,
+`tetto`, `piante`, `ritocca`). Dall'ortofoto (Google, z20-21): l'ala su
+via Bonardi con il tetto in coppi e la fascia di lucernari sulla falda nord, i due
+padiglioni sulla strada, il corpo grigio a tetto piano sull'angolo ovest con la torre delle
+scale, i blocchi degli impianti, il chiostro a quattro ali con le finestre a tetto e l'aula
+a sud con la testata smussata. Dalle foto del restauro (B&B Progetti) e da "Ciminiera neve"
+(Wikimedia Commons): la ciminiera del cortile, in mattoni con le costole in cemento e il
+serbatoio tondo, e le finestre ad arco del cortile. Le finestre seguono quelle delle piante.
+
+Dedotti, non rilevati: la facciata su via Bonardi (nessuna foto trovata), le quote (terra
+rialzato a 1,2 m, primo a 7, sottotetto a 12, gronda a 13,2) e l'altezza della ciminiera
+(48 m, dallo spostamento della cima nell'ortofoto). L'aula 4.0.1 (310 posti) non ha le file
+nella pianta: `piante()` ne mette 12 da 26 posti rivolte alla testata sud.
+
+## Edificio 6 (Giulio Natta, MIA0106)
+
+L'esterno è in `gusci/MIA0106.py` (stessa interfaccia degli altri gusci propri): il corpo
+storico in coppi intorno ai due pozzi di luce, l'ottagono a ovest, il blocco sud, la spina
+bassa e la torre dei laboratori. Tetti e masse vengono dall'ortofoto (zoom 21; il tetto della
+torre vi appare spostato di 4,4 m verso nord ed è riportato sulla pianta), la torre dalla foto
+"Ciminiera neve" di Wikimedia Commons (finestre in griglia con le tende, la striscia vetrata
+della scala sul lato ovest, i camini delle cappe). Le facciate del corpo storico non hanno
+foto: seguono le altre ali di Brusconi.
+
+Le quote sono dedotte dalle scale delle piante: il rialzato a 1,5 m (le scale esterne hanno
+8-10 alzate), il piano 000, che esiste solo nella torre, 1,5 m sotto il giardino sul cortile
+ribassato a nord, il seminterrato sotto. L'aula 6.0.1 è l'Aula Natta, nell'ottagono del primo
+piano: le file in tre settori a ventaglio sono aggiunte da `piante()` seguendo i due corridoi
+a gradini della pianta, legno rossiccio e muri bianchi dalla foto. Nella foto le file salgono
+più ripide dei 17 cm per fila dell'esportatore.
+
 ## Cosa manca
 
 - Edificio 3: le facciate verso l'esterno del corpo est e il lato sud delle ali non hanno
   foto; sono disegnate come quelle in vista. Le file del primo e del secondo sono stimate, e
   i colori dei banchi valgono per piano, non per aula.
-- Solo il Trifoglio, l'Edificio 11 e l'Edificio 3 hanno l'esterno dettagliato; gli altri edifici restano
-  estrusioni. Del profilo mancano ancora coppi, volte, denti, cornicioni, balaustre,
+- Solo il Trifoglio e gli Edifici 11, 1, 2, 3, 4 e 6 hanno l'esterno dettagliato; gli altri
+  edifici restano estrusioni. Del profilo mancano ancora coppi, volte, denti, cornicioni, balaustre,
   finestre forate e lucernari.
 - Le quote dell'Edificio 11 seguono una parte sola: la parte di Ponti ha fasce di altezze
   diverse, e lì piani e facciata non coincidono del tutto. Le aule ROGERS e IV e le aule A-F
@@ -294,39 +343,3 @@ intorno ai vuoti che stanno in un `cortili` della mappa.
 - Le alzate delle scale sono ricavate dal numero di pedate disegnate e dall'altezza del
   piano; le piante non le quotano. Le scale della torre vengono ripide (20 cm) perché la
   pianta disegna 9 pedate per rampa.
-
-## Edificio 1 (Rettorato, MIA0101)
-
-L'esterno è in `gusci/MIA0101.py`: `esporta3d.py` carica `gusci/<csie>.py` quando l'edificio è in `--edifici` e ne usa `guscio()`, `quote()` e, se ci sono, `interno()` e `arredi()`. Facciata e tetti sono ridisegnati dall'ortofoto (zoom 21) e dalle foto; le campate seguono le porte dei balconi della pianta. L'interno dell'Aula Magna (MIA0101001023: palco, presidenza, ~228 poltrone, boiserie, lampadari) è dedotto, non rilevato.
-
-## Edificio 4 (Giulio De Marchi, MIA0104)
-
-L'esterno è in `gusci/MIA0104.py`, con l'interfaccia dei gusci propri (`guscio`, `quote`,
-`tetto`, `piante`, `ritocca`). Dall'ortofoto (Google, z20-21): l'ala su
-via Bonardi con il tetto in coppi e la fascia di lucernari sulla falda nord, i due
-padiglioni sulla strada, il corpo grigio a tetto piano sull'angolo ovest con la torre delle
-scale, i blocchi degli impianti, il chiostro a quattro ali con le finestre a tetto e l'aula
-a sud con la testata smussata. Dalle foto del restauro (B&B Progetti) e da "Ciminiera neve"
-(Wikimedia Commons): la ciminiera del cortile, in mattoni con le costole in cemento e il
-serbatoio tondo, e le finestre ad arco del cortile. Le finestre seguono quelle delle piante.
-
-Dedotti, non rilevati: la facciata su via Bonardi (nessuna foto trovata), le quote (terra
-rialzato a 1,2 m, primo a 7, sottotetto a 12, gronda a 13,2) e l'altezza della ciminiera
-(48 m, dallo spostamento della cima nell'ortofoto). L'aula 4.0.1 (310 posti) non ha le file
-nella pianta: `piante()` ne mette 12 da 26 posti rivolte alla testata sud.
-## Edificio 6 (Giulio Natta, MIA0106)
-
-L'esterno è in `gusci/MIA0106.py` (stessa interfaccia degli altri gusci propri): il corpo
-storico in coppi intorno ai due pozzi di luce, l'ottagono a ovest, il blocco sud, la spina
-bassa e la torre dei laboratori. Tetti e masse vengono dall'ortofoto (zoom 21; il tetto della
-torre vi appare spostato di 4,4 m verso nord ed è riportato sulla pianta), la torre dalla foto
-"Ciminiera neve" di Wikimedia Commons (finestre in griglia con le tende, la striscia vetrata
-della scala sul lato ovest, i camini delle cappe). Le facciate del corpo storico non hanno
-foto: seguono le altre ali di Brusconi.
-
-Le quote sono dedotte dalle scale delle piante: il rialzato a 1,5 m (le scale esterne hanno
-8-10 alzate), il piano 000, che esiste solo nella torre, 1,5 m sotto il giardino sul cortile
-ribassato a nord, il seminterrato sotto. L'aula 6.0.1 è l'Aula Natta, nell'ottagono del primo
-piano: le file in tre settori a ventaglio sono aggiunte da `piante()` seguendo i due corridoi
-a gradini della pianta, legno rossiccio e muri bianchi dalla foto. Nella foto le file salgono
-più ripide dei 17 cm per fila dell'esportatore.

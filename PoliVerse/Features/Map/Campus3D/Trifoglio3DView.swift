@@ -4,11 +4,8 @@ import SwiftUI
 
 // PROTOTYPE — debug builds only, reached from the preview at the bottom and nowhere in the app.
 //
-// The walk from the campus to a classroom in 3D, on the Trifoglio (Edificio 13), on
-// Edificio 11 and on Edificio 2: campus → building → floor → room, each step an animated
-// Edificio 11 and on Edificio 3: campus → building → floor → room, each step an animated
-// Edificio 11 and on Edificio 4: campus → building → floor → room, each step an animated
-// Edificio 11 and on Edificio 6: campus → building → floor → room, each step an animated
+// The walk from the campus to a classroom in 3D, on the Trifoglio (Edificio 13), Edificio 11
+// and Edifici 1, 2, 3, 4 and 6: campus → building → floor → room, each step an animated
 // camera move plus fades.
 // The models come from `prototypes/trifoglio-3d-PROTOTYPE/esporta3d.py`, which extrudes
 // the same outlines and CAD floor plans the map illustrations are drawn from. Their
