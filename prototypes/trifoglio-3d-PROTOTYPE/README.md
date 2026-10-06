@@ -57,6 +57,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0113.usdz`, `MIA0113.json` | lo stesso per l'Edificio 9A (da `leonardo.json`) |
 | `MIA0109.usdz`, `MIA0109.json` | lo stesso per l'Edificio CT1 (da `leonardo.json`) |
 | `MIA0110.usdz`, `MIA0110.json` | lo stesso per l'Edificio 10 (da `leonardo.json`) |
+| `MIA0114.usdz`, `MIA0114.json` | lo stesso per l'Edificio 2A (da `leonardo.json`) |
 | `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py` (vedi `giuriati/README.md`) |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
@@ -66,7 +67,7 @@ Per rigenerarli, da questa cartella (circa 3 minuti):
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901,MIA0202,MIA0206,MIA0207,MIA0208,MIA0209,MIA0214,MIA0113,MIA0109,MIA0110
+python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901,MIA0202,MIA0206,MIA0207,MIA0208,MIA0209,MIA0214,MIA0113,MIA0109,MIA0110,MIA0114
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -441,6 +442,10 @@ La palazzina a un piano del Centralino, dal `profilo` dell'illustrazione: intona
 ### Edificio 10 Posta (`MIA0110`)
 
 La palazzina a un piano della Posta, dal `profilo` dell'illustrazione: intonaco, finestre a campate di 3,6 m, cornicione, terrazza grigia. Nessuna foto.
+
+### Edificio 2A Sala Lettura (`MIA0114`)
+
+Il corpo basso fra il 2 e il 3: zoccolo in pietra, il terra in cemento con le finestre delle piante, sopra la terrazza dell'ortofoto con le quattro aiuole quadrate. Nessuna foto.
 
 ## Cosa manca
 
