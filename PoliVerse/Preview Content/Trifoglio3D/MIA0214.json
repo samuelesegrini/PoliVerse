@@ -1,0 +1,27 @@
+{
+ "csie": "MIA0214",
+ "nome": null,
+ "numero": "16A",
+ "piani": [
+  {
+   "csip": "MIA021401I",
+   "quota": -8.0,
+   "aule": []
+  },
+  {
+   "csip": "MIA021400S",
+   "quota": -4.0,
+   "aule": []
+  },
+  {
+   "csip": "MIA0214000",
+   "quota": 0.6,
+   "aule": []
+  }
+ ],
+ "centro": [
+  17.75,
+  48.0
+ ],
+ "altezza": 3.56
+}
