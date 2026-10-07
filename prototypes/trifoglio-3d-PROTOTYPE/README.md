@@ -17,7 +17,7 @@ Si apre in Xcode: `PoliVerse/Features/Map/Campus3D/Trifoglio3DView.swift`, previ
    alla cattedra; compaiono i muri a tutta altezza, il soffitto e le luci. "Esci dall'aula"
    torna alla vista dall'alto.
 
-Dal campus si sceglie il Trifoglio, l'Edificio 11 o uno degli Edifici 1, 2, 3, 4 e 6.
+Dal campus si sceglie il Trifoglio, l'Edificio 11 o uno degli Edifici 1, 2, 3, 4, 6 e 7.
 "Portami all'aula T.1.2" fa tutto il percorso. Si può anche toccare l'edificio e le aule sul
 modello, trascinare per ruotare e pizzicare per lo zoom.
 
@@ -38,6 +38,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0103.usdz`, `MIA0103.json` | lo stesso per l'Edificio 3 |
 | `MIA0104.usdz`, `MIA0104.json` | lo stesso per l'Edificio 4 |
 | `MIA0106.usdz`, `MIA0106.json` | lo stesso per l'Edificio 6 |
+| `MIA0107.usdz`, `MIA0107.json` | lo stesso per l'Edificio 7 |
 | `MIA0314.usdz`, `MIA0314.json` | lo stesso per l'Edificio 41 (campus Bassini, da `bassini.json`) |
 | `MIA0403.usdz`, `MIA0403.json` | lo stesso per l'Edificio 25 (campus di via Golgi, da `bassini.json`) |
 | `MIA1401.usdz`, `MIA1401.json` | lo stesso per l'Edificio 26 (da `citta-studi.json`) |
@@ -68,7 +69,7 @@ Per rigenerarli, da questa cartella (circa 3 minuti):
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901,MIA0202,MIA0206,MIA0207,MIA0208,MIA0209,MIA0214,MIA0113,MIA0109,MIA0110,MIA0114,MIA0115
+python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0107,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901,MIA0202,MIA0206,MIA0207,MIA0208,MIA0209,MIA0214,MIA0113,MIA0109,MIA0110,MIA0114,MIA0115
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -452,7 +453,42 @@ Il corpo basso fra il 2 e il 3: zoccolo in pietra, il terra in cemento con le fi
 
 Il corpo a terrazze fra il 3 e il 5: il seminterrato esce di un metro col giardino sopra, il terra sulla parte di mezzo, il primo su quella sud col tetto chiaro, come nell'ortofoto; le finestre delle piante. Nessuna foto.
 
+## L'Edificio 7
+
+L'esterno del Carlo Erba è rifatto da zero in `gusci/MIA0107.py`, un guscio proprio come
+quelli degli altri edifici in `gusci/` (`guscio`, `quote`, `tetto`, `piante`, `ritocca`; tutti
+tranne `guscio` facoltativi in `esporta3d.py`). Le parti sono tagliate dal contorno del terra
+delle piante, con i confini presi dall'ortofoto (Esri World Imagery):
+
+- il corpo lungo su via Ponzio, largo quanto il primo piano (15 m): intonaco grigio,
+  zoccolo in pietra con le bocche del seminterrato, finestre ad arco al terra e al primo dove
+  le disegnano le piante, fascia marcapiano, cornicione e tetto a padiglione in coppi;
+- dietro, a ovest, il capannone a un piano con le finestre alte ad arco (la foto
+  dell'AIRLab) e nove denti di sega ogni 5 m, la vetrata rivolta a nord e la falda in coppi;
+- a nord del capannone un corpo basso a tetto piano grigio con gli impianti, a sud una
+  striscia bassa scura e il corpo a due piani dell'aula 7.1.3 con il tetto chiaro a teli;
+- alle porte esterne del terra, che è rialzato, il pianerottolo e i gradini.
+
+Quote dedotte: seminterrato a -3 m, terra a 1,2 m, primo a 6,6 m, gronda a 12,4 m, il muro del
+capannone a 6,4 m, il corpo sud a 11,4 m.
+
+Il seminterrato delle piante CAD è fuori posto: `piante()` lo sposta di (-9,6; -9,9), lo
+spostamento che mette l'ascensore del seminterrato sotto quello del terra e la sua ala est
+sotto il corpo su via Ponzio. Quello della mappa (`spostamenti`, -7,76; 0) lascia l'ala est
+1,8 m fuori dalla facciata e 10 m più a sud.
+
+Le aule del primo non hanno file nelle piante; `piante()` le aggiunge come nelle foto del
+servizio spazi: la 7.1.1 piana, con i banchi in due blocchi e la cattedra a sud (le finestre
+ad arco a sinistra), la 7.1.2 ad anfiteatro con la cattedra a nord (le porte a sinistra), la
+7.1.3 piana con la cattedra a sud fra le due porte. Banchi scuri e sedute rosse nella 7.1.1
+e nella 7.1.3, banchi in legno nella 7.1.2, pareti bianche.
+
 ## Cosa manca
+
+- Edificio 7: del corpo su via Ponzio e del capannone non si sono trovate foto da fuori;
+  facciate e quote seguono gli altri corpi storici del campus e la mappa. Lo zoccolo rosso
+  della 7.1.1, il parquet a spina di pesce e i carriponte gialli dell'AIRLab non ci sono; i
+  colori dei banchi valgono per piano, quindi qualche seduta rossa c'è anche nella 7.1.3.
 
 - Edificio 3: le facciate verso l'esterno del corpo est e il lato sud delle ali non hanno
   foto; sono disegnate come quelle in vista. Le file del primo e del secondo sono stimate, e
