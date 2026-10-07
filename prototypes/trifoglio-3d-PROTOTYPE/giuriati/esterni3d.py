@@ -31,6 +31,11 @@ A = A.parse_args()
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 sys.argv = [sys.argv[0], ".", tempfile.mkdtemp()]       # esporta3d legge i suoi argomenti all'import
 import esporta3d as E                                    # noqa: E402
+import importlib.util                                    # noqa: E402
+_spec = importlib.util.spec_from_file_location(          # porte, canestri, reti, giochi: esterni/arredo.py
+    "esterni_arredo", pathlib.Path(__file__).resolve().parent.parent / "esterni" / "arredo.py")
+arredo = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(arredo)
 
 COL = dict(E.COL)
 COL.update({
@@ -201,6 +206,7 @@ def main():
                     pil.append(t)
             oggetti(sc, sport, nome + "_Pilastri", pil, COL["palo"])
             sc.mesh(nome + "_Copertura", sport, lastra(g.buffer(0.5), 7.0, 7.25, "tetto"))
+        arredo.sport(E, sc, sport, nome + "_Attrezzi", s, g, righe=False)
 
     # alberi: quelli isolati e i filari, un albero ogni 7 m (con --zona sono in campus.usdz)
     if zona:
