@@ -60,6 +60,14 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0110.usdz`, `MIA0110.json` | lo stesso per l'Edificio 10 (da `leonardo.json`) |
 | `MIA0114.usdz`, `MIA0114.json` | lo stesso per l'Edificio 2A (da `leonardo.json`) |
 | `MIA0115.usdz`, `MIA0115.json` | lo stesso per l'Edificio 3A (da `leonardo.json`) |
+| `MIA0105.usdz`, `MIA0105.json` | lo stesso per l'Edificio 5 (da `leonardo.json`) |
+| `MIA0107.usdz`, `MIA0107.json` | lo stesso per l'Edificio 7 (da `leonardo.json`) |
+| `MIA0108.usdz`, `MIA0108.json` | lo stesso per l'Edificio 8 (da `leonardo.json`) |
+| `MIA0111.usdz`, `MIA0111.json` | lo stesso per l'Edificio 9 (da `leonardo.json`) |
+| `MIA0112.usdz`, `MIA0112.json` | lo stesso per l'Edificio 4A (da `leonardo.json`) |
+| `MIA0205.usdz`, `MIA0205.json` | lo stesso per l'Edificio 14 (Nave) (da `leonardo.json`) |
+| `MIA0212.usdz`, `MIA0212.json` | lo stesso per l'Edificio 16B (da `leonardo.json`) |
+| `MIA0215.usdz`, `MIA0215.json` | lo stesso per l'Edificio 16C, sotto la piazza della Nave (da `leonardo.json`) |
 | `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py --zona` (vedi `giuriati/README.md`): con la zona ci restano i campi, la pista, le recinzioni e le impronte |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
@@ -69,7 +77,7 @@ Per rigenerarli, da questa cartella (circa 3 minuti):
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901,MIA0202,MIA0206,MIA0207,MIA0208,MIA0209,MIA0214,MIA0113,MIA0109,MIA0110,MIA0114,MIA0115
+python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901,MIA0202,MIA0206,MIA0207,MIA0208,MIA0209,MIA0214,MIA0113,MIA0109,MIA0110,MIA0114,MIA0115,MIA0105,MIA0107,MIA0108,MIA0111,MIA0112,MIA0205,MIA0212,MIA0215
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
