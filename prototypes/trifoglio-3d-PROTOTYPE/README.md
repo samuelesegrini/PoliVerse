@@ -17,7 +17,7 @@ Si apre in Xcode: `PoliVerse/Features/Map/Campus3D/Trifoglio3DView.swift`, previ
    alla cattedra; compaiono i muri a tutta altezza, il soffitto e le luci. "Esci dall'aula"
    torna alla vista dall'alto.
 
-Dal campus si sceglie il Trifoglio o l'Edificio 11. "Portami all'aula T.1.2" fa tutto il
+Dal campus si sceglie il Trifoglio, l'Edificio 11 o l'Edificio 8. "Portami all'aula T.1.2" fa tutto il
 percorso. Si può anche toccare l'edificio e le aule sul
 modello, trascinare per ruotare e pizzicare per lo zoom.
 
@@ -33,6 +33,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0203.usdz` | i piani del Trifoglio: `MIA0203/Piani/<csip>` con soletta, muri tagliati a 1,5 m, locali e arredi (`<csip>_Arredi`); ogni aula è un nodo chiamato con il suo `csiv` |
 | `MIA0203.json` | piani, quote e aule (sigla, posti) per l'interfaccia |
 | `MIA0201.usdz`, `MIA0201.json` | lo stesso per l'Edificio 11 |
+| `MIA0108.usdz`, `MIA0108.json` | lo stesso per l'Edificio 8 |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
 trova il nodo da accendere senza tabelle in più.
@@ -41,7 +42,7 @@ Per rigenerarli, con il ramo della mappa estratto:
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201
+python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0108
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -191,9 +192,43 @@ Urbanfile (2018):
 Nella vista per piani i pilastri e la scala sono tagliati all'altezza dei muri; il resto è
 nascosto finché non si entra.
 
+## L'Edificio 8
+
+L'esterno dell'Amerio (l'Istituto di Fisica, oggi il Dipartimento di Fisica) è rifatto da
+zero in `gusci/MIA0108.py`, un guscio proprio come quelli degli altri edifici in `gusci/`
+(`guscio`, `quote`, `tetto`, `piante`). Fonti: l'ortofoto (Google, zoom 21) per i tetti e i
+corpi nel cortile, la foto della testata "FISICA SPERIMENTALE" (sito del Dipartimento) per
+facciate e quote, le piante per finestre e porte:
+
+- le ali in intonaco a graniglia grigio-beige, il terra a bugnato con le finestre ad arco
+  ribassato dentro un arco a tutto sesto, la fascia, le finestre ad arco del primo sui
+  davanzali a mensola, il cornicione con la gronda, i pluviali di rame; le porte ad arco
+  dove la pianta del terra ha le porte esterne (anche negli smussi della testata);
+- i tetti a padiglione in coppi come nell'ortofoto: un padiglione per ala (l'ala diagonale
+  con gli smussi), dove si incrociano vince il più alto, così impluvi e displuvi vengono da
+  sé; il corpo est piano fra due testate a padiglione, con un abbaino;
+- nel cortile il corpo ottagonale basso (il locale 017 della pianta del secondo è il suo
+  tetto piano bianco, con le macchine), la volta di vetro a rombi contro il suo lato nord-est,
+  i corpi di un piano intorno e i pozzi di luce;
+- a nord il secondo piano sotto la terrazza pavimentata, con le fioriere, il padiglione
+  grigio e le pergole dell'ortofoto, e il torrino dell'ascensore.
+
+Quote dalla foto (la testata è larga 12,9 m fra gli smussi) e dalle scale (32 alzate fra
+terra e primo): seminterrato a -4,2, terra a 0,3, primo a 5,9, secondo a 10,4, gronda a 11,
+terrazza a 14. Il primo, il secondo e il seminterrato sono importati fuori posto rispetto al
+terra: `piante()` li riallinea (il primo è anche stirato di 2 cm per metro in x, misurato sui
+muri e sull'ascensore del terra). L'aula 8.0.1 (260 posti) occupa tutta l'ala diagonale e
+non ha file nelle piante: `piante()` le aggiunge parallele alla testata, ogni 95 cm, con la
+cattedra verso l'ingresso interno a nord-est.
+
 ## Cosa manca
 
-- Solo il Trifoglio e l'Edificio 11 hanno l'esterno dettagliato; gli altri edifici restano
+- Edificio 8: delle facciate c'è una foto sola, la testata dell'ala diagonale; le altre sono
+  disegnate allo stesso modo. La cattedra dell'aula 8.0.1 a nord-est, l'altezza della volta
+  di vetro e il secondo piano sotto la terrazza (sopra il cortiletto aperto del terra) sono
+  dedotti dalle piante e dall'ortofoto, non rilevati.
+
+- Solo il Trifoglio, l'Edificio 11 e l'Edificio 8 hanno l'esterno dettagliato; gli altri edifici restano
   estrusioni. Del profilo mancano ancora coppi, volte, denti, cornicioni, balaustre,
   finestre forate e lucernari.
 - Le quote dell'Edificio 11 seguono una parte sola: la parte di Ponti ha fasce di altezze
