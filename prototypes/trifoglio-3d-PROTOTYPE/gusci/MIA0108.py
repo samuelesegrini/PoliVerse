@@ -11,15 +11,20 @@ da tre fonti:
   macchine nel cortile fra le ali, la volta di vetro a nord-est dell'ottagono, la terrazza
   pavimentata con le fioriere sopra il corpo a nord (il secondo piano) e il corpo piano a
   est con le due testate a padiglione;
-- la foto della testata dell'ala diagonale (sito del Dipartimento di Fisica): tre campate fra
-  due smussi, il terra a bugnato con le finestre sotto archi ribassati in un arco a tutto
-  sesto, la scritta FISICA SPERIMENTALE, le finestre ad arco del primo, il cornicione con la
-  gronda e i pluviali di rame, le porte ad arco negli smussi (la pianta le ha: porte esterne
-  in tutti e due gli smussi).
+- le due foto della testata dell'ala diagonale (sito del Dipartimento di Fisica, una frontale
+  e una di scorcio): tre campate fra due smussi; il terra a bugnato fino alla marcapiano
+  all'imposta degli archi (4 m), le finestre a tutto sesto con il secondo arco del telaio
+  nella lunetta e l'archivolto liscio senza chiave; sopra, intonaco liscio con la scritta
+  FISICA SPERIMENTALE, le finestre ad arco del primo fra specchiature appena in rilievo, il
+  fregio di riquadri sotto il cornicione, la gronda e i pluviali di rame agli spigoli della
+  testata, le porte ad arco negli smussi (la pianta le ha: porte esterne in tutti e due gli
+  smussi). Il render dallo stesso punto della foto frontale è stato confrontato con la foto
+  (2026-10-07): le quote delle finestre, della marcapiano e della scritta, misurate in
+  frazioni dell'altezza della testata, cadono entro pochi centimetri.
 
-Quote dalla foto (circa 70 px per metro, la testata è larga 12,9 m fra gli smussi) e dalle
-scale (32 alzate fra terra e primo): terra a 0,3, primo a 5,9, gronda a 11,0, cornicione fino
-a 11,4. Il secondo esiste solo nel corpo a nord, sotto la terrazza: a 10,4, terrazza a 14.
+Quote dalla foto (circa 82 px per metro, la testata è larga 12,9 m fra gli smussi) e dalle
+scale (32 alzate fra terra e primo): terra a 0,3, marcapiano a 4,0, primo a 5,9, gronda a
+11,0, cornicione fino a 11,4. Il secondo esiste solo nel corpo a nord, sotto la terrazza: a 10,4, terrazza a 14.
 L'interno dell'aula 8.0.1 non ha file disegnate: le file sono aggiunte in piante().
 
 guscio(), quote(), tetto() e piante() sono chiamati da esporta3d.py (E è quel modulo).
@@ -35,7 +40,7 @@ from shapely import affinity
 
 QUOTE = {"MIA010800S": -4.2, "MIA0108000": 0.3, "MIA0108001": 5.9, "MIA0108002": 10.4}
 TERRA, PRIMO, SECONDO = 0.3, 5.9, 10.4
-FASCIA = 5.6            # la fascia fra terra e primo, sopra il bugnato
+IMPOSTA = 4.0           # la cornice marcapiano all'imposta degli archi del terra: fin qui il bugnato
 GRONDA = 11.0           # sotto il cornicione delle ali
 CORNICE = 11.4          # il filo del tetto sul muro
 SPORTO = 0.7            # la gronda oltre il muro
@@ -386,40 +391,46 @@ def arco(t0, t1, z0, zi, ribassato=False):
     return unary_union([box(t0, z0, t1, zi), c.intersection(box(t0, zi, t1, zi + w))])
 
 
-def serramento(F, s, t0, t1, z0, traverso):
-    """Vetro scuro e telaio bianco: due ante, il traverso, il bordo."""
+def serramento(F, s, t0, t1, z0, traverso, lunetta=False):
+    """Vetro scuro e telaio bianco: due ante con i due sopraluce stretti ai lati (come nelle
+    foto), il traverso, il bordo; con lunetta, il secondo arco del telaio dentro la lunetta."""
     F.piatto(VETRO, s, 0.0, 0.02)
     tc = (t0 + t1) / 2
-    bars = [box(tc - 0.04, z0, tc + 0.04, 20), box(t0, traverso - 0.04, t1, traverso + 0.04)]
+    w = t1 - t0
+    bars = [box(tc - 0.04, z0, tc + 0.04, traverso), box(t0, traverso - 0.04, t1, traverso + 0.04)]
+    if w > 1.2:
+        bars += [box(t - 0.03, z0, t + 0.03, traverso) for t in (t0 + 0.17 * w, t1 - 0.17 * w)]
+    if lunetta:
+        r = w / 2 - 0.14
+        bars.append(Point(tc, traverso).buffer(r, 48).difference(Point(tc, traverso).buffer(r - 0.07, 48)))
     F.piatto(TELAIO, unary_union(bars).intersection(s), 0.0, 0.05)
     F.piatto(TELAIO, s.difference(s.buffer(-0.07)), 0.0, 0.06)
 
 
-def finestra_terra(F, tc, w=1.45):
-    """Il terra della foto: finestra rettangolare con la lunetta ad arco ribassato, dentro un
-    arco a tutto sesto incassato nel bugnato, con la chiave e il davanzale."""
+def finestra_terra(F, tc, w=1.75):
+    """Il terra delle foto: finestra a tutto sesto, il traverso all'imposta sulla cornice
+    marcapiano, il secondo arco del telaio nella lunetta, l'archivolto liscio intorno (senza
+    chiave), il davanzale sotto."""
     t0, t1 = tc - w / 2, tc + w / 2
-    z0, zi = 1.6, 3.9
-    s = arco(t0, t1, z0, zi, ribassato=True)
-    nicchia = arco(t0 - 0.22, t1 + 0.22, z0 - 0.05, zi, ribassato=False)
-    F.fori.append(nicchia.buffer(0.05))
-    serramento(F, s, t0, t1, z0, zi)
-    F.piatto(MURO_OMBRA, nicchia.difference(s), 0.0, 0.012)
-    F.piatto(CORNICI, nicchia.buffer(0.18).difference(nicchia).difference(box(t0 - 1, 0, t1 + 1, zi)), 0.0, 0.1)
-    r = (t1 - t0) / 2 + 0.22
-    F.piatto(CORNICI, Polygon([(tc - 0.16, zi + r - 0.05), (tc + 0.16, zi + r - 0.05), (tc + 0.22, zi + r + 0.32),
-                               (tc - 0.22, zi + r + 0.32)]), 0.0, 0.14)
-    F.rett(CORNICI, t0 - 0.3, t1 + 0.3, z0 - 0.15, z0, 0.0, 0.14)
+    z0, zi = 1.65, IMPOSTA
+    s = arco(t0, t1, z0, zi)
+    F.fori.append(s.buffer(0.08))
+    serramento(F, s, t0, t1, z0, zi, lunetta=True)
+    F.piatto(MURO_OMBRA, s.buffer(0.08).difference(s), 0.0, 0.01)
+    # l'archivolto: una fascia a tutto sesto che parte dalla marcapiano
+    giro = Point(tc, zi).buffer(w / 2 + 0.36, 48).difference(Point(tc, zi).buffer(w / 2 + 0.12, 48))
+    F.piatto(CORNICI, giro.intersection(box(t0 - 1, zi, t1 + 1, zi + w)), 0.0, 0.08)
+    F.rett(CORNICI, t0 - 0.25, t1 + 0.25, z0 - 0.15, z0, 0.0, 0.14)
 
 
-def finestra_primo(F, tc, z, w=1.4):
-    """Il primo della foto: finestra ad arco a tutto sesto con la cornice liscia, il
-    davanzale su due mensole."""
+def finestra_primo(F, tc, z, w=1.7):
+    """Il primo delle foto: finestra ad arco a tutto sesto con la cornice liscia e il secondo
+    arco del telaio nella lunetta, il davanzale su due mensole."""
     t0, t1 = tc - w / 2, tc + w / 2
-    z0, zi = z + 1.0, z + 3.25
+    z0, zi = z + 1.2, z + 3.45
     s = arco(t0, t1, z0, zi)
     F.fori.append(s.buffer(0.2))
-    serramento(F, s, t0, t1, z0, zi)
+    serramento(F, s, t0, t1, z0, zi, lunetta=w > 1.2)
     F.piatto(CORNICI, s.buffer(0.16).difference(s).difference(box(t0 - 1, 0, t1 + 1, z0)), 0.0, 0.08)
     F.rett(CORNICI, t0 - 0.35, t1 + 0.35, z0 - 0.14, z0, 0.0, 0.2)
     for tm in (t0 - 0.2, t1 + 0.05):
@@ -452,6 +463,19 @@ def bugnato(F, t0, t1, z0, z1, alto=0.5):
     while z < z1 - 0.1:
         F.piatto(MURO, box(t0, z + 0.05, t1, min(z1, z + alto)).difference(fori), 0.0, 0.05)
         z += alto
+
+
+def specchiature(F, L, fori):
+    """Le specchiature delle foto sopra il terra: riquadri appena in rilievo fra le finestre
+    del primo e un fregio di riquadri sotto il cornicione, staccati da un giunto in ombra."""
+    finestre = sorted(g.centroid.x for g in getattr(fori, "geoms", [fori]) if g.bounds[1] > PRIMO)
+    tagli = [0.4] + [(a + b) / 2 for a, b in zip(finestre, finestre[1:])] + [L - 0.4]
+    for t0, t1 in zip(tagli, tagli[1:]):
+        F.piatto(MURO, box(t0 + 0.08, PRIMO + 1.0, t1 - 0.08, PRIMO + 3.9).difference(fori.buffer(0.3)), 0.0, 0.025)
+    n = max(1, round((L - 0.8) / 1.75))
+    for k in range(n):
+        a = 0.4 + (L - 0.8) * k / n
+        F.rett(MURO, a + 0.08, a + (L - 0.8) / n - 0.08, PRIMO + 4.15, CORNICE - 0.65, 0.0, 0.025)
 
 
 def cornicione(F, L, z, sporto=SPORTO, key=CORNICI):
@@ -552,20 +576,19 @@ def facciate(E, S, b, terra, primo):
         if L > 2.2:
             for t in centri(win0.get(i, [])):
                 if all(abs(t - p) > 1.9 for p in ps) and 1.0 < t < L - 1.0:
-                    finestra_terra(F, t, w=min(1.45, L - 1.4))
+                    finestra_terra(F, t, w=min(1.75, L - 1.4))
         if alto:
             for t in centri(win1.get(i, [])):
                 if 1.0 < t < L - 1.0:
-                    finestra_primo(F, t, PRIMO, w=min(1.4, L - 1.4))
+                    finestra_primo(F, t, PRIMO, w=min(1.7, L - 1.4))
         fori = unary_union(F.fori) if F.fori else Polygon()
         F.rett(MURO_OMBRA, 0, L, 0.0, TERRA + 0.3, 0.0, 0.08)            # lo zoccolo
-        bugnato(F, 0, L, TERRA + 0.3, FASCIA)
-        F.rett(CORNICI, -0.1, L + 0.1, FASCIA, FASCIA + 0.3, 0.0, 0.18)    # la fascia del primo
+        bugnato(F, 0, L, TERRA + 0.3, IMPOSTA - 0.1)
+        F.rett(CORNICI, -0.1, L + 0.1, IMPOSTA - 0.1, IMPOSTA + 0.15, 0.0, 0.16)   # la marcapiano
         if alto:
-            F.rett(CORNICI, 0, L, 3.85, 3.95, 0.0, 0.06)                   # l'imposta degli archi
             cornicione(F, L, CORNICE)
-            if L > 6:                                                      # i pannelli fra le finestre
-                F.piatto(MURO, box(0.4, PRIMO + 0.4, L - 0.4, GRONDA - 0.7).difference(fori.buffer(0.25)), 0.0, 0.03)
+            if L > 6:
+                specchiature(F, L, fori)
         else:
             F.rett(CORNICI, -0.1, L + 0.1, BASSO - 0.25, BASSO + 0.15, 0.0, 0.3)
             F.rett(MURO, 0, L, BASSO + 0.15, BASSO + 0.9, -0.15, 0.1)      # il parapetto del tetto piano
@@ -577,7 +600,7 @@ def facciate(E, S, b, terra, primo):
             S.quad("mia0108_scritta", p, (e[3][0], e[3][1], 0), [(1, 0), (0, 0), (0, 1), (1, 1)])
         # pluviali di rame agli spigoli delle ali
         if alto and L > 8:
-            for t in (L - 0.35,):
+            for t in (0.35, L - 0.35):
                 p = F.punto(t, 0.12, 0)
                 S.solid(RAME, trimesh.creation.cylinder(0.055, segment=[(p[0], p[1], 0.2), (p[0], p[1], CORNICE - 0.3)], sections=8))
     return anello
