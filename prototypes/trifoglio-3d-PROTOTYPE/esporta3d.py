@@ -1119,8 +1119,19 @@ def campus(c, altri=()):
         spec.loader.exec_module(esterni3d)
         gj = zona.parent.parent / "giuriati" / "giuriati.json"
         escludi = box(*json.loads(gj.read_text())["isolato"]) if gj.exists() else None
-        esterni3d.terreno(sys.modules[__name__], sc, "Campus", json.loads(zona.read_text()), escludi,
-                          [ring(b["pianta"]) for b in list(c["edifici"]) + list(altri)])
+        d = json.loads(zona.read_text())
+        ingombri = [ring(b["pianta"]) for b in list(c["edifici"]) + list(altri)]
+        dettagli = zona.parent / "arredo.json"
+        if dettagli.exists():
+            # l'arredo dettagliato (alberi, panchine, lampioni, sport, pergole): esterni/arredo.py
+            spec = importlib.util.spec_from_file_location("esterni_arredo", zona.parent / "arredo.py")
+            arredo = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(arredo)
+            arredo.prima(esterni3d, d)
+        esterni3d.terreno(sys.modules[__name__], sc, "Campus", d, escludi, ingombri)
+        if dettagli.exists():
+            arredo.arreda(sys.modules[__name__], esterni3d, sc, "Campus", d, json.loads(dettagli.read_text()),
+                          escludi, ingombri, c)
     else:
         terreno_leonardo(sc, c)
     edifici_campus(sc, ed, c, altri)
