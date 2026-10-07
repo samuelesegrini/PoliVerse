@@ -22,11 +22,14 @@ come quelli del campus.
 ```
 python3 -m pip install pyarrow shapely trimesh mapbox_earcut numpy usd-core matplotlib
 python3 importa.py giuriati.json --leonardo ../../../design/mappa/leonardo.json
-python3 esterni3d.py giuriati.json "../../../PoliVerse/Preview Content/Trifoglio3D" --leonardo ../../../design/mappa/leonardo.json
+python3 esterni3d.py giuriati.json "../../../PoliVerse/Preview Content/Trifoglio3D" --leonardo ../../../design/mappa/leonardo.json --zona ../esterni/zona.json
 python3 esterni3d.py giuriati.json . --png --leonardo ../../../design/mappa/leonardo.json   # solo per giuriati.png
 ```
 
-`--leonardo` salta alberi, prati e percorsi che il file del campus ha già. Le chiavi di
+`--leonardo` salta alberi, prati e percorsi che il file del campus ha già. `--zona` (dal 7 ottobre
+2026) lascia a `campus.usdz` tutto il suolo dell'isolato, che ora viene da `esterni/zona.json`:
+strade, marciapiedi, prati, percorsi, alberi, lampioni e panchine. Qui restano la pista con
+il suo prato, i campi, le recinzioni, i muri e le impronte degli edifici. Le chiavi di
 `giuriati.json` sono quelle di `contesto` (verde, alberi, percorsi, strade, lampioni,
 panchine…), più `campi`, `piste`, `filari`, `recinzioni`, `muri`, `pavimentate`,
 `parcheggi` ed `edifici`, così si possono passare a `leonardo.json` quando lo si unisce.
