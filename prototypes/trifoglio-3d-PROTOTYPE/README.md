@@ -17,7 +17,7 @@ Si apre in Xcode: `PoliVerse/Features/Map/Campus3D/Trifoglio3DView.swift`, previ
    alla cattedra; compaiono i muri a tutta altezza, il soffitto e le luci. "Esci dall'aula"
    torna alla vista dall'alto.
 
-Dal campus si sceglie il Trifoglio o l'Edificio 11. "Portami all'aula T.1.2" fa tutto il
+Dal campus si sceglie il Trifoglio, l'Edificio 11 o l'Edificio 5. "Portami all'aula T.1.2" fa tutto il
 percorso. Si può anche toccare l'edificio e le aule sul
 modello, trascinare per ruotare e pizzicare per lo zoom.
 
@@ -33,6 +33,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0203.usdz` | i piani del Trifoglio: `MIA0203/Piani/<csip>` con soletta, muri tagliati a 1,5 m, locali e arredi (`<csip>_Arredi`); ogni aula è un nodo chiamato con il suo `csiv` |
 | `MIA0203.json` | piani, quote e aule (sigla, posti) per l'interfaccia |
 | `MIA0201.usdz`, `MIA0201.json` | lo stesso per l'Edificio 11 |
+| `MIA0105.usdz`, `MIA0105.json` | lo stesso per l'Edificio 5 |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
 trova il nodo da accendere senza tabelle in più.
@@ -41,7 +42,7 @@ Per rigenerarli, con il ramo della mappa estratto:
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201
+python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0105
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -191,7 +192,42 @@ Urbanfile (2018):
 Nella vista per piani i pilastri e la scala sono tagliati all'altezza dei muri; il resto è
 nascosto finché non si entra.
 
+## L'Edificio 5 "Arturo Danusso"
+
+L'esterno è rifatto da zero in `edificio5.py`, un modulo a parte con la stessa interfaccia
+dell'Edificio 3 (`CSIE`, `guscio`, `quote`, `tetto`, `piante`, `ritocca`): `esporta3d.py`
+carica ogni `edificio<numero>.py` accanto a sé. Le fonti sono l'ortofoto Google a zoom 21,
+le foto delle aule nel sito degli spazi del Politecnico e le foto di via Celoria
+(Urbanfile, 2022):
+
+- il corpo intorno al cortile, con il tetto ad anello in coppi: le falde si calcolano dal
+  contorno (`falde()`), con le displuviate agli angoli esterni e i compluvi verso il
+  cortile, e i lucernari dell'ortofoto; il padiglione nord delle aule 5.0.1 e 5.1.1, più
+  basso, con gli spigoli smussati; il terzo piano a T dentro il tetto, con il tetto piano, il
+  gruppo frigo a otto ventole e l'unità rossa;
+- l'aula sud su via Celoria con la vetrata a nastro nella falda; i due corpi bassi a tetto
+  piano ai lati del cortile di servizio; il raccordo con gli impianti, il capannone in
+  lamiera (testata nord a padiglione, sud a capanna) e la sala studio a tetto bianco;
+- facciate come gli altri edifici del 1927: zoccolo in pietra con le finestre del
+  seminterrato, terra bugnato con gli archi, fascia marcapiano, primo con gli archi, secondo
+  con le finestre rette, cornicione a mensole. Le finestre del primo e del secondo stanno
+  dove le disegnano le piante, il terra le ripete in colonna.
+
+Quote come l'Edificio 3, con cui si collega con la passerella al terra: seminterrato a 0 (le
+porte esterne della pianta sono lì), terra a 3,6 m, primo a 8,8, secondo a 13,6, terzo a
+18,2; cornicione a 18 m, padiglione a 14,8, aula sud a 10.
+
+Dentro: la 5.02 e la 5.03 hanno le sedute disegnate una per una, e `piante()` ne ricava una
+linea per fila (la cattedra a sud, dove la pianta mette il leggio); la 5.0.1 e la 5.1.1 non
+hanno file e prendono gradoni ogni 95 cm con il corridoio in mezzo, la cattedra a nord; la
+Beltrami e la Castigliano prendono tavoli. Colori dalle foto: banchi scuri e sedute rosse
+nel padiglione, faggio nella 5.02, grigio nella 5.03, tavoli scuri e sedie in faggio nelle
+aule piane; soffitti bianchi con le travi nere.
+
 ## Cosa manca
+
+- Edificio 5: le facciate non hanno foto, sono disegnate come quelle degli edifici gemelli;
+  le quote sono stimate. Mancano l'ingresso con i gradini e le rampe verso l'Edificio 6.
 
 - Solo il Trifoglio e l'Edificio 11 hanno l'esterno dettagliato; gli altri edifici restano
   estrusioni. Del profilo mancano ancora coppi, volte, denti, cornicioni, balaustre,
