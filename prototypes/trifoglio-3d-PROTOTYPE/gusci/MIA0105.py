@@ -18,9 +18,18 @@ Fonti, oltre ai contorni di leonardo.json e alle piante (piante/MIA0105-geometri
   arco, fascia marcapiano, primo liscio con gli archi, secondo con le finestre rette,
   cornicione e coppi.
 
+- le foto di Urbanfile del cantiere della palazzina Lerici (gennaio, marzo e luglio 2022,
+  "adiacente all'edificio 5"): l'aula sud su via Celoria è un solo piano alto in finta pietra
+  grigio-beige a bugne lisce, con lo zoccolo in granito e le grate del seminterrato, i
+  finestroni ad arco con l'archivolto e le inferriate a disegno, il cornicione con la gronda;
+  la facciata ovest, lungo il passaggio fra l'Edificio 5 e la Lerici, ha il terra a bugne
+  grezze grigie con le finestre rette sotto una piattabanda a cunei con la chiave, gli archi
+  al primo.
+
 Le finestre del primo e del secondo stanno dove le disegnano le piante (linee.finestre); il
-terra e il seminterrato le ripetono in colonna. Le facciate esterne dell'Edificio 5 non hanno
-foto: sono disegnate come quelle degli edifici gemelli.
+terra e il seminterrato le ripetono in colonna. Il terra a bugne grezze vale per tutte le
+facciate esterne del corpo; verso il cortile resta bugnato liscio ad archi, come nel cortile
+dell'Edificio 3 (foto di Wikimedia Commons). Il lato nord e quello est non hanno foto.
 
 Quote come l'Edificio 3, con cui si collega con la passerella al terra: seminterrato a quota
 del cortile (le porte esterne della pianta sono al seminterrato), terra a 3,6 m, primo a
@@ -49,6 +58,9 @@ PENDENZA = 0.5         # le falde in coppi, circa 27°
 STUCCO = "#D6CBB2"     # l'intonaco grigio-beige (Edificio 3, via Celoria)
 BUGNATO = "#CDBF9F"
 STUCCO_CHIARO = "#E8E2D2"   # cornici, fasce, davanzali
+RUSTICO = "#B4AE9E"    # il terra verso l'esterno: bugne grezze grigie (foto del passaggio della Lerici)
+PIETRA_CELORIA = "#CBC4B1"  # l'aula su via Celoria: finta pietra a bugne lisce, grigio-beige
+GIUNTO = "#8F8A7E"          # i giunti fra le bugne
 PIETRA = "#9E9A91"     # lo zoccolo
 GRIGIO = "#C9CBCB"     # il terzo piano, intonaco grigio
 INTONACO = "#E2DED5"   # capannone, raccordo, sala studio
@@ -336,23 +348,27 @@ def lucernario(E, S, x, y, n, filo, z_gronda, sporto=0.6, pend=PENDENZA):
 
 # ------------------------------------------------------------------ facciate
 
-def palazzo(E, S, b, g, masse, nome, z_top, piani, passo=4.2, colore=STUCCO, cornice=0.6):
+def palazzo(E, S, b, g, masse, nome, z_top, piani, passo=4.2, colore=STUCCO, cornice=0.6, terra_fuori="arco"):
     """Le facciate storiche di una massa: zoccolo in pietra con le finestre del seminterrato,
     terra bugnato con le finestre ad arco, la fascia marcapiano, poi un registro per piano
     sopra la fascia; il fregio e il cornicione. `piani` è la lista dei registri sopra la
     fascia: (csip della pianta per le finestre o None, z del davanzale, z della chiave,
-    'arco' o 'retta')."""
+    'arco' o 'retta'). `terra_fuori` è il terra delle facciate esterne: 'arco' come nei
+    cortili, o 'retta' (bugne grezze e finestre rette con la piattabanda, come la facciata
+    ovest nelle foto del passaggio fra l'Edificio 5 e la palazzina Lerici)."""
     for pts in anelli(g):
+        fuori = Polygon(pts).exterior.is_ccw
         for ie, e in enumerate(E.edges(pts)):
             for t0, t1 in tratti_liberi(e, masse, z_top - 1.0, nome):
-                _palazzo_tratto(E, S, b, pts, ie, e, t0, t1, z_top, piani, passo, colore, cornice)
+                _palazzo_tratto(E, S, b, pts, ie, e, t0, t1, z_top, piani, passo, colore, cornice,
+                                terra_fuori if fuori else "arco")
             # il muro sopra le masse più basse (i corpi addossati): liscio, con il cornicione
             for t0, t1 in tratti_liberi(e, masse, z_top, nome):
                 E.panel(S, STUCCO_CHIARO, e, rett(t0, t1, z_top - 0.55, z_top), 0.0, cornice)
                 E.panel(S, STUCCO_CHIARO, e, rett(t0, t1, z_top - 0.85, z_top - 0.55), 0.0, cornice * 0.5)
 
 
-def _palazzo_tratto(E, S, b, pts, ie, e, t0, t1, z_top, piani, passo, colore, cornice):
+def _palazzo_tratto(E, S, b, pts, ie, e, t0, t1, z_top, piani, passo, colore, cornice, terra="arco"):
     # le finestre: dalla pianta del primo registro, o a passo costante
     centri = []
     for csip, *_ in piani:
@@ -374,18 +390,41 @@ def _palazzo_tratto(E, S, b, pts, ie, e, t0, t1, z_top, piani, passo, colore, co
         for k in range(1, 5):
             tt = fx0 + (fx1 - fx0) * k / 5
             E.panel(S, FERRO, e, rett(tt - 0.02, tt + 0.02, fz0, fz1), 0.0, 0.06)
-    # terra bugnato, corsi da 55 cm interrotti dagli archi
-    archi = [arco(t - w_t(w) / 2, t + w_t(w) / 2, QUOTE["MIA0105000"] + 0.8, QUOTE["MIA0105000"] + 4.0) for t, w in centri]
-    fori = unary_union([a.buffer(0.2, join_style=2) for a in archi] + [f.buffer(0.1, join_style=2) for f in fin_s])
-    z = ZOCCOLO
-    while z < FASCIA - 0.1:
-        E.panel(S, BUGNATO, e, rett(t0, t1, z, min(FASCIA, z + 0.49)).difference(fori), 0.0, 0.06)
-        z += 0.55
-    for a in archi:
-        finestra(E, S, e, a)
-        cx, top = (a.bounds[0] + a.bounds[2]) / 2, a.bounds[3]
-        E.panel(S, STUCCO_CHIARO, e, Polygon([(cx - 0.18, top - 0.05), (cx + 0.18, top - 0.05),
-                                              (cx + 0.24, top + 0.4), (cx - 0.24, top + 0.4)]), 0.0, 0.16)
+    zt = QUOTE["MIA0105000"]
+    if terra == "retta":
+        # terra a bugne grezze: finestre rette con la piattabanda a cunei e la chiave
+        archi = [rett(t - w_t(w) / 2, t + w_t(w) / 2, zt + 0.8, zt + 3.3) for t, w in centri]
+        piatte = [Polygon([(a.bounds[0] - 0.1, a.bounds[3]), (a.bounds[2] + 0.1, a.bounds[3]),
+                           (a.bounds[2] + 0.45, a.bounds[3] + 0.75), (a.bounds[0] - 0.45, a.bounds[3] + 0.75)])
+                  for a in archi]
+        fori = unary_union([a.buffer(0.12, join_style=2) for a in archi] + piatte +
+                           [f.buffer(0.1, join_style=2) for f in fin_s])
+        z, k = ZOCCOLO, 0
+        while z < FASCIA - 0.1:
+            corso = rett(t0, t1, z, min(FASCIA, z + 0.52)).difference(fori)
+            E.panel(S, RUSTICO, e, corso, 0.0, 0.08 + 0.03 * (k % 2))
+            z += 0.6
+            k += 1
+        for a, pb in zip(archi, piatte):
+            finestra(E, S, e, a, telaio=0.12, sporge=0.1)
+            E.panel(S, "#C2BCAC", e, pb, 0.0, 0.16)
+            cx, top = (a.bounds[0] + a.bounds[2]) / 2, a.bounds[3]
+            E.panel(S, STUCCO_CHIARO, e, Polygon([(cx - 0.2, top), (cx + 0.2, top),
+                                                  (cx + 0.3, top + 0.8), (cx - 0.3, top + 0.8)]), 0.0, 0.22)
+            E.panel(S, STUCCO_CHIARO, e, rett(a.bounds[0] - 0.2, a.bounds[2] + 0.2, a.bounds[1] - 0.15, a.bounds[1]), 0.0, 0.18)
+    else:
+        # terra bugnato, corsi da 55 cm interrotti dagli archi
+        archi = [arco(t - w_t(w) / 2, t + w_t(w) / 2, zt + 0.8, zt + 4.0) for t, w in centri]
+        fori = unary_union([a.buffer(0.2, join_style=2) for a in archi] + [f.buffer(0.1, join_style=2) for f in fin_s])
+        z = ZOCCOLO
+        while z < FASCIA - 0.1:
+            E.panel(S, BUGNATO, e, rett(t0, t1, z, min(FASCIA, z + 0.49)).difference(fori), 0.0, 0.06)
+            z += 0.55
+        for a in archi:
+            finestra(E, S, e, a)
+            cx, top = (a.bounds[0] + a.bounds[2]) / 2, a.bounds[3]
+            E.panel(S, STUCCO_CHIARO, e, Polygon([(cx - 0.18, top - 0.05), (cx + 0.18, top - 0.05),
+                                                  (cx + 0.24, top + 0.4), (cx - 0.24, top + 0.4)]), 0.0, 0.16)
     E.panel(S, STUCCO_CHIARO, e, rett(t0, t1, FASCIA, FASCIA + 0.4), 0.0, 0.22)
     # i registri sopra la fascia
     for k, (csip, z0, z1, forma) in enumerate(piani):
@@ -410,6 +449,50 @@ def _palazzo_tratto(E, S, b, pts, ie, e, t0, t1, z_top, piani, passo, colore, co
     for k in range(int((t1 - t0) / 0.9)):
         t = t0 + 0.45 + k * 0.9
         E.panel(S, STUCCO_CHIARO, e, rett(t - 0.1, t + 0.1, z_top - 1.05, z_top - 0.55), 0.0, cornice * 0.8)
+
+
+def aula_celoria(E, S, b, g, masse, nome, z_top, passo=4.0):
+    """L'aula sud su via Celoria, come nelle foto di Urbanfile (2022) dalla via e dal cantiere
+    della palazzina Lerici: un solo piano alto in finta pietra grigio-beige a bugne lisce,
+    zoccolo in granito con le grate del seminterrato, finestroni ad arco con l'archivolto e
+    le inferriate a disegno, la fascia dei davanzali, il cornicione con la gronda."""
+    for pts in anelli(g):
+        for e in E.edges(pts):
+            for t0, t1 in tratti_liberi(e, masse, z_top - 1.0, nome):
+                centri = campate(t0, t1, passo, bordo=1.6)
+                fin_s = [rett(t - 0.6, t + 0.6, 0.35, 1.0) for t in centri]
+                E.panel(S, PIETRA, e, rett(t0, t1, 0.0, ZOCCOLO).difference(unary_union(fin_s)), 0.0, 0.14)
+                for f in fin_s:
+                    E.panel(S, "#2A2E33", e, f, 0.0, 0.04)
+                    for k in range(1, 6):
+                        tt = f.bounds[0] + 1.2 * k / 6
+                        E.panel(S, FERRO, e, rett(tt - 0.02, tt + 0.02, 0.35, 1.0), 0.0, 0.1)
+                archi = [arco(t - 0.95, t + 0.95, 3.6, 8.2, seg=10) for t in centri]
+                volti = [a.buffer(0.32, join_style=1).difference(a).difference(rett(-99, 999, -9, 5.8)) for a in archi]
+                fori = unary_union([a.buffer(0.05) for a in archi] + volti)
+                # il muro a bugne lisce: corsi da 60 cm, giunti scuri (la massa sotto)
+                z = ZOCCOLO
+                while z < z_top - 1.3:
+                    E.panel(S, PIETRA_CELORIA, e, rett(t0, t1, z + 0.03, min(z_top - 1.3, z + 0.6) - 0.03).difference(fori), 0.0, 0.07)
+                    z += 0.6
+                E.panel(S, STUCCO_CHIARO, e, rett(t0, t1, 3.3, 3.6), 0.0, 0.16)      # i davanzali
+                for t, a, v in zip(centri, archi, volti):
+                    E.panel(S, "#3A4049", e, a, 0.0, 0.02)
+                    E.panel(S, STUCCO_CHIARO, e, v, 0.0, 0.12)
+                    E.panel(S, STUCCO_CHIARO, e, Polygon([(t - 0.2, 8.1), (t + 0.2, 8.1), (t + 0.28, 8.75), (t - 0.28, 8.75)]), 0.0, 0.18)
+                    # l'inferriata: bacchette ogni 18 cm, due traversi, la lunetta a raggi
+                    x0, _, x1, _ = a.bounds
+                    barre = [rett(x - 0.015, x + 0.015, 3.6, 8.2) for x in np.arange(x0 + 0.18, x1 - 0.1, 0.18)]
+                    barre += [rett(x0, x1, zz - 0.025, zz + 0.025) for zz in (4.4, 6.2, 7.25)]
+                    for i in range(1, 6):
+                        ang = math.pi * i / 6
+                        barre.append(LineString([(t, 7.25), (t + 0.95 * math.cos(ang), 7.25 + 0.95 * math.sin(ang))]).buffer(0.02))
+                    E.panel(S, FERRO, e, unary_union(barre).intersection(a), 0.0, 0.08)
+                # fregio e cornicione con la gronda
+                E.panel(S, STUCCO_CHIARO, e, rett(t0, t1, z_top - 1.3, z_top - 1.1), 0.0, 0.12)
+                E.panel(S, PIETRA_CELORIA, e, rett(t0, t1, z_top - 1.1, z_top - 0.6), 0.0, 0.05)
+                E.panel(S, STUCCO_CHIARO, e, rett(t0, t1, z_top - 0.6, z_top - 0.3), 0.0, 0.3)
+                E.panel(S, STUCCO_CHIARO, e, rett(t0, t1, z_top - 0.3, z_top), 0.0, 0.55)
 
 
 def porte_esterne(E, S, b, masse):
@@ -505,7 +588,7 @@ def guscio(b, E):
     masse = _masse(b)
     Q = QUOTE
     # le masse piene
-    colori = {"corpo": STUCCO, "padiglione": STUCCO, "terzo": GRIGIO, "sud": STUCCO, "bassi": STUCCO,
+    colori = {"corpo": STUCCO, "padiglione": STUCCO, "terzo": GRIGIO, "sud": GIUNTO, "bassi": STUCCO,
               "raccordo": INTONACO, "raccordo-basso": INTONACO, "capannone": INTONACO, "studio": INTONACO}
     for nome, (g, z) in masse.items():
         z0 = GRONDA - 0.3 if nome == "terzo" else 0.0
@@ -514,10 +597,10 @@ def guscio(b, E):
     # le facciate storiche
     palazzo(E, S, b, masse["corpo"][0], masse, "corpo", GRONDA,
             [("MIA0105001", Q["MIA0105001"] + 0.9, Q["MIA0105001"] + 3.8, "arco"),
-             ("MIA0105002", Q["MIA0105002"] + 0.9, Q["MIA0105002"] + 2.9, "retta")])
+             ("MIA0105002", Q["MIA0105002"] + 0.9, Q["MIA0105002"] + 2.9, "retta")], terra_fuori="retta")
     palazzo(E, S, b, masse["padiglione"][0], masse, "padiglione", GRONDA_PAD,
             [("MIA0105001", Q["MIA0105001"] + 1.2, Q["MIA0105001"] + 4.6, "arco")], passo=3.6)
-    palazzo(E, S, b, masse["sud"][0], masse, "sud", GRONDA_SUD, [], passo=4.2)
+    aula_celoria(E, S, b, masse["sud"][0], masse, "sud", GRONDA_SUD)
     palazzo(E, S, b, masse["bassi"][0], masse, "bassi", BASSI, [], passo=3.8)
     # il terzo piano: intonaco grigio, finestre rette della pianta
     terzo = masse["terzo"][0]
