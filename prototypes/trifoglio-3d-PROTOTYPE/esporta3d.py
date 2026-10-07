@@ -840,8 +840,10 @@ def profilo_parti(b):
 
 def profilato(b):
     """Gli edifici portati in 3D dalle fasce della mappa (`profilo`, `parti`), come le
-    disegna build-mappa.py, tranne il Trifoglio che ha il suo guscio."""
-    return b["csie"] in ARGS.edifici.split(",") and not dettagliato(b) and bool(b.get("parti") or b.get("profilo"))
+    disegna build-mappa.py, tranne il Trifoglio e gli edifici con un modulo edificio<numero>.py,
+    che hanno il loro guscio (niente patio, travi e pilastri neri dell'Edificio 11)."""
+    return (b["csie"] in ARGS.edifici.split(",") and not dettagliato(b) and b["csie"] not in GUSCI
+            and bool(b.get("parti") or b.get("profilo")))
 
 
 def quote_profilo(b):

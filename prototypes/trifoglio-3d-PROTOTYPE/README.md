@@ -41,7 +41,7 @@ Per rigenerarli, con il ramo della mappa estratto:
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201
+python3 esporta3d.py <checkout>/design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0111
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -211,3 +211,30 @@ nascosto finché non si entra.
 - Le alzate delle scale sono ricavate dal numero di pedate disegnate e dall'altezza del
   piano; le piante non le quotano. Le scale della torre vengono ripide (20 cm) perché la
   pianta disegna 9 pedate per rampa.
+
+## Edificio 9 (Giuseppe Bruni, MIA0111)
+
+L'esterno è in `edificio9.py` (stessa interfaccia dei moduli `edificio<numero>.py`): le ali in
+coppi a padiglione intorno al cortile ottagonale, l'aula a rombo a nord-ovest, il padiglione
+che sporge a nord, il blocco est intorno alla terrazza grigia, la Lista Aperta bassa a tetto
+piano, il corpo lungo a sud con la torretta, il lucernario e il tetto tondo della scala a
+chiocciola. Masse e tetti vengono dall'ortofoto (zoom 21); le facciate non hanno foto e
+seguono le altre ali di Brusconi, con le finestre dove le disegnano le piante, piano per piano.
+Va esportato col ramo della mappa che ha l'Edificio 9 ridisegnato (PR #13): la
+trasposizione di `piante()` parte dalle piante salvate lì.
+
+Le piante pubbliche dell'Edificio 9 non sono specchiate da nord a sud, come le prende la
+mappa (`specchio`), ma trasposte (x e y scambiate). `piante()` le traspone e sposta ogni
+piano perché le sue scale cadano su quelle del terra: così il cortile, il corpo sud e il
+rombo tornano sotto i tetti dell'ortofoto (il terra copre il contorno di OpenStreetMap al 71%,
+contro il 51% della pianta specchiata) e la chiocciola sotto il suo tetto tondo. La mappa e
+il canvas delle piante vanno corretti allo stesso modo.
+
+Le quote non sono quotate: il rialzato a 1,2 m (7-8 alzate nelle scale esterne), il primo a
+6,6 e il secondo a 11,2. Il secondo, nelle piante, c'è solo a nord, a est e nel corpo sud:
+l'ala ovest, il rombo e il corpo fra cortile e corpo sud hanno due piani. Le aule dalle foto
+del sito del Politecnico: la 9.0.1 nel rombo, cattedra a sud-est fra due porte nere, tre
+blocchi di sedute in legno chiaro sul pavimento rosso; sopra, la 9.1.2 con un corridoio in
+mezzo e due lungo i muri (il soffitto a volte della foto non c'è); la 9.0.2 con la cattedra a
+est; la 9.0.3 e la 9.0.4 piane, coi tavoli. La rampa a gradini che la pianta del terra
+disegna in diagonale nel cortile, sotto gli alberi, è tolta.
