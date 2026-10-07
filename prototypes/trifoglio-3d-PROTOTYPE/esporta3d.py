@@ -124,7 +124,8 @@ ALA = 1.1            # quanto salgono le punte delle ali del tetto
 GLASS, GLASS_DARK, FRAME_GREY, WHITE = "#8FA6BA", "#5C6E80", "#80868E", "#F4F5F7"
 BLOCK, METAL, ROOF, PLANT = "#D3DEE7", "#8E949B", "#F2F3F4", "#E3E6EB"
 PALE, DOOR, ENTRY, BASE = "#E9E6E0", "#2D3B4F", "#2B3644", "#C9CED6"
-TEX = {"mosaico": 1.0, "cemento": 1.5, "cubetti": 1.2, "piastrelle": 1.2}   # metri coperti da una ripetizione
+TEX = {"mosaico": 1.0, "cemento": 1.5, "cubetti": 1.2, "piastrelle": 1.2,   # metri coperti da una ripetizione
+       "asfalto": 3.0, "erba": 4.0}
 
 
 class Solidi:
@@ -252,6 +253,22 @@ def texture(name):
                 height[r * px:(r + 1) * px][:, xs] = h
         rgb[height == 0] = [0.78, 0.76, 0.71]
         strength = 2.0
+    elif name in ("asfalto", "erba"):
+        # Il suolo di esterni/esterni3d.py: l'asfalto grigio a grana fine con qualche
+        # chiazza, il prato a ciuffi chiari e scuri. Toni vicini, per non vedere la ripetizione.
+        size = 256
+        noise = Image.fromarray((rng.random((size, size)) * 255).astype(np.uint8))
+        fine = np.asarray(noise.filter(ImageFilter.GaussianBlur(0.6)), float) / 255
+        coarse = np.asarray(noise.filter(ImageFilter.GaussianBlur(10)), float) / 255
+        coarse = (coarse - coarse.mean()) / (coarse.std() or 1)
+        height = fine
+        if name == "asfalto":
+            base, amp = np.array([0.56, 0.58, 0.61]), 0.10 * (fine - 0.5) + 0.025 * coarse
+            strength = 3.0
+        else:
+            base, amp = np.array([0.66, 0.82, 0.58]), 0.16 * (fine - 0.5) + 0.04 * coarse
+            strength = 2.0
+        rgb = base[None, None] * (1 + amp)[..., None]
     else:
         size = 256
         noise = Image.fromarray((rng.random((size, size)) * 255).astype(np.uint8))
@@ -1091,8 +1108,28 @@ def campus(c, altri=()):
     """altri: gli edifici di altri file nello stesso frame (bassini.json), solo con il loro
     esterno: il suolo e il contesto restano quelli di leonardo.json."""
     sc = Scena("Campus")
-    terr = sc.gruppo("Terreno", "Campus")
     ed = sc.gruppo("Edifici", "Campus")
+    zona = pathlib.Path(__file__).resolve().parent / "esterni" / "zona.json"
+    if zona.exists():
+        # il suolo di tutta la zona (strade, marciapiedi, verde, alberi, la città intorno):
+        # esterni/esterni3d.py; dentro l'isolato del Giuriati i campi sono in giuriati.usdz
+        import importlib.util          # giuriati/ ha un altro esterni3d.py: lo si carica per percorso
+        spec = importlib.util.spec_from_file_location("esterni_zona", zona.parent / "esterni3d.py")
+        esterni3d = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(esterni3d)
+        gj = zona.parent.parent / "giuriati" / "giuriati.json"
+        escludi = box(*json.loads(gj.read_text())["isolato"]) if gj.exists() else None
+        esterni3d.terreno(sys.modules[__name__], sc, "Campus", json.loads(zona.read_text()), escludi,
+                          [ring(b["pianta"]) for b in list(c["edifici"]) + list(altri)])
+    else:
+        terreno_leonardo(sc, c)
+    edifici_campus(sc, ed, c, altri)
+    return sc
+
+
+def terreno_leonardo(sc, c):
+    """Il suolo di prima, solo dal contesto di leonardo.json, se esterni/zona.json non c'è."""
+    terr = sc.gruppo("Terreno", "Campus")
     xs = [p[0] for b in c["edifici"] for p in b["pianta"]]
     ys = [p[1] for b in c["edifici"] for p in b["pianta"]]
     box = Polygon([(min(xs) - 80, min(ys) - 80), (max(xs) + 80, min(ys) - 80),
@@ -1119,6 +1156,9 @@ def campus(c, altri=()):
         m.apply_transform(YUP)
         m.invert() if m.volume < 0 else None
         sc.mesh(name, terr, colour(m, hex_))
+
+
+def edifici_campus(sc, ed, c, altri):
     for b in c["edifici"]:
         if b["csie"].startswith("osm-"):
             g = sc.gruppo(b["csie"].replace("-", "_"), ed)
@@ -1136,7 +1176,6 @@ def campus(c, altri=()):
         g = sc.gruppo(b["csie"], ed)
         for key, m in (esterno(b) or ({}, 0))[0].items():
             sc.mesh(f"{b['csie']}_Esterno_{key.lstrip('#')}", g, m)
-    return sc
 
 
 # ---------------------------------------------------------------- piani

@@ -8,7 +8,8 @@ Si apre in Xcode: `PoliVerse/Features/Map/Campus3D/Trifoglio3DView.swift`, previ
 
 ## Il percorso
 
-1. **Campus:** tutti i volumi degli edifici, verde, strade, percorsi e alberi.
+1. **Campus:** tutti i volumi degli edifici e la zona intorno: strade, marciapiedi, verde,
+   alberi e la città (vedi `esterni/README.md`).
 2. **Edificio:** gli altri edifici si fanno trasparenti, la camera vola sul Trifoglio.
 3. **Piano:** l'involucro sparisce, i piani sopra salgono e svaniscono, quelli sotto restano
    in trasparenza.
@@ -29,7 +30,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 
 | File | Cosa contiene |
 |---|---|
-| `campus.usdz` | terreno, alberi, volumi di tutti gli edifici sotto `Campus/Edifici/<csie>` |
+| `campus.usdz` | volumi di tutti gli edifici sotto `Campus/Edifici/<csie>`; il suolo della zona sotto `Campus/Terreno`, gli alberi sotto `Campus/Alberi` (`Chiome`, `Tronchi`), lampioni e panchine sotto `Campus/Arredi`, la città intorno sotto `Campus/Quartiere` (da `esterni/zona.json`) |
 | `MIA0203.usdz` | i piani del Trifoglio: `MIA0203/Piani/<csip>` con soletta, muri tagliati a 1,5 m, locali e arredi (`<csip>_Arredi`); ogni aula è un nodo chiamato con il suo `csiv` |
 | `MIA0203.json` | piani, quote e aule (sigla, posti) per l'interfaccia |
 | `MIA0201.usdz`, `MIA0201.json` | lo stesso per l'Edificio 11 |
@@ -67,7 +68,7 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0205.usdz`, `MIA0205.json` | lo stesso per l'Edificio 14 (Nave) (da `leonardo.json`) |
 | `MIA0212.usdz`, `MIA0212.json` | lo stesso per l'Edificio 16B (da `leonardo.json`) |
 | `MIA0215.usdz`, `MIA0215.json` | lo stesso per l'Edificio 16C, sotto la piazza della Nave (da `leonardo.json`) |
-| `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py` (vedi `giuriati/README.md`) |
+| `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py --zona` (vedi `giuriati/README.md`): con la zona ci restano i campi, la pista, le recinzioni e le impronte |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
 trova il nodo da accendere senza tabelle in più.
@@ -80,6 +81,10 @@ python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifogl
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
+
+Il suolo viene da `esterni/zona.json` (strade, verde e alberi di OpenStreetMap per tutta la
+zona, si aggiorna con `esterni/importa.py`); se il file manca, `campus.usdz` torna al
+contesto di `leonardo.json`.
 
 `--edifici` va dato sempre con tutti gli edifici modellati: un guscio proprio entra anche in
 `campus.usdz` solo se il suo edificio è nell'elenco, altrimenti lì resta l'estrusione.

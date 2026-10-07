@@ -22,7 +22,10 @@ A = argparse.ArgumentParser()
 A.add_argument("dati", type=pathlib.Path)
 A.add_argument("uscita", type=pathlib.Path)
 A.add_argument("--png", action="store_true")
+A.add_argument("--glb", action="store_true", help="anche giuriati.glb, per un visore web")
 A.add_argument("--leonardo", type=pathlib.Path, help="leonardo.json: il suolo non copre quello di campus.usdz")
+A.add_argument("--zona", type=pathlib.Path, help="esterni/zona.json: suolo, strade, verde, alberi e arredi sono "
+               "già in campus.usdz, qui restano lo sport, le recinzioni e le impronte")
 A = A.parse_args()
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
@@ -116,20 +119,22 @@ def main():
     arredi = sc.gruppo("Arredi", "Giuriati")
     edifici = sc.gruppo("Edifici", "Giuriati")
 
+    zona = A.zona and A.zona.exists()
     suolo = area
     if A.leonardo:                    # lo stesso riquadro che campus() in esporta3d.py dà al suo suolo
         c = json.loads(A.leonardo.read_text())
         xs = [p[0] for b in c["edifici"] for p in b["pianta"]]
         ys = [p[1] for b in c["edifici"] for p in b["pianta"]]
         suolo = area.difference(box(min(xs) - 80, min(ys) - 80, max(xs) + 80, max(ys) + 80))
-    sc.mesh("Suolo", terr, lastra(suolo, -0.4, 0.0, "terreno"))
     strade = unary_union([LineString(s["punti"]).buffer(s["larghezza"] / 2, cap_style=2)
                           for s in d["strade"]]).intersection(area)
-    sc.mesh("Strade", terr, lastra(strade, 0.0, 0.05, "strada"))
-    pav = unary_union([P(p["pianta"]) for p in d["pavimentate"]]).intersection(area).difference(strade)
-    sc.mesh("Pavimentate", terr, lastra(pav, 0.0, 0.03, "pavimentato"))
-    park = unary_union([P(p) for p in d["parcheggi"]]).intersection(area).difference(strade)
-    sc.mesh("Parcheggi", terr, lastra(park, 0.0, 0.035, "parcheggio"))
+    if not zona:
+        sc.mesh("Suolo", terr, lastra(suolo, -0.4, 0.0, "terreno"))
+        sc.mesh("Strade", terr, lastra(strade, 0.0, 0.05, "strada"))
+        pav = unary_union([P(p["pianta"]) for p in d["pavimentate"]]).intersection(area).difference(strade)
+        sc.mesh("Pavimentate", terr, lastra(pav, 0.0, 0.03, "pavimentato"))
+        park = unary_union([P(p) for p in d["parcheggi"]]).intersection(area).difference(strade)
+        sc.mesh("Parcheggi", terr, lastra(park, 0.0, 0.035, "parcheggio"))
 
     # i campi e la pista stanno sopra il verde; il verde non ci passa sotto
     campi = [(c, P(c["pianta"])) for c in d["campi"]]
@@ -138,16 +143,19 @@ def main():
     occupato = unary_union([g for _, g in campi] + [g for _, g in piste])
 
     verde = unary_union([P(v["pianta"]) for v in d["verde"]]).intersection(area)
+    if zona:                          # il verde è in campus.usdz; qui solo il prato dentro la pista
+        verde = Polygon()
     # il prato dentro l'anello della pista, fuori dal campo da rugby
     for p, g in piste:
         for h in p.get("buchi", []):
             verde = verde.union(P(h))
     sc.mesh("Prati", verde_g, lastra(verde.difference(occupato).difference(strade), 0.0, 0.04, "verde"))
-    boschi = unary_union([P(b["pianta"]) for b in d["boschi"]]).intersection(area)
-    sc.mesh("Boschi", verde_g, lastra(boschi.difference(strade), 0.0, 0.045, "bosco"))
-    perc = unary_union([LineString(p if isinstance(p, list) else p["punti"]).buffer(1.2)
-                        for p in d["percorsi"] if len(p if isinstance(p, list) else p["punti"]) > 1])
-    sc.mesh("Percorsi", terr, lastra(perc.intersection(area).difference(strade).difference(occupato), 0.0, 0.06, "percorso"))
+    if not zona:
+        boschi = unary_union([P(b["pianta"]) for b in d["boschi"]]).intersection(area)
+        sc.mesh("Boschi", verde_g, lastra(boschi.difference(strade), 0.0, 0.045, "bosco"))
+        perc = unary_union([LineString(p if isinstance(p, list) else p["punti"]).buffer(1.2)
+                            for p in d["percorsi"] if len(p if isinstance(p, list) else p["punti"]) > 1])
+        sc.mesh("Percorsi", terr, lastra(perc.intersection(area).difference(strade).difference(occupato), 0.0, 0.06, "percorso"))
 
     for i, (p, g) in enumerate(piste):
         nome = f"Pista_{i}_{p.get('sport') or 'pista'}"
@@ -194,7 +202,9 @@ def main():
             oggetti(sc, sport, nome + "_Pilastri", pil, COL["palo"])
             sc.mesh(nome + "_Copertura", sport, lastra(g.buffer(0.5), 7.0, 7.25, "tetto"))
 
-    # alberi: quelli isolati e i filari, un albero ogni 7 m
+    # alberi: quelli isolati e i filari, un albero ogni 7 m (con --zona sono in campus.usdz)
+    if zona:
+        d["alberi"], d["filari"], d["lampioni"], d["panchine"] = [], [], [], []
     alberi(sc, verde_g, d["alberi"], "Alberi")
     fil = []
     for f in d["filari"]:
@@ -239,6 +249,8 @@ def main():
 
     A.uscita.mkdir(parents=True, exist_ok=True)
     E.usdz(sc, A.uscita / "giuriati.usdz")
+    if A.glb:
+        sc.s.export(A.uscita / "giuriati.glb")
     print("giuriati.usdz", sum(1 for _ in sc.s.geometry), "mesh")
     if A.png:
         disegna(d, A.uscita / "giuriati.png")
