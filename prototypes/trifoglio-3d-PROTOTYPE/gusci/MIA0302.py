@@ -11,8 +11,11 @@ secondo):
 - le piante: le finestre su tutti i lati, la scala di sicurezza esterna sulla testata est. La
   grande sala del seminterrato verso via Ponzio sta sotto il cortile, e non esce.
 
-Nessuna foto delle facciate: intonaco chiaro con le finestre delle piante, piani da 3,4 m. Il
-corpo nord è solo un volume, alto due piani, senza finestre disegnate.
+- le foto di via Ponzio (Urbanfile, gennaio 2020, col numero 19 sul cancello): la stecca in
+  klinker marrone chiaro, le finestre coi telai bianchi e i pannelli bordeaux sotto quelle del
+  terra e del primo, il cornicione sottile.
+
+Piani da 3,4 m. Il corpo nord è solo un volume, alto due piani, senza finestre disegnate.
 """
 import sys
 import pathlib
@@ -27,9 +30,10 @@ QUOTE = {"MIA030201I": -7.4, "MIA030200S": -3.8, "MIA0302000": 0.0, "MIA0302001"
 TETTO = 3 * H
 STECCA = box(227.3, 126.4, 264.9, 145.0)
 
-INTONACO = "#E2DED4"
-TELAIO = "#4A4F55"
-NORD = "#BDB6A8"
+KLINKER = "kit_klinker"
+TELAIO = "#E2E2DE"
+BORDEAUX = "#7B3238"       # i pannelli sotto le finestre
+NORD = "#9C8574"
 
 
 def quote(b, E):
@@ -46,14 +50,15 @@ def piante(b, geo, aule, E):
 
 def guscio(b, E):
     k = K.Kit(E, CSIE)
-    st = K.Stile(muro=INTONACO, davanzale=0.9, architrave=2.7, telaio=TELAIO, sguincio=0.15, reach=1.5, ripiego=(2.7, 1.4, 12.0),
-                 marcapiano=(0.3, 0.05, "#CBC7BD"))
+    st = K.Stile(muro=KLINKER, davanzale=0.9, architrave=2.7, telaio=TELAIO, sguincio=0.12, reach=1.5, ripiego=(2.7, 1.4, 12.0),
+                 sottofinestra=BORDEAUX)
     corpo = k.squadra(k.contorno("MIA0302001", chiudi=0.6).intersection(STECCA.buffer(0.5, join_style=2)))
     corpo = max(k.pezzi(corpo), key=lambda g: g.area)
     for i, csip in enumerate(("MIA0302000", "MIA0302001", "MIA0302002")):
-        k.piano(corpo, i * H, (i + 1) * H, st.con(davanzale=0.5) if i == 0 else st, csip=csip, porte=i == 0)
+        k.piano(corpo, i * H, (i + 1) * H, st.con(davanzale=0.5) if i == 0 else st if i == 1 else st.con(sottofinestra=None),
+                csip=csip, porte=i == 0)
     # il tetto bianco a padiglione, quasi piano
-    k.falde(corpo.minimum_rotated_rectangle, TETTO, pendenza=0.12, sporto=0.4, colore="#E6E6E2", gronda="#CFCFCA")
+    k.falde(corpo.minimum_rotated_rectangle, TETTO, pendenza=0.12, sporto=0.4, colore="#E6E6E2", gronda="#8E7867")
     # il corpo basso a nord, dalla sagoma di OSM
     nord = Polygon(b["pianta"]).difference(corpo.buffer(0.3, join_style=2))
     for q in k.pezzi(nord, 20):

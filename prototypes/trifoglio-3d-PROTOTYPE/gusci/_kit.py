@@ -63,12 +63,12 @@ def verso(e):
 # ---------------------------------------------------------------- texture
 
 TEXTURE = {"kit_bugnato_grigio": 1.0, "kit_mattone": 0.5, "kit_coppi": 0.8, "kit_pv": 1.0,
-           "kit_lamiera": 1.0, "kit_klinker": 0.6}
+           "kit_lamiera": 1.0, "kit_klinker": 0.6, "kit_klinker_scuro": 0.6}
 
 
 def _texture(name):
     """(colore, normali) PIL generate: bugnato grigio (corsi da 50 cm), mattoni a vista
-    (25 x 6,5 cm), coppi, pannelli fotovoltaici, lamiera grecata, klinker."""
+    (25 x 6,5 cm), coppi, pannelli fotovoltaici, lamiera grecata, klinker (anche testa di moro)."""
     from PIL import Image
     rng = np.random.default_rng(7)
     size = 256
@@ -81,17 +81,19 @@ def _texture(name):
         height = np.clip(d / 0.03, 0, 1)
         rgb = np.array([0.66, 0.66, 0.64])[None, None] * (0.7 + 0.3 * height + rng.normal(0, 0.03, (size, size)))[..., None]
         strength = 5.0
-    elif name in ("kit_mattone", "kit_klinker"):
+    elif name in ("kit_mattone", "kit_klinker", "kit_klinker_scuro"):
         rows = 7 if name == "kit_mattone" else 8          # 0,5 m: 7 corsi da 7 cm
         cols = 2 if name == "kit_mattone" else 2.4
         course = np.floor(y * rows)
         xs = (x * cols + 0.5 * (course % 2)) % 1.0
         joint = (np.minimum((y * rows) % 1, 1 - (y * rows) % 1) < 0.08) | (np.minimum(xs, 1 - xs) < 0.03)
         k = (np.floor(x * cols + 0.5 * (course % 2)) + 7 * course).astype(int)
-        base = np.array([0.62, 0.33, 0.24]) if name == "kit_mattone" else np.array([0.55, 0.36, 0.28])
+        base = {"kit_mattone": [0.62, 0.33, 0.24], "kit_klinker": [0.55, 0.36, 0.28],
+                "kit_klinker_scuro": [0.30, 0.20, 0.17]}[name]
+        base = np.array(base)
         tone = rng.normal(0, 0.06, 64)[k % 64]
         rgb = base[None, None] * (0.95 + tone)[..., None]
-        rgb[joint] = [0.72, 0.70, 0.66]
+        rgb[joint] = [0.72, 0.70, 0.66] if name != "kit_klinker_scuro" else [0.36, 0.30, 0.27]
         height = np.where(joint, 0.0, 1.0)
         strength = 3.0
     elif name == "kit_coppi":
@@ -147,18 +149,22 @@ class Stile:
     ripiego    (passo, larghezza, lato minimo): finestre a passo regolare sui lati lunghi
                dove la pianta non ne disegna
     tende      colore delle tende da sole avvolte sopra le finestre (None: niente)
+    sottofinestra  colore di un pannello sotto ogni finestra, dal pavimento al davanzale
+    frangisole (sporgenza, colore) di una lama orizzontale sopra ogni finestra
     passo_montanti  per 'nastro' e 'vetrata'
     """
 
     def __init__(self, muro="#D8D4CC", finestre="pianta", davanzale=0.9, architrave=2.7,
                  telaio=TELAIO, vetro=VETRO, sguincio=0.18, cornice=None, marcapiano=None,
-                 tende=None, passo_montanti=1.5, minima=0.6, montante=1.4, reach=1.2, lesene=None, ripiego=None):
+                 tende=None, passo_montanti=1.5, minima=0.6, montante=1.4, reach=1.2, lesene=None, ripiego=None,
+                 sottofinestra=None, frangisole=None):
         self.muro, self.finestre, self.davanzale, self.architrave = muro, finestre, davanzale, architrave
         self.telaio, self.vetro, self.sguincio, self.cornice = telaio, vetro, sguincio, cornice
         self.marcapiano, self.tende, self.passo_montanti = marcapiano, tende, passo_montanti
         self.minima, self.montante, self.reach = minima, montante, reach
         self.lesene = lesene
         self.ripiego = ripiego
+        self.sottofinestra, self.frangisole = sottofinestra, frangisole
 
     def con(self, **kw):
         s = Stile.__new__(Stile)
@@ -284,6 +290,12 @@ class Kit:
             P(S.cornice, e, rett(t0 - 0.14, t1 + 0.14, z0 - 0.05, z1 + 0.14).difference(rett(t0, t1, z0, z1)), 0.0, 0.05)
         if S.tende:
             P(S.tende, e, rett(t0 - 0.05, t1 + 0.05, z1 - 0.22, z1), 0.0, 0.18)
+        z = getattr(self, "_zpiano", 0)
+        if getattr(S, "sottofinestra", None) and z0 > z + 0.3:
+            P(S.sottofinestra, e, rett(t0, t1, z + 0.1, z0 - 0.05), 0.06, 0.09)
+        if getattr(S, "frangisole", None):
+            sp, col = S.frangisole
+            P(col, e, rett(t0 - 0.15, t1 + 0.15, z1 + 0.12, z1 + 0.2), 0.0, sp)
 
     def nastro(self, e, t0, t1, z0, z1, st):
         P = self.pannello

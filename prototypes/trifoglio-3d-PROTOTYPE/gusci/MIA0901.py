@@ -11,8 +11,13 @@ Fonti, oltre alle piante del Politecnico (seminterrato e sette piani, dal terra 
   è regolare): i tetti piani, scuri sulla manica ovest con un lungo lucernario, chiari sul
   corpo di mezzo con gli impianti.
 
-Nessuna foto delle facciate: intonaco caldo con le finestre delle piante, il terra da 3,8 m e i
-piani delle camere da 2,95 m, per stare nei 20,5 m di OSM.
+- le foto dell'angolo su viale Romagna (Wikimedia Commons, "Milano casa dello Studente", e la
+  cartolina del 1934 ripresa da Urbanfile): il terra in granito grigio con la scritta, dal primo
+  al quarto il mattone rosso a vista con un marcapiano in pietra sopra il secondo, il quinto
+  in pietra chiara sotto il cornicione, il sesto arretrato intonacato in ocra; telai bianchi.
+
+Le finestre sono quelle delle piante: il terra da 3,8 m e i piani delle camere da 2,95 m, per
+stare nei 20,5 m di OSM.
 """
 import sys
 import pathlib
@@ -27,8 +32,12 @@ T0, H = 3.8, 2.95
 QUOTE = {"MIA090100S": -3.4, **{c: (0.0 if i == 0 else round(T0 + (i - 1) * H, 2)) for i, c in enumerate(PIANI)}}
 TETTO = round(T0 + 6 * H, 2)
 
-INTONACO = "#D9CBB2"
-TELAIO = "#4D4740"
+GRANITO = "#A9A69F"        # il terra, con la scritta
+MATTONE = "kit_mattone"    # dal primo al quarto
+PIETRA = "#CBC8C0"         # il quinto e il cornicione
+OCRA = "#D6A15F"           # il sesto, arretrato
+TELAIO = "#E4E1DA"         # i telai bianchi delle camere
+MURI = [GRANITO, MATTONE, MATTONE, MATTONE, MATTONE, PIETRA, OCRA]
 
 
 def quote(b, E):
@@ -45,8 +54,8 @@ def piante(b, geo, aule, E):
 
 def guscio(b, E):
     k = K.Kit(E, CSIE)
-    st = K.Stile(muro=INTONACO, davanzale=0.9, architrave=2.3, telaio=TELAIO, sguincio=0.15, reach=1.4,
-                 ripiego=(2.8, 1.1, 12.0), marcapiano=(0.25, 0.05, "#C7B89E"))
+    st = K.Stile(davanzale=0.9, architrave=2.3, telaio=TELAIO, sguincio=0.15, reach=1.4,
+                 ripiego=(2.8, 1.1, 12.0))
     corpi = []
     for csip in PIANI:
         g = unary_union([q for q in k.pezzi(k.contorno(csip, chiudi=0.8), 25.0)]).simplify(0.35)
@@ -54,14 +63,17 @@ def guscio(b, E):
     for i, (csip, g) in enumerate(zip(PIANI, corpi)):
         z0 = QUOTE[csip]
         z1 = T0 if i == 0 else z0 + H
-        stile = st.con(davanzale=0.5, architrave=3.0) if i == 0 else st
+        stile = st.con(muro=MURI[i], telaio="#4D4740", davanzale=0.5, architrave=3.0) if i == 0 else st.con(muro=MURI[i])
+        if i in (1, 3, 5):         # la fascia della scritta, il marcapiano, l'attacco del quinto
+            stile = stile.con(marcapiano=(0.35 if i == 1 else 0.25, 0.08, PIETRA))
         k.piano(g, z0, z1, stile, csip=csip, porte=i == 0)
         # il tetto di quello che il piano sopra non copre
         sopra = corpi[i + 1].buffer(0.2, join_style=2) if i + 1 < len(corpi) else None
         resto = g.difference(sopra) if sopra is not None else g
         for q in k.pezzi(resto, 6.0):
             alto = i + 1 == len(corpi)
-            k.tetto_piano(q, z1, parapetto=0.9 if alto else 1.0, muro=INTONACO, colore="#5B5F62" if alto else K.GUAINA)
+            k.tetto_piano(q, z1, parapetto=0.9 if alto else 1.0, muro=OCRA if alto else PIETRA if i == 5 else MURI[i],
+                          colore="#5B5F62" if alto else K.GUAINA)
     # gli impianti sul tetto del corpo di mezzo
     k.impianto(-278.0, 340.0, 2.2, 1.6, QUOTE["MIA0901006"] + 0.1, h=1.2)
     k.impianto(-275.0, 346.0, 2.2, 1.6, QUOTE["MIA0901006"] + 0.1, h=1.2)

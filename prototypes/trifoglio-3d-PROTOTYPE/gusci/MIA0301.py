@@ -9,7 +9,11 @@ Fonti, oltre alle piante del Politecnico (seminterrato, terra, primo, secondo, t
   bianco con due lunghe file di pannelli fotovoltaici, la testata est più bassa e scura con
   gli impianti, la torre delle scale col tetto a piramide.
 
-Nessuna foto delle facciate: intonaco chiaro con le finestre delle piante, piani da 4,5 m.
+- le foto di via Ponzio e via Bassini (Urbanfile, gennaio 2020 e giugno 2025, col numero 20
+  all'ingresso): la pelle di pannelli bianchi, le finestre a coppie con un pannello grigio
+  scuro sotto e una lama frangisole sopra, il terra più scuro.
+
+Piani da 4,5 m.
 """
 import sys
 import pathlib
@@ -24,8 +28,10 @@ QUOTE = {"MIA030100S": -4.0, "MIA0301000": 0.0, "MIA0301001": 4.5, "MIA0301002":
 TETTO = 18.0
 EST = 377.0                    # da qui la testata est, coi tetti scuri degli impianti
 
-INTONACO = "#E3E1DB"
-TELAIO = "#5A6066"
+INTONACO = "#E5E6E4"       # i pannelli bianchi
+TERRA = "#B4B8BC"
+SOTTO = "#7E8389"          # il pannello sotto le finestre
+TELAIO = "#4E545A"
 
 
 def quote(b, E):
@@ -43,14 +49,14 @@ def piante(b, geo, aule, E):
 def guscio(b, E):
     k = K.Kit(E, CSIE)
     st = K.Stile(muro=INTONACO, davanzale=0.95, architrave=3.0, telaio=TELAIO, sguincio=0.15, reach=1.5, ripiego=(2.7, 1.4, 15.0),
-                 marcapiano=(0.3, 0.05, "#CFCDC6"))
+                 sottofinestra=SOTTO, frangisole=(0.6, "#C8CBCE"))
     vetro = K.Stile(muro=INTONACO, finestre="vetrata", telaio=TELAIO, vetro=K.VETRO_CHIARO, passo_montanti=1.2, architrave=99)
     for csip in ("MIA0301000", "MIA0301001", "MIA0301002", "MIA0301003"):
         tutto = k.contorno(csip, chiudi=0.4)
         corpo = k.squadra(tutto.intersection(box(0, 134.6, 1000, 200)), passo=0.5)
         torre = max(k.pezzi(tutto.difference(box(0, 134.8, 1000, 200)).buffer(-0.6, join_style=2).buffer(0.6, join_style=2)), key=lambda g: g.area)
         z0 = QUOTE[csip]
-        k.piano(corpo, z0, z0 + H, st.con(davanzale=0.4) if csip.endswith("000") else st, csip=csip, porte=csip.endswith("000"))
+        k.piano(corpo, z0, z0 + H, st.con(davanzale=0.4, muro=TERRA, sottofinestra=None, frangisole=None) if csip.endswith("000") else st, csip=csip, porte=csip.endswith("000"))
         # la torre delle scale: i lati liberi vetrati, a tutta altezza
         k.piano(torre.simplify(0.3), z0, z0 + H, vetro)
     k.tetto_piano(corpo, TETTO, parapetto=1.0, muro=INTONACO, colore="#E8E8E4")
