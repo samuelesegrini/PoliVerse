@@ -9,7 +9,7 @@ Fonti, oltre alle piante del Politecnico (piante/MIA0314-geometria.json):
 - le foto Urbanfile (18 dicembre 2025 e 12 gennaio 2026) e quelle del Politecnico
   (inaugurazione): pannelli neri in fasce di un piano con la piega in basso, finestre a
   feritoia sfalsate sul fronte nord come nelle piante, il terra tutto vetrato; i connettori
-  vetrati dal primo al quinto piano verso il largo Volontari del Sangue e verso i cortili,
+  vetrati dal primo al quarto piano (al quinto la terrazza con la ringhiera) verso il largo Volontari del Sangue e verso i cortili,
   al terra il portale nero con i cancelli a lamelle, in cima la fascia grigia con la
   scritta; le testate sud delle ali chiuse da frangisole orizzontali che salgono oltre il
   tetto; sui lati delle ali il quinto piano (gli impianti, nelle piante una sala unica con i
@@ -40,8 +40,18 @@ Z_S, Z_0, Z_1 = -4.4, 0.0, 4.8
 H = 4.4
 QUOTE = {"MIA031400S": Z_S, "MIA0314000": Z_0, **{f"MIA031400{k}": round(Z_1 + H * (k - 1), 2) for k in range(1, 6)}}
 TETTO = round(Z_1 + H * 5, 2)        # 26,8 m: il solaio del tetto
-TETTO_CONN = TETTO + 1.0             # il tetto dei connettori, sopra la fascia grigia
-CORONA = TETTO + 2.0                 # i corpi neri salgono di una fascia piena oltre il quinto
+Z_5 = QUOTE["MIA0314005"]
+# I connettori hanno quattro piani vetrati sopra il portale (foto da nord e dal cortile): al
+# quinto c'è una terrazza con la ringhiera su entrambi i fronti e, arretrato di 3 m, un volume
+# basso col lucernario, che da terra non si vede (nella foto zenitale è la fascia chiara).
+CONN_ARRETRA = 3.0
+TETTO_CONN = Z_5 + 3.4
+# I blocchi nord finiscono poco sopra il quinto piano (foto da nord: 0,8 m di pannello), le ali
+# salgono più in alto con la corona a frangisole e le strisce di impianti (foto zenitale e dai
+# cortili): fra blocco e ala resta il gradino col lucernario dell'atrio.
+CORONA_N = TETTO + 0.4
+PARAPETTO_N = CORONA_N + 0.4
+CORONA = TETTO + 2.0
 PARAPETTO = CORONA + 0.5
 SCHERMO = CORONA + 1.0               # le strisce di impianti sulle ali, chiuse dai frangisole
 
@@ -131,6 +141,10 @@ def lato_ala(e):
     return abs(e[3][0]) > 0.9 and y > Y_ALI
 
 
+def _conn():
+    return unary_union([box(x0 + 0.05, 70.0, x1 - 0.05, Y_CONN) for x0, x1 in CONNETTORI])
+
+
 def finestre(geo, csip, e, reach=0.9):
     """Gli intervalli [t0, t1] delle finestre della pianta su questo lato: i telai disegnati
     paralleli al lato, entro reach dal suo filo."""
@@ -215,7 +229,7 @@ def portale(E, S, e, z0, z1):
     lamelle in quelli laterali, la porta vetrata in mezzo, la fascia nera sopra."""
     a, c, u, n, L, _ = e
     zv = z0 + 3.4
-    larghi = [(0.20, 0.38), (0.42, 0.58), (0.62, 0.80)]
+    larghi = [(0.07, 0.22), (0.36, 0.64), (0.78, 0.93)]
     varchi = [(L * p, L * q) for p, q in larghi]
     pieno = rett(0.0, L, z0, z1).difference(unary_union([rett(t0, t1, z0, zv) for t0, t1 in varchi]))
     E.panel(S, NERO, e, pieno, 0.0, 0.25)
@@ -242,10 +256,12 @@ def _piano(E, S, geo, csip, z0, z1, ultimo):
         corpo = [_chiuso(p) for p in _contorni(geo, "MIA0314004")]
     if not terra:              # il ponte verso l'Edificio 21 si disegna a parte (guscio)
         corpo = [max(E.clean(p.difference(PONTE)), key=lambda q: q.area) for p in corpo]
+    if ultimo:                 # al quinto i connettori sono terrazze (_connettori_quinto)
+        corpo = E.clean(corpo[0].difference(_conn()))
     for k, poly in enumerate(corpo):
         pts = E.ring_ccw(poly)
         E.prisma(S, FUGA if not terra else TELAIO, pts, z0, z1)
-        if k > 0:
+        if k > 0 and not ultimo:
             continue          # il ponte verso l'Edificio 21 al primo piano, a parte sotto
         for e in E.edges(pts):
             a, c, u, n, L, _ = e
@@ -253,6 +269,9 @@ def _piano(E, S, geo, csip, z0, z1, ultimo):
             if terra:
                 if connettore(e):
                     portale(E, S, e, z0, z1)
+                elif testata(e):
+                    # i frangisole delle testate scendono fino a terra (foto dai cortili)
+                    lamelle(E, S, e, 0.0, L, z0, z1)
                 elif x < 323.5 and 82.0 < y < 91.0:          # il vano dell'ascensore a ovest
                     pannelli(E, S, e, z0, z1, [])
                 elif x > 421.3:                                    # l'annesso basso a est
@@ -277,21 +296,22 @@ def _piano(E, S, geo, csip, z0, z1, ultimo):
                 continue
             fin = [] if ultimo and lato_ala(e) else finestre(geo, csip, e)
             buchi = [(t0, t1, z0 + 0.55, z0 + 3.75) for t0, t1 in fin]
-            pannelli(E, S, e, z0, z1, buchi)
+            # sul fronte nord i pannelli sono larghi quanto lo spazio fra due feritoie (foto)
+            pannelli(E, S, e, z0, z1, buchi, passo=2.8 if n[1] < -0.9 and y < Y_ALI else 1.5)
             for t0, t1, zz0, zz1 in buchi:
                 finestra(E, S, e, t0, t1, zz0, zz1)
     return corpo
 
 
 def _tetto(E, S, geo):
-    """Sopra il quinto piano (foto dal drone, da nord e zenitale): i tre corpi neri salgono
-    ancora di una fascia piena, la corona degli impianti, mentre i connettori finiscono più
-    in basso con una fascia grigia (la scritta del dipartimento) e il tetto col lucernario.
+    """Sopra il quinto piano (foto dal drone, da nord e zenitale): i blocchi nord finiscono
+    con un parapetto basso, le ali salgono ancora di una fascia piena, la corona degli
+    impianti; i connettori si fermano al quarto con la terrazza (_connettori_quinto).
     Sulle ali la corona è a frangisole sui lati, e sopra stanno due strisce di impianti
     chiuse dalle lamelle, coperte di fotovoltaico; in mezzo il fotovoltaico e, verso nord,
     il lucernario dell'atrio."""
     poly = _chiuso(_contorni(geo, "MIA0314004")[0])
-    conn = unary_union([box(x0 + 0.05, 70.0, x1 - 0.05, Y_CONN) for x0, x1 in CONNETTORI])
+    conn = _conn()
     # il vano scala vetrato a est finisce col quinto piano, con la ringhiera (foto da sud-est)
     scala = poly.intersection(SCALA_EST)
     for q in E.clean(scala):
@@ -304,43 +324,32 @@ def _tetto(E, S, geo):
                 pp = (a_[0] + (c_[0] - a_[0]) * f, a_[1] + (c_[1] - a_[1]) * f)
                 E.trave(S, TELAIO, (*pp, TETTO + 0.15), (*pp, TETTO + 1.2), 0.04)
     poly = poly.difference(SCALA_EST)
-    # i connettori: la fascia grigia, il tetto, il lucernario
-    for q in E.clean(poly.intersection(conn)):
-        pts = E.ring_ccw(q)
-        E.prisma(S, FASCIA, pts, TETTO, TETTO_CONN)
-        E.prisma(S, TETTO_COL, E.ring_ccw(q.buffer(-0.3, join_style=2)), TETTO_CONN, TETTO_CONN + 0.06)
-        for e in E.edges(E.ring_ccw(q.buffer(-0.25, join_style=2))):      # la ringhiera (foto dal cortile)
-            if connettore(e):
-                a_, c_ = e[0], e[1]
-                E.trave(S, TELAIO, (*a_, TETTO_CONN + 1.1), (*c_, TETTO_CONN + 1.1), 0.05)
-                for t in np.arange(0.0, e[4] + 0.01, 2.0):
-                    p_ = (a_[0] + e[2][0] * t, a_[1] + e[2][1] * t)
-                    E.trave(S, TELAIO, (*p_, TETTO_CONN), (*p_, TETTO_CONN + 1.1), 0.05)
-        x0, y0, x1, y1 = q.bounds
-        S.solid(TELAIO, E.box_z((x0 + x1) / 2, (y0 + y1) / 2 + 1.0, 6.4, 5.0, TETTO_CONN, TETTO_CONN + 0.4))
-        S.solid("#AFC4D3", E.box_z((x0 + x1) / 2, (y0 + y1) / 2 + 1.0, 6.0, 4.6, TETTO_CONN + 0.4, TETTO_CONN + 0.55))
-        for e in E.edges(pts):
-            if connettore(e):
-                E.panel(S, FASCIA, e, rett(0.0, e[4], TETTO, TETTO_CONN), 0.0, 0.12)
-                if e[3][1] < -0.9:          # la scritta, verso il largo
-                    m = e[4] / 2
-                    E.panel(S, "#2F6FB5", e, rett(m - 1.6, m + 1.6, TETTO + 0.35, TETTO + 0.95), 0.12, 0.16)
-                    E.panel(S, "#F4F5F7", e, rett(m - 1.3, m + 1.3, TETTO + 0.5, TETTO + 0.8), 0.16, 0.18)
-    # i corpi neri: la corona piena (a frangisole sui lati delle ali), il tetto, il parapetto
-    corpi = poly.difference(conn)
-    for q in E.clean(corpi):
-        pts = E.ring_ccw(q)
-        E.prisma(S, FUGA, pts, TETTO, CORONA)
-        for e in E.edges(pts):
-            if lato_ala(e) or testata(e):
-                lamelle(E, S, e, 0.0, e[4], TETTO, SCHERMO if testata(e) else CORONA)
-            else:
-                pannelli(E, S, e, TETTO, CORONA, [])
-        dentro = q.buffer(-0.35, join_style=2)
-        E.prisma(S, TETTO_COL, E.ring_ccw(dentro), CORONA, CORONA + 0.08)
-        for r in E.clean(q.difference(dentro)):
-            S.solid(NERO, trimesh.creation.extrude_polygon(r, PARAPETTO - CORONA).apply_translation([0, 0, CORONA]))
-            S.solid(COPERTINA, trimesh.creation.extrude_polygon(r, 0.06).apply_translation([0, 0, PARAPETTO]))
+    _connettori_quinto(E, S, poly.intersection(conn))
+    # i corpi neri: il blocco nord finisce col parapetto poco sopra il quinto, l'ala sale con
+    # la corona piena (a frangisole sui lati); dove l'ala supera il blocco, il lucernario
+    for q in E.clean(poly.difference(conn)):
+        for parte, cz, pz in ((box(0, 0, 999, Y_ALI), CORONA_N, PARAPETTO_N), (box(0, Y_ALI, 999, 999), CORONA, PARAPETTO)):
+            for r_ in E.clean(q.intersection(parte)):
+                pts = E.ring_ccw(r_)
+                E.prisma(S, FUGA, pts, TETTO, cz)
+                for e in E.edges(pts):
+                    x, y = _mid(e)
+                    if cz == CORONA and abs(y - Y_ALI) < 0.2 and e[3][1] < -0.9:
+                        vetrata(E, S, e, CORONA_N, CORONA, passo=1.5, colore="#56687A")
+                    elif cz == CORONA_N and abs(y - Y_ALI) < 0.2:
+                        continue
+                    elif lato_ala(e) or testata(e):
+                        lamelle(E, S, e, 0.0, e[4], TETTO, SCHERMO if testata(e) else cz)
+                    else:
+                        pannelli(E, S, e, TETTO, cz, [])
+                dentro = r_.buffer(-0.35, join_style=2)
+                E.prisma(S, TETTO_COL, E.ring_ccw(dentro), cz, cz + 0.08)
+                bordo = r_.difference(dentro)
+                if cz == CORONA_N:     # nessun parapetto contro la parete dell'ala
+                    bordo = bordo.difference(box(0, Y_ALI - 0.4, 999, 999))
+                for r in E.clean(bordo):
+                    S.solid(NERO, trimesh.creation.extrude_polygon(r, pz - cz).apply_translation([0, 0, cz]))
+                    S.solid(COPERTINA, trimesh.creation.extrude_polygon(r, 0.06).apply_translation([0, 0, pz]))
     for x0, x1 in CORPI:
         ala = poly.intersection(box(x0 - 3, Y_ALI, x1 + 3, 120.0))
         # le due strisce di impianti lungo i lati, a frangisole, col fotovoltaico sopra
@@ -356,8 +365,50 @@ def _tetto(E, S, geo):
         S.solid("#56687A", E.box_z((x0 + x1) / 2, 94.2, x1 - x0 - 9.4, 4.0, CORONA + 0.5, CORONA + 0.6))
         _fotovoltaico(E, S, box(x0 + 4.8, 97.4, x1 - 4.8, 109.6), CORONA)
         # il blocco nord: due campi di pannelli
-        _fotovoltaico(E, S, box(x0 + 1.2, 77.0, x1 - 1.2, 89.4), CORONA)
+        _fotovoltaico(E, S, box(x0 + 1.2, 77.0, x1 - 1.2, 89.4), CORONA_N)
     return SCHERMO + 0.2
+
+
+def _ringhiera(E, S, a_, c_, z0, h=1.1, passo=1.5):
+    L = float(np.hypot(c_[0] - a_[0], c_[1] - a_[1]))
+    E.trave(S, TELAIO, (*a_, z0 + h), (*c_, z0 + h), 0.05)
+    E.trave(S, TELAIO, (*a_, z0 + 0.15), (*c_, z0 + 0.15), 0.04)
+    for k in range(int(L / passo) + 1):
+        f = min(1.0, k * passo / max(0.01, L))
+        pp = (a_[0] + (c_[0] - a_[0]) * f, a_[1] + (c_[1] - a_[1]) * f)
+        E.trave(S, TELAIO, (*pp, z0), (*pp, z0 + h), 0.04)
+
+
+def _connettori_quinto(E, S, zona):
+    """Il quinto piano dei connettori: la terrazza sul solaio del quarto, col bordo nero e la
+    ringhiera sui due fronti (la scritta del dipartimento sulla ringhiera nord, foto dal
+    drone), e arretrato il volume basso grigio con la finestra a nastro e il lucernario."""
+    for q in E.clean(zona):
+        x0, y0, x1, y1 = q.bounds
+        pts = E.ring_ccw(q)
+        E.prisma(S, LASTRE, pts, Z_5, Z_5 + 0.12)
+        for e in E.edges(pts):
+            if not connettore(e):
+                continue
+            E.panel(S, NERO, e, rett(0.0, e[4], Z_5 - 0.15, Z_5 + 0.35), 0.0, 0.12)
+            a_, c_ = e[0], e[1]
+            dn = (e[3][0] * -0.1, e[3][1] * -0.1)
+            _ringhiera(E, S, (a_[0] + dn[0], a_[1] + dn[1]), (c_[0] + dn[0], c_[1] + dn[1]), Z_5 + 0.35)
+            if e[3][1] < -0.9:          # la scritta, verso il largo
+                m = e[4] / 2
+                E.panel(S, "#2F6FB5", e, rett(m - 1.6, m + 1.6, Z_5 + 0.55, Z_5 + 1.25), 0.02, 0.06)
+                E.panel(S, "#F4F5F7", e, rett(m - 1.3, m + 1.3, Z_5 + 0.7, Z_5 + 1.1), 0.06, 0.08)
+        nucleo = box(x0, y0 + CONN_ARRETRA, x1, y1 - CONN_ARRETRA)
+        pn = E.ring_ccw(nucleo)
+        E.prisma(S, FASCIA, pn, Z_5 + 0.12, TETTO_CONN)
+        for e in E.edges(pn):
+            if abs(e[3][1]) > 0.9:
+                E.panel(S, VETRO, e, rett(0.4, e[4] - 0.4, Z_5 + 0.9, Z_5 + 2.6), 0.0, 0.03)
+                E.panel(S, FASCIA, e, rett(0.0, e[4], TETTO_CONN - 0.5, TETTO_CONN), 0.0, 0.1)
+        E.prisma(S, TETTO_COL, E.ring_ccw(nucleo.buffer(-0.2, join_style=2)), TETTO_CONN, TETTO_CONN + 0.06)
+        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+        S.solid(TELAIO, E.box_z(cx, cy, 6.4, 5.0, TETTO_CONN, TETTO_CONN + 0.4))
+        S.solid("#AFC4D3", E.box_z(cx, cy, 6.0, 4.6, TETTO_CONN + 0.4, TETTO_CONN + 0.55))
 
 
 def _fotovoltaico(E, S, zona, z):
