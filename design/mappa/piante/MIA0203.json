@@ -1,0 +1,38 @@
+{
+  "csie": "MIA0203",
+  "piani": [
+    {
+      "csip": "MIA020300S",
+      "nome": "Seminterrato",
+      "aule": {
+        "MIA020300S001": {"sigla": "T.0.1", "posti": 100, "dotazioni": ["proiettore", "microfono", "oscurabile", "cattedra"]},
+        "MIA020300S002": {"sigla": "T.0.2", "posti": 100, "dotazioni": ["proiettore", "microfono", "oscurabile", "cattedra", "prese"]},
+        "MIA020300S019": {"sigla": "T.0.3", "posti": 50, "dotazioni": ["proiettore", "microfono", "oscurabile", "cattedra", "prese"]},
+        "MIA020300S018": {"sigla": "T.0.4", "posti": 50, "dotazioni": ["proiettore", "microfono", "oscurabile", "cattedra", "prese"]}
+      },
+      "principale": [-13.2, 3.0],
+      "acqua": [[2.5, -4.9]]
+    },
+    {
+      "csip": "MIA0203000",
+      "nome": "Terra",
+      "aule": {
+        "MIA0203000006": {"sigla": "T.1.1", "posti": 300, "dotazioni": ["proiettore", "microfono", "oscurabile", "cattedra", "prese", "rete"]},
+        "MIA0203000030": {"sigla": "T.1.2", "posti": 300, "dotazioni": ["proiettore", "microfono", "oscurabile", "cattedra", "prese", "rete"]},
+        "MIA0203000012": {"sigla": "T.1.3", "posti": 300, "dotazioni": ["proiettore", "microfono", "oscurabile", "cattedra", "prese"]}
+      },
+      "tipi": {"MIA0203000019a": "wc", "MIA0203000019b": "wc"},
+      "wc_accessibili": ["MIA0203000019a"],
+      "principale": [-13.2, 2.2]
+    },
+    {
+      "csip": "MIA0203001",
+      "nome": "Primo",
+      "aule": {
+        "MIA0203001006": {"sigla": "T.2.1", "posti": 300, "dotazioni": ["proiettore", "microfono", "oscurabile", "cattedra", "prese"]},
+        "MIA0203001026": {"sigla": "T.2.2", "posti": 300, "dotazioni": ["proiettore", "microfono", "oscurabile", "cattedra", "prese"]},
+        "MIA0203001013": {"sigla": "T.2.3", "posti": 300, "dotazioni": ["proiettore", "microfono", "oscurabile", "cattedra", "prese"]}
+      }
+    }
+  ]
+}

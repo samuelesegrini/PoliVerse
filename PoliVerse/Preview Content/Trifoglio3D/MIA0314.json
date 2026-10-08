@@ -1,0 +1,47 @@
+{
+ "csie": "MIA0314",
+ "nome": "DEIB e DCMIC",
+ "numero": "41",
+ "piani": [
+  {
+   "csip": "MIA031400S",
+   "quota": -4.4,
+   "aule": []
+  },
+  {
+   "csip": "MIA0314000",
+   "quota": 0.0,
+   "aule": []
+  },
+  {
+   "csip": "MIA0314001",
+   "quota": 4.8,
+   "aule": []
+  },
+  {
+   "csip": "MIA0314002",
+   "quota": 9.2,
+   "aule": []
+  },
+  {
+   "csip": "MIA0314003",
+   "quota": 13.6,
+   "aule": []
+  },
+  {
+   "csip": "MIA0314004",
+   "quota": 18.0,
+   "aule": []
+  },
+  {
+   "csip": "MIA0314005",
+   "quota": 22.4,
+   "aule": []
+  }
+ ],
+ "centro": [
+  372.81,
+  92.7
+ ],
+ "altezza": 30.0
+}

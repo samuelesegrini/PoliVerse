@@ -1,0 +1,27 @@
+{
+  "csie": "MIA0402",
+  "piani": [
+    {
+      "csip": "MIA0402000",
+      "nome": "Terra",
+      "aule": {
+        "MIA0402000004": {
+          "sigla": "G.0.1",
+          "posti": 40,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile"
+          ]
+        },
+        "MIA0402000003": {
+          "sigla": "G.0.2",
+          "posti": 40,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile"
+          ]
+        }
+      }
+    }
+  ]
+}

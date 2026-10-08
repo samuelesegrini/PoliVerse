@@ -1,0 +1,17 @@
+{
+ "csie": "MIA0110",
+ "nome": "Posta",
+ "numero": "10",
+ "piani": [
+  {
+   "csip": "MIA0110000",
+   "quota": 0.0,
+   "aule": []
+  }
+ ],
+ "centro": [
+  130.8,
+  111.15
+ ],
+ "altezza": 5.86
+}

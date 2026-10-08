@@ -1,0 +1,50 @@
+{
+ "csie": "MIA0101",
+ "nome": "Rettorato",
+ "numero": "1",
+ "piani": [
+  {
+   "csip": "MIA0101000",
+   "quota": 0.6,
+   "aule": []
+  },
+  {
+   "csip": "MIA0101001",
+   "quota": 6.0,
+   "aule": [
+    {
+     "csiv": "MIA0101001023",
+     "sigla": "AULA MAGNA",
+     "posti": 10,
+     "centro": [
+      -60.63,
+      7.0,
+      208.75
+     ],
+     "interno": {
+      "occhio": [
+       -60.58,
+       7.95,
+       221.49
+      ],
+      "guarda": [
+       -60.58,
+       7.95,
+       198.4
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "csip": "MIA0101002",
+   "quota": 11.0,
+   "aule": []
+  }
+ ],
+ "centro": [
+  -35.31,
+  209.56
+ ],
+ "altezza": 21.9
+}

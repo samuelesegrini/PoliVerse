@@ -1,0 +1,50 @@
+{
+ "csie": "MIA0112",
+ "nome": "Gaudenzio Fantoli",
+ "numero": "4A",
+ "piani": [
+  {
+   "csip": "MIA011200S",
+   "quota": -3.4,
+   "aule": []
+  },
+  {
+   "csip": "MIA0112000",
+   "quota": 0.0,
+   "aule": []
+  },
+  {
+   "csip": "MIA0112001",
+   "quota": 4.2,
+   "aule": [
+    {
+     "csiv": "MIA0112001003",
+     "sigla": "AULA FASSO'",
+     "posti": 70,
+     "centro": [
+      76.38,
+      5.2,
+      107.05
+     ],
+     "interno": {
+      "occhio": [
+       71.94,
+       7.56,
+       104.41
+      ],
+      "guarda": [
+       80.23,
+       5.75,
+       107.05
+      ]
+     }
+    }
+   ]
+  }
+ ],
+ "centro": [
+  72.95,
+  119.25
+ ],
+ "altezza": 10.7
+}

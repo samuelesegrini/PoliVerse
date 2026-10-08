@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="116.6 -48.4 318.1 254.3" width="636.1" height="508.6">
+<defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient></defs>
+<polygon points="213.6,70.7 191.6,83.4 191.6,69.4 213.6,56.7" fill="#D4CEC0"/>
+<polygon points="213.3,71.2 212.3,71.9 212.3,57.9 213.3,57.2" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="206.7,75.1 205.7,75.7 205.7,61.7 206.7,61.1" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="200.1,78.8 199.1,79.5 199.1,65.5 200.1,64.8" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="193.6,82.7 192.5,83.2 192.5,69.2 193.6,68.7" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="210.6,70 207.8,71.6 207.8,64.6 208,63.9 208.3,63.2 208.7,62.6 209.2,62.2 209.8,62 210.2,62.1 210.5,62.4 210.6,63" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="204,73.8 201.3,75.4 201.3,68.4 201.4,67.7 201.7,67 202.1,66.4 202.6,66 203.2,65.8 203.6,65.9 203.9,66.2 204,66.8" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="197.5,77.6 194.7,79.2 194.7,72.2 194.8,71.5 195.1,70.8 195.5,70.2 196.1,69.8 196.6,69.6 197,69.7 197.3,70 197.5,70.6" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="191.6,83.4 178.1,75.6 178.1,61.6 191.6,69.4" fill="#ECE7DC"/>
+<polygon points="191.6,83.8 190.5,83.2 190.5,69.2 191.6,69.8" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="185,80 183.9,79.4 183.9,65.4 185,66" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="178.4,76.2 177.4,75.6 177.4,61.6 178.4,62.2" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="189.4,79.7 186.6,78.1 186.6,71.1 186.7,70.6 187,70.2 187.5,70.1 188,70.3 188.5,70.8 189,71.4 189.3,72.1 189.4,72.7" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="182.8,75.9 180,74.3 180,67.3 180.2,66.8 180.5,66.4 180.9,66.3 181.4,66.5 182,67 182.4,67.6 182.7,68.3 182.8,68.9" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="178.1,61.6 200.1,48.9 213.6,56.7 191.6,69.4" fill="#F2EFE8"/>
+</svg>

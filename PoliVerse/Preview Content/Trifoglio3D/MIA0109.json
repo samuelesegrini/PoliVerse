@@ -1,0 +1,17 @@
+{
+ "csie": "MIA0109",
+ "nome": "Centralino",
+ "numero": "CT1",
+ "piani": [
+  {
+   "csip": "MIA0109000",
+   "quota": 0.0,
+   "aule": []
+  }
+ ],
+ "centro": [
+  107.9,
+  95.45
+ ],
+ "altezza": 5.36
+}

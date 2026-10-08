@@ -1,0 +1,116 @@
+{
+  "csie": "MIA1401",
+  "piani": [
+    {
+      "csip": "MIA140100S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA1401000",
+      "nome": "Terra",
+      "aule": {
+        "MIA1401000012": {
+          "sigla": "26.0.1",
+          "posti": 70,
+          "dotazioni": [
+            "proiettore",
+            "cattedra"
+          ]
+        },
+        "MIA1401000014": {
+          "sigla": "26.0.2",
+          "posti": 76,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "cattedra"
+          ]
+        },
+        "MIA1401000015": {
+          "sigla": "26.0.3",
+          "posti": 70,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "cattedra"
+          ]
+        },
+        "MIA1401000016": {
+          "sigla": "26.0.4",
+          "posti": 107,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA1401001",
+      "nome": "Primo",
+      "aule": {
+        "MIA1401001006b": {
+          "sigla": "26.1.1",
+          "posti": 207,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "cattedra"
+          ]
+        },
+        "MIA1401001006a": {
+          "sigla": "26.1.2",
+          "posti": 138,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA1401001005a": {
+          "sigla": "26.1.3",
+          "posti": 122,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA1401001005b": {
+          "sigla": "26.1.4",
+          "posti": 134,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA1401001004b": {
+          "sigla": "26.1.5",
+          "posti": 167,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "cattedra"
+          ]
+        },
+        "MIA1401001004c": {
+          "sigla": "26.1.6",
+          "posti": 167,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    }
+  ]
+}
