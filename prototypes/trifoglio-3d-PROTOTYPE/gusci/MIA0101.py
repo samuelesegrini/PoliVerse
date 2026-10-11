@@ -56,10 +56,11 @@ PADIGLIONI = (1, 7)    # le campate con il frontone e lo stemma, sporgenti di 45
 X_FRONTE = -66.4
 Y0, Y1 = 187.8, 232.9
 
-# Colori dalle foto: pietra grigio-beige, granito grigio, ferro scuro, vetri quasi neri.
-PIETRA = "#D8D2C5"
-PIETRA_CHIARA = "#E4DFD4"
-PIETRA_OMBRA = "#BDB6A8"
+# Colori dalle foto: pietra beige calda (campionata al sole sul fronte, Commons 2017-2019:
+# lesene #F6E1BA, muro #DECAAB), granito grigio, ferro scuro, vetri quasi neri.
+PIETRA = "#DCCDAF"
+PIETRA_CHIARA = "#E8DCC3"
+PIETRA_OMBRA = "#C3B293"
 GRANITO = "#8F908B"
 INTONACO = "#E2DBCB"          # il corpo sul giardino e lo scalone, intonaco chiaro
 FERRO = "#2D3135"

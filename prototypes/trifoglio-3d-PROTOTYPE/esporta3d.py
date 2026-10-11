@@ -1013,11 +1013,15 @@ def profilo_3d(b):
                 giu = offset_ring(own, sp)
                 su = offset_ring(own, sp + 1.0)
                 chiave = "piastrelle" if band.get("rivestimento") in ("mattone", "ceramica") else CLADDING[band.get("rivestimento", "mattone")]
+                # `testate`: il colore delle facce corte (foto Urbanfile 2022: le teste del
+                # volume di Ponti sono in mattone grigio scuro, i lati lunghi in ceramica chiara).
+                testate = band.get("testate")
                 for i_ in range(len(own)):
                     j_ = (i_ + 1) % len(own)
                     nn = normal_out(giu[i_], giu[j_])
                     quad = [(*giu[i_], z), (*giu[j_], z), (*su[j_], z + h), (*su[i_], z + h)]
-                    S.quad(chiave, quad, (nn[0], nn[1], 0.15),
+                    corta = testate and math.dist(own[i_], own[j_]) < 25
+                    S.quad(testate if corta else chiave, quad, (nn[0], nn[1], 0.15),
                            [(0, z), (math.dist(giu[i_], giu[j_]), z), (math.dist(giu[i_], giu[j_]), z + h), (0, z + h)])
                 prisma(S, "#F2F2EF", giu, z - 0.02, z)
                 prisma(S, COL["tetto"], su, z + h - 0.01, z + h)

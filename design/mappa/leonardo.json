@@ -269,19 +269,20 @@
             [-48.4, 45.0]
           ],
           "profilo": [
-            {"piano": "MIA020100S", "tipo": "fessura", "h": 5},
+            {"piano": "MIA020100S", "tipo": "fessura", "h": 3},
             {
               "piano": "MIA0201000",
               "tipo": "pieno",
               "rivestimento": "ceramica",
-              "h": 15
+              "h": 12
             },
-            {"piano": "MIA0201S00", "tipo": "vetro", "h": 20},
+            {"piano": "MIA0201S00", "tipo": "vetro", "h": 14},
             {
               "piano": "MIA0201001",
               "tipo": "sporto",
               "sporto": 1.5,
               "rivestimento": "mattone",
+              "testate": "#47484B",
               "h": 24
             }
           ]
