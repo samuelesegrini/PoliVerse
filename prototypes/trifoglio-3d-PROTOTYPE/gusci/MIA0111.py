@@ -14,9 +14,13 @@ Fonti, oltre ai contorni di leonardo.json e alle piante del Politecnico:
   nere ai lati della cattedra; la 9.0.2 coi banchi in legno scuro e le portefinestre ad arco;
   la 9.1.2 col pavimento grigio, un corridoio in mezzo e due lungo i muri, il soffitto a
   volte.
-Delle facciate non si sono trovate foto: seguono le altre ali di Brusconi del campus
-(zoccolo in pietra con le bocche di lupo, rialzato bugnato ad archi, piani alti lisci,
-cornicione), come dice anche il profilo della mappa.
+- le foto delle facciate: le panoramiche Mapillary del 2025 da via Ponzio (lato est) e da
+  viale Birarda (lato nord, coi due portoni ad arco e la gradinata), e la foto di Commons
+  "Milano - via Giuseppe Ponzio" dall'incrocio con via Celoria. Mostrano l'intonaco color
+  crema, il rialzato bugnato con le finestre ad arco, le finestre ad arco anche al primo e
+  rette al secondo, le lesene lisce, il cornicione col canale di gronda verde scuro, il
+  tetto a padiglione in coppi anche sull'angolo verso via Celoria (a tre piani, non basso),
+  e il padiglione a un piano, a terrazza, nell'angolo nord-est.
 
 Le piante pubbliche dell'Edificio 9 non sono specchiate da nord a sud, come le prende la
 mappa (`specchio`), ma trasposte: x e y scambiate, cioè ruotate di un quarto e specchiate.
@@ -47,13 +51,14 @@ G3 = 15.6              # la gronda delle ali a tre piani
 G2 = 11.0              # la gronda delle ali a due piani
 FASCIA_1, FASCIA_2 = 6.0, 10.6
 
-STUCCO = "#D3CBB8"         # l'intonaco grigio-beige delle ali di Brusconi
-BUGNATO = "#C6BDA8"
-STUCCO_CHIARO = "#E8E3D6"  # cornici, fasce, cornicione
+STUCCO = "#D8CEBA"         # l'intonaco color crema delle ali di Brusconi (foto di via Ponzio)
+BUGNATO = "#CEC4AE"
+STUCCO_CHIARO = "#E6DFD0"  # cornici, fasce, cornicione, lesene
 PIETRA = "#9D9990"         # lo zoccolo
 GRIGIO = "#C9CBCB"         # la Lista Aperta, intonaco grigio (profilo della mappa)
 VETRO_SCURO = "#3B4652"
-TELAIO = "#F2F0EA"
+TELAIO = "#E4E6E4"         # i serramenti grigio chiaro delle foto
+GRONDA = "#4F6157"         # il canale di gronda in lamiera verde scuro
 FERRO = "#2F3236"
 LASTRE = "#B9B5AC"
 TERRAZZA = "#8F9193"       # la terrazza dell'ala est, grigia nell'ortofoto
@@ -416,6 +421,10 @@ def cornicione(E, S, pts, z, sporto, h=0.8, colore=STUCCO_CHIARO):
     """Il cornicione: un gradino sotto e la lastra che sporge."""
     E.prisma(S, colore, E.ring_ccw(Polygon(pts).buffer(sporto * 0.4, join_style=2)), z - h, z - h * 0.45)
     E.prisma(S, colore, E.ring_ccw(Polygon(pts).buffer(sporto, join_style=2)), z - h * 0.45, z)
+    # il canale di gronda in lamiera verde scuro sul filo del cornicione (foto)
+    anello = Polygon(pts).buffer(sporto + 0.12, join_style=2).difference(Polygon(pts).buffer(sporto - 0.02, join_style=2))
+    for q in E.clean(anello):
+        S.solid(GRONDA, trimesh.creation.extrude_polygon(q, 0.32).apply_translation([0, 0, z - 0.2]))
 
 
 def ala(E, S, geo, pts, altre, piani, gronda, alte=False, grigia=False):
@@ -459,16 +468,21 @@ def ala(E, S, geo, pts, altre, piani, gronda, alte=False, grigia=False):
                 E.panel(S, STUCCO_CHIARO, e, Polygon([(cx - 0.16, g.bounds[3] - 0.05), (cx + 0.16, g.bounds[3] - 0.05),
                                                        (cx + 0.22, g.bounds[3] + 0.35), (cx - 0.22, g.bounds[3] + 0.35)]), 0.0, 0.15)
             E.panel(S, STUCCO_CHIARO, e, rett(t0, t1, FASCIA_1, FASCIA_1 + 0.4), 0.0, 0.22)
+            if piani == 1:      # il padiglione basso a nord-est: la fascia fa da cornice
+                continue
+            # le lesene lisce ai capi di ogni facciata, dalla fascia al fregio (foto di via Ponzio)
+            for a_ in (t0, t1 - 0.7):
+                E.panel(S, STUCCO_CHIARO, e, rett(a_, a_ + 0.7, FASCIA_1 + 0.4, gronda - 0.95), 0.0, 0.08)
             # il primo
             fin1 = finestre_piano(e, geo, "MIA0111001", t0, t1)
             for p, w in fin1:
                 w = min(max(w, 1.2), 1.8)
                 if alte:
                     g = arco(p - w / 2, p + w / 2, Z_1 + 0.9, gronda - 1.9 - w / 2)
-                else:
-                    g = rett(p - w / 2, p + w / 2, Z_1 + 0.8, Z_1 + 3.1)
-                    E.panel(S, STUCCO_CHIARO, e, rett(p - w / 2 - 0.25, p + w / 2 + 0.25, Z_1 + 3.25, Z_1 + 3.45), 0.0, 0.2)
+                else:   # ad arco a tutto sesto anche al primo, come nelle foto dei lati est e nord
+                    g = arco(p - w / 2, p + w / 2, Z_1 + 0.8, Z_1 + 3.4 - w / 2)
                 finestra(E, S, e, g)
+                E.panel(S, STUCCO_CHIARO, e, g.buffer(0.18, join_style=2).difference(g.buffer(0.02)), 0.0, 0.12)
                 E.panel(S, STUCCO_CHIARO, e, rett(p - w / 2 - 0.2, p + w / 2 + 0.2, Z_1 + 0.65, Z_1 + 0.8), 0.0, 0.18)
             if piani == 3:
                 E.panel(S, STUCCO_CHIARO, e, rett(t0, t1, FASCIA_2, FASCIA_2 + 0.3), 0.0, 0.18)
@@ -496,7 +510,8 @@ def parti(geo):
                  3, G3, "coppi"),
         "nord": (box(106.2, 267.5, 120.0, 277.0), 3, G3, "coppi"),
         "padiglione-nord": (box(117.4, 262.8, 128.0, 268.0), 3, G3, "coppi"),
-        "angolo-nord-est": (box(128.0, 259.3, 137.4, 264.4), 2, Z_1 + 4.2, "piano"),
+        # il padiglione basso a un piano, a terrazza, delle foto di viale Birarda
+        "angolo-nord-est": (box(128.0, 259.3, 137.4, 264.4), 1, FASCIA_1 + 0.4, "piano"),
         "est-nord": (box(120.0, 264.4, 137.4, 274.6), 3, G3, "coppi"),
         "est-ovest": (box(120.0, 274.6, 130.6, 283.8), 3, G3, "coppi"),
         "est-terrazza": (box(130.6, 274.6, 137.4, 283.8), 3, G3, "terrazza"),
@@ -509,7 +524,8 @@ def parti(geo):
         "sud-ovest": (box(91.2, 292.4, 100.0, 302.0), 2, G2, "coppi"),
         "sud-mezzo": (box(100.0, 292.0, 121.8, 302.0), 2, G2, "coppi"),
         "sud": (box(93.3, 302.0, 122.9, 322.7), 3, G3, "coppi"),
-        "lista-aperta": (box(128.4, 294.8, 137.6, 307.6), 2, Z_1 + 4.2, "piano"),
+        # l'angolo verso via Celoria: a tre piani e a coppi come il resto, nelle foto da via Ponzio
+        "lista-aperta": (box(128.4, 294.8, 137.6, 307.6), 3, G3, "coppi"),
     }
 
 
@@ -551,7 +567,7 @@ def guscio(b, E):
     massa = {k: max(E.clean(v[0].difference(CORTE)), key=lambda q: q.area) for k, v in P.items()}
     for nome, (g, piani, gronda, tipo) in P.items():
         pts = E.ring_ccw(massa[nome])
-        grigia = nome in ("lista-aperta", "angolo-nord-est")
+        grigia = False
         E.prisma(S, GRIGIO if grigia else STUCCO, pts, 0.0, gronda - 0.05)
         # le facce in vista: quelle che non toccano un'ala più alta o pari
         altre = [massa[k] for k, (h, _, gr, _) in P.items() if k != nome and gr >= gronda - 0.1]
