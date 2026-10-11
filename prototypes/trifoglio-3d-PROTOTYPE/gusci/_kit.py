@@ -63,12 +63,13 @@ def verso(e):
 # ---------------------------------------------------------------- texture
 
 TEXTURE = {"kit_bugnato_grigio": 1.0, "kit_mattone": 0.5, "kit_coppi": 0.8, "kit_pv": 1.0,
-           "kit_lamiera": 1.0, "kit_klinker": 0.6, "kit_klinker_scuro": 0.6}
+           "kit_lamiera": 1.0, "kit_klinker": 0.6, "kit_klinker_scuro": 0.6,
+           "kit_punta_diamante": 0.4}
 
 
 def _texture(name):
     """(colore, normali) PIL generate: bugnato grigio (corsi da 50 cm), mattoni a vista
-    (25 x 6,5 cm), coppi, pannelli fotovoltaici, lamiera grecata, klinker (anche testa di moro)."""
+    (25 x 6,5 cm), piastrelle a punta di diamante, coppi, pannelli fotovoltaici, lamiera grecata, klinker (anche testa di moro)."""
     from PIL import Image
     rng = np.random.default_rng(7)
     size = 256
@@ -96,6 +97,14 @@ def _texture(name):
         rgb[joint] = [0.72, 0.70, 0.66] if name != "kit_klinker_scuro" else [0.36, 0.30, 0.27]
         height = np.where(joint, 0.0, 1.0)
         strength = 3.0
+    elif name == "kit_punta_diamante":                    # piastrelle a punta di diamante da 10 cm
+        cx, cy = (x * 4) % 1.0, (y * 4) % 1.0
+        height = 1 - 2 * np.maximum(np.abs(cx - 0.5), np.abs(cy - 0.5))
+        k = (np.floor(x * 4) + 4 * np.floor(y * 4)).astype(int)
+        tone = rng.normal(0, 0.025, 16)[k % 16]
+        rgb = np.array([0.84, 0.84, 0.82])[None, None] * (0.94 + 0.06 * height + tone)[..., None]
+        rgb[(np.minimum(cx, 1 - cx) < 0.03) | (np.minimum(cy, 1 - cy) < 0.03)] = [0.88, 0.88, 0.86]
+        strength = 4.0
     elif name == "kit_coppi":
         cx = (x * 4) % 1.0
         row = (y * 2) % 1.0
