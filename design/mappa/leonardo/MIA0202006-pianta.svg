@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-69.8 40.8 40.4 37.7" width="404" height="376.9">
+<g id="livello-fondo" data-livello="terreno">
+<rect x="-69.8" y="40.8" width="40.4" height="37.7" fill="#EEF0EA"/>
+<path d="M-56.4 66.9L-56.4 55.3L-40.1 55.2L-40 62.5L-44.5 62.6L-44.5 68.9L-54.7 68.9L-54.7 66.9Z" fill="#4E5566" opacity="0.10"/>
+</g>
+<g id="livello-esterni" data-livello="esterni">
+<path d="" stroke="#C3C8D1" stroke-width="0.1" stroke-linecap="round"/>
+</g>
+<g id="livello-muri" data-livello="muri">
+<defs><clipPath id="pl-guscio"><path d="M-57.7 64.5L-57.8 52.9L-41.4 52.8L-41.4 60.1L-45.8 60.1L-45.8 66.4L-56.1 66.5L-56.1 64.5Z"/></clipPath></defs>
+<path d="M-57.7 64.5L-57.8 52.9L-41.4 52.8L-41.4 60.1L-45.8 60.1L-45.8 66.4L-56.1 66.5L-56.1 64.5Z" fill="#B9BFC9" fill-rule="evenodd"/>
+<path d="M-46.2 53.4L-46.2 54.2L-45.3 54.2L-45.3 53.4ZM-49.4 62.5L-49.4 63.3L-48.5 63.3L-48.5 62.5ZM-48.9 58.9L-47.9 58.9L-47.9 58L-48.9 58ZM-45.5 57.2L-44.6 57.2L-44.6 56.3L-45.5 56.3ZM-53 58.9L-52 58.9L-52 58L-53 58.1ZM-48.7 62.6L-47.9 62.6L-47.9 61.7L-48.7 61.7ZM-52.7 59.5L-52.7 58.7L-53.6 58.7L-53.6 59.5ZM-55.3 64.2L-55.3 63.5L-56.2 63.5L-56.2 64.2ZM-53.6 53.4L-53.6 54.2L-52.7 54.2L-52.7 53.4ZM-55.6 61.7L-55.6 62.4L-54.7 62.4L-54.7 61.7ZM-45.3 57.9L-45.3 57.1L-46.2 57.1L-46.2 57.9ZM-52.3 62.9L-53.1 62.9L-53.1 63.8L-52.3 63.8ZM-47.5 62.6L-46.9 62.6L-46.9 61.7L-47.5 61.7Z" fill="#FFFFFF" clip-path="url(#pl-guscio)"/>
+</g>
+<g id="livello-locali" data-livello="locali">
+<path id="MIA0202006001" data-tipo="locale" d="M-57.4 60.3L-55.3 60.3L-55.3 61.7L-55.2 61.7L-55.2 62.4L-55.2 62.4L-55.2 63.2L-55.5 63.2L-55.6 62.7L-56 62.7L-56 63.2L-57.4 63.2Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0202006002" data-tipo="locale" d="M-52 58.6L-52 58.5L-53 58.5L-53 58.6L-53.1 58.6L-53.1 58.7L-53.2 58.7L-53.2 59.5L-53.1 59.5L-53.1 61.7L-53.9 61.7L-53.9 61.5L-53.2 61.5L-53.2 60.3L-55.1 60.3L-55.1 61.7L-55.2 61.7L-55.2 62.4L-55.1 62.4L-55.1 63.2L-53.1 63.2L-53.1 63.4L-52.3 63.3L-52.3 63.2L-52 63.2Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0202006003a" data-tipo="locale" d="M-47.8 63.5L-47.8 62.2L-47.9 62.2L-47.9 62.1L-48.7 62.1L-48.7 62.2L-48.9 62.2L-48.9 62.5L-49 62.5L-49 63.3L-48.9 63.3L-48.9 63.5L-52.3 63.5L-52.3 63.3L-53.1 63.4L-53.1 63.5L-55.7 63.5L-55.7 64.8L-51.5 64.7L-51.5 66.1L-48.2 66.1Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0202006003b" data-tipo="scale" d="M-55.7 64.8L-54.5 64.8L-54.5 64.9L-51.5 64.9L-51.5 66.1L-55.7 66.1Z" fill="#E9EBEF" fill-rule="evenodd"/>
+<path id="MIA0202006003c" data-tipo="tecnico" d="M-57.4 63.6L-57.4 63.5L-55.7 63.5L-55.7 64.2L-56.9 64.2L-56.9 63.6Z" fill="#E4E7EC" fill-rule="evenodd"/>
+<path id="MIA0202006004" data-tipo="locale" d="M-51.8 60.3L-49.1 60.3L-49.1 62.5L-49 62.5L-49 63.3L-51.8 63.3ZM-51.3 62L-49.9 62L-49.9 63.2L-51.3 63.2ZM-51.3 60.5L-49.9 60.5L-49.9 61.7L-51.3 61.7Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0202006005" data-tipo="locale" d="M-57.4 56.8L-53.3 56.7L-53.2 58.7L-53.2 58.7L-53.2 59.5L-53.2 59.5L-53.2 60.1L-57.4 60.1Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0202006006" data-tipo="locale" d="M-57.4 53.2L-53.3 53.2L-53.3 53.4L-53.2 53.4L-53.2 54.2L-53.3 54.2L-53.3 56.6L-57.4 56.6Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0202006007" data-tipo="locale" d="M-51.9 60.1L-51.9 58.6L-50.5 58.6L-50.5 58.4L-52 58.4L-52 58.5L-53 58.5L-53 58.4L-53.1 58.4L-53.1 54.2L-53.2 54.2L-53.2 53.4L-53.1 53.4L-53.1 53.2L-49.5 53.2L-49.5 58.6L-49 58.6L-49 60.1Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0202006008" data-tipo="locale" d="M-45.8 53.1L-45.8 53.4L-45.8 53.4L-45.8 54.2L-45.8 54.2L-45.8 57.1L-45.7 57.1L-45.7 57.9L-45.8 57.9L-45.8 58.4L-46.7 58.4L-46.7 58.5L-45.8 58.5L-45.8 59.8L-46.2 59.8L-46.2 60.4L-47.6 60.4L-47.6 58.4L-47.9 58.4L-47.9 58.5L-48.9 58.5L-48.9 58.4L-49.4 58.4L-49.4 53.2Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0202006009" data-tipo="locale" d="M-41.7 56.7L-44.6 56.7L-44.6 56.8L-45.5 56.8L-45.5 56.7L-45.6 56.7L-45.7 54.2L-45.8 54.2L-45.8 53.4L-45.7 53.4L-45.7 53.1L-41.7 53.1Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0202006010" data-tipo="locale" d="M-45.6 59.8L-45.6 57.9L-45.7 57.9L-45.7 57.1L-45.6 57.1L-45.6 56.9L-45.5 56.9L-45.5 56.8L-44.6 56.8L-44.6 56.9L-41.7 56.9L-41.7 59.8Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0202006011" data-tipo="locale" d="M-46.2 60.8L-46.2 60.6L-47.8 60.6L-47.8 58.6L-47.9 58.6L-47.9 58.5L-48.9 58.5L-48.9 62.1L-48.7 62.1L-48.7 62.1L-47.9 62.1L-47.9 62.1L-47.5 62.1L-47.5 62.1L-46.9 62.1L-46.9 62.1L-46.2 62.1Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0202006012" data-tipo="locale" d="M-48 66.1L-47.6 63.5L-47.6 62.2L-47.5 62.2L-47.5 62.1L-46.9 62.1L-46.9 62.2L-46.2 62.2L-46.1 66.1Z" fill="#F3F4F7" fill-rule="evenodd"/>
+</g>
+<g id="livello-arredi" data-livello="arredi">
+<path d="" stroke="#C9D9EC" stroke-width="0.09" stroke-linecap="round"/>
+</g>
+<g id="livello-gradini" data-livello="gradini">
+<path d="M-51.5 65.5L-55.1 65.5M-51.5 64.8L-55.7 64.8M-51.5 64.7L-55.7 64.8M-51.5 64.9L-54.5 64.9M-51.5 64.9L-54.5 64.9M-54.5 64.8L-54.5 64.9M-55.1 64.8L-55.1 65.5M-53.9 64.9L-53.9 66.1M-54.2 64.9L-54.2 66.1M-54.5 64.8L-54.5 66.1M-53.6 64.9L-53.6 66.1M-51.5 64.8L-51.5 64.9M-51.5 65.5L-51.6 65.8M-51.5 64.7L-51.5 66.1M-51.5 65.5L-51.6 65.3M-53.3 64.9L-53.3 66.1M-51.8 64.9L-51.8 66.1M-52.1 64.9L-52 66.1M-52.4 64.9L-52.4 66.1M-52.7 64.9L-52.7 66.1M-53 64.9L-53 66.1" stroke="#C3C8D1" stroke-width="0.06" stroke-linecap="round"/>
+<path d="" stroke="#A3AAB6" stroke-width="0.07" stroke-linecap="round"/>
+</g>
+<g id="livello-ascensori" data-livello="ascensori">
+</g>
+<g id="livello-finestre" data-livello="finestre">
+<path d="" stroke="#8FC3E8" stroke-width="0.12" stroke-linecap="round"/>
+</g>
+<g id="livello-porte" data-livello="porte">
+<path d="M-45.8 53.4L-44.9 53.3M-45.8 54.2A0.8 0.8 0 0 0 -44.9 53.3M-49 62.5L-48.1 62.5M-49 63.3A0.8 0.8 0 0 0 -48.1 62.5M-48.9 58.5L-48.9 57.5M-47.9 58.5A1 1 0 0 0 -48.9 57.5M-45.5 56.8L-45.5 56M-44.6 56.8A0.8 0.8 0 0 0 -45.5 56M-53 58.5L-53 57.5M-52 58.5A1 1 0 0 0 -53 57.5M-48.7 62.1L-48.7 61.3M-47.9 62.1A0.8 0.8 0 0 0 -48.7 61.3M-53.2 59.5L-54 59.5M-53.2 58.7A0.8 0.8 0 0 0 -54 59.5M-55.7 64.2L-56.3 64.2M-55.7 63.5A0.6 0.6 0 0 0 -56.3 64.2M-53.2 53.4L-54 53.4M-53.2 54.2A0.8 0.8 0 0 1 -54 53.4M-55.2 61.7L-55.8 61.7M-55.2 62.4A0.7 0.7 0 0 1 -55.8 61.7M-45.7 57.9L-44.9 57.9M-45.7 57.1A0.8 0.8 0 0 1 -44.9 57.9M-52.3 63.3L-52.3 62.5M-53.1 63.4A0.8 0.8 0 0 1 -52.3 62.5M-47.5 62.1L-47.5 62.8M-46.9 62.1A0.7 0.7 0 0 1 -47.5 62.8" fill="none" stroke="#A3AAB6" stroke-width="0.07" stroke-linecap="round"/>
+</g>
+<g id="livello-percorso-accessibile" data-livello="percorso-accessibile" style="display: none">
+</g>
+<g id="livello-ingressi" data-livello="ingressi">
+</g>
+<g id="livello-accessibilita" data-livello="accessibilita">
+</g>
+<g id="livello-acqua" data-livello="acqua">
+</g>
+<g id="livello-etichette" data-livello="etichette">
+</g>
+<g id="livello-dotazioni" data-livello="dotazioni">
+</g>
+</svg>

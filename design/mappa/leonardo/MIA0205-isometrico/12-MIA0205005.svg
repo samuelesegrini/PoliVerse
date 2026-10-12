@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40.5 -141.8 313.9 356" width="627.9" height="712">
+<defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient></defs>
+<polygon points="71,-31 66.3,-33.5 66.3,-37.5 71,-35" fill="#F2F3F6"/>
+<polygon points="51.3,-20.6 38.6,-13.1 38.6,-17.1 51.3,-24.6" fill="#D4D8DF"/>
+<polygon points="28.9,-7.5 25.3,-11 25.3,-15 28.9,-11.5" fill="#F2F3F6"/>
+<polygon points="33.4,-8.7 32.2,-9.4 32.2,-13.4 33.4,-12.7" fill="#F2F3F6"/>
+<polygon points="32.2,-9.4 28.9,-7.5 28.9,-11.5 32.2,-13.4" fill="#D4D8DF"/>
+<polygon points="94.4,-15.5 47.5,12.6 47.5,8.6 94.4,-19.5" fill="#D4D8DF"/>
+<polygon points="195.4,41.4 94.4,-15.5 94.4,-19.5 195.4,37.4" fill="#F2F3F6"/>
+<polygon points="9.2,20.3 1.2,12.9 1.2,8.9 9.2,16.3" fill="#F2F3F6"/>
+<polygon points="47.5,12.6 22,24.7 22,20.7 47.5,8.6" fill="#D4D8DF"/>
+<polygon points="22,24.7 9.2,20.3 9.2,16.3 22,20.7" fill="#F2F3F6"/>
+<polygon points="233.5,27.8 228.1,39.7 228.1,35.7 233.5,23.8" fill="#D4D8DF"/>
+<polygon points="202,40.2 195.4,41.4 195.4,37.4 202,36.2" fill="#D4D8DF"/>
+<polygon points="228.1,39.7 207.3,43.1 207.3,39.1 228.1,35.7" fill="#D4D8DF"/>
+<polygon points="207.3,43.1 202,40.2 202,36.2 207.3,39.1" fill="#F2F3F6"/>
+<polygon points="21.5,-6.2 33.4,-12.7 32.2,-13.4 28.9,-11.5 25.3,-15 37.6,-22.1 39.5,-21 48.5,-26.2 51.3,-24.6 38.6,-17.1 40.5,-17 71,-35 66.3,-37.5 73.8,-43.4 83.8,-47.4 89.5,-44.1 103.7,-49.7 109.5,-49.8 109.5,-46.4 115.4,-46.4 115.4,-43.2 119,-40.7 233.5,23.8 228.1,35.7 207.3,39.1 202,36.2 195.4,37.4 94.4,-19.5 47.5,8.6 22,20.7 9.2,16.3 1.2,8.9" fill="#FFFFFF"/>
+<polygon points="72.4,-35 67.6,-37.6 67.6,-51.6 72.4,-49" fill="url(#iso-glass-l)"/>
+<polygon points="49.9,-24.6 36.5,-16.6 36.5,-30.6 49.9,-38.6" fill="url(#iso-glass-r)"/>
+<polygon points="29.1,-12.4 26.5,-14.9 26.5,-28.9 29.1,-26.4" fill="url(#iso-glass-l)"/>
+<polygon points="34.8,-12.7 32.2,-14.2 32.2,-28.2 34.8,-26.7" fill="url(#iso-glass-l)"/>
+<polygon points="32.2,-14.2 29.1,-12.4 29.1,-26.4 32.2,-28.2" fill="url(#iso-glass-r)"/>
+<polygon points="94.4,-20.3 46.8,8.2 46.8,-5.8 94.4,-34.3" fill="url(#iso-glass-r)"/>
+<polygon points="195.6,36.8 94.4,-20.3 94.4,-34.3 195.6,22.8" fill="url(#iso-glass-l)"/>
+<polygon points="9.9,15.9 2.4,8.9 2.4,-5.1 9.9,1.9" fill="url(#iso-glass-l)"/>
+<polygon points="46.8,8.2 21.9,20 21.9,6 46.8,-5.8" fill="url(#iso-glass-r)"/>
+<polygon points="21.9,20 9.9,15.9 9.9,1.9 21.9,6" fill="url(#iso-glass-l)"/>
+<polygon points="232.4,24 227.3,35.2 227.3,21.2 232.4,10" fill="url(#iso-glass-r)"/>
+<polygon points="202.2,35.6 195.6,36.8 195.6,22.8 202.2,21.6" fill="url(#iso-glass-r)"/>
+<polygon points="227.3,35.2 207.6,38.5 207.6,24.5 227.3,21.2" fill="url(#iso-glass-r)"/>
+<polygon points="207.6,38.5 202.2,35.6 202.2,21.6 207.6,24.5" fill="url(#iso-glass-l)"/>
+<path d="M43.2 -20.6V-34.6M86.4 -15.6V-29.6M78.5 -10.8V-24.8M70.6 -6.1V-20.1M62.7 -1.3V-15.3M54.7 3.4V-10.6M187.2 32V18M178.8 27.2V13.2M170.3 22.5V8.5M161.9 17.7V3.7M153.4 13V-1M145 8.2V-5.8M136.6 3.5V-10.5M128.1 -1.3V-15.3M119.7 -6V-20M111.3 -10.8V-24.8M102.8 -15.5V-29.5M38.5 12.1V-1.9M30.2 16.1V2.1M229.8 29.6V15.6M217.4 36.9V22.9" stroke="#FFFFFF" stroke-width="1.2" opacity="0.75"/>
+</svg>

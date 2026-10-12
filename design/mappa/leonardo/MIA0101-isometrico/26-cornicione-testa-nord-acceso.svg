@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="177.8 90.4 250.5 233.8" width="501" height="467.6">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="255.8,199.5 225.7,216.9 225.7,213.9 255.8,196.5" fill="#4E5566" opacity="0.25"/>
+<polygon points="225.7,216.9 208,206.7 208,203.7 225.7,213.9" fill="#4E5566" opacity="0.25"/>
+<polygon points="259.3,196.5 225.7,215.9 225.7,213.4 259.3,194" fill="#D9CDB2"/>
+<polygon points="225.7,215.9 204.6,203.7 204.6,201.2 225.7,213.4" fill="#F1EADB"/>
+<polygon points="204.6,201.2 238.2,181.8 259.3,194 225.7,213.4" fill="#F5F0E4"/>
+<rect x="256.4" y="197" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="254.9" y="197.9" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="253.3" y="198.8" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="251.7" y="199.7" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="250.1" y="200.7" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="248.5" y="201.6" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="246.9" y="202.5" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="245.3" y="203.4" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="243.8" y="204.3" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="242.2" y="205.2" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="240.6" y="206.2" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="239" y="207.1" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="237.4" y="208" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="235.8" y="208.9" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="234.2" y="209.8" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="232.6" y="210.7" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="231.1" y="211.7" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="229.5" y="212.6" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="227.9" y="213.5" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="226.3" y="214.4" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="224.6" y="214.4" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="223" y="213.5" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="221.4" y="212.5" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="219.8" y="211.6" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="218.1" y="210.7" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="216.5" y="209.8" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="214.9" y="208.8" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="213.3" y="207.9" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="211.7" y="207" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="210.1" y="206.1" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="208.5" y="205.1" width="0.5" height="0.9" fill="#D9CFB8"/>
+<rect x="206.9" y="204.2" width="0.5" height="0.9" fill="#D9CFB8"/>
+</svg>

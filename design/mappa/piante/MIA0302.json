@@ -1,0 +1,43 @@
+{
+  "csie": "MIA0302",
+  "piani": [
+    {
+      "csip": "MIA030201I",
+      "nome": "Primo Interrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA030200S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0302000",
+      "nome": "Terra",
+      "aule": {
+        "MIA0302000011": {
+          "sigla": "19.0.1",
+          "posti": 53,
+          "dotazioni": [
+            "oscurabile"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0302001",
+      "nome": "Primo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0302002",
+      "nome": "Secondo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA030200V",
+      "nome": "Sottotetto",
+      "aule": {}
+    }
+  ]
+}

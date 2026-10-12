@@ -1,0 +1,26 @@
+{
+  "csie": "MIA0112",
+  "piani": [
+    {
+      "csip": "MIA011200S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0112000",
+      "nome": "Terra",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0112001",
+      "nome": "Primo",
+      "aule": {
+        "MIA0112001003": {
+          "sigla": "AULA FASSO'",
+          "posti": 70,
+          "dotazioni": []
+        }
+      }
+    }
+  ]
+}

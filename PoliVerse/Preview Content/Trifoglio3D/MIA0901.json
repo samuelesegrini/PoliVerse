@@ -1,0 +1,75 @@
+{
+ "csie": "MIA0901",
+ "nome": "Casa dello Studente",
+ "numero": "",
+ "piani": [
+  {
+   "csip": "MIA090100S",
+   "quota": -3.4,
+   "aule": []
+  },
+  {
+   "csip": "MIA0901000",
+   "quota": 0.0,
+   "aule": [
+    {
+     "csiv": "MIA0901000124",
+     "sigla": "AULA AUDITORIUM",
+     "posti": 140,
+     "centro": [
+      -275.54,
+      1.0,
+      343.44
+     ],
+     "interno": {
+      "occhio": [
+       -271.98,
+       3.19,
+       352.98
+      ],
+      "guarda": [
+       -275.54,
+       1.55,
+       340.63
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "csip": "MIA0901001",
+   "quota": 3.8,
+   "aule": []
+  },
+  {
+   "csip": "MIA0901002",
+   "quota": 6.75,
+   "aule": []
+  },
+  {
+   "csip": "MIA0901003",
+   "quota": 9.7,
+   "aule": []
+  },
+  {
+   "csip": "MIA0901004",
+   "quota": 12.65,
+   "aule": []
+  },
+  {
+   "csip": "MIA0901005",
+   "quota": 15.6,
+   "aule": []
+  },
+  {
+   "csip": "MIA0901006",
+   "quota": 18.55,
+   "aule": []
+  }
+ ],
+ "centro": [
+  -281.91,
+  358.18
+ ],
+ "altezza": 22.46
+}

@@ -1,0 +1,26 @@
+{
+  "csie": "MIA0101",
+  "piani": [
+    {
+      "csip": "MIA0101000",
+      "nome": "Terra",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0101001",
+      "nome": "Primo",
+      "aule": {
+        "MIA0101001023": {
+          "sigla": "AULA MAGNA",
+          "posti": 10,
+          "dotazioni": []
+        }
+      }
+    },
+    {
+      "csip": "MIA0101002",
+      "nome": "Secondo",
+      "aule": {}
+    }
+  ]
+}

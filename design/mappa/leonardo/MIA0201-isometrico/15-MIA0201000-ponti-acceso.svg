@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-260.8 -95.5 322.3 289.1" width="644.5" height="578.2">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="21.5,98.2 -5.5,114.2 -5.5,99.2 21.5,83.2" fill="#CDC5B6"/>
+<polygon points="-1.7,116.4 -72.4,157.6 -72.4,142.6 -1.7,101.4" fill="#CDC5B6"/>
+<polygon points="-72.4,157.6 -104.2,139.2 -104.2,124.2 -72.4,142.6" fill="#E6E0D4"/>
+<polygon points="-5.9,67.4 21.5,83.2 -5.5,99.2 -1.7,101.4 -72.4,142.6 -104.2,124.2" fill="#F1EDE5"/>
+<path d="M21.5 95.2L-5.5 111.2M21.5 92.2L-5.5 108.2M21.5 89.2L-5.5 105.2M21.5 86.2L-5.5 102.2M-1.7 113.4L-72.4 154.6M-1.7 110.4L-72.4 151.6M-1.7 107.4L-72.4 148.6M-1.7 104.4L-72.4 145.6M-72.4 154.6L-104.2 136.2M-72.4 151.6L-104.2 133.2M-72.4 148.6L-104.2 130.2M-72.4 145.6L-104.2 127.2" stroke="#FFFFFF" stroke-width="0.5" opacity="0.35"/>
+</svg>

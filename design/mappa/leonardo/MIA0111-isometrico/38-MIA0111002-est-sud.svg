@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="553.6 28.3 273.7 237.4" width="547.4" height="474.8">
+<defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient></defs>
+<polygon points="747.4,120.3 723,134.8 723,122.8 747.4,108.3" fill="#CAC4B5"/>
+<polygon points="746.3,121.4 745.3,122 745.3,110 746.3,109.4" fill="#EEEAE1" opacity="0.9"/>
+<polygon points="739.4,125.4 738.4,126 738.4,114 739.4,113.4" fill="#EEEAE1" opacity="0.9"/>
+<polygon points="732.6,129.5 731.6,130.1 731.6,118.1 732.6,117.5" fill="#EEEAE1" opacity="0.9"/>
+<polygon points="725.8,133.5 724.8,134.1 724.8,122.1 725.8,121.5" fill="#EEEAE1" opacity="0.9"/>
+<polygon points="743.3,119.8 740.9,121.3 740.9,114.7 743.3,113.2" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="736.5,123.9 734.1,125.3 734.1,118.7 736.5,117.3" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="729.6,127.9 727.2,129.4 727.2,122.8 729.6,121.3" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="715.3,139 697.7,128.8 697.7,116.8 715.3,127" fill="#E4DFD3"/>
+<polygon points="713.6,138.4 712.6,137.8 712.6,125.8 713.6,126.4" fill="#EEEAE1" opacity="0.9"/>
+<polygon points="706.7,134.4 705.6,133.8 705.6,121.8 706.7,122.4" fill="#EEEAE1" opacity="0.9"/>
+<polygon points="699.7,130.4 698.7,129.8 698.7,117.8 699.7,118.4" fill="#EEEAE1" opacity="0.9"/>
+<polygon points="711.1,133.7 708.7,132.2 708.7,125.7 711.1,127.1" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="704.2,129.7 701.7,128.2 701.7,121.7 704.2,123.1" fill="#3E4652" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="723.7,139.4 715.3,139 715.3,127 723.7,127.4" fill="#E4DFD3"/>
+<polygon points="697.7,116.8 729.5,98.4 747.4,108.3 723,122.8 723.7,127.4 715.3,127" fill="#EEEAE1"/>
+</svg>

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-26.6 76.2 34.7 44.5" width="346.7" height="444.5">
+<g id="livello-fondo" data-livello="terreno">
+<rect x="-26.6" y="76.2" width="34.7" height="44.5" fill="#EEF0EA"/>
+<path d="M-2.7 90.6L-13.3 90.7L-13.2 111.1L-2.6 111Z" fill="#4E5566" opacity="0.10"/>
+</g>
+<g id="livello-esterni" data-livello="esterni">
+<path d="" stroke="#C3C8D1" stroke-width="0.1" stroke-linecap="round"/>
+</g>
+<g id="livello-muri" data-livello="muri">
+<defs><clipPath id="pl-guscio"><path d="M-4 88.2L-14.6 88.2L-14.6 108.7L-3.9 108.6Z"/></clipPath></defs>
+<path d="M-4 88.2L-14.6 88.2L-14.6 108.7L-3.9 108.6Z" fill="#B9BFC9" fill-rule="evenodd"/>
+<path d="" fill="#FFFFFF" clip-path="url(#pl-guscio)"/>
+</g>
+<g id="livello-locali" data-livello="locali">
+<path id="MIA011402I001" data-tipo="locale" d="M-4.5 88.7L-4.5 100.3L-5.4 100L-5.4 101.7L-4.5 101.7L-4.4 108.1L-14.1 108.2L-14.1 88.7ZM-6.4 89.5L-6.4 107.4L-13.4 107.4L-13.5 89.5Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA011402I002" data-tipo="scale" d="M-4.5 100.3L-4.5 101.7L-5.4 101.7L-5.4 100Z" fill="#E9EBEF" fill-rule="evenodd"/>
+</g>
+<g id="livello-arredi" data-livello="arredi">
+<path d="" stroke="#C9D9EC" stroke-width="0.09" stroke-linecap="round"/>
+</g>
+<g id="livello-gradini" data-livello="gradini">
+<path d="M-4.9 101.7L-4.9 100.2M-4.5 101.2L-5.3 101.2M-4.5 100.9L-5.3 100.9M-4.5 100.6L-5.3 100.6M-4.5 100.3L-5.3 100.3M-4.5 101.7L-5.3 101.7M-4.5 101.4L-5.3 101.5M-4.5 100.3L-5.4 100M-4.9 100.2L-4.9 100.2M-4.9 100.2L-5 100.2" stroke="#C3C8D1" stroke-width="0.06" stroke-linecap="round"/>
+<path d="M-5.3 101.7L-5.3 100M-5.4 101.7L-5.4 100M-5.4 101.7L-5.3 101.7" stroke="#A3AAB6" stroke-width="0.07" stroke-linecap="round"/>
+</g>
+<g id="livello-ascensori" data-livello="ascensori">
+</g>
+<g id="livello-finestre" data-livello="finestre">
+<path d="M-5.3 100.4L-5.2 100.4M-4.9 100.4L-4.9 101.2M-4.9 101.2L-5.3 101.2M-5.3 101.2L-5.3 100.4M-5.1 100.4L-5.1 101.2M-5.1 100.4L-4.9 100.4M-5.2 100.4L-5.1 100.4M-5.2 100.4L-5.2 101.2M-5.2 100.4L-5.2 101.2M-5.1 100.4L-5.1 101.2M-5 100.4L-5 101.2M-5 100.4L-5 101.2M-5 100.4L-5 101.2" stroke="#8FC3E8" stroke-width="0.12" stroke-linecap="round"/>
+</g>
+<g id="livello-porte" data-livello="porte">
+<path d="" fill="none" stroke="#A3AAB6" stroke-width="0.07" stroke-linecap="round"/>
+</g>
+<g id="livello-percorso-accessibile" data-livello="percorso-accessibile" style="display: none">
+</g>
+<g id="livello-ingressi" data-livello="ingressi">
+</g>
+<g id="livello-accessibilita" data-livello="accessibilita">
+</g>
+<g id="livello-acqua" data-livello="acqua">
+</g>
+<g id="livello-etichette" data-livello="etichette">
+</g>
+<g id="livello-dotazioni" data-livello="dotazioni">
+</g>
+</svg>

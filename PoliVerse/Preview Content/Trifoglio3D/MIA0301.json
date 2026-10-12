@@ -1,0 +1,60 @@
+{
+ "csie": "MIA0301",
+ "nome": null,
+ "numero": "20",
+ "piani": [
+  {
+   "csip": "MIA030100S",
+   "quota": -4.0,
+   "aule": [
+    {
+     "csiv": "MIA030100S020",
+     "sigla": "20.S.1",
+     "posti": 264,
+     "centro": [
+      387.05,
+      -3.0,
+      142.75
+     ],
+     "interno": {
+      "occhio": [
+       393.07,
+       0.38,
+       150.26
+      ],
+      "guarda": [
+       387.02,
+       -2.45,
+       136.84
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "csip": "MIA0301000",
+   "quota": 0.0,
+   "aule": []
+  },
+  {
+   "csip": "MIA0301001",
+   "quota": 4.5,
+   "aule": []
+  },
+  {
+   "csip": "MIA0301002",
+   "quota": 9.0,
+   "aule": []
+  },
+  {
+   "csip": "MIA0301003",
+   "quota": 13.5,
+   "aule": []
+  }
+ ],
+ "centro": [
+  349.9,
+  142.26
+ ],
+ "altezza": 21.13
+}

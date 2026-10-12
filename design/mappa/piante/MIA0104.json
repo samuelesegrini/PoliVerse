@@ -1,0 +1,36 @@
+{
+  "csie": "MIA0104",
+  "piani": [
+    {
+      "csip": "MIA010400S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0104000",
+      "nome": "Terra",
+      "aule": {
+        "MIA0104000026": {
+          "sigla": "4.0.1",
+          "posti": 310,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0104001",
+      "nome": "Primo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0104002",
+      "nome": "Secondo",
+      "aule": {}
+    }
+  ]
+}

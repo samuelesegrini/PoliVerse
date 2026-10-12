@@ -1,0 +1,65 @@
+{
+  "csie": "MIA0106",
+  "piani": [
+    {
+      "csip": "MIA010600S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0106000",
+      "nome": "Terra",
+      "aule": {}
+    },
+    {
+      "csip": "MIA010600R",
+      "nome": "Rialzato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0106001",
+      "nome": "Primo",
+      "aule": {
+        "MIA0106001057": {
+          "sigla": "6.0.1 ",
+          "posti": 275,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile"
+          ]
+        },
+        "MIA0106001056": {
+          "sigla": "AULA DIPARTIMENTALE LOMBARDI",
+          "posti": 40,
+          "dotazioni": []
+        }
+      }
+    },
+    {
+      "csip": "MIA0106002",
+      "nome": "Secondo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0106003",
+      "nome": "Terzo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0106004",
+      "nome": "Quarto",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0106005",
+      "nome": "Quinto",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0106006",
+      "nome": "Sesto",
+      "aule": {}
+    }
+  ]
+}

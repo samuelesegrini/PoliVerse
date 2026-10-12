@@ -1,0 +1,55 @@
+{
+  "csie": "MIA0107",
+  "piani": [
+    {
+      "csip": "MIA010700S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0107000",
+      "nome": "Terra",
+      "aule": {
+        "MIA0107000008": {
+          "sigla": "LAB. LDID7",
+          "posti": 50,
+          "dotazioni": []
+        }
+      }
+    },
+    {
+      "csip": "MIA0107001",
+      "nome": "Primo",
+      "aule": {
+        "MIA0107001014": {
+          "sigla": "7.1.1 ",
+          "posti": 108,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIA0107001017": {
+          "sigla": "7.1.2",
+          "posti": 40,
+          "dotazioni": [
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIA0107001020": {
+          "sigla": "7.1.3",
+          "posti": 190,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        }
+      }
+    }
+  ]
+}

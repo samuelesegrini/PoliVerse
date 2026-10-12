@@ -1,0 +1,54 @@
+{
+  "csie": "MIA0601",
+  "piani": [
+    {
+      "csip": "MIA060100S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0601000",
+      "nome": "Terra",
+      "aule": {
+        "MIA0601000005": {
+          "sigla": "E.P.6",
+          "posti": 100,
+          "dotazioni": [
+            "proiettore",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0601000007": {
+          "sigla": "E.P.7",
+          "posti": 90,
+          "dotazioni": [
+            "proiettore",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0601001",
+      "nome": "Primo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0601002",
+      "nome": "Secondo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0601003",
+      "nome": "Terzo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0601004",
+      "nome": "Quarto",
+      "aule": {}
+    }
+  ]
+}
