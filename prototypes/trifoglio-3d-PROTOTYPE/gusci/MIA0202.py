@@ -114,7 +114,7 @@ def finestra(k, e, t0, t1, z0, z1, ante=1):
 
 
 def facciata(k, e, z0, z1, csip, reach=1.4, spigoli=False):
-    """Un piano su un lato: il muro in klinker coi buchi, le finestre grandi (0,9-2,45 m) e
+    """Un piano su un lato: il muro in klinker coi buchi, le finestre grandi (0,75-2,6 m) e
     le piccole orizzontali (1,5-2,3 m); con spigoli, anche quelle d'angolo. Restituisce le t
     delle lesene."""
     iv = k.finestre_pianta(csip, e, reach, 0.5)
@@ -127,10 +127,10 @@ def facciata(k, e, z0, z1, csip, reach=1.4, spigoli=False):
             piccole.insert(0, (0.0, 1.25))
         if 1.5 < L - iv[-1][1] < 2.2:
             piccole.append((L - 1.25, L))
-    buchi = [(a, b, z0 + 0.9, z0 + 2.45) for a, b in grandi] + [(a, b, z0 + 1.5, z0 + 2.3) for a, b in piccole]
+    buchi = [(a, b, z0 + 0.75, z0 + 2.6) for a, b in grandi] + [(a, b, z0 + 1.5, z0 + 2.3) for a, b in piccole]
     k.muro(e, z0, z1, KLINKER, buchi)
     for a, b in grandi:
-        finestra(k, e, a, b, z0 + 0.9, z0 + 2.45)
+        finestra(k, e, a, b, z0 + 0.75, z0 + 2.6)
     for a, b in piccole:
         finestra(k, e, a, b, z0 + 1.5, z0 + 2.3, ante=2 if b - a > 0.9 else 1)
     return lesene

@@ -27,9 +27,11 @@ Fonti, oltre ai contorni di leonardo.json e alle piante (piante/MIA0105-geometri
   al primo.
 
 Le finestre del primo e del secondo stanno dove le disegnano le piante (linee.finestre); il
-terra e il seminterrato le ripetono in colonna. Il terra a bugne grezze vale per tutte le
-facciate esterne del corpo; verso il cortile resta bugnato liscio ad archi, come nel cortile
-dell'Edificio 3 (foto di Wikimedia Commons). Il lato nord e quello est non hanno foto.
+terra e il seminterrato le ripetono in colonna. Il terra a bugne grezze vale per le facciate
+ovest del corpo; a nord (panorami Mapillary 2025, l'ingresso col cartello "5" sullo smusso
+del padiglione) il terra ha gli archi e le bugne lisce salgono fino al cornicione; verso il
+cortile resta il bugnato liscio ad archi, come nel cortile dell'Edificio 3 (foto di
+Wikimedia Commons). Il lato est non ha foto.
 
 Quote come l'Edificio 3, con cui si collega con la passerella al terra: seminterrato a quota
 del cortile (le porte esterne della pianta sono al seminterrato), terra a 3,6 m, primo a
@@ -355,13 +357,17 @@ def palazzo(E, S, b, g, masse, nome, z_top, piani, passo=4.2, colore=STUCCO, cor
     fascia: (csip della pianta per le finestre o None, z del davanzale, z della chiave,
     'arco' o 'retta'). `terra_fuori` è il terra delle facciate esterne: 'arco' come nei
     cortili, o 'retta' (bugne grezze e finestre rette con la piattabanda, come la facciata
-    ovest nelle foto del passaggio fra l'Edificio 5 e la palazzina Lerici)."""
+    ovest nelle foto del passaggio fra l'Edificio 5 e la palazzina Lerici): vale solo per i
+    lati che guardano a ovest, perché sul lato nord i panorami Mapillary (2025) mostrano gli
+    archi anche al terra."""
     for pts in anelli(g):
         fuori = Polygon(pts).exterior.is_ccw
         for ie, e in enumerate(E.edges(pts)):
             for t0, t1 in tratti_liberi(e, masse, z_top - 1.0, nome):
+                ovest = fuori and e[3][0] < -0.9
+                nord = fuori and e[3][1] < -0.9
                 _palazzo_tratto(E, S, b, pts, ie, e, t0, t1, z_top, piani, passo, colore, cornice,
-                                terra_fuori if fuori else "arco")
+                                terra_fuori if ovest else ("nord" if nord else "arco"))
             # il muro sopra le masse più basse (i corpi addossati): liscio, con il cornicione
             for t0, t1 in tratti_liberi(e, masse, z_top, nome):
                 E.panel(S, STUCCO_CHIARO, e, rett(t0, t1, z_top - 0.55, z_top), 0.0, cornice)
@@ -380,8 +386,12 @@ def _palazzo_tratto(E, S, b, pts, ie, e, t0, t1, z_top, piani, passo, colore, co
         centri = [(t, 1.3) for t in campate(t0, t1, passo)]
     w_t = lambda w: max(1.0, min(1.5, w))
     # zoccolo con le finestre del seminterrato
-    fin_s = [rett(t - 0.55, t + 0.55, 0.7, 2.4) for t, _ in centri]
-    zoc = rett(t0, t1, 0.0, ZOCCOLO).difference(unary_union([f.buffer(0.1, join_style=2) for f in fin_s]))
+    # a nord il terreno sale fino al terra (il cortile è al seminterrato): niente finestre del
+    # seminterrato, lo zoccolo arriva al terra e le finestre ad arco scendono quasi a terra,
+    # come le portefinestre col sopraluce dei panorami Mapillary davanti all'ingresso
+    zoccolo = QUOTE["MIA0105000"] if terra == "nord" else ZOCCOLO
+    fin_s = [] if terra == "nord" else [rett(t - 0.55, t + 0.55, 0.7, 2.4) for t, _ in centri]
+    zoc = rett(t0, t1, 0.0, zoccolo).difference(unary_union([f.buffer(0.1, join_style=2) for f in fin_s]))
     E.panel(S, PIETRA, e, zoc, 0.0, 0.1)
     for f in fin_s:
         E.panel(S, "#2A2E33", e, f, 0.0, 0.02)
@@ -414,9 +424,9 @@ def _palazzo_tratto(E, S, b, pts, ie, e, t0, t1, z_top, piani, passo, colore, co
             E.panel(S, STUCCO_CHIARO, e, rett(a.bounds[0] - 0.2, a.bounds[2] + 0.2, a.bounds[1] - 0.15, a.bounds[1]), 0.0, 0.18)
     else:
         # terra bugnato, corsi da 55 cm interrotti dagli archi
-        archi = [arco(t - w_t(w) / 2, t + w_t(w) / 2, zt + 0.8, zt + 4.0) for t, w in centri]
+        archi = [arco(t - w_t(w) / 2, t + w_t(w) / 2, zt + (0.35 if terra == "nord" else 0.8), zt + 4.0) for t, w in centri]
         fori = unary_union([a.buffer(0.2, join_style=2) for a in archi] + [f.buffer(0.1, join_style=2) for f in fin_s])
-        z = ZOCCOLO
+        z = zoccolo
         while z < FASCIA - 0.1:
             E.panel(S, BUGNATO, e, rett(t0, t1, z, min(FASCIA, z + 0.49)).difference(fori), 0.0, 0.06)
             z += 0.55
@@ -427,6 +437,7 @@ def _palazzo_tratto(E, S, b, pts, ie, e, t0, t1, z_top, piani, passo, colore, co
                                                   (cx + 0.24, top + 0.4), (cx - 0.24, top + 0.4)]), 0.0, 0.16)
     E.panel(S, STUCCO_CHIARO, e, rett(t0, t1, FASCIA, FASCIA + 0.4), 0.0, 0.22)
     # i registri sopra la fascia
+    fori_su = []
     for k, (csip, z0, z1, forma) in enumerate(piani):
         cc = centri_da_pianta(b, E, csip, pts, ie, t0, t1) if csip else []
         if not cc:
@@ -435,6 +446,7 @@ def _palazzo_tratto(E, S, b, pts, ie, e, t0, t1, z_top, piani, passo, colore, co
             ww = max(1.0, min(1.45, w))
             g = arco(t - ww / 2, t + ww / 2, z0, z1) if forma == "arco" else rett(t - ww / 2, t + ww / 2, z0, z1)
             finestra(E, S, e, g)
+            fori_su.append(g.buffer(0.25, join_style=2))
             E.panel(S, STUCCO_CHIARO, e, rett(t - ww / 2 - 0.2, t + ww / 2 + 0.2, z0 - 0.15, z0), 0.0, 0.18)
             if forma == "arco":
                 E.panel(S, STUCCO_CHIARO, e, Polygon([(t - 0.16, z1 - 0.05), (t + 0.16, z1 - 0.05),
@@ -442,6 +454,11 @@ def _palazzo_tratto(E, S, b, pts, ie, e, t0, t1, z_top, piani, passo, colore, co
         if k + 1 < len(piani):      # la fascetta fra due piani
             zf = piani[k + 1][1] - 0.75
             E.panel(S, STUCCO_CHIARO, e, rett(t0, t1, zf, zf + 0.22), 0.0, 0.08)
+    # le bugne lisce anche sopra la fascia, come nei panorami del lato nord: i giunti ogni 55 cm
+    if piani:
+        buchi = unary_union(fori_su) if fori_su else Polygon()
+        giunti = [rett(t0, t1, z - 0.02, z + 0.02) for z in np.arange(FASCIA + 0.95, z_top - 1.3, 0.55)]
+        E.panel(S, GIUNTO, e, unary_union(giunti).difference(buchi), 0.0, 0.012)
     # fregio, cornicione a due gradini con le mensole
     E.panel(S, STUCCO_CHIARO, e, rett(t0, t1, z_top - 1.25, z_top - 1.1), 0.0, 0.1)
     E.panel(S, STUCCO_CHIARO, e, rett(t0, t1, z_top - 0.85, z_top - 0.55), 0.0, cornice * 0.5)
