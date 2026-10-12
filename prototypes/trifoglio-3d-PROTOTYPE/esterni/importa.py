@@ -35,6 +35,8 @@ MARCIAPIEDE = {"primary": 4, "secondary": 3.5, "tertiary": 3, "residential": 2.5
 VERDE = {"grass": "prato", "park": "parco", "garden": "giardino", "dog_park": "cani", "flowerbed": "aiuola",
          "village_green": "prato", "recreation_ground": "prato"}
 SPORT = {"pitch", "track", "playground"}
+# altezze di OSM smentite dalle panoramiche (Mapillary, via Saldini e via Colombo, ottobre 2026)
+ALTEZZE = {"w248727395": 4.0, "w248727399": 4.0}   # Edifici 32.4 e 32.5: un piano, non 12,8 m
 
 
 def xy(x, y):
@@ -198,7 +200,7 @@ def main():
             continue
         h = r.get("height")
         piani = r.get("num_floors")
-        out["edifici"].append({"altezza": round(h or (piani or 4) * 3.2, 1), "pianta": anello(g, 0.3),
+        out["edifici"].append({"altezza": ALTEZZE.get(r["osm"]) or round(h or (piani or 4) * 3.2, 1), "pianta": anello(g, 0.3),
                                **({"nome": r["nome"]} if r["nome"] else {}), "osm": r["osm"]})
 
     # ---- quello che leonardo.json ha in più (disegnato a mano o da un OSM più vecchio)
