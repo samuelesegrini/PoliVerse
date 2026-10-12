@@ -447,7 +447,7 @@ Il corpo sotto la piazza fra il Trifoglio e il 14: il seminterrato affiora sulle
 
 ### Edificio 9A Poli.Radio (`MIA0113`)
 
-La palazzina stretta di due piani a est del 9: il terra era disegnato 3 m più a ovest del primo e ci sta sopra con lo `spostamento` in `leonardo.json`; intonaco, finestre delle piante, cornicione e tetto in coppi come nel `profilo` e nell'ortofoto. Nessuna foto.
+La palazzina stretta di due piani a est del 9, rifatta sulle panoramiche Mapillary 2024-25 di via Ponzio, dove il lato est è il muro di cinta stesso: il terra cieco d'intonaco grigio su uno zoccolo di ghiaietto, quattro campate fra lesene di pietra chiara, al primo un nastro di finestre per campata (vetro sopra, pannello scuro sotto) su una fascia di pietra, la cornice e il tetto basso in coppi a padiglione con la gronda a 5,9 m. A sud un corpo a un piano con la terrazza, la ringhiera a correnti e un'unità esterna. Le misure vengono dalle panoramiche raddrizzate sul piano della facciata; gli altri lati, che non si vedono, hanno le finestre delle piante.
 
 ### Edificio CT1 Centralino (`MIA0109`)
 
@@ -455,7 +455,7 @@ La palazzina a un piano del Centralino, dal `profilo` dell'illustrazione: intona
 
 ### Edificio 10 Posta (`MIA0110`)
 
-La palazzina a un piano della Posta, dal `profilo` dell'illustrazione: intonaco, finestre a campate di 3,6 m, cornicione, terrazza grigia. Nessuna foto.
+La palazzina bassa subito dietro la cancellata di via Bonardi, rifatta sulle panoramiche Mapillary e sull'ortofoto: sta nel cortile ribassato davanti al seminterrato dell'8, col pavimento a -1,4 m e il tetto a 2,2 m, all'altezza degli occhi di chi passa; il lato est è un muro cieco d'intonaco ocra sotto una fascia di gronda grigio scuro, il tetto piano grigio ha le tre strisce chiare dell'ortofoto.
 
 ### Edificio 2A Sala Lettura (`MIA0114`)
 
