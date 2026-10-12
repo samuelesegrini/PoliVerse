@@ -1,7 +1,7 @@
 """PROTOTIPO — l'Edificio 7 "Carlo Erba" (MIA0107), l'esterno rifatto da zero.
 
 Fonti, oltre ai contorni di leonardo.json e alle piante:
-- l'ortofoto (Esri World Imagery, z19): il corpo lungo su via Ponzio con il tetto a padiglione
+- l'ortofoto (Esri World Imagery, z19, e Google, z21): il corpo lungo su via Ponzio con il tetto a padiglione
   in coppi, largo quanto il primo piano delle piante (15 m); dietro, a ovest, il capannone a un
   piano con nove denti di sega (shed) in coppi, la vetrata rivolta a nord, ogni 5 m; a nord del
   capannone un corpo basso a tetto piano grigio con gli impianti; a sud il corpo a due piani
@@ -16,9 +16,21 @@ Fonti, oltre ai contorni di leonardo.json e alle piante:
   (Jwslubbock, CC BY-SA 3.0) per gli edifici vicini dello stesso tempo: intonaco grigio, finestre
   ad arco, fascia marcapiano, cornicione semplice e tetto in coppi.
 
-Del corpo su via Ponzio non si sono trovate foto: segue gli altri corpi storici del campus e la
-mappa (intonaco grigio, finestre ad arco ai due piani, campata di 3,8 m). Le quote sono dedotte:
-il seminterrato a -3, il terra rialzato a 1,2 m, il primo a 6,6 m, la gronda a 12,4 m.
+Corretto sulle foto reali il 2026-10-12:
+- le panoramiche Mapillary del 2024 dal marciapiede di via Ponzio (id 1266563197700555,
+  1089649288686022): intonaco beige caldo, non grigio; finestre ad arco ai due piani con il
+  traverso all'imposta e la lunetta a raggiera; le specchiature ad arco intorno a quelle del
+  primo e il fregio di riquadri sotto il cornicione; le lesene ai capi degli avancorpi d'angolo
+  (35-50 cm in fuori, già nella pianta del terra) e del portale; l'attico sopra la gronda con
+  i piedistalli e i pinnacoli. Il render dallo stesso punto è stato confrontato con le foto;
+- la foto Mapillary del 2017 da via Ponzio (131856842324711): il portale ad arco al centro
+  della facciata, la porta doppia della pianta, con sopra la scritta ISTITUTO ELETTROTECNICO
+  CARLO ERBA;
+- il satellite Google a 5 cm/px (2,3 m più a nord del frame di OSM): il tetto a padiglione
+  sporge 55 cm, l'attico è lungo 20 m con quattro piedistalli; il refrigeratore bianco a otto
+  ventole sul corpo nord; il tetto del corpo sud in lamiera grecata chiara, greche nord-sud.
+Le quote sono dedotte dalle piante: il seminterrato a -3, il terra rialzato a 1,2 m, il primo
+a 6,6 m, la gronda a 12,4 m (dalle panoramiche il corpo è più basso dell'Edificio 9 a fianco).
 Coordinate Z-up del frame del campus: x est, y sud.
 """
 import math
@@ -43,18 +55,21 @@ SUD_TOP = 11.4          # il corpo a due piani dell'aula 7.1.3
 X_FRONTE = 119.5
 Y_SHED0, Y_SHED1, Y_SUD = 177.0, 222.0, 226.8
 
-INTONACO = "#C9C6BD"    # l'intonaco grigio (mappa, foto di via Ponzio)
-INTONACO_SUD = "#DAD6CC"
-STUCCO_CHIARO = "#E5E1D7"   # cornici, fasce, cornicione
-PIETRA = "#9C9890"      # lo zoccolo
+INTONACO = "#C8BFAB"    # l'intonaco beige caldo delle panoramiche di via Ponzio (2024)
+INTONACO_SUD = "#D6D1C5"
+STUCCO_CHIARO = "#DDD6C6"   # cornici, fasce, cornicione, lesene
+LESENA = "#D2CAB7"      # le lesene e le specchiature, appena più chiare dell'intonaco
+PIETRA = "#A39D90"      # lo zoccolo
 VETRO_SCURO = "#3D4752"
 TELAIO = "#F2F0EA"      # i telai bianchi (foto delle aule)
 VETRO_SHED = "#9DB0C0"
 FERRO = "#2F3236"
 TETTO_PIANO = "#8B8E8F"     # il tetto del corpo nord, grigio nell'ortofoto
 TETTO_SCURO = "#55585B"     # la striscia bassa
-TELI = "#DCDAD3"            # i teli chiari del tetto del corpo sud
+TELI = "#D3D4D0"            # la lamiera grecata chiara del tetto del corpo sud (satellite)
+GRECA = "#B9BBB7"
 IMPIANTI = "#B9BDC2"
+IMPIANTI_BIANCHI = "#E8E9E6"
 LASTRE = "#B9B5AC"
 PORTA = "#3A3B3D"
 COPPI = "coppi"
@@ -151,16 +166,27 @@ def rett(t0, t1, z0, z1):
     return Polygon([(t0, z0), (t1, z0), (t1, z1), (t0, z1)])
 
 
-def finestra(E, S, e, shape, cornice=0.15, sporge=0.1, vetro=VETRO_SCURO):
-    """Il vetro scuro appena dentro il filo, la cornice chiara intorno, montante e traverso
-    bianchi."""
+def finestra(E, S, e, shape, cornice=0.15, sporge=0.1, vetro=VETRO_SCURO, imposta=None):
+    """Il vetro scuro appena dentro il filo, la cornice chiara intorno, i telai bianchi. Nelle
+    finestre ad arco (imposta data) come nelle panoramiche di via Ponzio e nella foto
+    dell'AIRLab: il traverso all'imposta, la lunetta a raggiera, due montanti sotto se la
+    finestra è larga."""
     E.panel(S, vetro, e, shape, 0.0, 0.02)
     E.panel(S, STUCCO_CHIARO, e, shape.buffer(cornice, join_style=2).difference(shape), 0.0, sporge)
     t0, z0, t1, z1 = shape.bounds
-    tm = (t0 + t1) / 2
-    zt = z0 + (z1 - z0) * 0.62
-    bars = unary_union([rett(tm - 0.03, tm + 0.03, z0, z1), rett(t0, t1, zt - 0.03, zt + 0.03)])
-    E.panel(S, TELAIO, e, bars.intersection(shape), 0.0, 0.05)
+    tm, w = (t0 + t1) / 2, t1 - t0
+    if imposta is None:
+        zt = z0 + (z1 - z0) * 0.62
+        bars = [rett(tm - 0.03, tm + 0.03, z0, z1), rett(t0, t1, zt - 0.03, zt + 0.03)]
+    else:
+        r = w / 2
+        bars = [rett(t0, t1, imposta - 0.04, imposta + 0.04),
+                rett(t0, t1, z0 + (imposta - z0) * 0.55 - 0.03, z0 + (imposta - z0) * 0.55 + 0.03)]
+        k = 2 if w > 1.2 else 1
+        bars += [rett(t0 + w * j / (k + 1) - 0.03, t0 + w * j / (k + 1) + 0.03, z0, imposta) for j in range(1, k + 1)]
+        for a in (math.pi / 4, math.pi / 2, 3 * math.pi / 4):       # la raggiera della lunetta
+            bars.append(LineString([(tm, imposta), (tm + r * math.cos(a), imposta + r * math.sin(a))]).buffer(0.03))
+    E.panel(S, TELAIO, e, unary_union(bars).intersection(shape), 0.0, 0.05)
 
 
 def libero(e, altre):
@@ -225,9 +251,15 @@ def facciata(E, S, b, pts, altre, piani, top, tinta=INTONACO, ad_arco=True, base
                 w = t1 - t0
                 if ad_arco and w <= 2.2:
                     g = arco(t0, t1, z_sill, z_imp)
+                    finestra(E, S, e, g, imposta=z_imp)
+                    if csip.endswith("001") and top == GRONDA:      # la specchiatura ad arco del primo
+                        E.panel(S, LESENA, e, arco(t0 - 0.45, t1 + 0.45, z_sill - 0.15, z_imp, seg=12).difference(
+                            g.buffer(0.16, join_style=2)), 0.0, 0.04)
+                        # il fregio sotto il cornicione: un riquadro sopra ogni finestra (panoramiche)
+                        E.panel(S, LESENA, e, rett(t0 - 0.3, t1 + 0.3, GRONDA - 1.45, GRONDA - 0.9), 0.0, 0.03)
                 else:
                     g = rett(t0, t1, z_sill, z_imp + (w / 2 if ad_arco else 0.0))
-                finestra(E, S, e, g)
+                    finestra(E, S, e, g)
                 E.panel(S, STUCCO_CHIARO, e, rett(t0 - 0.25, t1 + 0.25, z_sill - 0.12, z_sill), 0.0, 0.16)   # il davanzale
                 if csip.endswith("000"):     # la bocca del seminterrato sotto la finestra del terra
                     E.panel(S, "#2A2E33", e, rett(t0 + 0.1, t1 - 0.1, base + 0.25, Z_T - 0.2), 0.0, 0.03)
@@ -314,9 +346,19 @@ def ingressi(b, E, S, contorno):
             m = (t0 + t1) / 2
             t0, t1 = m - 0.6, m + 0.6
         e = es[i]
-        E.panel(S, PORTA, e, rett(t0, t1, Z_T, Z_T + 2.6), 0.0, 0.03)
-        E.panel(S, STUCCO_CHIARO, e, rett(t0, t1, Z_T, Z_T + 2.6).buffer(0.2, join_style=2).difference(
-            rett(t0, t1, Z_T - 1, Z_T + 2.6)), 0.0, 0.14)
+        if n[0] > 0.9 and abs(p[1] - PORTALE_Y) < 2.0:
+            # il portale su via Ponzio (foto Mapillary 2017): ad arco, con la ghiera in pietra e,
+            # sopra, la scritta ISTITUTO ELETTROTECNICO CARLO ERBA
+            t0, t1 = t0 - 0.2, t1 + 0.2
+            g = arco(t0, t1, Z_T, Z_T + 2.6, seg=12)
+            E.panel(S, PORTA, e, g, 0.0, 0.03)
+            E.panel(S, PIETRA, e, g.buffer(0.35, join_style=2).difference(g).difference(
+                rett(t0 - 1, t1 + 1, Z_T - 5, Z_T)), 0.0, 0.16)
+            scritta(E, S, e, (t0 + t1) / 2, Z_T + 2.6 + (t1 - t0) / 2 + 0.45)
+        else:
+            E.panel(S, PORTA, e, rett(t0, t1, Z_T, Z_T + 2.6), 0.0, 0.03)
+            E.panel(S, STUCCO_CHIARO, e, rett(t0, t1, Z_T, Z_T + 2.6).buffer(0.2, join_style=2).difference(
+                rett(t0, t1, Z_T - 1, Z_T + 2.6)), 0.0, 0.14)
         # pianerottolo da 1,2 m e gradini da 17 x 30 cm verso fuori
         E.panel(S, LASTRE, e, rett(t0 - 0.3, t1 + 0.3, -0.05, Z_T), 0.0, 1.2)
         k = int(Z_T / 0.17)
@@ -326,6 +368,102 @@ def ingressi(b, E, S, contorno):
             E.trave(S, FERRO, (*E.on_face(e, s, 1.2, Z_T + 1.0)[:2], Z_T + 1.0),
                     (*E.on_face(e, s, 1.2 + k * 0.3, 1.0)[:2], 1.0), 0.05)
 
+SCRITTA = "ISTITUTO ELETTROTECNICO CARLO ERBA"
+LETTERE = "#3E3B35"
+
+
+def blocco(S, key, e, t0, t1, z0, z1, d0, d1):
+    """Un parallelepipedo sulla faccia (per i pezzi troppo piccoli per E.panel, che scarta
+    le forme sotto i 5 dm²)."""
+    _, _, u, n, _, _ = e
+    m = trimesh.creation.box(extents=[t1 - t0, d1 - d0, z1 - z0])
+    a = e[0]
+    tc, dc = (t0 + t1) / 2, (d0 + d1) / 2
+    M = np.array([[u[0], n[0], 0, a[0] + u[0] * tc + n[0] * dc], [u[1], n[1], 0, a[1] + u[1] * tc + n[1] * dc],
+                  [0, 0, 1, (z0 + z1) / 2], [0, 0, 0, 1]], float)
+    if np.linalg.det(M[:3, :3]) < 0:
+        M[:3, 1] *= -1
+    S.solid(key, m.apply_transform(M))
+
+
+# Le lettere a bastoncino su una griglia 2 x 2: aste (x0, y0, x1, y1) in frazioni della lettera.
+GLIFI = {
+    "I": [(.5, 0, .5, 1)], "S": [(0, 1, 1, 1), (0, .5, 0, 1), (0, .5, 1, .5), (1, 0, 1, .5), (0, 0, 1, 0)],
+    "T": [(0, 1, 1, 1), (.5, 0, .5, 1)], "U": [(0, 0, 0, 1), (1, 0, 1, 1), (0, 0, 1, 0)],
+    "O": [(0, 0, 0, 1), (1, 0, 1, 1), (0, 0, 1, 0), (0, 1, 1, 1)],
+    "E": [(0, 0, 0, 1), (0, 1, 1, 1), (0, .5, .8, .5), (0, 0, 1, 0)], "L": [(0, 0, 0, 1), (0, 0, 1, 0)],
+    "R": [(0, 0, 0, 1), (0, 1, 1, 1), (1, .5, 1, 1), (0, .5, 1, .5), (.6, 0, .6, .5)],
+    "C": [(0, 0, 0, 1), (0, 1, 1, 1), (0, 0, 1, 0)], "N": [(0, 0, 0, 1), (1, 0, 1, 1), (0, 1, 1, 0)],
+    "A": [(0, 0, 0, 1), (1, 0, 1, 1), (0, 1, 1, 1), (0, .5, 1, .5)],
+    "B": [(0, 0, 0, 1), (0, 1, .8, 1), (.8, .5, .8, 1), (0, .5, 1, .5), (1, 0, 1, .5), (0, 0, 1, 0)],
+}
+
+
+def scritta(E, S, e, tm, z, h=0.36, passo=0.28):
+    """La scritta sopra il portale (foto Mapillary 2017): lettere scure in rilievo su una
+    fascia liscia, a bastoncino; si legge da via Ponzio."""
+    L = len(SCRITTA) * passo
+    E.panel(S, STUCCO_CHIARO, e, rett(tm - L / 2 - 0.3, tm + L / 2 + 0.3, z - 0.12, z + h + 0.12), 0.0, 0.05)
+    _, _, u, n, _, _ = e
+    verso = 1 if u[0] * n[1] - u[1] * n[0] > 0 else -1     # la destra di chi guarda la facciata
+    w, k = passo - 0.1, 0.05
+    for i, ch in enumerate(SCRITTA):
+        t = -L / 2 + i * passo + 0.06
+        for x0, y0, x1, y1 in GLIFI.get(ch, []):
+            if x0 != x1 and y0 != y1:       # la diagonale della N: tre gradini
+                for j in range(3):
+                    blocco(S, LETTERE, e, *sorted(tm + verso * (t + w * q) for q in (j / 3, (j + 1) / 3)),
+                           z + h * (1 - (j + 1) / 3), z + h * (1 - j / 3), 0.03, 0.08)
+                continue
+            ta, tb = sorted(tm + verso * (t + w * q) for q in (x0, x1))
+            blocco(S, LETTERE, e, ta - k / 2, tb + k / 2, z + h * y0 - k / 2, z + h * y1 + k / 2, 0.03, 0.08)
+
+
+# Lungo via Ponzio (panoramiche Mapillary 2024): gli avancorpi d'angolo, che la pianta del terra
+# già disegna (35-50 cm in fuori), chiusi da lesene; al centro il portale fra due lesene e,
+# sopra la gronda, l'attico. Dal satellite Google (5 cm/px, riportato 2,3 m a sud sul frame
+# di OSM) l'attico è lungo 20 m con quattro piedistalli: ai capi e sopra le lesene del portale.
+LESENE_Y = (169.7, 180.1, 201.7, 213.0, 236.3, 246.6)
+ATTICO_Y = (197.4, 217.2)
+PINNACOLI_Y = (197.7, 201.7, 213.0, 216.9)
+ATTICO = 1.6
+PORTALE_Y = 208.2       # il portale: la porta doppia del terra su via Ponzio
+
+
+def ponzio(E, S, f):
+    """Le lesene e l'attico sopra il portale, sulla facciata est (i lati con la normale verso
+    est, che la pianta spezza agli avancorpi)."""
+    es = [e for e in E.edges(E.ring_ccw(f)) if e[3][0] > 0.9]
+
+    def lato(y):
+        for e in es:
+            a, _, u, _, L, _ = e
+            t = (y - a[1]) / u[1]
+            if -0.01 <= t <= L + 0.01:
+                return e, t
+        return None, None
+    for y in LESENE_Y:
+        e, t = lato(y)
+        if e is None:
+            continue
+        t = min(max(t, 0.35), e[4] - 0.35)
+        E.panel(S, LESENA, e, rett(t - 0.35, t + 0.35, Z_T + 0.1, GRONDA - 0.7), 0.0, 0.12)
+    # l'attico: il muro che sale oltre la gronda, la cimasa, una specchiatura e i pinnacoli
+    e, ta = lato(ATTICO_Y[0])
+    _, tb = lato(ATTICO_Y[1])
+    if e is None:
+        return
+    ta, tb = sorted((ta, tb))
+    E.panel(S, INTONACO, e, rett(ta, tb, GRONDA - 0.8, GRONDA + ATTICO), -0.4, 0.15)
+    E.panel(S, STUCCO_CHIARO, e, rett(ta - 0.1, tb + 0.1, GRONDA + ATTICO, GRONDA + ATTICO + 0.2), -0.5, 0.25)
+    for y0, y1 in zip(PINNACOLI_Y, PINNACOLI_Y[1:]):      # le specchiature fra i piedistalli
+        t0, t1 = sorted((lato(y0)[1], lato(y1)[1]))
+        E.panel(S, LESENA, e, rett(t0 + 0.5, t1 - 0.5, GRONDA + 0.25, GRONDA + ATTICO - 0.25), 0.15, 0.2)
+    for y in PINNACOLI_Y:
+        x, y, _ = E.on_face(e, lato(y)[1], -0.1, 0)
+        S.solid(STUCCO_CHIARO, E.box_z(x, y, 0.5, 0.5, GRONDA + ATTICO + 0.2, GRONDA + ATTICO + 0.55))
+        S.solid(STUCCO_CHIARO, trimesh.creation.icosphere(subdivisions=1, radius=0.22).apply_translation(
+            [x, y, GRONDA + ATTICO + 0.77]))
 
 # ------------------------------------------------------------------ guscio
 
@@ -376,8 +514,9 @@ def guscio(b, E):
     # il corpo su via Ponzio: cornicione e tetto a padiglione in coppi
     f = P["fronte"]
     cornicione(E, S, E.ring_ccw(f), GRONDA, 0.6, h=0.8)
+    ponzio(E, S, f)
     x0, y0, x1, y1 = f.bounds
-    colmo = falde(E, S, x0, y0, x1, y1, GRONDA, pendenza=0.5, sporto=0.35)
+    colmo = falde(E, S, x0, y0, x1, y1, GRONDA, pendenza=0.38, sporto=0.55)     # il tetto sul satellite sporge 55 cm
     # il capannone: il bordo e i denti di sega
     g = P["shed"]
     cornicione(E, S, E.ring_ccw(g), SHED_GRONDA, 0.3, h=0.4)
@@ -388,16 +527,24 @@ def guscio(b, E):
         E.prisma(S, colore, E.ring_ccw(g.buffer(-0.3, join_style=2)), top[k], top[k] + 0.05)
         parapetto(E, S, g, top[k], h=0.6)
     gx0, gy0, gx1, gy1 = P["nord"].bounds
-    for cx, cy, w, d in ((gx0 + 3.0, gy0 + 3.5, 3.0, 2.2), (gx0 + 3.0, gy0 + 6.7, 3.0, 2.2), (gx0 + 6.5, gy0 + 5.0, 1.6, 1.6)):
-        S.solid(IMPIANTI, E.box_z(cx, cy, w, d, NORD_TOP, NORD_TOP + 1.3))
-    # il corpo sud: tetto piano chiaro a teli, con le giunte
+    # sul satellite Google (5 cm/px, 2,3 m più a nord di OSM): il refrigeratore bianco con otto
+    # ventole in due file, una macchina più piccola a nord-est e i tubi verso il corpo lungo
+    S.solid(IMPIANTI_BIANCHI, E.box_z(113.4, 175.3, 5.0, 2.6, NORD_TOP, NORD_TOP + 1.8))
+    for i in range(4):
+        for j in range(2):
+            S.solid(FERRO, trimesh.creation.cylinder(radius=0.5, height=0.06, sections=16).apply_translation(
+                [111.5 + i * 1.25, 174.65 + j * 1.3, NORD_TOP + 1.83]))
+    S.solid(IMPIANTI, E.box_z(116.4, 170.5, 2.2, 1.6, NORD_TOP, NORD_TOP + 1.2))
+    E.trave(S, IMPIANTI, (117.6, 170.5, NORD_TOP + 0.4), (119.4, 170.5, NORD_TOP + 0.4), 0.25)
+    # il corpo sud: tetto piano in lamiera grecata chiara (satellite)
     g = P["sud"]
     E.prisma(S, TELI, E.ring_ccw(g.buffer(-0.3, join_style=2)), SUD_TOP, SUD_TOP + 0.05)
     parapetto(E, S, g, SUD_TOP, h=0.7)
     sx0, sy0, sx1, sy1 = g.bounds
-    for x in np.arange(sx0 + 1.6, sx1 - 0.5, 1.6):
-        for q in E.clean(g.buffer(-0.35, join_style=2).intersection(box(x - 0.03, sy0, x + 0.03, sy1))):
-            E.prisma(S, "#C4C1B8", E.ring_ccw(q), SUD_TOP + 0.05, SUD_TOP + 0.09)
+    for x in np.arange(sx0 + 0.6, sx1 - 0.3, 0.6):      # le greche ogni 60 cm, nord-sud come sul satellite
+        largo = 0.05 if round((x - sx0) / 0.6) % 6 else 0.1     # le giunte fra le lastre ogni 3,6 m
+        for q in E.clean(g.buffer(-0.35, join_style=2).intersection(box(x - largo, sy0, x + largo, sy1))):
+            E.prisma(S, GRECA, E.ring_ccw(q), SUD_TOP + 0.05, SUD_TOP + 0.1)
     return S.meshes(), round(colmo, 2)
 
 
