@@ -4,12 +4,16 @@ con le aule G.0.1 e G.0.2 a ovest e i laboratori a est.
 Fonti, oltre alla pianta del Politecnico (il terra, l'unico piano):
 - la sagoma e l'altezza di OSM (w41758125, 10,7 m, un piano); la pianta è più lunga di OSM di
   qualche metro per parte, e sta con l'ortofoto: il guscio segue la pianta;
-- l'ortofoto (Esri World Imagery, spostata di circa 8 m verso est e 5 m verso nord): il tetto
-  a due lunghe coperture chiare affiancate da ovest a est, lette come due botti ribassate, e
-  la testata ovest più bassa e scura;
+- l'ortofoto (Esri World Imagery, spostata di circa 8 m verso est e 5 m verso nord), rimessa
+  sulla pianta: la navata alta da x 514,6 a 557 coperta da due tetti chiari affiancati, uno
+  largo verso nord e uno stretto verso sud, con il canale in mezzo a y 255,7; lungo il lato
+  nord una navata bassa scura, sempre in ombra (è più bassa della navata alta), che comincia
+  dove la pianta fa il dente a x 520; in testa verso via Golgi un corpo basso con le macchine
+  sul tetto;
 - la pianta: le finestre sui lati lunghi e le porte verso il cortile a sud.
 
-Nessuna foto delle facciate: muri intonacati, l'altezza del capannone presa da OSM.
+Nessuna foto delle facciate: muri intonacati; sopra la navata bassa, le finestre alte della
+navata.
 """
 import sys
 import pathlib
@@ -20,8 +24,11 @@ import _kit as K
 
 CSIE = "MIA0402"
 GRONDA = 9.0
-FRECCIA = 1.2
-OVEST = 520.5                     # la testata più bassa, a ovest
+FRECCIA = 1.0
+BASSO = 4.5                       # la navata bassa a nord e il corpo verso via Golgi
+NORD = 249.8                      # dove comincia la navata alta
+CANALE = 255.7                    # il canale fra i due tetti chiari
+EST = 557.0                       # dove finisce la navata alta, verso via Golgi
 
 INTONACO = "#DAD5CA"
 TELAIO = "#4A4F55"
@@ -46,15 +53,17 @@ def guscio(b, E):
     corpo = k.squadra(k.contorno("MIA0402000", chiudi=0.6))
     corpo = max(k.pezzi(corpo), key=lambda g: g.area)
     x0, y0, x1, y1 = corpo.bounds
-    testata = corpo.intersection(box(0, 0, OVEST, 1000))
-    capannone = corpo.difference(box(0, 0, OVEST, 1000))
-    k.piano(testata, 0.0, 5.0, st, csip="MIA0402000", porte=True)
-    k.tetto_piano(testata, 5.0, parapetto=0.5, muro=INTONACO, colore="#5A5E61")
-    k.piano(capannone, 0.0, 4.2, st, csip="MIA0402000", porte=True)
-    k.piano(capannone, 4.2, GRONDA, K.Stile(muro=INTONACO, finestre=("passo", 2.4, 1.6), davanzale=1.0, architrave=3.4, telaio=TELAIO))
-    k.tetto_piano(capannone, GRONDA, parapetto=0.0, muro=INTONACO, colore="#BFC0BC")
-    # le due botti chiare affiancate
-    m = (y0 + y1) / 2
-    for ya, yb in ((y0, m), (m, y1)):
-        k.volta(box(OVEST + 0.3, ya + 0.3, x1 - 0.3, yb - 0.3), GRONDA, FRECCIA, colore="#E4E3DE")
+    navata = corpo.intersection(box(0, NORD, EST, 1000))
+    # tutto il piano terra, poi la navata alta sopra la navata bassa e il corpo verso la strada
+    k.piano(corpo, 0.0, BASSO, st, csip="MIA0402000", porte=True)
+    k.tetto_piano(corpo.difference(navata), BASSO, parapetto=0.5, muro=INTONACO, colore="#5A5E61")
+    k.piano(navata, BASSO, GRONDA, K.Stile(muro=INTONACO, finestre=("passo", 2.4, 1.6), davanzale=1.2, architrave=3.4, telaio=TELAIO))
+    k.tetto_piano(navata, GRONDA, parapetto=0.0, muro=INTONACO, colore="#BFC0BC")
+    # i due tetti chiari affiancati, il largo a nord e lo stretto a sud
+    nx0 = navata.bounds[0]
+    for ya, yb in ((NORD, CANALE), (CANALE, y1)):
+        k.volta(box(nx0 + 0.3, ya + 0.2, EST - 0.3, yb - 0.2), GRONDA, FRECCIA * (yb - ya) / 6.0, colore="#E4E3DE")
+    # le macchine sul corpo verso via Golgi
+    k.impianto((EST + x1) / 2, NORD + 2.5, 2.4, 1.6, BASSO + 0.1, h=1.2)
+    k.impianto((EST + x1) / 2, NORD + 6.0, 2.4, 1.6, BASSO + 0.1, h=1.2)
     return k.fine()
