@@ -903,16 +903,18 @@ struct Trifoglio3DView: View {
         .safeAreaInset(edge: .bottom) { panel }
         .sheet(isPresented: $showsBench) { Trifoglio3DBenchView(bench: bench) }
         .task {
-            // `-Trifoglio3DBench` runs the bench as soon as the campus is drawn.
-            guard CommandLine.arguments.contains("-Trifoglio3DBench") else { return }
+            // `-Trifoglio3DBench` runs the bench as soon as the campus is drawn,
+            // `-Trifoglio3DBenchQuick` only its one-minute shells comparison.
+            let quick = CommandLine.arguments.contains("-Trifoglio3DBenchQuick")
+            guard quick || CommandLine.arguments.contains("-Trifoglio3DBench") else { return }
             while scene.firstFrame == nil { try? await Task.sleep(for: .milliseconds(100)) }
-            await runBench()
+            await runBench(quick: quick)
         }
     }
 
     /// Runs the bench with nothing over the walk, then shows what it measured.
-    private func runBench() async {
-        await bench.run(on: scene)
+    private func runBench(quick: Bool = false) async {
+        await bench.run(on: scene, quick: quick)
         showsBench = true
     }
 

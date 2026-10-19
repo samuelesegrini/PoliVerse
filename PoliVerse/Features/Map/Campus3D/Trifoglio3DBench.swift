@@ -150,7 +150,10 @@ final class Trifoglio3DBench {
     @ObservationIgnored private var frames: [TimeInterval] = []
 
     /// Runs every measurement in turn. Takes about a minute; the walk moves by itself.
-    func run(on scene: Trifoglio3DScene) async {
+    /// - Parameter quick: Only the still campus with the simplified shells against the
+    ///   detailed ones, five times each, alternated: about a minute, short enough not to heat
+    ///   the phone the way the whole bench does.
+    func run(on scene: Trifoglio3DScene, quick: Bool = false) async {
         guard step == nil else { return }
         let start = ContinuousClock.now
         var report = Trifoglio3DBenchReport(
@@ -167,6 +170,20 @@ final class Trifoglio3DBench {
         scene.unloadBuildings()
         step = "Campus fermo, 10 s"
         report.stillCampus = await watch(scene) { try? await Task.sleep(for: .seconds(10)) }
+
+        if quick {
+            for round in 1...5 {
+                for (name, detailed) in [("campus, tutto acceso", false), ("campus, edifici dettagliati", true)] {
+                    step = "Lontano o dettagliati (\(round)/5): \(name)"
+                    scene.setDistant(!detailed)
+                    try? await Task.sleep(for: .seconds(1))
+                    report.variants.append(.init(name: name, window: await watch(scene) { try? await Task.sleep(for: .seconds(4)) }))
+                }
+            }
+            scene.setDistant(true)
+            finish(&report, start: start)
+            return
+        }
 
         await measureVariants(&report, scene: scene)
 
@@ -191,6 +208,11 @@ final class Trifoglio3DBench {
         step = "Campus fermo di nuovo, 10 s"
         report.stillCampusAfter = await watch(scene) { try? await Task.sleep(for: .seconds(10)) }
 
+        finish(&report, start: start)
+    }
+
+    /// Closes the report with the battery and the heat, and saves it.
+    private func finish(_ report: inout Trifoglio3DBenchReport, start: ContinuousClock.Instant) {
         report.batteryEnd = Trifoglio3DProbe.battery()
         report.thermalEnd = Trifoglio3DProbe.thermal()
         report.totalSeconds = seconds(start, .now)

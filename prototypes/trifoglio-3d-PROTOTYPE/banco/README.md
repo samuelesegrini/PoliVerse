@@ -30,6 +30,9 @@ Il modo più rapido per avere numeri veri, letti dal dispositivo e non stimati:
 1. In Xcode, schema **PoliVerse** (Debug), destinazione il tuo iPhone; in Edit Scheme → Run →
    Arguments aggiungi `-Trifoglio3D` (apre il campus 3D al posto dell'app). Con anche
    `-Trifoglio3DBench` il banco parte da solo appena il campus è disegnato.
+   Con `-Trifoglio3DBenchQuick` fa solo il confronto di un minuto tra involucri da lontano e
+   dettagliati, 5 volte alternati: il banco intero porta l'iPhone 12 Pro a "serious" in 6 minuti
+   e da caldo tutto sta a 30 Hz.
 2. Altrimenti tocca **Misura** nella barra in alto del campus. La camera si muove da sola per
    circa un minuto; non toccare lo schermo.
 3. Alla fine compare la scheda con i risultati; il pulsante di condivisione manda il JSON
@@ -230,3 +233,18 @@ quando la camera va su un edificio. Se il file non c'è, tutto resta com'era.
 | solo semplificazione | 641 k | si ferma ai bordi aperti |
 
 Provato e scartato: masse estruse dall'impronta (96 k triangoli), troppo lontane dall'aspetto.
+
+### 8. Da caldo non si confrontano i frame (78ca5f8 e 1434f6c, telefono "serious")
+
+Con l'iPhone a "serious" dall'inizio tutto sta a 30 Hz, anche senza edifici; solo la scena
+vuota resta a 60. Restano leggibili i caricamenti e la memoria:
+
+| Misura | Involucri come prima (dbf7c43) | Una mesh e un materiale per edificio |
+|---|---|---|
+| I 36 edifici letti uno a uno, con la scena a schermo | 122 s | 72–74 s |
+| Tutto subito, con la scena a schermo | 161 s | 76 s |
+| Memoria a campus fermo | 599 MB | 526–530 MB |
+
+Sulla foto dal telefono i colori sono quelli degli involucri dettagliati e, senza
+semplificazione (1434f6c), il tetto del Trifoglio è pulito. Il confronto dei frame si rifà con
+il telefono freddo ("nominal") e `-Trifoglio3DBenchQuick`.
