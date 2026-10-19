@@ -422,7 +422,10 @@ final class Trifoglio3DScene {
             unlight()
             level = next
             self.csie = csie
-            exteriors.forEach { fade($0, to: $0.name == csie ? 1 : 0.18) }
+            // As in Maps, the other buildings stay solid and only those standing between the
+            // camera and this one go: see-through shells cost 37 fps against 57 on an iPhone 12 Pro.
+            let blocking = blockers(of: shell, polar: 1.0, margin: 1.15)
+            exteriors.forEach { fade($0, to: blocking.contains($0.name) ? 0 : 1) }
             models.values.forEach { fade($0, to: 0) }
             trees.forEach { fade($0, to: 1) }
             if let building = self.building { floors(of: building).forEach { lift($0, to: 0) } }
@@ -610,15 +613,60 @@ final class Trifoglio3DScene {
     ///   - margin: How much bigger than the entity the frame is; 1 is a tight fit.
     ///   - duration: How long the flight takes, in seconds.
     private func frame(_ entity: Entity?, polar: Float, margin: Float, duration: Double = 1.3) {
-        guard let entity else { return }
+        guard let framed = framing(entity, margin: margin) else { return }
+        fly(to: framed.box.center, distance: framed.distance, polar: polar, duration: duration)
+    }
+
+    /// The bounds of what ``frame(_:polar:margin:duration:)`` frames and how far away the
+    /// camera stands to fit it, or `nil` when there is nothing to frame.
+    private func framing(_ entity: Entity?, margin: Float) -> (box: BoundingBox, distance: Float)? {
+        guard let entity else { return nil }
         let box = entity.visualBounds(relativeTo: nil)
-        guard !box.isEmpty else { return }
+        guard !box.isEmpty else { return nil }
         let radius = max(length(box.extents) / 2, 4) * margin
         let vertical = fieldOfView * .pi / 180
         let aspect = viewSize.height > 0 ? Float(viewSize.width / viewSize.height) : 1
         let horizontal = 2 * atan(tan(vertical / 2) * aspect)
-        let distance = radius / sin(min(vertical, horizontal) / 2)
-        fly(to: box.center, distance: distance, polar: polar, duration: duration)
+        return (box, radius / sin(min(vertical, horizontal) / 2))
+    }
+
+    /// The buildings whose shells stand between the camera, once framed on an entity from
+    /// the south-west, and that entity: lines from the eye to its centre and to the middle
+    /// of each side of its top pass through their bounds.
+    private func blockers(of entity: Entity?, polar: Float, margin: Float) -> Set<String> {
+        guard let entity, let framed = framing(entity, margin: margin) else { return [] }
+        let (box, distance) = (framed.box, framed.distance)
+        let a = Self.southWest
+        let eye = box.center + SIMD3(sin(polar) * sin(a), cos(polar), sin(polar) * cos(a)) * distance
+        let (lo, hi) = (box.min, box.max)
+        let mid = box.center
+        let targets: [SIMD3<Float>] = [mid, [mid.x, hi.y, mid.z], [lo.x, hi.y, mid.z], [hi.x, hi.y, mid.z],
+                                       [mid.x, hi.y, lo.z], [mid.x, hi.y, hi.z]]
+        var names: Set<String> = []
+        for other in exteriors where other.name != entity.name {
+            let bounds = other.visualBounds(relativeTo: nil)
+            if targets.contains(where: { Self.segment(from: eye, to: $0, hits: bounds) }) { names.insert(other.name) }
+        }
+        return names
+    }
+
+    /// Whether the segment between two points passes through a box (the slab test).
+    private static func segment(from p: SIMD3<Float>, to q: SIMD3<Float>, hits box: BoundingBox) -> Bool {
+        guard !box.isEmpty else { return false }
+        let d = q - p
+        var (t0, t1): (Float, Float) = (0, 1)
+        for axis in 0..<3 {
+            if abs(d[axis]) < 1e-6 {
+                if p[axis] < box.min[axis] || p[axis] > box.max[axis] { return false }
+                continue
+            }
+            var (near, far) = ((box.min[axis] - p[axis]) / d[axis], (box.max[axis] - p[axis]) / d[axis])
+            if near > far { swap(&near, &far) }
+            t0 = max(t0, near)
+            t1 = min(t1, far)
+            if t0 > t1 { return false }
+        }
+        return true
     }
 
     /// Flies the camera along its orbit to look at a point from a distance and an angle,

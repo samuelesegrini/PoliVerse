@@ -224,6 +224,7 @@ final class Trifoglio3DBench {
             ("campus, senza città intorno", { scene.setVisible(["Quartiere"], $0) }),
             ("campus, senza arredi", { scene.setVisible(["Arredi"], $0) }),
             ("campus, senza terreno", { scene.setVisible(["Terreno"], $0) }),
+            ("campus, senza edifici", { scene.setVisible(["Edifici"], $0) }),
             ("campus, solo edifici senza ombre", {
                 scene.setShadows($0); scene.setVisible(trees + ["Quartiere", "Arredi", "Terreno"], $0)
             }),
@@ -236,7 +237,7 @@ final class Trifoglio3DBench {
             toggle(true)
         }
         await scene.go(to: .building("MIA0203"))
-        for (name, change) in [("edificio, gli altri trasparenti", { }),
+        for (name, change) in [("edificio, così com'è", { }),
                                ("edificio, gli altri opachi", { scene.setExteriorsOpaque() })] as [(String, () -> Void)] {
             step = "Dove va il tempo: \(name)"
             change()
