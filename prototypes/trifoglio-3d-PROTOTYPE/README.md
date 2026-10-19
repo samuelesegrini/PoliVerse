@@ -68,6 +68,8 @@ per i piani. Scrive in `PoliVerse/Preview Content/Trifoglio3D/`:
 | `MIA0205.usdz`, `MIA0205.json` | lo stesso per l'Edificio 14 (Nave) (da `leonardo.json`) |
 | `MIA0212.usdz`, `MIA0212.json` | lo stesso per l'Edificio 16B (da `leonardo.json`) |
 | `MIA0215.usdz`, `MIA0215.json` | lo stesso per l'Edificio 16C, sotto la piazza della Nave (da `leonardo.json`) |
+| `MIB0211.usdz`, `MIB0211.json` | lo stesso per l'Edificio B2 del campus Bovisa di via Durando (da `bovisa.json`) |
+| `bovisa.usdz` | l'esterno degli edifici di Bovisa sotto `Campus/Edifici/<csie>`, come in `campus.usdz`, su una lastra di suolo: Bovisa ha un frame suo (origine 45.508, 9.15), quindi non entra in `campus.usdz` |
 | `giuriati.usdz` | gli esterni del Centro Sportivo Giuriati e del suo isolato, a est del campus; si genera con `giuriati/esterni3d.py --zona` (vedi `giuriati/README.md`): con la zona ci restano i campi, la pista, le recinzioni e le impronte |
 
 Il `csiv` è lo stesso codice di `Classroom.roomCode`, quindi dall'aula di una lezione si
@@ -77,7 +79,7 @@ Per rigenerarli, da questa cartella (circa 3 minuti):
 
 ```
 python3 -m pip install shapely trimesh mapbox_earcut numpy usd-core
-python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901,MIA0202,MIA0206,MIA0207,MIA0208,MIA0209,MIA0214,MIA0113,MIA0109,MIA0110,MIA0114,MIA0115,MIA0105,MIA0107,MIA0108,MIA0111,MIA0112,MIA0205,MIA0212,MIA0215
+python3 esporta3d.py ../../design/mappa "../../PoliVerse/Preview Content/Trifoglio3D" --edifici=MIA0203,MIA0201,MIA0101,MIA0102,MIA0103,MIA0104,MIA0106,MIA0314,MIA0403,MIA1401,MIA0306,MIA0301,MIA0302,MIA0402,MIA0601,MIA0603,MIA0901,MIA0202,MIA0206,MIA0207,MIA0208,MIA0209,MIA0214,MIA0113,MIA0109,MIA0110,MIA0114,MIA0115,MIA0105,MIA0107,MIA0108,MIA0111,MIA0112,MIA0205,MIA0212,MIA0215,MIB0211
 ```
 
 Metri, asse Y verso l'alto, X verso est, Z verso sud. Piani da 4 m.
@@ -90,6 +92,10 @@ contesto di `leonardo.json`.
 `campus.usdz` solo se il suo edificio è nell'elenco, altrimenti lì resta l'estrusione.
 Gli edifici dell'elenco che non sono in `leonardo.json` si cercano negli altri file del campus
 in `design/mappa` (per ora `bassini.json`): in `campus.usdz` entra solo il loro esterno.
+Un file del campus con un'`origine` diversa da quella di `leonardo.json` (`bovisa.json`) è un
+campus lontano, nel suo frame: i suoi edifici restano fuori da `campus.usdz` e da
+`esterni/zona.json`, e il loro esterno va in `<file>.usdz` (`bovisa.usdz`). Nella preview
+`Trifoglio3DView` non ci sono ancora: serve una scena per campus.
 
 ### Aggiungere un edificio
 

@@ -377,7 +377,9 @@ def pilastri(v):
     dentro il suo contorno. Quadrati nell'atrio del seminterrato, tondi (ottagoni) nelle
     aule del primo."""
     rings = [ring(r).buffer(0) for r in v["forma"]]
-    return [r for r in rings if r.area < 1.5 and any(o is not r and o.area > 5 and o.contains(r) for o in rings)]
+    # un anello che si incrocia (B2 di Bovisa) diventa un MultiPolygon: non è un pilastro
+    return [r for r in rings if r.geom_type == "Polygon" and r.area < 1.5
+            and any(o is not r and o.area > 5 and o.contains(r) for o in rings)]
 
 
 def shape_of(v):
@@ -1128,6 +1130,18 @@ def campus(c, altri=()):
     else:
         terreno_leonardo(sc, c)
     edifici_campus(sc, ed, c, altri)
+    return sc
+
+
+def campus_altrove(edifici):
+    """Un campus lontano da Città Studi, nel frame del suo file (Bovisa): gli esterni dei suoi
+    edifici sotto Campus/Edifici, come in campus.usdz, su una lastra di suolo grigia."""
+    sc = Scena("Campus")
+    ed = sc.gruppo("Edifici", "Campus")
+    terr = sc.gruppo("Terreno", "Campus")
+    tutto = unary_union([ring(b["pianta"]) for b in edifici]).envelope.buffer(40, join_style=2)
+    sc.mesh("Suolo", terr, slab(tutto, -0.4, 0.0, COL["terreno"]))
+    edifici_campus(sc, ed, {"edifici": []}, edifici)
     return sc
 
 
@@ -2573,10 +2587,22 @@ def main():
     # Gli edifici esportati che stanno in un altro file dello stesso frame (bassini.json).
     altri = [e for f in sorted(SRC.glob("*.json")) if f.name not in ("leonardo.json", "livelli.json")
              for e in json.loads(f.read_text())["edifici"] if e["csie"] in ARGS.edifici.split(",")]
-    cs = campus(c, altri)
+    # Nel campus entrano solo quelli dello stesso frame: Bovisa (bovisa.json) ha un'origine sua.
+    stesso = {e["csie"] for f in SRC.glob("*.json") if f.name != "livelli.json"
+              for d in [json.loads(f.read_text())] if d.get("origine") == c["origine"] for e in d.get("edifici", [])}
+    cs = campus(c, [e for e in altri if e["csie"] in stesso])
     usdz(cs, OUT / "campus.usdz")
     if ARGS.glb:
         cs.s.export(OUT / "campus.glb")
+    # Gli edifici di un campus con un'origine sua vanno in <campus>.usdz (bovisa.usdz).
+    for f in sorted(SRC.glob("*.json")):
+        d = json.loads(f.read_text()) if f.name != "livelli.json" else {}
+        lontani = [e for e in d.get("edifici", []) if e["csie"] in ARGS.edifici.split(",") and e["csie"] not in stesso]
+        if lontani:
+            sl = campus_altrove(lontani)
+            usdz(sl, OUT / f"{f.stem}.usdz")
+            if ARGS.glb:
+                sl.s.export(OUT / f"{f.stem}.glb")
     for csie in ARGS.edifici.split(","):
         b = next(e for e in c["edifici"] + altri if e["csie"] == csie)
         info = SRC / "piante" / f"{csie}.json"

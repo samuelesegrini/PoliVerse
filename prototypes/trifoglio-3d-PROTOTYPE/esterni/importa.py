@@ -78,7 +78,9 @@ def main():
     a = a.parse_args()
 
     campus = {f.name: json.loads(f.read_text()) for f in sorted(a.mappa.glob("*.json"))}
-    campus = {k: v for k, v in campus.items() if isinstance(v, dict) and "edifici" in v}
+    # solo i campus nel frame di Città Studi: Bovisa (bovisa.json) ha un'origine sua
+    campus = {k: v for k, v in campus.items() if isinstance(v, dict) and "edifici" in v
+              and v.get("origine") == [LAT0, LON0]}
     pts = [p for c in campus.values() for b in c["edifici"] for p in b.get("pianta", [])]
     area = (math.floor(min(p[0] for p in pts) - MARGINE), math.floor(min(p[1] for p in pts) - MARGINE),
             math.ceil(max(p[0] for p in pts) + MARGINE), math.ceil(max(p[1] for p in pts) + MARGINE))

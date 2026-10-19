@@ -605,8 +605,13 @@ def main(csie, adding=False):
         # OpenStreetMap maps no room inside: match the floor's outline to the building's.
         # The floor whose outline sits best on the footprint places the building: often the
         # ground floor, but a basement may reach under a courtyard and a ground floor be partial.
+        # Only drawings of the same city area share an orientation: the buildings of campus
+        # files with the same origin (Bovisa's drawings are turned from Città Studi's).
+        nearby = {b["csie"] for f in HERE.glob("*.json") if f.name != "livelli.json"
+                  for c in [json.loads(f.read_text())] if c.get("origine") == campus["origine"]
+                  for b in c["edifici"]}
         known = [json.loads(g.read_text())["trasformazione"] for g in (HERE / "piante").glob("*-geometria.json")
-                 if not g.name.startswith(csie)]
+                 if not g.name.startswith(csie) and g.name.split("-")[0] in nearby]
         known = [k for k in known if k.get("da") != "contorno"]
         prior = (statistics.median(k["th"] for k in known), statistics.median(k["s"] for k in known)) if known else None
         tries = []
