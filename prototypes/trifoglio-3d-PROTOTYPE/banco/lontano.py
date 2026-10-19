@@ -3,28 +3,33 @@
 
     python3 banco/lontano.py <campus.usdz> [--quota 0.15] [--minimo 2]
 
-Scrive accanto a campus.usdz il file campus_lontano.usdz: per ogni `Campus/Edifici/<csie>` il
-suo involucro con circa `quota` dei triangoli. Le mesh di un edificio si uniscono in una sola,
-saldata, senza i pezzi più piccoli di `minimo` metri, che si semplifica per errore quadrico (fast-simplification); ogni triangolo rimasto
-riprende il materiale del triangolo originale più vicino, e si torna a una mesh per materiale.
-Le facce restano piatte: alla fine ogni triangolo ha i suoi vertici.
+Scrive accanto a campus.usdz il file campus_lontano.usdz: per ogni `Campus/Edifici/<csie>` una
+sola mesh, con un solo materiale per tutti. Le mesh di un edificio si uniscono e si saldano,
+perdono i pezzi più piccoli di `minimo` metri e si semplificano per errore quadrico a circa
+`quota` dei triangoli (fast-simplification). Ogni triangolo rimasto prende il colore del
+materiale del triangolo originale più vicino (la media della texture, se ne ha una), letto da
+una tavolozza: una texture con un quadretto per colore. Le facce restano piatte.
 
 Perché: sull'iPhone 12 Pro il campus fermo sta a cavallo dei 16,7 ms per frame e scivola a
-30 fps (banco/README.md); gli involucri sono 1,24 M triangoli, inutili da lontano. Con 2 m e
-0,15 restano 500 k triangoli e da 400 m l'aspetto quasi non cambia; con 4 m i muri fatti di
-pezzi piccoli si bucano. Trifoglio3DScene mostra questi involucri dalla vista campus e quelli
-veri quando la camera scende su un edificio. esporta3d.py lo chiama su campus.usdz e poi
-salda il risultato con ottimizza.py (20 → 14 MB).
+30 fps; la scena vuota sta a 60, senza edifici quasi, e dimezzare i triangoli degli involucri
+non cambia nulla (banco/README.md). Quello che costa sono le 540 mesh con 404 materiali degli
+involucri: qui diventano 36 mesh e 1 materiale. Con 2 m e 0,15 restano 500 k triangoli e da
+400 m l'aspetto quasi non cambia; con 4 m i muri fatti di pezzi piccoli si bucano.
+Trifoglio3DScene mostra questi involucri dalla vista campus e quelli veri quando la camera
+scende su un edificio. esporta3d.py lo chiama su campus.usdz e poi salda il risultato con
+ottimizza.py (30 → 21 MB).
 
-Dipendenze: usd-core, numpy, fast-simplification.
+Dipendenze: usd-core, numpy, pillow, fast-simplification.
 """
 import argparse, pathlib, tempfile, zipfile
 import fast_simplification
 import numpy as np
-from pxr import Usd, UsdGeom, UsdShade, UsdUtils, Vt
+from PIL import Image
+from pxr import Sdf, Usd, UsdGeom, UsdShade, UsdUtils, Vt
 from ottimizza import componenti
 
 QUOTA = 0.15
+CASELLA = 8       # pixel per lato del quadretto di ogni colore nella tavolozza
 MINIMO = 2.0      # metri: i pezzi più piccoli (cornici, davanzali, ringhiere) da lontano non si vedono
 
 
@@ -48,6 +53,21 @@ def vicini(src, dst, cella=0.5):
     return out
 
 
+def colore(st, cartella, percorso):
+    """Il colore sRGB 0–1 di un materiale: il suo diffuseColor, o la media della sua texture."""
+    pbr = st.GetPrimAtPath(percorso).GetChild("PBR") if percorso else None
+    if not pbr:
+        return np.array([0.8, 0.8, 0.8])
+    ingresso = UsdShade.Shader(pbr).GetInput("diffuseColor")
+    fonti = ingresso.GetConnectedSources()[0] if ingresso else []
+    if fonti:
+        file = UsdShade.Shader(fonti[0].source.GetPrim()).GetInput("file").Get()
+        with Image.open(cartella / file.path) as img:
+            return np.asarray(img.convert("RGB"), np.float64).reshape(-1, 3).mean(axis=0) / 255
+    lineare = np.array(ingresso.Get() if ingresso and ingresso.Get() is not None else (0.6, 0.6, 0.6))
+    return np.where(lineare <= 0.0031308, lineare * 12.92, 1.055 * lineare ** (1 / 2.4) - 0.055)
+
+
 def lontano(campus, quota=QUOTA, minimo=MINIMO):
     campus = pathlib.Path(campus)
     dest = campus.with_name("campus_lontano.usdz")
@@ -58,9 +78,12 @@ def lontano(campus, quota=QUOTA, minimo=MINIMO):
             z.extractall(d)
             radice = next(n for n in z.namelist() if n.endswith((".usdc", ".usda")))
         st = Usd.Stage.Open(str(d / radice))
+        cartella = (d / radice).parent
         for child in st.GetPrimAtPath("/Campus").GetChildren():
             if child.GetName() != "Edifici":
                 st.RemovePrim(child.GetPath())
+        tavolozza = {}              # colore sRGB a 8 bit -> casella
+        pezzi = []                  # (edificio, vertici dei triangoli, casella di ogni triangolo)
         for edificio in list(st.GetPrimAtPath("/Campus/Edifici").GetChildren()):
             Ps, Fs, mats, uso = [], [], [], []
             off = 0
@@ -73,7 +96,7 @@ def lontano(campus, quota=QUOTA, minimo=MINIMO):
                 if not len(F):
                     continue
                 rel = UsdShade.MaterialBindingAPI(prim).GetDirectBinding().GetMaterialPath()
-                mats.append(str(rel) if rel else "")
+                mats.append(rel if rel else None)
                 Ps.append(P); Fs.append(F + off); uso.append(np.full(len(F), len(mats) - 1))
                 off += len(P)
             for child in list(edificio.GetChildren()):
@@ -100,19 +123,54 @@ def lontano(campus, quota=QUOTA, minimo=MINIMO):
                 V2, G2 = np.asarray(V2, np.float64), np.asarray(G2)
             else:
                 V2, G2 = V, G
-            # Il materiale del triangolo originale più vicino al centro di ogni triangolo nuovo.
+            # Il materiale del triangolo originale più vicino al centro di ogni triangolo nuovo,
+            # ridotto al suo colore: una casella della tavolozza.
             m2 = mat[vicini(V[G].mean(axis=1), V2[G2].mean(axis=1))]
-            dopo += len(G2)
+            caselle = np.empty(len(m2), np.int64)
             for k in np.unique(m2):
-                tris = V2[G2[m2 == k]].reshape(-1, 3).astype(np.float32)
-                mesh = UsdGeom.Mesh.Define(st, edificio.GetPath().AppendChild(f"{edificio.GetName()}_Lontano_{k}"))
-                mesh.CreatePointsAttr(Vt.Vec3fArray.FromNumpy(tris))
-                mesh.CreateFaceVertexCountsAttr(Vt.IntArray([3] * (len(tris) // 3)))
-                mesh.CreateFaceVertexIndicesAttr(Vt.IntArray.FromNumpy(np.arange(len(tris), dtype=np.int32)))
-                mesh.CreateSubdivisionSchemeAttr("none")
-                if mats[k]:
-                    UsdShade.MaterialBindingAPI.Apply(mesh.GetPrim()).Bind(UsdShade.Material(st.GetPrimAtPath(mats[k])))
-        layer = d / "campus_lontano.usdc"
+                rgb = tuple(np.round(colore(st, cartella, mats[k]) * 255).astype(int))
+                caselle[m2 == k] = tavolozza.setdefault(rgb, len(tavolozza))
+            pezzi.append((edificio, V2[G2].reshape(-1, 3).astype(np.float32), caselle))
+            dopo += len(G2)
+
+        # Una sola texture con un quadretto per colore, e un solo materiale per tutti: una
+        # mesh e una draw call per edificio invece di una per materiale.
+        lato = CASELLA * int(np.ceil(np.sqrt(len(tavolozza))))
+        lato = 1 << int(np.ceil(np.log2(lato)))
+        per_riga = lato // CASELLA
+        img = Image.new("RGB", (lato, lato))
+        for rgb, i in tavolozza.items():
+            x, y = i % per_riga * CASELLA, i // per_riga * CASELLA
+            img.paste(rgb, (x, y, x + CASELLA, y + CASELLA))
+        img.save(cartella / "lontano.png")
+        st.RemovePrim("/Materiali")
+        materiale = UsdShade.Material.Define(st, "/Materiali/Lontano")
+        pbr = UsdShade.Shader.Define(st, "/Materiali/Lontano/PBR")
+        pbr.CreateIdAttr("UsdPreviewSurface")
+        pbr.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.9)
+        lettore = UsdShade.Shader.Define(st, "/Materiali/Lontano/st")
+        lettore.CreateIdAttr("UsdPrimvarReader_float2")
+        lettore.CreateInput("varname", Sdf.ValueTypeNames.String).Set("st")
+        tex = UsdShade.Shader.Define(st, "/Materiali/Lontano/tex")
+        tex.CreateIdAttr("UsdUVTexture")
+        tex.CreateInput("file", Sdf.ValueTypeNames.Asset).Set("lontano.png")
+        tex.CreateInput("st", Sdf.ValueTypeNames.Float2).ConnectToSource(lettore.ConnectableAPI(), "result")
+        pbr.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).ConnectToSource(tex.ConnectableAPI(), "rgb")
+        materiale.CreateSurfaceOutput().ConnectToSource(pbr.ConnectableAPI(), "surface")
+        for edificio, tris, caselle in pezzi:
+            # Il centro del quadretto: con le tre uv uguali la texture non sfuma mai nel vicino.
+            u = (caselle % per_riga * CASELLA + CASELLA / 2) / lato
+            v = 1 - (caselle // per_riga * CASELLA + CASELLA / 2) / lato
+            uv = np.repeat(np.stack([u, v], axis=1), 3, axis=0).astype(np.float32)
+            mesh = UsdGeom.Mesh.Define(st, edificio.GetPath().AppendChild(f"{edificio.GetName()}_Lontano"))
+            mesh.CreatePointsAttr(Vt.Vec3fArray.FromNumpy(tris))
+            mesh.CreateFaceVertexCountsAttr(Vt.IntArray([3] * (len(tris) // 3)))
+            mesh.CreateFaceVertexIndicesAttr(Vt.IntArray.FromNumpy(np.arange(len(tris), dtype=np.int32)))
+            mesh.CreateSubdivisionSchemeAttr("none")
+            UsdGeom.PrimvarsAPI(mesh).CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray,
+                                                    UsdGeom.Tokens.vertex).Set(Vt.Vec2fArray.FromNumpy(uv))
+            UsdShade.MaterialBindingAPI.Apply(mesh.GetPrim()).Bind(materiale)
+        layer = cartella / "campus_lontano.usdc"
         st.GetRootLayer().Export(str(layer))
         tmp = dest.with_suffix(".tmp.usdz")
         UsdUtils.CreateNewUsdzPackage(str(layer), str(tmp))

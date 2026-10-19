@@ -119,8 +119,9 @@ final class Trifoglio3DScene {
     /// trees and building footprints, in the campus frame. Optional.
     @ObservationIgnored private var giuriati: Entity?
     /// Each building's simplified shell from `campus_lontano.usdz`, by `csie`, hung inside
-    /// its detailed shell: drawn from the campus view instead of it, with 60 % fewer
-    /// triangles. Empty when the bundle has no such file.
+    /// its detailed shell: drawn from the campus view instead of it, as one mesh with one
+    /// material shared by all, where the detailed shells are 540 meshes and 404 materials.
+    /// Empty when the bundle has no such file.
     @ObservationIgnored private var distant: [String: Entity] = [:]
     /// The floors of the buildings loaded so far, each with its slab, cut walls and rooms,
     /// by `csie`. At most ``keptBuildings`` of them.

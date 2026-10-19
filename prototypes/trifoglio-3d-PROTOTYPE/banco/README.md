@@ -197,21 +197,35 @@ Cosa dicono:
   aspetta la GPU.
 - La CPU resta al 38 % anche a 60 fps: non è il lavoro per frame dell'app.
 
-### 6. Involucri semplificati da lontano (idea 9)
+### 6. Il campus a 30 Hz: sono i materiali degli edifici (dbf7c43, 3 giri per variante)
 
-`lontano.py` scrive `campus_lontano.usdz`: per ogni edificio i pezzi più piccoli di 2 m tolti
-(cornici, davanzali, ringhiere) e il resto semplificato per errore quadrico, poi saldato da
-`ottimizza.py`. `esporta3d.py` lo produce insieme a `campus.usdz`; `Trifoglio3DScene` lo mostra
-dalla vista campus e torna agli involucri veri quando la camera va su un edificio. Se il file
-non c'è, tutto resta com'era.
+| Variante | fps nei 3 giri | Frame mediano |
+|---|---|---|
+| tutto acceso | 40 / 39 / 40 | 17 / 17 / 33 ms |
+| senza ombre, alberi, città, arredi o terreno | 32–40 | salta tra 17 e 33 ms |
+| senza edifici | 51 / 43 / 54 | 16,7 ms |
+| scena vuota | 60 / 60 / 60 | 16,7 ms |
+| involucri dettagliati invece dei semplificati | 40 / 40 / 40 | come sopra |
 
-| Pezzi tolti sotto | Triangoli | MB | Aspetto da 400 m |
-|---|---|---|---|
-| nessuno (solo semplificazione) | 641 k | 24,8 | uguale; la semplificazione si ferma ai bordi aperti |
-| 2 m (scelto) | 500 k (−60 %) | 14,4 saldato | quasi uguale |
-| 4 m | 253 k | 10,8 | muri bucati |
+- RealityKit da solo sta a 60 Hz; gli edifici sono l'unico pezzo che fa scivolare a 30.
+- Gli involucri semplificati, con il 60 % di triangoli in meno ma ancora una mesh per
+  materiale, non cambiano nulla: non contano i triangoli. Contano le 540 mesh e i 404
+  materiali degli involucri, ognuno una draw call e un cambio di stato.
+- Le ombre valgono 33 MB di GPU e 25 MB di memoria in tutti e tre i giri.
+
+### 7. Involucri da lontano: una mesh e un materiale per edificio (idea 9 + 11)
+
+`lontano.py` scrive `campus_lontano.usdz`: per ogni edificio una sola mesh, senza i pezzi più
+piccoli di 2 m (cornici, davanzali, ringhiere), semplificata e colorata da una tavolozza
+condivisa, una texture di 2,5 kB con un quadretto per colore: 36 mesh e 1 materiale invece di
+540 mesh e 404 materiali. `esporta3d.py` lo produce insieme a `campus.usdz` e lo salda con
+`ottimizza.py`; `Trifoglio3DScene` lo mostra dalla vista campus e torna agli involucri veri
+quando la camera va su un edificio. Se il file non c'è, tutto resta com'era.
+
+| Pezzi tolti sotto | Triangoli | Aspetto da 400 m |
+|---|---|---|
+| nessuno (solo semplificazione) | 641 k | uguale; la semplificazione si ferma ai bordi aperti |
+| 2 m (scelto) | 500 k (−60 %), 21 MB | quasi uguale |
+| 4 m | 253 k | muri bucati |
 
 Provato e scartato: masse estruse dall'impronta (96 k triangoli), troppo lontane dall'aspetto.
-
-Da misurare sul telefono: il campus fermo con `campus, edifici dettagliati` contro gli involucri
-semplificati, e `campus, scena vuota` per sapere quanto costa RealityKit da solo.
