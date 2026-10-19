@@ -150,9 +150,9 @@ final class Trifoglio3DBench {
     @ObservationIgnored private var frames: [TimeInterval] = []
 
     /// Runs every measurement in turn. Takes about a minute; the walk moves by itself.
-    /// - Parameter quick: Only the still campus with the simplified shells against the
-    ///   detailed ones, five times each, alternated: about a minute, short enough not to heat
-    ///   the phone the way the whole bench does.
+    /// - Parameter quick: Only the still campus with the sun's shadows as they are, reaching
+    ///   250 m instead of 700, and off, four times each, alternated: about a minute, short
+    ///   enough not to heat the phone the way the whole bench does.
     func run(on scene: Trifoglio3DScene, quick: Bool = false) async {
         guard step == nil else { return }
         let start = ContinuousClock.now
@@ -172,15 +172,22 @@ final class Trifoglio3DBench {
         report.stillCampus = await watch(scene) { try? await Task.sleep(for: .seconds(10)) }
 
         if quick {
-            for round in 1...5 {
-                for (name, detailed) in [("campus, tutto acceso", false), ("campus, edifici dettagliati", true)] {
-                    step = "Lontano o dettagliati (\(round)/5): \(name)"
-                    scene.setDistant(!detailed)
+            // With the phone cool, the simplified shells and the detailed ones both ran at 40 fps;
+            // with the shadows off two rounds in five reached 60.
+            let shadows: [(String, () -> Void)] = [
+                ("campus, tutto acceso", { scene.setShadows(true) }),
+                ("campus, ombre fino a 250 m", { scene.setShadows(true, distance: 250) }),
+                ("campus, senza ombre", { scene.setShadows(false) }),
+            ]
+            for round in 1...4 {
+                for (name, change) in shadows {
+                    step = "Ombre (\(round)/4): \(name)"
+                    change()
                     try? await Task.sleep(for: .seconds(1))
                     report.variants.append(.init(name: name, window: await watch(scene) { try? await Task.sleep(for: .seconds(4)) }))
                 }
             }
-            scene.setDistant(true)
+            scene.setShadows(true)
             finish(&report, start: start)
             return
         }

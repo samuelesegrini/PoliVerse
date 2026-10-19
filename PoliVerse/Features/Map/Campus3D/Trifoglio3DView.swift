@@ -387,9 +387,11 @@ final class Trifoglio3DScene {
     // MARK: - Switches for the bench
 
     /// Turns the sun's shadows on or off, at once.
-    func setShadows(_ on: Bool) {
+    ///
+    /// - Parameter distance: How far from the camera shadows reach, in metres.
+    func setShadows(_ on: Bool, distance: Float = 700) {
         if on {
-            sun.components.set(DirectionalLightComponent.Shadow(maximumDistance: 700, depthBias: 2))
+            sun.components.set(DirectionalLightComponent.Shadow(maximumDistance: distance, depthBias: 2))
         } else {
             sun.components.remove(DirectionalLightComponent.Shadow.self)
         }

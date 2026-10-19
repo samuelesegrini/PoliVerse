@@ -30,8 +30,8 @@ Il modo più rapido per avere numeri veri, letti dal dispositivo e non stimati:
 1. In Xcode, schema **PoliVerse** (Debug), destinazione il tuo iPhone; in Edit Scheme → Run →
    Arguments aggiungi `-Trifoglio3D` (apre il campus 3D al posto dell'app). Con anche
    `-Trifoglio3DBench` il banco parte da solo appena il campus è disegnato.
-   Con `-Trifoglio3DBenchQuick` fa solo il confronto di un minuto tra involucri da lontano e
-   dettagliati, 5 volte alternati: il banco intero porta l'iPhone 12 Pro a "serious" in 6 minuti
+   Con `-Trifoglio3DBenchQuick` fa solo un confronto di un minuto, oggi le ombre (come sono, fino
+   a 250 m, spente), 4 volte alternate: il banco intero porta l'iPhone 12 Pro a "serious" in 6 minuti
    e da caldo tutto sta a 30 Hz.
 2. Altrimenti tocca **Misura** nella barra in alto del campus. La camera si muove da sola per
    circa un minuto; non toccare lo schermo.
@@ -248,3 +248,22 @@ vuota resta a 60. Restano leggibili i caricamenti e la memoria:
 Sulla foto dal telefono i colori sono quelli degli involucri dettagliati e, senza
 semplificazione (1434f6c), il tetto del Trifoglio è pulito. Il confronto dei frame si rifà con
 il telefono freddo ("nominal") e `-Trifoglio3DBenchQuick`.
+
+### 9. Da freddo: gli involucri da lontano non cambiano i frame (a5d95ee, "nominal")
+
+`-Trifoglio3DBenchQuick`, 5 giri alternati da 4 s:
+
+| Variante | fps nei 5 giri |
+|---|---|
+| involucri da lontano (36 mesh, 1 materiale) | 41,7 / 40,4 / 39,9 / 39,9 / 39,8 |
+| involucri dettagliati (540 mesh, 404 materiali) | 39,7 / 39,6 / 39,8 / 39,8 / 39,6 |
+
+Uguali: i 40 fps sono frame da 16,7 e da 33,3 ms alternati. Né i triangoli né le draw call
+degli edifici fanno scivolare a 30; gli involucri da lontano servono ai caricamenti (dimezzati)
+e alla memoria (−70 MB), non ai frame. Resta sospetta l'ombra del sole, che arriva a 700 m e
+ridisegna ogni edificio una seconda volta: spenta, due giri su cinque andavano a 60. Il banco
+rapido ora confronta ombre come sono, fino a 250 m e spente.
+
+Trovato anche: dopo ogni banco l'app restava aperta con il campus a schermo, ed è per questo
+che il telefono non scendeva mai da "serious". Un campus fermo a schermo scalda: anche questo è
+da sistemare, smettendo di disegnare quando nulla si muove.
