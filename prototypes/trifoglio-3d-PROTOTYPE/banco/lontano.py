@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 """PROTOTIPO — gli edifici del campus visti da lontano: involucri semplificati (LOD).
 
-    python3 banco/lontano.py <campus.usdz> [--quota 0.15] [--minimo 2]
+    python3 banco/lontano.py <campus.usdz> [--minimo 2] [--quota 1]
 
 Scrive accanto a campus.usdz il file campus_lontano.usdz: per ogni `Campus/Edifici/<csie>` una
 sola mesh, con un solo materiale per tutti. Le mesh di un edificio si uniscono e si saldano,
-perdono i pezzi più piccoli di `minimo` metri e si semplificano per errore quadrico a circa
-`quota` dei triangoli (fast-simplification). Ogni triangolo rimasto prende il colore del
-materiale del triangolo originale più vicino (la media della texture, se ne ha una), letto da
-una tavolozza: una texture con un quadretto per colore. Le facce restano piatte.
+e perdono i pezzi più piccoli di `minimo` metri. Ogni triangolo prende il colore del suo
+materiale (la media della texture, se ne ha una), letto da una tavolozza: una texture con un
+quadretto per colore. Le facce restano piatte. Con `quota` < 1 si semplificano anche per
+errore quadrico (fast-simplification), ma sul telefono non serve e i tetti si deformano.
 
 Perché: sull'iPhone 12 Pro il campus fermo sta a cavallo dei 16,7 ms per frame e scivola a
 30 fps; la scena vuota sta a 60, senza edifici quasi, e dimezzare i triangoli degli involucri
 non cambia nulla (banco/README.md). Quello che costa sono le 540 mesh con 404 materiali degli
-involucri: qui diventano 36 mesh e 1 materiale. Con 2 m e 0,15 restano 500 k triangoli e da
-400 m l'aspetto quasi non cambia; con 4 m i muri fatti di pezzi piccoli si bucano.
+involucri: qui diventano 36 mesh e 1 materiale. Con 2 m restano 862 k triangoli su 1,24 M e
+l'aspetto non cambia; con 4 m i muri fatti di pezzi piccoli si bucano.
 Trifoglio3DScene mostra questi involucri dalla vista campus e quelli veri quando la camera
 scende su un edificio. esporta3d.py lo chiama su campus.usdz e poi salda il risultato con
-ottimizza.py (30 → 21 MB).
+ottimizza.py (52 → 29 MB).
 
 Dipendenze: usd-core, numpy, pillow, fast-simplification.
 """
@@ -28,7 +28,7 @@ from PIL import Image
 from pxr import Sdf, Usd, UsdGeom, UsdShade, UsdUtils, Vt
 from ottimizza import componenti
 
-QUOTA = 0.15
+QUOTA = 1.0       # 1: nessuna semplificazione; sull'iPhone i triangoli non contano, e semplificando i tetti si deformano
 CASELLA = 8       # pixel per lato del quadretto di ogni colore nella tavolozza
 MINIMO = 2.0      # metri: i pezzi più piccoli (cornici, davanzali, ringhiere) da lontano non si vedono
 
@@ -118,14 +118,14 @@ def lontano(campus, quota=QUOTA, minimo=MINIMO):
             np.minimum.at(lo, pezzo, C.min(axis=1)); np.maximum.at(hi, pezzo, C.max(axis=1))
             grande = (hi - lo).max(axis=1) >= minimo
             G, mat = G[grande[pezzo]], mat[grande[pezzo]]
-            if len(G) > 200:
+            if quota < 1 and len(G) > 200:
                 V2, G2 = fast_simplification.simplify(V.astype(np.float32), G.astype(np.int32), target_reduction=1 - quota)
                 V2, G2 = np.asarray(V2, np.float64), np.asarray(G2)
+                # Il materiale del triangolo originale più vicino al centro di ogni triangolo nuovo.
+                m2 = mat[vicini(V[G].mean(axis=1), V2[G2].mean(axis=1))]
             else:
-                V2, G2 = V, G
-            # Il materiale del triangolo originale più vicino al centro di ogni triangolo nuovo,
-            # ridotto al suo colore: una casella della tavolozza.
-            m2 = mat[vicini(V[G].mean(axis=1), V2[G2].mean(axis=1))]
+                V2, G2, m2 = V, G, mat
+            # Ogni materiale ridotto al suo colore: una casella della tavolozza.
             caselle = np.empty(len(m2), np.int64)
             for k in np.unique(m2):
                 rgb = tuple(np.round(colore(st, cartella, mats[k]) * 255).astype(int))

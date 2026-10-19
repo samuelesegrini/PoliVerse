@@ -216,7 +216,7 @@ Cosa dicono:
 ### 7. Involucri da lontano: una mesh e un materiale per edificio (idea 9 + 11)
 
 `lontano.py` scrive `campus_lontano.usdz`: per ogni edificio una sola mesh, senza i pezzi più
-piccoli di 2 m (cornici, davanzali, ringhiere), semplificata e colorata da una tavolozza
+piccoli di 2 m (cornici, davanzali, ringhiere), colorata da una tavolozza
 condivisa, una texture di 2,5 kB con un quadretto per colore: 36 mesh e 1 materiale invece di
 540 mesh e 404 materiali. `esporta3d.py` lo produce insieme a `campus.usdz` e lo salda con
 `ottimizza.py`; `Trifoglio3DScene` lo mostra dalla vista campus e torna agli involucri veri
@@ -224,8 +224,9 @@ quando la camera va su un edificio. Se il file non c'è, tutto resta com'era.
 
 | Pezzi tolti sotto | Triangoli | Aspetto da 400 m |
 |---|---|---|
-| nessuno (solo semplificazione) | 641 k | uguale; la semplificazione si ferma ai bordi aperti |
-| 2 m (scelto) | 500 k (−60 %), 21 MB | quasi uguale |
-| 4 m | 253 k | muri bucati |
+| 2 m, senza semplificare (scelto) | 862 k, 29 MB | uguale |
+| 2 m e semplificazione al 15 % | 500 k, 21 MB | tetti deformati, triangoli rossi attorno al camino del Trifoglio (visto anche sul telefono) |
+| 4 m e semplificazione al 15 % | 253 k | muri bucati |
+| solo semplificazione | 641 k | si ferma ai bordi aperti |
 
 Provato e scartato: masse estruse dall'impronta (96 k triangoli), troppo lontane dall'aspetto.
