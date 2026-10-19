@@ -93,7 +93,14 @@ struct Trifoglio3DBenchReport: Codable {
         var gpuMB: Double
     }
 
-    /// One building's floors read from the bundle, with their tap shapes.
+    /// Six still seconds with one piece of the scene switched off.
+    struct Variant: Codable {
+        /// What was switched off.
+        var name: String
+        var window: Window
+    }
+
+    /// One building's floors read from the bundle.
     struct Building: Codable {
         var csie: String
         var ms: Double
@@ -109,6 +116,9 @@ struct Trifoglio3DBenchReport: Codable {
     var memoryAtFirstFrameMB: Double?
     /// Ten seconds looking at the still campus.
     var stillCampus: Window?
+    /// Where the frame time goes: the still campus, then a building with the others
+    /// see-through, each with one piece switched off, so the gap in fps is that piece's cost.
+    var variants: [Variant] = []
     /// The flight from the campus to classroom T.1.2, building load included.
     var tourToClassroom: Window?
     /// Every building read cold, one at a time, slowest first.
@@ -158,6 +168,8 @@ final class Trifoglio3DBench {
         step = "Campus fermo, 10 s"
         report.stillCampus = await watch(scene) { try? await Task.sleep(for: .seconds(10)) }
 
+        await measureVariants(&report, scene: scene)
+
         step = "Volo all'aula T.1.2"
         report.tourToClassroom = await watch(scene) { await scene.tour() }
 
@@ -200,6 +212,38 @@ final class Trifoglio3DBench {
     private func save() {
         try? Data(json.utf8).write(to: Self.reportURL, options: .atomic)
         print("TRIFOGLIO3D_BENCH_BEGIN\n\(json)\nTRIFOGLIO3D_BENCH_END")
+    }
+
+    /// The still campus and a building view, each with one piece switched off in turn.
+    private func measureVariants(_ report: inout Trifoglio3DBenchReport, scene: Trifoglio3DScene) async {
+        let trees = ["Chiome", "Tronchi", "Alberi_Chiome", "Alberi_Tronchi", "Filari_Chiome", "Filari_Tronchi"]
+        let campusVariants: [(String, (Bool) -> Void)] = [
+            ("campus, tutto acceso", { _ in }),
+            ("campus, senza ombre", { scene.setShadows($0) }),
+            ("campus, senza alberi", { scene.setVisible(trees, $0) }),
+            ("campus, senza città intorno", { scene.setVisible(["Quartiere"], $0) }),
+            ("campus, senza arredi", { scene.setVisible(["Arredi"], $0) }),
+            ("campus, senza terreno", { scene.setVisible(["Terreno"], $0) }),
+            ("campus, solo edifici senza ombre", {
+                scene.setShadows($0); scene.setVisible(trees + ["Quartiere", "Arredi", "Terreno"], $0)
+            }),
+        ]
+        for (name, toggle) in campusVariants {
+            step = "Dove va il tempo: \(name)"
+            toggle(false)
+            try? await Task.sleep(for: .seconds(1))     // the first frames after a change are not typical
+            report.variants.append(.init(name: name, window: await watch(scene) { try? await Task.sleep(for: .seconds(6)) }))
+            toggle(true)
+        }
+        await scene.go(to: .building("MIA0203"))
+        for (name, change) in [("edificio, gli altri trasparenti", { }),
+                               ("edificio, gli altri opachi", { scene.setExteriorsOpaque() })] as [(String, () -> Void)] {
+            step = "Dove va il tempo: \(name)"
+            change()
+            try? await Task.sleep(for: .seconds(1))
+            report.variants.append(.init(name: name, window: await watch(scene) { try? await Task.sleep(for: .seconds(6)) }))
+        }
+        await scene.go(to: .campus)
     }
 
     /// Reads every model as the walk used to before its first frame, holds them all, then
@@ -291,6 +335,14 @@ struct Trifoglio3DBenchView: View {
                         row("Memoria al primo frame", report.memoryAtFirstFrameMB.map { String(format: "%.0f MB", $0) })
                     }
                     window("Campus fermo, 10 s", report.stillCampus)
+                    if !report.variants.isEmpty {
+                        Section("Dove va il tempo (fps · CPU · GPU)") {
+                            ForEach(report.variants, id: \.name) { variant in
+                                row(variant.name, String(format: "%.0f fps · %.0f %% · %.0f MB", variant.window.fps,
+                                                         variant.window.cpuPercent, variant.window.gpuMB))
+                            }
+                        }
+                    }
                     window("Volo all'aula T.1.2", report.tourToClassroom)
                     Section("Edifici letti uno a uno") {
                         let times = report.buildings.map(\.ms).sorted()

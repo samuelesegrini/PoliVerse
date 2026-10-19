@@ -111,6 +111,8 @@ final class Trifoglio3DScene {
     @ObservationIgnored private let root = Entity()
     /// The camera every move animates.
     @ObservationIgnored private let camera = Entity()
+    /// The sun, the one light that casts shadows.
+    @ObservationIgnored private let sun = Entity()
     /// The campus: terrain, trees and every building's outer shell.
     @ObservationIgnored private var campus: Entity?
     /// The Giuriati sports centre and its block east of the campus: ground, pitches, track,
@@ -200,7 +202,6 @@ final class Trifoglio3DScene {
         camera.components.set(lens)
         root.addChild(camera)
 
-        let sun = Entity()
         sun.components.set(DirectionalLightComponent(color: .white, intensity: 2600))
         sun.components.set(DirectionalLightComponent.Shadow(maximumDistance: 700, depthBias: 2))
         sun.look(at: [20, 0, 140], from: [-160, 260, 220], relativeTo: nil)
@@ -345,6 +346,30 @@ final class Trifoglio3DScene {
         guard let rooms = floor.findEntity(named: floor.name + "_Locali"),
               tappableFloors.insert(rooms.id).inserted else { return }
         await tappableExactly(rooms)
+    }
+
+    // MARK: - Switches for the bench
+
+    /// Turns the sun's shadows on or off, at once.
+    func setShadows(_ on: Bool) {
+        if on {
+            sun.components.set(DirectionalLightComponent.Shadow(maximumDistance: 700, depthBias: 2))
+        } else {
+            sun.components.remove(DirectionalLightComponent.Shadow.self)
+        }
+    }
+
+    /// Shows or hides, at once, the campus and Giuriati entities with these names.
+    func setVisible(_ names: [String], _ visible: Bool) {
+        for name in names {
+            campus?.findEntity(named: name)?.isEnabled = visible
+            giuriati?.findEntity(named: name)?.isEnabled = visible
+        }
+    }
+
+    /// Makes every building's outer shell fully opaque at once, as on the campus.
+    func setExteriorsOpaque() {
+        exteriors.forEach { $0.components.set(OpacityComponent(opacity: 1)); $0.isEnabled = true }
     }
 
     /// Lets go of every loaded building but the one the camera is on, so the next
