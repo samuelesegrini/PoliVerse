@@ -107,6 +107,13 @@ campus lontano, nel suo frame: i suoi edifici restano fuori da `campus.usdz` e d
    poi si rigenera `campus.usdz` con tutti gli edifici, una volta sola, per non avere
    conflitti sul file binario.
 
+## Caricamento e prestazioni
+
+Ogni `.usdz` che `esporta3d.py` scrive passa da `banco/ottimizza.py` (vertici saldati e tessere
+per il culling, stesso aspetto). L'app legge prima il solo `campus.usdz` e i piani di un edificio
+quando la camera ci va, tenendone al più 4. Obiettivi, metriche, banco di prova e numeri sono in
+[`banco/README.md`](banco/README.md).
+
 ## Il guscio del Trifoglio
 
 Nel campus il Trifoglio non è un'estrusione piatta: `guscio()` lo costruisce come nelle foto

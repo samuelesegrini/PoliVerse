@@ -2580,6 +2580,11 @@ def usdz(sc, path):
         for f in tex_dir.iterdir():
             f.unlink()
         tex_dir.rmdir()
+    # Vertici saldati e tessere per il culling: stesso aspetto, meno byte e meno triangoli
+    # disegnati (banco/README.md).
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent / "banco"))
+    from ottimizza import ottimizza
+    ottimizza(path)
 
 
 def main():

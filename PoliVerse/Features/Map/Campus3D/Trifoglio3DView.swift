@@ -1,4 +1,5 @@
 #if DEBUG
+import OSLog
 import RealityKit
 import SwiftUI
 
@@ -11,6 +12,11 @@ import SwiftUI
 // the same outlines and CAD floor plans the map illustrations are drawn from. Their
 // entities carry the Politecnico codes as names, so a room is found by its `csiv` —
 // the same code as ``Classroom/roomCode``.
+//
+// Loading works like a map's tiles: the campus alone comes before the first frame, and a
+// building's floors are read only when the camera heads for it, during the flight there,
+// with the few visited last kept and the rest let go. The numbers this is tuned against,
+// and the bench that measures them, are in `prototypes/trifoglio-3d-PROTOTYPE/banco/`.
 
 /// Where the camera stands on the walk from the campus to a classroom.
 enum Trifoglio3DLevel: Equatable {
@@ -110,8 +116,16 @@ final class Trifoglio3DScene {
     /// The Giuriati sports centre and its block east of the campus: ground, pitches, track,
     /// trees and building footprints, in the campus frame. Optional.
     @ObservationIgnored private var giuriati: Entity?
-    /// Every building's floors, each with its slab, cut walls and rooms, by `csie`.
-    @ObservationIgnored private var models: [String: Entity] = [:]
+    /// The floors of the buildings loaded so far, each with its slab, cut walls and rooms,
+    /// by `csie`. At most ``keptBuildings`` of them.
+    @ObservationIgnored private(set) var models: [String: Entity] = [:]
+    /// Loads under way, by `csie`, so a building asked for twice is read once.
+    @ObservationIgnored private var loading: [String: Task<Entity?, Never>] = [:]
+    /// The loaded buildings, the one used last at the end.
+    @ObservationIgnored private var recent: [String] = []
+    /// How many buildings' floors stay in memory. Each is 1–8 MB on the GPU; going back to
+    /// one just visited is instant, and the campus never holds all 36.
+    static let keptBuildings = 4
     /// The floors of the building the camera is on.
     private var building: Entity? { models[csie] }
     /// Keeps the per-frame callback alive.
@@ -132,8 +146,9 @@ final class Trifoglio3DScene {
     @ObservationIgnored private var tweens: [Tween] = []
     /// Seconds since the scene started, advanced once a frame.
     @ObservationIgnored private var clock: Double = 0
-    /// The lit classroom, the glowing copy laid over it, and when it was lit.
-    @ObservationIgnored private var lit: (room: Entity, glow: ModelEntity, since: Double)?
+    /// The lit classroom, the glowing copy laid over it, when it was lit, and the point its
+    /// label hangs from.
+    @ObservationIgnored private var lit: (room: Entity, glow: ModelEntity, since: Double, top: SIMD3<Float>)?
     /// The name of the glowing copies, so every one can be found and removed.
     private static let glowName = "Trifoglio3D_Luce"
     /// The end of the name of a classroom's interior: `<csiv>_Interno`.
@@ -156,7 +171,12 @@ final class Trifoglio3DScene {
 
     // MARK: - Loading
 
-    /// Loads the models from the bundle and adds them, the camera and a sun to the view.
+    /// Adds the camera, a sun and the campus to the view; everything else follows after
+    /// the first frame.
+    ///
+    /// RealityView draws nothing until this returns, so it reads only `campus.usdz` and the
+    /// small plan files the buttons need. The Giuriati block and the taps on the buildings
+    /// come right after, and each building's floors when the camera heads for it.
     ///
     /// - Parameter content: The view's content.
     func load(into content: inout RealityViewCameraContent) async {
@@ -180,44 +200,96 @@ final class Trifoglio3DScene {
         root.addChild(fill)
         content.add(root)
 
-        do {
-            guard let campusURL = Bundle.main.url(forResource: "campus", withExtension: "usdz")
-            else { failure = "Modelli non trovati nel bundle (Preview Content/Trifoglio3D)."; return }
-            let campus = try await Entity(contentsOf: campusURL)
-            tappable(campus.findEntity(named: "Edifici"))
-            root.addChild(campus)
-            self.campus = campus
-            if let giuriatiURL = Bundle.main.url(forResource: "giuriati", withExtension: "usdz") {
-                let giuriati = try await Entity(contentsOf: giuriatiURL)
-                root.addChild(giuriati)
-                self.giuriati = giuriati
-            }
-            for csie in Self.buildings {
-                guard let buildingURL = Bundle.main.url(forResource: csie, withExtension: "usdz"),
-                      let planURL = Bundle.main.url(forResource: csie, withExtension: "json")
-                else { failure = "Modelli di \(csie) non trovati nel bundle."; continue }
-                plans[csie] = try JSONDecoder().decode(Trifoglio3DPlan.self, from: Data(contentsOf: planURL))
-                let building = try await Entity(contentsOf: buildingURL)
-                for floor in floors(of: building) {
-                    await tappableExactly(floor.findEntity(named: floor.name + "_Locali"))
-                }
-                // Each tiered classroom's full walls, ceiling and lights stay hidden until the
-                // camera goes inside: from above they would cover the room.
-                visit(building) { if $0.name.hasSuffix(Self.interiorSuffix) { $0.isEnabled = false } }
-                building.components.set(OpacityComponent(opacity: 0))
-                building.isEnabled = false
-                root.addChild(building)
-                models[csie] = building
-            }
-        } catch {
-            failure = "Modelli non caricati: \(error.localizedDescription)"
-        }
-
+        await loadCampus()
         subscription = content.subscribe(to: SceneEvents.Update.self) { [weak self] event in
             let delta = event.deltaTime
             MainActor.assumeIsolated { self?.step(delta) }
         }
         aim()
+        Task { await loadAfterFirstFrame() }
+    }
+
+    /// Reads the campus and every building's plan file, and adds the campus to the scene.
+    func loadCampus() async {
+        let signpost = Trifoglio3DSignpost.begin(.campus)
+        defer { Trifoglio3DSignpost.end(signpost) }
+        guard let campusURL = Bundle.main.url(forResource: "campus", withExtension: "usdz")
+        else { failure = "Modelli non trovati nel bundle (Preview Content/Trifoglio3D)."; return }
+        do {
+            let campus = try await Entity(contentsOf: campusURL)
+            root.addChild(campus)
+            self.campus = campus
+        } catch {
+            failure = "Campus non caricato: \(error.localizedDescription)"
+            return
+        }
+        for csie in Self.buildings {
+            guard let planURL = Bundle.main.url(forResource: csie, withExtension: "json"),
+                  let data = try? Data(contentsOf: planURL),
+                  let plan = try? JSONDecoder().decode(Trifoglio3DPlan.self, from: data)
+            else { failure = "Piante di \(csie) non trovate nel bundle."; continue }
+            plans[csie] = plan
+        }
+    }
+
+    /// What the first frame can do without: the Giuriati block and the taps on the buildings.
+    func loadAfterFirstFrame() async {
+        let signpost = Trifoglio3DSignpost.begin(.afterFirstFrame)
+        defer { Trifoglio3DSignpost.end(signpost) }
+        if let giuriatiURL = Bundle.main.url(forResource: "giuriati", withExtension: "usdz"),
+           let giuriati = try? await Entity(contentsOf: giuriatiURL) {
+            root.addChild(giuriati)
+            self.giuriati = giuriati
+        }
+        tappable(campus?.findEntity(named: "Edifici"))
+    }
+
+    /// A building's floors, read from the bundle the first time and kept for the next.
+    ///
+    /// Asking again while the first read is under way waits for that one. Loading a fifth
+    /// building lets go of the one used longest ago, never the one the camera is on.
+    ///
+    /// - Parameter csie: The building's code.
+    /// - Returns: Its floors, hidden and see-through, or `nil` when it has no model.
+    @discardableResult
+    func loadBuilding(_ csie: String) async -> Entity? {
+        if let model = models[csie] {
+            recent.removeAll { $0 == csie }
+            recent.append(csie)
+            return model
+        }
+        if let task = loading[csie] { return await task.value }
+        let task = Task { () -> Entity? in
+            let signpost = Trifoglio3DSignpost.begin(.building)
+            defer { Trifoglio3DSignpost.end(signpost) }
+            guard let url = Bundle.main.url(forResource: csie, withExtension: "usdz"),
+                  let building = try? await Entity(contentsOf: url)
+            else { return nil }
+            for floor in floors(of: building) {
+                await tappableExactly(floor.findEntity(named: floor.name + "_Locali"))
+            }
+            // Each tiered classroom's full walls, ceiling and lights stay hidden until the
+            // camera goes inside: from above they would cover the room.
+            visit(building) { if $0.name.hasSuffix(Self.interiorSuffix) { $0.isEnabled = false } }
+            building.components.set(OpacityComponent(opacity: 0))
+            building.isEnabled = false
+            return building
+        }
+        loading[csie] = task
+        let building = await task.value
+        loading[csie] = nil
+        guard let building else {
+            failure = "Modelli di \(csie) non trovati nel bundle."
+            return nil
+        }
+        root.addChild(building)
+        models[csie] = building
+        recent.append(csie)
+        while recent.count > Self.keptBuildings, let oldest = recent.first(where: { $0 != self.csie }) {
+            recent.removeAll { $0 == oldest }
+            models.removeValue(forKey: oldest)?.removeFromParent()
+        }
+        return building
     }
 
     /// Lets taps reach every mesh under an entity.
@@ -275,7 +347,6 @@ final class Trifoglio3DScene {
         if let other = Self.buildingCode(of: next), other != csie || level == .campus {
             if case .building = next {} else { await move(to: .building(other)) }
         }
-        guard let building else { return }
         switch next {
         case .campus:
             unlight()
@@ -294,8 +365,11 @@ final class Trifoglio3DScene {
             trees.forEach { fade($0, to: 1) }
             if let building = self.building { floors(of: building).forEach { lift($0, to: 0) } }
             frame(shell, polar: 1.0, margin: 1.15)
+            // Its floors are read during the flight, ready for the tap on a floor.
+            if models[csie] == nil { Task { await loadBuilding(csie) } }
 
         case .floor(let csip):
+            guard let building = await loadBuilding(csie) else { return }
             unlight()
             level = next
             let order = floors(of: building).map(\.name)
@@ -318,9 +392,9 @@ final class Trifoglio3DScene {
 
         case .room(let csip, let csiv):
             if level != .floor(csip), !isRoom(on: csip) { await move(to: .floor(csip)) }
+            guard let room = building?.findEntity(named: csiv) else { return }
             unlight()
             level = next
-            guard let room = building.findEntity(named: csiv) else { return }
             light(room)
             // Wider than the room, so the corridors that lead to it stay in view.
             frame(room, polar: 0.5, margin: 2.4, duration: 1.1)
@@ -393,7 +467,7 @@ final class Trifoglio3DScene {
             // Climb to the building's group under "Edifici".
             var node: Entity? = entity
             while let current = node, current.parent?.name != "Edifici" { node = current.parent }
-            if let name = node?.name, models[name] != nil { await go(to: .building(name)) }
+            if let name = node?.name, Self.buildings.contains(name) { await go(to: .building(name)) }
         case .floor(let csip), .room(let csip, _):
             let rooms = plan?.piani.first { $0.csip == csip }?.aule ?? []
             if rooms.contains(where: { $0.csiv == entity.name }) {
@@ -559,14 +633,17 @@ final class Trifoglio3DScene {
         source.addChild(glow)
         // Just above the room's 5 cm slab, so the two never flicker into each other.
         glow.setPosition(source.position(relativeTo: nil) + [0, 0.06, 0], relativeTo: nil)
-        lit = (room, glow, clock)
+        var top = room.visualBounds(relativeTo: nil).center
+        top.y += 1
+        lit = (room, glow, clock, top)
     }
 
-    /// Removes every glowing copy, so no classroom stays lit.
+    /// Removes the glowing copy, so no classroom stays lit.
+    ///
+    /// Only ``light(_:)`` makes one and it clears the last first, so there is never more
+    /// than the one ``lit`` holds: no need to search every building's entities for others.
     private func unlight() {
-        var glows: [Entity] = []
-        for building in models.values { visit(building) { if $0.name == Self.glowName { glows.append($0) } } }
-        glows.forEach { $0.removeFromParent() }
+        lit?.glow.removeFromParent()
         lit = nil
         labelPoint = nil
     }
@@ -578,9 +655,11 @@ final class Trifoglio3DScene {
         material.emissiveIntensity = 0.35 + 0.3 * Float(sin((clock - lit.since) * 4))
         model.materials = [material]
         lit.glow.components.set(model)
-        var top = lit.room.visualBounds(relativeTo: nil).center
-        top.y += 1
-        labelPoint = project(top)
+        // A new point redraws the SwiftUI overlay, so it changes only when the camera
+        // moved the label by half a point or more: a still view costs no layout per frame.
+        let point = project(lit.top)
+        if let point, let old = labelPoint, abs(point.x - old.x) < 0.5, abs(point.y - old.y) < 0.5 { return }
+        labelPoint = point
     }
 
     /// Where a point in the scene lands on screen, or `nil` when it is behind the camera.
@@ -789,6 +868,51 @@ struct Trifoglio3DView: View {
     /// A classroom's door code from its space code.
     private func roomName(_ csiv: String) -> String {
         scene.plan?.piani.flatMap(\.aule).first { $0.csiv == csiv }?.sigla ?? csiv
+    }
+}
+
+/// The 3D walk's stretches of work, as Points of Interest intervals for Instruments and
+/// for the bench in `PoliVerseTests/Trifoglio3DLoadTests.swift`.
+///
+/// Kept apart from ``PerfSignpost``: the walk is a debug prototype, and MetricKit keeps
+/// only a few custom metrics per app.
+nonisolated enum Trifoglio3DSignpost {
+    /// The stretches of work that are timed.
+    enum Name {
+        /// ``Trifoglio3DScene/loadCampus()``: everything before the first frame.
+        case campus
+        /// ``Trifoglio3DScene/loadAfterFirstFrame()``: the Giuriati block and the taps.
+        case afterFirstFrame
+        /// One ``Trifoglio3DScene/loadBuilding(_:)`` that reads from the bundle.
+        case building
+
+        /// The name both Instruments and `XCTOSSignpostMetric` match on.
+        var staticName: StaticString {
+            switch self {
+            case .campus: "trifoglio3d.campus"
+            case .afterFirstFrame: "trifoglio3d.after-first-frame"
+            case .building: "trifoglio3d.building"
+            }
+        }
+    }
+
+    /// One open interval.
+    struct Interval {
+        fileprivate let name: StaticString
+        fileprivate let state: OSSignpostIntervalState
+    }
+
+    /// The Points of Interest signposter Instruments reads.
+    private static let signposter = OSSignposter(subsystem: "segrini.samuele.PoliVerse", category: .pointsOfInterest)
+
+    /// Opens an interval.
+    static func begin(_ name: Name) -> Interval {
+        Interval(name: name.staticName, state: signposter.beginInterval(name.staticName, id: signposter.makeSignpostID()))
+    }
+
+    /// Closes what ``begin(_:)`` opened.
+    static func end(_ interval: Interval) {
+        signposter.endInterval(interval.name, interval.state)
     }
 }
 
