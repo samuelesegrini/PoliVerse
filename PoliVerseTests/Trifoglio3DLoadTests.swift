@@ -58,8 +58,8 @@ nonisolated final class Trifoglio3DLoadTests: XCTestCase {
         }
     }
 
-    /// The largest building's floors, with the exact tap shapes of its rooms: what the
-    /// flight to a building has to hide. Goal: under 300 ms, shorter than the 1.3 s flight.
+    /// The largest building's floors: what the flight to a building has to hide.
+    /// Goal: under 300 ms, shorter than the 1.3 s flight.
     @MainActor func testOneBuilding() {
         measure(metrics: [XCTClockMetric(), XCTCPUMetric(), XCTMemoryMetric()], options: options) {
             let scene = Trifoglio3DScene()

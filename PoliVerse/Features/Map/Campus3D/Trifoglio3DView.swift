@@ -123,6 +123,8 @@ final class Trifoglio3DScene {
     @ObservationIgnored private var loading: [String: Task<Entity?, Never>] = [:]
     /// The loaded buildings, the one used last at the end.
     @ObservationIgnored private var recent: [String] = []
+    /// The floors whose rooms already have their tap shapes, by entity.
+    @ObservationIgnored private var tappableFloors: Set<Entity.ID> = []
     /// How many buildings' floors stay in memory. Each is 1–8 MB on the GPU; going back to
     /// one just visited is instant, and the campus never holds all 36.
     static let keptBuildings = 4
@@ -316,23 +318,33 @@ final class Trifoglio3DScene {
     }
 
     /// Reads a building's floors from the bundle and readies them, without adding them to
-    /// the scene: the exact tap shapes of its rooms, the interiors hidden, the whole
-    /// see-through and disabled.
+    /// the scene: the interiors hidden, the whole see-through and disabled.
+    ///
+    /// The rooms' tap shapes wait for ``tappableRooms(on:)``: built for every floor they took
+    /// most of the second a building needed on an iPhone 12 Pro, and only the floor on screen
+    /// takes taps.
     func readBuilding(_ csie: String) async -> Entity? {
         let signpost = Trifoglio3DSignpost.begin(.building)
         defer { Trifoglio3DSignpost.end(signpost) }
         guard let url = Bundle.main.url(forResource: csie, withExtension: "usdz"),
               let building = try? await Entity(contentsOf: url)
         else { return nil }
-        for floor in floors(of: building) {
-            await tappableExactly(floor.findEntity(named: floor.name + "_Locali"))
-        }
         // Each tiered classroom's full walls, ceiling and lights stay hidden until the
         // camera goes inside: from above they would cover the room.
         visit(building) { if $0.name.hasSuffix(Self.interiorSuffix) { $0.isEnabled = false } }
         building.components.set(OpacityComponent(opacity: 0))
         building.isEnabled = false
         return building
+    }
+
+    /// Gives a floor's rooms their exact tap shapes, once: the floor's own, when the camera
+    /// comes to it.
+    ///
+    /// - Parameter floor: The floor's entity, named by its `csip`.
+    func tappableRooms(on floor: Entity) async {
+        guard let rooms = floor.findEntity(named: floor.name + "_Locali"),
+              tappableFloors.insert(rooms.id).inserted else { return }
+        await tappableExactly(rooms)
     }
 
     /// Lets go of every loaded building but the one the camera is on, so the next
@@ -414,6 +426,8 @@ final class Trifoglio3DScene {
                 }
             }
             frame(floors(of: building)[safe: chosen], polar: 0.6, margin: 1.0)
+            // Its rooms take taps from now on; the shapes are built during the flight.
+            if let floor = floors(of: building)[safe: chosen] { await tappableRooms(on: floor) }
 
         case .room(let csip, let csiv):
             if level != .floor(csip), !isRoom(on: csip) { await move(to: .floor(csip)) }

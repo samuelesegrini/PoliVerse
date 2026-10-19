@@ -10,7 +10,7 @@ misura → idee → modifica → rimisura fatto il 19/10/2026.
 |---|---|---|---|
 | Latenza: il campus compare subito | tempo dal lancio al campus disegnato (`trifoglio3d.campus`) | < 1 s su iPhone 15 | `Trifoglio3DPerformanceTests.testTimeToCampus`, `Trifoglio3DLoadTests.testBeforeFirstFrame` |
 | | byte, file e forme di collisione letti prima del primo frame | ≤ 1 file, ≤ 40 MB, 0 collisioni | `misura.py`, riga "Primo frame" |
-| Latenza: entrare in un edificio non aspetta | tempo per leggere i piani di un edificio con le collisioni delle aule | < 300 ms, meno del volo di 1,3 s che lo nasconde | `Trifoglio3DLoadTests.testOneBuilding` |
+| Latenza: entrare in un edificio non aspetta | tempo per leggere i piani di un edificio | < 300 ms, meno del volo di 1,3 s che lo nasconde | `Trifoglio3DLoadTests.testOneBuilding` |
 | Memoria | memoria GPU con il campus fermo | < 160 MB | banco sul telefono (`misura.py` ne dà una stima) |
 | | memoria fisica dell'app | < 300 MB | `testStillCampus`, `testWalkAcrossTenBuildings` |
 | CPU e batteria | triangoli disegnati a ogni fermata della camera (mediana) | < 400 k | `misura.py`, righe "fermate" |
@@ -45,7 +45,7 @@ Cosa misura (`PoliVerse/Features/Map/Campus3D/Trifoglio3DBench.swift`):
 | CPU | tempo CPU del processo (`CLOCK_PROCESS_CPUTIME_ID`) diviso il tempo trascorso |
 | Frame al secondo, durata dei frame, scatti in ms/s | `SceneEvents.Update` di RealityKit, frame per frame |
 | Campus fermo 10 s, volo all'aula T.1.2, ancora fermo alla fine | le misure sopra, in quelle finestre |
-| Ogni edificio letto a freddo, con le collisioni delle aule | orologio attorno a `loadBuilding` |
+| Ogni edificio letto a freddo | orologio attorno a `loadBuilding` |
 | Il vecchio caricamento, tutto subito | i 38 modelli letti e tenuti insieme: tempo, memoria, GPU |
 | Batteria e temperatura | `UIDevice.batteryLevel` e `thermalState` all'inizio e alla fine |
 
@@ -140,7 +140,24 @@ Cosa diceva la misura di partenza:
   | 100 m / 20000 | 481 k | 815 |
   | 100 m fisso, ogni mesh | 251 k | 2037 |
 
-### 4. Da rimisurare sul telefono
+### 4. Prima misura sul telefono (iPhone 12 Pro, iOS 27.2, Debug, 19/10/2026)
+
+`Trifoglio3DLoadTests`, 5 giri ciascuno, con il campus.usdz vecchio (49 MB, non ottimizzato):
+
+| Test | Tempo | Picco di memoria |
+|---|---|---|
+| Campus prima del primo frame (nuovo) | 1,53 s ±9 % | 324 MB |
+| Solo campus.usdz | 1,29 s | 338 MB |
+| Tutto subito (vecchio) | 5,72 s | 436 MB |
+| Un edificio (MIA0201), con le forme di tocco di tutte le aule | 1,03 s (CPU 0,57 s) | 149 MB |
+| Dieci edifici di fila | 6,1 s | 156 MB, piatta |
+
+Il campus compare 3,7 volte prima. Un edificio era sopra il traguardo di 300 ms; il sospetto
+(CPU 0,57 s su 1,03 s) è l'attesa delle forme di tocco esatte di ogni aula di ogni piano, generate
+una dopo l'altra. Ora si generano solo per il piano su cui si entra (`tappableRooms(on:)`),
+durante il volo: la prossima misura dice quanto vale.
+
+### 5. Da rimisurare sul telefono
 
 I numeri sopra sono del cloud. Il prossimo giro parte dai test XCTest su un iPhone: tempo al
 campus, memoria fisica, CPU a campus fermo, scatti del volo. Le idee 8–11 si scelgono su quei
