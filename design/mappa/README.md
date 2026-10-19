@@ -45,6 +45,10 @@ floor plans sit exactly inside its outline.
      on the map by the script.
    - `livelli` — the `csip` of each floor shown in the isometric view, lowest
      first. (`piani`, a bare count, is enough for a neighbour.)
+   - `solo_pianta` — floors that get a floor plan but are no storey of their
+     own in the isometric view or the 3D model: mezzanines (`…S00`, `…S01`,
+     `…S0R`, `…S0S`) and storeys the 3D model was built without. Keeping them
+     out of `livelli` leaves every other floor's height as it was.
    - `badge` — where the building number sits (top-left of the roof).
    - `impianti` — rooftop plant as `[x, y, width, depth]`.
    - `ingresso` — the main door: which edge of `pianta` (`lato`, counting from
@@ -68,7 +72,9 @@ Floor plans are drawn from exact geometry, not traced:
 
 1. List the floors in the building's `livelli` (the codes are in the service's
    `spazi/piano` list; leave out roof levels with no outline) and run
-   `python3 importa-scheda.py <csie>` (needs network). It fetches each floor's
+   `python3 importa-scheda.py <csie>` (needs network), or
+   `python3 importa-scheda.py <csie> --aggiungi` to add only the floors not
+   imported yet, placed like the ones already there. It fetches each floor's
    public drawing from the Politecnico's maps service and writes
    `piante/<csie>-geometria.json`: the gross floor outline, every room as a
    polygon with its `csiv` and label point, each door as hinge and leaf

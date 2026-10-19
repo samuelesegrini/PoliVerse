@@ -60,6 +60,16 @@
       "csip": "MIA0106006",
       "nome": "Sesto",
       "aule": {}
+    },
+    {
+      "csip": "MIA0106S0R",
+      "nome": "Rialzato Soppalco",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0106S01",
+      "nome": "Primo Soppalco",
+      "aule": {}
     }
   ]
 }

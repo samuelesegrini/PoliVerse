@@ -83,6 +83,11 @@
       "csip": "MIA0105003",
       "nome": "Terzo",
       "aule": {}
+    },
+    {
+      "csip": "MIA0105S00",
+      "nome": "Terra Soppalco",
+      "aule": {}
     }
   ]
 }

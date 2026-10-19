@@ -6,6 +6,12 @@
 Writes `piante/<csie>-geometria.json`, which `build-mappa.py` draws the floor
 plans from. Run it again only when the Politecnico's plans change.
 
+    python3 importa-scheda.py MIA0107 --aggiungi
+
+adds only the floors the file does not have yet (a floor just listed in `livelli`
+or `solo_pianta`), placed with the transform already stored: the floors already
+there are left as they are.
+
 For each floor in the building's `livelli`, the service's public floor drawing
 (`piano/<csip>/svg/pub`, the one its room pages show) gives the exact geometry:
 the gross floor outline, every room as a polygon with its `csiv`, the doors as
@@ -29,6 +35,7 @@ import re
 import statistics
 import tempfile
 import sys
+import time
 import urllib.request
 import xml.etree.ElementTree as ET
 
@@ -51,8 +58,14 @@ DOOR_LAYERS = ["PORTE", "ARC_Porte"]
 
 def get(url, data=None):
     req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"} if data else {})
-    with urllib.request.urlopen(req, timeout=90) as r:
-        return r.read().decode()
+    for attempt in range(3):           # the service drops a connection now and then
+        try:
+            with urllib.request.urlopen(req, timeout=90) as r:
+                return r.read().decode()
+        except urllib.error.URLError:
+            if attempt == 2:
+                raise
+            time.sleep(2 * (attempt + 1))
 
 
 def r2(v):
@@ -493,14 +506,24 @@ def lift_centres(segs):
 
 # ---------------------------------------------------------------- main
 
-def main(csie):
+def main(csie, adding=False):
     campus_file = next(f for f in HERE.glob("*.json") if f.name != "livelli.json"
                        and csie in f.read_text())
     campus = json.loads(campus_file.read_text())
     building = next(b for b in campus["edifici"] if b["csie"] == csie)
     global MIRRORED
     MIRRORED = bool(building.get("specchio"))
-    floors = building["livelli"]
+    floors = building["livelli"] + building.get("solo_pianta", [])
+    dest = HERE / "piante" / f"{csie}-geometria.json"
+    # Adding floors to a building already imported: the floors already there stay as they
+    # are, and the new ones are placed with the transform those were placed with, so a
+    # second fit can't move the building (it may anchor on another floor).
+    old = json.loads(dest.read_text()) if adding else None
+    if old:
+        new = [c for c in floors if c not in old["piani"]]
+        if not new:
+            print("every floor is already imported")
+            return
     lat0, lon0 = campus["origine"]
     xs = [p[0] for p in building["pianta"]]
     ys = [p[1] for p in building["pianta"]]
@@ -509,10 +532,13 @@ def main(csie):
             lon0 + (max(xs) + 15) / k, lat0 - (min(ys) - 15) / 110540)
 
     cache = pathlib.Path(tempfile.mkdtemp(prefix="dwg-"))
-    drawn = {c: load_floor(c, cache) for c in floors}
+    drawn = {c: load_floor(c, cache) for c in (new if old else floors)}
     # A floor drawn without its outline (some basements) takes the largest one of the others:
     # every floor is in the same CAD frame.
-    widest = max((f["shell"] for f in drawn.values() if f["shell"]),
+    others = dict(drawn)
+    if old and any(not f["shell"] and f["rooms"] for f in drawn.values()):
+        others.update({c: load_floor(c, cache) for c in old["piani"]})
+    widest = max((f["shell"] for f in others.values() if f["shell"]),
                  key=lambda s: max(abs(area(r)) for r in s), default=[])
     for c, f in drawn.items():
         if not f["shell"] and f["rooms"]:
@@ -537,7 +563,8 @@ def main(csie):
             if r["ref"] in refs:
                 counts[r["level"]] = counts.get(r["level"], 0) + 1
         shared += [(n, c, lvl) for lvl, n in counts.items()]
-    level_of, taken = {c: None for c in drawn}, set()
+    level_of = {c: None for c in drawn}
+    taken = {f["livello_osm"] for f in old["piani"].values() if f.get("livello_osm")} if old else set()
     for n, c, lvl in sorted(shared, reverse=True):
         if n >= 8 and level_of[c] is None and lvl not in taken:
             level_of[c] = lvl
@@ -560,7 +587,10 @@ def main(csie):
                 pairs.append((flipped(area_centroid(rings[0])), room[0]["centre"]))
     ref = None
     fitted = None
-    if len(pairs) >= 4:
+    if old:
+        fitted = old["trasformazione"]
+        print("placed with the transform of the floors already imported")
+    elif len(pairs) >= 4:
         t, used, err = robust_fit(pairs)
         print(f"fit on {used}/{len(pairs)} rooms, median error {err * 100:.0f} cm, "
               f"scale {t['s']:.4f}, rotation {math.degrees(t['th']):.2f}°")
@@ -598,15 +628,26 @@ def main(csie):
     # those of a floor it does.
     lifts = {c: lift_centres([(apply(t, flipped(a)), apply(t, flipped(b))) for a, b in f["lines"]["ascensori"]])
              for c, f in drawn.items()}
-    anchors = [c for c in drawn if level_of[c]] or [ref]
-    anchor = next((c for c in anchors if drawn[c]["shell"]), None)
-    # Placed by its outline, every floor goes onto the building's footprint; placed by its rooms,
-    # onto the floor OpenStreetMap placed.
-    # Every other floor goes onto the anchor floor's own outline, wherever that was placed:
-    # the building's footprint is only a rough sketch of it.
-    anchor_shell = ([apply(t, flipped(p)) for p in max(drawn[anchor]["shell"], key=lambda r: abs(area(r)))]
-                    if anchor else [tuple(p) for p in building["pianta"]])
-    placed = [p for c in anchors for p in lifts[c]]
+    if old:
+        # Every floor already imported is placed: the new ones go onto their lifts, or onto
+        # the ground floor's outline (the widest one if there is no ground floor).
+        anchors = []
+        rings = [r for c, f in old["piani"].items() if c.endswith("000") for r in f["contorno"]] \
+            or [r for f in old["piani"].values() for r in f["contorno"]]
+        anchor_shell = [tuple(p) for p in max(rings, key=lambda r: abs(area(r)))] if rings \
+            else [tuple(p) for p in building["pianta"]]
+        placed = [p for f in old["piani"].values()
+                  for p in lift_centres([(s_[:2], s_[2:4]) for s_ in f["linee"]["ascensori"]])]
+    else:
+        anchors = [c for c in drawn if level_of[c]] or [ref]
+        anchor = next((c for c in anchors if drawn[c]["shell"]), None)
+        # Placed by its outline, every floor goes onto the building's footprint; placed by its rooms,
+        # onto the floor OpenStreetMap placed.
+        # Every other floor goes onto the anchor floor's own outline, wherever that was placed:
+        # the building's footprint is only a rough sketch of it.
+        anchor_shell = ([apply(t, flipped(p)) for p in max(drawn[anchor]["shell"], key=lambda r: abs(area(r)))]
+                        if anchor else [tuple(p) for p in building["pianta"]])
+        placed = [p for c in anchors for p in lifts[c]]
     shift = {}
     for c in drawn:
         shift[c] = (0.0, 0.0)
@@ -667,6 +708,15 @@ def main(csie):
             label = f["labels"].get(ref) or area_centroid(ring)
             vani.append({"csiv": csiv, "tipo": kind, "etichetta": T(label),
                          "forma": [[T(p) for p in simplify(r, 0.03)] for r in rings]})
+        contorno = [[T(p) for p in simplify(ring, 0.03)] for ring in f["shell"]]
+        outside = lambda p: shell and not inside(p, shell)
+        if old and f.get("borrowed"):
+            # The outline borrowed from a floor already imported is taken where that floor is:
+            # this one may be drawn apart from it, with a shift of its own.
+            contorno = max((g["contorno"] for g in old["piani"].values() if g["contorno"]),
+                           key=lambda rings: max(abs(area(r)) for r in rings))
+            placed_shell = max(contorno, key=lambda r: abs(area(r)))
+            outside = lambda p: not inside(T(p), placed_shell)
         doors, unread = [], 0
         for arc in f["arcs"]:
             hinge, p1, p2, radius = door_from_arc(arc)
@@ -685,19 +735,20 @@ def main(csie):
             n = math.hypot(ux, uy) or 1
             nx, ny = -uy / n, ux / n
             mid = ((hinge[0] + closed[0]) / 2, (hinge[1] + closed[1]) / 2)
-            out_a = shell and not inside((mid[0] + nx * 0.9, mid[1] + ny * 0.9), shell)
-            out_b = shell and not inside((mid[0] - nx * 0.9, mid[1] - ny * 0.9), shell)
+            out_a = outside((mid[0] + nx * 0.9, mid[1] + ny * 0.9))
+            out_b = outside((mid[0] - nx * 0.9, mid[1] - ny * 0.9))
+            # A mezzanine (…S00, …S01, …S0S) opens onto the storey it stands in, never outside.
             doors.append({"cardine": T(hinge), "chiusa": T(closed), "aperta": T(open_),
-                          "esterna": bool(out_a or out_b)})
+                          "esterna": bool(out_a or out_b) and c[len(csie)] != "S"})
         out["piani"][c] = {
             "livello_osm": level_of[c],
-            "contorno": [[T(p) for p in simplify(ring, 0.03)] for ring in f["shell"]],
+            "contorno": contorno,
             "vani": vani,
             "porte": doors,
             "linee": {name: [T(a) + T(b) for a, b in segs] for name, segs in f["lines"].items()},
             "percorso_accessibile": [T(a) + T(b) + [way] for a, b, way in f["route"]],
             "acqua": [T(p) for p in f["fountains"]],
-            "vuoti": [[T(p) for p in ring] for ring in voids(shell, all_rooms)],
+            "vuoti": [] if old and f.get("borrowed") else [[T(p) for p in ring] for ring in voids(shell, all_rooms)],
         }
         print(f"{c}: {len(vani)} rooms, {len(doors)} doors ({sum(d['esterna'] for d in doors)} outside, "
               f"{unread} without a drawn leaf), "
@@ -718,10 +769,12 @@ def main(csie):
                 d["esterna"] = False
             out["piani"][c]["vuoti"] = [ring for ring in out["piani"][c]["vuoti"]
                                         if all(x0 - 0.5 <= p[0] <= x1 + 0.5 and y0 - 0.5 <= p[1] <= y1 + 0.5 for p in ring)]
-    dest = HERE / "piante" / f"{csie}-geometria.json"
+    if old:
+        out["piani"] = {c: old["piani"].get(c) or out["piani"][c] for c in floors}
     dest.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")) + "\n")
     print(f"wrote {dest.relative_to(HERE)}")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "MIA0203")
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    main(args[0] if args else "MIA0203", adding="--aggiungi" in sys.argv)

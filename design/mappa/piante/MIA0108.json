@@ -32,6 +32,26 @@
       "csip": "MIA0108002",
       "nome": "Secondo",
       "aule": {}
+    },
+    {
+      "csip": "MIA0108S00",
+      "nome": "Terra Soppalco",
+      "aule": {
+        "MIA0108S00013": {
+          "sigla": "8.1.1",
+          "posti": 150,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0108S01",
+      "nome": "Primo Soppalco",
+      "aule": {}
     }
   ]
 }

@@ -234,6 +234,11 @@
           ]
         }
       }
+    },
+    {
+      "csip": "MIA0103S00",
+      "nome": "Terra Soppalco",
+      "aule": {}
     }
   ]
 }

@@ -192,6 +192,3240 @@
     }
   },
   "disegni": {
+    "bassini/MIA031400S-pianta": {
+      "file": "bassini/MIA031400S-pianta.svg",
+      "viewBox": "275.8 62.8 171.5 102.2",
+      "strati": [
+        {
+          "file": "bassini/MIA031400S-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA031400S-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA031400S-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA031400S-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA031400S-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA031400S-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA031400S-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA031400S-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA031400S-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA031400S-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA031400S-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA031400S-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA031400S-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA031400S-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA031400S-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0314000-pianta": {
+      "file": "bassini/MIA0314000-pianta.svg",
+      "viewBox": "309.1 60.9 135.5 65.7",
+      "strati": [
+        {
+          "file": "bassini/MIA0314000-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0314000-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0314000-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0314000-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0314000-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0314000-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0314000-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0314000-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0314000-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0314000-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0314000-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0314000-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0314000-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0314000-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0314000-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0314001-pianta": {
+      "file": "bassini/MIA0314001-pianta.svg",
+      "viewBox": "309 62.8 135.7 63.5",
+      "strati": [
+        {
+          "file": "bassini/MIA0314001-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0314001-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0314001-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0314001-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0314001-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0314001-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0314001-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0314001-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0314001-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0314001-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0314001-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0314001-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0314001-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0314001-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0314001-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0314002-pianta": {
+      "file": "bassini/MIA0314002-pianta.svg",
+      "viewBox": "309.1 63 126.2 63.4",
+      "strati": [
+        {
+          "file": "bassini/MIA0314002-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0314002-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0314002-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0314002-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0314002-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0314002-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0314002-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0314002-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0314002-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0314002-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0314002-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0314002-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0314002-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0314002-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0314002-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0314003-pianta": {
+      "file": "bassini/MIA0314003-pianta.svg",
+      "viewBox": "309.1 63 126.2 63.4",
+      "strati": [
+        {
+          "file": "bassini/MIA0314003-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0314003-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0314003-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0314003-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0314003-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0314003-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0314003-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0314003-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0314003-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0314003-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0314003-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0314003-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0314003-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0314003-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0314003-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0314004-pianta": {
+      "file": "bassini/MIA0314004-pianta.svg",
+      "viewBox": "309.2 63 126.1 63.4",
+      "strati": [
+        {
+          "file": "bassini/MIA0314004-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0314004-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0314004-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0314004-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0314004-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0314004-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0314004-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0314004-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0314004-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0314004-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0314004-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0314004-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0314004-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0314004-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0314004-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0314005-pianta": {
+      "file": "bassini/MIA0314005-pianta.svg",
+      "viewBox": "309.2 62.8 126 63.3",
+      "strati": [
+        {
+          "file": "bassini/MIA0314005-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0314005-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0314005-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0314005-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0314005-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0314005-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0314005-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0314005-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0314005-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0314005-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0314005-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0314005-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0314005-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0314005-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0314005-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA040300S-pianta": {
+      "file": "bassini/MIA040300S-pianta.svg",
+      "viewBox": "519 250.3 64.8 53",
+      "strati": [
+        {
+          "file": "bassini/MIA040300S-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA040300S-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA040300S-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA040300S-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA040300S-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA040300S-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA040300S-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA040300S-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA040300S-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA040300S-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA040300S-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA040300S-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA040300S-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA040300S-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA040300S-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0403000-pianta": {
+      "file": "bassini/MIA0403000-pianta.svg",
+      "viewBox": "529.1 250.3 54.8 52.8",
+      "strati": [
+        {
+          "file": "bassini/MIA0403000-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0403000-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0403000-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0403000-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0403000-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0403000-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0403000-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0403000-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0403000-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0403000-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0403000-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0403000-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0403000-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0403000-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0403000-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0403001-pianta": {
+      "file": "bassini/MIA0403001-pianta.svg",
+      "viewBox": "529.1 250.3 54.8 52.8",
+      "strati": [
+        {
+          "file": "bassini/MIA0403001-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0403001-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0403001-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0403001-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0403001-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0403001-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0403001-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0403001-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0403001-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0403001-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0403001-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0403001-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0403001-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0403001-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0403001-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0403002-pianta": {
+      "file": "bassini/MIA0403002-pianta.svg",
+      "viewBox": "529.1 250.3 54.8 52.8",
+      "strati": [
+        {
+          "file": "bassini/MIA0403002-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0403002-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0403002-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0403002-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0403002-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0403002-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0403002-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0403002-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0403002-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0403002-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0403002-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0403002-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0403002-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0403002-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0403002-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA030600S-pianta": {
+      "file": "bassini/MIA030600S-pianta.svg",
+      "viewBox": "420 66.8 76.4 76.4",
+      "strati": [
+        {
+          "file": "bassini/MIA030600S-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA030600S-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA030600S-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA030600S-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA030600S-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA030600S-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA030600S-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA030600S-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA030600S-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA030600S-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA030600S-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA030600S-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA030600S-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA030600S-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA030600S-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0306000-pianta": {
+      "file": "bassini/MIA0306000-pianta.svg",
+      "viewBox": "417.5 61 76 82.5",
+      "strati": [
+        {
+          "file": "bassini/MIA0306000-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0306000-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0306000-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0306000-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0306000-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0306000-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0306000-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0306000-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0306000-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0306000-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0306000-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0306000-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0306000-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0306000-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0306000-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0306001-pianta": {
+      "file": "bassini/MIA0306001-pianta.svg",
+      "viewBox": "420.6 67.8 75.9 76.1",
+      "strati": [
+        {
+          "file": "bassini/MIA0306001-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0306001-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0306001-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0306001-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0306001-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0306001-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0306001-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0306001-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0306001-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0306001-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0306001-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0306001-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0306001-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0306001-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0306001-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0306002-pianta": {
+      "file": "bassini/MIA0306002-pianta.svg",
+      "viewBox": "420.1 67.8 73.3 75.7",
+      "strati": [
+        {
+          "file": "bassini/MIA0306002-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0306002-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0306002-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0306002-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0306002-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0306002-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0306002-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0306002-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0306002-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0306002-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0306002-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0306002-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0306002-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0306002-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0306002-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0306003-pianta": {
+      "file": "bassini/MIA0306003-pianta.svg",
+      "viewBox": "420.6 67.6 72.9 75.9",
+      "strati": [
+        {
+          "file": "bassini/MIA0306003-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0306003-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0306003-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0306003-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0306003-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0306003-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0306003-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0306003-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0306003-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0306003-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0306003-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0306003-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0306003-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0306003-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0306003-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0306004-pianta": {
+      "file": "bassini/MIA0306004-pianta.svg",
+      "viewBox": "420.1 67.5 73.4 76.1",
+      "strati": [
+        {
+          "file": "bassini/MIA0306004-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0306004-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0306004-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0306004-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0306004-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0306004-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0306004-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0306004-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0306004-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0306004-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0306004-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0306004-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0306004-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0306004-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0306004-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0306005-pianta": {
+      "file": "bassini/MIA0306005-pianta.svg",
+      "viewBox": "420 67.7 73.4 75.8",
+      "strati": [
+        {
+          "file": "bassini/MIA0306005-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0306005-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0306005-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0306005-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0306005-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0306005-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0306005-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0306005-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0306005-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0306005-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0306005-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0306005-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0306005-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0306005-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0306005-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0306006-pianta": {
+      "file": "bassini/MIA0306006-pianta.svg",
+      "viewBox": "419.8 67.4 73.7 76.1",
+      "strati": [
+        {
+          "file": "bassini/MIA0306006-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0306006-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0306006-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0306006-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0306006-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0306006-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0306006-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0306006-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0306006-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0306006-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0306006-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0306006-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0306006-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0306006-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0306006-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA030100S-pianta": {
+      "file": "bassini/MIA030100S-pianta.svg",
+      "viewBox": "290.1 107.9 119 57.3",
+      "strati": [
+        {
+          "file": "bassini/MIA030100S-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA030100S-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA030100S-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA030100S-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA030100S-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA030100S-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA030100S-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA030100S-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA030100S-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA030100S-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA030100S-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA030100S-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA030100S-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA030100S-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA030100S-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0301000-pianta": {
+      "file": "bassini/MIA0301000-pianta.svg",
+      "viewBox": "288.6 103.1 125.9 63.2",
+      "strati": [
+        {
+          "file": "bassini/MIA0301000-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0301000-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0301000-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0301000-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0301000-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0301000-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0301000-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0301000-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0301000-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0301000-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0301000-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0301000-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0301000-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0301000-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0301000-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0301001-pianta": {
+      "file": "bassini/MIA0301001-pianta.svg",
+      "viewBox": "288.6 107.9 121.4 56.3",
+      "strati": [
+        {
+          "file": "bassini/MIA0301001-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0301001-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0301001-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0301001-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0301001-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0301001-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0301001-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0301001-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0301001-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0301001-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0301001-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0301001-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0301001-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0301001-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0301001-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0301002-pianta": {
+      "file": "bassini/MIA0301002-pianta.svg",
+      "viewBox": "288.6 107.9 121.4 56.3",
+      "strati": [
+        {
+          "file": "bassini/MIA0301002-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0301002-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0301002-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0301002-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0301002-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0301002-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0301002-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0301002-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0301002-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0301002-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0301002-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0301002-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0301002-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0301002-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0301002-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0301003-pianta": {
+      "file": "bassini/MIA0301003-pianta.svg",
+      "viewBox": "288.7 108.5 121.4 56.3",
+      "strati": [
+        {
+          "file": "bassini/MIA0301003-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0301003-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0301003-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0301003-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0301003-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0301003-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0301003-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0301003-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0301003-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0301003-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0301003-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0301003-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0301003-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0301003-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0301003-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA030201I-pianta": {
+      "file": "bassini/MIA030201I-pianta.svg",
+      "viewBox": "214.8 114 66.6 64.6",
+      "strati": [
+        {
+          "file": "bassini/MIA030201I-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA030201I-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA030201I-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA030201I-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA030201I-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA030201I-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA030201I-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA030201I-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA030201I-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA030201I-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA030201I-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA030201I-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA030201I-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA030201I-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA030201I-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA030200S-pianta": {
+      "file": "bassini/MIA030200S-pianta.svg",
+      "viewBox": "214.8 114 66.6 64.6",
+      "strati": [
+        {
+          "file": "bassini/MIA030200S-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA030200S-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA030200S-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA030200S-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA030200S-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA030200S-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA030200S-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA030200S-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA030200S-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA030200S-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA030200S-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA030200S-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA030200S-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA030200S-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA030200S-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0302000-pianta": {
+      "file": "bassini/MIA0302000-pianta.svg",
+      "viewBox": "214.4 112 66.9 61.7",
+      "strati": [
+        {
+          "file": "bassini/MIA0302000-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0302000-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0302000-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0302000-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0302000-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0302000-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0302000-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0302000-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0302000-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0302000-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0302000-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0302000-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0302000-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0302000-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0302000-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0302001-pianta": {
+      "file": "bassini/MIA0302001-pianta.svg",
+      "viewBox": "215.5 113.9 65.6 61.8",
+      "strati": [
+        {
+          "file": "bassini/MIA0302001-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0302001-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0302001-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0302001-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0302001-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0302001-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0302001-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0302001-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0302001-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0302001-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0302001-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0302001-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0302001-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0302001-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0302001-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0302002-pianta": {
+      "file": "bassini/MIA0302002-pianta.svg",
+      "viewBox": "215.5 113.9 65.7 43.1",
+      "strati": [
+        {
+          "file": "bassini/MIA0302002-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0302002-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0302002-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0302002-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0302002-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0302002-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0302002-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0302002-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0302002-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0302002-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0302002-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0302002-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0302002-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0302002-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0302002-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "bassini/MIA0402000-pianta": {
+      "file": "bassini/MIA0402000-pianta.svg",
+      "viewBox": "502.3 234.8 72 38.1",
+      "strati": [
+        {
+          "file": "bassini/MIA0402000-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "bassini/MIA0402000-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "bassini/MIA0402000-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "bassini/MIA0402000-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "bassini/MIA0402000-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "bassini/MIA0402000-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "bassini/MIA0402000-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "bassini/MIA0402000-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "bassini/MIA0402000-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "bassini/MIA0402000-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "bassini/MIA0402000-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "bassini/MIA0402000-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "bassini/MIA0402000-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "bassini/MIA0402000-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "bassini/MIA0402000-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA140100S-pianta": {
+      "file": "citta-studi/MIA140100S-pianta.svg",
+      "viewBox": "524.2 450.3 51.1 56.8",
+      "strati": [
+        {
+          "file": "citta-studi/MIA140100S-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA140100S-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA140100S-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA140100S-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA140100S-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA140100S-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA140100S-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA140100S-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA140100S-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA140100S-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA140100S-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA140100S-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA140100S-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA140100S-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA140100S-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA1401000-pianta": {
+      "file": "citta-studi/MIA1401000-pianta.svg",
+      "viewBox": "492.8 432.8 104.3 88.6",
+      "strati": [
+        {
+          "file": "citta-studi/MIA1401000-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA1401000-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA1401000-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA1401000-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA1401000-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA1401000-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA1401000-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA1401000-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA1401000-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA1401000-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA1401000-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA1401000-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA1401000-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA1401000-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA1401000-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA1401001-pianta": {
+      "file": "citta-studi/MIA1401001-pianta.svg",
+      "viewBox": "494.1 450.4 102.3 71.2",
+      "strati": [
+        {
+          "file": "citta-studi/MIA1401001-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA1401001-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA1401001-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA1401001-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA1401001-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA1401001-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA1401001-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA1401001-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA1401001-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA1401001-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA1401001-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA1401001-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA1401001-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA1401001-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA1401001-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA060100S-pianta": {
+      "file": "citta-studi/MIA060100S-pianta.svg",
+      "viewBox": "-110.3 838.6 45.2 63.2",
+      "strati": [
+        {
+          "file": "citta-studi/MIA060100S-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA060100S-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA060100S-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA060100S-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA060100S-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA060100S-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA060100S-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA060100S-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA060100S-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA060100S-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA060100S-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA060100S-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA060100S-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA060100S-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA060100S-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA0601000-pianta": {
+      "file": "citta-studi/MIA0601000-pianta.svg",
+      "viewBox": "-110.3 838.6 45.7 58.1",
+      "strati": [
+        {
+          "file": "citta-studi/MIA0601000-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA0601000-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA0601000-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA0601000-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA0601000-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA0601000-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA0601000-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA0601000-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA0601000-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA0601000-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA0601000-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA0601000-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA0601000-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA0601000-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA0601000-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA0601001-pianta": {
+      "file": "citta-studi/MIA0601001-pianta.svg",
+      "viewBox": "-110.3 838.6 48.3 55.1",
+      "strati": [
+        {
+          "file": "citta-studi/MIA0601001-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA0601001-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA0601001-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA0601001-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA0601001-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA0601001-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA0601001-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA0601001-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA0601001-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA0601001-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA0601001-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA0601001-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA0601001-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA0601001-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA0601001-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA0601002-pianta": {
+      "file": "citta-studi/MIA0601002-pianta.svg",
+      "viewBox": "-110.3 838.6 48.5 55.1",
+      "strati": [
+        {
+          "file": "citta-studi/MIA0601002-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA0601002-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA0601002-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA0601002-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA0601002-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA0601002-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA0601002-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA0601002-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA0601002-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA0601002-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA0601002-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA0601002-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA0601002-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA0601002-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA0601002-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA0601003-pianta": {
+      "file": "citta-studi/MIA0601003-pianta.svg",
+      "viewBox": "-110.3 838.6 48 55.2",
+      "strati": [
+        {
+          "file": "citta-studi/MIA0601003-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA0601003-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA0601003-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA0601003-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA0601003-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA0601003-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA0601003-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA0601003-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA0601003-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA0601003-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA0601003-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA0601003-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA0601003-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA0601003-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA0601003-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA0601004-pianta": {
+      "file": "citta-studi/MIA0601004-pianta.svg",
+      "viewBox": "-110.2 838.6 37.9 33.8",
+      "strati": [
+        {
+          "file": "citta-studi/MIA0601004-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA0601004-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA0601004-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA0601004-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA0601004-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA0601004-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA0601004-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA0601004-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA0601004-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA0601004-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA0601004-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA0601004-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA0601004-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA0601004-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA0601004-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA060300S-pianta": {
+      "file": "citta-studi/MIA060300S-pianta.svg",
+      "viewBox": "-90.5 875.6 44 55",
+      "strati": [
+        {
+          "file": "citta-studi/MIA060300S-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA060300S-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA060300S-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA060300S-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA060300S-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA060300S-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA060300S-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA060300S-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA060300S-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA060300S-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA060300S-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA060300S-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA060300S-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA060300S-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA060300S-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA0603000-pianta": {
+      "file": "citta-studi/MIA0603000-pianta.svg",
+      "viewBox": "-90.4 885.8 44 44.8",
+      "strati": [
+        {
+          "file": "citta-studi/MIA0603000-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA0603000-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA0603000-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA0603000-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA0603000-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA0603000-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA0603000-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA0603000-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA0603000-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA0603000-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA0603000-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA0603000-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA0603000-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA0603000-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA0603000-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA090100S-pianta": {
+      "file": "citta-studi/MIA090100S-pianta.svg",
+      "viewBox": "-325.4 315.3 105.9 88.5",
+      "strati": [
+        {
+          "file": "citta-studi/MIA090100S-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA090100S-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA090100S-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA090100S-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA090100S-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA090100S-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA090100S-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA090100S-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA090100S-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA090100S-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA090100S-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA090100S-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA090100S-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA090100S-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA090100S-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA0901000-pianta": {
+      "file": "citta-studi/MIA0901000-pianta.svg",
+      "viewBox": "-325.5 315.3 106 88.6",
+      "strati": [
+        {
+          "file": "citta-studi/MIA0901000-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA0901000-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA0901000-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA0901000-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA0901000-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA0901000-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA0901000-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA0901000-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA0901000-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA0901000-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA0901000-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA0901000-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA0901000-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA0901000-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA0901000-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA0901001-pianta": {
+      "file": "citta-studi/MIA0901001-pianta.svg",
+      "viewBox": "-325.3 315.6 105.4 87.3",
+      "strati": [
+        {
+          "file": "citta-studi/MIA0901001-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA0901001-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA0901001-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA0901001-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA0901001-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA0901001-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA0901001-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA0901001-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA0901001-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA0901001-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA0901001-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA0901001-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA0901001-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA0901001-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA0901001-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA0901002-pianta": {
+      "file": "citta-studi/MIA0901002-pianta.svg",
+      "viewBox": "-325.3 315.8 105.3 87.1",
+      "strati": [
+        {
+          "file": "citta-studi/MIA0901002-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA0901002-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA0901002-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA0901002-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA0901002-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA0901002-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA0901002-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA0901002-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA0901002-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA0901002-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA0901002-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA0901002-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA0901002-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA0901002-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA0901002-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA0901003-pianta": {
+      "file": "citta-studi/MIA0901003-pianta.svg",
+      "viewBox": "-325.4 319.8 103 83.2",
+      "strati": [
+        {
+          "file": "citta-studi/MIA0901003-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA0901003-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA0901003-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA0901003-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA0901003-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA0901003-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA0901003-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA0901003-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA0901003-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA0901003-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA0901003-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA0901003-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA0901003-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA0901003-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA0901003-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA0901004-pianta": {
+      "file": "citta-studi/MIA0901004-pianta.svg",
+      "viewBox": "-325.3 315.8 105.3 87",
+      "strati": [
+        {
+          "file": "citta-studi/MIA0901004-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA0901004-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA0901004-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA0901004-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA0901004-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA0901004-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA0901004-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA0901004-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA0901004-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA0901004-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA0901004-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA0901004-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA0901004-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA0901004-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA0901004-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA0901005-pianta": {
+      "file": "citta-studi/MIA0901005-pianta.svg",
+      "viewBox": "-325.4 319.9 105.4 83",
+      "strati": [
+        {
+          "file": "citta-studi/MIA0901005-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA0901005-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA0901005-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA0901005-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA0901005-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA0901005-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA0901005-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA0901005-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA0901005-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA0901005-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA0901005-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA0901005-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA0901005-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA0901005-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA0901005-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "citta-studi/MIA0901006-pianta": {
+      "file": "citta-studi/MIA0901006-pianta.svg",
+      "viewBox": "-326.2 316.2 106.2 87.5",
+      "strati": [
+        {
+          "file": "citta-studi/MIA0901006-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "citta-studi/MIA0901006-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "citta-studi/MIA0901006-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "citta-studi/MIA0901006-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "citta-studi/MIA0901006-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "citta-studi/MIA0901006-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "citta-studi/MIA0901006-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "citta-studi/MIA0901006-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "citta-studi/MIA0901006-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "citta-studi/MIA0901006-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "citta-studi/MIA0901006-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "citta-studi/MIA0901006-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "citta-studi/MIA0901006-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "citta-studi/MIA0901006-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "citta-studi/MIA0901006-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
     "leonardo/MIA0203-mappa": {
       "file": "leonardo/MIA0203-mappa.svg",
       "viewBox": "-62 -44 134 136",
@@ -2534,7 +5768,7 @@
     },
     "leonardo/MIA020200S-pianta": {
       "file": "leonardo/MIA020200S-pianta.svg",
-      "viewBox": "-60.1 23.3 54.9 53.1",
+      "viewBox": "-57.8 19.3 52.8 54.3",
       "strati": [
         {
           "file": "leonardo/MIA020200S-pianta/01-fondo.svg",
@@ -2600,7 +5834,7 @@
     },
     "leonardo/MIA0202S0S-pianta": {
       "file": "leonardo/MIA0202S0S-pianta.svg",
-      "viewBox": "-59.3 23.3 54.6 52.8",
+      "viewBox": "-57.9 19.4 52.7 54.6",
       "strati": [
         {
           "file": "leonardo/MIA0202S0S-pianta/01-fondo.svg",
@@ -2666,7 +5900,7 @@
     },
     "leonardo/MIA020200R-pianta": {
       "file": "leonardo/MIA020200R-pianta.svg",
-      "viewBox": "-62.2 22.3 55 53.4",
+      "viewBox": "-58.1 19.3 52.8 54.4",
       "strati": [
         {
           "file": "leonardo/MIA020200R-pianta/01-fondo.svg",
@@ -2732,7 +5966,7 @@
     },
     "leonardo/MIA0202001-pianta": {
       "file": "leonardo/MIA0202001-pianta.svg",
-      "viewBox": "-72 34.1 49.5 44.7",
+      "viewBox": "-53.1 23.9 44.2 49",
       "strati": [
         {
           "file": "leonardo/MIA0202001-pianta/01-fondo.svg",
@@ -2798,7 +6032,7 @@
     },
     "leonardo/MIA0202002-pianta": {
       "file": "leonardo/MIA0202002-pianta.svg",
-      "viewBox": "-72 34.1 49.5 44.7",
+      "viewBox": "-53.1 23.9 44.2 49",
       "strati": [
         {
           "file": "leonardo/MIA0202002-pianta/01-fondo.svg",
@@ -2864,7 +6098,7 @@
     },
     "leonardo/MIA0202003-pianta": {
       "file": "leonardo/MIA0202003-pianta.svg",
-      "viewBox": "-72 34.1 49.5 44.7",
+      "viewBox": "-53.1 23.9 44.2 49",
       "strati": [
         {
           "file": "leonardo/MIA0202003-pianta/01-fondo.svg",
@@ -2930,7 +6164,7 @@
     },
     "leonardo/MIA0202004-pianta": {
       "file": "leonardo/MIA0202004-pianta.svg",
-      "viewBox": "-72 34.1 49.5 44.7",
+      "viewBox": "-53.1 23.9 44.2 49",
       "strati": [
         {
           "file": "leonardo/MIA0202004-pianta/01-fondo.svg",
@@ -2996,7 +6230,7 @@
     },
     "leonardo/MIA0202005-pianta": {
       "file": "leonardo/MIA0202005-pianta.svg",
-      "viewBox": "-72 34.1 49.5 44.7",
+      "viewBox": "-53.1 23.9 44.2 49",
       "strati": [
         {
           "file": "leonardo/MIA0202005-pianta/01-fondo.svg",
@@ -3062,7 +6296,7 @@
     },
     "leonardo/MIA0202006-pianta": {
       "file": "leonardo/MIA0202006-pianta.svg",
-      "viewBox": "-69.8 40.8 40.4 37.7",
+      "viewBox": "-52.8 26.1 37.4 40",
       "strati": [
         {
           "file": "leonardo/MIA0202006-pianta/01-fondo.svg",
@@ -4198,7 +7432,7 @@
     },
     "leonardo/MIA020600S-pianta": {
       "file": "leonardo/MIA020600S-pianta.svg",
-      "viewBox": "65.9 8.9 87 66.7",
+      "viewBox": "66.4 8.9 85.6 66.1",
       "strati": [
         {
           "file": "leonardo/MIA020600S-pianta/01-fondo.svg",
@@ -4264,7 +7498,7 @@
     },
     "leonardo/MIA0206000-pianta": {
       "file": "leonardo/MIA0206000-pianta.svg",
-      "viewBox": "64.1 6.2 87.4 67.1",
+      "viewBox": "64.7 6.3 86 66.4",
       "strati": [
         {
           "file": "leonardo/MIA0206000-pianta/01-fondo.svg",
@@ -4330,7 +7564,7 @@
     },
     "leonardo/MIA0206001-pianta": {
       "file": "leonardo/MIA0206001-pianta.svg",
-      "viewBox": "62.2 18.2 61.9 61.7",
+      "viewBox": "89.8 10.8 61.1 61.9",
       "strati": [
         {
           "file": "leonardo/MIA0206001-pianta/01-fondo.svg",
@@ -4396,7 +7630,7 @@
     },
     "leonardo/MIA0206002-pianta": {
       "file": "leonardo/MIA0206002-pianta.svg",
-      "viewBox": "62.5 18.6 60.9 61.4",
+      "viewBox": "89.7 11.9 60.6 61",
       "strati": [
         {
           "file": "leonardo/MIA0206002-pianta/01-fondo.svg",
@@ -4968,6 +8202,72 @@
         },
         {
           "file": "leonardo/MIA0208S0S-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "leonardo/MIA0208000-pianta": {
+      "file": "leonardo/MIA0208000-pianta.svg",
+      "viewBox": "49.3 -36.2 76.8 44",
+      "strati": [
+        {
+          "file": "leonardo/MIA0208000-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0208000-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "leonardo/MIA0208000-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "leonardo/MIA0208000-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "leonardo/MIA0208000-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "leonardo/MIA0208000-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "leonardo/MIA0208000-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "leonardo/MIA0208000-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "leonardo/MIA0208000-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "leonardo/MIA0208000-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA0208000-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0208000-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "leonardo/MIA0208000-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA0208000-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA0208000-pianta/15-dotazioni.svg",
           "livello": "dotazioni"
         }
       ]
@@ -5840,6 +9140,204 @@
         },
         {
           "file": "leonardo/MIA0101002-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "leonardo/MIA010100S-pianta": {
+      "file": "leonardo/MIA010100S-pianta.svg",
+      "viewBox": "-79 170.4 90.4 79.1",
+      "strati": [
+        {
+          "file": "leonardo/MIA010100S-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA010100S-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "leonardo/MIA010100S-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "leonardo/MIA010100S-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "leonardo/MIA010100S-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "leonardo/MIA010100S-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "leonardo/MIA010100S-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "leonardo/MIA010100S-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "leonardo/MIA010100S-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "leonardo/MIA010100S-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA010100S-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA010100S-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "leonardo/MIA010100S-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA010100S-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA010100S-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "leonardo/MIA0101S00-pianta": {
+      "file": "leonardo/MIA0101S00-pianta.svg",
+      "viewBox": "-45.3 190.5 44.1 39.5",
+      "strati": [
+        {
+          "file": "leonardo/MIA0101S00-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0101S00-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "leonardo/MIA0101S00-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "leonardo/MIA0101S00-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "leonardo/MIA0101S00-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "leonardo/MIA0101S00-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "leonardo/MIA0101S00-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "leonardo/MIA0101S00-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "leonardo/MIA0101S00-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "leonardo/MIA0101S00-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA0101S00-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0101S00-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "leonardo/MIA0101S00-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA0101S00-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA0101S00-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "leonardo/MIA0101S01-pianta": {
+      "file": "leonardo/MIA0101S01-pianta.svg",
+      "viewBox": "-77.9 179.8 88.8 69.6",
+      "strati": [
+        {
+          "file": "leonardo/MIA0101S01-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0101S01-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "leonardo/MIA0101S01-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "leonardo/MIA0101S01-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "leonardo/MIA0101S01-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "leonardo/MIA0101S01-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "leonardo/MIA0101S01-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "leonardo/MIA0101S01-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "leonardo/MIA0101S01-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "leonardo/MIA0101S01-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA0101S01-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0101S01-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "leonardo/MIA0101S01-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA0101S01-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA0101S01-pianta/15-dotazioni.svg",
           "livello": "dotazioni"
         }
       ]
@@ -7382,6 +10880,72 @@
         }
       ]
     },
+    "leonardo/MIA0102S00-pianta": {
+      "file": "leonardo/MIA0102S00-pianta.svg",
+      "viewBox": "-82.5 79.6 84.4 106.1",
+      "strati": [
+        {
+          "file": "leonardo/MIA0102S00-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0102S00-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "leonardo/MIA0102S00-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "leonardo/MIA0102S00-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "leonardo/MIA0102S00-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "leonardo/MIA0102S00-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "leonardo/MIA0102S00-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "leonardo/MIA0102S00-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "leonardo/MIA0102S00-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "leonardo/MIA0102S00-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA0102S00-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0102S00-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "leonardo/MIA0102S00-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA0102S00-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA0102S00-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
     "leonardo/MIA0103-mappa": {
       "file": "leonardo/MIA0103-mappa.svg",
       "viewBox": "-107 218 134 136",
@@ -8104,6 +11668,72 @@
         }
       ]
     },
+    "leonardo/MIA0103S00-pianta": {
+      "file": "leonardo/MIA0103S00-pianta.svg",
+      "viewBox": "-41.3 231.6 50.3 106.6",
+      "strati": [
+        {
+          "file": "leonardo/MIA0103S00-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0103S00-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "leonardo/MIA0103S00-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "leonardo/MIA0103S00-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "leonardo/MIA0103S00-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "leonardo/MIA0103S00-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "leonardo/MIA0103S00-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "leonardo/MIA0103S00-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "leonardo/MIA0103S00-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "leonardo/MIA0103S00-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA0103S00-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0103S00-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "leonardo/MIA0103S00-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA0103S00-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA0103S00-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
     "leonardo/MIA0104-mappa": {
       "file": "leonardo/MIA0104-mappa.svg",
       "viewBox": "-40 60 130 145",
@@ -8768,6 +12398,72 @@
         }
       ]
     },
+    "leonardo/MIA0104S00-pianta": {
+      "file": "leonardo/MIA0104S00-pianta.svg",
+      "viewBox": "-12 80.4 67.8 43.2",
+      "strati": [
+        {
+          "file": "leonardo/MIA0104S00-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0104S00-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "leonardo/MIA0104S00-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "leonardo/MIA0104S00-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "leonardo/MIA0104S00-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "leonardo/MIA0104S00-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "leonardo/MIA0104S00-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "leonardo/MIA0104S00-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "leonardo/MIA0104S00-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "leonardo/MIA0104S00-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA0104S00-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0104S00-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "leonardo/MIA0104S00-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA0104S00-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA0104S00-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
     "leonardo/MIA0112-mappa": {
       "file": "leonardo/MIA0112-mappa.svg",
       "viewBox": "30 60 85 120",
@@ -9150,6 +12846,72 @@
         },
         {
           "file": "leonardo/MIA0112001-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "leonardo/MIA0112S0S-pianta": {
+      "file": "leonardo/MIA0112S0S-pianta.svg",
+      "viewBox": "51.7 80 42.6 81.1",
+      "strati": [
+        {
+          "file": "leonardo/MIA0112S0S-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0112S0S-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "leonardo/MIA0112S0S-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "leonardo/MIA0112S0S-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "leonardo/MIA0112S0S-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "leonardo/MIA0112S0S-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "leonardo/MIA0112S0S-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "leonardo/MIA0112S0S-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "leonardo/MIA0112S0S-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "leonardo/MIA0112S0S-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA0112S0S-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0112S0S-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "leonardo/MIA0112S0S-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA0112S0S-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA0112S0S-pianta/15-dotazioni.svg",
           "livello": "dotazioni"
         }
       ]
@@ -10004,6 +13766,72 @@
         },
         {
           "file": "leonardo/MIA0105003-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "leonardo/MIA0105S00-pianta": {
+      "file": "leonardo/MIA0105S00-pianta.svg",
+      "viewBox": "0.3 277.4 60.6 55",
+      "strati": [
+        {
+          "file": "leonardo/MIA0105S00-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0105S00-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "leonardo/MIA0105S00-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "leonardo/MIA0105S00-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "leonardo/MIA0105S00-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "leonardo/MIA0105S00-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "leonardo/MIA0105S00-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "leonardo/MIA0105S00-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "leonardo/MIA0105S00-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "leonardo/MIA0105S00-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA0105S00-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0105S00-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "leonardo/MIA0105S00-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA0105S00-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA0105S00-pianta/15-dotazioni.svg",
           "livello": "dotazioni"
         }
       ]
@@ -11034,6 +14862,138 @@
         }
       ]
     },
+    "leonardo/MIA0106S0R-pianta": {
+      "file": "leonardo/MIA0106S0R-pianta.svg",
+      "viewBox": "29.3 146.7 88.8 110.3",
+      "strati": [
+        {
+          "file": "leonardo/MIA0106S0R-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0106S0R-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "leonardo/MIA0106S0R-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "leonardo/MIA0106S0R-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "leonardo/MIA0106S0R-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "leonardo/MIA0106S0R-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "leonardo/MIA0106S0R-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "leonardo/MIA0106S0R-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "leonardo/MIA0106S0R-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "leonardo/MIA0106S0R-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA0106S0R-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0106S0R-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "leonardo/MIA0106S0R-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA0106S0R-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA0106S0R-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "leonardo/MIA0106S01-pianta": {
+      "file": "leonardo/MIA0106S01-pianta.svg",
+      "viewBox": "29.3 146.7 88.8 111.1",
+      "strati": [
+        {
+          "file": "leonardo/MIA0106S01-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0106S01-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "leonardo/MIA0106S01-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "leonardo/MIA0106S01-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "leonardo/MIA0106S01-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "leonardo/MIA0106S01-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "leonardo/MIA0106S01-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "leonardo/MIA0106S01-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "leonardo/MIA0106S01-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "leonardo/MIA0106S01-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA0106S01-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0106S01-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "leonardo/MIA0106S01-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA0106S01-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA0106S01-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
     "leonardo/MIA0107-mappa": {
       "file": "leonardo/MIA0107-mappa.svg",
       "viewBox": "70 135 95 145",
@@ -11456,6 +15416,72 @@
         },
         {
           "file": "leonardo/MIA0107001-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "leonardo/MIA0107S00-pianta": {
+      "file": "leonardo/MIA0107S00-pianta.svg",
+      "viewBox": "93.9 153.9 41.6 105.8",
+      "strati": [
+        {
+          "file": "leonardo/MIA0107S00-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0107S00-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "leonardo/MIA0107S00-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "leonardo/MIA0107S00-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "leonardo/MIA0107S00-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "leonardo/MIA0107S00-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "leonardo/MIA0107S00-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "leonardo/MIA0107S00-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "leonardo/MIA0107S00-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "leonardo/MIA0107S00-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA0107S00-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0107S00-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "leonardo/MIA0107S00-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA0107S00-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA0107S00-pianta/15-dotazioni.svg",
           "livello": "dotazioni"
         }
       ]
@@ -12116,6 +16142,138 @@
         },
         {
           "file": "leonardo/MIA0108002-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "leonardo/MIA0108S00-pianta": {
+      "file": "leonardo/MIA0108S00-pianta.svg",
+      "viewBox": "79.7 92.9 49.2 62.2",
+      "strati": [
+        {
+          "file": "leonardo/MIA0108S00-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0108S00-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "leonardo/MIA0108S00-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "leonardo/MIA0108S00-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "leonardo/MIA0108S00-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "leonardo/MIA0108S00-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "leonardo/MIA0108S00-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "leonardo/MIA0108S00-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "leonardo/MIA0108S00-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "leonardo/MIA0108S00-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA0108S00-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0108S00-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "leonardo/MIA0108S00-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA0108S00-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA0108S00-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
+    "leonardo/MIA0108S01-pianta": {
+      "file": "leonardo/MIA0108S01-pianta.svg",
+      "viewBox": "83.3 103.8 61.1 59.9",
+      "strati": [
+        {
+          "file": "leonardo/MIA0108S01-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0108S01-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "leonardo/MIA0108S01-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "leonardo/MIA0108S01-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "leonardo/MIA0108S01-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "leonardo/MIA0108S01-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "leonardo/MIA0108S01-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "leonardo/MIA0108S01-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "leonardo/MIA0108S01-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "leonardo/MIA0108S01-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA0108S01-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0108S01-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "leonardo/MIA0108S01-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA0108S01-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA0108S01-pianta/15-dotazioni.svg",
           "livello": "dotazioni"
         }
       ]
@@ -12894,6 +17052,72 @@
         }
       ]
     },
+    "leonardo/MIA0111S00-pianta": {
+      "file": "leonardo/MIA0111S00-pianta.svg",
+      "viewBox": "67.7 240.3 89.1 77.3",
+      "strati": [
+        {
+          "file": "leonardo/MIA0111S00-pianta/01-fondo.svg",
+          "livello": "terreno"
+        },
+        {
+          "file": "leonardo/MIA0111S00-pianta/02-esterni.svg",
+          "livello": "esterni"
+        },
+        {
+          "file": "leonardo/MIA0111S00-pianta/03-muri.svg",
+          "livello": "muri"
+        },
+        {
+          "file": "leonardo/MIA0111S00-pianta/04-locali.svg",
+          "livello": "locali"
+        },
+        {
+          "file": "leonardo/MIA0111S00-pianta/05-arredi.svg",
+          "livello": "arredi"
+        },
+        {
+          "file": "leonardo/MIA0111S00-pianta/06-gradini.svg",
+          "livello": "gradini"
+        },
+        {
+          "file": "leonardo/MIA0111S00-pianta/07-ascensori.svg",
+          "livello": "ascensori"
+        },
+        {
+          "file": "leonardo/MIA0111S00-pianta/08-finestre.svg",
+          "livello": "finestre"
+        },
+        {
+          "file": "leonardo/MIA0111S00-pianta/09-porte.svg",
+          "livello": "porte"
+        },
+        {
+          "file": "leonardo/MIA0111S00-pianta/10-percorso-accessibile.svg",
+          "livello": "percorso-accessibile"
+        },
+        {
+          "file": "leonardo/MIA0111S00-pianta/11-ingressi.svg",
+          "livello": "ingressi"
+        },
+        {
+          "file": "leonardo/MIA0111S00-pianta/12-accessibilita.svg",
+          "livello": "accessibilita"
+        },
+        {
+          "file": "leonardo/MIA0111S00-pianta/13-acqua.svg",
+          "livello": "acqua"
+        },
+        {
+          "file": "leonardo/MIA0111S00-pianta/14-etichette.svg",
+          "livello": "etichette"
+        },
+        {
+          "file": "leonardo/MIA0111S00-pianta/15-dotazioni.svg",
+          "livello": "dotazioni"
+        }
+      ]
+    },
     "leonardo/MIA0113-mappa": {
       "file": "leonardo/MIA0113-mappa.svg",
       "viewBox": "111.0 284.1 55.19999999999999 65.39999999999998",
@@ -13058,7 +17282,7 @@
     },
     "leonardo/MIA0113000-pianta": {
       "file": "leonardo/MIA0113000-pianta.svg",
-      "viewBox": "120.9 297.1 29.1 39.5",
+      "viewBox": "124 297.1 29.1 39.5",
       "strati": [
         {
           "file": "leonardo/MIA0113000-pianta/01-fondo.svg",

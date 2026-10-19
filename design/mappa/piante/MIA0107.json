@@ -50,6 +50,24 @@
           ]
         }
       }
+    },
+    {
+      "csip": "MIA0107S00",
+      "nome": "Terra Soppalco",
+      "aule": {
+        "MIA0107S00001": {
+          "sigla": "7.0.1",
+          "posti": 88,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese",
+            "rete"
+          ]
+        }
+      }
     }
   ]
 }

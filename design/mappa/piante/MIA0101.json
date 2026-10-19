@@ -21,6 +21,21 @@
       "csip": "MIA0101002",
       "nome": "Secondo",
       "aule": {}
+    },
+    {
+      "csip": "MIA010100S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0101S00",
+      "nome": "Terra Soppalco",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0101S01",
+      "nome": "Primo Soppalco",
+      "aule": {}
     }
   ]
 }

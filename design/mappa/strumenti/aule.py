@@ -27,7 +27,8 @@ def get(path):
 def main(csie):
     campus = next(json.loads(f.read_text()) for f in HERE.glob("*.json")
                   if f.name != "livelli.json" and csie in f.read_text())
-    floors = next(b for b in campus["edifici"] if b["csie"] == csie)["livelli"]
+    building = next(b for b in campus["edifici"] if b["csie"] == csie)
+    floors = building["livelli"] + building.get("solo_pianta", [])
     names = {p["csip"]: p["nome"] for p in get("spazi/piano") if p["csie"] == csie}
     rooms = [a for a in get("spazi/aula") if a["csie"] == csie]
 

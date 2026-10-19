@@ -2283,6 +2283,9 @@ def main():
             if plans.exists() and geometry.exists():
                 geo = json.loads(geometry.read_text())["piani"]
                 for floor in json.loads(plans.read_text())["piani"]:
+                    if not geo[floor["csip"]]["contorno"]:      # nothing drawn (a crawl space)
+                        print(f"{src.stem}/{floor['csip']}  no outline, not drawn")
+                        continue
                     name = f"{floor['csip']}-pianta"
                     disegni[f"{src.stem}/{name}"] = write_drawing(dest, name, *draw_plan(b, floor, geo[floor["csip"]]))
                     print(f"{src.stem}/{floor['csip']}  piano {floor['nome']}")
