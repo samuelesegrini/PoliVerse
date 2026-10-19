@@ -34,6 +34,12 @@ Il modo più rapido per avere numeri veri, letti dal dispositivo e non stimati:
    circa un minuto; non toccare lo schermo.
 3. Alla fine compare la scheda con i risultati; il pulsante di condivisione manda il JSON
    (incollalo nel thread e lo analizzo). Tieni premuto **Misura** per rifarlo.
+4. Lo stesso JSON finisce in `Documents/trifoglio3d-bench.json` dell'app e nella console tra
+   `TRIFOGLIO3D_BENCH_BEGIN` e `TRIFOGLIO3D_BENCH_END`. Dal Mac:
+
+       xcrun devicectl device copy from --device <id> --domain-type appDataContainer \
+         --domain-identifier segrini.samuele.PoliVerse \
+         --source Documents/trifoglio3d-bench.json --destination bench.json
 
 Cosa misura (`PoliVerse/Features/Map/Campus3D/Trifoglio3DBench.swift`):
 

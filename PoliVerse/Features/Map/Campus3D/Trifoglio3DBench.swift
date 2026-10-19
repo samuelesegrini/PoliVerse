@@ -184,6 +184,22 @@ final class Trifoglio3DBench {
         report.totalSeconds = seconds(start, .now)
         self.report = report
         step = nil
+        save()
+    }
+
+    /// Where the last report is written, in the app's Documents, so a Mac can copy it off the
+    /// phone without anyone touching it:
+    /// `xcrun devicectl device copy from --device <id> --domain-type appDataContainer
+    /// --domain-identifier segrini.samuele.PoliVerse --source Documents/trifoglio3d-bench.json
+    /// --destination bench.json`
+    static var reportURL: URL {
+        URL.documentsDirectory.appending(path: "trifoglio3d-bench.json")
+    }
+
+    /// Writes the report to ``reportURL`` and prints it, between markers, to the console.
+    private func save() {
+        try? Data(json.utf8).write(to: Self.reportURL, options: .atomic)
+        print("TRIFOGLIO3D_BENCH_BEGIN\n\(json)\nTRIFOGLIO3D_BENCH_END")
     }
 
     /// Reads every model as the walk used to before its first frame, holds them all, then
