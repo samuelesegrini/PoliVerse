@@ -131,6 +131,15 @@ final class Trifoglio3DScene {
     /// Keeps the per-frame callback alive.
     @ObservationIgnored private var subscription: EventSubscription?
 
+    /// When ``load(into:)`` started, the campus was in the scene, and the first frame with
+    /// it was drawn, with the app's memory then: what ``Trifoglio3DBench`` reports.
+    @ObservationIgnored private(set) var loadStarted: ContinuousClock.Instant?
+    @ObservationIgnored private(set) var campusLoaded: ContinuousClock.Instant?
+    @ObservationIgnored private(set) var firstFrame: ContinuousClock.Instant?
+    @ObservationIgnored private(set) var memoryAtFirstFrame: UInt64?
+    /// Called once a frame with the time since the last one, while the bench listens.
+    @ObservationIgnored var onFrame: ((TimeInterval) -> Void)?
+
     /// The orbit the camera sits on: what it looks at, from how far, how far from vertical
     /// and from which side. Animating these rather than positions makes every move an arc.
     @ObservationIgnored private var target: SIMD3<Float> = [30, 0, 150]
@@ -180,6 +189,7 @@ final class Trifoglio3DScene {
     ///
     /// - Parameter content: The view's content.
     func load(into content: inout RealityViewCameraContent) async {
+        loadStarted = .now
         content.camera = .virtual
         var lens = PerspectiveCameraComponent()
         lens.near = 1
@@ -201,6 +211,7 @@ final class Trifoglio3DScene {
         content.add(root)
 
         await loadCampus()
+        campusLoaded = .now
         subscription = content.subscribe(to: SceneEvents.Update.self) { [weak self] event in
             let delta = event.deltaTime
             MainActor.assumeIsolated { self?.step(delta) }
@@ -259,22 +270,7 @@ final class Trifoglio3DScene {
             return model
         }
         if let task = loading[csie] { return await task.value }
-        let task = Task { () -> Entity? in
-            let signpost = Trifoglio3DSignpost.begin(.building)
-            defer { Trifoglio3DSignpost.end(signpost) }
-            guard let url = Bundle.main.url(forResource: csie, withExtension: "usdz"),
-                  let building = try? await Entity(contentsOf: url)
-            else { return nil }
-            for floor in floors(of: building) {
-                await tappableExactly(floor.findEntity(named: floor.name + "_Locali"))
-            }
-            // Each tiered classroom's full walls, ceiling and lights stay hidden until the
-            // camera goes inside: from above they would cover the room.
-            visit(building) { if $0.name.hasSuffix(Self.interiorSuffix) { $0.isEnabled = false } }
-            building.components.set(OpacityComponent(opacity: 0))
-            building.isEnabled = false
-            return building
-        }
+        let task = Task { await readBuilding(csie) }
         loading[csie] = task
         let building = await task.value
         loading[csie] = nil
@@ -316,6 +312,35 @@ final class Trifoglio3DScene {
                 part.generateCollisionShapes(recursive: false)
             }
             part.components.set(InputTargetComponent())
+        }
+    }
+
+    /// Reads a building's floors from the bundle and readies them, without adding them to
+    /// the scene: the exact tap shapes of its rooms, the interiors hidden, the whole
+    /// see-through and disabled.
+    func readBuilding(_ csie: String) async -> Entity? {
+        let signpost = Trifoglio3DSignpost.begin(.building)
+        defer { Trifoglio3DSignpost.end(signpost) }
+        guard let url = Bundle.main.url(forResource: csie, withExtension: "usdz"),
+              let building = try? await Entity(contentsOf: url)
+        else { return nil }
+        for floor in floors(of: building) {
+            await tappableExactly(floor.findEntity(named: floor.name + "_Locali"))
+        }
+        // Each tiered classroom's full walls, ceiling and lights stay hidden until the
+        // camera goes inside: from above they would cover the room.
+        visit(building) { if $0.name.hasSuffix(Self.interiorSuffix) { $0.isEnabled = false } }
+        building.components.set(OpacityComponent(opacity: 0))
+        building.isEnabled = false
+        return building
+    }
+
+    /// Lets go of every loaded building but the one the camera is on, so the next
+    /// ``loadBuilding(_:)`` of each reads from the bundle again.
+    func unloadBuildings() {
+        for csie in models.keys where csie != self.csie || level == .campus {
+            models.removeValue(forKey: csie)?.removeFromParent()
+            recent.removeAll { $0 == csie }
         }
     }
 
@@ -593,6 +618,11 @@ final class Trifoglio3DScene {
     /// Advances every animation, the lit room's pulse and its label by one frame.
     private func step(_ delta: TimeInterval) {
         clock += delta
+        if firstFrame == nil {
+            firstFrame = .now
+            memoryAtFirstFrame = Trifoglio3DProbe.memory()
+        }
+        onFrame?(delta)
         for index in tweens.indices.reversed() {
             let tween = tweens[index]
             let t = Float(min(1, (clock - tween.start) / tween.duration))
@@ -691,6 +721,10 @@ struct Trifoglio3DView: View {
     @State private var lastPinch: CGFloat = 1
     /// Reduce Motion, which makes every move a jump.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The bench that measures the walk on this device.
+    @State private var bench = Trifoglio3DBench()
+    /// Whether the bench's results are on screen.
+    @State private var showsBench = false
 
     /// The view's content.
     var body: some View {
@@ -715,6 +749,16 @@ struct Trifoglio3DView: View {
                 }
                 .onEnded { _ in lastPinch = 1 })
             .overlay(alignment: .topLeading) { label }
+            .overlay(alignment: .top) {
+                if let step = bench.step {
+                    Label(step, systemImage: "gauge.with.dots.needle.67percent")
+                        .font(.footnote.bold())
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .glassEffect()
+                        .padding(.top, 8)
+                }
+            }
             .onAppear {
                 scene.viewSize = proxy.size
                 scene.reduceMotion = reduceMotion
@@ -725,6 +769,19 @@ struct Trifoglio3DView: View {
         .ignoresSafeArea(edges: .bottom)
         .safeAreaInset(edge: .top) { crumbs }
         .safeAreaInset(edge: .bottom) { panel }
+        .sheet(isPresented: $showsBench) { Trifoglio3DBenchView(bench: bench) }
+        .task {
+            // `-Trifoglio3DBench` runs the bench as soon as the campus is drawn.
+            guard CommandLine.arguments.contains("-Trifoglio3DBench") else { return }
+            while scene.firstFrame == nil { try? await Task.sleep(for: .milliseconds(100)) }
+            await runBench()
+        }
+    }
+
+    /// Runs the bench with nothing over the walk, then shows what it measured.
+    private func runBench() async {
+        await bench.run(on: scene)
+        showsBench = true
     }
 
     /// The lit classroom's name and seats, floating over it.
@@ -760,6 +817,14 @@ struct Trifoglio3DView: View {
                 }
                 if case .inside = scene.level {
                     crumb("Dentro", to: scene.level)
+                }
+                Button("Misura", systemImage: "gauge.with.dots.needle.67percent") {
+                    if bench.report != nil, bench.step == nil { showsBench = true } else { Task { await runBench() } }
+                }
+                .buttonStyle(.glass)
+                .disabled(bench.step != nil)
+                .contextMenu {
+                    Button("Misura di nuovo") { Task { await runBench() } }
                 }
             }
             .padding(.horizontal, 16)

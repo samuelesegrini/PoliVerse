@@ -11,7 +11,7 @@ misura → idee → modifica → rimisura fatto il 19/10/2026.
 | Latenza: il campus compare subito | tempo dal lancio al campus disegnato (`trifoglio3d.campus`) | < 1 s su iPhone 15 | `Trifoglio3DPerformanceTests.testTimeToCampus`, `Trifoglio3DLoadTests.testBeforeFirstFrame` |
 | | byte, file e forme di collisione letti prima del primo frame | ≤ 1 file, ≤ 40 MB, 0 collisioni | `misura.py`, riga "Primo frame" |
 | Latenza: entrare in un edificio non aspetta | tempo per leggere i piani di un edificio con le collisioni delle aule | < 300 ms, meno del volo di 1,3 s che lo nasconde | `Trifoglio3DLoadTests.testOneBuilding` |
-| Memoria | memoria GPU stimata a regime (campus + edifici tenuti) | < 160 MB | `misura.py`, riga "a regime" |
+| Memoria | memoria GPU con il campus fermo | < 160 MB | banco sul telefono (`misura.py` ne dà una stima) |
 | | memoria fisica dell'app | < 300 MB | `testStillCampus`, `testWalkAcrossTenBuildings` |
 | CPU e batteria | triangoli disegnati a ogni fermata della camera (mediana) | < 400 k | `misura.py`, righe "fermate" |
 | | draw call alla fermata campus | < 1100 | `misura.py` |
@@ -22,6 +22,35 @@ misura → idee → modifica → rimisura fatto il 19/10/2026.
 Nel cloud non c'è Xcode né un iPhone: `misura.py` conta quello che sul telefono diventa tempo,
 memoria e batteria (byte, vertici, triangoli disegnati, draw call). I secondi e i megabyte veri
 li danno i test XCTest, da far girare sul telefono.
+
+## Il banco sul telefono
+
+Il modo più rapido per avere numeri veri, letti dal dispositivo e non stimati:
+
+1. In Xcode, schema **PoliVerse** (Debug), destinazione il tuo iPhone; in Edit Scheme → Run →
+   Arguments aggiungi `-Trifoglio3D` (apre il campus 3D al posto dell'app). Con anche
+   `-Trifoglio3DBench` il banco parte da solo appena il campus è disegnato.
+2. Altrimenti tocca **Misura** nella barra in alto del campus. La camera si muove da sola per
+   circa un minuto; non toccare lo schermo.
+3. Alla fine compare la scheda con i risultati; il pulsante di condivisione manda il JSON
+   (incollalo nel thread e lo analizzo). Tieni premuto **Misura** per rifarlo.
+
+Cosa misura (`PoliVerse/Features/Map/Campus3D/Trifoglio3DBench.swift`):
+
+| Misura | Come la legge |
+|---|---|
+| Apertura: campus nella scena e primo frame, in ms | orologio dall'inizio del caricamento |
+| Memoria dell'app | `phys_footprint` (`task_info`), quella che iOS conta per il limite |
+| Memoria GPU | `MTLDevice.currentAllocatedSize` |
+| CPU | tempo CPU del processo (`CLOCK_PROCESS_CPUTIME_ID`) diviso il tempo trascorso |
+| Frame al secondo, durata dei frame, scatti in ms/s | `SceneEvents.Update` di RealityKit, frame per frame |
+| Campus fermo 10 s, volo all'aula T.1.2, ancora fermo alla fine | le misure sopra, in quelle finestre |
+| Ogni edificio letto a freddo, con le collisioni delle aule | orologio attorno a `loadBuilding` |
+| Il vecchio caricamento, tutto subito | i 38 modelli letti e tenuti insieme: tempo, memoria, GPU |
+| Batteria e temperatura | `UIDevice.batteryLevel` e `thermalState` all'inizio e alla fine |
+
+La batteria cambia di pochi punti in un minuto: per il consumo vero serve Instruments →
+Power Profiler, oppure ripetere il banco più volte di fila.
 
 ## Gli strumenti
 
