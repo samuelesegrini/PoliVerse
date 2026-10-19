@@ -118,6 +118,10 @@ final class Trifoglio3DScene {
     /// The Giuriati sports centre and its block east of the campus: ground, pitches, track,
     /// trees and building footprints, in the campus frame. Optional.
     @ObservationIgnored private var giuriati: Entity?
+    /// Each building's simplified shell from `campus_lontano.usdz`, by `csie`, hung inside
+    /// its detailed shell: drawn from the campus view instead of it, with 60 % fewer
+    /// triangles. Empty when the bundle has no such file.
+    @ObservationIgnored private var distant: [String: Entity] = [:]
     /// The floors of the buildings loaded so far, each with its slab, cut walls and rooms,
     /// by `csie`. At most ``keptBuildings`` of them.
     @ObservationIgnored private(set) var models: [String: Entity] = [:]
@@ -166,6 +170,8 @@ final class Trifoglio3DScene {
     private static let glowName = "Trifoglio3D_Luce"
     /// The end of the name of a classroom's interior: `<csiv>_Interno`.
     private static let interiorSuffix = "_Interno"
+    /// What a building's simplified shell is called, after its `csie`.
+    private static let distantSuffix = "_Lontano"
     /// Whether a move is under way. Taps and buttons wait for it to end rather than
     /// start a second move that fights the first over the camera and the fades.
     @ObservationIgnored private var isMoving = false
@@ -246,7 +252,8 @@ final class Trifoglio3DScene {
         }
     }
 
-    /// What the first frame can do without: the Giuriati block and the taps on the buildings.
+    /// What the first frame can do without: the Giuriati block, the simplified shells and
+    /// the taps on the buildings.
     func loadAfterFirstFrame() async {
         let signpost = Trifoglio3DSignpost.begin(.afterFirstFrame)
         defer { Trifoglio3DSignpost.end(signpost) }
@@ -255,7 +262,35 @@ final class Trifoglio3DScene {
             root.addChild(giuriati)
             self.giuriati = giuriati
         }
+        await loadDistant()
         tappable(campus?.findEntity(named: "Edifici"))
+    }
+
+    /// Hangs each simplified shell of `campus_lontano.usdz` inside the building's detailed
+    /// one, so fading, framing and taps keep working on the building's group, and shows
+    /// them if the camera is on the campus.
+    ///
+    /// The file comes from `banco/lontano.py`, which `esporta3d.py` runs on `campus.usdz`.
+    private func loadDistant() async {
+        guard let url = Bundle.main.url(forResource: "campus_lontano", withExtension: "usdz"),
+              let file = try? await Entity(contentsOf: url),
+              let groups = file.findEntity(named: "Edifici")
+        else { return }
+        for group in Array(groups.children) {
+            guard let detailed = exteriors.first(where: { $0.name == group.name }) else { continue }
+            group.name += Self.distantSuffix
+            detailed.addChild(group, preservingWorldTransform: true)
+            distant[detailed.name] = group
+        }
+        setDistant(level == .campus)
+    }
+
+    /// Draws every building with its simplified shell, or with its detailed one.
+    func setDistant(_ on: Bool) {
+        for shell in exteriors {
+            guard let far = distant[shell.name] else { continue }
+            for part in shell.children { part.isEnabled = (part === far) == on }
+        }
     }
 
     /// A building's floors, read from the bundle the first time and kept for the next.
@@ -367,6 +402,13 @@ final class Trifoglio3DScene {
         }
     }
 
+    /// Shows or hides the whole campus and Giuriati: with both hidden, what is left of a frame
+    /// is RealityKit's own cost.
+    func setScene(_ visible: Bool) {
+        campus?.isEnabled = visible
+        giuriati?.isEnabled = visible
+    }
+
     /// Makes every building's outer shell fully opaque at once, as on the campus.
     func setExteriorsOpaque() {
         exteriors.forEach { $0.components.set(OpacityComponent(opacity: 1)); $0.isEnabled = true }
@@ -413,6 +455,7 @@ final class Trifoglio3DScene {
         case .campus:
             unlight()
             level = next
+            setDistant(true)
             exteriors.forEach { fade($0, to: 1) }
             models.values.forEach { fade($0, to: 0) }
             trees.forEach { fade($0, to: 1) }
@@ -422,6 +465,7 @@ final class Trifoglio3DScene {
             unlight()
             level = next
             self.csie = csie
+            setDistant(false)
             // As in Maps, the other buildings stay solid and only those standing between the
             // camera and this one go: see-through shells cost 37 fps against 57 on an iPhone 12 Pro.
             let blocking = blockers(of: shell, polar: 1.0, margin: 1.15)

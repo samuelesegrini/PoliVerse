@@ -65,6 +65,8 @@ Power Profiler, oppure ripetere il banco più volte di fila.
   `Trifoglio3DScene.frame` e il frustum culling per riquadri, come RealityKit.
 - **`ottimizza.py <file.usdz> …`** alleggerisce i modelli senza cambiare l'aspetto (sotto).
   `esporta3d.py` lo chiama da solo su ogni `.usdz` che scrive.
+- **`lontano.py <campus.usdz>`** scrive `campus_lontano.usdz`, gli involucri semplificati per la
+  vista campus (sezione 6). Serve `pip install fast-simplification`.
 - **`PoliVerseTests/Trifoglio3DLoadTests.swift`**: tempo, CPU e memoria di ogni passo del
   caricamento, letto da RealityKit sul dispositivo.
 - **`PoliVerseUITests/Trifoglio3DPerformanceTests.swift`**: l'app aperta con `-Trifoglio3D`:
@@ -123,7 +125,7 @@ Cosa diceva la misura di partenza:
 | 6 | Etichetta aggiornata solo se si sposta; `unlight` senza visitare tutte le entità | fatto |
 | 7 | Campus in due strati (terreno+edifici, poi alberi e città) | provato e scartato: −13 % byte al primo frame per un file e 2 MB in più |
 | 8 | Chiome meno dense: 553 k triangoli, il 27 % del campus | da fare nel thread dell'arredo (PR #25), che possiede gli alberi |
-| 9 | LOD degli involucri: 1,24 M triangoli, inutili da lontano | da provare: una variante semplificata scambiata per distanza |
+| 9 | LOD degli involucri: 1,24 M triangoli, inutili da lontano | fatto (`lontano.py`, sezione 6), da misurare sul telefono |
 | 10 | Ombra del sole limitata alla zona inquadrata (oggi 700 m: ogni triangolo disegnato due volte) | da provare sul telefono con `testStillCampus` |
 | 11 | Meno materiali (517 nel campus): colori quasi uguali uniti | da provare |
 
@@ -163,8 +165,53 @@ Il campus compare 3,7 volte prima. Un edificio era sopra il traguardo di 300 ms;
 una dopo l'altra. Ora si generano solo per il piano su cui si entra (`tappableRooms(on:)`),
 durante il volo: la prossima misura dice quanto vale.
 
-### 5. Da rimisurare sul telefono
+### 5. Il banco nell'app (iPhone 12 Pro, 1c2c688, 19/10/2026)
 
-I numeri sopra sono del cloud. Il prossimo giro parte dai test XCTest su un iPhone: tempo al
-campus, memoria fisica, CPU a campus fermo, scatti del volo. Le idee 8–11 si scelgono su quei
-numeri.
+Due giri da 6 minuti: con i modelli della PR #26 così come sono e con gli stessi passati da
+`ottimizza.py` (solo sul Mac, mai committati). Il telefono parte freddo e finisce "serious".
+
+| Misura | Modelli attuali | Ottimizzati |
+|---|---|---|
+| Primo frame | 1461 ms | 1624 ms |
+| Memoria al primo frame | 274 MB | 285 MB |
+| Campus fermo: fps / mediana frame / CPU | 39 / 33,1 ms / 38 % | 38 / 33,3 ms / 39 % |
+| Campus fermo: memoria / GPU | 504 / 288 MB | 512 / 287 MB |
+| Volo all'aula: fps / scatti | 33 / 432 ms/s | 35 / 88 ms/s |
+| Tutto subito, con la scena a schermo | 144 s, 913 MB | 141 s, 951 MB |
+| Un edificio letto con la scena a schermo, il più lento | 9,7 s | 12,3 s |
+
+Cosa dicono:
+
+- **I modelli ottimizzati non cambiano nulla di misurabile sul telefono.** Le differenze stanno
+  nel rumore del calore. Meno byte e meno triangoli contati nel cloud non sono diventati né
+  secondi né megabyte: RealityKit tiene la sua copia della geometria comunque.
+- **Il campus fermo sta a 30 Hz**, mediana 33,3 ms, qualunque pezzo si spenga (ombre, alberi,
+  città, arredi, terreno). Lo stesso pezzo spento passa da 30 a 60 Hz da un giro all'altro
+  (senza ombre: 40 poi 60 fps). La GPU sta a cavallo dei 16,7 ms: quando ne sfora uno, iOS
+  passa a un frame ogni due. Per uscirne serve un margine, non un pezzo solo, e ogni variante
+  va misurata più volte: ora il banco fa 3 giri alternati da 4 s.
+- **Le ombre** valgono 33 MB di GPU in tutti e due i giri.
+- **Gli involucri in trasparenza** costano: sull'edificio 37 fps contro 57 con gli altri opachi.
+  Ora restano opachi e sparisce solo chi copre la vista (95f6e48).
+- **Un edificio** si legge in 1 s nei test, ma in 7–12 s con la scena a schermo: la lettura
+  aspetta la GPU.
+- La CPU resta al 38 % anche a 60 fps: non è il lavoro per frame dell'app.
+
+### 6. Involucri semplificati da lontano (idea 9)
+
+`lontano.py` scrive `campus_lontano.usdz`: per ogni edificio i pezzi più piccoli di 2 m tolti
+(cornici, davanzali, ringhiere) e il resto semplificato per errore quadrico, poi saldato da
+`ottimizza.py`. `esporta3d.py` lo produce insieme a `campus.usdz`; `Trifoglio3DScene` lo mostra
+dalla vista campus e torna agli involucri veri quando la camera va su un edificio. Se il file
+non c'è, tutto resta com'era.
+
+| Pezzi tolti sotto | Triangoli | MB | Aspetto da 400 m |
+|---|---|---|---|
+| nessuno (solo semplificazione) | 641 k | 24,8 | uguale; la semplificazione si ferma ai bordi aperti |
+| 2 m (scelto) | 500 k (−60 %) | 14,4 saldato | quasi uguale |
+| 4 m | 253 k | 10,8 | muri bucati |
+
+Provato e scartato: masse estruse dall'impronta (96 k triangoli), troppo lontane dall'aspetto.
+
+Da misurare sul telefono: il campus fermo con `campus, edifici dettagliati` contro gli involucri
+semplificati, e `campus, scena vuota` per sapere quanto costa RealityKit da solo.

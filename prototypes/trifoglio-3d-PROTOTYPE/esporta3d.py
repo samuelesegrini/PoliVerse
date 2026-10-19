@@ -2585,6 +2585,14 @@ def usdz(sc, path):
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent / "banco"))
     from ottimizza import ottimizza
     ottimizza(path)
+    # Gli edifici visti dal campus, semplificati: Trifoglio3DScene li mostra al posto dei veri.
+    if pathlib.Path(path).name == "campus.usdz":
+        try:
+            from lontano import lontano
+        except ImportError as e:
+            print(f"campus_lontano.usdz non scritto ({e}): pip install fast-simplification")
+        else:
+            ottimizza(lontano(path)[0])
 
 
 def main():

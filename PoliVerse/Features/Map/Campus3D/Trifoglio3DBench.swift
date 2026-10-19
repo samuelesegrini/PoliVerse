@@ -214,6 +214,9 @@ final class Trifoglio3DBench {
         print("TRIFOGLIO3D_BENCH_BEGIN\n\(json)\nTRIFOGLIO3D_BENCH_END")
     }
 
+    /// How many times each campus variant is measured.
+    private static let rounds = 3
+
     /// The still campus and a building view, each with one piece switched off in turn.
     private func measureVariants(_ report: inout Trifoglio3DBenchReport, scene: Trifoglio3DScene) async {
         let trees = ["Chiome", "Tronchi", "Alberi_Chiome", "Alberi_Tronchi", "Filari_Chiome", "Filari_Tronchi"]
@@ -225,16 +228,22 @@ final class Trifoglio3DBench {
             ("campus, senza arredi", { scene.setVisible(["Arredi"], $0) }),
             ("campus, senza terreno", { scene.setVisible(["Terreno"], $0) }),
             ("campus, senza edifici", { scene.setVisible(["Edifici"], $0) }),
+            ("campus, scena vuota", { scene.setScene($0) }),
+            ("campus, edifici dettagliati", { scene.setDistant($0) }),
             ("campus, solo edifici senza ombre", {
                 scene.setShadows($0); scene.setVisible(trees + ["Quartiere", "Arredi", "Terreno"], $0)
             }),
         ]
-        for (name, toggle) in campusVariants {
-            step = "Dove va il tempo: \(name)"
-            toggle(false)
-            try? await Task.sleep(for: .seconds(1))     // the first frames after a change are not typical
-            report.variants.append(.init(name: name, window: await watch(scene) { try? await Task.sleep(for: .seconds(6)) }))
-            toggle(true)
+        // Three rounds, one variant after another: on an iPhone 12 Pro the campus sits so close
+        // to 16.7 ms a frame that the same variant runs at 30 or 60 Hz from one try to the next.
+        for round in 1...Self.rounds {
+            for (name, toggle) in campusVariants {
+                step = "Dove va il tempo (\(round)/\(Self.rounds)): \(name)"
+                toggle(false)
+                try? await Task.sleep(for: .seconds(1))     // the first frames after a change are not typical
+                report.variants.append(.init(name: name, window: await watch(scene) { try? await Task.sleep(for: .seconds(4)) }))
+                toggle(true)
+            }
         }
         await scene.go(to: .building("MIA0203"))
         for (name, change) in [("edificio, così com'è", { }),
@@ -338,7 +347,7 @@ struct Trifoglio3DBenchView: View {
                     window("Campus fermo, 10 s", report.stillCampus)
                     if !report.variants.isEmpty {
                         Section("Dove va il tempo (fps · CPU · GPU)") {
-                            ForEach(report.variants, id: \.name) { variant in
+                            ForEach(Array(report.variants.enumerated()), id: \.offset) { _, variant in
                                 row(variant.name, String(format: "%.0f fps · %.0f %% · %.0f MB", variant.window.fps,
                                                          variant.window.cpuPercent, variant.window.gpuMB))
                             }
