@@ -155,23 +155,38 @@ class Regolatore:
         log = self.out / f"{nome}.log"
         argomenti = ["-Trifoglio3D", "-Trifoglio3DBenchTour", "-Trifoglio3DRounds", str(self.args.giri),
                      "-Trifoglio3DTuning", json.dumps(configurazioni)]
-        with open(log, "w") as f:
-            proc = subprocess.Popen(["xcrun", "devicectl", "device", "process", "launch", "--device", UDID,
-                                     "--terminate-existing", "--console", BUNDLE, "--", *argomenti],
-                                    stdout=f, stderr=subprocess.STDOUT)
-            limite = time.time() + 60 + 40 * self.args.giri * len(configurazioni)
-            while time.time() < limite and "TRIFOGLIO3D_BENCH_END" not in log.read_text(errors="ignore"):
-                if proc.poll() is not None and "TRIFOGLIO3D_BENCH_END" not in log.read_text(errors="ignore"):
-                    break
-                time.sleep(3)
-        self.chiudi()
-        proc.kill()
-        testo = log.read_text(errors="ignore")
-        if "TRIFOGLIO3D_BENCH_END" not in testo:
-            errori = [r for r in testo.splitlines() if "rror" in r or "ocked" in r][:3]
-            self.scrivi(f"{nome}: nessun risultato ({'; '.join(errori) or 'app chiusa o bloccata'})")
+        copia = self.out / f"{nome}.copia.json"
+        copia.unlink(missing_ok=True)
+        avvio = datetime.datetime.now(datetime.timezone.utc)
+        p = subprocess.run(["xcrun", "devicectl", "device", "process", "launch", "--device", UDID,
+                            "--terminate-existing", BUNDLE, "--", *argomenti],
+                           stdin=subprocess.DEVNULL, capture_output=True, text=True)
+        log.write_text(p.stdout + p.stderr)
+        if p.returncode != 0:
+            errori = [r.strip() for r in (p.stdout + p.stderr).splitlines() if "rror" in r][:2]
+            self.scrivi(f"{nome}: nessun risultato ({'; '.join(errori) or 'lancio fallito'})")
             return None
-        corpo = testo.split("TRIFOGLIO3D_BENCH_BEGIN", 1)[1].split("TRIFOGLIO3D_BENCH_END", 1)[0]
+        # Il banco scrive Documents/trifoglio3d-bench.json alla fine: lo si copia finché è quello nuovo.
+        limite = time.time() + 60 + 40 * self.args.giri * len(configurazioni)
+        corpo = None
+        while time.time() < limite:
+            time.sleep(10)
+            subprocess.run(["xcrun", "devicectl", "device", "copy", "from", "--device", UDID,
+                            "--domain-type", "appDataContainer", "--domain-identifier", BUNDLE,
+                            "--source", "Documents/trifoglio3d-bench.json", "--destination", str(copia)],
+                           stdin=subprocess.DEVNULL, capture_output=True)
+            try:
+                letto = json.loads(copia.read_text())
+            except (OSError, ValueError):
+                continue
+            data = datetime.datetime.fromisoformat(letto["date"].replace("Z", "+00:00"))
+            if data >= avvio - datetime.timedelta(seconds=5) and letto.get("turns"):
+                corpo = copia.read_text()
+                break
+        self.chiudi()
+        if corpo is None:
+            self.scrivi(f"{nome}: nessun risultato (il banco non ha finito in tempo)")
+            return None
         report = json.loads(corpo)
         (self.out / f"{nome}.json").write_text(corpo)
         with open(self.out / "storia.jsonl", "a") as f:
@@ -187,10 +202,12 @@ class Regolatore:
         prova = dict(base, **{manopola: valore})
         nome = f"p{self.stato['passate']}-{manopola}-{valore}".lower()
         report = None
-        for _ in range(2):
+        for attesa in (20, 60, 120, None):
             report = self.giro([base, prova], nome)
-            if report:
+            if report or attesa is None:
                 break
+            # A volte il lancio fallisce ("Invalid argument") per un po' dopo il giro prima.
+            time.sleep(attesa)
         if not report:
             return False
         costi = {}
