@@ -150,9 +150,9 @@ final class Trifoglio3DBench {
     @ObservationIgnored private var frames: [TimeInterval] = []
 
     /// Runs every measurement in turn. Takes about a minute; the walk moves by itself.
-    /// - Parameter quick: Only the still campus with the sun's shadows as they are, reaching
-    ///   250 m instead of 700, and off, four times each, alternated: about a minute, short
-    ///   enough not to heat the phone the way the whole bench does.
+    /// - Parameter quick: Only the still campus as it is, without the sun's shadows, and with
+    ///   them, four times each, alternated: about a minute, short enough not to heat the phone
+    ///   the way the whole bench does.
     func run(on scene: Trifoglio3DScene, quick: Bool = false) async {
         guard step == nil else { return }
         let start = ContinuousClock.now
@@ -172,12 +172,10 @@ final class Trifoglio3DBench {
         report.stillCampus = await watch(scene) { try? await Task.sleep(for: .seconds(10)) }
 
         if quick {
-            // With the phone cool, the simplified shells and the detailed ones both ran at 40 fps;
-            // with the shadows off two rounds in five reached 60.
+            // With the phone cool, shadows reaching 700 m or 250 m both ran at 40 fps, none at 60.
             let shadows: [(String, () -> Void)] = [
-                ("campus, tutto acceso", { scene.setShadows(true) }),
-                ("campus, ombre fino a 250 m", { scene.setShadows(true, distance: 250) }),
-                ("campus, senza ombre", { scene.setShadows(false) }),
+                ("campus, tutto acceso", { scene.setShadows(false) }),
+                ("campus, con le ombre", { scene.setShadows(true) }),
             ]
             for round in 1...4 {
                 for (name, change) in shadows {
@@ -187,7 +185,7 @@ final class Trifoglio3DBench {
                     report.variants.append(.init(name: name, window: await watch(scene) { try? await Task.sleep(for: .seconds(4)) }))
                 }
             }
-            scene.setShadows(true)
+            scene.setShadows(false)
             finish(&report, start: start)
             return
         }
@@ -251,7 +249,7 @@ final class Trifoglio3DBench {
         let trees = ["Chiome", "Tronchi", "Alberi_Chiome", "Alberi_Tronchi", "Filari_Chiome", "Filari_Tronchi"]
         let campusVariants: [(String, (Bool) -> Void)] = [
             ("campus, tutto acceso", { _ in }),
-            ("campus, senza ombre", { scene.setShadows($0) }),
+            ("campus, con le ombre", { scene.setShadows(!$0) }),
             ("campus, senza alberi", { scene.setVisible(trees, $0) }),
             ("campus, senza città intorno", { scene.setVisible(["Quartiere"], $0) }),
             ("campus, senza arredi", { scene.setVisible(["Arredi"], $0) }),
@@ -259,8 +257,8 @@ final class Trifoglio3DBench {
             ("campus, senza edifici", { scene.setVisible(["Edifici"], $0) }),
             ("campus, scena vuota", { scene.setScene($0) }),
             ("campus, edifici dettagliati", { scene.setDistant($0) }),
-            ("campus, solo edifici senza ombre", {
-                scene.setShadows($0); scene.setVisible(trees + ["Quartiere", "Arredi", "Terreno"], $0)
+            ("campus, solo edifici", {
+                scene.setVisible(trees + ["Quartiere", "Arredi", "Terreno"], $0)
             }),
         ]
         // Three rounds, one variant after another: on an iPhone 12 Pro the campus sits so close

@@ -30,8 +30,8 @@ Il modo più rapido per avere numeri veri, letti dal dispositivo e non stimati:
 1. In Xcode, schema **PoliVerse** (Debug), destinazione il tuo iPhone; in Edit Scheme → Run →
    Arguments aggiungi `-Trifoglio3D` (apre il campus 3D al posto dell'app). Con anche
    `-Trifoglio3DBench` il banco parte da solo appena il campus è disegnato.
-   Con `-Trifoglio3DBenchQuick` fa solo un confronto di un minuto, oggi le ombre (come sono, fino
-   a 250 m, spente), 4 volte alternate: il banco intero porta l'iPhone 12 Pro a "serious" in 6 minuti
+   Con `-Trifoglio3DBenchQuick` fa solo un confronto di un minuto, oggi il campus senza e con le
+   ombre del sole, 4 volte alternate: il banco intero porta l'iPhone 12 Pro a "serious" in 6 minuti
    e da caldo tutto sta a 30 Hz.
 2. Altrimenti tocca **Misura** nella barra in alto del campus. La camera si muove da sola per
    circa un minuto; non toccare lo schermo.
@@ -129,7 +129,7 @@ Cosa diceva la misura di partenza:
 | 7 | Campus in due strati (terreno+edifici, poi alberi e città) | provato e scartato: −13 % byte al primo frame per un file e 2 MB in più |
 | 8 | Chiome meno dense: 553 k triangoli, il 27 % del campus | da fare nel thread dell'arredo (PR #25), che possiede gli alberi |
 | 9 | LOD degli involucri: 1,24 M triangoli, inutili da lontano | fatto (`lontano.py`, sezione 6), da misurare sul telefono |
-| 10 | Ombra del sole limitata alla zona inquadrata (oggi 700 m: ogni triangolo disegnato due volte) | da provare sul telefono con `testStillCampus` |
+| 10 | Ombra del sole limitata alla zona inquadrata (oggi 700 m: ogni triangolo disegnato due volte) | misurato: la distanza non conta, l'ombra sì; tolta dalla vista campus (sezione 10) |
 | 11 | Meno materiali (517 nel campus): colori quasi uguali uniti | da provare |
 
 ### 3. Le scelte, con i numeri
@@ -267,3 +267,21 @@ rapido ora confronta ombre come sono, fino a 250 m e spente.
 Trovato anche: dopo ogni banco l'app restava aperta con il campus a schermo, ed è per questo
 che il telefono non scendeva mai da "serious". Un campus fermo a schermo scalda: anche questo è
 da sistemare, smettendo di disegnare quando nulla si muove.
+
+### 10. Il colpevole: l'ombra del sole (99b7e6c, "nominal" dall'inizio alla fine)
+
+`-Trifoglio3DBenchQuick`, 4 giri alternati da 4 s, involucri da lontano:
+
+| Variante | fps nei 4 giri | Frame mediano | Scatti | GPU |
+|---|---|---|---|---|
+| ombre fino a 700 m (com'era) | 38,5 / 39,9 / 40,0 / 39,9 | 33,3–33,5 ms | 34 / 0 / 0 / 0 ms/s | 321 MB |
+| ombre fino a 250 m | 39,6 / 39,9 / 37,8 / 39,7 | salta tra 17 e 33 ms | 8 / 0 / 367 / 242 ms/s | 321 MB |
+| senza ombre | 59,8 / 59,8 / 59,8 / 59,8 | 16,7 ms, p95 16,9 | 0 | 288 MB |
+
+Senza l'ombra del sole il campus sta fisso a 60 fps; accorciarla non serve, costa il passaggio
+d'ombra in sé, più 33 MB di GPU e 33 di memoria. Ora la vista campus non ha ombre e le
+riaccende quando la camera va su un edificio, dove si stava a 53–57 fps con le ombre. Da
+provare se manca la profondità: ombre cotte nei colori degli involucri da lontano.
+
+Nota: il primo frame di questo giro è 2,4 s invece di 1,55 perché era il primo avvio dopo un
+aggiornamento di iOS (gli shader si ricompilano).

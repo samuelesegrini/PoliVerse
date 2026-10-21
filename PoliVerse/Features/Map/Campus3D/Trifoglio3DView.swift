@@ -209,8 +209,8 @@ final class Trifoglio3DScene {
         camera.components.set(lens)
         root.addChild(camera)
 
+        // No shadows yet: the walk opens on the campus, which casts none (see `move(to:)`).
         sun.components.set(DirectionalLightComponent(color: .white, intensity: 2600))
-        sun.components.set(DirectionalLightComponent.Shadow(maximumDistance: 700, depthBias: 2))
         sun.look(at: [20, 0, 140], from: [-160, 260, 220], relativeTo: nil)
         root.addChild(sun)
         // A weaker light from the other side, so walls in shade are grey rather than black.
@@ -459,6 +459,9 @@ final class Trifoglio3DScene {
             unlight()
             level = next
             setDistant(true)
+            // Without the sun's shadows the campus holds 60 fps on an iPhone 12 Pro, with them
+            // 40, as 30 and 60 Hz frames alternate; a shorter shadow reach changes nothing.
+            setShadows(false)
             exteriors.forEach { fade($0, to: 1) }
             models.values.forEach { fade($0, to: 0) }
             trees.forEach { fade($0, to: 1) }
@@ -469,6 +472,7 @@ final class Trifoglio3DScene {
             level = next
             self.csie = csie
             setDistant(false)
+            setShadows(true)
             // As in Maps, the other buildings stay solid and only those standing between the
             // camera and this one go: see-through shells cost 37 fps against 57 on an iPhone 12 Pro.
             let blocking = blockers(of: shell, polar: 1.0, margin: 1.15)
