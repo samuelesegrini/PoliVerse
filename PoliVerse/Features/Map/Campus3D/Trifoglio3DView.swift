@@ -663,6 +663,17 @@ final class Trifoglio3DScene {
         return "\(all) entità, \(meshes) mesh accese, opacità <1: \(faded), =1: \(full), figli della radice: \(root.children.count)"
     }
 
+    /// The entities drawn see-through now, with their opacity.
+    func fadedNames() -> String {
+        var names: [String] = []
+        visit(root) { entity in
+            if let opacity = entity.components[OpacityComponent.self]?.opacity, opacity < 1, entity.isEnabledInHierarchy {
+                names.append("\(entity.name)=\(opacity)")
+            }
+        }
+        return names.joined(separator: ", ")
+    }
+
     /// Takes every opacity of 1 off the scene, so RealityKit draws those entities as opaque.
     func dropFullOpacities() {
         visit(root) { entity in
@@ -678,6 +689,17 @@ final class Trifoglio3DScene {
         if frameApart { try? await Task.sleep(for: .milliseconds(20)) }
         pieces.forEach { $0.isEnabled = true }
     }
+
+    /// Shows or hides every building's outer shell but the one the camera is on.
+    func setOtherShells(_ visible: Bool) {
+        for shell in exteriors where shell.name != csie { shell.isEnabled = visible }
+    }
+
+    /// Shows or hides the lit classroom's glowing copy.
+    func setGlow(_ visible: Bool) { lit?.glow.isEnabled = visible }
+
+    /// Shows or hides the building the camera is on, its floors and rooms.
+    func setBuilding(_ visible: Bool) { building?.isEnabled = visible }
 
     /// Makes every building's outer shell fully opaque at once, as on the campus.
     func setExteriorsOpaque() {
@@ -1229,6 +1251,8 @@ struct Trifoglio3DView: View {
                 case "inside": await scene.go(to: .inside(floor: "MIA0203000", room: "MIA0203000030"))
                 default: break
                 }
+                try? await Task.sleep(for: .seconds(3))
+                print("TRIFOGLIO3D_CENSUS \(scene.census()) sfumate: \(scene.fadedNames())")
                 return
             }
             let quick = CommandLine.arguments.contains("-Trifoglio3DBenchQuick")

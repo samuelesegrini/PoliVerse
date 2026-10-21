@@ -330,12 +330,20 @@ final class Trifoglio3DBench {
             ("luce cotta", tuned { $0.bakedLight = [1, 0, 0, 0] }),
             ("shader personalizzato, solo colore", tuned { $0.bakedLight = [1, 1, 0, 0] }),
             ("luce cotta, grafo", tuned { $0.graphLight = true }),
+            ("altri edifici opachi", { if !$0 { scene.setExteriorsOpaque() } }),
+            ("senza altri edifici", { scene.setOtherShells($0) }),
+            ("senza aula accesa", { scene.setGlow($0) }),
+            ("senza l'edificio", { scene.setBuilding($0) }),
+            ("senza pulsazione", tuned { $0.pulseEvery = 1_000_000 }),
+            ("senza pulsazione né aula", { on in tuned { $0.pulseEvery = 1_000_000 }(on); scene.setGlow(on) }),
         ]
         // `-Trifoglio3DOnly "a|b"` keeps only the variants with those names.
         let only = arguments.firstIndex(of: "-Trifoglio3DOnly")
             .flatMap { $0 + 1 < arguments.count ? Set(arguments[$0 + 1].split(separator: "|").map(String.init)) : nil }
         let chosen = variants.filter { only?.contains($0.0) ?? true }
-        await scene.go(to: .campus)
+        // `-Trifoglio3DGPUAt room` measures at the lit classroom of the tour, else on the campus.
+        let place = arguments.firstIndex(of: "-Trifoglio3DGPUAt").flatMap { $0 + 1 < arguments.count ? arguments[$0 + 1] : nil }
+        if place == "room" { await scene.tour() } else { await scene.go(to: .campus) }
         let rounds = arguments.firstIndex(of: "-Trifoglio3DRounds")
             .flatMap { $0 + 1 < arguments.count ? Int(arguments[$0 + 1]) : nil } ?? 3
         for round in 1...max(1, rounds) {
