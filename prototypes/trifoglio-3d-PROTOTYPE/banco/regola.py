@@ -44,6 +44,8 @@ OBIETTIVI = {
 # Le manopole e i valori da provare. Nessuna toglie dettaglio ai modelli.
 MANOPOLE = {
     "graphLight": [True, False],
+    "bakedEverywhere": [True, False],
+    "tapShells": [True, False],
     "shadowsInFlight": [True, False],
     "shadows": [False, True],
     "dropFullOpacity": [True, False],

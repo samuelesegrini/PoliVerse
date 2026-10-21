@@ -76,6 +76,12 @@ struct Trifoglio3DTuning: Codable, Equatable {
     /// The same light from `Trifoglio3DLight.usda`, a MaterialX graph RealityKit compiles in its
     /// own pipeline, where the Metal surface shader holds the campus at 40 fps.
     var graphLight = false
+    /// The baked light stays on the building, floor and room views too, which then have no
+    /// shadows; otherwise RealityKit's light and the shadows come back once the camera is down.
+    var bakedEverywhere = false
+    /// A tap finds a building by one shape made from its simplified shell, rather than by one
+    /// shape for each of the 540 pieces of the detailed shells.
+    var tapShells = false
 
     /// The configurations a launch asks for, or just today's.
     static var fromLaunch: [Trifoglio3DTuning] {
@@ -110,6 +116,8 @@ extension Trifoglio3DTuning {
         noAntialiasing = try values.decodeIfPresent(Bool.self, forKey: .noAntialiasing) ?? noAntialiasing
         bakedLight = try values.decodeIfPresent([Float].self, forKey: .bakedLight) ?? bakedLight
         graphLight = try values.decodeIfPresent(Bool.self, forKey: .graphLight) ?? graphLight
+        bakedEverywhere = try values.decodeIfPresent(Bool.self, forKey: .bakedEverywhere) ?? bakedEverywhere
+        tapShells = try values.decodeIfPresent(Bool.self, forKey: .tapShells) ?? tapShells
     }
 
     /// Sets RealityView's camera effects to these choices.
@@ -382,7 +390,7 @@ final class Trifoglio3DScene {
         }
         await loadDistant()
         if tuning.bakedLight != nil || tuning.graphLight { await setBakedLight() }
-        tappable(campus?.findEntity(named: "Edifici"))
+        if tuning.tapShells, !distant.isEmpty { await tappableShells() } else { tappable(campus?.findEntity(named: "Edifici")) }
     }
 
     /// Hangs each simplified shell of `campus_lontano.usdz` inside the building's detailed
@@ -411,7 +419,9 @@ final class Trifoglio3DScene {
         for shell in exteriors {
             guard let far = distant[shell.name] else { continue }
             let simplified = on && tuning.distantShells && shell.name != detailed
-            for part in shell.children { part.isEnabled = (part === far) == simplified }
+            for part in shell.children where !part.name.hasSuffix("_Tocco") {
+                part.isEnabled = (part === far) == simplified
+            }
         }
     }
 
@@ -455,6 +465,25 @@ final class Trifoglio3DScene {
         guard let entity else { return }
         entity.generateCollisionShapes(recursive: true)
         visit(entity) { $0.components.set(InputTargetComponent()) }
+    }
+
+    /// Gives each building one tap shape, its simplified shell's mesh, on an entity of its own
+    /// beside it that is never switched off, so taps find it from the campus and from a building.
+    private func tappableShells() async {
+        for shell in exteriors {
+            guard let far = distant[shell.name] else { continue }
+            var parts: [(Entity, MeshResource)] = []
+            visit(far) { if let model = $0.components[ModelComponent.self] { parts.append(($0, model.mesh)) } }
+            for (part, mesh) in parts {
+                guard let shape = try? await ShapeResource.generateStaticMesh(from: mesh) else { continue }
+                let tap = Entity()
+                tap.name = shell.name + "_Tocco"
+                shell.addChild(tap)
+                tap.setTransformMatrix(part.transformMatrix(relativeTo: shell), relativeTo: shell)
+                tap.components.set(CollisionComponent(shapes: [shape]))
+                tap.components.set(InputTargetComponent())
+            }
+        }
     }
 
     /// Lets taps reach every mesh under an entity by its exact shape, so a tap on an
@@ -555,8 +584,10 @@ final class Trifoglio3DScene {
 
     /// Puts the campus and Giuriati under the baked light of ``Trifoglio3DTuning/bakedLight``,
     /// or back under RealityKit's: run after each model is read and whenever the knob turns.
-    func setBakedLight() async {
-        let weights = tuning.bakedLight
+    ///
+    /// - Parameter active: `false` puts RealityKit's light back whatever the knob says.
+    func setBakedLight(active: Bool = true) async {
+        let weights = active ? tuning.bakedLight : nil
         let shader = weights.flatMap { _ in
             MTLCreateSystemDefaultDevice()?.makeDefaultLibrary().map {
                 CustomMaterial.SurfaceShader(named: "trifoglio3dBakedLight", in: $0)
@@ -565,7 +596,7 @@ final class Trifoglio3DScene {
         if tuning.graphLight, graph == nil {
             graph = try? await ShaderGraphMaterial(named: "/Root/LuceCotta", from: "Trifoglio3DLight.usda", in: .main)
         }
-        let graph = tuning.graphLight ? graph : nil
+        let graph = active && tuning.graphLight ? graph : nil
         for top in [campus, giuriati].compactMap({ $0 }) {
             visit(top) { entity in
                 guard var model = entity.components[ModelComponent.self] else { return }
@@ -691,6 +722,7 @@ final class Trifoglio3DScene {
         switch next {
         case .campus:
             phase = "verso il campus"
+            if tuning.bakedLight != nil || tuning.graphLight, bakedMaterials.isEmpty { await setBakedLight() }
             unlight()
             level = next
             setDistant(true)
@@ -777,6 +809,8 @@ final class Trifoglio3DScene {
         if level != .campus, tuning.shadows, !sun.components.has(DirectionalLightComponent.Shadow.self) {
             setShadows(true)
         }
+        // Down on a building the baked light gives way to RealityKit's, which takes the shadows.
+        if level != .campus, !tuning.bakedEverywhere, !bakedMaterials.isEmpty { await setBakedLight(active: false) }
         if level != .campus { setDistant(false) }
         if let floor = pendingTaps {
             pendingTaps = nil
