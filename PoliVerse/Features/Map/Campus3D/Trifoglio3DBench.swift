@@ -91,6 +91,10 @@ struct Trifoglio3DBenchReport: Codable {
         var memoryPeakMB: Double
         /// What the GPU driver held at the end, in MB.
         var gpuMB: Double
+        /// When it started and ended, in seconds from the first frame: where an Instruments trace
+        /// of the run finds its frames.
+        var startS: Double? = nil
+        var endS: Double? = nil
     }
 
     /// Six still seconds with one piece of the scene switched off.
@@ -305,6 +309,7 @@ final class Trifoglio3DBench {
             device: Trifoglio3DProbe.model(), system: ProcessInfo.processInfo.operatingSystemVersionString,
             date: .now, batteryStart: Trifoglio3DProbe.battery(), thermalStart: Trifoglio3DProbe.thermal())
         let trees = ["Chiome", "Tronchi", "Alberi_Chiome", "Alberi_Tronchi", "Filari_Chiome", "Filari_Tronchi"]
+        let arguments = CommandLine.arguments
         let base = scene.tuning
         func tuned(_ change: @escaping (inout Trifoglio3DTuning) -> Void) -> (Bool) -> Void {
             { on in var t = base; if !on { change(&t) }; scene.tuning = t }
@@ -321,11 +326,19 @@ final class Trifoglio3DBench {
             ("senza edifici", { scene.setVisible(["Edifici"], $0) }),
             ("senza Giuriati", { scene.setGiuriati($0) }),
             ("scena vuota", { scene.setScene($0) }),
+            ("luce non calcolata (prova)", { scene.setUnlit(!$0) }),
+            ("luce cotta", tuned { $0.bakedLight = [1, 0, 0, 0] }),
         ]
+        // `-Trifoglio3DOnly "a|b"` keeps only the variants with those names.
+        let only = arguments.firstIndex(of: "-Trifoglio3DOnly")
+            .flatMap { $0 + 1 < arguments.count ? Set(arguments[$0 + 1].split(separator: "|").map(String.init)) : nil }
+        let chosen = variants.filter { only?.contains($0.0) ?? true }
         await scene.go(to: .campus)
-        for round in 1...3 {
-            for (name, toggle) in variants {
-                step = "GPU (\(round)/3): \(name)"
+        let rounds = arguments.firstIndex(of: "-Trifoglio3DRounds")
+            .flatMap { $0 + 1 < arguments.count ? Int(arguments[$0 + 1]) : nil } ?? 3
+        for round in 1...max(1, rounds) {
+            for (name, toggle) in chosen {
+                step = "GPU (\(round)/\(rounds)): \(name)"
                 toggle(false)
                 try? await Task.sleep(for: .milliseconds(700))
                 report.variants.append(.init(name: name, window: await watch(scene, name) { try? await Task.sleep(for: .seconds(3)) }))
@@ -496,6 +509,7 @@ final class Trifoglio3DBench {
         }
         let cpu0 = Trifoglio3DProbe.cpuTime()
         let t0 = ContinuousClock.now
+        let firstFrame = scene.firstFrame
         await work()
         let wall = seconds(t0, .now)
         let cpu = Trifoglio3DProbe.cpuTime() - cpu0
@@ -509,11 +523,16 @@ final class Trifoglio3DBench {
         // A frame is late when it takes more than one and a half times the usual one; the
         // time beyond the usual one is what the eye sees as a stutter.
         let late = frames.filter { $0 > median * 1.5 }.reduce(0) { $0 + ($1 - median) }
-        return .init(seconds: wall, fps: wall > 0 ? Double(frames.count) / wall : 0,
+        var window = Trifoglio3DBenchReport.Window(seconds: wall, fps: wall > 0 ? Double(frames.count) / wall : 0,
                      frameMedianMs: median * 1000, frameP95Ms: p95 * 1000, frameMaxMs: (sorted.last ?? 0) * 1000,
                      hitchMsPerSecond: wall > 0 ? late * 1000 / wall : 0,
                      cpuPercent: wall > 0 ? cpu / wall * 100 : 0,
                      memoryMB: mb(memory), memoryPeakMB: mb(peak), gpuMB: mb(Trifoglio3DProbe.gpuMemory()))
+        if let firstFrame {
+            window.startS = seconds(firstFrame, t0)
+            window.endS = seconds(firstFrame, t0) + wall
+        }
+        return window
     }
 
     /// The report as pretty JSON, to share.

@@ -1,4 +1,5 @@
 #if DEBUG
+import Metal
 import OSLog
 import RealityKit
 import SwiftUI
@@ -69,6 +70,9 @@ struct Trifoglio3DTuning: Codable, Equatable {
     var standardRange = false
     /// Edges without 4× multisampling: they would show steps, so only a reference for the bench.
     var noAntialiasing = false
+    /// The campus and Giuriati lit by `Trifoglio3DLight.metal` with these weights (constant, sky,
+    /// sun, fill) under an unlit material, instead of RealityKit's lighting; `nil` keeps it.
+    var bakedLight: [Float]? = nil
 
     /// The configurations a launch asks for, or just today's.
     static var fromLaunch: [Trifoglio3DTuning] {
@@ -101,6 +105,7 @@ extension Trifoglio3DTuning {
         noCameraGrain = try values.decodeIfPresent(Bool.self, forKey: .noCameraGrain) ?? noCameraGrain
         standardRange = try values.decodeIfPresent(Bool.self, forKey: .standardRange) ?? standardRange
         noAntialiasing = try values.decodeIfPresent(Bool.self, forKey: .noAntialiasing) ?? noAntialiasing
+        bakedLight = try values.decodeIfPresent([Float].self, forKey: .bakedLight) ?? bakedLight
     }
 
     /// Sets RealityView's camera effects to these choices.
@@ -196,6 +201,10 @@ final class Trifoglio3DScene {
     @ObservationIgnored private let sun = Entity()
     /// The weaker light from the other side.
     @ObservationIgnored private let fill = Entity()
+    /// The lit materials ``setBakedLight()`` took off, by entity.
+    @ObservationIgnored private var bakedMaterials: [Entity.ID: [any RealityKit.Material]] = [:]
+    /// The lit materials ``setUnlit(_:)`` took off, by entity.
+    @ObservationIgnored private var litMaterials: [Entity.ID: [any RealityKit.Material]] = [:]
     /// The campus: terrain, trees and every building's outer shell.
     @ObservationIgnored private var campus: Entity?
     /// The Giuriati sports centre and its block east of the campus: ground, pitches, track,
@@ -269,6 +278,7 @@ final class Trifoglio3DScene {
     @ObservationIgnored var tuning = Trifoglio3DTuning.fromLaunch[0] {
         didSet {
             if tuning.distantShells != oldValue.distantShells { setDistant(level == .campus) }
+            if tuning.bakedLight != oldValue.bakedLight { setBakedLight() }
             effects = tuning
         }
     }
@@ -337,6 +347,7 @@ final class Trifoglio3DScene {
             let campus = try await Entity(contentsOf: campusURL)
             root.addChild(campus)
             self.campus = campus
+            if tuning.bakedLight != nil { setBakedLight() }
         } catch {
             failure = "Campus non caricato: \(error.localizedDescription)"
             return
@@ -359,8 +370,10 @@ final class Trifoglio3DScene {
            let giuriati = try? await Entity(contentsOf: giuriatiURL) {
             root.addChild(giuriati)
             self.giuriati = giuriati
+            if tuning.bakedLight != nil { setBakedLight() }
         }
         await loadDistant()
+        if tuning.bakedLight != nil { setBakedLight() }
         tappable(campus?.findEntity(named: "Edifici"))
     }
 
@@ -502,6 +515,67 @@ final class Trifoglio3DScene {
         for name in names {
             campus?.findEntity(named: name)?.isEnabled = visible
             giuriati?.findEntity(named: name)?.isEnabled = visible
+        }
+    }
+
+    /// Draws the campus and Giuriati with materials that compute no lighting, each in its own
+    /// base colour, or puts the lit ones back: the bench's measure of what lighting every pixel
+    /// costs the GPU. The campus looks flat meanwhile.
+    func setUnlit(_ on: Bool) {
+        for top in [campus, giuriati].compactMap({ $0 }) {
+            visit(top) { entity in
+                guard var model = entity.components[ModelComponent.self] else { return }
+                if on {
+                    guard litMaterials[entity.id] == nil else { return }
+                    litMaterials[entity.id] = model.materials
+                    model.materials = model.materials.map { material in
+                        var unlit = UnlitMaterial()
+                        if let lit = material as? PhysicallyBasedMaterial {
+                            unlit.color = .init(tint: lit.baseColor.tint, texture: lit.baseColor.texture)
+                        } else {
+                            unlit.color = .init(tint: .gray)
+                        }
+                        return unlit
+                    }
+                } else if let saved = litMaterials.removeValue(forKey: entity.id) {
+                    model.materials = saved
+                }
+                entity.components.set(model)
+            }
+        }
+    }
+
+    /// Puts the campus and Giuriati under the baked light of ``Trifoglio3DTuning/bakedLight``,
+    /// or back under RealityKit's: run after each model is read and whenever the knob turns.
+    func setBakedLight() {
+        let weights = tuning.bakedLight
+        let shader = weights.flatMap { _ in
+            MTLCreateSystemDefaultDevice()?.makeDefaultLibrary().map {
+                CustomMaterial.SurfaceShader(named: "trifoglio3dBakedLight", in: $0)
+            }
+        }
+        for top in [campus, giuriati].compactMap({ $0 }) {
+            visit(top) { entity in
+                guard var model = entity.components[ModelComponent.self] else { return }
+                if let weights, weights.count == 4, let shader {
+                    if bakedMaterials[entity.id] == nil { bakedMaterials[entity.id] = model.materials }
+                    model.materials = bakedMaterials[entity.id, default: []].map { material in
+                        guard let lit = material as? PhysicallyBasedMaterial,
+                              var baked = try? CustomMaterial(surfaceShader: shader, lightingModel: .unlit)
+                        else { return material }
+                        baked.baseColor = .init(tint: lit.baseColor.tint,
+                                                texture: lit.baseColor.texture.map { .init($0.resource) })
+                        baked.faceCulling = lit.faceCulling
+                        baked.custom.value = SIMD4(weights[0], weights[1], weights[2], weights[3])
+                        return baked
+                    }
+                } else if let saved = bakedMaterials.removeValue(forKey: entity.id) {
+                    model.materials = saved
+                } else {
+                    return
+                }
+                entity.components.set(model)
+            }
         }
     }
 
