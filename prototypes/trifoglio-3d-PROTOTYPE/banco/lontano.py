@@ -19,10 +19,9 @@ Trifoglio3DScene mostra questi involucri dalla vista campus e quelli veri quando
 scende su un edificio. esporta3d.py lo chiama su campus.usdz e poi salda il risultato con
 ottimizza.py (52 → 29 MB).
 
-Dipendenze: usd-core, numpy, pillow, fast-simplification.
+Dipendenze: usd-core, numpy, pillow; fast-simplification solo con `--quota` < 1.
 """
 import argparse, pathlib, tempfile, zipfile
-import fast_simplification
 import numpy as np
 from PIL import Image
 from pxr import Sdf, Usd, UsdGeom, UsdShade, UsdUtils, Vt
@@ -119,6 +118,7 @@ def lontano(campus, quota=QUOTA, minimo=MINIMO):
             grande = (hi - lo).max(axis=1) >= minimo
             G, mat = G[grande[pezzo]], mat[grande[pezzo]]
             if quota < 1 and len(G) > 200:
+                import fast_simplification      # solo per semplificare: di norma non serve
                 V2, G2 = fast_simplification.simplify(V.astype(np.float32), G.astype(np.int32), target_reduction=1 - quota)
                 V2, G2 = np.asarray(V2, np.float64), np.asarray(G2)
                 # Il materiale del triangolo originale più vicino al centro di ogni triangolo nuovo.

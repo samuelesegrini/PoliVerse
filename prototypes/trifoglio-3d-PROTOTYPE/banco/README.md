@@ -69,7 +69,7 @@ Power Profiler, oppure ripetere il banco più volte di fila.
 - **`ottimizza.py <file.usdz> …`** alleggerisce i modelli senza cambiare l'aspetto (sotto).
   `esporta3d.py` lo chiama da solo su ogni `.usdz` che scrive.
 - **`lontano.py <campus.usdz>`** scrive `campus_lontano.usdz`, gli involucri semplificati per la
-  vista campus (sezione 6). Serve `pip install fast-simplification`.
+  vista campus (sezione 7). Serve `pip install pillow`.
 - **`PoliVerseTests/Trifoglio3DLoadTests.swift`**: tempo, CPU e memoria di ogni passo del
   caricamento, letto da RealityKit sul dispositivo.
 - **`PoliVerseUITests/Trifoglio3DPerformanceTests.swift`**: l'app aperta con `-Trifoglio3D`:
@@ -285,3 +285,34 @@ provare se manca la profondità: ombre cotte nei colori degli involucri da lonta
 
 Nota: il primo frame di questo giro è 2,4 s invece di 1,55 perché era il primo avvio dopo un
 aggiornamento di iOS (gli shader si ricompilano).
+
+### 11. Il campus a 60 fps (37e617b, "nominal" in tutti e due i giri)
+
+| Variante (banco completo, 3 giri) | fps | GPU |
+|---|---|---|
+| campus com'è ora: senza ombre, involucri da lontano | 59,8 / 59,8 / 59,6 | 288 MB |
+| con le ombre | 40,0 / 40,0 / 39,9 | 321 MB |
+| senza ombre ma involucri dettagliati | 59,8 / 39,8 / 39,9 | 287 MB |
+| scena vuota | 59,9 / 59,8 / 59,8 | 287 MB |
+| edificio, ombre accese | 59,2 – 59,8 | 326 MB |
+
+Servono tutte e due le cose: senza ombre e con gli involucri da lontano il campus sta a 60 fps;
+con gli involucri dettagliati torna a 40 due giri su tre. Il file `campus_lontano.usdz` va
+quindi nel bundle: lo scrive `esporta3d.py` insieme a `campus.usdz`.
+
+| Misura | 19/10 mattina (1c2c688) | 21/10 (37e617b) | Traguardo |
+|---|---|---|---|
+| Campus fermo, fps nelle varianti | 40 | 60 | 60 |
+| Memoria GPU, campus fermo | 288 MB | 288 MB (321 con le ombre) | < 160 MB |
+| Memoria dell'app, campus fermo | 504 MB | 491–501 MB | < 300 MB |
+| Primo frame | 1,46 s | 1,50–1,68 s | < 1 s |
+| Un edificio (test, senza scena) | 1,03 s | 0,27 s | < 300 ms |
+| Tutti i 36 edifici con la scena a schermo | 123 s | 86 s | |
+| Volo all'aula: fps / scatti | 33 / 432 ms/s | 38 / 355 ms/s | 60 / < 5 ms/s |
+
+Restano fuori: il volo (ora di un altro thread), la memoria e il primo frame.
+
+Smettere di disegnare a campus fermo non si può con le API pubbliche: nell'SDK di iOS 27.2
+`RealityView` non ha né frame rate né pausa (solo gli effetti di `renderingEffects`); `ARView`
+ha `__preferredFrameRate`, privato. L'unica via è `RealityRenderer` con una propria vista Metal,
+un lavoro grosso. La leva resta togliere lavoro alla GPU, come le ombre.

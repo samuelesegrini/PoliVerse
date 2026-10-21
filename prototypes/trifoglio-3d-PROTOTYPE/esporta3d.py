@@ -2590,7 +2590,7 @@ def usdz(sc, path):
         try:
             from lontano import lontano
         except ImportError as e:
-            print(f"campus_lontano.usdz non scritto ({e}): pip install fast-simplification")
+            print(f"campus_lontano.usdz non scritto ({e}): pip install pillow")
         else:
             ottimizza(lontano(path)[0])
 
