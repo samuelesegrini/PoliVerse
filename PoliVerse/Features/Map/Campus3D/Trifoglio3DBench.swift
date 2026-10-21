@@ -328,6 +328,8 @@ final class Trifoglio3DBench {
             ("scena vuota", { scene.setScene($0) }),
             ("luce non calcolata (prova)", { scene.setUnlit(!$0) }),
             ("luce cotta", tuned { $0.bakedLight = [1, 0, 0, 0] }),
+            ("shader personalizzato, solo colore", tuned { $0.bakedLight = [1, 1, 0, 0] }),
+            ("luce cotta, grafo", tuned { $0.graphLight = true }),
         ]
         // `-Trifoglio3DOnly "a|b"` keeps only the variants with those names.
         let only = arguments.firstIndex(of: "-Trifoglio3DOnly")

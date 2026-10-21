@@ -73,6 +73,9 @@ struct Trifoglio3DTuning: Codable, Equatable {
     /// The campus and Giuriati lit by `Trifoglio3DLight.metal` with these weights (constant, sky,
     /// sun, fill) under an unlit material, instead of RealityKit's lighting; `nil` keeps it.
     var bakedLight: [Float]? = nil
+    /// The same light from `Trifoglio3DLight.usda`, a MaterialX graph RealityKit compiles in its
+    /// own pipeline, where the Metal surface shader holds the campus at 40 fps.
+    var graphLight = false
 
     /// The configurations a launch asks for, or just today's.
     static var fromLaunch: [Trifoglio3DTuning] {
@@ -106,6 +109,7 @@ extension Trifoglio3DTuning {
         standardRange = try values.decodeIfPresent(Bool.self, forKey: .standardRange) ?? standardRange
         noAntialiasing = try values.decodeIfPresent(Bool.self, forKey: .noAntialiasing) ?? noAntialiasing
         bakedLight = try values.decodeIfPresent([Float].self, forKey: .bakedLight) ?? bakedLight
+        graphLight = try values.decodeIfPresent(Bool.self, forKey: .graphLight) ?? graphLight
     }
 
     /// Sets RealityView's camera effects to these choices.
@@ -201,6 +205,8 @@ final class Trifoglio3DScene {
     @ObservationIgnored private let sun = Entity()
     /// The weaker light from the other side.
     @ObservationIgnored private let fill = Entity()
+    /// `Trifoglio3DLight.usda`'s material, read once.
+    @ObservationIgnored private var graph: ShaderGraphMaterial?
     /// The lit materials ``setBakedLight()`` took off, by entity.
     @ObservationIgnored private var bakedMaterials: [Entity.ID: [any RealityKit.Material]] = [:]
     /// The lit materials ``setUnlit(_:)`` took off, by entity.
@@ -278,7 +284,9 @@ final class Trifoglio3DScene {
     @ObservationIgnored var tuning = Trifoglio3DTuning.fromLaunch[0] {
         didSet {
             if tuning.distantShells != oldValue.distantShells { setDistant(level == .campus) }
-            if tuning.bakedLight != oldValue.bakedLight { setBakedLight() }
+            if tuning.bakedLight != oldValue.bakedLight || tuning.graphLight != oldValue.graphLight {
+                Task { await setBakedLight() }
+            }
             effects = tuning
         }
     }
@@ -347,7 +355,7 @@ final class Trifoglio3DScene {
             let campus = try await Entity(contentsOf: campusURL)
             root.addChild(campus)
             self.campus = campus
-            if tuning.bakedLight != nil { setBakedLight() }
+            if tuning.bakedLight != nil || tuning.graphLight { await setBakedLight() }
         } catch {
             failure = "Campus non caricato: \(error.localizedDescription)"
             return
@@ -370,10 +378,10 @@ final class Trifoglio3DScene {
            let giuriati = try? await Entity(contentsOf: giuriatiURL) {
             root.addChild(giuriati)
             self.giuriati = giuriati
-            if tuning.bakedLight != nil { setBakedLight() }
+            if tuning.bakedLight != nil || tuning.graphLight { await setBakedLight() }
         }
         await loadDistant()
-        if tuning.bakedLight != nil { setBakedLight() }
+        if tuning.bakedLight != nil || tuning.graphLight { await setBakedLight() }
         tappable(campus?.findEntity(named: "Edifici"))
     }
 
@@ -547,17 +555,33 @@ final class Trifoglio3DScene {
 
     /// Puts the campus and Giuriati under the baked light of ``Trifoglio3DTuning/bakedLight``,
     /// or back under RealityKit's: run after each model is read and whenever the knob turns.
-    func setBakedLight() {
+    func setBakedLight() async {
         let weights = tuning.bakedLight
         let shader = weights.flatMap { _ in
             MTLCreateSystemDefaultDevice()?.makeDefaultLibrary().map {
                 CustomMaterial.SurfaceShader(named: "trifoglio3dBakedLight", in: $0)
             }
         }
+        if tuning.graphLight, graph == nil {
+            graph = try? await ShaderGraphMaterial(named: "/Root/LuceCotta", from: "Trifoglio3DLight.usda", in: .main)
+        }
+        let graph = tuning.graphLight ? graph : nil
         for top in [campus, giuriati].compactMap({ $0 }) {
             visit(top) { entity in
                 guard var model = entity.components[ModelComponent.self] else { return }
-                if let weights, weights.count == 4, let shader {
+                if let graph {
+                    if bakedMaterials[entity.id] == nil { bakedMaterials[entity.id] = model.materials }
+                    model.materials = bakedMaterials[entity.id, default: []].map { material in
+                        guard let lit = material as? PhysicallyBasedMaterial else { return material }
+                        var baked = graph
+                        if let texture = lit.baseColor.texture {
+                            try? baked.setParameter(name: "BaseTexture", value: .textureResource(texture.resource))
+                        }
+                        try? baked.setParameter(name: "Tint", value: .color(lit.baseColor.tint.cgColor))
+                        baked.faceCulling = lit.faceCulling
+                        return baked
+                    }
+                } else if let weights, weights.count == 4, let shader {
                     if bakedMaterials[entity.id] == nil { bakedMaterials[entity.id] = model.materials }
                     model.materials = bakedMaterials[entity.id, default: []].map { material in
                         guard let lit = material as? PhysicallyBasedMaterial,

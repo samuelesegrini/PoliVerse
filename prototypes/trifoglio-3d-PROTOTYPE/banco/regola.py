@@ -43,6 +43,7 @@ OBIETTIVI = {
 
 # Le manopole e i valori da provare. Nessuna toglie dettaglio ai modelli.
 MANOPOLE = {
+    "graphLight": [True, False],
     "shadowsInFlight": [True, False],
     "shadows": [False, True],
     "dropFullOpacity": [True, False],
@@ -53,6 +54,10 @@ MANOPOLE = {
     "tapShapesAfterArrival": [True, False],
     "pulseEvery": [3, 1],
     "labelWhileMoving": [False, True],
+    "noMotionBlur": [True, False],
+    "noDepthOfField": [True, False],
+    "noCameraGrain": [True, False],
+    "standardRange": [True, False],
 }
 
 # Le fasi del volo in cui la camera si muove; "attesa dei piani" è latenza, non fluidità.
@@ -71,12 +76,11 @@ def persi(window):
 
 
 def costo(turno):
-    """Il tempo brutto di un turno, in ms: frame persi in volo e nelle viste ferme, più l'attesa dei piani."""
+    """Il tempo brutto di un turno, in ms: frame persi in volo e nelle viste ferme. L'attesa dei piani
+    si registra a parte: cambia di secondi da un giro all'altro e coprirebbe ogni manopola."""
     c = 0.0
     for fase in turno["tour"]["phases"]:
-        if fase["name"] == ATTESA:
-            c += fase["seconds"] * 1000
-        elif fase["name"] != "fermo":
+        if fase["name"] not in (ATTESA, "fermo"):
             c += max(0.0, fase["seconds"] * 60 - fase["frames"]) * FRAME_MS
     for vista in ("stillCampus", "stillRoom", "stillBuilding"):
         if turno.get(vista):
