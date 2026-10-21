@@ -44,21 +44,21 @@ OBIETTIVI = {
 # Le manopole e i valori da provare. Nessuna toglie dettaglio ai modelli né all'immagine: quelle
 # che cambiano ciò che si vede (le ombre, l'antialiasing) le decide Samuele, non il regolatore.
 MANOPOLE = {
-    "graphLight": [True, False],
-    "bakedEverywhere": [True, False],      # senza ombre non toglie più nulla di visibile
+    "graphLight": [False, True],
+    "bakedEverywhere": [False, True],
     "tapShells": [True, False],
     "shadowsInFlight": [True, False],
     "dropFullOpacity": [True, False],
     "skipNoopFades": [True, False],
     "hideTreesAtOnce": [True, False],
-    "distantShells": [False, True],
+    "distantShells": [True, False],
     "detailedOnArrival": [True, False],
     "tapShapesAfterArrival": [True, False],
     "pulseEvery": [3, 1],
     "labelWhileMoving": [False, True],
-    "noMotionBlur": [True, False],
+    "noMotionBlur": [False, True],
     "noDepthOfField": [True, False],
-    "noCameraGrain": [True, False],
+    "noCameraGrain": [False, True],
     "standardRange": [True, False],
 }
 
@@ -242,7 +242,8 @@ class Regolatore:
         self.scrivi("migliore contro il riferimento: " + "; ".join(righe))
 
     def xctest(self):
-        """I test XCTest del 3D, con la configurazione migliore; i numeri restano nel .xcresult."""
+        """I test di prestazione del 3D, con la configurazione migliore; i numeri restano nel .xcresult.
+        I test di caricamento (PoliVerseTests) non dipendono dalle manopole e stanno nello schema PoliVerse."""
         if not self.args.test_dd:
             return
         n = self.stato["passate"]
@@ -253,7 +254,6 @@ class Regolatore:
         p = subprocess.run(["xcodebuild", "test-without-building", "-project", "PoliVerse.xcodeproj",
                             "-scheme", "PoliVerseUI", "-destination", f"id={UDID}",
                             "-derivedDataPath", self.args.test_dd, "-resultBundlePath", str(risultato),
-                            "-only-testing:PoliVerseTests/Trifoglio3DLoadTests",
                             "-only-testing:PoliVerseUITests/Trifoglio3DPerformanceTests"],
                            env=env, capture_output=True, text=True, cwd=self.args.repo)
         (self.out / f"xctest-p{n}.log").write_text(p.stdout + p.stderr)

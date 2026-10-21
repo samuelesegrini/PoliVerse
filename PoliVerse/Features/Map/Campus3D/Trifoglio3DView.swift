@@ -37,13 +37,15 @@ enum Trifoglio3DLevel: Equatable {
 ///
 /// Every knob starts at what the walk does today. `banco/regola.py` launches the app with
 /// `-Trifoglio3DTuning '<json>'`, a list of these, and the bench alternates them; a knob whose
-/// turn wins on the phone becomes the default here. None of them takes detail out of a model.
+/// turn wins on the phone becomes the default here (21 October 2026: baked light everywhere,
+/// no shadows, the detailed shells from afar, no motion blur nor grain). None of them takes
+/// detail out of a model.
 struct Trifoglio3DTuning: Codable, Equatable {
     /// The sun's shadows switched on as the flight to a building leaves the campus, rather
     /// than once the camera is down on it.
     var shadowsInFlight = false
     /// The sun's shadows on the building, floor and room views at all.
-    var shadows = true
+    var shadows = false
     /// An entity faded back to full drops its opacity, so RealityKit draws it as opaque again.
     var dropFullOpacity = false
     /// A fade to the opacity an entity already has is not animated.
@@ -51,7 +53,7 @@ struct Trifoglio3DTuning: Codable, Equatable {
     /// The trees vanish at once when the camera goes into a floor, rather than fading.
     var hideTreesAtOnce = false
     /// The simplified shells of `campus_lontano.usdz` from the campus view.
-    var distantShells = true
+    var distantShells = false
     /// On the flight to a building only that one swaps to its detailed shell; the others keep
     /// their simplified one until the camera is down.
     var detailedOnArrival = false
@@ -61,12 +63,12 @@ struct Trifoglio3DTuning: Codable, Equatable {
     var pulseEvery = 1
     /// The classroom's label follows the camera while it moves, rather than appearing once it stops.
     var labelWhileMoving = true
-    /// RealityView's camera effects, all on by default: motion blur, depth of field and grain
-    /// blur or noise the image rather than add to it. Standard dynamic range draws to an 8-bit
+    /// RealityView's camera effects: motion blur, depth of field and grain blur or noise the
+    /// image rather than add to it; motion blur and grain are off. Standard dynamic range draws to an 8-bit
     /// target instead of an extended one.
-    var noMotionBlur = false
+    var noMotionBlur = true
     var noDepthOfField = false
-    var noCameraGrain = false
+    var noCameraGrain = true
     var standardRange = false
     /// Edges without 4× multisampling: they would show steps, so only a reference for the bench.
     var noAntialiasing = false
@@ -75,10 +77,10 @@ struct Trifoglio3DTuning: Codable, Equatable {
     var bakedLight: [Float]? = nil
     /// The same light from `Trifoglio3DLight.usda`, a MaterialX graph RealityKit compiles in its
     /// own pipeline, where the Metal surface shader holds the campus at 40 fps.
-    var graphLight = false
+    var graphLight = true
     /// The baked light stays on the building, floor and room views too, which then have no
     /// shadows; otherwise RealityKit's light and the shadows come back once the camera is down.
-    var bakedEverywhere = false
+    var bakedEverywhere = true
     /// A tap finds a building by one shape made from its simplified shell, rather than by one
     /// shape for each of the 540 pieces of the detailed shells.
     var tapShells = false
