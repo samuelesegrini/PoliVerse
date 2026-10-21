@@ -32,6 +32,87 @@ enum Trifoglio3DLevel: Equatable {
     case inside(floor: String, room: String)
 }
 
+/// The choices the walk can draw with, each a knob the bench's control loop turns.
+///
+/// Every knob starts at what the walk does today. `banco/regola.py` launches the app with
+/// `-Trifoglio3DTuning '<json>'`, a list of these, and the bench alternates them; a knob whose
+/// turn wins on the phone becomes the default here. None of them takes detail out of a model.
+struct Trifoglio3DTuning: Codable, Equatable {
+    /// The sun's shadows switched on as the flight to a building leaves the campus, rather
+    /// than once the camera is down on it.
+    var shadowsInFlight = false
+    /// The sun's shadows on the building, floor and room views at all.
+    var shadows = true
+    /// An entity faded back to full drops its opacity, so RealityKit draws it as opaque again.
+    var dropFullOpacity = false
+    /// A fade to the opacity an entity already has is not animated.
+    var skipNoopFades = false
+    /// The trees vanish at once when the camera goes into a floor, rather than fading.
+    var hideTreesAtOnce = false
+    /// The simplified shells of `campus_lontano.usdz` from the campus view.
+    var distantShells = true
+    /// On the flight to a building only that one swaps to its detailed shell; the others keep
+    /// their simplified one until the camera is down.
+    var detailedOnArrival = false
+    /// A floor's rooms get their tap shapes once the camera has arrived, not during the flight.
+    var tapShapesAfterArrival = false
+    /// The lit classroom's glow changes once every this many frames (1: every frame).
+    var pulseEvery = 1
+    /// The classroom's label follows the camera while it moves, rather than appearing once it stops.
+    var labelWhileMoving = true
+    /// RealityView's camera effects, all on by default: motion blur, depth of field and grain
+    /// blur or noise the image rather than add to it. Standard dynamic range draws to an 8-bit
+    /// target instead of an extended one.
+    var noMotionBlur = false
+    var noDepthOfField = false
+    var noCameraGrain = false
+    var standardRange = false
+    /// Edges without 4× multisampling: they would show steps, so only a reference for the bench.
+    var noAntialiasing = false
+
+    /// The configurations a launch asks for, or just today's.
+    static var fromLaunch: [Trifoglio3DTuning] {
+        let arguments = CommandLine.arguments
+        guard let index = arguments.firstIndex(of: "-Trifoglio3DTuning"), index + 1 < arguments.count,
+              let list = try? JSONDecoder().decode([Trifoglio3DTuning].self, from: Data(arguments[index + 1].utf8)),
+              !list.isEmpty
+        else { return [Trifoglio3DTuning()] }
+        return list
+    }
+}
+
+extension Trifoglio3DTuning {
+    /// Missing keys keep today's value, so a configuration names only the knobs it turns.
+    init(from decoder: Decoder) throws {
+        self.init()
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        shadowsInFlight = try values.decodeIfPresent(Bool.self, forKey: .shadowsInFlight) ?? shadowsInFlight
+        shadows = try values.decodeIfPresent(Bool.self, forKey: .shadows) ?? shadows
+        dropFullOpacity = try values.decodeIfPresent(Bool.self, forKey: .dropFullOpacity) ?? dropFullOpacity
+        skipNoopFades = try values.decodeIfPresent(Bool.self, forKey: .skipNoopFades) ?? skipNoopFades
+        hideTreesAtOnce = try values.decodeIfPresent(Bool.self, forKey: .hideTreesAtOnce) ?? hideTreesAtOnce
+        distantShells = try values.decodeIfPresent(Bool.self, forKey: .distantShells) ?? distantShells
+        detailedOnArrival = try values.decodeIfPresent(Bool.self, forKey: .detailedOnArrival) ?? detailedOnArrival
+        tapShapesAfterArrival = try values.decodeIfPresent(Bool.self, forKey: .tapShapesAfterArrival) ?? tapShapesAfterArrival
+        pulseEvery = try values.decodeIfPresent(Int.self, forKey: .pulseEvery) ?? pulseEvery
+        labelWhileMoving = try values.decodeIfPresent(Bool.self, forKey: .labelWhileMoving) ?? labelWhileMoving
+        noMotionBlur = try values.decodeIfPresent(Bool.self, forKey: .noMotionBlur) ?? noMotionBlur
+        noDepthOfField = try values.decodeIfPresent(Bool.self, forKey: .noDepthOfField) ?? noDepthOfField
+        noCameraGrain = try values.decodeIfPresent(Bool.self, forKey: .noCameraGrain) ?? noCameraGrain
+        standardRange = try values.decodeIfPresent(Bool.self, forKey: .standardRange) ?? standardRange
+        noAntialiasing = try values.decodeIfPresent(Bool.self, forKey: .noAntialiasing) ?? noAntialiasing
+    }
+
+    /// Sets RealityView's camera effects to these choices.
+    func apply(to content: inout RealityViewCameraContent) {
+        content.renderingEffects.motionBlur = noMotionBlur ? .disabled : .default
+        content.renderingEffects.depthOfField = noDepthOfField ? .disabled : .default
+        content.renderingEffects.cameraGrain = noCameraGrain ? .disabled : .default
+        content.renderingEffects.dynamicRange = standardRange ? .standard : .default
+        content.renderingEffects.antialiasing = noAntialiasing ? .none : .multisample4X
+    }
+}
+
 /// A building's floors and classrooms, as the exporter writes them next to the models.
 struct Trifoglio3DPlan: Decodable {
     /// One floor of the building.
@@ -113,6 +194,8 @@ final class Trifoglio3DScene {
     @ObservationIgnored private let camera = Entity()
     /// The sun, the one light that casts shadows.
     @ObservationIgnored private let sun = Entity()
+    /// The weaker light from the other side.
+    @ObservationIgnored private let fill = Entity()
     /// The campus: terrain, trees and every building's outer shell.
     @ObservationIgnored private var campus: Entity?
     /// The Giuriati sports centre and its block east of the campus: ground, pitches, track,
@@ -176,6 +259,21 @@ final class Trifoglio3DScene {
     /// Whether a move is under way. Taps and buttons wait for it to end rather than
     /// start a second move that fights the first over the camera and the fades.
     @ObservationIgnored private var isMoving = false
+    /// The step of the walk under way, for the bench to tell which one a late frame fell in.
+    @ObservationIgnored private(set) var phase = ""
+    /// The floor whose rooms get their tap shapes once the camera has arrived.
+    @ObservationIgnored private var pendingTaps: Entity?
+    /// Frames since the glow last changed, for ``Trifoglio3DTuning/pulseEvery``.
+    @ObservationIgnored private var pulseFrame = 0
+    /// The choices the walk draws with; the bench turns them.
+    @ObservationIgnored var tuning = Trifoglio3DTuning.fromLaunch[0] {
+        didSet {
+            if tuning.distantShells != oldValue.distantShells { setDistant(level == .campus) }
+            effects = tuning
+        }
+    }
+    /// The same choices, watched by RealityView's update to set its camera effects.
+    private(set) var effects = Trifoglio3DTuning.fromLaunch[0]
 
     /// One running animation.
     private struct Tween {
@@ -214,7 +312,6 @@ final class Trifoglio3DScene {
         sun.look(at: [20, 0, 140], from: [-160, 260, 220], relativeTo: nil)
         root.addChild(sun)
         // A weaker light from the other side, so walls in shade are grey rather than black.
-        let fill = Entity()
         fill.components.set(DirectionalLightComponent(color: .white, intensity: 900))
         fill.look(at: [20, 0, 140], from: [220, 180, -120], relativeTo: nil)
         root.addChild(fill)
@@ -287,10 +384,13 @@ final class Trifoglio3DScene {
     }
 
     /// Draws every building with its simplified shell, or with its detailed one.
-    func setDistant(_ on: Bool) {
+    ///
+    /// - Parameter detailed: A building drawn with its detailed shell all the same.
+    func setDistant(_ on: Bool, except detailed: String? = nil) {
         for shell in exteriors {
             guard let far = distant[shell.name] else { continue }
-            for part in shell.children { part.isEnabled = (part === far) == on }
+            let simplified = on && tuning.distantShells && shell.name != detailed
+            for part in shell.children { part.isEnabled = (part === far) == simplified }
         }
     }
 
@@ -405,11 +505,47 @@ final class Trifoglio3DScene {
         }
     }
 
+    /// Switches the weaker light from the other side on or off.
+    func setFill(_ on: Bool) { fill.isEnabled = on }
+
+    /// Shows or hides the Giuriati block.
+    func setGiuriati(_ on: Bool) { giuriati?.isEnabled = on }
+
     /// Shows or hides the whole campus and Giuriati: with both hidden, what is left of a frame
     /// is RealityKit's own cost.
     func setScene(_ visible: Bool) {
         campus?.isEnabled = visible
         giuriati?.isEnabled = visible
+    }
+
+    /// What hangs in the scene now: entities, those enabled with a mesh, those with an opacity
+    /// below 1 and at 1, for the bench to find what a walk leaves behind.
+    func census() -> String {
+        var (all, meshes, faded, full) = (0, 0, 0, 0)
+        visit(root) { entity in
+            all += 1
+            if entity.isEnabledInHierarchy, entity.components.has(ModelComponent.self) { meshes += 1 }
+            if let opacity = entity.components[OpacityComponent.self]?.opacity, entity.isEnabledInHierarchy {
+                if opacity < 1 { faded += 1 } else { full += 1 }
+            }
+        }
+        return "\(all) entità, \(meshes) mesh accese, opacità <1: \(faded), =1: \(full), figli della radice: \(root.children.count)"
+    }
+
+    /// Takes every opacity of 1 off the scene, so RealityKit draws those entities as opaque.
+    func dropFullOpacities() {
+        visit(root) { entity in
+            if entity.components[OpacityComponent.self]?.opacity == 1 { entity.components.remove(OpacityComponent.self) }
+        }
+    }
+
+    /// Switches the faded pieces (every shell and the trees) off and on again, in the same
+    /// frame or a frame apart, so RealityKit takes them in afresh.
+    func reenableFaded(frameApart: Bool) async {
+        let pieces = exteriors + trees
+        pieces.forEach { $0.isEnabled = false }
+        if frameApart { try? await Task.sleep(for: .milliseconds(20)) }
+        pieces.forEach { $0.isEnabled = true }
     }
 
     /// Makes every building's outer shell fully opaque at once, as on the campus.
@@ -456,6 +592,7 @@ final class Trifoglio3DScene {
         }
         switch next {
         case .campus:
+            phase = "verso il campus"
             unlight()
             level = next
             setDistant(true)
@@ -468,11 +605,12 @@ final class Trifoglio3DScene {
             frame(campus?.findEntity(named: "Edifici"), polar: 0.95, margin: 0.9)
 
         case .building(let csie):
+            phase = "verso l'edificio"
             unlight()
             level = next
             self.csie = csie
-            setDistant(false)
-            setShadows(true)
+            if tuning.detailedOnArrival { setDistant(true, except: csie) } else { setDistant(false) }
+            if tuning.shadowsInFlight, tuning.shadows { setShadows(true) }
             // As in Maps, the other buildings stay solid and only those standing between the
             // camera and this one go: see-through shells cost 37 fps against 57 on an iPhone 12 Pro.
             let blocking = blockers(of: shell, polar: 1.0, margin: 1.15)
@@ -485,13 +623,15 @@ final class Trifoglio3DScene {
             if models[csie] == nil { Task { await loadBuilding(csie) } }
 
         case .floor(let csip):
+            phase = "attesa dei piani"
             guard let building = await loadBuilding(csie) else { return }
+            phase = "verso il piano"
             unlight()
             level = next
             let order = floors(of: building).map(\.name)
             let chosen = order.firstIndex(of: csip) ?? 0
             fade(shell, to: 0, duration: 0.6)
-            trees.forEach { fade($0, to: 0) }
+            if tuning.hideTreesAtOnce { trees.forEach { $0.isEnabled = false } } else { trees.forEach { fade($0, to: 0) } }
             fade(building, to: 1)
             for (index, floor) in floors(of: building).enumerated() {
                 if index > chosen {
@@ -506,11 +646,14 @@ final class Trifoglio3DScene {
             }
             frame(floors(of: building)[safe: chosen], polar: 0.6, margin: 1.0)
             // Its rooms take taps from now on; the shapes are built during the flight.
-            if let floor = floors(of: building)[safe: chosen] { await tappableRooms(on: floor) }
+            if let floor = floors(of: building)[safe: chosen] {
+                if tuning.tapShapesAfterArrival { pendingTaps = floor } else { await tappableRooms(on: floor) }
+            }
 
         case .room(let csip, let csiv):
             if level != .floor(csip), !isRoom(on: csip) { await move(to: .floor(csip)) }
             guard let room = building?.findEntity(named: csiv) else { return }
+            phase = "verso l'aula"
             unlight()
             level = next
             light(room)
@@ -520,6 +663,7 @@ final class Trifoglio3DScene {
         case .inside(let csip, let csiv):
             guard let view = interior(csiv) else { return }
             if level != .room(floor: csip, room: csiv) { await move(to: .room(floor: csip, room: csiv)) }
+            phase = "dentro"
             unlight()
             level = next
             setLens(near: 0.1, fieldOfView: 60)
@@ -530,6 +674,17 @@ final class Trifoglio3DScene {
                 azimuth: atan2(offset.x, offset.z), duration: 1.6)
         }
         await settle()
+        // Shadows come on once the camera is down on the building, not on the way: in flight
+        // the whole campus is still in view, and with shadows it drops to 30 Hz.
+        if level != .campus, tuning.shadows, !sun.components.has(DirectionalLightComponent.Shadow.self) {
+            setShadows(true)
+        }
+        if level != .campus { setDistant(false) }
+        if let floor = pendingTaps {
+            pendingTaps = nil
+            await tappableRooms(on: floor)
+        }
+        phase = "fermo"
     }
 
     /// The building a level is in, by the first seven characters of its codes: `MIA0203`.
@@ -640,9 +795,15 @@ final class Trifoglio3DScene {
     private func fade(_ entity: Entity?, to opacity: Float, duration: Double = 0.7) {
         guard let entity else { return }
         let from = entity.isEnabled ? entity.components[OpacityComponent.self]?.opacity ?? 1 : 0
+        if tuning.skipNoopFades, from == opacity { return }
         entity.isEnabled = true
+        let dropsOpacity = tuning.dropFullOpacity
         animate(duration) { k in
-            entity.components.set(OpacityComponent(opacity: from + (opacity - from) * k))
+            if k == 1, opacity == 1, dropsOpacity {
+                entity.components.remove(OpacityComponent.self)
+            } else {
+                entity.components.set(OpacityComponent(opacity: from + (opacity - from) * k))
+            }
             if k == 1, opacity == 0 { entity.isEnabled = false }
         }
     }
@@ -820,9 +981,16 @@ final class Trifoglio3DScene {
     private func pulse() {
         guard let lit, var model = lit.glow.components[ModelComponent.self],
               var material = model.materials.first as? PhysicallyBasedMaterial else { return }
-        material.emissiveIntensity = 0.35 + 0.3 * Float(sin((clock - lit.since) * 4))
-        model.materials = [material]
-        lit.glow.components.set(model)
+        pulseFrame += 1
+        if pulseFrame % max(1, tuning.pulseEvery) == 0 {
+            material.emissiveIntensity = 0.35 + 0.3 * Float(sin((clock - lit.since) * 4))
+            model.materials = [material]
+            lit.glow.components.set(model)
+        }
+        if !tuning.labelWhileMoving, isMoving {
+            if labelPoint != nil { labelPoint = nil }
+            return
+        }
         // A new point redraws the SwiftUI overlay, so it changes only when the camera
         // moved the label by half a point or more: a still view costs no layout per frame.
         let point = project(lit.top)
@@ -868,7 +1036,10 @@ struct Trifoglio3DView: View {
     var body: some View {
         GeometryReader { proxy in
             RealityView { content in
+                scene.effects.apply(to: &content)
                 await scene.load(into: &content)
+            } update: { content in
+                scene.effects.apply(to: &content)
             }
             .gesture(SpatialTapGesture().targetedToAnyEntity().onEnded { value in
                 Task { await scene.tapped(value.entity) }
@@ -910,11 +1081,25 @@ struct Trifoglio3DView: View {
         .sheet(isPresented: $showsBench) { Trifoglio3DBenchView(bench: bench) }
         .task {
             // `-Trifoglio3DBench` runs the bench as soon as the campus is drawn,
-            // `-Trifoglio3DBenchQuick` only its one-minute shells comparison.
+            // `-Trifoglio3DBenchQuick` only its one-minute shells comparison,
+            // `-Trifoglio3DBenchTour` the control loop's round: each `-Trifoglio3DTuning` in turn.
             let quick = CommandLine.arguments.contains("-Trifoglio3DBenchQuick")
-            guard quick || CommandLine.arguments.contains("-Trifoglio3DBench") else { return }
+            let tour = CommandLine.arguments.contains("-Trifoglio3DBenchTour")
+            guard quick || tour || CommandLine.arguments.contains("-Trifoglio3DBenchResidue")
+                    || CommandLine.arguments.contains("-Trifoglio3DBenchGPU") || CommandLine.arguments.contains("-Trifoglio3DBench") else { return }
             while scene.firstFrame == nil { try? await Task.sleep(for: .milliseconds(100)) }
-            await runBench(quick: quick)
+            if CommandLine.arguments.contains("-Trifoglio3DBenchGPU") {
+                await bench.runGPU(on: scene)
+                showsBench = true
+            } else if CommandLine.arguments.contains("-Trifoglio3DBenchResidue") {
+                await bench.runResidue(on: scene)
+                showsBench = true
+            } else if tour {
+                await bench.runLoop(on: scene)
+                showsBench = true
+            } else {
+                await runBench(quick: quick)
+            }
         }
     }
 
@@ -1090,6 +1275,9 @@ nonisolated enum Trifoglio3DSignpost {
         case afterFirstFrame
         /// One ``Trifoglio3DScene/loadBuilding(_:)`` that reads from the bundle.
         case building
+        /// One window the bench watches, named in the interval's message: `-Trifoglio3DBenchGPU`
+        /// and `banco/regola.py` read the GPU time of its frames from a Metal System Trace.
+        case window
 
         /// The name both Instruments and `XCTOSSignpostMetric` match on.
         var staticName: StaticString {
@@ -1097,6 +1285,7 @@ nonisolated enum Trifoglio3DSignpost {
             case .campus: "trifoglio3d.campus"
             case .afterFirstFrame: "trifoglio3d.after-first-frame"
             case .building: "trifoglio3d.building"
+            case .window: "trifoglio3d.window"
             }
         }
     }
@@ -1113,6 +1302,12 @@ nonisolated enum Trifoglio3DSignpost {
     /// Opens an interval.
     static func begin(_ name: Name) -> Interval {
         Interval(name: name.staticName, state: signposter.beginInterval(name.staticName, id: signposter.makeSignpostID()))
+    }
+
+    /// Opens an interval whose message says what it is.
+    static func begin(_ name: Name, _ label: String) -> Interval {
+        Interval(name: name.staticName,
+                 state: signposter.beginInterval(name.staticName, id: signposter.makeSignpostID(), "\(label, privacy: .public)"))
     }
 
     /// Closes what ``begin(_:)`` opened.

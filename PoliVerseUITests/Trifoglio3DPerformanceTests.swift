@@ -24,6 +24,10 @@ nonisolated final class Trifoglio3DPerformanceTests: PoliVerseUITestCase {
     @MainActor private func makeWalk() -> XCUIApplication {
         let app = makeApp()
         app.launchArguments.append("-Trifoglio3D")
+        // `banco/regola.py` runs these with the configuration its loop found best.
+        if let tuning = ProcessInfo.processInfo.environment["TRIFOGLIO3D_TUNING"] {
+            app.launchArguments += ["-Trifoglio3DTuning", "[\(tuning)]"]
+        }
         return app
     }
 

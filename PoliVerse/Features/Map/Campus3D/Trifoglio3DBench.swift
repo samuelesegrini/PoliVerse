@@ -136,6 +136,45 @@ struct Trifoglio3DBenchReport: Codable {
     var thermalStart: String
     var thermalEnd: String?
     var totalSeconds: Double?
+
+    /// One flight from the campus to classroom T.1.2, building load included, with its
+    /// frames split by the step of the walk they fell in.
+    struct Tour: Codable {
+        /// The variant flown.
+        var name: String
+        var window: Window
+        var phases: [Phase]
+    }
+
+    /// The frames of one step of a flight.
+    struct Phase: Codable {
+        /// The step, as ``Trifoglio3DScene/phase`` names it.
+        var name: String
+        var seconds: Double
+        var frames: Int
+        /// Time beyond the usual frame, summed over its late frames, and its longest frame, in ms.
+        var lateMs: Double
+        var maxMs: Double
+    }
+
+    /// One configuration's turn in a round of the control loop.
+    struct Turn: Codable {
+        /// Its index in ``configurations``, and the round.
+        var configuration: Int
+        var round: Int
+        /// The phone's heat as the turn started: the disturbance the loop cannot control.
+        var thermal: String
+        var stillCampus: Window?
+        var tour: Tour?
+        var stillRoom: Window?
+        var stillBuilding: Window?
+    }
+
+    /// The configurations of `-Trifoglio3DBenchTour`, and their turns in the order run.
+    var configurations: [Trifoglio3DTuning] = []
+    var turns: [Turn] = []
+    /// The flights of earlier tour runs.
+    var tours: [Tour] = []
 }
 
 /// Runs the bench against the scene on screen.
@@ -148,6 +187,8 @@ final class Trifoglio3DBench {
 
     /// Frame durations collected by the window being watched.
     @ObservationIgnored private var frames: [TimeInterval] = []
+    /// The step of the walk each of ``frames`` fell in.
+    @ObservationIgnored private var framePhases: [String] = []
 
     /// Runs every measurement in turn. Takes about a minute; the walk moves by itself.
     /// - Parameter quick: Only the still campus as it is, without the sun's shadows, and with
@@ -214,6 +255,145 @@ final class Trifoglio3DBench {
         report.stillCampusAfter = await watch(scene) { try? await Task.sleep(for: .seconds(10)) }
 
         finish(&report, start: start)
+    }
+
+    /// The control loop's round: every configuration of `-Trifoglio3DTuning` in turn, for
+    /// `-Trifoglio3DRounds` rounds (3 unless given), so two configurations compared always ran
+    /// under the same heat. Each turn: the still campus, the flight to T.1.2 from cold with its
+    /// frames split by step, the still classroom, the still building.
+    func runLoop(on scene: Trifoglio3DScene) async {
+        guard step == nil else { return }
+        let start = ContinuousClock.now
+        var report = Trifoglio3DBenchReport(
+            device: Trifoglio3DProbe.model(), system: ProcessInfo.processInfo.operatingSystemVersionString,
+            date: .now, batteryStart: Trifoglio3DProbe.battery(), thermalStart: Trifoglio3DProbe.thermal())
+        let configurations = Trifoglio3DTuning.fromLaunch
+        let arguments = CommandLine.arguments
+        let rounds = arguments.firstIndex(of: "-Trifoglio3DRounds")
+            .flatMap { $0 + 1 < arguments.count ? Int(arguments[$0 + 1]) : nil } ?? 3
+        let still = Duration.seconds(3)
+        for round in 1...max(1, rounds) {
+            for (index, tuning) in configurations.enumerated() {
+                step = "Giro \(round)/\(rounds), configurazione \(index + 1) di \(configurations.count)"
+                scene.tuning = tuning
+                await scene.go(to: .campus)
+                scene.unloadBuildings()
+                try? await Task.sleep(for: .seconds(1))
+                var turn = Trifoglio3DBenchReport.Turn(configuration: index, round: round, thermal: Trifoglio3DProbe.thermal())
+                let tag = "c\(index) r\(round)"
+                turn.stillCampus = await watch(scene, "\(tag) campus") { try? await Task.sleep(for: still) }
+                let window = await watch(scene, "\(tag) volo") { await scene.tour() }
+                turn.tour = Trifoglio3DBenchReport.Tour(name: "configurazione \(index + 1)", window: window, phases: phases())
+                turn.stillRoom = await watch(scene, "\(tag) aula") { try? await Task.sleep(for: still) }
+                await scene.go(to: .building(scene.csie))
+                turn.stillBuilding = await watch(scene, "\(tag) edificio") { try? await Task.sleep(for: still) }
+                report.turns.append(turn)
+            }
+        }
+        report.configurations = configurations
+        scene.tuning = configurations[0]
+        await scene.go(to: .campus)
+        finish(&report, start: start)
+    }
+
+    /// Where the GPU's time goes on the still campus, for a Metal System Trace to read: each
+    /// variant 3 s, alternated for 3 rounds, inside a `trifoglio3d.window` interval named after it.
+    func runGPU(on scene: Trifoglio3DScene) async {
+        guard step == nil else { return }
+        let start = ContinuousClock.now
+        var report = Trifoglio3DBenchReport(
+            device: Trifoglio3DProbe.model(), system: ProcessInfo.processInfo.operatingSystemVersionString,
+            date: .now, batteryStart: Trifoglio3DProbe.battery(), thermalStart: Trifoglio3DProbe.thermal())
+        let trees = ["Chiome", "Tronchi", "Alberi_Chiome", "Alberi_Tronchi", "Filari_Chiome", "Filari_Tronchi"]
+        let base = scene.tuning
+        func tuned(_ change: @escaping (inout Trifoglio3DTuning) -> Void) -> (Bool) -> Void {
+            { on in var t = base; if !on { change(&t) }; scene.tuning = t }
+        }
+        let variants: [(String, (Bool) -> Void)] = [
+            ("così com'è", { _ in }),
+            ("senza antialiasing", tuned { $0.noAntialiasing = true }),
+            ("gamma standard", tuned { $0.standardRange = true }),
+            ("senza luce di riempimento", { scene.setFill($0) }),
+            ("senza città", { scene.setVisible(["Quartiere"], $0) }),
+            ("senza terreno", { scene.setVisible(["Terreno"], $0) }),
+            ("senza alberi", { scene.setVisible(trees, $0) }),
+            ("senza arredi", { scene.setVisible(["Arredi"], $0) }),
+            ("senza edifici", { scene.setVisible(["Edifici"], $0) }),
+            ("senza Giuriati", { scene.setGiuriati($0) }),
+            ("scena vuota", { scene.setScene($0) }),
+        ]
+        await scene.go(to: .campus)
+        for round in 1...3 {
+            for (name, toggle) in variants {
+                step = "GPU (\(round)/3): \(name)"
+                toggle(false)
+                try? await Task.sleep(for: .milliseconds(700))
+                report.variants.append(.init(name: name, window: await watch(scene, name) { try? await Task.sleep(for: .seconds(3)) }))
+                toggle(true)
+            }
+        }
+        scene.tuning = base
+        finish(&report, start: start)
+    }
+
+    /// What a walk leaves on the campus: the still campus fresh, then after going to each level
+    /// and back, then after each clean-up, with a census of the scene beside every number.
+    func runResidue(on scene: Trifoglio3DScene) async {
+        guard step == nil else { return }
+        let start = ContinuousClock.now
+        var report = Trifoglio3DBenchReport(
+            device: Trifoglio3DProbe.model(), system: ProcessInfo.processInfo.operatingSystemVersionString,
+            date: .now, batteryStart: Trifoglio3DProbe.battery(), thermalStart: Trifoglio3DProbe.thermal())
+        func still(_ name: String) async {
+            step = name
+            try? await Task.sleep(for: .seconds(1))
+            let window = await watch(scene) { try? await Task.sleep(for: .seconds(4)) }
+            report.variants.append(.init(name: "\(name) — \(scene.census())", window: window))
+        }
+        await still("campus appena aperto")
+        for round in 1...2 {
+            await scene.go(to: .building("MIA0203"))
+            await scene.go(to: .campus)
+            scene.unloadBuildings()
+            await still("\(round): campus dopo l'edificio")
+            scene.dropFullOpacities()
+            await scene.reenableFaded(frameApart: false)
+            await still("\(round): gusci e alberi riaccesi nello stesso frame")
+            await scene.go(to: .building("MIA0203"))
+            await scene.go(to: .campus)
+            scene.unloadBuildings()
+            await still("\(round): campus dopo l'edificio")
+            scene.dropFullOpacities()
+            await scene.reenableFaded(frameApart: true)
+            await still("\(round): gusci e alberi riaccesi a un frame di distanza")
+        }
+        await scene.tour()
+        await scene.go(to: .campus)
+        scene.unloadBuildings()
+        await still("campus dopo l'aula")
+        scene.setScene(false)
+        try? await Task.sleep(for: .milliseconds(200))
+        scene.setScene(true)
+        await still("campus spento e riacceso")
+        finish(&report, start: start)
+    }
+
+    /// The last watched frames, grouped by the step of the walk they fell in, in order of first frame.
+    private func phases() -> [Trifoglio3DBenchReport.Phase] {
+        let sorted = frames.sorted()
+        let median = sorted.isEmpty ? 0 : sorted[sorted.count / 2]
+        var result: [Trifoglio3DBenchReport.Phase] = []
+        for (delta, name) in zip(frames, framePhases) {
+            if result.last?.name != name, !result.contains(where: { $0.name == name }) {
+                result.append(.init(name: name, seconds: 0, frames: 0, lateMs: 0, maxMs: 0))
+            }
+            guard let index = result.firstIndex(where: { $0.name == name }) else { continue }
+            result[index].seconds += delta
+            result[index].frames += 1
+            if delta > median * 1.5 { result[index].lateMs += (delta - median) * 1000 }
+            result[index].maxMs = max(result[index].maxMs, delta * 1000)
+        }
+        return result
     }
 
     /// Closes the report with the battery and the heat, and saves it.
@@ -302,11 +482,16 @@ final class Trifoglio3DBench {
     }
 
     /// Watches the frames, the CPU and the memory while some work runs.
-    private func watch(_ scene: Trifoglio3DScene, during work: () async -> Void) async -> Trifoglio3DBenchReport.Window {
+    private func watch(_ scene: Trifoglio3DScene, _ label: String = "",
+                       during work: () async -> Void) async -> Trifoglio3DBenchReport.Window {
+        let signpost = Trifoglio3DSignpost.begin(.window, label.isEmpty ? (step ?? "") : label)
+        defer { Trifoglio3DSignpost.end(signpost) }
         frames.removeAll()
         var peak = Trifoglio3DProbe.memory()
-        scene.onFrame = { [weak self] delta in
+        framePhases.removeAll()
+        scene.onFrame = { [weak self, weak scene] delta in
             self?.frames.append(delta)
+            self?.framePhases.append(scene?.phase ?? "")
             if self?.frames.count.isMultiple(of: 15) == true { peak = max(peak, Trifoglio3DProbe.memory()) }
         }
         let cpu0 = Trifoglio3DProbe.cpuTime()
@@ -381,6 +566,15 @@ struct Trifoglio3DBenchView: View {
                         }
                     }
                     window("Volo all'aula T.1.2", report.tourToClassroom)
+                    ForEach(Array(report.tours.enumerated()), id: \.offset) { index, tour in
+                        Section(String(format: "Volo %d, %@: %.0f fps · %.0f ms/s di scatti", index + 1, tour.name,
+                                       tour.window.fps, tour.window.hitchMsPerSecond)) {
+                            ForEach(tour.phases, id: \.name) { phase in
+                                row(phase.name, String(format: "%.1f s · %.0f ms in ritardo · max %.0f ms",
+                                                       phase.seconds, phase.lateMs, phase.maxMs))
+                            }
+                        }
+                    }
                     Section("Edifici letti uno a uno") {
                         let times = report.buildings.map(\.ms).sorted()
                         row("Mediana", times.isEmpty ? nil : String(format: "%.0f ms", times[times.count / 2]))
