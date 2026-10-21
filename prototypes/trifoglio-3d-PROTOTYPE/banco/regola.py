@@ -41,13 +41,13 @@ OBIETTIVI = {
     "memoria, MB": 300,
 }
 
-# Le manopole e i valori da provare. Nessuna toglie dettaglio ai modelli.
+# Le manopole e i valori da provare. Nessuna toglie dettaglio ai modelli né all'immagine: quelle
+# che cambiano ciò che si vede (le ombre, l'antialiasing) le decide Samuele, non il regolatore.
 MANOPOLE = {
     "graphLight": [True, False],
-    "bakedEverywhere": [True, False],
+    "bakedEverywhere": [True, False],      # senza ombre non toglie più nulla di visibile
     "tapShells": [True, False],
     "shadowsInFlight": [True, False],
-    "shadows": [False, True],
     "dropFullOpacity": [True, False],
     "skipNoopFades": [True, False],
     "hideTreesAtOnce": [True, False],

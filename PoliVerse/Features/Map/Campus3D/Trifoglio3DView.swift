@@ -1215,6 +1215,20 @@ struct Trifoglio3DView: View {
             // `-Trifoglio3DBench` runs the bench as soon as the campus is drawn,
             // `-Trifoglio3DBenchQuick` only its one-minute shells comparison,
             // `-Trifoglio3DBenchTour` the control loop's round: each `-Trifoglio3DTuning` in turn.
+            // `-Trifoglio3DShotAt building|floor|room|inside` walks there by itself, for screenshots.
+            let arguments = CommandLine.arguments
+            if let index = arguments.firstIndex(of: "-Trifoglio3DShotAt"), index + 1 < arguments.count {
+                while scene.firstFrame == nil { try? await Task.sleep(for: .milliseconds(100)) }
+                try? await Task.sleep(for: .seconds(2))
+                switch arguments[index + 1] {
+                case "building": await scene.go(to: .building("MIA0203"))
+                case "floor": await scene.go(to: .floor("MIA0203000"))
+                case "room": await scene.tour()
+                case "inside": await scene.go(to: .inside(floor: "MIA0203000", room: "MIA0203000030"))
+                default: break
+                }
+                return
+            }
             let quick = CommandLine.arguments.contains("-Trifoglio3DBenchQuick")
             let tour = CommandLine.arguments.contains("-Trifoglio3DBenchTour")
             guard quick || tour || CommandLine.arguments.contains("-Trifoglio3DBenchResidue")
