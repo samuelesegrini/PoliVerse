@@ -404,17 +404,23 @@ struct WeBeepLoginSheet: View {
                 Text("Per accedere con la Carta d'Identità Elettronica serve l'app CieID.")
             }
         }
+        // A web view asks for no size of its own; on the Mac the sheet would
+        // otherwise collapse to its title bar.
+        .macSheetSize(width: 1040, height: 860, resizable: true)
     }
 }
 
-/// Shown while the user is over in CieID, so returning to a seemingly idle
-/// login page does not read as a failure.
+/// Shown while the user is over in CieID — or in their SPID provider's app — so
+/// returning to a seemingly idle login page does not read as a failure.
 struct CieIDWaitingBanner: View {
+    /// The app the student is approving the sign-in in, as it fits after "nell'app".
+    var app = "CieID"
+
     /// The view's content.
     var body: some View {
         HStack(spacing: 10) {
             ProgressView()
-            Text("Completa l'accesso nell'app CieID, poi torna qui.")
+            Text("Completa l'accesso nell'app \(app), poi torna qui.")
                 .font(.footnote)
         }
         .padding(12)

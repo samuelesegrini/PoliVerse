@@ -1,0 +1,35 @@
+{
+  "csie": "MIA0206",
+  "piani": [
+    {
+      "csip": "MIA020600S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0206000",
+      "nome": "Terra",
+      "aule": {},
+      "principale": [
+        112.7,
+        42.6
+      ],
+      "ingressi": [
+        [
+          108.7,
+          60.2
+        ]
+      ]
+    },
+    {
+      "csip": "MIA0206001",
+      "nome": "Primo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0206002",
+      "nome": "Secondo",
+      "aule": {}
+    }
+  ]
+}

@@ -20,6 +20,8 @@ import OSLog
 ///   writes it, rather than polling for it.
 /// - ``prewarm(_:)``: loads the page while the student is still on the sign-in
 ///   screen.
+/// - ``autofillHints``: marks the Politecnico's form fields so AutoFill knows the
+///   person code, the password and the second factor's code for what they are.
 @MainActor
 enum LoginWebKit {
     /// Diagnostic log for this type, under the `loginweb` category.
@@ -140,6 +142,70 @@ enum LoginWebKit {
             injectionTime: .atDocumentStart,
             forMainFrameOnly: true)
     }
+
+    // MARK: - Helping AutoFill
+
+    /// JavaScript defining `poliverseCodeField()`, which finds the field for the second
+    /// factor's code on an aunicalogin page, or returns `null`.
+    ///
+    /// Matched on what the field is called rather than on an id, because the page that
+    /// asks for the code can only be seen with an account that has Polimi 2FA turned on:
+    /// any text-like input other than the person code and the password whose id, name,
+    /// placeholder or label speaks of an OTP, a token or a code.
+    nonisolated static let codeFieldFinder = """
+    function poliverseCodeField() {
+      var inputs = document.querySelectorAll('input');
+      for (var i = 0; i < inputs.length; i++) {
+        var field = inputs[i];
+        var type = (field.getAttribute('type') || 'text').toLowerCase();
+        if (['text', 'number', 'tel', 'password'].indexOf(type) < 0) { continue; }
+        if (field.id === 'login' || field.id === 'password') { continue; }
+        var words = [field.id, field.name, field.placeholder,
+                     field.getAttribute('aria-label')].join(' ');
+        if (/otp|token|one.?time|codice|code/i.test(words)) { return field; }
+      }
+      return null;
+    }
+    """
+
+    /// A script that marks the fields of the Politecnico's sign-in for AutoFill.
+    ///
+    /// The person code and password fields carry no `autocomplete` attribute, which
+    /// leaves the keyboard guessing; the code field gets `one-time-code`, which is what
+    /// lets iOS offer a code that has just arrived by SMS, and a numeric keyboard.
+    /// Nothing is read or filled: the attributes only tell the system what each field
+    /// is, and the student still types or picks every value on the page itself.
+    ///
+    /// Scoped to aunicalogin. The SPID and CIE providers' pages mark their own fields,
+    /// and changing a page that is not the Politecnico's is not this script's business.
+    static let autofillHints = WKUserScript(
+        source: """
+        (function () {
+          if (window.location.hostname !== 'aunicalogin.polimi.it') { return; }
+          \(codeFieldFinder)
+          function mark(field, autocomplete, inputmode) {
+            if (!field) { return; }
+            field.setAttribute('autocomplete', autocomplete);
+            if (inputmode) { field.setAttribute('inputmode', inputmode); }
+          }
+          mark(document.getElementById('login'), 'username');
+          mark(document.getElementById('password'), 'current-password');
+          mark(poliverseCodeField(), 'one-time-code', 'numeric');
+        })();
+        """,
+        // At document end: the fields have to exist to be marked, and these
+        // pages are rendered on the server rather than built by script.
+        injectionTime: .atDocumentEnd,
+        forMainFrameOnly: true)
+
+    /// JavaScript evaluating to `true` when the page on screen asks for the second
+    /// factor's code, so the app can say where to find it.
+    static let codeFieldProbe = """
+    (function () {
+      \(codeFieldFinder)
+      return poliverseCodeField() !== null;
+    })()
+    """
 
     // MARK: - Warming
 

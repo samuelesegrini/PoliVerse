@@ -1,0 +1,55 @@
+{
+  "csie": "MIA0901",
+  "piani": [
+    {
+      "csip": "MIA090100S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0901000",
+      "nome": "Terra",
+      "aule": {
+        "MIA0901000124": {
+          "sigla": "AULA AUDITORIUM",
+          "posti": 140,
+          "dotazioni": [
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0901001",
+      "nome": "Primo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0901002",
+      "nome": "Secondo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0901003",
+      "nome": "Terzo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0901004",
+      "nome": "Quarto",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0901005",
+      "nome": "Quinto",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0901006",
+      "nome": "Sesto",
+      "aule": {}
+    }
+  ]
+}

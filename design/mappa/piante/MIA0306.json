@@ -1,0 +1,116 @@
+{
+  "csie": "MIA0306",
+  "piani": [
+    {
+      "csip": "MIA030600S",
+      "nome": "Seminterrato",
+      "aule": {
+        "MIA030600S001": {
+          "sigla": "21.S.1",
+          "posti": 130,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA030600S004": {
+          "sigla": "21.S.2",
+          "posti": 126,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIA030600S008": {
+          "sigla": "21.S.3",
+          "posti": 117,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIA030600S010": {
+          "sigla": "21.S.4",
+          "posti": 126,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0306000",
+      "nome": "Terra",
+      "aule": {
+        "MIA0306000001": {
+          "sigla": "21.0.1",
+          "posti": 53,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIA0306000002": {
+          "sigla": "21.0.2",
+          "posti": 48,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIA0306000004": {
+          "sigla": "21.0.3",
+          "posti": 139,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0306001",
+      "nome": "Primo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0306002",
+      "nome": "Secondo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0306003",
+      "nome": "Terzo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0306004",
+      "nome": "Quarto",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0306005",
+      "nome": "Quinto",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0306006",
+      "nome": "Sesto",
+      "aule": {}
+    }
+  ]
+}

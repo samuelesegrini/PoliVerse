@@ -1,0 +1,102 @@
+{
+ "csie": "MIA0106",
+ "nome": "Giulio Natta",
+ "numero": "6",
+ "piani": [
+  {
+   "csip": "MIA010600S",
+   "quota": -4.6,
+   "aule": []
+  },
+  {
+   "csip": "MIA0106000",
+   "quota": -1.5,
+   "aule": []
+  },
+  {
+   "csip": "MIA010600R",
+   "quota": 1.5,
+   "aule": []
+  },
+  {
+   "csip": "MIA0106001",
+   "quota": 6.3,
+   "aule": [
+    {
+     "csiv": "MIA0106001056",
+     "sigla": "AULA DIPARTIMENTALE LOMBARDI",
+     "posti": 40,
+     "centro": [
+      62.43,
+      7.3,
+      208.25
+     ],
+     "interno": {
+      "occhio": [
+       64.06,
+       8.3,
+       212.48
+      ],
+      "guarda": [
+       64.0,
+       7.85,
+       204.74
+      ]
+     }
+    },
+    {
+     "csiv": "MIA0106001057",
+     "sigla": "6.0.1 ",
+     "posti": 275,
+     "centro": [
+      49.37,
+      7.3,
+      208.3
+     ],
+     "interno": {
+      "occhio": [
+       42.34,
+       10.51,
+       208.84
+      ],
+      "guarda": [
+       55.43,
+       7.85,
+       208.3
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "csip": "MIA0106002",
+   "quota": 10.9,
+   "aule": []
+  },
+  {
+   "csip": "MIA0106003",
+   "quota": 14.6,
+   "aule": []
+  },
+  {
+   "csip": "MIA0106004",
+   "quota": 18.3,
+   "aule": []
+  },
+  {
+   "csip": "MIA0106005",
+   "quota": 22.0,
+   "aule": []
+  },
+  {
+   "csip": "MIA0106006",
+   "quota": 25.7,
+   "aule": []
+  }
+ ],
+ "centro": [
+  71.02,
+  208.1
+ ],
+ "altezza": 31.9
+}

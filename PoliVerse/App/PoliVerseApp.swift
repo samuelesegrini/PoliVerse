@@ -258,7 +258,17 @@ struct PoliVerseApp: App {
     var body: some Scene {
         #if os(macOS)
         Window("PoliVerse", id: Self.mainWindowID) {
+            #if DEBUG
+            // `-Trifoglio3D` opens the 3D prototype instead of the app, for when the
+            // preview host cannot start. See ``Trifoglio3DView``.
+            if CommandLine.arguments.contains("-Trifoglio3D") {
+                Trifoglio3DView()
+            } else {
+                rootContent
+            }
+            #else
             rootContent
+            #endif
         }
         .defaultSize(width: 1280, height: 840)
         // Opens at launch even when the last session ended with it closed; the menu bar
@@ -289,7 +299,17 @@ struct PoliVerseApp: App {
         }
         #else
         WindowGroup(id: Self.mainWindowID) {
+            #if DEBUG
+            // `-Trifoglio3D` opens the 3D prototype instead of the app, for when the
+            // preview host cannot start. See ``Trifoglio3DView``.
+            if CommandLine.arguments.contains("-Trifoglio3D") {
+                Trifoglio3DView()
+            } else {
+                rootContent
+            }
+            #else
             rootContent
+            #endif
         }
         // A saved lecture that finished downloading while the app was not running:
         // iOS relaunches it to hand the file over, and waits for the move.

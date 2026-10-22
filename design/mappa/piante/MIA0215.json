@@ -1,0 +1,41 @@
+{
+  "csie": "MIA0215",
+  "piani": [
+    {
+      "csip": "MIA021500S",
+      "nome": "Seminterrato",
+      "aule": {
+        "MIA021500S003": {
+          "sigla": "16C.0.1",
+          "posti": 80,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA021500S004": {
+          "sigla": "16C.0.2",
+          "posti": 64,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA021500S005": {
+          "sigla": "16C.0.3",
+          "posti": 64,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    }
+  ]
+}

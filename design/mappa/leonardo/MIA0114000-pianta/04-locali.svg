@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-23.5 78.2 46.2 105.5" width="462.4" height="1055.1">
+<path id="MIA0114000001a" data-tipo="locale" d="M2.1 110.5L2.1 109.2L1.8 109.2L1.8 108.5L2 108.5L2 107.6L1.8 107.6L1.8 106.3L2.7 106.3L2.7 103L-1.7 103L-1.7 104.4L-2.6 104.4L-2.6 106.3L-1.7 106.3L-1.7 107.6L-1.9 107.6L-1.9 108.5L-1.7 108.5L-1.7 109.1L-2 109.1L-2 110.5Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0114000001b" data-tipo="locale" d="M2.8 112.3L2.8 110.8L1.9 110.8L1.9 110.5L0.2 110.5L0.2 110.6L0.1 110.6L0.1 112.3Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0114000001d" data-tipo="tecnico" d="M0 112.3L0 112.1L0.1 112.1L0.1 111.3L0 111.3L0 110.9L-1 110.9L-1 112.3Z" fill="#E4E7EC" fill-rule="evenodd"/>
+<path id="MIA0114000001e" data-tipo="locale" d="M-1.1 112.3L-1.1 112.1L-1 112.1L-1 111.3L-1.1 111.3L-1.1 110.9L-2.6 110.9L-2.6 112.3Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0114000002" data-tipo="locale" d="M2.4 110.5L3.2 110.5L3.2 112.7L-3 112.7L-3 110.5L-2.2 110.5L-2.2 110.4L-2 110.4L-2 109.2L-2.3 109.2L-2.3 107.8L-3.1 107.8L-3.1 102.8L-4.8 102.8L-4.8 108.7L-7 108.7L-6.9 144.1L-4.7 144.1L-4.7 147.2L-1.6 147.2L-1.6 147.3L1.1 147.3L1.1 147.2L7.2 147.2L7.1 108.7L4.9 108.7L4.9 101.3L2.8 101.3L2.8 102.5L3.2 102.5L3.2 103.8L3 103.8L3 104.3L3.2 104.3L3.2 107.8L2.4 107.8L2.4 109.2L2.1 109.2L2.1 110.4L2.4 110.4Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0114000003" data-tipo="corridoio" d="M10.8 147.5L10.8 149.8L1.1 149.9L1.1 150L-1.6 150L-1.6 149.9L-11.4 149.9L-11.5 147.5L-1.6 147.5L-1.6 147.3L1.1 147.3L1.1 147.5Z" fill="#FFFFFF" fill-rule="evenodd"/>
+<path id="MIA0114000004a" data-tipo="corridoio" d="M1.1 150.2L7.2 150.2L7.2 151.7L5 151.7L5.1 167.4L4.1 167.4L4.1 168L-4.5 168.1L-4.5 167.4L-4.7 167.4L-4.7 150.2L-1.6 150.2L-1.6 150L1.1 150Z" fill="#FFFFFF" fill-rule="evenodd"/>
+<path id="MIA0114000004b" data-tipo="scale" d="M4.3 171.3L4.3 171.6L-4.5 171.6L-4.5 171.4L-4.5 171.4L-4.5 168.1L4.1 168L4.1 171.3Z" fill="#E9EBEF" fill-rule="evenodd"/>
+<path id="MIA0114000005" data-tipo="scale" d="M7.2 151.7L5.5 151.7L5.6 169.4L7.2 169.4Z" fill="#E9EBEF" fill-rule="evenodd"/>
+<path id="MIA0114000006" data-tipo="locale" d="M-7.4 101L-9.2 101L-9.2 98.4L-7.4 98.4Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0114000007" data-tipo="corridoio" d="M-3.1 101L-3.1 102.8L-11 102.8L-11 102L-9.2 102L-9.2 101Z" fill="#FFFFFF" fill-rule="evenodd"/>
+<path id="MIA0114000008" data-tipo="scale" d="M2.8 101.3L2.8 102.5L-3 102.5L-3 101.3Z" fill="#E9EBEF" fill-rule="evenodd"/>
+</svg>

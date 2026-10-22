@@ -20,9 +20,28 @@ struct CieIDBridgeTests {
     @Test("livello1 and livello2 paths are recognised")
     func detectsAssuranceLevels() throws {
         for level in ["livello1", "livello2"] {
-            let url = try #require(URL(string: "https://idserver.servizicie.interno.gov.it/idp/\(level)/x"))
+            let url = try #require(URL(string: "https://ios.idserver.servizicie.interno.gov.it/idp/\(level)/x"))
             #expect(CieIDBridge.isHandoffToCieID(url), "\(level) should be a hand-off")
         }
+    }
+
+    /// "Entra con le tue credenziali CIE" posts the username and password to
+    /// `/idp/login/livello2`. Handing that to CieID dropped what the student
+    /// had typed, on the one CIE route the Politecnico says works for its app.
+    @Test("The CIE credentials form is not handed off")
+    func keepsCredentialsForm() throws {
+        let url = try #require(URL(string: "https://idserver.servizicie.interno.gov.it/idp/login/livello2"))
+        #expect(CieIDBridge.isHandoffToCieID(url, method: "POST") == false)
+        // Its "ask again" link is a GET to the same address, on the provider's
+        // own pages, where the second factor follows too.
+        #expect(CieIDBridge.isHandoffToCieID(url, method: "GET") == false)
+    }
+
+    @Test("A form post is never a hand-off")
+    func postIsNotHandoff() throws {
+        let url = try #require(URL(string:
+            "https://ios.idserver.servizicie.interno.gov.it/idp/Authn/SSO?nextUrl=https%3A%2F%2Fx"))
+        #expect(CieIDBridge.isHandoffToCieID(url, method: "POST") == false)
     }
 
     @Test("Ordinary navigation is left alone")

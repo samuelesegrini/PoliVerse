@@ -151,6 +151,28 @@ no credential is read and login does not complete.
 
 There is no token exchange to perform — the app has already done it.
 
+## Second factors
+
+Researched 2026-10-22; the full comparison is in the project's research doc. Since
+20 January 2022 every sign-in needs a second factor, and which one depends on the
+student, not the app:
+
+| Who | Second factor | Where it happens |
+| --- | --- | --- |
+| Italian students | SPID or CIE level 2 (by law) | the provider's page: app approval, SMS OTP |
+| Foreign students, staff, PhD | Polimi 2FA: TOTP from an authenticator app (SMS for staff and PhD) | aunicalogin, after the password |
+
+What the app does about it, and nothing more: `SessionSeeder` signs WeBeep and the
+recordings in on the session the PoliMi sign-in leaves behind (one second factor
+instead of three); `IdentityAppHandoff` opens a provider's app when its page links to
+it, such as PosteID's universal link
+`appregistry-posteid.mobile.poste.it/jod-login-schema/btcs/pid/access/…`, and leaves
+the page polling; `LoginWebKit.autofillHints` marks aunicalogin's fields for AutoFill.
+
+Ruled out: storing the TOTP secret or a native code field (the Regolamento counts the
+OTP as a credential, art. 2 lett. a and art. 19 c.6), and `ASWebAuthenticationSession`
+for the PoliMi token (see above). PoliMi offers no passkeys.
+
 ## Hosts
 
 | Host | Purpose |

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="66.4 -55.8 123 145.1" width="246" height="290.2">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="147.4,14.7 121.8,29.5 121.8,25.5 147.4,10.7" fill="#D4D8DF"/>
+<polygon points="126.6,40.3 96.6,23 96.6,19 126.6,36.3" fill="#F2F3F6"/>
+<polygon points="133.5,36.3 126.6,40.3 126.6,36.3 133.5,32.3" fill="#D4D8DF"/>
+<polygon points="129.2,0.2 147.4,10.7 121.8,25.5 133.5,32.3 126.6,36.3 96.6,19" fill="#FFFFFF"/>
+<polygon points="146,14.7 120.4,29.5 120.4,25.5 146,10.7" fill="#FFD98A" opacity="0.55"/>
+<polygon points="146,10.7 120.4,25.5 120.4,11.5 146,-3.3" fill="url(#iso-lit-r)"/>
+<polygon points="146,10.7 137.5,15.6 137.5,1.6 146,-3.3" fill="#B87A24" opacity="0.14"/>
+<polygon points="146,3.7 120.4,18.5 120.4,11.5 146,-3.3" fill="url(#iso-lit-glow)"/>
+<polygon points="126.6,39.5 98,23 98,19 126.6,35.5" fill="#FFD98A" opacity="0.55"/>
+<polygon points="126.6,35.5 98,19 98,5 126.6,21.5" fill="url(#iso-lit-l)"/>
+<polygon points="107.6,24.5 98,19 98,5 107.6,10.5" fill="#B87A24" opacity="0.14"/>
+<polygon points="126.6,28.5 98,12 98,5 126.6,21.5" fill="url(#iso-lit-glow)"/>
+<polygon points="132.2,36.3 126.6,39.5 126.6,35.5 132.2,32.3" fill="#FFD98A" opacity="0.55"/>
+<polygon points="132.2,32.3 126.6,35.5 126.6,21.5 132.2,18.3" fill="url(#iso-lit-r)"/>
+<polygon points="132.2,25.3 126.6,28.5 126.6,21.5 132.2,18.3" fill="url(#iso-lit-glow)"/>
+<path d="M146 7.5L120.4 22.3M126.6 32.3L98 15.8M132.2 29.1L126.6 32.3" stroke="#D9963A" stroke-width="1.1" opacity="0.4"/>
+<path d="M137.5 15.6V1.6M128.9 20.6V6.6M117.1 30V16M107.6 24.5V10.5" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+</svg>

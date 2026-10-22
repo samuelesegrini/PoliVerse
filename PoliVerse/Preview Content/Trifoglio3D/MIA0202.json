@@ -1,0 +1,57 @@
+{
+ "csie": "MIA0202",
+ "nome": null,
+ "numero": "12",
+ "piani": [
+  {
+   "csip": "MIA020200S",
+   "quota": -3.0,
+   "aule": []
+  },
+  {
+   "csip": "MIA0202S0S",
+   "quota": -1.4,
+   "aule": []
+  },
+  {
+   "csip": "MIA020200R",
+   "quota": 1.0,
+   "aule": []
+  },
+  {
+   "csip": "MIA0202001",
+   "quota": 4.3,
+   "aule": []
+  },
+  {
+   "csip": "MIA0202002",
+   "quota": 7.6,
+   "aule": []
+  },
+  {
+   "csip": "MIA0202003",
+   "quota": 10.9,
+   "aule": []
+  },
+  {
+   "csip": "MIA0202004",
+   "quota": 14.2,
+   "aule": []
+  },
+  {
+   "csip": "MIA0202005",
+   "quota": 17.5,
+   "aule": []
+  },
+  {
+   "csip": "MIA0202006",
+   "quota": 20.8,
+   "aule": []
+  }
+ ],
+ "centro": [
+  -29.0,
+  48.6
+ ],
+ "altezza": 24.46
+}

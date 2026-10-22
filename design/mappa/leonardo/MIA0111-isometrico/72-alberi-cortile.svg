@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="553.6 28.3 273.7 237.4" width="547.4" height="474.8">
+<defs><radialGradient id="iso-tree" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#9FD08A"/><stop offset="1" stop-color="#4F9A5E"/></radialGradient></defs>
+<rect x="684" y="133.1" width="2.8" height="19.2" rx="1" fill="#8A6A48"/><path d="M685.4 137.9l-5.4 -6M685.4 140.3l6 -6.6" stroke="#8A6A48" stroke-width="1.1"/><circle cx="685.4" cy="133.1" r="12" fill="url(#iso-tree)"/><circle cx="680" cy="137.3" r="8.4" fill="url(#iso-tree)"/><circle cx="691.4" cy="136.7" r="7.8" fill="url(#iso-tree)"/>
+</svg>

@@ -1,0 +1,37 @@
+{
+  "csie": "MIA0603",
+  "piani": [
+    {
+      "csip": "MIA060300S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0603000",
+      "nome": "Terra",
+      "aule": {
+        "MIA0603000011": {
+          "sigla": "E.P.1",
+          "posti": 72,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIA0603000009": {
+          "sigla": "E.P.2",
+          "posti": 30,
+          "dotazioni": []
+        },
+        "MIA0603000010": {
+          "sigla": "E.P.3",
+          "posti": 30,
+          "dotazioni": [
+            "proiettore"
+          ]
+        }
+      }
+    }
+  ]
+}

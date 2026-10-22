@@ -65,6 +65,9 @@ struct PoliMiAppLoginWebView: View {
     /// Handed the SPID provider list the page carries, as JSON, each time the
     /// chooser loads. See ``SPIDCatalogue``.
     var onProvidersRead: (String) -> Void = { _ in }
+    /// Called with a WeBeep token obtained on the session this sign-in leaves behind,
+    /// or `nil` to leave WeBeep alone. See ``SessionSeeder``.
+    var onWeBeepToken: ((WeBeepAuth.MoodleToken) -> Void)?
 
     /// Diagnostic log for this type, under the `oauth` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "oauth")
@@ -96,6 +99,15 @@ struct PoliMiAppLoginWebView: View {
     /// not happen.
     @State private var selectionFailed = false
 
+    /// The app the page handed the student to, to approve the sign-in, while they are
+    /// there: their SPID provider's, as a rule. `""` when the app is not known by name.
+    /// Cleared when the page next settles.
+    @State private var awayIn: String?
+
+    /// Whether the page on screen asks for the Polimi 2FA code, so the app can say where
+    /// to find it.
+    @State private var asksForCode = false
+
     /// Which stage of the sign-in the page on screen belongs to. See ``LoginStage``.
     private var stage: LoginStage {
         LoginStage(url: currentURL, method: method, hasPressed: didSelectMethod)
@@ -124,12 +136,21 @@ struct PoliMiAppLoginWebView: View {
             },
             onFinished: { webView, url in
                 currentURL = url
+                awayIn = nil
                 guard !didFinish else { return }
                 // Built from `url` rather than read back from `currentURL`:
                 // the assignment above is a `@State` write and is not visible
                 // to this closure until the next render.
                 let settled = LoginStage(
                     url: url, method: method, hasPressed: didSelectMethod)
+                if settled.mayAskForCode {
+                    Task {
+                        let found = try? await webView.evaluateJavaScript(LoginWebKit.codeFieldProbe)
+                        asksForCode = (found as? Bool) == true
+                    }
+                } else {
+                    asksForCode = false
+                }
                 // Only the chooser carries the buttons. An interstitial on the
                 // same host would find nothing to press, and latching the
                 // failure there would show the student the raw page before the
@@ -143,7 +164,8 @@ struct PoliMiAppLoginWebView: View {
             // Pushed, not polled: the page tells us the moment it stores the
             // credential.
             onCredential: { raw in adopt(raw) },
-            credentialKey: credentialsKey
+            credentialKey: credentialsKey,
+            onAppHandoff: { app in awayIn = app ?? "" }
         )
         // Hidden until the student is somewhere that has to be theirs. What
         // is covered is the bootstrap, the chooser the app's own buttons stand
@@ -154,6 +176,24 @@ struct PoliMiAppLoginWebView: View {
         .overlay {
             if !showsWebView {
                 LoginWaitingView(method: method) { selectionFailed = true }
+            }
+        }
+        // The provider's page waits, polling, while the student approves in
+        // the app; on the way back it looks idle without this.
+        .overlay(alignment: .bottom) {
+            if let awayIn, showsWebView {
+                CieIDWaitingBanner(app: awayIn.isEmpty ? "del tuo gestore" : awayIn)
+            }
+        }
+        // Where the code comes from, said once, above the field rather than
+        // under the keyboard. Nothing is typed here: the field is the page's.
+        .overlay(alignment: .top) {
+            if asksForCode, showsWebView {
+                Text("Apri la tua app di autenticazione, per esempio Google Authenticator, e scrivi qui sotto il codice di Polimi.")
+                    .font(.footnote)
+                    .padding(12)
+                    .frame(maxWidth: .infinity)
+                    .background(.regularMaterial)
             }
         }
     }
@@ -281,12 +321,23 @@ struct PoliMiAppLoginWebView: View {
         else { return }
         didFinish = true
         log.notice("Credential reported by Servizi Online")
+        endSession()
+        onCredentials(stored.token)
+    }
+
+    /// Ends the sign-in's web session, first using it once more to sign WeBeep and the
+    /// recordings in, so that neither asks for a sign-in — and a second factor — of its
+    /// own.
+    ///
+    /// The session dies with the flow, as it always did; the cache does not, which is
+    /// what makes the next login fast.
+    @MainActor
+    private func endSession() {
+        let onWeBeepToken = onWeBeepToken
         Task {
-            // The session dies with the flow, as it always did; the cache does
-            // not, which is what makes the next login fast.
+            await SessionSeeder.seed(from: LoginWebKit.dataStore, weBeep: onWeBeepToken)
             await LoginWebKit.endSession()
         }
-        onCredentials(stored.token)
     }
 
     /// Reads the credential if the app has stored one.
@@ -301,7 +352,7 @@ struct PoliMiAppLoginWebView: View {
 
         didFinish = true
         log.notice("Read credentials minted by the official app")
-        Task { await LoginWebKit.endSession() }
+        endSession()
         onCredentials(stored.token)
         return true
     }

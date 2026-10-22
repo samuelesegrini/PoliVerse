@@ -53,13 +53,18 @@ struct AuthWebView {
     /// jar, which the token exchange needs. A flow whose session stays in its own
     /// store turns it off.
     var adoptsCookies = true
+    /// Called when the page has handed the student to another app — their SPID
+    /// provider's, to approve the sign-in — with the app's name when it is known. The
+    /// page stays where it is, waiting for the approval. See ``IdentityAppHandoff``.
+    var onAppHandoff: (String?) -> Void = { _ in }
 
     /// Creates the navigation delegate and credential observer.
     ///
     /// - Returns: The coordinator.
     func makeCoordinator() -> Coordinator {
         Coordinator(router: router, decide: decide, onError: onError,
-                    onCieIDMissing: onCieIDMissing, onFinished: onFinished, adoptsCookies: adoptsCookies)
+                    onCieIDMissing: onCieIDMissing, onFinished: onFinished, adoptsCookies: adoptsCookies,
+                    onAppHandoff: onAppHandoff)
     }
 
     /// Creates the web view on ``LoginWebKit``'s persistent store, with the content rules and,
@@ -85,6 +90,10 @@ struct AuthWebView {
         // to be restarted from the top.
         configuration.websiteDataStore = dataStore ?? LoginWebKit.dataStore
 
+        // Tells AutoFill what the Politecnico's fields are, on every sign-in
+        // that passes through aunicalogin.
+        configuration.userContentController.addUserScript(LoginWebKit.autofillHints)
+
         // Tells us the instant the credential is written, instead of polling
         // for it.
         if let handler = onCredential {
@@ -96,6 +105,12 @@ struct AuthWebView {
         }
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
+        #if os(macOS)
+        // The identity providers lay their forms out for a phone held upright
+        // or a full browser window. In a sheet on a laptop screen the CIE form
+        // ran past the bottom edge; a little smaller, it fits whole.
+        webView.pageZoom = 0.85
+        #endif
         webView.navigationDelegate = context.coordinator
         context.coordinator.webView = webView
         webView.load(URLRequest(url: startURL))
@@ -164,6 +179,8 @@ struct AuthWebView {
         private let onFinished: (WKWebView, URL?) -> Void
         /// Whether finishing copies the session's cookies into the shared jar.
         private let adoptsCookies: Bool
+        /// Reports that the page handed the student to another app.
+        private let onAppHandoff: (String?) -> Void
         /// Diagnostic log for this type, under the `authweb` category.
         let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "authweb")
 
@@ -183,6 +200,9 @@ struct AuthWebView {
         /// URLs we have re-issued ourselves, so the re-issued navigation is
         /// allowed through rather than bouncing forever.
         private var reissued: Set<String> = []
+        /// Universal links already offered to their app, so one whose app is not
+        /// installed is loaded here the second time rather than offered again.
+        private var handedOff: Set<String> = []
 
         /// Creates the delegate.
         ///
@@ -194,13 +214,15 @@ struct AuthWebView {
         ///   - onFinished: Reports that a navigation has settled.
         ///   - adoptsCookies: Whether finishing copies the session's cookies into the
         ///     shared jar.
+        ///   - onAppHandoff: Reports that the page handed the student to another app.
         init(
             router: CieIDRouter,
             decide: @escaping (URL) -> AuthWebViewDecision,
             onError: @escaping (any Error) -> Void,
             onCieIDMissing: @escaping () -> Void,
             onFinished: @escaping (WKWebView, URL?) -> Void,
-            adoptsCookies: Bool = true
+            adoptsCookies: Bool = true,
+            onAppHandoff: @escaping (String?) -> Void = { _ in }
         ) {
             self.router = router
             self.decide = decide
@@ -208,6 +230,7 @@ struct AuthWebView {
             self.onCieIDMissing = onCieIDMissing
             self.onFinished = onFinished
             self.adoptsCookies = adoptsCookies
+            self.onAppHandoff = onAppHandoff
         }
 
         /// Tells the host a navigation has settled, unless the flow is already over.
@@ -264,17 +287,53 @@ struct AuthWebView {
             // The Mac has no CieID app: the identity provider's desktop flow
             // runs in this web view, so the navigation is left alone there.
             #if os(iOS)
-            if CieIDBridge.isHandoffToCieID(url) {
+            if CieIDBridge.isHandoffToCieID(
+                url, method: navigationAction.request.httpMethod ?? "GET") {
                 log.debug("Intercepting CIE hand-off")
                 cancelledDeliberately = true
                 let opened = await router.openCieID(for: url)
                 if !opened { onCieIDMissing() }
                 return .cancel
             }
+
+            // A SPID provider's "open the app" link. Left to the web view, a
+            // script-driven universal link may load the link's fallback page
+            // here instead of opening the app, and the page that was waiting
+            // for the approval is gone. Opened by us, the app comes up and the
+            // page stays, polling, for when the student comes back.
+            if let route = IdentityAppHandoff.route(for: url),
+               !handedOff.contains(url.absoluteString) {
+                handedOff.insert(url.absoluteString)
+                cancelledDeliberately = true
+                let opened = await Self.openInApp(url, universalLinksOnly: true)
+                if opened {
+                    log.info("Handed off to \(route.appName, privacy: .public)")
+                    onAppHandoff(route.appName)
+                } else {
+                    // Not installed: the provider's own page for that case is
+                    // the next best thing, and it is in this web view.
+                    log.info("\(route.appName, privacy: .public) is not installed; loading its page here")
+                    _ = await MainActor.run { webView.load(URLRequest(url: url)) }
+                }
+                return .cancel
+            }
             #endif
 
             switch decide(url) {
             case .allow:
+                #if os(iOS)
+                // A scheme only another app can open — a provider's own. A web
+                // view cannot load it and drops it without a word, which leaves
+                // the student pressing a button that does nothing.
+                if IdentityAppHandoff.isExternalScheme(url),
+                   navigationAction.targetFrame?.isMainFrame != false {
+                    cancelledDeliberately = true
+                    let opened = await Self.openInApp(url, universalLinksOnly: false)
+                    log.info("Opening scheme \(url.scheme ?? "?", privacy: .public) in another app: \(opened, privacy: .public)")
+                    if opened { onAppHandoff(nil) }
+                    return .cancel
+                }
+                #endif
                 return .allow
             case .finish(let action):
                 finished = true
@@ -322,6 +381,21 @@ struct AuthWebView {
             log.error("Login navigation failed: \(nsError.domain) \(nsError.code)")
             onError(error)
         }
+
+        #if os(iOS)
+        /// Hands a URL to the system, to open in the app that claims it.
+        ///
+        /// - Parameters:
+        ///   - url: The URL to open.
+        ///   - universalLinksOnly: Opens it only if an installed app claims it as a
+        ///     universal link, rather than in Safari.
+        /// - Returns: Whether an app took it.
+        @MainActor
+        private static func openInApp(_ url: URL, universalLinksOnly: Bool) async -> Bool {
+            await UIApplication.shared.open(
+                url, options: universalLinksOnly ? [.universalLinksOnly: true] : [:])
+        }
+        #endif
 
         /// The host whose navigations must not escape to another app.
         ///

@@ -1,0 +1,93 @@
+{
+  "csie": "MIA0212",
+  "piani": [
+    {
+      "csip": "MIA021201I",
+      "nome": "Primo Interrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA021200S",
+      "nome": "Seminterrato",
+      "aule": {
+        "MIA021200S001": {
+          "sigla": "16B.0.1 ",
+          "posti": 149,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0212000",
+      "nome": "Terra",
+      "aule": {
+        "MIA0212000001": {
+          "sigla": "16B.1.1",
+          "posti": 174,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        }
+      },
+      "principale": [
+        -24.7,
+        -24.8
+      ],
+      "ingressi": [
+        [
+          -40.3,
+          -21.9
+        ]
+      ]
+    },
+    {
+      "csip": "MIA0212001",
+      "nome": "Primo",
+      "aule": {
+        "MIA0212001001": {
+          "sigla": "16B.2.1",
+          "posti": 149,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0212002",
+      "nome": "Secondo",
+      "aule": {
+        "MIA0212002001": {
+          "sigla": "16B.3.1",
+          "posti": 149,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0212003",
+      "nome": "Terzo",
+      "aule": {}
+    }
+  ]
+}

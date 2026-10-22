@@ -1,0 +1,40 @@
+{
+  "csie": "MIA0301",
+  "piani": [
+    {
+      "csip": "MIA030100S",
+      "nome": "Seminterrato",
+      "aule": {
+        "MIA030100S020": {
+          "sigla": "20.S.1",
+          "posti": 264,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0301000",
+      "nome": "Terra",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0301001",
+      "nome": "Primo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0301002",
+      "nome": "Secondo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0301003",
+      "nome": "Terzo",
+      "aule": {}
+    }
+  ]
+}

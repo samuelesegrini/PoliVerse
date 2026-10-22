@@ -1,0 +1,60 @@
+{
+ "csie": "MIA0302",
+ "nome": "Mario Silvestri",
+ "numero": "19",
+ "piani": [
+  {
+   "csip": "MIA030201I",
+   "quota": -7.4,
+   "aule": []
+  },
+  {
+   "csip": "MIA030200S",
+   "quota": -3.8,
+   "aule": []
+  },
+  {
+   "csip": "MIA0302000",
+   "quota": 0.0,
+   "aule": [
+    {
+     "csiv": "MIA0302000011",
+     "sigla": "19.0.1",
+     "posti": 53,
+     "centro": [
+      231.1,
+      1.0,
+      131.11
+     ],
+     "interno": {
+      "occhio": [
+       228.86,
+       3.19,
+       135.68
+      ],
+      "guarda": [
+       231.09,
+       1.55,
+       128.02
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "csip": "MIA0302001",
+   "quota": 3.4,
+   "aule": []
+  },
+  {
+   "csip": "MIA0302002",
+   "quota": 6.8,
+   "aule": []
+  }
+ ],
+ "centro": [
+  243.89,
+  128.18
+ ],
+ "altezza": 11.42
+}

@@ -1,0 +1,20 @@
+{
+  "csie": "MIA0208",
+  "piani": [
+    {
+      "csip": "MIA020800S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0208S0S",
+      "nome": "Seminterrato Soppalco",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0208000",
+      "nome": "Terra",
+      "aule": {}
+    }
+  ]
+}

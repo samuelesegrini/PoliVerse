@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-206.7 -178.7 154.4 247.6" width="308.9" height="495.2">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="-92.3,11.9 -137.4,37.9 -137.4,33.9 -92.3,7.9" fill="#D4D8DF"/>
+<polygon points="-137.4,37.9 -176.5,15.3 -176.5,11.3 -137.4,33.9" fill="#F2F3F6"/>
+<polygon points="-131.5,-14.7 -92.3,7.9 -137.4,33.9 -176.5,11.3" fill="#FFFFFF"/>
+<polygon points="-93.7,11.9 -137.4,37.1 -137.4,33.1 -93.7,7.9" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-93.7,7.9 -137.4,33.1 -137.4,19.1 -93.7,-6.1" fill="url(#iso-lit-r)"/>
+<polygon points="-93.7,7.9 -102.4,12.9 -102.4,-1.1 -93.7,-6.1" fill="#B87A24" opacity="0.14"/>
+<polygon points="-119.9,23 -128.6,28.1 -128.6,14.1 -119.9,9" fill="#FFFFFF" opacity="0.18"/>
+<polygon points="-93.7,0.9 -137.4,26.1 -137.4,19.1 -93.7,-6.1" fill="url(#iso-lit-glow)"/>
+<polygon points="-137.4,37.1 -175.1,15.3 -175.1,11.3 -137.4,33.1" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-137.4,33.1 -175.1,11.3 -175.1,-2.7 -137.4,19.1" fill="url(#iso-lit-l)"/>
+<polygon points="-156.2,22.2 -165.7,16.8 -165.7,2.8 -156.2,8.2" fill="#B87A24" opacity="0.14"/>
+<polygon points="-165.7,16.8 -175.1,11.3 -175.1,-2.7 -165.7,2.8" fill="#B87A24" opacity="0.14"/>
+<polygon points="-137.4,26.1 -175.1,4.3 -175.1,-2.7 -137.4,19.1" fill="url(#iso-lit-glow)"/>
+<path d="M-93.7 4.7L-137.4 29.9M-137.4 29.9L-175.1 8.1" stroke="#D9963A" stroke-width="1.1" opacity="0.4"/>
+<path d="M-102.4 12.9V-1.1M-111.2 18V4M-119.9 23V9M-128.6 28.1V14.1M-146.8 27.7V13.7M-156.2 22.2V8.2M-165.7 16.8V2.8" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+</svg>
