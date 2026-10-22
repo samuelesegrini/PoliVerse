@@ -43,7 +43,7 @@ OBIETTIVI = {
 
 # Le manopole e i valori da provare. Nessuna toglie dettaglio ai modelli né all'immagine: quelle
 # che cambiano ciò che si vede (le ombre, l'antialiasing) le decide Samuele, non il regolatore.
-RAFFREDDA = 600   # secondi di pausa dopo un giro finito con il telefono caldo
+CALDO = ("serious", "critical")   # i giri a questo calore si segnano e non decidono
 
 MANOPOLE = {
     "graphLight": [False, True],
@@ -212,22 +212,28 @@ class Regolatore:
             time.sleep(attesa)
         if not report:
             return False
-        # Un telefono che scalda ("serious") rallenta tutto e i giri diventano rumore: si lascia
-        # raffreddare, fermo, prima del confronto dopo.
-        if report.get("thermalEnd") in ("serious", "critical"):
-            self.scrivi(f"telefono caldo ({report['thermalEnd']}): pausa di {RAFFREDDA // 60} minuti")
-            time.sleep(RAFFREDDA)
-        costi = {}
+        # I giri si fanno di fila, senza aspettare che il telefono si raffreddi (Samuele, 21 ottobre):
+        # quelli con il telefono caldo si segnano e restano fuori dal confronto, che li falserebbero.
+        costi, caldi = {}, set()
         for t in report["turns"]:
             costi.setdefault(t["round"], {})[t["configuration"]] = costo(t)
-        coppie = [(c[0], c[1]) for c in costi.values() if 0 in c and 1 in c]
+            if t["thermal"] in CALDO:
+                caldi.add(t["round"])
+        coppie = [(c[0], c[1]) for r, c in costi.items() if 0 in c and 1 in c and r not in caldi]
+        calore = sorted({t["thermal"] for t in report["turns"]})
+        if len(coppie) < 3:
+            self.scrivi(f"{manopola}={valore}: rimandata, {len(caldi)}/{len(costi)} giri con il telefono caldo "
+                        f"({'/'.join(calore)})")
+            self.stato["decisioni"].append({"passata": self.stato["passate"], "manopola": manopola, "valore": valore,
+                                            "giri_caldi": len(caldi), "calore": calore, "rimandata": True})
+            self.salva()
+            return False
         vinti = sum(1 for a, b in coppie if b < a)
         ca = statistics.median(a for a, _ in coppie)
         cb = statistics.median(b for _, b in coppie)
-        calore = sorted({t["thermal"] for t in report["turns"]})
         vince = vinti >= len(coppie) - (len(coppie) // 3) and cb < ca * (1 - self.args.soglia)
         self.scrivi(f"{manopola}={valore}: costo {ca:.0f} → {cb:.0f} ms, meglio in {vinti}/{len(coppie)} giri, "
-                    f"calore {'/'.join(calore)} → {'ADOTTATA' if vince else 'scartata'}")
+                    f"{len(caldi)} caldi esclusi, calore {'/'.join(calore)} → {'ADOTTATA' if vince else 'scartata'}")
         self.stato["decisioni"].append({"passata": self.stato["passate"], "manopola": manopola, "valore": valore,
                                         "costo_prima": ca, "costo_dopo": cb, "vinti": vinti, "giri": len(coppie),
                                         "calore": calore, "adottata": vince})
