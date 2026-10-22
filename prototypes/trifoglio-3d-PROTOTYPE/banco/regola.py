@@ -62,6 +62,7 @@ MANOPOLE = {
     "noDepthOfField": [True, False],
     "noCameraGrain": [False, True],
     "standardRange": [True, False],
+    "preloadTour": [False, True],
 }
 
 # Le fasi del volo in cui la camera si muove; "attesa dei piani" è latenza, non fluidità.
@@ -105,6 +106,9 @@ def misure(turno):
         "campus fermo, fps": turno["stillCampus"]["fps"],
         "aula ferma, fps": turno["stillRoom"]["fps"],
         "edificio fermo, fps": turno["stillBuilding"]["fps"],
+        # Il lavoro dietro ogni frame: scorre continuo dove gli fps saltano tra 60 e 40.
+        "campus fermo, ms di CPU per frame": turno["stillCampus"].get("cpuMsPerFrame") or 0,
+        "aula ferma, ms di CPU per frame": turno["stillRoom"].get("cpuMsPerFrame") or 0,
         "GPU, MB": w["gpuMB"],
         "memoria, MB": w["memoryMB"],
     }

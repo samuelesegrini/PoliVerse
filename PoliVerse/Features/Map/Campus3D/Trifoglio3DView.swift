@@ -84,6 +84,13 @@ struct Trifoglio3DTuning: Codable, Equatable {
     /// A tap finds a building by one shape made from its simplified shell, rather than by one
     /// shape for each of the 540 pieces of the detailed shells.
     var tapShells = false
+    /// The tour's building (the Trifoglio, where "Portami all'aula" goes) is read once the
+    /// campus is on screen, so its floors are ready before anyone taps.
+    var preloadTour = true
+    /// The scale RealityView draws at, in pixels per point (`nil`: the screen's, 3 on an
+    /// iPhone 12 Pro). Every pixel lit, blended and multisampled costs GPU time and render
+    /// target memory, so 2 does a little under half the work of 3, a touch softer.
+    var renderScale: Double? = nil
 
     /// The configurations a launch asks for, or just today's.
     static var fromLaunch: [Trifoglio3DTuning] {
@@ -120,6 +127,8 @@ extension Trifoglio3DTuning {
         graphLight = try values.decodeIfPresent(Bool.self, forKey: .graphLight) ?? graphLight
         bakedEverywhere = try values.decodeIfPresent(Bool.self, forKey: .bakedEverywhere) ?? bakedEverywhere
         tapShells = try values.decodeIfPresent(Bool.self, forKey: .tapShells) ?? tapShells
+        preloadTour = try values.decodeIfPresent(Bool.self, forKey: .preloadTour) ?? preloadTour
+        renderScale = try values.decodeIfPresent(Double.self, forKey: .renderScale) ?? renderScale
     }
 
     /// Sets RealityView's camera effects to these choices.
@@ -297,6 +306,7 @@ final class Trifoglio3DScene {
             if tuning.bakedLight != oldValue.bakedLight || tuning.graphLight != oldValue.graphLight {
                 Task { await setBakedLight() }
             }
+            if tuning.renderScale != oldValue.renderScale { applyRenderScale() }
             effects = tuning
         }
     }
@@ -690,6 +700,37 @@ final class Trifoglio3DScene {
         pieces.forEach { $0.isEnabled = true }
     }
 
+    /// The building ``tour()`` goes to.
+    static let tourBuilding = "MIA0203"
+
+    /// Starts reading the tour's building when ``Trifoglio3DTuning/preloadTour`` says so and
+    /// the camera is on the campus: the floors are then ready when "Portami all'aula" is tapped,
+    /// instead of read during the flight and waited for at the building.
+    func preloadTour() {
+        guard tuning.preloadTour, level == .campus, models[Self.tourBuilding] == nil else { return }
+        Task { await loadBuilding(Self.tourBuilding) }
+    }
+
+    /// Draws RealityView at ``Trifoglio3DTuning/renderScale`` pixels per point, or the screen's.
+    ///
+    /// RealityView has no setting for it, so this finds the view RealityKit draws into
+    /// (an `ARView`) in the window and sets its scale.
+    func applyRenderScale() {
+        let windows = UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }
+        for window in windows {
+            let scale = tuning.renderScale.map { CGFloat($0) } ?? window.screen.scale
+            var stack: [UIView] = [window]
+            while let view = stack.popLast() {
+                if view is ARView {
+                    view.contentScaleFactor = scale
+                    view.layer.contentsScale = scale
+                } else {
+                    stack.append(contentsOf: view.subviews)
+                }
+            }
+        }
+    }
+
     /// Shows or hides every building's outer shell but the one the camera is on.
     func setOtherShells(_ visible: Bool) {
         for shell in exteriors where shell.name != csie { shell.isEnabled = visible }
@@ -721,7 +762,7 @@ final class Trifoglio3DScene {
     /// the building and the floor from the campus, straight across from another room on
     /// the same floor, and nowhere at all when T.1.2 is already on screen.
     func tour() async {
-        await go(to: .room(floor: "MIA0203000", room: "MIA0203000030"))
+        await go(to: .room(floor: "\(Self.tourBuilding)000", room: "\(Self.tourBuilding)000030"))
     }
 
     /// Animates to a level and waits until the move has finished. Does nothing when the
@@ -840,6 +881,7 @@ final class Trifoglio3DScene {
             pendingTaps = nil
             await tappableRooms(on: floor)
         }
+        if level == .campus { preloadTour() }
         phase = "fermo"
     }
 
@@ -1075,6 +1117,11 @@ final class Trifoglio3DScene {
         clock += delta
         if firstFrame == nil {
             firstFrame = .now
+            applyRenderScale()
+            Task {
+                try? await Task.sleep(for: .seconds(1))     // after the campus has settled
+                preloadTour()
+            }
             memoryAtFirstFrame = Trifoglio3DProbe.memory()
         }
         onFrame?(delta)

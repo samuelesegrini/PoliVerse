@@ -93,6 +93,9 @@ struct Trifoglio3DBenchReport: Codable {
         var gpuMB: Double
         /// When it started and ended, in seconds from the first frame: where an Instruments trace
         /// of the run finds its frames.
+        /// The app's CPU time per frame drawn, in ms: the work behind each frame, which moves
+        /// smoothly where the frame rate jumps between 60 and 40 Hz.
+        var cpuMsPerFrame: Double? = nil
         var startS: Double? = nil
         var endS: Double? = nil
     }
@@ -282,6 +285,7 @@ final class Trifoglio3DBench {
                 scene.tuning = tuning
                 await scene.go(to: .campus)
                 scene.unloadBuildings()
+                scene.preloadTour()     // as the walk does when it comes back to the campus
                 try? await Task.sleep(for: .seconds(1))
                 var turn = Trifoglio3DBenchReport.Turn(configuration: index, round: round, thermal: Trifoglio3DProbe.thermal())
                 let tag = "c\(index) r\(round)"
@@ -335,6 +339,7 @@ final class Trifoglio3DBench {
             ("senza aula accesa", { scene.setGlow($0) }),
             ("senza l'edificio", { scene.setBuilding($0) }),
             ("senza pulsazione", tuned { $0.pulseEvery = 1_000_000 }),
+            ("scala 2×", tuned { $0.renderScale = 2 }),
             ("senza pulsazione né aula", { on in tuned { $0.pulseEvery = 1_000_000 }(on); scene.setGlow(on) }),
         ]
         // `-Trifoglio3DOnly "a|b"` keeps only the variants with those names.
@@ -538,6 +543,7 @@ final class Trifoglio3DBench {
                      hitchMsPerSecond: wall > 0 ? late * 1000 / wall : 0,
                      cpuPercent: wall > 0 ? cpu / wall * 100 : 0,
                      memoryMB: mb(memory), memoryPeakMB: mb(peak), gpuMB: mb(Trifoglio3DProbe.gpuMemory()))
+        if !frames.isEmpty { window.cpuMsPerFrame = cpu * 1000 / Double(frames.count) }
         if let firstFrame {
             window.startS = seconds(firstFrame, t0)
             window.endS = seconds(firstFrame, t0) + wall
