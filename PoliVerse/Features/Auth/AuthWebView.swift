@@ -105,6 +105,12 @@ struct AuthWebView {
         }
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
+        #if os(macOS)
+        // The identity providers lay their forms out for a phone held upright
+        // or a full browser window. In a sheet on a laptop screen the CIE form
+        // ran past the bottom edge; a little smaller, it fits whole.
+        webView.pageZoom = 0.85
+        #endif
         webView.navigationDelegate = context.coordinator
         context.coordinator.webView = webView
         webView.load(URLRequest(url: startURL))

@@ -73,7 +73,7 @@ struct RecordingsSignInSheet: View {
         }
         // A web view asks for no size of its own; on the Mac the sheet would
         // otherwise collapse to its title bar.
-        .macSheetSize(width: 560, height: 720)
+        .macSheetSize(width: 720, height: 900)
     }
 }
 
