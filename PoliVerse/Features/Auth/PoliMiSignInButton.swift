@@ -93,14 +93,18 @@ struct PoliMiSignInButton: View {
                 .buttonStyle(.glass)
                 .controlSize(.large)
 
-                Button { start(.cie) } label: {
-                    Label("Entra con CIE", systemImage: "creditcard")
-                        .font(.subheadline.weight(.medium))
-                        .frame(maxWidth: .infinity)
+                // Not twice: when CIE was the last way in, the filled button
+                // above already says "Entra con CIE".
+                if !isCIERemembered {
+                    Button { start(.cie) } label: {
+                        Label("Entra con CIE", systemImage: "creditcard")
+                            .font(.subheadline.weight(.medium))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .disabled(isPreparing)
+                    .buttonStyle(.glass)
+                    .controlSize(.large)
                 }
-                .disabled(isPreparing)
-                .buttonStyle(.glass)
-                .controlSize(.large)
 
                 // The Politecnico's own warning, said before the tap rather
                 // than in a paragraph on the page the student is about to be
@@ -160,6 +164,13 @@ struct PoliMiSignInButton: View {
     /// presented.
     private var isPasswordRemembered: Bool {
         if case .password = remembered { return true }
+        return false
+    }
+
+    /// Whether the remembered method is CIE, whose own button would then repeat the primary
+    /// one.
+    private var isCIERemembered: Bool {
+        if case .cie = remembered { return true }
         return false
     }
 
@@ -255,6 +266,10 @@ struct PoliMiSignInButton: View {
                 Text("Per accedere con la Carta d'Identità Elettronica serve l'app CieID.")
             }
         }
+        // A web view asks for no size of its own, and a Mac sheet is only as
+        // large as its content asks: without this the sign-in opened as a
+        // title bar and a Cancel button, with the page squeezed to nothing.
+        .macSheetSize(width: 560, height: 720)
     }
 
     /// Hands WeBeep the token a sign-in obtains for it on the same session, or `nil` when
@@ -317,6 +332,9 @@ struct SPIDProviderPicker: View {
                     .padding(.bottom, 8)
             }
         }
+        // A list asks for little height of its own, and a Mac sheet is only as
+        // large as its content asks.
+        .macSheetSize(width: 420, height: 560)
     }
 }
 
