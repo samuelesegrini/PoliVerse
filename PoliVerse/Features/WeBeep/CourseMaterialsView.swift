@@ -406,7 +406,7 @@ struct WeBeepLoginSheet: View {
         }
         // A web view asks for no size of its own; on the Mac the sheet would
         // otherwise collapse to its title bar.
-        .macSheetSize(width: 720, height: 900)
+        .macSheetSize(width: 720, height: 900, resizable: true)
     }
 }
 

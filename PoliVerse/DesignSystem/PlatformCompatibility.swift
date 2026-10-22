@@ -157,10 +157,13 @@ extension View {
     /// - Parameters:
     ///   - width: The ideal width.
     ///   - height: The ideal height.
+    ///   - resizable: Lets the student drag the sheet larger, for content whose size the
+    ///     app does not control, such as a web page.
     /// - Returns: The sized view.
-    func macSheetSize(width: CGFloat = 520, height: CGFloat = 640) -> some View {
+    func macSheetSize(width: CGFloat = 520, height: CGFloat = 640, resizable: Bool = false) -> some View {
         #if os(macOS)
-        frame(minWidth: width * 0.85, idealWidth: width, minHeight: height * 0.7, idealHeight: height)
+        frame(minWidth: width * 0.85, idealWidth: width, maxWidth: resizable ? .infinity : nil,
+              minHeight: height * 0.7, idealHeight: height, maxHeight: resizable ? .infinity : nil)
         #else
         self
         #endif
