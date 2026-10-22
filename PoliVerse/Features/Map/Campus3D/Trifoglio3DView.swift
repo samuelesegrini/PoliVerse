@@ -89,8 +89,9 @@ struct Trifoglio3DTuning: Codable, Equatable {
     var preloadTour = true
     /// The scale RealityView draws at, in pixels per point (`nil`: the screen's, 3 on an
     /// iPhone 12 Pro). Every pixel lit, blended and multisampled costs GPU time and render
-    /// target memory, so 2 does a little under half the work of 3, a touch softer.
-    var renderScale: Double? = nil
+    /// target memory, so 2 does a little under half the work of 3, a touch softer: on the
+    /// classroom 7.0 ms of GPU a frame against 12.4. Samuele chose 2 on 22 October 2026.
+    var renderScale: Double? = 2
 
     /// The configurations a launch asks for, or just today's.
     static var fromLaunch: [Trifoglio3DTuning] {
@@ -716,6 +717,7 @@ final class Trifoglio3DScene {
     /// RealityView has no setting for it, so this finds the view RealityKit draws into
     /// (an `ARView`) in the window and sets its scale.
     func applyRenderScale() {
+        #if os(iOS)
         let windows = UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }
         for window in windows {
             let scale = tuning.renderScale.map { CGFloat($0) } ?? window.screen.scale
@@ -729,6 +731,7 @@ final class Trifoglio3DScene {
                 }
             }
         }
+        #endif
     }
 
     /// Shows or hides every building's outer shell but the one the camera is on.
