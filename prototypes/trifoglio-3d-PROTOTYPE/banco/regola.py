@@ -43,6 +43,8 @@ OBIETTIVI = {
 
 # Le manopole e i valori da provare. Nessuna toglie dettaglio ai modelli né all'immagine: quelle
 # che cambiano ciò che si vede (le ombre, l'antialiasing) le decide Samuele, non il regolatore.
+RAFFREDDA = 600   # secondi di pausa dopo un giro finito con il telefono caldo
+
 MANOPOLE = {
     "graphLight": [False, True],
     "bakedEverywhere": [False, True],
@@ -210,6 +212,11 @@ class Regolatore:
             time.sleep(attesa)
         if not report:
             return False
+        # Un telefono che scalda ("serious") rallenta tutto e i giri diventano rumore: si lascia
+        # raffreddare, fermo, prima del confronto dopo.
+        if report.get("thermalEnd") in ("serious", "critical"):
+            self.scrivi(f"telefono caldo ({report['thermalEnd']}): pausa di {RAFFREDDA // 60} minuti")
+            time.sleep(RAFFREDDA)
         costi = {}
         for t in report["turns"]:
             costi.setdefault(t["round"], {})[t["configuration"]] = costo(t)
