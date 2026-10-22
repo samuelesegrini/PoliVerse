@@ -169,4 +169,14 @@ struct WeBeepAPITests {
         #expect(tokens.count == 1)
         #expect(tokens.first?.value == "NEW")
     }
+
+    @Test("The dashboard is recognised in each of the forms Moodle lands on")
+    func loggedInPage() throws {
+        for candidate in ["https://webeep.polimi.it/my/", "https://webeep.polimi.it/my",
+                          "https://webeep.polimi.it/my/index.php?lang=it"] {
+            #expect(WeBeepAuth.isLoggedInPage(try #require(URL(string: candidate))), "\(candidate)")
+        }
+        #expect(!WeBeepAuth.isLoggedInPage(try #require(URL(string: "https://webeep.polimi.it/login/index.php"))))
+        #expect(!WeBeepAuth.isLoggedInPage(try #require(URL(string: "https://example.com/my/"))))
+    }
 }

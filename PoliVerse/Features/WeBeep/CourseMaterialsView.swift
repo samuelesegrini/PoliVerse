@@ -407,14 +407,17 @@ struct WeBeepLoginSheet: View {
     }
 }
 
-/// Shown while the user is over in CieID, so returning to a seemingly idle
-/// login page does not read as a failure.
+/// Shown while the user is over in CieID — or in their SPID provider's app — so
+/// returning to a seemingly idle login page does not read as a failure.
 struct CieIDWaitingBanner: View {
+    /// The app the student is approving the sign-in in, as it fits after "nell'app".
+    var app = "CieID"
+
     /// The view's content.
     var body: some View {
         HStack(spacing: 10) {
             ProgressView()
-            Text("Completa l'accesso nell'app CieID, poi torna qui.")
+            Text("Completa l'accesso nell'app \(app), poi torna qui.")
                 .font(.footnote)
         }
         .padding(12)

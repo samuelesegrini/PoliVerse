@@ -35,7 +35,7 @@ struct WeBeepLoginWebView: View {
                     }
                 }
 
-                if !handedOffToLaunch, isLoggedInPage(url) {
+                if !handedOffToLaunch, WeBeepAuth.isLoggedInPage(url) {
                     handedOffToLaunch = true
                     return .load(WeBeepAuth.launchURL(passport: passport))
                 }
@@ -45,11 +45,5 @@ struct WeBeepLoginWebView: View {
             onError: onError,
             onCieIDMissing: onCieIDMissing
         )
-    }
-
-    /// Moodle lands on `/my/` or `/my/index.php`, sometimes with a query.
-    private func isLoggedInPage(_ url: URL) -> Bool {
-        guard url.host == "webeep.polimi.it" else { return false }
-        return ["/my/", "/my", "/my/index.php"].contains(url.path)
     }
 }

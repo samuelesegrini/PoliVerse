@@ -68,6 +68,16 @@ nonisolated struct LoginStage: Equatable, Sendable {
         return true
     }
 
+    /// Whether the page may be the one asking for the Polimi 2FA code: a page of the
+    /// Politecnico's own sign-in after the chooser, which is where the code is asked for
+    /// once the password has been accepted.
+    ///
+    /// Only a candidate; ``LoginWebKit/codeFieldProbe`` looks for the field itself.
+    var mayAskForCode: Bool {
+        guard url?.host?.hasSuffix("aunicalogin.polimi.it") == true else { return false }
+        return !isChooser
+    }
+
     /// Whether to apply ``PoliMiLoginMethod/pageTrimmingCSS``, which only the chooser
     /// has anything to trim and only the password stays on.
     var trimsPage: Bool {

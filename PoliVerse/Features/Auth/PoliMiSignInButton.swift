@@ -32,6 +32,9 @@ struct PoliMiSignInButton: View {
     @Environment(SPIDCatalogue.self) private var spid
     /// The shared ``LoginMethodMemory``, from the environment.
     @Environment(LoginMethodMemory.self) private var loginMemory
+    /// The shared ``WeBeepModel``, from the environment, signed in on the same session
+    /// when it is not connected yet.
+    @Environment(WeBeepModel.self) private var weBeep
 
     /// Whether the sign-in web view is up.
     /// Whether the prompt to install CieID is up.
@@ -226,7 +229,11 @@ struct PoliMiSignInButton: View {
                 // Read off the page while we are there, so the list the app
                 // offers next time is the one the Politecnico is actually
                 // federating with.
-                onProvidersRead: { spid.adopt($0) }
+                onProvidersRead: { spid.adopt($0) },
+                // WeBeep rides on the session this sign-in leaves behind, so the
+                // student meets one second factor rather than two. Left alone
+                // when it is already connected.
+                onWeBeepToken: weBeepSeed
             )
             .ignoresSafeArea(edges: .bottom)
             .navigationTitle("Servizi Online")
@@ -248,6 +255,14 @@ struct PoliMiSignInButton: View {
                 Text("Per accedere con la Carta d'Identità Elettronica serve l'app CieID.")
             }
         }
+    }
+
+    /// Hands WeBeep the token a sign-in obtains for it on the same session, or `nil` when
+    /// WeBeep is already connected and is left alone.
+    private var weBeepSeed: ((WeBeepAuth.MoodleToken) -> Void)? {
+        guard !weBeep.isAuthenticated else { return nil }
+        let weBeep = weBeep
+        return { weBeep.store($0) }
     }
 
     /// Why the session failed, or `nil` when it has not.

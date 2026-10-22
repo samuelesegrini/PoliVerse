@@ -42,14 +42,27 @@ nonisolated enum CieIDBridge {
 
     /// Whether a navigation is the hand-off to the CieID app.
     ///
-    /// Matches an identity-provider URL carrying `nextUrl`, or any path containing
-    /// `livello1` or `livello2`, which are the CIE assurance levels.
+    /// Matches an identity-provider URL carrying `nextUrl`, or a path containing
+    /// `livello1` or `livello2`, which are the CIE assurance levels — except on the
+    /// identity provider's own web pages.
     ///
-    /// - Parameter url: The navigation the web view is about to follow.
+    /// Those pages are where "Entra con le tue credenziali CIE" runs, the one CIE route
+    /// the Politecnico says works for its app: the credentials form posts to
+    /// `/idp/login/livello2` on `idserver.servizicie.interno.gov.it`, and the second
+    /// factor follows on the same host. Matching the path alone handed that post to
+    /// CieID, dropping the username and password the student had just typed, so a form
+    /// submission and anything on that host stay in the web view. Read off the live
+    /// page on 2026-10-22.
+    ///
+    /// - Parameters:
+    ///   - url: The navigation the web view is about to follow.
+    ///   - method: The navigation's HTTP method.
     /// - Returns: `true` when the navigation must be cancelled and handed off.
-    static func isHandoffToCieID(_ url: URL) -> Bool {
+    static func isHandoffToCieID(_ url: URL, method: String = "GET") -> Bool {
+        if method.uppercased() == "POST" { return false }
         let string = url.absoluteString
         if string.contains(idpOutboundHost) && string.contains("nextUrl") { return true }
+        if url.host?.lowercased() == idpReturnHost { return false }
         let path = url.pathComponents
         return path.contains("livello1") || path.contains("livello2")
     }
