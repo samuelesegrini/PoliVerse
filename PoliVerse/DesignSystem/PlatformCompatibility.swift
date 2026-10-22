@@ -164,11 +164,31 @@ extension View {
         #if os(macOS)
         frame(minWidth: width * 0.85, idealWidth: width, maxWidth: resizable ? .infinity : nil,
               minHeight: height * 0.7, idealHeight: height, maxHeight: resizable ? .infinity : nil)
+            // A flexible frame lets the sheet grow but does not give it edges to drag:
+            // SwiftUI's sheet window has no resizable style unless asked.
+            .background { if resizable { MacSheetResizer() } }
         #else
         self
         #endif
     }
 }
+
+#if os(macOS)
+/// Makes the sheet window it lands in resizable, so the student can drag its edges as
+/// with any Mac window.
+private struct MacSheetResizer: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView { ResizingView() }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private final class ResizingView: NSView {
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            window?.styleMask.insert(.resizable)
+        }
+    }
+}
+#endif
 
 #if os(macOS)
 // The Mac has no navigation bar, so its title modes and placements mean nothing there.

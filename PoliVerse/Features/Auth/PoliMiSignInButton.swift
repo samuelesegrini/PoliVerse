@@ -269,7 +269,7 @@ struct PoliMiSignInButton: View {
         // A web view asks for no size of its own, and a Mac sheet is only as
         // large as its content asks: without this the sign-in opened as a
         // title bar and a Cancel button, with the page squeezed to nothing.
-        .macSheetSize(width: 720, height: 900, resizable: true)
+        .macSheetSize(width: 1040, height: 860, resizable: true)
     }
 
     /// Hands WeBeep the token a sign-in obtains for it on the same session, or `nil` when
