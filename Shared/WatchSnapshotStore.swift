@@ -13,7 +13,7 @@ nonisolated enum WatchSnapshotStore {
     /// process's own when the group is not provisioned — a simulator build
     /// without signing, for one.
     private static var defaults: UserDefaults {
-        UserDefaults(suiteName: OfflineStore.groupIdentifier) ?? .standard
+        OfflineStore.groupDefaults
     }
 
     /// The last snapshot kept, if any this build can read.
