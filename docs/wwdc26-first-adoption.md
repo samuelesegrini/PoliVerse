@@ -1,5 +1,8 @@
 # WWDC26: prima adozione delle priorità alte
 
+Seguito: [passaggi originali e correzioni dei riassunti](wwdc26-summary-followup.md).
+I risultati qui sotto descrivono la prima tranche.
+
 Implementazione iniziata il 3 novembre 2026, dalla ricerca
 [WWDC26: opportunità](wwdc26-opportunities.md), baseline `89f35328`.
 
