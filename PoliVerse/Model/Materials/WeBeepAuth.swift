@@ -45,6 +45,17 @@ nonisolated enum WeBeepAuth {
         URL(string: "\(siteURL)/my/")!
     }
 
+    /// Whether a navigation has reached a page that only exists once a Moodle session does.
+    ///
+    /// Moodle lands on `/my/` or `/my/index.php`, sometimes with a query.
+    ///
+    /// - Parameter url: The navigation to test.
+    /// - Returns: `true` on WeBeep's dashboard.
+    static func isLoggedInPage(_ url: URL) -> Bool {
+        guard url.host == "webeep.polimi.it" else { return false }
+        return ["/my/", "/my", "/my/index.php"].contains(url.path)
+    }
+
     /// The token-launch URL.
     ///
     /// - Parameter passport: A nonce echoed back inside the signed payload, which is what

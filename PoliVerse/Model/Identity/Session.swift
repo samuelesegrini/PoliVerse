@@ -134,7 +134,8 @@ final class Session {
                 // never got anywhere. Flag it instead and let them choose to
                 // retry the login from Settings.
                 await MainActor.run { self?.serviceAuthorizationFailed = true }
-            }
+            },
+            onTokenLost: { [weak self] in await self?.tokenLost() }
         )
 
         // Last, because it takes `self`: everything it reaches for is built.
@@ -209,6 +210,30 @@ final class Session {
         // Widgets read the offline files, which are keyed by matricola, and
         // have no session of their own to ask.
         SharedAccount.update(matricola: student.matricola, firstName: student.firstName)
+    }
+
+    /// Leaves ``State/signedIn(_:)`` when the token behind it is gone.
+    ///
+    /// A pair disappears without a sign-out when the identity provider refuses the
+    /// refresh, and the sample student is left signed in with no pair at all when
+    /// the sample data is turned off. Staying signed in over either made every
+    /// screen, and every pass of ``FreshnessCoordinator``, fail with "Non hai
+    /// effettuato l'accesso" until the app was relaunched. The offline copies stay:
+    /// this is not the student asking to leave, and signing back in finds them.
+    ///
+    /// Called by the transport for each request that finds no token, so it does
+    /// nothing unless there is a signed-in student and still no pair — a request
+    /// that started before a fresh sign-in must not undo it.
+    func tokenLost() async {
+        guard !useMockData, case .signedIn = state else { return }
+        let stillHeld = await tokens.hasToken
+        guard !stillHeld else { return }
+        // Read again after the await: a sign-in may have finished meanwhile.
+        guard !useMockData, case .signedIn = state else { return }
+        log.notice("No usable token while signed in; returning to sign-in")
+        state = .signedOut
+        await profileBox.set(matricola: nil)
+        SharedAccount.update(matricola: nil, firstName: nil)
     }
 
     /// Moves the session to another state. The only way to do so from outside this

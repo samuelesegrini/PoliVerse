@@ -1,0 +1,61 @@
+{
+ "campus": "Milano Bovisa",
+ "origine": [
+  45.508,
+  9.15
+ ],
+ "nota": "Gli edifici del Politecnico a Bovisa (campus di via Durando e di via La Masa), in un frame proprio: metri, x verso est, y verso sud, origine 45.508, 9.15. Sagome di OpenStreetMap, lette da Overture Maps.",
+ "edifici": [
+  {
+   "csie": "MIB0211",
+   "numero": "B2",
+   "piani": 4,
+   "pianta": [
+    [
+     1300.4,
+     206.7
+    ],
+    [
+     1265.9,
+     219.7
+    ],
+    [
+     1290.6,
+     283.8
+    ],
+    [
+     1357.5,
+     258.4
+    ],
+    [
+     1332.8,
+     194.3
+    ]
+   ],
+   "osm": "w147256172",
+   "livelli": [
+    "MIB021100S",
+    "MIB0211000",
+    "MIB0211001",
+    "MIB0211002",
+    "MIB0211003"
+   ],
+   "piani_3d": [
+    "MIB0211000",
+    "MIB0211001",
+    "MIB0211002",
+    "MIB0211003"
+   ],
+   "spostamenti": {
+    "MIB0211000": [
+     8.86,
+     -3.43
+    ],
+    "MIB0211003": [
+     -1.68,
+     0.65
+    ]
+   }
+  }
+ ]
+}

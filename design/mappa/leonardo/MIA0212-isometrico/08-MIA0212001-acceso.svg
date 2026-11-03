@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-102.6 -187.8 146.8 189.2" width="293.6" height="378.4">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="9.4,-76.2 -45.4,-44.6 -45.4,-46.2 9.4,-77.8" fill="#C3C8CF"/>
+<polygon points="-45.4,-44.6 -77.6,-63.2 -77.6,-64.8 -45.4,-46.2" fill="#D9DDE2"/>
+<polygon points="-22.9,-96.4 9.4,-77.8 -45.4,-46.2 -77.6,-64.8" fill="#E9ECEF"/>
+<polygon points="4.2,-77.8 -45.4,-49.2 -45.4,-53.2 4.2,-81.8" fill="#D4D8DF"/>
+<polygon points="-45.4,-49.2 -72.4,-64.8 -72.4,-68.8 -45.4,-53.2" fill="#F2F3F6"/>
+<polygon points="-22.9,-97.4 4.2,-81.8 -45.4,-53.2 -72.4,-68.8" fill="#FFFFFF"/>
+<polygon points="2.8,-77.8 -45.4,-50 -45.4,-54 2.8,-81.8" fill="#FFD98A" opacity="0.55"/>
+<polygon points="2.8,-81.8 -45.4,-54 -45.4,-66.4 2.8,-94.2" fill="url(#iso-lit-r)"/>
+<polygon points="2.8,-81.8 -5.3,-77.2 -5.3,-89.6 2.8,-94.2" fill="#B87A24" opacity="0.14"/>
+<polygon points="-21.3,-67.9 -29.3,-63.3 -29.3,-75.7 -21.3,-80.3" fill="#FFFFFF" opacity="0.18"/>
+<polygon points="2.8,-87.2 -45.4,-59.4 -45.4,-66.4 2.8,-94.2" fill="url(#iso-lit-glow)"/>
+<polygon points="-45.4,-50 -71,-64.8 -71,-68.8 -45.4,-54" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-45.4,-54 -71,-68.8 -71,-81.2 -45.4,-66.4" fill="url(#iso-lit-l)"/>
+<polygon points="-62.5,-63.9 -71,-68.8 -71,-81.2 -62.5,-76.3" fill="#B87A24" opacity="0.14"/>
+<polygon points="-45.4,-59.4 -71,-74.2 -71,-81.2 -45.4,-66.4" fill="url(#iso-lit-glow)"/>
+<path d="M2.8 -85L-45.4 -57.2M-45.4 -57.2L-71 -72" stroke="#D9963A" stroke-width="1.1" opacity="0.4"/>
+<path d="M-5.3 -77.2V-89.6M-13.3 -72.5V-84.9M-21.3 -67.9V-80.3M-29.3 -63.3V-75.7M-37.4 -58.6V-71M-53.9 -58.9V-71.3M-62.5 -63.9V-76.3" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+<polygon points="9.4,-77.8 -45.4,-46.2 -45.4,-50.1 9.4,-81.7" fill="#DDE7EF" opacity="0.45" stroke="#B9C2CB" stroke-width="0.5"/>
+<polygon points="-45.4,-46.2 -77.6,-64.8 -77.6,-68.7 -45.4,-50.1" fill="#DDE7EF" opacity="0.45" stroke="#B9C2CB" stroke-width="0.5"/>
+</svg>

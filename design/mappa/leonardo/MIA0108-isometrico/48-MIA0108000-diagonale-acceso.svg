@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="289.8 -102.3 255.2 207.5" width="510.4" height="415">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="442.9,56.3 396.6,57 396.6,43 442.9,42.3" fill="#D4CEC0"/>
+<path d="M442.9 54L396.6 54.7M442.9 51.6L396.6 52.3M442.9 49.2L396.6 49.9M442.9 46.8L396.6 47.5" stroke="#B9AD92" stroke-width="0.35"/>
+<polygon points="439.1,56.6 437.7,56.7 437.7,42.7 439.1,42.6" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="429.8,56.8 428.3,56.8 428.3,42.8 429.8,42.8" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="420.5,56.9 419,56.9 419,42.9 420.5,42.9" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="411.2,57.1 409.7,57.1 409.7,43.1 411.2,43.1" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="401.9,57.2 400.4,57.2 400.4,43.2 401.9,43.2" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="435.7,54 431.8,54 431.8,47 431.9,46.4 432.3,45.9 433,45.5 433.7,45.4 434.5,45.5 435.1,45.8 435.5,46.3 435.7,47" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="426.4,54.1 422.5,54.2 422.5,47.2 422.6,46.5 423,46 423.7,45.7 424.4,45.5 425.2,45.6 425.8,46 426.2,46.5 426.4,47.1" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="417.1,54.2 413.2,54.3 413.2,47.3 413.3,46.7 413.7,46.2 414.4,45.8 415.1,45.7 415.9,45.8 416.5,46.1 416.9,46.6 417.1,47.2" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="407.8,54.4 403.8,54.4 403.8,47.4 404,46.8 404.4,46.3 405.1,45.9 405.8,45.8 406.6,45.9 407.2,46.3 407.6,46.8 407.8,47.4" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="396.6,43 396.6,22.8 443.1,22.4 442.9,42.3" fill="#F2EFE8"/>
+</svg>

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="105.4 -42.4 44.6 41.5" width="446" height="414.5">
+<g id="livello-fondo" data-livello="terreno">
+<rect x="105.4" y="-42.4" width="44.6" height="41.5" fill="#EEF0EA"/>
+<path d="M128.6 -22.1L139.2 -22.1L139.3 -11.5L128.6 -11.5Z" fill="#4E5566" opacity="0.10"/>
+</g>
+<g id="livello-esterni" data-livello="esterni">
+<path d="M137.5 -25.8L133.4 -25.8M137.5 -24.5L137.5 -25.8M137.2 -24.5L137.2 -25.8M137.3 -25.8L137.3 -25.9M137.3 -29.4L137.3 -29.5M137.3 -29.9L130.8 -29.9M137.1 -25.8L137.3 -25.8M137.3 -25.8L137.3 -25.9M137 -29.6L130.8 -29.6M137.9 -13.9L138 -12.9M137.7 -13.9L137.7 -12.9M137.8 -13.9L137.8 -12.9M137 -25.8L137 -25.9M137.3 -25.9L137 -25.9M134.1 -25.8L134.1 -25.8M137 -25.8L134.1 -25.8M137 -29.4L137.3 -29.4M137 -29.5L137.3 -29.5M137 -29.5L137 -29.6M137.3 -29.5L137.3 -29.9M130.8 -29.6L130.8 -29.6M130.8 -29.6L130.4 -29.6M130.3 -29.9L130.4 -29.6M130.3 -29.9L117.4 -29.9M137.3 -25.9L137 -25.9M137 -29.4L133.6 -29.4M137 -29.4L133.6 -29.3M137 -29.4L137 -29.4M137 -29.4L137 -29.5M133.6 -29.3L133.6 -29.4M130.8 -29.9L130.8 -30.4M130.8 -30.4L117.4 -30.3M127.2 -24.2L118.4 -24.2M118.4 -24.2L118.4 -24.5M127.2 -24.5L118.4 -24.5M127.2 -23.8L126.8 -23.8M126.8 -23.8L126.8 -24.2" stroke="#C3C8D1" stroke-width="0.1" stroke-linecap="round"/>
+</g>
+<g id="livello-muri" data-livello="muri">
+<defs><clipPath id="pl-guscio"><path d="M127.2 -24.5L137.9 -24.5L137.9 -13.9L127.3 -13.9Z"/></clipPath></defs>
+<path d="M127.2 -24.5L137.9 -24.5L137.9 -13.9L127.3 -13.9Z" fill="#B9BFC9" fill-rule="evenodd"/>
+<path d="M135.5 -24.8L134.7 -24.8L134.7 -23.9L135.5 -23.9ZM132 -17.8L132.7 -17.8L132.7 -18.7L132 -18.7Z" fill="#FFFFFF" clip-path="url(#pl-guscio)"/>
+</g>
+<g id="livello-locali" data-livello="locali">
+<path id="MIA0207000001" data-tipo="locale" d="M130.6 -18.3L131.8 -18.3L131.8 -18.6L131.8 -18.6L131.8 -19.4L131.8 -19.4L131.8 -19.7L130.9 -19.7L130.9 -20L127.6 -20L127.6 -14.3L130.6 -14.3L130.6 -14.4L130.6 -14.4L130.6 -15.1L130.6 -15.1L130.6 -17.8L130.6 -17.8Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0207000002" data-tipo="locale" d="M131.3 -24.1L127.5 -24.1L127.5 -20.3L131.8 -20.3L131.8 -20.5L131.8 -20.5L131.8 -21.3L131.8 -21.3L131.8 -21.4L131.3 -21.4Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0207000003" data-tipo="corridoio" d="M135.9 -18.4L137.6 -18.4L137.6 -24.1L131.4 -24.1L131.4 -21.5L131.9 -21.5L131.9 -21.3L131.8 -21.3L131.9 -19.4L131.8 -19.4L131.8 -18.6L131.9 -18.6L131.9 -18.4L132 -18.4L132 -18.3L132.7 -18.3L132.7 -18.4L133.6 -18.4L133.6 -18.4L135.1 -18.4L135.1 -18.4L135.9 -18.4Z" fill="#FFFFFF" fill-rule="evenodd"/>
+<path id="MIA0207000004" data-tipo="locale" d="M137.6 -18.4L137.3 -18.4L137.3 -18.3L135.9 -18.3L135.9 -18.4L135.1 -18.4L135.1 -18.3L134.7 -18.3L134.7 -14.3L137.7 -14.3Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0207000005" data-tipo="locale" d="M134.6 -16.2L134.4 -16.2L134.4 -16.3L132.9 -16.2L133 -14.5L133.6 -14.5L133.6 -14.3L134.6 -14.3Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0207000006" data-tipo="corridoio" d="M134.6 -18.3L134.4 -18.3L134.4 -18.4L132.9 -18.3L132.9 -16.3L133.6 -16.3L133.6 -16.3L134.4 -16.3L134.4 -16.4L134.6 -16.4Z" fill="#FFFFFF" fill-rule="evenodd"/>
+<path id="MIA0207000007" data-tipo="scale" d="M132.8 -18.3L132.7 -18.3L132.7 -18.3L132 -18.3L132 -18.3L131.9 -18.3L131.9 -14.3L132.8 -14.3Z" fill="#E9EBEF" fill-rule="evenodd"/>
+<path id="MIA0207000008" data-tipo="locale" d="M131.8 -16.9L130.7 -16.9L130.7 -15.1L130.6 -15.1L130.6 -14.4L130.7 -14.4L130.7 -14.3L131.8 -14.3Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0207000009" data-tipo="tecnico" d="M131.8 -18.2L130.7 -18.2L130.7 -17.8L130.6 -17.8L130.7 -16.9L131.8 -16.9Z" fill="#E4E7EC" fill-rule="evenodd"/>
+</g>
+<g id="livello-arredi" data-livello="arredi">
+<path d="" stroke="#C9D9EC" stroke-width="0.09" stroke-linecap="round"/>
+</g>
+<g id="livello-gradini" data-livello="gradini">
+<path d="M132.8 -15.2L131.9 -15.2M132.8 -17.9L132 -17.9M132.8 -15.5L131.9 -15.5M132.8 -15.8L131.9 -15.8M132.8 -16.1L131.9 -16.1M132.8 -16.3L131.9 -16.3M132.8 -16.6L131.9 -16.6M132.8 -16.9L131.9 -16.9M132.8 -17.1L131.9 -17.1M132.8 -17.4L131.9 -17.4M132.8 -17.7L132 -17.7M132 -17.9L131.9 -17.9M132 -17.7L131.9 -17.7M132.8 -14.8L132.4 -14.8M132.4 -14.8L132.3 -17.9M132.1 -17.8L132.3 -17.9M132.3 -17.9L132.6 -17.8" stroke="#C3C8D1" stroke-width="0.06" stroke-linecap="round"/>
+<path d="" stroke="#A3AAB6" stroke-width="0.07" stroke-linecap="round"/>
+</g>
+<g id="livello-ascensori" data-livello="ascensori">
+</g>
+<g id="livello-finestre" data-livello="finestre">
+<path d="" stroke="#8FC3E8" stroke-width="0.12" stroke-linecap="round"/>
+</g>
+<g id="livello-porte" data-livello="porte">
+<path d="M135.5 -24.4L135.5 -23.5M134.7 -24.4A0.8 0.8 0 0 0 135.5 -23.5M132 -18.3L132 -17.6M132.7 -18.3A0.7 0.7 0 0 1 132 -17.6" fill="none" stroke="#A3AAB6" stroke-width="0.07" stroke-linecap="round"/>
+</g>
+<g id="livello-percorso-accessibile" data-livello="percorso-accessibile" style="display: none">
+<path d="M135.1 -25.1L135.1 -24.7M134.7 -20.9L134.7 -19M133.8 -20.9L134.7 -20.9M135.4 -19L135.5 -18.8M134 -18.9L135.4 -19M134 -18.9L133.3 -18.9M133.8 -20.9L133.1 -20.9M134 -18.9L134 -17.8M133.8 -21.5L133.8 -20.9M135.1 -21.5L133.8 -21.5M135.1 -23.5L135.1 -21.5M130.9 -25.1L135.1 -25.1M130.9 -27.2L130.9 -25.1M139 -27.2L130.9 -27.2" fill="none" stroke="#FFFFFF" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M135.1 -24.1L134.5 -24.7L135.6 -24.7ZM135.5 -18.6L134.9 -18.8L136 -18.8ZM132.3 -18.9L133.3 -19.5L133.3 -18.4ZM132.2 -20.9L133.1 -21.4L133.1 -20.3ZM134 -16.9L133.4 -17.8L134.5 -17.9Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.5" stroke-linejoin="round"/>
+<path d="M135.1 -25.1L135.1 -24.7M134.7 -20.9L134.7 -19M133.8 -20.9L134.7 -20.9M135.4 -19L135.5 -18.8M134 -18.9L135.4 -19M134 -18.9L133.3 -18.9M133.8 -20.9L133.1 -20.9M134 -18.9L134 -17.8M133.8 -21.5L133.8 -20.9M135.1 -21.5L133.8 -21.5M135.1 -23.5L135.1 -21.5M130.9 -25.1L135.1 -25.1M130.9 -27.2L130.9 -25.1M139 -27.2L130.9 -27.2" fill="none" stroke="#1C6BAD" stroke-width="0.38" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M135.1 -24.1L134.5 -24.7L135.6 -24.7ZM135.5 -18.6L134.9 -18.8L136 -18.8ZM132.3 -18.9L133.3 -19.5L133.3 -18.4ZM132.2 -20.9L133.1 -21.4L133.1 -20.3ZM134 -16.9L133.4 -17.8L134.5 -17.9Z" fill="#1C6BAD"/>
+</g>
+<g id="livello-ingressi" data-livello="ingressi">
+<path d="M135.1 -24.9L135.8 -26.8L134.4 -26.8Z" fill="#1C6BAD" stroke="#1C6BAD" stroke-width="0.3" stroke-linejoin="round"/>
+</g>
+<g id="livello-accessibilita" data-livello="accessibilita">
+</g>
+<g id="livello-acqua" data-livello="acqua">
+</g>
+<g id="livello-etichette" data-livello="etichette">
+</g>
+<g id="livello-dotazioni" data-livello="dotazioni">
+</g>
+</svg>

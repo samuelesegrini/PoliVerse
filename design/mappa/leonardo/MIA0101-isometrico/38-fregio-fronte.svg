@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="177.8 90.4 250.5 233.8" width="501" height="467.6">
+<defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient></defs>
+<polygon points="267.4,244 225.7,219.9 225.7,213.9 267.4,238" fill="#E4DFD3"/>
+<polygon points="297.6,226.6 267.4,244 267.4,238 297.6,220.6" fill="#CAC4B5"/>
+<polygon points="225.7,213.9 255.8,196.5 297.6,220.6 267.4,238" fill="#EEEAE1"/>
+<path d="M267.4 241L225.7 216.9M297.6 223.6L267.4 241" stroke="#FFFFFF" stroke-width="0.5" opacity="0.35"/>
+</svg>

@@ -32,6 +32,9 @@ struct PoliMiSignInButton: View {
     @Environment(SPIDCatalogue.self) private var spid
     /// The shared ``LoginMethodMemory``, from the environment.
     @Environment(LoginMethodMemory.self) private var loginMemory
+    /// The shared ``WeBeepModel``, from the environment, signed in on the same session
+    /// when it is not connected yet.
+    @Environment(WeBeepModel.self) private var weBeep
 
     /// Whether the sign-in web view is up.
     /// Whether the prompt to install CieID is up.
@@ -90,14 +93,18 @@ struct PoliMiSignInButton: View {
                 .buttonStyle(.glass)
                 .controlSize(.large)
 
-                Button { start(.cie) } label: {
-                    Label("Entra con CIE", systemImage: "creditcard")
-                        .font(.subheadline.weight(.medium))
-                        .frame(maxWidth: .infinity)
+                // Not twice: when CIE was the last way in, the filled button
+                // above already says "Entra con CIE".
+                if !isCIERemembered {
+                    Button { start(.cie) } label: {
+                        Label("Entra con CIE", systemImage: "creditcard")
+                            .font(.subheadline.weight(.medium))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .disabled(isPreparing)
+                    .buttonStyle(.glass)
+                    .controlSize(.large)
                 }
-                .disabled(isPreparing)
-                .buttonStyle(.glass)
-                .controlSize(.large)
 
                 // The Politecnico's own warning, said before the tap rather
                 // than in a paragraph on the page the student is about to be
@@ -157,6 +164,13 @@ struct PoliMiSignInButton: View {
     /// presented.
     private var isPasswordRemembered: Bool {
         if case .password = remembered { return true }
+        return false
+    }
+
+    /// Whether the remembered method is CIE, whose own button would then repeat the primary
+    /// one.
+    private var isCIERemembered: Bool {
+        if case .cie = remembered { return true }
         return false
     }
 
@@ -226,7 +240,11 @@ struct PoliMiSignInButton: View {
                 // Read off the page while we are there, so the list the app
                 // offers next time is the one the Politecnico is actually
                 // federating with.
-                onProvidersRead: { spid.adopt($0) }
+                onProvidersRead: { spid.adopt($0) },
+                // WeBeep rides on the session this sign-in leaves behind, so the
+                // student meets one second factor rather than two. Left alone
+                // when it is already connected.
+                onWeBeepToken: weBeepSeed
             )
             .ignoresSafeArea(edges: .bottom)
             .navigationTitle("Servizi Online")
@@ -248,6 +266,18 @@ struct PoliMiSignInButton: View {
                 Text("Per accedere con la Carta d'Identità Elettronica serve l'app CieID.")
             }
         }
+        // A web view asks for no size of its own, and a Mac sheet is only as
+        // large as its content asks: without this the sign-in opened as a
+        // title bar and a Cancel button, with the page squeezed to nothing.
+        .macSheetSize(width: 1040, height: 860, resizable: true)
+    }
+
+    /// Hands WeBeep the token a sign-in obtains for it on the same session, or `nil` when
+    /// WeBeep is already connected and is left alone.
+    private var weBeepSeed: ((WeBeepAuth.MoodleToken) -> Void)? {
+        guard !weBeep.isAuthenticated else { return nil }
+        let weBeep = weBeep
+        return { weBeep.store($0) }
     }
 
     /// Why the session failed, or `nil` when it has not.
@@ -302,6 +332,9 @@ struct SPIDProviderPicker: View {
                     .padding(.bottom, 8)
             }
         }
+        // A list asks for little height of its own, and a Mac sheet is only as
+        // large as its content asks.
+        .macSheetSize(width: 420, height: 560)
     }
 }
 

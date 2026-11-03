@@ -71,6 +71,9 @@ struct RecordingsSignInSheet: View {
                 Text("Per accedere con la Carta d'Identità Elettronica serve l'app CieID.")
             }
         }
+        // A web view asks for no size of its own; on the Mac the sheet would
+        // otherwise collapse to its title bar.
+        .macSheetSize(width: 1040, height: 860, resizable: true)
     }
 }
 

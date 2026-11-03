@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-206.7 -178.7 154.4 247.6" width="308.9" height="495.2">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="-92.3,-6.1 -137.4,19.9 -137.4,15.9 -92.3,-10.1" fill="#D4D8DF"/>
+<polygon points="-137.4,19.9 -176.5,-2.7 -176.5,-6.7 -137.4,15.9" fill="#F2F3F6"/>
+<polygon points="-131.5,-32.7 -92.3,-10.1 -137.4,15.9 -176.5,-6.7" fill="#FFFFFF"/>
+<polygon points="-93.7,-6.1 -137.4,19.1 -137.4,15.1 -93.7,-10.1" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-93.7,-10.1 -137.4,15.1 -137.4,1.1 -93.7,-24.1" fill="url(#iso-lit-r)"/>
+<polygon points="-93.7,-10.1 -102.4,-5.1 -102.4,-19.1 -93.7,-24.1" fill="#B87A24" opacity="0.14"/>
+<polygon points="-119.9,5 -128.6,10.1 -128.6,-3.9 -119.9,-9" fill="#FFFFFF" opacity="0.18"/>
+<polygon points="-93.7,-17.1 -137.4,8.1 -137.4,1.1 -93.7,-24.1" fill="url(#iso-lit-glow)"/>
+<polygon points="-137.4,19.1 -175.1,-2.7 -175.1,-6.7 -137.4,15.1" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-137.4,15.1 -175.1,-6.7 -175.1,-20.7 -137.4,1.1" fill="url(#iso-lit-l)"/>
+<polygon points="-156.2,4.2 -165.7,-1.2 -165.7,-15.2 -156.2,-9.8" fill="#B87A24" opacity="0.14"/>
+<polygon points="-165.7,-1.2 -175.1,-6.7 -175.1,-20.7 -165.7,-15.2" fill="#B87A24" opacity="0.14"/>
+<polygon points="-137.4,8.1 -175.1,-13.7 -175.1,-20.7 -137.4,1.1" fill="url(#iso-lit-glow)"/>
+<path d="M-93.7 -13.3L-137.4 11.9M-137.4 11.9L-175.1 -9.9" stroke="#D9963A" stroke-width="1.1" opacity="0.4"/>
+<path d="M-102.4 -5.1V-19.1M-111.2 0V-14M-119.9 5V-9M-128.6 10.1V-3.9M-146.8 9.7V-4.3M-156.2 4.2V-9.8M-165.7 -1.2V-15.2" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+</svg>

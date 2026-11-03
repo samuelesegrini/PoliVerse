@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-102.6 -187.8 146.8 189.2" width="293.6" height="378.4">
+<defs><linearGradient id="iso-glass-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D2EA"/><stop offset="1" stop-color="#8FB1D4"/></linearGradient><linearGradient id="iso-glass-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F9FC2"/><stop offset="1" stop-color="#617FA3"/></linearGradient><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient><radialGradient id="iso-shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#1D2B40" stop-opacity="0.22"/><stop offset="1" stop-color="#1D2B40" stop-opacity="0"/></radialGradient><radialGradient id="iso-tree" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#9FD08A"/><stop offset="1" stop-color="#4F9A5E"/></radialGradient></defs>
+<g id="livello-ombra" data-livello="ombre">
+<ellipse cx="-34.1" cy="-45.7" rx="44" ry="25.3" fill="url(#iso-shadow)"/>
+</g>
+<g id="livello-lotto" data-livello="terreno">
+<polygon points="28.4,-47.2 -45.4,-4.6 -45.4,-9.6 28.4,-52.2" fill="#AFBFD0"/>
+<polygon points="-45.4,-4.6 -96.6,-34.2 -96.6,-39.2 -45.4,-9.6" fill="#C8D4E1"/>
+<polygon points="-22.9,-81.8 28.4,-52.2 -45.4,-9.6 -96.6,-39.2" fill="#E3ECF5"/>
+</g>
+<g id="livello-percorso" data-livello="percorsi">
+<polygon points="-3.1,-48 2.5,-51.2 14.6,-44.2 9.1,-41" fill="#F4F7FA"/>
+</g>
+<g id="livello-alberi-dietro" data-livello="alberi">
+</g>
+<g id="livello-basamento" data-livello="edifici">
+<polygon points="7.3,-52.2 -45.4,-21.8 -45.4,-27.8 7.3,-58.2" fill="#AEB4BE"/>
+<polygon points="-45.4,-21.8 -75.5,-39.2 -75.5,-45.2 -45.4,-27.8" fill="#C9CED6"/>
+<polygon points="-22.9,-75.6 7.3,-58.2 -45.4,-27.8 -75.5,-45.2" fill="#E9EBEF"/>
+</g>
+<g id="livello-MIA0212000" data-livello="piani" data-piano="MIA0212000">
+<polygon points="4.2,-58.2 -45.4,-29.6 -45.4,-47.6 4.2,-76.2" fill="#DCE1E7"/>
+<polygon points="-45.4,-29.6 -72.4,-45.2 -72.4,-63.2 -45.4,-47.6" fill="#F1F3F6"/>
+<polygon points="-22.9,-91.8 4.2,-76.2 -45.4,-47.6 -72.4,-63.2" fill="#F6F7F9"/>
+<path d="M-0.3 -55.6V-73.6M-4.8 -53V-71M-9.4 -50.4V-68.4M-13.9 -47.8V-65.8M-18.4 -45.2V-63.2M-22.9 -42.6V-60.6M-27.4 -40V-58M-31.9 -37.4V-55.4M-36.4 -34.8V-52.8M-40.9 -32.2V-50.2M-49.9 -32.2V-50.2M-54.4 -34.8V-52.8M-58.9 -37.4V-55.4M-63.4 -40V-58M-67.9 -42.6V-60.6" stroke="#9AA3AD" stroke-width="0.6"/>
+</g>
+<g id="livello-MIA0212000-acceso" data-livello="piani" data-piano="MIA0212000" data-acceso="true" style="display: none">
+<polygon points="4.2,-58.2 -45.4,-29.6 -45.4,-47.6 4.2,-76.2" fill="#EED39A"/>
+<polygon points="-45.4,-29.6 -72.4,-45.2 -72.4,-63.2 -45.4,-47.6" fill="#FBE6B4"/>
+<polygon points="-22.9,-91.8 4.2,-76.2 -45.4,-47.6 -72.4,-63.2" fill="#F6F7F9"/>
+<path d="M-0.3 -55.6V-73.6M-4.8 -53V-71M-9.4 -50.4V-68.4M-13.9 -47.8V-65.8M-18.4 -45.2V-63.2M-22.9 -42.6V-60.6M-27.4 -40V-58M-31.9 -37.4V-55.4M-36.4 -34.8V-52.8M-40.9 -32.2V-50.2M-49.9 -32.2V-50.2M-54.4 -34.8V-52.8M-58.9 -37.4V-55.4M-63.4 -40V-58M-67.9 -42.6V-60.6" stroke="#9AA3AD" stroke-width="0.6"/>
+</g>
+<g id="livello-ingresso" data-livello="ingressi">
+<polygon points="-2.9,-58.1 2.3,-61.1 2.3,-71.2 -2.9,-68.2" fill="#2D3B4F"/>
+<polygon points="10.1,-69.7 -0.3,-63.7 -0.3,-66.7 10.1,-72.7" fill="#C9CED6"/>
+<polygon points="-0.3,-63.7 -5.5,-66.7 -5.5,-69.7 -0.3,-66.7" fill="#E8EAEE"/>
+<polygon points="-5.5,-69.7 4.9,-75.7 10.1,-72.7 -0.3,-66.7" fill="#FFFFFF"/>
+</g>
+<g id="livello-MIA0212001" data-livello="piani" data-piano="MIA0212001">
+<polygon points="9.4,-76.2 -45.4,-44.6 -45.4,-46.2 9.4,-77.8" fill="#C3C8CF"/>
+<polygon points="-45.4,-44.6 -77.6,-63.2 -77.6,-64.8 -45.4,-46.2" fill="#D9DDE2"/>
+<polygon points="-22.9,-96.4 9.4,-77.8 -45.4,-46.2 -77.6,-64.8" fill="#E9ECEF"/>
+<polygon points="4.2,-77.8 -45.4,-49.2 -45.4,-53.2 4.2,-81.8" fill="#D4D8DF"/>
+<polygon points="-45.4,-49.2 -72.4,-64.8 -72.4,-68.8 -45.4,-53.2" fill="#F2F3F6"/>
+<polygon points="-22.9,-97.4 4.2,-81.8 -45.4,-53.2 -72.4,-68.8" fill="#FFFFFF"/>
+<polygon points="2.8,-81.8 -45.4,-54 -45.4,-66.4 2.8,-94.2" fill="url(#iso-glass-r)"/>
+<polygon points="2.8,-81.8 -45.4,-54 -45.4,-66.4 2.8,-94.2" fill="#1E2A3A" opacity="0.38"/>
+<polygon points="-45.4,-54 -71,-68.8 -71,-81.2 -45.4,-66.4" fill="url(#iso-glass-l)"/>
+<polygon points="-45.4,-54 -71,-68.8 -71,-81.2 -45.4,-66.4" fill="#1E2A3A" opacity="0.38"/>
+<path d="M-5.3 -77.2V-89.6M-13.3 -72.5V-84.9M-21.3 -67.9V-80.3M-29.3 -63.3V-75.7M-37.4 -58.6V-71M-53.9 -58.9V-71.3M-62.5 -63.9V-76.3" stroke="#7F8791" stroke-width="1.2" opacity="0.9"/>
+<polygon points="9.4,-77.8 -45.4,-46.2 -45.4,-50.1 9.4,-81.7" fill="#DDE7EF" opacity="0.45" stroke="#B9C2CB" stroke-width="0.5"/>
+<polygon points="-45.4,-46.2 -77.6,-64.8 -77.6,-68.7 -45.4,-50.1" fill="#DDE7EF" opacity="0.45" stroke="#B9C2CB" stroke-width="0.5"/>
+</g>
+<g id="livello-MIA0212001-acceso" data-livello="piani" data-piano="MIA0212001" data-acceso="true" style="display: none">
+<polygon points="9.4,-76.2 -45.4,-44.6 -45.4,-46.2 9.4,-77.8" fill="#C3C8CF"/>
+<polygon points="-45.4,-44.6 -77.6,-63.2 -77.6,-64.8 -45.4,-46.2" fill="#D9DDE2"/>
+<polygon points="-22.9,-96.4 9.4,-77.8 -45.4,-46.2 -77.6,-64.8" fill="#E9ECEF"/>
+<polygon points="4.2,-77.8 -45.4,-49.2 -45.4,-53.2 4.2,-81.8" fill="#D4D8DF"/>
+<polygon points="-45.4,-49.2 -72.4,-64.8 -72.4,-68.8 -45.4,-53.2" fill="#F2F3F6"/>
+<polygon points="-22.9,-97.4 4.2,-81.8 -45.4,-53.2 -72.4,-68.8" fill="#FFFFFF"/>
+<polygon points="2.8,-77.8 -45.4,-50 -45.4,-54 2.8,-81.8" fill="#FFD98A" opacity="0.55"/>
+<polygon points="2.8,-81.8 -45.4,-54 -45.4,-66.4 2.8,-94.2" fill="url(#iso-lit-r)"/>
+<polygon points="2.8,-81.8 -5.3,-77.2 -5.3,-89.6 2.8,-94.2" fill="#B87A24" opacity="0.14"/>
+<polygon points="-21.3,-67.9 -29.3,-63.3 -29.3,-75.7 -21.3,-80.3" fill="#FFFFFF" opacity="0.18"/>
+<polygon points="2.8,-87.2 -45.4,-59.4 -45.4,-66.4 2.8,-94.2" fill="url(#iso-lit-glow)"/>
+<polygon points="-45.4,-50 -71,-64.8 -71,-68.8 -45.4,-54" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-45.4,-54 -71,-68.8 -71,-81.2 -45.4,-66.4" fill="url(#iso-lit-l)"/>
+<polygon points="-62.5,-63.9 -71,-68.8 -71,-81.2 -62.5,-76.3" fill="#B87A24" opacity="0.14"/>
+<polygon points="-45.4,-59.4 -71,-74.2 -71,-81.2 -45.4,-66.4" fill="url(#iso-lit-glow)"/>
+<path d="M2.8 -85L-45.4 -57.2M-45.4 -57.2L-71 -72" stroke="#D9963A" stroke-width="1.1" opacity="0.4"/>
+<path d="M-5.3 -77.2V-89.6M-13.3 -72.5V-84.9M-21.3 -67.9V-80.3M-29.3 -63.3V-75.7M-37.4 -58.6V-71M-53.9 -58.9V-71.3M-62.5 -63.9V-76.3" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+<polygon points="9.4,-77.8 -45.4,-46.2 -45.4,-50.1 9.4,-81.7" fill="#DDE7EF" opacity="0.45" stroke="#B9C2CB" stroke-width="0.5"/>
+<polygon points="-45.4,-46.2 -77.6,-64.8 -77.6,-68.7 -45.4,-50.1" fill="#DDE7EF" opacity="0.45" stroke="#B9C2CB" stroke-width="0.5"/>
+</g>
+<g id="livello-MIA0212002" data-livello="piani" data-piano="MIA0212002">
+<polygon points="9.4,-94.2 -45.4,-62.6 -45.4,-64.2 9.4,-95.8" fill="#C3C8CF"/>
+<polygon points="-45.4,-62.6 -77.6,-81.2 -77.6,-82.8 -45.4,-64.2" fill="#D9DDE2"/>
+<polygon points="-22.9,-114.4 9.4,-95.8 -45.4,-64.2 -77.6,-82.8" fill="#E9ECEF"/>
+<polygon points="4.2,-95.8 -45.4,-67.2 -45.4,-71.2 4.2,-99.8" fill="#D4D8DF"/>
+<polygon points="-45.4,-67.2 -72.4,-82.8 -72.4,-86.8 -45.4,-71.2" fill="#F2F3F6"/>
+<polygon points="-22.9,-115.4 4.2,-99.8 -45.4,-71.2 -72.4,-86.8" fill="#FFFFFF"/>
+<polygon points="2.8,-99.8 -45.4,-72 -45.4,-84.4 2.8,-112.2" fill="url(#iso-glass-r)"/>
+<polygon points="2.8,-99.8 -45.4,-72 -45.4,-84.4 2.8,-112.2" fill="#1E2A3A" opacity="0.38"/>
+<polygon points="-45.4,-72 -71,-86.8 -71,-99.2 -45.4,-84.4" fill="url(#iso-glass-l)"/>
+<polygon points="-45.4,-72 -71,-86.8 -71,-99.2 -45.4,-84.4" fill="#1E2A3A" opacity="0.38"/>
+<path d="M-5.3 -95.2V-107.6M-13.3 -90.5V-102.9M-21.3 -85.9V-98.3M-29.3 -81.3V-93.7M-37.4 -76.6V-89M-53.9 -76.9V-89.3M-62.5 -81.9V-94.3" stroke="#7F8791" stroke-width="1.2" opacity="0.9"/>
+<polygon points="9.4,-95.8 -45.4,-64.2 -45.4,-68.1 9.4,-99.7" fill="#DDE7EF" opacity="0.45" stroke="#B9C2CB" stroke-width="0.5"/>
+<polygon points="-45.4,-64.2 -77.6,-82.8 -77.6,-86.7 -45.4,-68.1" fill="#DDE7EF" opacity="0.45" stroke="#B9C2CB" stroke-width="0.5"/>
+</g>
+<g id="livello-MIA0212002-acceso" data-livello="piani" data-piano="MIA0212002" data-acceso="true" style="display: none">
+<polygon points="9.4,-94.2 -45.4,-62.6 -45.4,-64.2 9.4,-95.8" fill="#C3C8CF"/>
+<polygon points="-45.4,-62.6 -77.6,-81.2 -77.6,-82.8 -45.4,-64.2" fill="#D9DDE2"/>
+<polygon points="-22.9,-114.4 9.4,-95.8 -45.4,-64.2 -77.6,-82.8" fill="#E9ECEF"/>
+<polygon points="4.2,-95.8 -45.4,-67.2 -45.4,-71.2 4.2,-99.8" fill="#D4D8DF"/>
+<polygon points="-45.4,-67.2 -72.4,-82.8 -72.4,-86.8 -45.4,-71.2" fill="#F2F3F6"/>
+<polygon points="-22.9,-115.4 4.2,-99.8 -45.4,-71.2 -72.4,-86.8" fill="#FFFFFF"/>
+<polygon points="2.8,-95.8 -45.4,-68 -45.4,-72 2.8,-99.8" fill="#FFD98A" opacity="0.55"/>
+<polygon points="2.8,-99.8 -45.4,-72 -45.4,-84.4 2.8,-112.2" fill="url(#iso-lit-r)"/>
+<polygon points="2.8,-99.8 -5.3,-95.2 -5.3,-107.6 2.8,-112.2" fill="#B87A24" opacity="0.14"/>
+<polygon points="-21.3,-85.9 -29.3,-81.3 -29.3,-93.7 -21.3,-98.3" fill="#FFFFFF" opacity="0.18"/>
+<polygon points="2.8,-105.2 -45.4,-77.4 -45.4,-84.4 2.8,-112.2" fill="url(#iso-lit-glow)"/>
+<polygon points="-45.4,-68 -71,-82.8 -71,-86.8 -45.4,-72" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-45.4,-72 -71,-86.8 -71,-99.2 -45.4,-84.4" fill="url(#iso-lit-l)"/>
+<polygon points="-62.5,-81.9 -71,-86.8 -71,-99.2 -62.5,-94.3" fill="#B87A24" opacity="0.14"/>
+<polygon points="-45.4,-77.4 -71,-92.2 -71,-99.2 -45.4,-84.4" fill="url(#iso-lit-glow)"/>
+<path d="M2.8 -103L-45.4 -75.2M-45.4 -75.2L-71 -90" stroke="#D9963A" stroke-width="1.1" opacity="0.4"/>
+<path d="M-5.3 -95.2V-107.6M-13.3 -90.5V-102.9M-21.3 -85.9V-98.3M-29.3 -81.3V-93.7M-37.4 -76.6V-89M-53.9 -76.9V-89.3M-62.5 -81.9V-94.3" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+<polygon points="9.4,-95.8 -45.4,-64.2 -45.4,-68.1 9.4,-99.7" fill="#DDE7EF" opacity="0.45" stroke="#B9C2CB" stroke-width="0.5"/>
+<polygon points="-45.4,-64.2 -77.6,-82.8 -77.6,-86.7 -45.4,-68.1" fill="#DDE7EF" opacity="0.45" stroke="#B9C2CB" stroke-width="0.5"/>
+</g>
+<g id="livello-MIA0212003" data-livello="piani" data-piano="MIA0212003">
+<polygon points="9.4,-112.2 -45.4,-80.6 -45.4,-82.2 9.4,-113.8" fill="#C3C8CF"/>
+<polygon points="-45.4,-80.6 -77.6,-99.2 -77.6,-100.8 -45.4,-82.2" fill="#D9DDE2"/>
+<polygon points="-22.9,-132.4 9.4,-113.8 -45.4,-82.2 -77.6,-100.8" fill="#E9ECEF"/>
+<polygon points="4.2,-113.8 -45.4,-85.2 -45.4,-89.2 4.2,-117.8" fill="#D4D8DF"/>
+<polygon points="-45.4,-85.2 -72.4,-100.8 -72.4,-104.8 -45.4,-89.2" fill="#F2F3F6"/>
+<polygon points="-22.9,-133.4 4.2,-117.8 -45.4,-89.2 -72.4,-104.8" fill="#FFFFFF"/>
+<polygon points="2.8,-117.8 -45.4,-90 -45.4,-102.4 2.8,-130.2" fill="url(#iso-glass-r)"/>
+<polygon points="2.8,-117.8 -45.4,-90 -45.4,-102.4 2.8,-130.2" fill="#1E2A3A" opacity="0.38"/>
+<polygon points="-45.4,-90 -71,-104.8 -71,-117.2 -45.4,-102.4" fill="url(#iso-glass-l)"/>
+<polygon points="-45.4,-90 -71,-104.8 -71,-117.2 -45.4,-102.4" fill="#1E2A3A" opacity="0.38"/>
+<path d="M-5.3 -113.2V-125.6M-13.3 -108.5V-120.9M-21.3 -103.9V-116.3M-29.3 -99.3V-111.7M-37.4 -94.6V-107M-53.9 -94.9V-107.3M-62.5 -99.9V-112.3" stroke="#7F8791" stroke-width="1.2" opacity="0.9"/>
+<polygon points="9.4,-113.8 -45.4,-82.2 -45.4,-86.1 9.4,-117.7" fill="#DDE7EF" opacity="0.45" stroke="#B9C2CB" stroke-width="0.5"/>
+<polygon points="-45.4,-82.2 -77.6,-100.8 -77.6,-104.7 -45.4,-86.1" fill="#DDE7EF" opacity="0.45" stroke="#B9C2CB" stroke-width="0.5"/>
+</g>
+<g id="livello-MIA0212003-acceso" data-livello="piani" data-piano="MIA0212003" data-acceso="true" style="display: none">
+<polygon points="9.4,-112.2 -45.4,-80.6 -45.4,-82.2 9.4,-113.8" fill="#C3C8CF"/>
+<polygon points="-45.4,-80.6 -77.6,-99.2 -77.6,-100.8 -45.4,-82.2" fill="#D9DDE2"/>
+<polygon points="-22.9,-132.4 9.4,-113.8 -45.4,-82.2 -77.6,-100.8" fill="#E9ECEF"/>
+<polygon points="4.2,-113.8 -45.4,-85.2 -45.4,-89.2 4.2,-117.8" fill="#D4D8DF"/>
+<polygon points="-45.4,-85.2 -72.4,-100.8 -72.4,-104.8 -45.4,-89.2" fill="#F2F3F6"/>
+<polygon points="-22.9,-133.4 4.2,-117.8 -45.4,-89.2 -72.4,-104.8" fill="#FFFFFF"/>
+<polygon points="2.8,-113.8 -45.4,-86 -45.4,-90 2.8,-117.8" fill="#FFD98A" opacity="0.55"/>
+<polygon points="2.8,-117.8 -45.4,-90 -45.4,-102.4 2.8,-130.2" fill="url(#iso-lit-r)"/>
+<polygon points="2.8,-117.8 -5.3,-113.2 -5.3,-125.6 2.8,-130.2" fill="#B87A24" opacity="0.14"/>
+<polygon points="-21.3,-103.9 -29.3,-99.3 -29.3,-111.7 -21.3,-116.3" fill="#FFFFFF" opacity="0.18"/>
+<polygon points="2.8,-123.2 -45.4,-95.4 -45.4,-102.4 2.8,-130.2" fill="url(#iso-lit-glow)"/>
+<polygon points="-45.4,-86 -71,-100.8 -71,-104.8 -45.4,-90" fill="#FFD98A" opacity="0.55"/>
+<polygon points="-45.4,-90 -71,-104.8 -71,-117.2 -45.4,-102.4" fill="url(#iso-lit-l)"/>
+<polygon points="-62.5,-99.9 -71,-104.8 -71,-117.2 -62.5,-112.3" fill="#B87A24" opacity="0.14"/>
+<polygon points="-45.4,-95.4 -71,-110.2 -71,-117.2 -45.4,-102.4" fill="url(#iso-lit-glow)"/>
+<path d="M2.8 -121L-45.4 -93.2M-45.4 -93.2L-71 -108" stroke="#D9963A" stroke-width="1.1" opacity="0.4"/>
+<path d="M-5.3 -113.2V-125.6M-13.3 -108.5V-120.9M-21.3 -103.9V-116.3M-29.3 -99.3V-111.7M-37.4 -94.6V-107M-53.9 -94.9V-107.3M-62.5 -99.9V-112.3" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+<polygon points="9.4,-113.8 -45.4,-82.2 -45.4,-86.1 9.4,-117.7" fill="#DDE7EF" opacity="0.45" stroke="#B9C2CB" stroke-width="0.5"/>
+<polygon points="-45.4,-82.2 -77.6,-100.8 -77.6,-104.7 -45.4,-86.1" fill="#DDE7EF" opacity="0.45" stroke="#B9C2CB" stroke-width="0.5"/>
+</g>
+<g id="livello-tetto" data-livello="edifici">
+<polygon points="4.2,-123.2 -45.4,-94.6 -45.4,-101.6 4.2,-130.2" fill="#4E5566" opacity="0.3"/>
+<polygon points="-45.4,-94.6 -72.4,-110.2 -72.4,-117.2 -45.4,-101.6" fill="#4E5566" opacity="0.3"/>
+<polygon points="11.1,-130.2 -45.4,-97.6 -45.4,-99.8 11.1,-132.4" fill="#A3A8B0"/>
+<polygon points="-45.4,-97.6 -79.3,-117.2 -79.3,-119.4 -45.4,-99.8" fill="#B9BDC4"/>
+<polygon points="-22.9,-152 11.1,-132.4 -45.4,-99.8 -79.3,-119.4" fill="#E3E5E8"/>
+</g>
+<g id="livello-lamelle" data-livello="edifici">
+<path d="M11.8 -76.2V-138.2M10.7 -75.6V-137.6M9.7 -75V-137M8.7 -74.4V-136.4M7.6 -73.8V-135.8M6.6 -73.2V-135.2M5.5 -72.6V-134.6M4.5 -72V-134M3.5 -71.4V-133.4M2.4 -70.8V-132.8M1.4 -70.2V-132.2M0.3 -69.6V-131.6M-0.7 -69V-131M-1.7 -68.4V-130.4M-2.8 -67.8V-129.8M-3.8 -67.2V-129.2M-4.8 -66.6V-128.6M-5.9 -66V-128M-6.9 -65.4V-127.4M-8 -64.8V-126.8M-9 -64.2V-126.2M-10 -63.6V-125.6M-11.1 -63V-125M-12.1 -62.4V-124.4M-13.2 -61.8V-123.8M-14.2 -61.2V-123.2M-15.2 -60.6V-122.6M-16.3 -60V-122M-17.3 -59.4V-121.4M-18.4 -58.8V-120.8M-19.4 -58.2V-120.2M-20.4 -57.6V-119.6M-21.5 -57V-119M-22.5 -56.4V-118.4M-23.6 -55.8V-117.8M-24.6 -55.2V-117.2M-25.6 -54.6V-116.6M-26.7 -54V-116M-27.7 -53.4V-115.4M-28.8 -52.8V-114.8M-29.8 -52.2V-114.2M-30.8 -51.6V-113.6M-31.9 -51V-113M-32.9 -50.4V-112.4M-33.9 -49.8V-111.8M-35 -49.2V-111.2M-36 -48.6V-110.6M-37.1 -48V-110M-38.1 -47.4V-109.4M-39.1 -46.8V-108.8M-40.2 -46.2V-108.2M-41.2 -45.6V-107.6M-42.3 -45V-107M-43.3 -44.4V-106.4M-44.3 -43.8V-105.8M-45.4 -43.2V-105.2" stroke="#F7F8FA" stroke-width="0.45" opacity="0.95"/>
+<path d="M11.8 -138.2L-45.4 -105.2M11.8 -133.2L-45.4 -100.2" stroke="#E6E9ED" stroke-width="0.9"/>
+<path d="M-45.4 -43.2V-105.2M-46.4 -43.8V-105.8M-47.5 -44.4V-106.4M-48.5 -45V-107M-49.6 -45.6V-107.6M-50.6 -46.2V-108.2M-51.7 -46.8V-108.8M-52.7 -47.4V-109.4M-53.8 -48V-110M-54.8 -48.7V-110.7M-55.9 -49.3V-111.3M-56.9 -49.9V-111.9M-58 -50.5V-112.5M-59 -51.1V-113.1M-60.1 -51.7V-113.7M-61.1 -52.3V-114.3M-62.2 -52.9V-114.9M-63.2 -53.5V-115.5M-64.3 -54.1V-116.1M-65.3 -54.7V-116.7M-66.4 -55.3V-117.3M-67.4 -55.9V-117.9M-68.5 -56.5V-118.5M-69.5 -57.1V-119.1M-70.6 -57.7V-119.7M-71.6 -58.4V-120.4M-72.7 -59V-121M-73.7 -59.6V-121.6M-74.8 -60.2V-122.2M-75.8 -60.8V-122.8M-76.9 -61.4V-123.4M-77.9 -62V-124M-79 -62.6V-124.6M-80 -63.2V-125.2" stroke="#F7F8FA" stroke-width="0.45" opacity="0.95"/>
+<path d="M-45.4 -105.2L-80 -125.2M-45.4 -100.2L-80 -120.2" stroke="#E6E9ED" stroke-width="0.9"/>
+</g>
+<g id="livello-impianti" data-livello="impianti">
+</g>
+<g id="livello-alberi-davanti" data-livello="alberi">
+</g>
+<g id="livello-etichette-piani" data-livello="etichette-piani" style="display: none">
+<path d="M6.2 -67.2H14.2" stroke="#8E8E93" stroke-width="0.8" stroke-dasharray="1.5 1.5"/><rect x="14.2" y="-72.2" width="9" height="10" rx="5" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.8"/><text x="18.7" y="-64.6" font-size="7" font-weight="700" text-anchor="middle" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">T</text>
+<path d="M6.2 -85.2H14.2" stroke="#8E8E93" stroke-width="0.8" stroke-dasharray="1.5 1.5"/><rect x="14.2" y="-90.2" width="9" height="10" rx="5" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.8"/><text x="18.7" y="-82.6" font-size="7" font-weight="700" text-anchor="middle" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">1</text>
+<path d="M6.2 -103.2H14.2" stroke="#8E8E93" stroke-width="0.8" stroke-dasharray="1.5 1.5"/><rect x="14.2" y="-108.2" width="9" height="10" rx="5" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.8"/><text x="18.7" y="-100.6" font-size="7" font-weight="700" text-anchor="middle" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">2</text>
+<path d="M6.2 -121.2H14.2" stroke="#8E8E93" stroke-width="0.8" stroke-dasharray="1.5 1.5"/><rect x="14.2" y="-126.2" width="9" height="10" rx="5" fill="#FFFFFF" stroke="#E3E5EA" stroke-width="0.8"/><text x="18.7" y="-118.6" font-size="7" font-weight="700" text-anchor="middle" fill="#1C6BAD" font-family="-apple-system, system-ui, sans-serif">3</text>
+</g>
+</svg>

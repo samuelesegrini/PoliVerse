@@ -52,6 +52,35 @@ records which way in the student last used, so the button offers it again
 (``LoginMethodMemory``). ``CieIDBridge`` and ``CieIDRouter`` hand a CIE
 sign-in to the CieID app and catch the callback when it returns.
 
+> Warning: For the Polimi App client, which is the one this app signs in as, the
+> Politecnico supports CIE only through "Entra con le tue credenziali CIE", not the
+> CieID app's quick route. That form posts to `/idp/login/livello2` on the CIE
+> provider's own host, which ``CieIDBridge/isHandoffToCieID(_:method:)`` leaves in
+> the web view.
+
+### Second factors
+
+Every sign-in has asked for a second factor since 2022, and the app implements none
+of them: each is asked for on a page the student already sees. Polimi 2FA is a code
+from an authenticator app after the password, on aunicalogin; with SPID or CIE the
+provider asks, with an approval in its own app or an SMS code. What the app does is
+keep the page alive around them.
+
+- ``SessionSeeder`` uses the session a Politecnico sign-in leaves behind to sign
+  WeBeep and the recordings in before ``LoginWebKit/endSession()`` ends it, so a first
+  launch costs one second factor rather than three. A page that would need the
+  student ends the attempt, and that service keeps its own sign-in.
+- ``IdentityAppHandoff`` recognises a provider page opening its app — PosteID's
+  "Accedi più rapidamente" universal link, or a scheme of the provider's own — so
+  ``AuthWebView`` opens the app itself and leaves the page polling for the approval.
+- ``LoginWebKit/autofillHints`` marks aunicalogin's fields for AutoFill, the code
+  field as `one-time-code`, and ``LoginWebKit/codeFieldProbe`` lets the sign-in say
+  where the code comes from.
+
+> Important: The app never holds the authenticator's secret, never generates a code
+> and never offers a field of its own for one. The Regolamento counts the OTP among
+> the credentials a service must not collect (art. 2 lett. a, art. 19 c.6).
+
 ### Enrolments
 
 One codice persona can carry several matricole, and the services answer only for
@@ -94,6 +123,11 @@ rather than showing an empty one.
 - ``TokenStore``
 - ``ScopeAudit``
 - ``ServiceDirectory``
+
+### Second factors
+- ``SessionSeeder``
+- ``IdentityAppHandoff``
+- ``LoginWebKit``
 
 ### Ways in
 - ``PoliMiLoginMethod``

@@ -1,0 +1,32 @@
+{
+ "csie": "MIA0114",
+ "nome": "Sala Lettura",
+ "numero": "2A",
+ "piani": [
+  {
+   "csip": "MIA011402I",
+   "quota": -9.0,
+   "aule": []
+  },
+  {
+   "csip": "MIA011401I",
+   "quota": -6.0,
+   "aule": []
+  },
+  {
+   "csip": "MIA011400S",
+   "quota": -3.0,
+   "aule": []
+  },
+  {
+   "csip": "MIA0114000",
+   "quota": 1.0,
+   "aule": []
+  }
+ ],
+ "centro": [
+  0.28,
+  135.32
+ ],
+ "altezza": 5.26
+}

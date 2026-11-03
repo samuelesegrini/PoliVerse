@@ -123,4 +123,19 @@ struct LoginStageTests {
             method: .cie)
         #expect(stage.showsWebView)
     }
+
+    @Test("A page of the Politecnico's sign-in after the chooser may ask for the code")
+    func codePageCandidate() {
+        let after = LoginStage(
+            url: url("https://aunicalogin.polimi.it/aunicalogin/aunicalogin/controller/IdentificazioneUnica.do"),
+            method: .password)
+        #expect(after.mayAskForCode)
+
+        let chooser = LoginStage(
+            url: url("https://aunicalogin.polimi.it/aunicalogin/aunicalogin.jsp"), method: .password)
+        #expect(!chooser.mayAskForCode)
+
+        let provider = LoginStage(url: url("https://posteid.poste.it/jod-login-schema/login.jsp"), method: .password)
+        #expect(!provider.mayAskForCode)
+    }
 }

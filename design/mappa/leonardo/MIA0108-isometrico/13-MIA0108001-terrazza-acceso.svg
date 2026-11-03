@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="289.8 -102.3 255.2 207.5" width="510.4" height="415">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="380.2,-7.5 355.8,-21.6 355.8,-34.6 380.2,-20.5" fill="#ECE7DC"/>
+<polygon points="378,-8.3 377,-8.9 377,-21.9 378,-21.3" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="371.4,-12.1 370.4,-12.8 370.4,-25.8 371.4,-25.1" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="364.9,-15.9 363.8,-16.5 363.8,-29.5 364.9,-28.9" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="358.3,-19.7 357.2,-20.3 357.2,-33.3 358.3,-32.7" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="375.7,-13.2 373.3,-14.7 373.3,-21.8 375.7,-20.4" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="369.1,-17 366.7,-18.5 366.7,-25.6 369.1,-24.2" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="362.5,-20.9 360.1,-22.2 360.1,-29.4 362.5,-28" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="400.1,-19 380.2,-7.5 380.2,-20.5 400.1,-32" fill="#D4CEC0"/>
+<polygon points="400.9,-19 399.8,-18.5 399.8,-31.5 400.9,-32" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="394.3,-15.2 393.3,-14.6 393.3,-27.6 394.3,-28.2" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="387.7,-11.5 386.7,-10.8 386.7,-23.8 387.7,-24.5" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="381.1,-7.6 380.1,-7 380.1,-20 381.1,-20.6" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="398,-21 395.6,-19.5 395.6,-26.7 398,-28.1" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="391.4,-17.2 389,-15.8 389,-22.9 391.4,-24.3" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="384.9,-13.4 382.4,-12 382.4,-19.1 384.9,-20.5" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="355.8,-34.6 375.7,-46.1 400.1,-32 380.2,-20.5" fill="#F2EFE8"/>
+</svg>

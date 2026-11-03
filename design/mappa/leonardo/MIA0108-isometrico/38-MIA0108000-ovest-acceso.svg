@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="289.8 -102.3 255.2 207.5" width="510.4" height="415">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="400.3,38.9 341.7,5.1 341.7,-8.9 400.3,24.9" fill="#ECE7DC"/>
+<path d="M400.2 36.6L341.6 2.8M400.2 34.2L341.6 0.4M400.2 31.8L341.6 -2M400.2 29.4L341.6 -4.4" stroke="#B9AD92" stroke-width="0.35"/>
+<polygon points="397.5,37.7 396.5,37.1 396.5,23.1 397.5,23.7" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="390.9,33.9 389.9,33.3 389.9,19.3 390.9,19.9" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="384.3,30.1 383.3,29.5 383.3,15.5 384.3,16.1" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="377.8,26.3 376.7,25.7 376.7,11.7 377.8,12.3" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="371.2,22.5 370.1,21.9 370.1,7.9 371.2,8.5" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="364.6,18.7 363.6,18.1 363.6,4.1 364.6,4.7" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="358,14.9 357,14.3 357,0.3 358,0.9" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="351.4,11.1 350.4,10.5 350.4,-3.5 351.4,-2.9" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="344.9,7.3 343.8,6.7 343.8,-7.3 344.9,-6.7" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="395.3,33.6 392.6,32 392.6,25 392.7,24.5 393,24.1 393.4,24 394,24.2 394.5,24.7 394.9,25.3 395.2,26 395.3,26.6" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="388.8,29.8 386,28.2 386,21.2 386.1,20.7 386.4,20.3 386.8,20.2 387.4,20.4 387.9,20.9 388.4,21.5 388.7,22.2 388.8,22.8" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="382.2,26 379.4,24.4 379.4,17.4 379.5,16.9 379.8,16.5 380.3,16.4 380.8,16.6 381.3,17.1 381.8,17.7 382.1,18.4 382.2,19" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="375.6,22.2 372.8,20.6 372.8,13.6 372.9,13.1 373.2,12.7 373.7,12.6 374.2,12.8 374.7,13.3 375.2,13.9 375.5,14.6 375.6,15.2" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="369,18.4 366.2,16.8 366.2,9.8 366.3,9.3 366.6,8.9 367.1,8.8 367.6,9 368.2,9.5 368.6,10.1 368.9,10.8 369,11.4" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="362.4,14.6 359.7,13 359.7,6 359.8,5.5 360.1,5.1 360.5,5 361,5.2 361.6,5.7 362,6.3 362.3,7 362.4,7.6" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="355.8,10.8 353.1,9.2 353.1,2.2 353.2,1.7 353.5,1.3 353.9,1.2 354.5,1.4 355,1.9 355.4,2.5 355.7,3.2 355.8,3.8" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="349.3,7 346.5,5.4 346.5,-1.6 346.6,-2.1 346.9,-2.5 347.4,-2.6 347.9,-2.4 348.4,-1.9 348.9,-1.3 349.2,-0.6 349.3,0" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="418.3,28.5 400.3,38.9 400.3,24.9 418.3,14.5" fill="#D4CEC0"/>
+<path d="M418.4 26.2L400.4 36.6M418.4 23.8L400.4 34.2M418.4 21.4L400.4 31.8M418.4 19L400.4 29.4" stroke="#B9AD92" stroke-width="0.35"/>
+<polygon points="416.7,29.8 415.7,30.4 415.7,16.4 416.7,15.8" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="410.1,33.6 409.1,34.2 409.1,20.2 410.1,19.6" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="403.6,37.4 402.5,38 402.5,24 403.6,23.4" fill="#F2EFE8" opacity="0.9"/>
+<polygon points="414,28.5 411.3,30.1 411.3,23.1 411.4,22.5 411.7,21.8 412.1,21.2 412.7,20.7 413.2,20.5 413.6,20.6 413.9,21 414,21.5" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="407.5,32.3 404.7,33.9 404.7,26.9 404.8,26.3 405.1,25.6 405.5,25 406.1,24.5 406.6,24.3 407.1,24.4 407.4,24.8 407.5,25.3" fill="#F2D492" stroke="#F7F2E6" stroke-width="0.7"/>
+<polygon points="341.7,-8.9 359.7,-19.3 418.3,14.5 400.3,24.9" fill="#F2EFE8"/>
+</svg>

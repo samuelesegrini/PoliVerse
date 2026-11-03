@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="7.5 248.1 54.5 32.7" width="545.3" height="327">
+<g id="livello-fondo" data-livello="terreno">
+<rect x="7.5" y="248.1" width="54.5" height="32.7" fill="#EEF0EA"/>
+<path d="M51.3 262.6L51.3 271.2L20.8 271.3L20.8 262.6Z" fill="#4E5566" opacity="0.10"/>
+</g>
+<g id="livello-esterni" data-livello="esterni">
+<path d="" stroke="#C3C8D1" stroke-width="0.1" stroke-linecap="round"/>
+</g>
+<g id="livello-muri" data-livello="muri">
+<defs><clipPath id="pl-guscio"><path d="M50 260.1L50 268.8L19.5 268.9L19.5 260.2Z"/></clipPath></defs>
+<path d="M50 260.1L50 268.8L19.5 268.9L19.5 260.2Z" fill="#B9BFC9" fill-rule="evenodd"/>
+<path d="M40.9 268.2L40.9 267.3L39.9 267.3L39.9 268.2ZM39.9 266.9L39.9 267.3L40.9 267.3L40.9 266.9ZM43.9 268.1L43.9 267.3L43 267.3L43 268.2ZM43 266.9L43 267.3L43.9 267.3L43.9 266.9ZM42.1 265.6L41.2 265.6L41.2 266.5L42.1 266.5ZM40.9 266.5L41.2 266.5L41.2 265.6L40.9 265.6ZM21.9 262.2L21.1 262.2L21.1 263.1L21.9 263.1ZM28.9 260.7L28.9 261.4L29.8 261.4L29.8 260.7ZM44.2 262.4L44.9 262.4L44.8 261.5L44.1 261.5ZM44.5 264.9L44.4 264.2L43.6 264.3L43.6 265ZM29.8 268.4L29.8 267.6L28.9 267.6L28.9 268.4ZM26.9 268.4L26.9 267.6L26 267.6L26 268.4ZM20.4 264.8L20.4 264L19.5 264L19.5 264.8ZM49.6 264.3L48.8 264.3L48.8 265.2L49.6 265.2ZM33.5 260.8L34.2 260.8L34.2 259.9L33.5 259.9Z" fill="#FFFFFF" clip-path="url(#pl-guscio)"/>
+</g>
+<g id="livello-locali" data-livello="locali">
+<path id="MIA0105003001" data-tipo="locale" d="M25.1 264L22.4 264L22.4 265.5L22 265.5L22 263.9L19.5 264L19.5 264.9L19.9 264.9L19.9 265.2L20.2 265.2L20.2 265.5L19.9 265.5L19.9 268.4L26.4 268.4L26.4 265.4L25.1 265.4Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0105003002" data-tipo="tecnico" d="M22 262.7L21.9 262.7L21.9 262.6L21.1 262.6L21.1 262.7L20.9 262.7L21 263.3L20.9 263.3L20.9 263.9L21 263.9L21 263.9L22 263.9Z" fill="#E4E7EC" fill-rule="evenodd"/>
+<path id="MIA0105003003" data-tipo="tecnico" d="M20.9 263.3L20.9 263.3L20.9 262.7L19.9 262.7L19.9 263.9L20.9 263.9Z" fill="#E4E7EC" fill-rule="evenodd"/>
+<path id="MIA0105003004" data-tipo="locale" d="M21.9 262.6L22 262.6L22 260.4L19.9 260.4L19.9 262.6L21.1 262.6L21.1 262.6L21.9 262.6Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0105003005" data-tipo="scale" d="M23.8 264L23.8 262.6L22.4 262L22.4 264Z" fill="#E9EBEF" fill-rule="evenodd"/>
+<path id="MIA0105003006" data-tipo="corridoio" d="M29.3 265.4L28.2 265.4L28.2 265.3L27.3 265.3L27.3 265.4L26.4 265.4L26.5 268.4L29.3 268.4Z" fill="#FFFFFF" fill-rule="evenodd"/>
+<path id="MIA0105003007" data-tipo="locale" d="M29.4 260.6L29.4 260.7L29.4 260.7L29.4 261.4L29.4 261.4L29.4 265.4L29.4 265.4L29.4 268.4L40.3 268.4L40.3 265.4L40.1 265.4L40.1 260.8L39.9 260.8L39.9 260.6L36 260.6L36 260.4L35.3 260.4L35.3 260.6L34.2 260.6L34.2 260.2L33.4 260.2L33.4 260.6Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0105003008" data-tipo="locale" d="M29.3 261.4L29.4 261.4L29.4 260.7L29.3 260.7L29.3 260.6L26.2 260.6L26.2 262.6L29.3 262.5Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0105003009" data-tipo="locale" d="M43.5 268.1L43.4 266.1L42.1 266.1L42.1 266.1L40.4 266.1L40.4 266.9L40.3 266.9L40.3 268.2L40.4 268.2L40.4 268.4L43.5 268.4Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0105003010" data-tipo="locale" d="M43.4 266L43.4 265.3L42.9 265.4L42.9 265.1L43.3 265.1L43.3 264.1L42.9 264.1L42.9 263.7L40.4 263.7L40.4 266.1L42.1 266.1L42.1 266.1Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0105003011" data-tipo="scale" d="M41.6 261.8L41.6 263.7L42.9 263.7L42.9 262.4Z" fill="#E9EBEF" fill-rule="evenodd"/>
+<path id="MIA0105003012" data-tipo="locale" d="M49.6 260.4L45 260.4L45.1 265.2L44.9 265.2L44.9 265.1L44 265.1L44 265.2L43.5 265.2L43.5 268.4L49.6 268.4L49.6 264.8L50 264.8L50 263.9L49.6 263.9Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0105003013" data-tipo="locale" d="M43.4 265.1L44 265.1L44 265.1L44.9 265.1L44.9 265.1L44.9 265.1L44.9 261.9L44 261.9L44 261.9L43.4 261.9Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0105003014" data-tipo="locale" d="M43.4 260.4L43.4 261.8L44 261.8L44 261.9L44.9 261.9L44.9 260.4Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path data-tipo="vuoto" d="M22.5 261.4L24 261.9L24.5 263.4L25.9 263.9L25.9 264.9L28.9 264.9L28.9 263.4L25.9 263.4L25.4 262.9L25.4 260.9L22.5 260.9Z" fill="#F8F9F6" stroke="#C3C8D1" stroke-width="0.12" stroke-dasharray="0.5 0.35"/>
+</g>
+<g id="livello-arredi" data-livello="arredi">
+<path d="" stroke="#C9D9EC" stroke-width="0.09" stroke-linecap="round"/>
+</g>
+<g id="livello-gradini" data-livello="gradini">
+<path d="M23.8 263.9L23.8 261.9M23.8 264L23.8 261.9M25.1 261.9L22.4 261.9M22.4 262.2L23.8 262.2M23.8 262.2L25.1 262.2M25.1 262.5L23.8 262.5M23.8 262.5L22.4 262.5M22.4 262.8L23.8 262.8M23.8 262.8L25.1 262.8M25.1 263.1L23.8 263.1M23.8 263.1L22.4 263.1M22.4 263.4L23.8 263.4M23.8 263.4L25.1 263.4M25.1 263.7L23.8 263.7M23.8 263.7L22.4 263.7M22.4 264L23.8 264M23.8 264L25.1 264M23.8 263.9L25.1 263.9M41.6 261.7L41.6 263.7M41.6 261.7L41.6 263.7M42.9 261.6L40.4 261.7M42.9 261.9L41.6 261.9M41.6 261.9L40.4 262M42.9 262.2L41.6 262.2M41.6 262.2L40.4 262.2M42.9 262.6L41.6 262.6M41.6 262.6L40.4 262.6M42.9 262.8L41.6 262.9M41.6 262.9L40.4 262.9M42.9 263.1L41.6 263.1M41.6 263.1L40.4 263.1M42.9 263.4L41.6 263.4M41.6 263.4L40.4 263.4M42.9 263.7L41.6 263.7M41.6 263.7L40.4 263.7M41.6 263.7L40.4 263.7" stroke="#C3C8D1" stroke-width="0.06" stroke-linecap="round"/>
+<path d="" stroke="#A3AAB6" stroke-width="0.07" stroke-linecap="round"/>
+</g>
+<g id="livello-ascensori" data-livello="ascensori">
+<path d="M27 263.3L28.7 263.3L28.7 265.1L27 265.1Z" fill="#E9EBEF"/>
+<path d="M27 263.3L28.7 263.3M28.7 263.3L28.7 265.1M28.7 265.1L27 265.1M27 265.1L27 263.3M27 263.3L28.7 265.1M28.7 263.3L27 265.1" stroke="#A3AAB6" stroke-width="0.08" stroke-linecap="round"/>
+</g>
+<g id="livello-finestre" data-livello="finestre">
+<path d="M25.5 268.6L23.9 268.6M25.5 268.6L23.9 268.7M28.8 268.6L27.1 268.6M28.8 268.6L27.1 268.6M26.4 265.4L26.5 267.6M26.5 268.4L26.5 268.4M34.2 268.6L32.6 268.6M34.2 268.6L32.6 268.6M31.5 268.6L29.9 268.6M31.5 268.6L29.9 268.6M37 268.6L35.3 268.6M37 268.6L35.3 268.6M42.4 268.6L40.7 268.6M42.4 268.6L40.7 268.6M40.4 265.4L40.4 266.1M40.4 266.1L40.4 266.9M40.4 268.1L40.4 268.4M40.3 265.4L40.3 266.9M40.3 268.2L40.3 268.4M39.7 268.6L38 268.6M39.7 268.6L38 268.6M43.4 265.3L43.4 266M43.4 266.1L43.4 266.9M43.5 268.1L43.5 268.4M44 268.6L45.7 268.6M44 268.6L45.7 268.6M45.7 268.6L45.6 268.6M45.6 268.6L45.7 268.6M44.1 268.6L44 268.6M44 268.6L44.1 268.6M38 268.6L38.1 268.6M38.1 268.6L38 268.6M39.6 268.6L39.7 268.6M39.7 268.6L39.6 268.6M40.7 268.6L40.8 268.6M40.8 268.6L40.7 268.6M42.3 268.6L42.4 268.6M42.4 268.6L42.3 268.6M35.3 268.6L35.4 268.6M35.4 268.6L35.3 268.6M36.9 268.6L37 268.6M37 268.6L36.9 268.6M29.9 268.6L29.9 268.6M29.9 268.6L29.9 268.6M31.4 268.6L31.5 268.6M31.5 268.6L31.4 268.6M32.6 268.6L32.6 268.6M32.6 268.6L32.6 268.6M34.2 268.6L34.2 268.6M34.2 268.6L34.2 268.6M27.1 268.6L27.2 268.6M27.2 268.6L27.1 268.6M28.7 268.6L28.8 268.6M28.8 268.6L28.7 268.6M23.9 268.7L23.9 268.7M23.9 268.6L23.9 268.6M25.4 268.6L25.5 268.6M25.5 268.6L25.4 268.6M26.4 267.6L26.4 265.4M26.4 268.4L26.4 268.4M29.4 268.4L29.4 268.4M29.4 267.6L29.4 265.4M29.3 265.4L29.3 267.6M29.3 268.4L29.3 268.4M26.5 267.6L26.4 267.6M26.5 268.4L26.4 268.4M29.3 267.6L29.4 267.6M29.3 268.4L29.4 268.4M40.9 266.1L40.4 266.1M42.1 266.1L43.4 266M40.9 266.1L40.9 266.1M40.4 266.1L40.9 266.1M42.1 266.1L43.4 266.1M42.1 266.1L42.1 266.1M43.5 268.4L43.5 268.1M43.5 266.9L43.5 265.3M40.4 266.9L40.3 266.9M40.4 268.2L40.3 268.2M43.5 268.1L43.5 268.1M35.3 260.4L36 260.4M35.3 260.4L36 260.3" stroke="#8FC3E8" stroke-width="0.12" stroke-linecap="round"/>
+</g>
+<g id="livello-porte" data-livello="porte">
+<path d="M40.4 268.2L41.3 268.1M40.4 267.3A0.9 0.9 0 0 1 41.3 268.1M40.4 266.9L40.8 266.9M40.4 267.3A0.4 0.4 0 0 0 40.8 266.9M43.5 268.1L42.5 268.1M43.4 267.3A0.9 0.9 0 0 0 42.5 268.1M43.4 266.9L43 266.9M43.4 267.3A0.4 0.4 0 0 1 43 266.9M42.1 266.1L42.1 265.2M41.2 266.1A0.8 0.8 0 0 1 42.1 265.2M40.9 266.1L40.9 265.7M41.2 266.1A0.4 0.4 0 0 0 40.9 265.7M21.9 262.7L21.9 263.5M21.1 262.7A0.8 0.8 0 0 0 21.9 263.5M29.3 260.7L28.6 260.7M29.3 261.4A0.8 0.8 0 0 1 28.6 260.7M44.1 262L44.1 262.7M44.9 261.9A0.7 0.7 0 0 1 44.1 262.7M44.1 265L44.8 265.1M44 264.3A0.7 0.7 0 0 1 44.8 265.1M29.3 268.4L28.5 268.4M29.3 267.6A0.8 0.8 0 0 0 28.5 268.4M26.5 268.4L27.2 268.4M26.5 267.6A0.8 0.8 0 0 1 27.2 268.4M19.9 264.8L20.7 264.8M19.9 264A0.8 0.8 0 0 1 20.7 264.8M49.6 264.8L49.6 264M48.8 264.8A0.8 0.8 0 0 1 49.6 264M33.5 260.4L33.5 261.1M34.2 260.4A0.7 0.7 0 0 1 33.5 261.1" fill="none" stroke="#A3AAB6" stroke-width="0.07" stroke-linecap="round"/>
+</g>
+<g id="livello-percorso-accessibile" data-livello="percorso-accessibile" style="display: none">
+<path d="M27.7 266.4L27.3 266.5M27.7 266.4L28.6 266.4M27.7 266.4L27.7 265.9" fill="none" stroke="#FFFFFF" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26.7 266.5L27.3 265.9L27.3 267ZM29.6 266.4L28.6 267L28.6 265.9ZM27.7 265.1L28.3 265.9L27.2 265.9Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.5" stroke-linejoin="round"/>
+<path d="M27.7 266.4L27.3 266.5M27.7 266.4L28.6 266.4M27.7 266.4L27.7 265.9" fill="none" stroke="#1C6BAD" stroke-width="0.38" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26.7 266.5L27.3 265.9L27.3 267ZM29.6 266.4L28.6 267L28.6 265.9ZM27.7 265.1L28.3 265.9L27.2 265.9Z" fill="#1C6BAD"/>
+</g>
+<g id="livello-ingressi" data-livello="ingressi">
+<path d="M19.1 264.4L17.3 263.8L17.3 265.1Z" fill="#1C6BAD" stroke="#1C6BAD" stroke-width="0.3" stroke-linejoin="round"/>
+<path d="M33.8 259.8L34.5 257.9L33.1 258Z" fill="#1C6BAD" stroke="#1C6BAD" stroke-width="0.3" stroke-linejoin="round"/>
+</g>
+<g id="livello-accessibilita" data-livello="accessibilita">
+<rect x="27.1" y="263.4" width="1.5" height="1.5" rx="0.3" fill="#1C6BAD"/><circle cx="27.9" cy="263.9" r="0.1" fill="#FFFFFF"/><path d="M27.8 264.1L27.8 264.3L28.1 264.3L28.2 264.6M27.8 264.2L28 264.2" fill="none" stroke="#FFFFFF" stroke-width="0.1" stroke-linecap="round" stroke-linejoin="round"/><path d="M27.7 264.2A0.3 0.3 0 1 0 28 264.6" fill="none" stroke="#FFFFFF" stroke-width="0.1" stroke-linecap="round"/>
+</g>
+<g id="livello-acqua" data-livello="acqua">
+</g>
+<g id="livello-etichette" data-livello="etichette">
+</g>
+<g id="livello-dotazioni" data-livello="dotazioni">
+</g>
+</svg>
