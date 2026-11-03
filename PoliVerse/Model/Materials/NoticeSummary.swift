@@ -69,7 +69,7 @@ final class NoticeSummary {
     /// `false` on hardware without Apple Intelligence, with it switched off, or
     /// while the model is still downloading. The button is then not offered
     /// rather than offered and failing.
-    static var isAvailable: Bool {
+    nonisolated static var isAvailable: Bool {
         if case .available = SystemLanguageModel.default.availability { return true }
         return false
     }
