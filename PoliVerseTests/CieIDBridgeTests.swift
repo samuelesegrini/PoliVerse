@@ -25,6 +25,15 @@ struct CieIDBridgeTests {
         }
     }
 
+    /// CieID claims every path on its iOS host, so any navigation there must
+    /// carry `sourceApp`, or CieID returns the session to Safari.
+    @Test("Anything on CieID's iOS host is a hand-off")
+    func detectsAnyPathOnCieIDHost() throws {
+        let url = try #require(URL(string:
+            "https://ios.idserver.servizicie.interno.gov.it/idp/login/app?opId=abc"))
+        #expect(CieIDBridge.isHandoffToCieID(url))
+    }
+
     /// "Entra con le tue credenziali CIE" posts the username and password to
     /// `/idp/login/livello2`. Handing that to CieID dropped what the student
     /// had typed, on the one CIE route the Politecnico says works for its app.

@@ -35,6 +35,10 @@ nonisolated enum CieIDBridge {
     /// exactly as the SDK's own constant is.
     private static let idpOutboundHost = "ios.idserver.servizicie.interno.go"
 
+    /// The host CieID claims whole as a universal link, `*` in its
+    /// `apple-app-site-association`, read on 2026-11-03.
+    private static let cieIDAppHost = "ios.idserver.servizicie.interno.gov.it"
+
     /// Host the identity provider sends the student back through once authenticated.
     private static let idpReturnHost = "idserver.servizicie.interno.gov.it"
 
@@ -54,6 +58,12 @@ nonisolated enum CieIDBridge {
     /// submission and anything on that host stay in the web view. Read off the live
     /// page on 2026-10-22.
     ///
+    /// Anything on ``cieIDAppHost`` is a hand-off whatever its shape. CieID claims the
+    /// whole host, so a navigation there that slipped through would open CieID without
+    /// `sourceApp`, and CieID would return the session to Safari, which then shows an
+    /// error. Keeping the provider's pages in the web view sends the "Entra con app
+    /// CieID" route through here, on URLs that need not carry `nextUrl`.
+    ///
     /// - Parameters:
     ///   - url: The navigation the web view is about to follow.
     ///   - method: The navigation's HTTP method.
@@ -61,6 +71,7 @@ nonisolated enum CieIDBridge {
     static func isHandoffToCieID(_ url: URL, method: String = "GET") -> Bool {
         if method.uppercased() == "POST" { return false }
         let string = url.absoluteString
+        if url.host?.lowercased() == cieIDAppHost { return true }
         if string.contains(idpOutboundHost) && string.contains("nextUrl") { return true }
         if url.host?.lowercased() == idpReturnHost { return false }
         let path = url.pathComponents
