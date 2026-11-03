@@ -348,6 +348,7 @@ struct SearchView: View {
                 refreshResults()
             }
         }
+        .specialPage(.search, style: style)
     }
 
     // MARK: - Before a search

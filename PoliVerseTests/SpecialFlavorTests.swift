@@ -127,4 +127,32 @@ struct SpecialFlavorTests {
         #expect(older.specialSettings.grid == .fine)
         #expect(older.specialSettings.pair == 1)
     }
+    @Test("Every per-page combination survives storage without changing recipe content")
+    func pagePresentations() throws {
+        for special in SpecialFlavor.allCases {
+            for mask in 0..<16 {
+                var look = TodayStyle.starting(special)
+                look.specialSettings.chaos = .wild
+                look.specialSettings.grid = .wide
+                for (index, page) in SpecialPage.allCases.enumerated() {
+                    look.specialSettings.setPresentation(mask & (1 << index) == 0 ? .characteristic : .essential, for: page)
+                }
+                let restored = try #require(TodayStyle(rawValue: look.rawValue))
+                #expect(restored == look)
+                #expect(restored.resolved.special == special)
+                #expect(restored.specialSettings.chaos == .wild)
+                #expect(restored.specialSettings.grid == .wide)
+            }
+        }
+    }
+
+    @Test("Old and future presentation values retain the characteristic recipe")
+    func unknownPresentations() throws {
+        let data = Data(#"{"presentations":{"today":7,"courses":"essential","future":"essential"}}"#.utf8)
+        let settings = try JSONDecoder().decode(SpecialSettings.self, from: data)
+        #expect(settings.presentation(for: .today) == .characteristic)
+        #expect(settings.presentation(for: .courses) == .essential)
+        #expect(settings.presentation(for: .career) == .characteristic)
+    }
+
 }

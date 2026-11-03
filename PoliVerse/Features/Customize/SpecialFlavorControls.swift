@@ -44,7 +44,25 @@ struct SpecialFlavorControls: View {
                     Text("Un Flavor speciale cambia tutte le pagine: guardale qui prima di scegliere.")
                 }
 
+                Section {
+                    ForEach(SpecialPage.allCases) { page in
+                        Picker(page.title, selection: Binding {
+                            style.specialSettings.presentation(for: page)
+                        } set: { value in
+                            withAnimation(.snappy) { style.specialSettings.setPresentation(value, for: page) }
+                        }) {
+                            ForEach(SpecialPresentation.allCases) { Text($0.title).tag($0) }
+                        }
+                        .pickerStyle(.menu)
+                        .accessibilityIdentifier("customize-presentation-\(page.rawValue)")
+                    }
+                } header: {
+                    Text("Presentazione delle pagine")
+                } footer: {
+                    Text("Essenziale mantiene forme, colori e funzioni di questo stile, con meno decorazioni. Inclinazione e griglia restano memorizzate e tornano attive con Caratteristico.")
+                }
                 knob(special)
+                    .disabled(style.specialSettings.presentation(for: preview) == .essential)
 
                 Section(special == .blueprint ? "Carta e inchiostro" : "Coppia di colori") {
                     HStack(spacing: 14) {
@@ -59,7 +77,7 @@ struct SpecialFlavorControls: View {
                 }
 
                 Section {
-                    Button("Duplica come classico", systemImage: "square.on.square", action: duplicateAsClassic)
+                    Button("Converti in classico", systemImage: "square.on.square", action: duplicateAsClassic)
                         .accessibilityIdentifier("customize-special-duplicate")
                 } footer: {
                     Text("Tieni colori e caratteri e cambi ogni parte. Le forme speciali delle pagine restano qui.")
@@ -107,23 +125,7 @@ struct SpecialFlavorControls: View {
 
 /// The page Personalizza's editor shows a special Flavor on: Oggi, which is
 /// the page being edited, or one of the others, drawn as the app draws them.
-enum SpecialPreview: String, CaseIterable, Identifiable {
-    /// The four tabs.
-    case today, courses, career, search
-
-    /// The page's identity, which is its raw value.
-    var id: String { rawValue }
-
-    /// What the tab is called.
-    var title: LocalizedStringKey {
-        switch self {
-        case .today: "Oggi"
-        case .courses: "Corsi"
-        case .career: "Carriera"
-        case .search: "Cerca"
-        }
-    }
-}
+typealias SpecialPreview = SpecialPage
 
 /// A colour pair: the page's colour with the one that stands out tucked beside it.
 private struct PairSwatch: View {

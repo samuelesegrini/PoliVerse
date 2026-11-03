@@ -99,6 +99,7 @@ struct BlueprintSearchHero: View {
 /// Buildings from above, drawn only in outline, with hatching on one: a
 /// picture of a campus, not a map of this one.
 private struct OutlineBlocks: View {
+    @Environment(\.specialEffectsEnabled) private var effects
     /// The view's content.
     var body: some View {
         Canvas { context, size in
@@ -111,7 +112,7 @@ private struct OutlineBlocks: View {
             for (index, block) in blocks.enumerated() {
                 let rect = CGRect(x: block.minX * w, y: block.minY * h, width: block.width * w, height: block.height * h)
                 context.stroke(Path(rect), with: .color(.white.opacity(0.85)), lineWidth: 1.5)
-                if index == 4 {
+                if index == 4, effects {
                     // One building hatched, as a drawing marks a section.
                     var hatch = Path()
                     var x = rect.minX - rect.height

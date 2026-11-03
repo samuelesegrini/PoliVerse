@@ -41,14 +41,14 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         let app = makeApp()
         app.launch()
 
-        // Swiping is choosing: the look that comes to rest in the middle is
-        // the one the app wears, with nothing to confirm.
+        // Swiping previews locally; tapping the centered card explicitly applies.
         _ = open(app)
         XCTAssertTrue(isCentred(card(app, 0), in: app))
         shot(app, "01-gallery")
         card(app, 0).swipeLeft()
         settle()
         shot(app, "02-swiped")
+        XCTAssertTrue((card(app, 1).value as? String)?.contains("Anteprima") == true)
         XCTAssertTrue(isCentred(card(app, 1), in: app), "Swiping did not bring the next look to the middle")
         // Tapping the middle card goes back to the app wearing it.
         card(app, 1).tap()
@@ -108,7 +108,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
             let restore = app.buttons["Ripristina tutto"].firstMatch
             XCTAssertTrue(restore.waitForExistence(timeout: 3))
             XCTAssertTrue(restore.isEnabled, "Editing offered no way back to how the look was")
-            XCTAssertTrue(app.buttons["Elimina Flavor…"].firstMatch.exists, "••• offers no way to delete the look")
+            XCTAssertTrue(app.buttons["Elimina look…"].firstMatch.exists, "••• offers no way to delete the look")
             restore.tap()
             settle()
             shot(app, "07-restored")
@@ -116,6 +116,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
 
         done.tap()
         settle()
+        _ = open(app)
         XCTAssertTrue(edit.waitForExistence(timeout: 5), "Fine did not return to the gallery")
         shot(app, "08-gallery")
 
@@ -143,23 +144,17 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         XCTAssertTrue(done.waitForExistence(timeout: 5), "A new look did not open for editing")
         settle()
         shot(app, "10-new-editing")
-        done.tap()
-        let custom = app.buttons["customize-pair-custom"]
-        XCTAssertTrue(custom.waitForExistence(timeout: 5), "Adding did not ask about the app")
-        shot(app, "11-pair-question")
-        custom.tap()
-        let icon = app.buttons["app-option-icon"]
-        XCTAssertTrue(icon.waitForExistence(timeout: 5), "Personalizza l'app did not open the app half")
-        icon.tap()
-        // Every shape comes in every colour; pick one of Giorno's.
+        allParts(app)
+        part(app, "app")
         app.buttons["Giorno"].firstMatch.tap()
         let graphite = app.buttons["app-icon-graphite"].firstMatch
         revealInRow(graphite, anchor: app.buttons["app-icon-automatic"].firstMatch, in: app)
         graphite.tap()
         settle()
         shot(app, "12-app-icon")
-        app.buttons["app-done"].tap()
+        done.tap()
         settle()
+        _ = open(app)
         XCTAssertTrue(isCentred(card(app, todayPresetCount), in: app), "The new look did not come to the middle")
         XCTAssertTrue(app.staticTexts["App su misura"].exists, "The new look's app is not its own")
         shot(app, "13-added")
@@ -385,6 +380,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
 
         done.tap()
         settle()
+        _ = open(app)
         XCTAssertTrue(edit.waitForExistence(timeout: 5))
         shot(app, "39-gallery")
         card(app, 0).tap()
@@ -474,8 +470,9 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
         if isWide {
             part(app, id)
         } else {
-            app.buttons["customize-switch-\(id)"].firstMatch.tap()
-            settle()
+            // A nonadjacent capsule item is clipped; use the visible overview entrance.
+            allParts(app)
+            part(app, id)
         }
     }
 
@@ -588,6 +585,7 @@ nonisolated final class CustomizeAnimationTests: XCTestCase {
 
         done.tap()
         settle()
+        _ = open(app)
         XCTAssertTrue(edit.waitForExistence(timeout: 5), "Fine did not return to the gallery")
     }
 

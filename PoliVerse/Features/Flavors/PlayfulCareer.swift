@@ -113,6 +113,7 @@ struct PlayfulTickets: View {
 /// Where the student stands, in Giocherelloso: the credits as a ring in the
 /// page's colour, the average set in Didot inside it, the graduation base beside.
 struct PlayfulStanding: View {
+    @Environment(\.specialEffectsEnabled) private var effects
     /// The career's figures.
     let book: GradeBook
     /// The average, the service's or the libretto's own.
@@ -151,7 +152,7 @@ struct PlayfulStanding: View {
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(palette.main, in: .rect(cornerRadius: 28, style: .continuous))
-        .shadow(color: palette.main.opacity(0.3), radius: 16, y: 8)
+        .shadow(color: palette.main.opacity(0.3), radius: effects ? 16 : 0, y: effects ? 8 : 0)
     }
 
     /// The credits ring with the average inside.

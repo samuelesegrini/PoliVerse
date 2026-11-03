@@ -209,7 +209,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
 
     /// The look's name, or its place in the gallery when it has none.
     func displayName(at index: Int) -> String {
-        name.isEmpty ? String(localized: "Flavor \(index + 1)") : name
+        name.isEmpty ? String(localized: "Look \(index + 1)") : name
     }
 
     /// The material a section draws in: its own, or the page's.
@@ -289,7 +289,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
     /// The themes a student finds before making any looks: the plain
     /// default, then eight, each with its own Flavor, typeface, material and
     /// background, and a different page built on them.
-    static var presets: [TodayStyle] {
+    static let presets: [TodayStyle] = {
         // Tramonto: Futura in mandarin on a soft gradient, the lesson now in
         // front, all glass.
         var sunset = TodayStyle()
@@ -439,7 +439,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
         plain.name = "Base"
 
         return [plain, sunset, polimi, minimal, study, night, greenhouse, coffee, code]
-    }
+    }()
 
     /// A fixed id for a preset's sticker, so the presets are the same looks
     /// each time they are built.
@@ -449,6 +449,7 @@ nonisolated struct TodayStyle: Equatable, Sendable {
 
     /// Saved looks, one stored style per line; the presets when there are none.
     static func library(from stored: String, active: TodayStyle) -> [TodayStyle] {
+        if let library = LookLibrary(document: stored) { return library.looks }
         let looks = stored.split(separator: "\n").compactMap { TodayStyle(rawValue: String($0)) }
         return looks.isEmpty ? presets : looks
     }

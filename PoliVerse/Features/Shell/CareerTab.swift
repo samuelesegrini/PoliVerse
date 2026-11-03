@@ -11,7 +11,7 @@ struct CareerTab: View {
             NewDestination.career.screen
                 // The study plan, when a way in from outside asks for it.
                 .navigationDestination(for: NewDestination.self) { $0.screen }
-                .flavorPaper()
+                .flavorPaper(.career)
                 .profileButton()
                 .dataStatusLine()
         }

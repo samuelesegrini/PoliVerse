@@ -7,6 +7,7 @@ import SwiftUI
 /// once Aule libere has fetched the day, and until then the card just leads
 /// there. A search box that waits on the network is one nobody uses.
 struct PlayfulSearchHero: View {
+    @Environment(\.specialEffectsEnabled) private var effects
     /// The shared ``FreeRoomsModel``, from the environment.
     @Environment(FreeRoomsModel.self) private var aule
     /// The shared ``CourseModel``, from the environment.
@@ -75,7 +76,7 @@ struct PlayfulSearchHero: View {
         .frame(maxWidth: .infinity, minHeight: 200, alignment: .bottomLeading)
         .background(Self.campus.color, in: .rect(cornerRadius: 30, style: .continuous))
         .clipShape(.rect(cornerRadius: 30, style: .continuous))
-        .shadow(color: Self.campus.color.opacity(0.3), radius: 14, y: 8)
+        .shadow(color: Self.campus.color.opacity(0.3), radius: effects ? 14 : 0, y: effects ? 8 : 0)
         .playfulLean(0, in: style)
         .accessibilityElement(children: .combine)
         .accessibilityHint("Apre le aule libere")
@@ -120,7 +121,7 @@ struct PlayfulSearchHero: View {
                 .frame(width: 58, height: 58)
                 .background(colour, in: .circle)
                 .overlay { Circle().strokeBorder(.white, lineWidth: 3) }
-                .rotationEffect(.degrees(style.lean(index).degrees * 1.5))
+                .rotationEffect(.degrees(effects ? style.lean(index).degrees * 1.5 : 0))
             Text(words.last.map(String.init) ?? teacher.name)
                 .font(.caption)
                 .lineLimit(1)

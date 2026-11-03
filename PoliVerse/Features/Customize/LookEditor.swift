@@ -24,18 +24,20 @@ import SwiftUI
 /// Data, stickers drag where they are. It edits a draft. ✓ keeps it, ✕ drops
 /// it, and every change can be undone — ⌘Z and ⇧⌘Z from a keyboard.
 struct LookEditor: View {
-    /// The draft being edited.
-    @Binding var look: TodayStyle
-    /// The look as editing found it, for the resets and for asking before ✕.
-    let original: TodayStyle
-    /// True for a look being added: its button says Aggiungi.
-    let isNew: Bool
+    @Binding var edit: LookEditingSession
+    private var look: TodayStyle {
+        get { edit.draft }
+        nonmutating set { edit.draft = newValue }
+    }
+    private var original: TodayStyle { edit.original }
+    private var isNew: Bool { edit.index == nil }
     /// The screen's safe area, so the controls clear the bars.
     let insets: EdgeInsets
     /// Leaves without keeping anything.
     let cancel: () -> Void
     /// Keeps the draft.
     let done: () -> Void
+    var saveOnly: (() -> Void)?
     /// Deletes the look, for one already saved that is not the last.
     var delete: (() -> Void)?
     /// Where the gallery's card of the look is, for an edit: the page moves
@@ -55,7 +57,10 @@ struct LookEditor: View {
     /// The iPhone task under way, if any.
     @State private var mode: EditorMode?
     /// The look as the task found it, for its Annulla.
-    @State private var modeSnapshot: TodayStyle?
+    private var modeSnapshot: TodayStyle? {
+        get { edit.taskSnapshot }
+        nonmutating set { edit.taskSnapshot = newValue }
+    }
     /// The stickers' task has the keyboard open to add more.
     @State private var addingSticker = false
     @State private var confirmingDelete = false
@@ -84,7 +89,10 @@ struct LookEditor: View {
     /// Which page a special Flavor is previewed on.
     @State private var preview = SpecialPreview.today
     /// Every change, to undo and redo.
-    @State private var history = EditHistory()
+    private var history: EditHistory {
+        get { edit.history }
+        nonmutating set { edit.history = newValue }
+    }
     /// False while the card that opened the editor is still growing into it:
     /// the page starts at full size and settles into the middle.
     @State private var settled = false
@@ -198,7 +206,7 @@ struct LookEditor: View {
         .modifier(DiscardQuestion(onMac: Self.onMac && isWide, isPresented: $confirmingCancel,
                                   name: look.name, discard: { leave(then: cancel) }))
         .confirmationDialog("Eliminare il Flavor?", isPresented: $confirmingDelete, titleVisibility: .visible) {
-            Button("Elimina Flavor", role: .destructive) {
+            Button("Elimina look", role: .destructive) {
                 if let delete { leave(then: delete) }
             }
                 .accessibilityIdentifier("customize-editor-delete-confirm")
@@ -264,15 +272,15 @@ struct LookEditor: View {
     private func modeDock(_ mode: EditorMode, screen: CGSize) -> some View {
         switch mode {
         case .stickers:
-            StickerDock(look: $look, adding: $addingSticker)
+            StickerDock(look: $edit.draft, adding: $addingSticker)
         case .greeting:
-            TypingDock(text: $look.customGreeting, prompt: "Scrivi il tuo saluto", limit: TodayStyle.customGreetingLimit,
+            TypingDock(text: $edit.draft.customGreeting, prompt: "Scrivi il tuo saluto", limit: TodayStyle.customGreetingLimit,
                        note: "Sopra la data, al posto del saluto.", submit: finishMode)
         case .besideText:
-            TypingDock(text: $look.accessoryText, prompt: "Tutto pronto?", limit: TodayStyle.accessoryTextLimit,
+            TypingDock(text: $edit.draft.accessoryText, prompt: "Tutto pronto?", limit: TodayStyle.accessoryTextLimit,
                        note: "Nel carattere della data e nel tuo colore.", submit: finishMode)
         case .sections:
-            SectionTaskDock(look: $look)
+            SectionTaskDock(look: $edit.draft)
                 .frame(height: screen.height * 0.42)
         }
     }
@@ -617,7 +625,7 @@ struct LookEditor: View {
                 case .app:
                     appInspector
                 case .special:
-                    SpecialFlavorControls(style: $look, preview: $preview.animation(.snappy),
+                    SpecialFlavorControls(style: $edit.draft, preview: $preview.animation(.snappy),
                                           duplicateAsClassic: duplicateAsClassic)
                         .scrollContentBackground(.hidden)
                 default:
@@ -668,17 +676,17 @@ struct LookEditor: View {
                 inspectorGroup("Icona", note: look.app.paired
                                ? "Automatica segue il colore del Flavor."
                                : "Scelta a mano. Automatica la riabbina al Flavor.") {
-                    AppIconPicker(look: $look, layout: .grid(columns: 4))
+                    AppIconPicker(look: $edit.draft, layout: .grid(columns: 4))
                 }
                 inspectorGroup("Aspetto della Home", note: "Come la vedi con le icone scure, colorate o trasparenti.") {
                     GlassSegmentedPicker("Aspetto della Home", selection: $homeLook) { Text($0.title) }
                         .accessibilityIdentifier("customize-home-look")
                 }
                 inspectorGroup("Colore dell’app", note: "Il colore dei pulsanti e dei collegamenti in tutta l’app.") {
-                    AppTintPicker(look: $look, layout: .grid(columns: 6))
+                    AppTintPicker(look: $edit.draft, layout: .grid(columns: 6))
                 }
                 inspectorGroup("Barra su iPhone", note: "Su iPad e Mac le sezioni stanno nella barra laterale.") {
-                    AppBarPicker(look: $look)
+                    AppBarPicker(look: $edit.draft)
                 }
             }
             .padding(.horizontal, 20)
@@ -808,7 +816,8 @@ struct LookEditor: View {
         .buttonStyle(.glassProminent)
         .buttonBorderShape(.circle)
         .keyboardShortcut(.return, modifiers: .command)
-        .accessibilityLabel(isNew ? Text("Aggiungi") : Text("Fine"))
+        .accessibilityLabel("Salva e usa")
+        .help("Salva e usa")
         .accessibilityIdentifier("customize-edit-done")
     }
 
@@ -854,6 +863,10 @@ struct LookEditor: View {
                     roundButton("Annulla", symbol: "xmark", id: "customize-editor-cancel", shortcut: .cancelAction, action: askCancel)
                     undoRedo
                     Spacer()
+                    if let saveOnly {
+                        Button("Salva nella libreria") { leave(then: saveOnly) }.buttonStyle(.glass)
+                            .accessibilityIdentifier("customize-save-library")
+                    }
                     doneButton
                 }
             }
@@ -870,7 +883,7 @@ struct LookEditor: View {
             } else {
                 nameField
                     .frame(width: 240)
-                (look == original ? Text("Flavor") : Text("Modificato"))
+                (look == original ? Text("Look") : Text("Modificato"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -879,10 +892,11 @@ struct LookEditor: View {
                     .buttonStyle(.glass)
                     .keyboardShortcut(.cancelAction)
                     .accessibilityIdentifier("customize-editor-cancel")
-                Button { leave(then: done) } label: { isNew ? Text("Aggiungi") : Text("Fine") }
-                    .buttonStyle(.glassProminent)
-                    .keyboardShortcut(.return, modifiers: .command)
-                    .accessibilityIdentifier("customize-edit-done")
+                if let saveOnly {
+                    Button("Salva nella libreria") { leave(then: saveOnly) }.buttonStyle(.glass)
+                        .accessibilityIdentifier("customize-save-library")
+                }
+                doneButton
             }
         }
         .frame(height: 48)
@@ -890,14 +904,14 @@ struct LookEditor: View {
 
     /// The look's name, typed in place.
     private var nameField: some View {
-        TextField("Il mio Flavor", text: Binding { look.name } set: { look.name = String($0.prefix(TodayStyle.nameLimit)) })
+        TextField("Il mio look", text: Binding { look.name } set: { look.name = String($0.prefix(TodayStyle.nameLimit)) })
             .font(.headline)
             .submitLabel(.done)
             .focused($nameFocused)
             .padding(.horizontal, 12)
             .frame(minHeight: 40)
             .background(Color(white: 0.11), in: .rect(cornerRadius: 12, style: .continuous))
-            .accessibilityLabel(Text("Nome del Flavor"))
+            .accessibilityLabel(Text("Nome del look"))
             .accessibilityIdentifier("customize-name-field")
     }
 
@@ -922,6 +936,11 @@ struct LookEditor: View {
     /// items drop accessibility identifiers, so tests find these by their labels.
     @ViewBuilder
     private var menuItems: some View {
+        if let saveOnly {
+            Button("Salva nella libreria", systemImage: "square.and.arrow.down") { leave(then: saveOnly) }
+                .accessibilityIdentifier("customize-save-library")
+        }
+
         Section {
             Button("Rinomina", systemImage: "pencil", action: rename)
             Button("Ripristina tutto", systemImage: "arrow.uturn.backward") {
@@ -930,7 +949,7 @@ struct LookEditor: View {
             .disabled(look == original)
         }
         if delete != nil {
-            Button("Elimina Flavor…", systemImage: "trash", role: .destructive) { confirmingDelete = true }
+            Button("Elimina look…", systemImage: "trash", role: .destructive) { confirmingDelete = true }
         }
     }
 
@@ -1023,7 +1042,7 @@ struct LookEditor: View {
             }
         }
         .frame(width: target.size.width, height: target.size.height, alignment: .top)
-        .background { LookBackground(style: look.resolved) }
+        .background { LookBackground(style: look.resolved, page: preview) }
         .overlay(alignment: .bottom) {
             if target.tabBar {
                 ReplicaTabBar()
@@ -1039,7 +1058,7 @@ struct LookEditor: View {
     /// but the page itself.
     private func todayPage(insets: EdgeInsets) -> some View {
         ScrollView {
-            TodayLanding(day: shell.day, draft: $look, arranging: arranging, quiet: true, selection: $selectedSticker,
+            TodayLanding(day: shell.day, draft: $edit.draft, arranging: arranging, quiet: true, selection: $selectedSticker,
                          onAddSticker: { sheet = .stickerPicker }) { zone in
                 guard !arranging else { return }
                 open(zone)
@@ -1062,7 +1081,7 @@ struct LookEditor: View {
                 case .search, .today: SearchView(embedded: true, places: NewDestination.inSearch)
                 }
             }
-            .flavorPaper()
+            .flavorPaper(preview)
         }
         .padding(.top, insets.top)
         .environment(\.look, drawn)
@@ -1142,7 +1161,7 @@ struct LookEditor: View {
             }
             Group {
                 if current == .special {
-                    SpecialFlavorControls(style: $look, preview: $preview.animation(.snappy),
+                    SpecialFlavorControls(style: $edit.draft, preview: $preview.animation(.snappy),
                                           duplicateAsClassic: duplicateAsClassic)
                         .scrollContentBackground(.hidden)
                 } else {
@@ -1161,7 +1180,7 @@ struct LookEditor: View {
 
     /// One tool's controls.
     private func toolView(_ tool: LookTool, layout: ToolLayout) -> some View {
-        LookToolView(tool: tool, look: $look, layout: layout, selectedSticker: $selectedSticker,
+        LookToolView(tool: tool, look: $edit.draft, layout: layout, selectedSticker: $selectedSticker,
                      homeLook: $homeLook, arranging: $arranging, pickStickers: { sheet = .stickerPicker },
                      enterMode: layout == .strip ? { enter($0) } : nil, typing: $typingInTools)
     }
@@ -1242,7 +1261,7 @@ struct LookEditor: View {
         switch page {
         case .section(let kind):
             NavigationStack {
-                SectionFormPicker(kind: kind, style: $look, close: { sheet = nil })
+                SectionFormPicker(kind: kind, style: $edit.draft, close: { sheet = nil })
                     .toolbar { closeItem }
             }
             .tint(look.resolved.controlTint(scheme))

@@ -291,11 +291,11 @@ struct JourneyView: View {
         let defaults = UserDefaults.standard
         let stored = defaults.string(forKey: TodayStyle.libraryKey) ?? ""
         guard !stored.isEmpty else { return }
-        var looks = TodayStyle.library(from: stored, active: style)
-        let selection = defaults.integer(forKey: TodayStyle.selectionKey)
-        guard looks.indices.contains(selection) else { return }
-        change(&looks[selection])
-        defaults.set(TodayStyle.encodeLibrary(looks), forKey: TodayStyle.libraryKey)
+        var library = LookLibrary.load(defaults)
+        var updated = library.active
+        change(&updated)
+        library.save(updated, at: library.selection)
+        library.persist(to: defaults)
     }
 }
 

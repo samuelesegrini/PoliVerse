@@ -258,13 +258,14 @@ private struct ChipSurface: ViewModifier {
 extension View {
     /// A special Flavor's paper behind a tab's first page; nothing for a
     /// classic Flavor, whose paper stays on Oggi.
-    func flavorPaper() -> some View {
-        modifier(FlavorPaper())
+    func flavorPaper(_ page: SpecialPage) -> some View {
+        modifier(FlavorPaper(page: page))
     }
 }
 
 /// The page's paper behind a tab's root, in a special Flavor only.
 private struct FlavorPaper: ViewModifier {
+    let page: SpecialPage
     /// The look in use.
     @Environment(\.look) private var style
 
@@ -274,7 +275,7 @@ private struct FlavorPaper: ViewModifier {
     /// - Returns: The modified view.
     func body(content: Content) -> some View {
         if style.special != nil {
-            content.background(LookBackground(style: style).ignoresSafeArea())
+            content.background(LookBackground(style: style, page: page).ignoresSafeArea())
         } else {
             content
         }

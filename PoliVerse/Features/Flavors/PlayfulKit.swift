@@ -94,6 +94,7 @@ struct PlayfulKicker: View {
 
 /// A ticket: a stub on the leading edge torn along a dashed line, and the rest.
 struct PlayfulTicket<Stub: View, Content: View>: View {
+    @Environment(\.specialEffectsEnabled) private var effects
     /// The stub's fill.
     let stubFill: Color
     /// The stub's width.
@@ -117,7 +118,7 @@ struct PlayfulTicket<Stub: View, Content: View>: View {
                 .background(stubFill)
                 .overlay(alignment: .trailing) {
                     Rectangle()
-                        .stroke(style: StrokeStyle(lineWidth: 2, dash: [5, 4]))
+                        .stroke(style: StrokeStyle(lineWidth: 2, dash: effects ? [5, 4] : []))
                         .frame(width: 2)
                         .foregroundStyle(.black.opacity(0.18))
                 }
@@ -139,6 +140,15 @@ extension View {
     ///   - style: The look in use.
     /// - Returns: The view, turned.
     func playfulLean(_ index: Int, in style: TodayStyle) -> some View {
-        rotationEffect(style.lean(index))
+        modifier(PlayfulLean(index: index, style: style))
+    }
+}
+
+private struct PlayfulLean: ViewModifier {
+    let index: Int
+    let style: TodayStyle
+    @Environment(\.specialEffectsEnabled) private var effects
+    func body(content: Content) -> some View {
+        content.rotationEffect(effects ? style.lean(index) : .zero)
     }
 }

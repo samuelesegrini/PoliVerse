@@ -10,7 +10,7 @@ struct SearchTab: View {
     var body: some View {
         NavigationStack(path: Binding(get: { shell.searchPath }, set: { shell.searchPath = $0 })) {
             SearchView(embedded: true, places: NewDestination.inSearch)
-                .flavorPaper()
+                .flavorPaper(.search)
                 .profileButton()
                 .dataStatusLine()
         }

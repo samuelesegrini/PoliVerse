@@ -70,6 +70,7 @@ struct LookScreen: View {
         .clipShape(.rect(cornerRadius: cornerRadius))
         .screenScaled(scale, size: screen)
         .allowsHitTesting(false)
+        .specialPage(.today, style: self.look.resolved)
     }
 }
 

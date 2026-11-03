@@ -79,6 +79,7 @@ struct CareerView: View {
                 .refreshable { await career.load(force: true) }
                 .detailPresentation(item: $selectedExam) { ExamDetailView(exam: $0) }
         }
+        .specialPage(.career, style: style)
     }
 
     // MARK: - The page

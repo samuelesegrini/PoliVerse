@@ -219,6 +219,7 @@ struct CoursesPage: View {
         .sheet(isPresented: $showingHidden) { HiddenCoursesSheet() }
         .animation(.snappy, value: shown.map(\.id))
         .animation(.snappy, value: originFilter)
+        .specialPage(.courses, style: style)
     }
 
     // MARK: - Hero

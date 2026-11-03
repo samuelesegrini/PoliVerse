@@ -143,6 +143,7 @@ struct TodayLanding: View {
         .padding(.horizontal, 20)
         .padding(.top, marked ? 16 : quiet ? 0 : 12)
         .animation(.snappy, value: style)
+        .specialPage(.today, style: style)
     }
 
     // MARK: - Header
