@@ -673,19 +673,19 @@ struct LookEditor: View {
     private var appInspector: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
-                inspectorGroup("Icona", note: look.app.paired
+                ToolGroup(title: "Icona", note: look.app.paired
                                ? "Automatica segue il colore del Flavor."
                                : "Scelta a mano. Automatica la riabbina al Flavor.") {
                     AppIconPicker(look: $edit.draft, layout: .grid(columns: 4))
                 }
-                inspectorGroup("Aspetto della Home", note: "Come la vedi con le icone scure, colorate o trasparenti.") {
+                ToolGroup(title: "Aspetto della Home", note: "Come la vedi con le icone scure, colorate o trasparenti.") {
                     GlassSegmentedPicker("Aspetto della Home", selection: $homeLook) { Text($0.title) }
                         .accessibilityIdentifier("customize-home-look")
                 }
-                inspectorGroup("Colore dell’app", note: "Il colore dei pulsanti e dei collegamenti in tutta l’app.") {
+                ToolGroup(title: "Colore dell’app", note: "Il colore dei pulsanti e dei collegamenti in tutta l’app.") {
                     AppTintPicker(look: $edit.draft, layout: .grid(columns: 6))
                 }
-                inspectorGroup("Barra su iPhone", note: "Su iPad e Mac le sezioni stanno nella barra laterale.") {
+                ToolGroup(title: "Barra su iPhone", note: "Su iPad e Mac le sezioni stanno nella barra laterale.") {
                     AppBarPicker(look: $edit.draft)
                 }
             }
@@ -700,24 +700,6 @@ struct LookEditor: View {
         .onChange(of: look.app.tabBar) {
             appView = .today
             device = .phone
-        }
-    }
-
-    /// One group of the inspector: its name, its controls, a line under them.
-    private func inspectorGroup<Content: View>(_ title: LocalizedStringKey, note: LocalizedStringKey?,
-                                               @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .accessibilityAddTraits(.isHeader)
-            content()
-            if let note {
-                Text(note)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
         }
     }
 
@@ -821,6 +803,13 @@ struct LookEditor: View {
         .accessibilityIdentifier("customize-edit-done")
     }
 
+    @ViewBuilder private var saveLibraryButton: some View {
+        if let saveOnly {
+            Button("Salva nella libreria") { leave(then: saveOnly) }.buttonStyle(.glass)
+                .accessibilityIdentifier("customize-save-library")
+        }
+    }
+
     /// The iPhone's bar: ✕ and undo and redo on the left, ••• and ✓ on the right.
     @ViewBuilder
     private var topBar: some View {
@@ -863,10 +852,7 @@ struct LookEditor: View {
                     roundButton("Annulla", symbol: "xmark", id: "customize-editor-cancel", shortcut: .cancelAction, action: askCancel)
                     undoRedo
                     Spacer()
-                    if let saveOnly {
-                        Button("Salva nella libreria") { leave(then: saveOnly) }.buttonStyle(.glass)
-                            .accessibilityIdentifier("customize-save-library")
-                    }
+                    saveLibraryButton
                     doneButton
                 }
             }
@@ -892,10 +878,7 @@ struct LookEditor: View {
                     .buttonStyle(.glass)
                     .keyboardShortcut(.cancelAction)
                     .accessibilityIdentifier("customize-editor-cancel")
-                if let saveOnly {
-                    Button("Salva nella libreria") { leave(then: saveOnly) }.buttonStyle(.glass)
-                        .accessibilityIdentifier("customize-save-library")
-                }
+                saveLibraryButton
                 doneButton
             }
         }

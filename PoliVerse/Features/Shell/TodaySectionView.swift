@@ -253,8 +253,7 @@ struct TodaySectionView: View {
     /// One row per entry: the shape every section had before forms.
     private func rows(_ entries: [TodayEntry]) -> some View {
         ForEach(entries) { entry in
-            row(symbol: entry.symbol, title: entry.title, detail: entry.detail,
-                trailing: entry.when, last: entry.id == entries.last?.id, opens: entry.opens)
+            row(entry, last: entry.id == entries.last?.id)
         }
     }
 
@@ -416,62 +415,39 @@ struct TodaySectionView: View {
         .padding(.vertical, compact ? 4 : 6)
     }
 
-    /// One row, opening its detail when there is one.
-    ///
-    /// - Parameters:
-    ///   - symbol: The row's SF Symbol.
-    ///   - title: What it is.
-    ///   - detail: One more line, if any.
-    ///   - trailing: When it is.
-    ///   - last: True for the last row, which draws no divider.
-    ///   - opens: The screen a tap opens, if any.
-    /// - Returns: The row.
-    private func row(symbol: String, title: String, detail: String?, trailing: String, last: Bool,
-                     opens: TodayDetail? = nil) -> some View {
-        opening(opens) {
-            rowContent(symbol: symbol, title: title, detail: detail, trailing: trailing, last: last)
-        }
-    }
-
-    /// A row's own layout, without the tap.
-    ///
-    /// - Parameters:
-    ///   - symbol: The row's SF Symbol.
-    ///   - title: What it is.
-    ///   - detail: One more line, dropped in the compact density.
-    ///   - trailing: When it is.
-    ///   - last: True for the last row, which draws no divider.
-    /// - Returns: The row's content.
-    private func rowContent(symbol: String, title: String, detail: String?, trailing: String, last: Bool) -> some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                Image(systemName: symbol)
-                    .font(compact ? .subheadline : .body)
-                    .foregroundStyle(accent)
-                    .frame(width: 24)
-                if compact {
-                    Text(title).font(.subheadline).lineLimit(1)
-                } else {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(title).font(.subheadline.weight(.medium)).lineLimit(1)
-                        if let detail, !detail.isEmpty {
-                            Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+    /// One entry, with its detail action and density-specific layout kept together.
+    private func row(_ entry: TodayEntry, last: Bool) -> some View {
+        opening(entry.opens) {
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    Image(systemName: entry.symbol)
+                        .font(compact ? .subheadline : .body)
+                        .foregroundStyle(accent)
+                        .frame(width: 24)
+                    if compact {
+                        Text(entry.title).font(.subheadline).lineLimit(1)
+                    } else {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(entry.title).font(.subheadline.weight(.medium)).lineLimit(1)
+                            if let detail = entry.detail, !detail.isEmpty {
+                                Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                            }
                         }
                     }
+                    Spacer(minLength: 8)
+                    Text(entry.when)
+                        .font(.caption.weight(.medium))
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
-                Spacer(minLength: 8)
-                Text(trailing)
-                    .font(.caption.weight(.medium))
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                .padding(.vertical, compact ? 7 : 10)
+                if !last {
+                    Divider().padding(.leading, 36)
+                }
             }
-            .padding(.vertical, compact ? 7 : 10)
-            if !last {
-                Divider().padding(.leading, 36)
-            }
+            .accessibilityElement(children: .combine)
         }
-        .accessibilityElement(children: .combine)
     }
 
     /// The line a section shows in place of its list when there is nothing.

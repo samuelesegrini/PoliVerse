@@ -98,7 +98,7 @@ Eseguire la suite `PoliVerse`, il walkthrough `CustomizeAnimationTests`,
 Il walkthrough copre le differenze tra scorrere, chiudere e applicare, il ciclo
 unico dell’editor, i controlli delle sezioni e il recupero delle eliminazioni.
 
-## Resoconto di questa modifica
+## Primo passaggio
 
 - Perimetro dedicato: **14.488 → 14.338 righe**, 150 in meno (1,04%).
 - Includendo le regioni esterne congelate e le relative modifiche: **14646 → 14502 righe**, riduzione netta **144 (0.98%)**.
@@ -120,3 +120,58 @@ unico dell’editor, i controlli delle sezioni e il recupero delle eliminazioni.
 I risultati UI e prestazionali incompleti vanno rieseguiti su un simulatore
 stabile prima di considerare chiusa la verifica end-to-end. La registrazione
 intermedia non sostituisce questo controllo.
+
+## Secondo passaggio: riduzione conservativa
+
+Il vincolo confermato è conservare anche aspetto e interazioni dell’editor,
+oltre alla galleria, anche se il nuovo obiettivo del 20% non viene raggiunto.
+
+- Rimossi la modalità Corsi fittizia di `AppPreview`, senza chiamanti, e
+  `FlavorFlowView` con il relativo shader, anch’essi senza utilizzatori.
+  Le anteprime Home e Dock, la pagina Oggi e gli effetti effettivamente usati
+  restano disponibili.
+- I gruppi App riusano `ToolGroup`, con gli stessi spazi, caratteri, note e
+  intestazioni accessibili. Il pulsante della libreria è condiviso tra le due
+  barre che avevano la stessa implementazione.
+- Carta, motivo, carattere della data e materiale condividono selezione e
+  animazione delle tessere; conservano anteprime, ordine e identificativi.
+  Per aggiungere un selettore equivalente basta specificare valori, scelta,
+  etichette e anteprima, senza duplicare il comportamento della selezione.
+- Le righe delle sezioni ricevono direttamente `TodayEntry`, eliminando il
+  passaggio duplicato dei suoi campi. Contenuto, densità e azioni restano uguali.
+
+| Misura | Prima del secondo passaggio | Dopo |
+| --- | ---: | ---: |
+| Righe fisiche nel perimetro dedicato | 14.338 | 14.177 |
+| Righe non vuote e non occupate soltanto da commenti, stesso perimetro | 10.491 | 10.371 |
+| Totale con regioni esterne congelate | 14.502 | 14.341 |
+
+Questo passaggio elimina **161 righe fisiche nette** e **120 righe non vuote
+e non occupate soltanto da commenti**. Il secondo conteggio è un indicatore
+testuale, non una misura delle istruzioni eseguite. Dalla baseline complessiva
+di 14.646 righe, la riduzione è **305 righe, pari al 2,08%**.
+Non sono stati spostati componenti fuori dal perimetro per ottenere il risultato.
+
+Il **20% non è raggiunto**: mancano altre 2.625 righe per arrivare a un totale
+di 11.716 o inferiore. Le alternative valutate — uniformare gli editor con
+controlli nativi o generalizzare layout con comportamenti differenti — non
+offrono al momento un taglio dimostrato compatibile con il vincolo visivo.
+Non costituiscono modifiche approvate.
+
+I **95 test in 11 suite** della personalizzazione sono stati rieseguiti su Mac
+e sono passati. La compilazione Mac è riuscita. La rimozione di codice non
+raggiungibile non dimostra un miglioramento delle prestazioni in esecuzione;
+restano da completare i confronti visuali e prestazionali descritti sopra.
+È riuscita anche la compilazione iOS Simulator per arm64 e x86_64, escludendo
+la generazione delle icone; questa prova non verifica le risorse delle icone.
+
+### Standards
+
+Nessun rilievo nella revisione del secondo passaggio: le astrazioni condividono
+comportamenti esistenti e le implementazioni eliminate non hanno chiamanti.
+
+### Spec
+
+Nessun rilievo nella revisione del secondo passaggio: azioni, ordine, spaziature,
+animazioni, identificativi accessibili e segno di spunta sono conservati nel
+codice. Entrambe le revisioni sono statiche; il confronto visuale resta aperto.

@@ -79,8 +79,6 @@ struct LookScreen: View {
 struct AppPreview: View {
     /// What the preview shows.
     enum Mode: Equatable {
-        /// A page of the app, with its tab bar.
-        case app
         /// The Home Screen, for the icon.
         case homeScreen
         /// A Mac's desktop, with the icon in the Dock.
@@ -125,9 +123,7 @@ struct AppPreview: View {
     /// The look whose app half is drawn.
     let look: TodayStyle
     /// Which of the two to show.
-    var mode = Mode.app
-    /// Shows the tab bar minimised, when the look lets it minimise.
-    var showsMinimizedBar = false
+    let mode: Mode
     /// How the Home Screen draws its icons.
     var homeLook = HomeLook.light
     /// The screen it stands for.
@@ -136,31 +132,19 @@ struct AppPreview: View {
     var insets = LookScreen.referenceInsets
 
     /// A preview of a look's app half, drawn with its special Flavor applied.
-    init(look: TodayStyle, mode: Mode = .app, showsMinimizedBar: Bool = false, homeLook: HomeLook = .light,
+    init(look: TodayStyle, mode: Mode, homeLook: HomeLook = .light,
          screen: CGSize = LookScreen.reference, insets: EdgeInsets = LookScreen.referenceInsets) {
         self.look = look.resolved
         self.mode = mode
-        self.showsMinimizedBar = showsMinimizedBar
         self.homeLook = homeLook
         self.screen = screen
         self.insets = insets
     }
 
-    /// Whether the interface is in light or dark mode.
-    @Environment(\.colorScheme) private var scheme
-
-    /// A few courses, enough to show the tint on rows, progress and links.
-    private static let courses: [(code: String, name: LocalizedStringKey, detail: LocalizedStringKey, progress: Double)] = [
-        ("AN", "Analisi Matematica II", "10 CFU · 2° semestre", 0.62),
-        ("FI", "Fondamenti di Informatica", "10 CFU · 1° semestre", 0.88),
-        ("FT", "Fisica Tecnica", "8 CFU · 2° semestre", 0.35),
-    ]
-
     /// The view's content.
     var body: some View {
         Group {
             switch mode {
-            case .app: coursesPage
             case .homeScreen: homeScreen
             case .dock: dock
             }
@@ -170,53 +154,6 @@ struct AppPreview: View {
         .clipShape(.rect(cornerRadius: 48))
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-    }
-
-    /// The look's own light, as the app is lit in it.
-    private var lit: ColorScheme { look.appearance.colorScheme ?? scheme }
-
-    /// Corsi, drawn in the look: its tint, its cards and its tab bar.
-    private var coursesPage: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Corsi")
-                .font(.largeTitle.bold())
-                .padding(.horizontal, 20)
-            VStack(spacing: 10) {
-                ForEach(Self.courses.indices, id: \.self) { index in
-                    let course = Self.courses[index]
-                    HStack(spacing: 12) {
-                        Text(course.code)
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 40, height: 40)
-                            .background(.tint.opacity(1 - Double(index) * 0.2), in: .rect(cornerRadius: 11, style: .continuous))
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(course.name).font(.subheadline.weight(.semibold))
-                            Text(course.detail).font(.caption).foregroundStyle(.secondary)
-                            ProgressView(value: course.progress)
-                        }
-                    }
-                    .padding(14)
-                    .todayMaterial(look.material, flavor: look.flavor, mode: look.appearance.flavorMode, cornerRadius: 22)
-                }
-            }
-            .padding(.horizontal, 16)
-            Text("Tutti i corsi")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.tint)
-                .padding(.horizontal, 20)
-            Spacer(minLength: 0)
-        }
-        .padding(.top, insets.top + 54)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .overlay(alignment: .bottom) {
-            ReplicaTabBar(selected: 1, minimized: showsMinimizedBar && look.appTabBar == .minimizes)
-                .padding(.bottom, max(insets.bottom - 13, 0))
-        }
-        .background(Color(.systemGroupedBackground))
-        .tint(look.controlTint(lit))
-        .fontDesign(look.textDesign.design)
-        .environment(\.colorScheme, lit)
     }
 
     /// A wallpaper in the app's colour, dimmed as the Home Screen's look asks.
