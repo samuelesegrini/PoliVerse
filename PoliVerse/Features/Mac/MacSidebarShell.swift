@@ -24,11 +24,11 @@ struct MacSidebarShell: View {
         NavigationSplitView {
             List(selection: Binding<ShellSelection?>(get: { selection }, set: { if let new = $0 { selection = new } })) {
                 Section {
-                    row("Oggi", "calendar.day.timeline.left", .tab(.today))
-                    row(NewDestination.courses.title, NewDestination.courses.systemImage, .tab(.courses))
-                    row(NewDestination.career.title, NewDestination.career.systemImage, .tab(.career))
+                    row(NewDestination.Tab.today.title, NewDestination.Tab.today.systemImage, .tab(.today))
+                    row(NewDestination.Tab.courses.title, NewDestination.Tab.courses.systemImage, .tab(.courses))
+                    row(NewDestination.Tab.career.title, NewDestination.Tab.career.systemImage, .tab(.career))
                         .badge(unread)
-                    row("Cerca", "magnifyingglass", .tab(.search))
+                    row(NewDestination.Tab.search.title, NewDestination.Tab.search.systemImage, .tab(.search))
                 }
                 Section("Campus e studio") {
                     ForEach(NewDestination.inSearch + [.calendar, .studyPlan]) { place in

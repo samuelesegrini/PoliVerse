@@ -52,6 +52,8 @@ struct LookEditor: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     /// The sidebar shows each part's name and value, not only its picture.
     @AppStorage("lookEditorSidebarOpen") private var sidebarOpen = true
+    /// Measured actions leave the iPad title centered without overlapping either side.
+    @State private var padBarSides = (leading: CGFloat.zero, trailing: CGFloat.zero)
     /// What the page is previewed on, on iPad and Mac: this kind of screen to begin with.
     @State private var device = LookEditor.ownDevice
     /// The iPhone task under way, if any.
@@ -810,6 +812,19 @@ struct LookEditor: View {
         }
     }
 
+    /// Secondary look actions, in the same menu on iPhone and iPad.
+    private var moreButton: some View {
+        Menu { menuItems } label: {
+            Image(systemName: "ellipsis")
+                .font(.body.weight(.semibold))
+                .frame(width: 30, height: 30)
+        }
+        .buttonStyle(.glass)
+        .buttonBorderShape(.circle)
+        .accessibilityLabel("Altre azioni")
+        .accessibilityIdentifier("customize-editor-more")
+    }
+
     /// The iPhone's bar: ✕ and undo and redo on the left, ••• and ✓ on the right.
     @ViewBuilder
     private var topBar: some View {
@@ -817,18 +832,10 @@ struct LookEditor: View {
             if arranging {
                 arrangingBar
             } else {
-                roundButton("Annulla", symbol: "xmark", id: "customize-editor-cancel", shortcut: .cancelAction, action: askCancel)
+                roundButton("Annulla personalizzazione", symbol: "xmark", id: "customize-editor-cancel", shortcut: .cancelAction, action: askCancel)
                 undoRedo
                 Spacer()
-                Menu { menuItems } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.body.weight(.semibold))
-                        .frame(width: 30, height: 30)
-                }
-                .buttonStyle(.glass)
-                .buttonBorderShape(.circle)
-                .accessibilityLabel("Altre azioni")
-                .accessibilityIdentifier("customize-editor-more")
+                moreButton
                 doneButton
             }
         }
@@ -842,18 +849,31 @@ struct LookEditor: View {
             if arranging {
                 arrangingBar
             } else {
-                Group {
-                    if look.name.isEmpty { Text("Senza nome") } else { Text(verbatim: look.name) }
+                GeometryReader { room in
+                    Group {
+                        if look.name.isEmpty { Text("Senza nome") } else { Text(verbatim: look.name) }
+                    }
+                    .font(.headline)
+                    .lineLimit(1)
+                    .frame(width: min(360, max(0, room.size.width
+                        - 2 * (max(padBarSides.leading, padBarSides.trailing) + 16))))
+                    .clipped()
+                    .accessibilityIdentifier("customize-look-title")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .font(.headline)
-                .lineLimit(1)
-                .frame(maxWidth: 360)
                 HStack(spacing: 8) {
-                    roundButton("Annulla", symbol: "xmark", id: "customize-editor-cancel", shortcut: .cancelAction, action: askCancel)
-                    undoRedo
+                    HStack(spacing: 8) {
+                        roundButton("Annulla personalizzazione", symbol: "xmark", id: "customize-editor-cancel", shortcut: .cancelAction, action: askCancel)
+                        undoRedo
+                    }
+                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { padBarSides.leading = $0 }
                     Spacer()
-                    saveLibraryButton
-                    doneButton
+                    HStack(spacing: 8) {
+                        saveLibraryButton
+                        moreButton
+                        doneButton
+                    }
+                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { padBarSides.trailing = $0 }
                 }
             }
         }
@@ -926,7 +946,7 @@ struct LookEditor: View {
 
         Section {
             Button("Rinomina", systemImage: "pencil", action: rename)
-            Button("Ripristina tutto", systemImage: "arrow.uturn.backward") {
+            Button("Ripristina tutto", systemImage: "arrow.counterclockwise") {
                 withAnimation(.snappy) { look = original }
             }
             .disabled(look == original)

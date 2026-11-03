@@ -1,6 +1,36 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
+    "Annulla personalizzazione" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel customization"
+          }
+        }
+      }
+    },
+    "Annulla modifiche: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discard changes: %@"
+          }
+        }
+      }
+    },
+    "Conferma %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirm %@"
+          }
+        }
+      }
+    },
     "" : {
       "localizations" : {
         "en" : {

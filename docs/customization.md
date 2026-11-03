@@ -175,3 +175,51 @@ comportamenti esistenti e le implementazioni eliminate non hanno chiamanti.
 Nessun rilievo nella revisione del secondo passaggio: azioni, ordine, spaziature,
 animazioni, identificativi accessibili e segno di spunta sono conservati nel
 codice. Entrambe le revisioni sono statiche; il confronto visuale resta aperto.
+
+
+## Iconografia e controlli delle barre
+
+- Il ripristino completo usa `arrow.counterclockwise`, come il ripristino per
+  parte; annulla/ripeti conservano `arrow.uturn.backward` e `forward`.
+- La chiusura dell’editor è annunciata come «Annulla personalizzazione»;
+  le conferme e gli annullamenti locali nominano la sottoattività. La spunta
+  principale resta «Salva e usa».
+- Il menu «Altre azioni» è condiviso da iPhone e iPad. Il salvataggio nella
+  libreria mantiene l’etichetta testuale; su iPad rimane anche il pulsante diretto.
+- `NewDestination.Tab` fornisce etichette e simboli a navigazione, barra laterale
+  Mac e replica della galleria. Cerca conserva il ruolo di ricerca del sistema.
+  Le varianti filled della replica e la scelta automatica delle barre native
+  rimangono separate dalla definizione del simbolo base.
+- I pulsanti annulla/ripeti hanno una superficie di 44 × 44 punti ciascuno.
+  La verifica UI misura anche i pulsanti circolari dopo l’applicazione dello stile.
+- Su iPad il titolo resta centrato e riserva lo spazio realmente occupato dai
+  gruppi laterali; il nome viene troncato quando necessario, senza sovrapporre
+  salvataggio, menu e conferma.
+
+La disposizione dell’editor e i gesti restano quelli esistenti. Non viene
+introdotto un selettore libero di icone né migrata la barra a un nuovo contenitore.
+Le indicazioni di riferimento sono le HIG [Toolbars](https://developer.apple.com/design/human-interface-guidelines/toolbars),
+[SF Symbols](https://developer.apple.com/design/human-interface-guidelines/sf-symbols)
+e la sessione [WWDC26 What’s new in SwiftUI, 6:15](https://developer.apple.com/videos/play/wwdc2026/269/?time=375).
+
+
+Verifiche di questo intervento: **95 test in 11 suite su Mac passati**;
+**due prove UI su iPhone e due su iPad passate**, con schermate acquisite ed
+esaminate. Sono controllati anche etichette e dimensioni dei pulsanti principali,
+e il titolo di un look non attivo con nome lungo. Le prove iOS escludono la
+generazione delle icone. Il controllo completo di VoiceOver, Dynamic Type e
+finestre iPad ridimensionate resta distinto da queste prove mirate.
+
+La suite generale iOS è stata compilata ma interrotta dopo circa sei minuti
+senza avvio dei test: la verifica generale resta incompleta. La ripetizione
+finale del test iPad, dopo aver reso obbligatoria la presenza del titolo e
+aggiunto il confronto con il nome modificato, è stata compilata ma interrotta
+dopo oltre otto minuti senza risposta da una lettura dell’interfaccia. La prima
+esecuzione iPad aveva superato il controllo di sovrapposizione. La ripetizione
+resta da completare; lo stallo non è stato attribuito a una causa verificata.
+Standards e Spec non hanno rilievi aperti dopo le correzioni statiche del titolo
+e del test iPad.
+
+Questo intervento aggiunge **40 righe Swift nette** e **30 righe di traduzioni**;
+test e resoconto sono separati. I conteggi dei passaggi precedenti restano
+resoconti storici della riduzione, antecedenti a questa aggiunta funzionale.

@@ -314,14 +314,15 @@ struct RootView: View {
         MacSidebarShell(selection: $tabSelection, unread: feed.unreadCount)
         #else
         TabView(selection: $tabSelection) {
-            Tab("Oggi", systemImage: "calendar.day.timeline.left", value: ShellSelection.tab(.today)) {
+            Tab(NewDestination.Tab.today.title, systemImage: NewDestination.Tab.today.systemImage,
+                value: ShellSelection.tab(.today)) {
                 TodayTab().accessibilityIdentifier("tab-today")
             }
-            Tab(NewDestination.courses.title, systemImage: NewDestination.courses.systemImage,
+            Tab(NewDestination.Tab.courses.title, systemImage: NewDestination.Tab.courses.systemImage,
                 value: ShellSelection.tab(.courses)) {
                 CoursesTab().accessibilityIdentifier("tab-courses")
             }
-            Tab(NewDestination.career.title, systemImage: NewDestination.career.systemImage,
+            Tab(NewDestination.Tab.career.title, systemImage: NewDestination.Tab.career.systemImage,
                 value: ShellSelection.tab(.career)) {
                 CareerTab().accessibilityIdentifier("tab-career")
             }
@@ -336,7 +337,8 @@ struct RootView: View {
                     }
                 }
             }
-            Tab(value: ShellSelection.tab(.search), role: .search) {
+            Tab(NewDestination.Tab.search.title, systemImage: NewDestination.Tab.search.systemImage,
+                value: ShellSelection.tab(.search), role: .search) {
                 SearchTab().accessibilityIdentifier("tab-search")
             }
 

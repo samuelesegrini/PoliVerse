@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 
 nonisolated final class LookApplicationUITests: XCTestCase {
@@ -41,8 +42,49 @@ nonisolated final class LookApplicationUITests: XCTestCase {
         app.buttons["customize-edit"].tap()
         let done = app.buttons["customize-edit-done"]
         XCTAssertTrue(done.waitForExistence(timeout: 10))
+        XCTAssertEqual(done.label, "Salva e usa")
+        XCTAssertEqual(app.buttons["customize-editor-cancel"].label, "Annulla personalizzazione")
+        for id in ["customize-editor-cancel", "customize-editor-undo", "customize-editor-redo",
+                   "customize-editor-more", "customize-edit-done"] {
+            let button = app.buttons[id]
+            XCTAssertGreaterThanOrEqual(button.frame.width, 44, id)
+            XCTAssertGreaterThanOrEqual(button.frame.height, 44, id)
+        }
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "Editor toolbar"
+        shot.lifetime = .keepAlways
+        add(shot)
         done.tap()
         XCTAssertTrue(app.buttons["today-customize"].firstMatch.waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["customize-pair-custom"].exists)
     }
+
+    @MainActor func testUnappliedLookKeepsTitleClearOfToolbarActions() throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad, "The centered title belongs to the iPad editor")
+        let app = launch()
+        open(app)
+        app.buttons["customize-card-0"].swipeLeft()
+        XCTAssertTrue(app.buttons["customize-card-1"].waitForExistence(timeout: 5))
+        app.buttons["customize-edit"].tap()
+        XCTAssertTrue(app.buttons["customize-edit-done"].waitForExistence(timeout: 10))
+        let title = app.staticTexts["customize-look-title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        let name = app.textFields["customize-name-field"]
+        name.tap()
+        let previous = name.value as? String ?? ""
+        let longName = "Il mio look per studiare"
+        name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: previous.count) + longName)
+        XCTAssertEqual(title.label, longName)
+        let save = app.buttons["customize-save-library"]
+        XCTAssertTrue(save.exists)
+        for id in ["customize-editor-cancel", "customize-editor-undo", "customize-editor-redo",
+                   "customize-save-library", "customize-editor-more", "customize-edit-done"] {
+            XCTAssertFalse(title.frame.intersects(app.buttons[id].frame), id)
+        }
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "Unapplied look toolbar"
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
+
 }
