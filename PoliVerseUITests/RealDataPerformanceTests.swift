@@ -49,7 +49,16 @@ nonisolated final class RealDataPerformanceTests: PoliVerseUITestCase {
     @MainActor private func makeSignedInApp(forcingRefresh: Bool = true) -> XCUIApplication {
         let app = makeApp(data: .signedInAccount)
         if forcingRefresh { app.launchArguments += ["-forceLaunchRefresh", "<true/>"] }
+        app.launchArguments += Self.extraArguments
         return app
+    }
+
+    /// Launch arguments a device run adds without a code change, such as
+    /// `-TodayLegacy all` for the drawing A/B: `POLIVERSE_EXTRA_ARGS`, split on
+    /// spaces, which `xcodebuild` passes through as `TEST_RUNNER_POLIVERSE_EXTRA_ARGS`.
+    static var extraArguments: [String] {
+        (ProcessInfo.processInfo.environment["POLIVERSE_EXTRA_ARGS"] ?? "")
+            .split(separator: " ").map(String.init)
     }
 
     /// A launched app on the signed-in account, sitting on Oggi.
