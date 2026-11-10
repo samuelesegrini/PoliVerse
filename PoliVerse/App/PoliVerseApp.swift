@@ -387,8 +387,12 @@ struct PoliVerseApp: App {
                         await pending.flush()
                         // Forced, unlike the foreground path: whatever is
                         // on screen was fetched before the outage, and the
-                        // window has no way of knowing that.
-                        await freshness.revalidate(force: true)
+                        // window has no way of knowing that. Only with
+                        // someone signed in, like the foreground path: a pass
+                        // without an account fails every service.
+                        if session.student != nil {
+                            await freshness.revalidate(force: true)
+                        }
                     }
                 }
             }

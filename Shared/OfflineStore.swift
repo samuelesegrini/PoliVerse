@@ -67,6 +67,28 @@ nonisolated final class OfflineStore: Sendable {
     static let groupIdentifier = "group.segrini.samuele.PoliVerse"
     #endif
 
+    /// Whether this process can reach the app group's container, asked once.
+    ///
+    /// A build whose signing does not carry the group — a personal team's profile,
+    /// an unsigned simulator build — gets `nil` from the container lookup, and the
+    /// system logs "client is not entitled" each time it is asked.
+    static let isGroupAvailable: Bool = FileManager.default
+        .containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil
+
+    /// The app group's defaults, or the process's own when the group is not
+    /// available.
+    ///
+    /// `UserDefaults(suiteName:)` never returns `nil` for a group the process is not
+    /// entitled to: it returns a suite that cannot persist anything, and cfprefsd
+    /// logs "Using kCFPreferencesAnyUser with a container is only allowed for System
+    /// Containers, detaching from cfprefsd" on the first read. Without the group the
+    /// extensions cannot read what is written either way, so the app's own
+    /// defaults at least keep it.
+    static var groupDefaults: UserDefaults {
+        guard isGroupAvailable else { return .standard }
+        return UserDefaults(suiteName: groupIdentifier) ?? .standard
+    }
+
     /// The store every service uses, backed by the app group.
     static let shared = OfflineStore(groupIdentifier: groupIdentifier)
 
@@ -401,7 +423,7 @@ nonisolated struct SharedAccount: Sendable {
     /// The app group's defaults, which both the app and its extensions read and write.
     /// Falls back to `.standard` when the suite is unavailable.
     static var defaults: UserDefaults {
-        UserDefaults(suiteName: OfflineStore.groupIdentifier) ?? .standard
+        OfflineStore.groupDefaults
     }
 
     /// Whose records an extension should read, or `nil` when signed out — which a

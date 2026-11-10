@@ -81,7 +81,8 @@ final class AgendaModel {
             }
         }
     }
-    /// `true` while a load is in flight.
+    /// `true` while a load is in flight over an empty timetable; a refresh of weeks
+    /// already held does not report it.
     private(set) var isLoading = false
     /// The last load's error, or `nil` when it succeeded. A failed deadlines fetch does
     /// not set it.
@@ -168,12 +169,16 @@ final class AgendaModel {
         let deadlinesDue = await deadlineLoader.isDue(deadlineKey, env: env, force: force)
         guard due || deadlinesDue else { return }
 
+        // Written only when they change, and `isLoading` only over an empty
+        // timetable — the one place it is read. A refresh over held weeks
+        // that toggled it redrew the calendar and the glass on it twice in
+        // a frame ("glassEffect() tried to update multiple times per frame").
         loadsInFlight += 1
-        isLoading = true
-        errorMessage = nil
+        if !isLoading, events.isEmpty { isLoading = true }
+        if errorMessage != nil { errorMessage = nil }
         defer {
             loadsInFlight -= 1
-            if loadsInFlight == 0 { isLoading = false }
+            if loadsInFlight == 0, isLoading { isLoading = false }
         }
 
         async let lectures = fetchWeeks(wanted, env: env, force: force)

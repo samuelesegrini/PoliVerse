@@ -170,6 +170,13 @@ nonisolated final class PoliMiAPI: Sendable {
     /// can drop the token and send the student back to sign-in.
     private let onInvalidScope: @Sendable () async -> Void
 
+    /// Called when an authenticated request finds no usable token: none is stored, or
+    /// the identity provider refused the refresh and the pair was dropped.
+    ///
+    /// Without it the session stayed signed in over a missing token, and every screen
+    /// kept asking for its data and failing with "Non hai effettuato l'accesso".
+    private let onTokenLost: @Sendable () async -> Void
+
     /// Creates the authenticated transport.
     ///
     /// - Parameters:
@@ -178,6 +185,7 @@ nonisolated final class PoliMiAPI: Sendable {
     ///   - profileID: Supplies the signed-in student's profile.
     ///   - matricola: Supplies the matricola, for the services that require it.
     ///   - onInvalidScope: Called on a scope refusal from a service the app depends on.
+    ///   - onTokenLost: Called when an authenticated request finds no usable token.
     ///   - session: The session requests are issued through.
     init(
         tokens: TokenStore,
@@ -185,6 +193,7 @@ nonisolated final class PoliMiAPI: Sendable {
         profileID: @escaping @Sendable () async -> Int = { PoliMiProfile.student },
         matricola: @escaping @Sendable () async -> String? = { nil },
         onInvalidScope: @escaping @Sendable () async -> Void = {},
+        onTokenLost: @escaping @Sendable () async -> Void = {},
         session: URLSession = APISession.shared
     ) {
         self.tokens = tokens
@@ -192,6 +201,7 @@ nonisolated final class PoliMiAPI: Sendable {
         self.profileID = profileID
         self.matricola = matricola
         self.onInvalidScope = onInvalidScope
+        self.onTokenLost = onTokenLost
         self.session = session
     }
 
@@ -295,7 +305,13 @@ nonisolated final class PoliMiAPI: Sendable {
         var didRetryAuth = false
 
         while true {
-            let urlRequest = try await makeURLRequest(request)
+            let urlRequest: URLRequest
+            do {
+                urlRequest = try await makeURLRequest(request)
+            } catch let error as AuthError {
+                await onTokenLost()
+                throw error
+            }
 
             do {
                 let (data, response) = try await session.data(for: urlRequest)
@@ -376,6 +392,8 @@ nonisolated final class PoliMiAPI: Sendable {
             } catch let error as APIError {
                 throw error
             } catch let error as AuthError {
+                // A refresh after a 401 was refused: the pair is gone.
+                await onTokenLost()
                 throw error
             } catch {
                 // Cancellation first: it is not a failure, and retrying a
