@@ -76,6 +76,9 @@ struct CareerView: View {
                 .navigationDestination(isPresented: $showingManifesti) { ManifestiView() }
                 .navigationDestination(isPresented: $showingTimetable) { PersonalTimetableView() }
                 .task { await career.load() }
+                .screenLedger("Carriera",
+                              hasContent: !career.sessions.isEmpty || !career.libretto.isEmpty,
+                              isComplete: !career.isLoading && (!career.sessions.isEmpty || !career.libretto.isEmpty))
                 .refreshable { await career.load(force: true) }
                 .detailPresentation(item: $selectedExam) { ExamDetailView(exam: $0) }
         }

@@ -47,6 +47,9 @@ actor Loader<R: Resource> {
         var lastUsed: ContinuousClock.Instant
         /// ``Env/source`` of the load that produced it.
         var source: String
+        /// Fetched by a warm-up and not served to anyone yet. The ledger counts
+        /// how many of these are ever used.
+        var unusedWarmUp = false
     }
 
     /// One fetch in flight, for one or more keys.
@@ -63,6 +66,8 @@ actor Loader<R: Resource> {
         let warm: Bool
         /// Callers awaiting it and not cancelled.
         var waiters: Int
+        /// Someone asked for a key of this warm-up while it was in flight.
+        var claimed = false
     }
 
     private let resource: R
@@ -102,6 +107,11 @@ actor Loader<R: Resource> {
     func cached(_ key: R.Key, env: Env) -> Snapshot? {
         guard var entry = entries[key], entry.source == env.source else { return nil }
         entry.lastUsed = clock.now
+        if entry.unusedWarmUp, isHeld(key, env: env) {
+            // Served fresh because a warm-up fetched it: the warm-up paid off.
+            entry.unusedWarmUp = false
+            LoadingLedger.shared.noteSpeculation(part: R.id, used: 1)
+        }
         entries[key] = entry
         return snapshot(entry)
     }
@@ -156,6 +166,7 @@ actor Loader<R: Resource> {
             if let id = flightOf[key], let flight = flights[id], flight.source == env.source {
                 // Joined even when forced: a fetch under way is as fresh as a new one.
                 waitingOn.insert(id)
+                if flight.warm { flights[id]?.claimed = true }
             } else if force || isDue(key, env: env) {
                 toFetch.append(key)
             }
@@ -299,7 +310,10 @@ actor Loader<R: Resource> {
                 let samples = keys.compactMap { key in resource.sample(key).map { (key, $0) } }
                 if samples.count == keys.count { return Dictionary(uniqueKeysWithValues: samples) }
             }
-            return try await resource.fetch(keys, env: env, previous: previous)
+            // What the requests of this fetch are for, read by ``RequestGate``.
+            return try await LoadContext.$current.withValue(.init(part: R.id, speculative: warm)) {
+                try await resource.fetch(keys, env: env, previous: previous)
+            }
         }
         flights[id] = Flight(task: task, keys: keys, source: env.source, warm: warm, waiters: 0)
         for key in keys { flightOf[key] = id }
@@ -355,8 +369,13 @@ actor Loader<R: Resource> {
         }
         let now = clock.now
         let date = Date.now
+        if flight.warm {
+            LoadingLedger.shared.noteSpeculation(
+                part: R.id, sent: values.count, used: flight.claimed ? values.count : 0)
+        }
         for (key, value) in values {
-            entries[key] = Entry(value: value, fetchedAt: date, stamp: now, lastUsed: now, source: flight.source)
+            entries[key] = Entry(value: value, fetchedAt: date, stamp: now, lastUsed: now, source: flight.source,
+                                 unusedWarmUp: flight.warm && !flight.claimed)
             if R.persistence != .memory, flight.source != "mock", (R.persistence == .publicDisk || flight.source != "anonymous") {
                 resource.save(value, to: offline, as: resource.storageName(for: key), account: flight.source)
             }

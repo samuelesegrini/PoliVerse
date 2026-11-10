@@ -66,6 +66,13 @@ nonisolated struct PublicHTTP: HTTP {
     ///   1200 bytes of the body, ``APIError/cancelled`` for a cancellation, and
     ///   ``APIError/transport(_:)`` for anything else.
     func data(for request: APIRequest) async throws -> Data {
+        try await RequestGate.shared.run(host: request.host.rawValue) {
+            try await self.perform(request)
+        }
+    }
+
+    /// The request behind ``data(for:)``, without the ledger's timing.
+    private func perform(_ request: APIRequest) async throws -> Data {
         let base = directory?.routedURL(for: request.host) ?? request.host.fallback
         guard var components = URLComponents(
             url: base.appendingPathComponent(request.path), resolvingAgainstBaseURL: false)

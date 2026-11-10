@@ -108,7 +108,8 @@ struct DiagnosticsCollector {
             performance: .init(
                 metricReports: summary.metricCount,
                 diagnosticReports: summary.diagnosticCount,
-                latest: summary.latest))
+                latest: summary.latest),
+            loading: await LoadingLedger.shared.report())
     }
 
     /// Probes every service's base address, WeBeep included.

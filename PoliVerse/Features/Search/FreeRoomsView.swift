@@ -53,6 +53,8 @@ struct FreeRoomsView: View {
         .task(id: "\(aule.day.timeIntervalSince1970)|\(aule.campus ?? "")") {
             await aule.load()
         }
+        .screenLedger("Aule libere", hasContent: !aule.rooms.isEmpty,
+                      isComplete: !aule.isLoading && !aule.rooms.isEmpty)
         .refreshable { await aule.load(force: true) }
         // Free rooms is not in ``FreshnessCoordinator``: a campus pass is up
         // to 158 requests, which is not something to spend every time the app

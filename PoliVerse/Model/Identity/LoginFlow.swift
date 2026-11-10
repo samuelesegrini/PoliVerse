@@ -328,6 +328,8 @@ final class LoginFlow {
         // Otherwise the next person to sign in on this device finds the
         // previous student's courses in Spotlight.
         SpotlightIndex().clear()
+        // The loading ledger describes this student's use of the app.
+        await LoadingLedger.shared.erase()
         // Same reason: reminders naming someone else's lectures would keep
         // arriving after they signed out.
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()

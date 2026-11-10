@@ -47,6 +47,8 @@ struct CourseDetailView: View {
     @State private var bracketTeacher: String?
     /// The programme once the Manifesti service has answered.
     @State private var syllabus: Syllabus?
+    /// Whether the page's own loads have all returned, for the loading ledger.
+    @State private var didLoad = false
 
     /// The course's own colour.
     private var accent: Color { Theme.accent(for: course) }
@@ -178,7 +180,10 @@ struct CourseDetailView: View {
                 if let id = pick.module.syllabusID { syllabus = await manifesti.syllabus(for: id) }
             }
             await lectures
+            didLoad = true
         }
+        .screenLedger("Corso", hasContent: didLoad || syllabus != nil || bracketTeacher != nil,
+                      isComplete: didLoad)
     }
 
     // MARK: - Hero

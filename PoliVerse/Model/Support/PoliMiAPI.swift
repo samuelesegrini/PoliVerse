@@ -301,6 +301,15 @@ nonisolated final class PoliMiAPI: Sendable {
     ///   status is classified.
     @discardableResult
     func send(_ request: APIRequest) async throws -> Data {
+        // Timed as one request, retries and token refresh included: that is the
+        // wait the caller had.
+        try await RequestGate.shared.run(host: request.host.rawValue) {
+            try await self.transmit(request)
+        }
+    }
+
+    /// The pipeline behind ``send(_:)``, without the ledger's timing.
+    private func transmit(_ request: APIRequest) async throws -> Data {
         var attempt = 0
         var didRetryAuth = false
 
