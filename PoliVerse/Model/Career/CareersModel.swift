@@ -12,12 +12,16 @@ import OSLog
 /// student through a web view, so it is offered rather than performed.
 @Observable
 final class CareersModel {
+    /// The list, through the shared loader: a second caller joins the load in
+    /// flight, and the list is read once a day at most.
+    private let query: Query<CareersSource>
+
     /// The enrolments, once loaded.
-    private(set) var careers: [Career] = []
+    var careers: [Career] { query.value ?? [] }
     /// `true` while the list is loading.
-    private(set) var isLoading = false
+    var isLoading: Bool { query.isLoading }
     /// The last load's error, or `nil` when it succeeded.
-    private(set) var errorMessage: String?
+    var errorMessage: String? { query.errorMessage }
 
     /// Who is signed in, and the transport.
     private let account: any Account
@@ -63,54 +67,12 @@ final class CareersModel {
     init(account: any Account, defaults: UserDefaults = .standard) {
         self.account = account
         self.defaults = defaults
+        self.query = Query(CareersSource(), account: account)
     }
 
-    /// Loads the enrolment list once.
-    ///
-    /// Returns when the list is already held; a call while a load is in flight waits for
-    /// it, so a caller that reads ``careers`` right after finds them. A sample account
-    /// gets ``Career/samples()``. A failure leaves the list empty and sets
-    /// ``errorMessage``.
+    /// Loads the list, once a day at most; a call while it loads joins it.
     func load() async {
-        if let running {
-            await running.value
-            return
-        }
-        guard careers.isEmpty else { return }
-        let task = Task(name: "careers load") { await self.fetch() }
-        running = task
-        await task.value
-        running = nil
-    }
-
-    /// The load in flight, which a second caller joins.
-    @ObservationIgnored private var running: Task<Void, Never>?
-
-    /// Fetches the enrolment list.
-    private func fetch() async {
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
-
-        if account.isSample {
-            careers = Career.samples()
-            return
-        }
-
-        do {
-            let data = try await account.http.data(
-                for: APIRequest(host: .app, path: "/v1/careers/list"))
-            // Parses the payload a second time, on the main actor: a question
-            // for a debugger, not a cost every student should pay.
-            #if DEBUG
-            log.notice("careers payload shape: \(JSONShape.describe(data), privacy: .public)")
-            #endif
-            careers = try await BackgroundJSON.decode(CareersResponse.self, from: data).careers
-            log.notice("careers: \(self.careers.count, privacy: .public) — \(self.careers.map { "\($0.matricola) \($0.status ?? "?")" }.joined(separator: ", "), privacy: .private(mask: .hash))")
-        } catch {
-            log.error("Careers list failed: \(error.localizedDescription)")
-            errorMessage = userFacingMessage(error)
-        }
+        await query.load()
     }
 
     /// The enrolment the app should be on, if it is not already.
@@ -162,4 +124,30 @@ final class CareersModel {
 extension CareersModel: Enrolments {
     /// The matricole of every known enrolment.
     var matricole: [String] { careers.map(\.matricola) }
+}
+
+/// The student's enrolments, from `/v1/careers/list`.
+///
+/// Kept in memory only, as before: the list is the first thing read after
+/// signing in, and a stale copy would offer a switch to a career that closed.
+nonisolated struct CareersSource: Resource {
+    static let id = "careers"
+    /// A day: enrolments change once a year, and the list used to be read once a launch.
+    static let ttl: TimeInterval = 86_400
+    static let persistence: Persistence = .memory
+
+    private static let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "careers")
+
+    @concurrent
+    func fetch(_ key: Whole, env: Env, previous: [Career]?) async throws -> [Career] {
+        let data = try await env.http.data(for: APIRequest(host: .app, path: "/v1/careers/list"))
+        #if DEBUG
+        Self.log.notice("careers payload shape: \(JSONShape.describe(data), privacy: .public)")
+        #endif
+        let careers = try await BackgroundJSON.decode(CareersResponse.self, from: data).careers
+        Self.log.notice("careers: \(careers.count, privacy: .public) — \(careers.map { "\($0.matricola) \($0.status ?? "?")" }.joined(separator: ", "), privacy: .private(mask: .hash))")
+        return careers
+    }
+
+    func sample(_ key: Whole) -> [Career]? { Career.samples() }
 }

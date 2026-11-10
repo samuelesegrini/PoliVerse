@@ -1,3 +1,4 @@
+import Observation
 import SwiftUI
 import UserNotifications
 
@@ -215,6 +216,36 @@ struct PoliVerseApp: App {
             notices: notices, news: news, weBeep: weBeep, status: status)
         _freshness = State(initialValue: freshness)
 
+        // Watched here rather than with `onChange` on the window's view: iOS
+        // launches the app in the background for refreshes and the Watch, with
+        // no view, and a queued change should still go out when signal returns.
+        // `Observations` (Swift 6.2) follows the models directly, whether or
+        // not anything is on screen.
+        //
+        // The moment signal returns is the moment to send what was queued, not
+        // the next time the student happens to open a tab. Forced, unlike the
+        // foreground path: whatever is on screen was fetched before the outage.
+        // Only with someone signed in: a pass without an account fails every service.
+        Task(name: "reconnection") { @MainActor in
+            var wasOnline = network.isOnline
+            for await online in Observations({ network.isOnline }) {
+                defer { wasOnline = online }
+                guard online, !wasOnline else { continue }
+                await pending.flush()
+                if session.student != nil {
+                    await freshness.revalidate(force: true)
+                }
+            }
+        }
+        // The queue is per matricola, so switching career must show that
+        // career's waiting changes rather than the last one's. The first value
+        // is the one at launch, which the queue already read in its init.
+        Task(name: "career switch") { @MainActor in
+            for await _ in Observations({ session.student?.matricola }).dropFirst() {
+                await pending.refresh()
+            }
+        }
+
         // Deliberately narrower than the coordinator's list: a background
         // refresh gets about 30 seconds in total, so it warms the two screens
         // a student opens to and leaves the rest to the next foregrounding.
@@ -379,28 +410,8 @@ struct PoliVerseApp: App {
                     }
                 }
             }
-            // The moment signal returns is the moment to send what was
-            // queued — not the next time the user happens to open a tab.
-            .onChange(of: network.isOnline) { _, online in
-                if online {
-                    Task {
-                        await pending.flush()
-                        // Forced, unlike the foreground path: whatever is
-                        // on screen was fetched before the outage, and the
-                        // window has no way of knowing that. Only with
-                        // someone signed in, like the foreground path: a pass
-                        // without an account fails every service.
-                        if session.student != nil {
-                            await freshness.revalidate(force: true)
-                        }
-                    }
-                }
-            }
-            // The queue is per matricola, so switching career must show
-            // that career's waiting changes rather than the last one's.
-            .onChange(of: session.student?.matricola) { _, _ in
-                Task { await pending.refresh() }
-            }
+            // Reconnection and a career switch are watched from `init`, with
+            // `Observations`: they matter with no window too.
             // The one guaranteed moment a login (or career switch) has
             // just finished: token in hand, the account confirmed by
             // `/jaf/internal/user`. Forced, because this is the pass that

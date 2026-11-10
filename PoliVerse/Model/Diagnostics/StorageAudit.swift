@@ -117,7 +117,8 @@ nonisolated enum StorageAudit {
     ///
     /// - Returns: The groups, largest first.
     static func scan() async -> [Category] {
-        await Task.detached(priority: .userInitiated) { scanNow() }.value
+        // Off the main actor, at the caller's priority, and cancelled with it.
+        await Compute.run { scanNow() }
     }
 
     /// ``scanNow(materials:appData:)`` over the app's real folders, on the calling thread.
