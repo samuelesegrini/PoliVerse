@@ -116,13 +116,12 @@ final class SpotlightIndex {
 
         guard !items.isEmpty else { return }
         let count = items.count
-        CSSearchableIndex.default().indexSearchableItems(items) { error in
-            if let error {
-                log.error("Spotlight indexing failed: \(error.localizedDescription)")
-            } else {
-                log.notice("Indexed \(count, privacy: .public) items for Spotlight")
-                DiagnosticsLog.shared.spotlightIndexed(count: count)
-            }
+        do {
+            try await CSSearchableIndex.default().indexSearchableItems(items)
+            log.notice("Indexed \(count, privacy: .public) items for Spotlight")
+            DiagnosticsLog.shared.spotlightIndexed(count: count)
+        } catch {
+            log.error("Spotlight indexing failed: \(error.localizedDescription)")
         }
     }
 

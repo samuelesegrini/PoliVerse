@@ -735,7 +735,7 @@ final class WeBeepModel {
     ///   matched, or the call failed — none of which is the same as a page with no forums.
     func forums(for course: Course) async -> [CourseForum]? {
         if session.useMockData { return CourseForum.samples }
-        guard let api else { return nil }
+        guard api != nil else { return nil }
         if courses.isEmpty { await loadCourses() }
         guard let moodleID = moodleCourseID(for: course) else { return nil }
         do {
@@ -758,7 +758,7 @@ final class WeBeepModel {
     /// - Returns: The link, or `nil` when WeBeep is not connected, the course cannot be
     ///   matched, or its page has no such link.
     func recordingsEntry(for course: Course) async -> URL? {
-        guard !session.useMockData, let api else { return nil }
+        guard !session.useMockData, api != nil else { return nil }
         if courses.isEmpty { await loadCourses() }
         guard let moodleID = moodleCourseID(for: course) else { return nil }
         do {
