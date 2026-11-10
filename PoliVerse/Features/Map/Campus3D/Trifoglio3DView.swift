@@ -143,9 +143,9 @@ extension Trifoglio3DTuning {
 }
 
 /// A building's floors and classrooms, as the exporter writes them next to the models.
-struct Trifoglio3DPlan: Decodable {
+nonisolated struct Trifoglio3DPlan: Decodable, Sendable {
     /// One floor of the building.
-    struct Floor: Decodable, Identifiable {
+    nonisolated struct Floor: Decodable, Identifiable, Sendable {
         /// The floor's code, which also names its entity.
         let csip: String
         /// Height of its floor slab, in metres above the ground floor.
@@ -157,7 +157,7 @@ struct Trifoglio3DPlan: Decodable {
     }
 
     /// One classroom.
-    struct Room: Decodable, Identifiable {
+    nonisolated struct Room: Decodable, Identifiable, Sendable {
         /// The room's space code, which also names its entity.
         let csiv: String
         /// The code on the door, for example `"T.1.2"`.
@@ -171,7 +171,7 @@ struct Trifoglio3DPlan: Decodable {
     }
 
     /// The view from inside a classroom, in the scene's metres.
-    struct Interior: Decodable {
+    nonisolated struct Interior: Decodable, Sendable {
         /// The eye, standing behind the last row: x, height, z.
         let occhio: [Float]
         /// The point it looks at, over the lectern: x, height, z.
@@ -381,13 +381,28 @@ final class Trifoglio3DScene {
             failure = "Campus non caricato: \(error.localizedDescription)"
             return
         }
-        for csie in Self.buildings {
+        let read = await Self.readPlans(Self.buildings)
+        plans.merge(read.plans) { _, new in new }
+        if let csie = read.missing.last { failure = "Piante di \(csie) non trovate nel bundle." }
+    }
+
+    /// Reads and decodes the floor plans of `codes` from the bundle, off the main thread.
+    ///
+    /// - Parameter codes: The buildings' `csie` codes.
+    /// - Returns: The plans found, by code, and the codes whose plan is missing or unreadable.
+    @concurrent
+    nonisolated static func readPlans(_ codes: [String]) async -> (plans: [String: Trifoglio3DPlan], missing: [String]) {
+        var plans: [String: Trifoglio3DPlan] = [:]
+        var missing: [String] = []
+        let decoder = JSONDecoder()
+        for csie in codes {
             guard let planURL = Bundle.main.url(forResource: csie, withExtension: "json"),
                   let data = try? Data(contentsOf: planURL),
-                  let plan = try? JSONDecoder().decode(Trifoglio3DPlan.self, from: data)
-            else { failure = "Piante di \(csie) non trovate nel bundle."; continue }
+                  let plan = try? decoder.decode(Trifoglio3DPlan.self, from: data)
+            else { missing.append(csie); continue }
             plans[csie] = plan
         }
+        return (plans, missing)
     }
 
     /// What the first frame can do without: the Giuriati block, the simplified shells and
