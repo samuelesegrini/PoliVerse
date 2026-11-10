@@ -1,0 +1,130 @@
+% DRAFT, rewrite
+\section{Overall description}
+
+\subsection{Product perspective}
+
+\subsubsection{Scenarios}
+
+\paragraph{S1, first sign-in.} Giulia installs PoliVerse and signs in. Carriera needs
+six answers from the Politecnico. The libretto answers first and writes itself onto
+the screen while the exam sittings are still loading. Their section shows its title
+and a waiting line, not ``Nessun appello''. The weighted average stays hidden until
+the credits counter has arrived, then appears once with its final value.
+
+\paragraph{S2, a free room between lectures.} Marco leaves a lecture in building 3 and
+opens Aule libere. The rooms of the buildings on his map are asked first, so the
+first free rooms listed are a short walk away. The rest of the campus fills in
+below without moving what he is reading.
+
+\paragraph{S3, the lecture is ready.} At 9:05 Sara has a lecture at 9:15 in a room she
+has never been to. When she opens the app in the corridor, the room, its floor plan
+and the building's 3D model appear at once, because the app fetched them when it
+last ran.
+
+\paragraph{S4, no signal.} Luca is on the metro with no connection. He opens the
+timetable, tomorrow's free rooms and a course page. Each shows its stored copy with
+its age, and no error covers the screen. In Impostazioni he can see what is ready
+offline.
+
+\paragraph{S5, a slow server.} One career endpoint does not answer. After four
+seconds its section shows the copy from this morning, marked with its age, while the
+other sections are fresh. The app keeps trying in the background and replaces the
+copy when the answer comes.
+
+\paragraph{S6, a new grade.} A grade is published in the afternoon. The next time the
+app refreshes, in the background or when Anna opens it, it notices the new row. Anna
+gets a notification, and in the libretto only that row writes itself in and is
+marked as new.
+
+\subsubsection{Domain model}
+A screen is made of sections. Each section shows one part. A part is fetched by one
+or more requests to a host and may have a stored copy on the phone. The class
+diagram shows the terms, and the state diagram shows the life of a section while its
+screen is open.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  class/.style={draw, rectangle split, rectangle split parts=2, align=left,
+    font=\small, text width=3.1cm, inner sep=3pt},
+  rel/.style={-, thin}, lab/.style={font=\scriptsize}]
+  \node[class] (screen) {\textbf{Screen}\nodepart{two}name};
+  \node[class, right=1.6cm of screen] (section) {\textbf{Section}\nodepart{two}title\\state};
+  \node[class, right=1.6cm of section] (part) {\textbf{Part}\nodepart{two}kind\\max age};
+  \node[class, below=1.3cm of part] (copy) {\textbf{Stored copy}\nodepart{two}fetched at\\account};
+  \node[class, below=1.3cm of section] (request) {\textbf{Request}\nodepart{two}speculative\\duration, outcome};
+  \node[class, below=1.3cm of screen] (host) {\textbf{Host}\nodepart{two}name};
+  \draw[rel] (screen) -- node[lab, above, near start]{1} node[lab, above, near end]{1..*} (section);
+  \draw[rel] (section) -- node[lab, above, near start]{1..*} node[lab, above, near end]{1} (part);
+  \draw[rel] (part) -- node[lab, right, near start]{1} node[lab, right, near end]{0..1} (copy);
+  \draw[rel] (part.south west) -- node[lab, above, sloped, near start]{1} node[lab, above, sloped, near end]{1..*} (request.north east);
+  \draw[rel] (request) -- node[lab, above, near start]{*} node[lab, above, near end]{1} (host);
+\end{tikzpicture}
+\caption{Domain model of loading.}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  st/.style={draw, rounded corners=4pt, font=\small, minimum height=0.75cm,
+    minimum width=2.3cm, align=center},
+  tr/.style={-{Stealth[length=5pt]}, thin}, lab/.style={font=\scriptsize, align=center}]
+  \node[st] (short) {Waiting, short};
+  \node[st, right=1.6cm of short] (wait) {Waiting};
+  \node[st, right=1.6cm of wait] (long) {Waiting, long};
+  \node[draw, dashed, rounded corners=6pt, inner sep=8pt, fit=(short)(wait)(long)] (box) {};
+  \node[st, below=1.8cm of wait] (arrived) {Arrived};
+  \node[st, left=2.4cm of arrived] (held) {Held};
+  \node[st, right=1.6cm of arrived] (failed) {Failed};
+  \node[st, below=1.1cm of arrived] (empty) {Empty};
+  \node[circle, fill, inner sep=2pt, left=2.2cm of short] (start) {};
+  \draw[tr] (start) -- node[lab, above]{no stored copy} (box.west);
+  \draw[tr] (start) |- node[lab, left, pos=0.25]{stored copy} (held.west);
+  \draw[tr] (short) -- node[lab, above]{300 ms} (wait);
+  \draw[tr] (wait) -- node[lab, above]{3 s} (long);
+  \draw[tr] (box.south) -- node[lab, right]{answer} (arrived);
+  \draw[tr] ([xshift=-8pt]box.south -| failed) -- node[lab, left]{failure} ([xshift=-8pt]failed.north);
+  \draw[tr] ([xshift=8pt]failed.north) -- node[lab, right]{retry} ([xshift=8pt]box.south -| failed);
+  \draw[tr] (held) -- node[lab, above]{newer answer} (arrived);
+  \draw[tr] (arrived) -- node[lab, right]{answer has no items} (empty);
+\end{tikzpicture}
+\caption{States of a section while its screen is open. A failure with a stored copy leaves the section in Held.}
+\end{figure}
+
+\subsection{Product functions}
+\begin{description}[style=nextline, leftmargin=1.5em]
+  \item[F1, partial display] Each section appears when its part arrives, in one of seven states, with one shared look for waiting, arriving, empty and failed.
+  \item[F2, relevance order] Requests of a screen that needs many are sent in the order of what the student is looking at.
+  \item[F3, parts stored and aged one by one] Each part is kept as soon as it arrives and has its own max age, so a load resumes and a refresh asks only for what is old.
+  \item[F4, part deadlines] A slow part stops holding its section: the stored copy stands in and the app retries.
+  \item[F5, timetable prefetch] What a lecture needs is fetched before it starts.
+  \item[F6, offline pack] A defined set of parts is fetched ahead and its readiness is shown.
+  \item[F7, boundary refresh] Free rooms stay correct as bookings start and end, without polling.
+  \item[F8, change awareness] The app knows what changed in a refresh, marks it, and can notify.
+  \item[F9, speculative budget] Prefetch and offline pack obey limits on data, power and requests.
+  \item[F10, loading ledger] Every load is timed on the device and reported.
+\end{description}
+
+\subsection{User characteristics}
+\begin{description}[style=nextline, leftmargin=1.5em]
+  \item[Student] Enrolled at the Politecnico, signed in with their own account. Uses the app in short visits between lectures, often on mobile data and sometimes with no signal. Does not know and should not need to know which data comes from which server.
+  \item[Developer] The one developer of the app. Reads the loading ledger on their own phone to decide what to change next.
+\end{description}
+
+\subsection{Assumptions, dependencies and constraints}
+\assumption{D1}{A server of the Politecnico answers each request with one whole response; it never sends a response in usable pieces.}
+\assumption{D2}{The Politecnico's servers send no cache validators and offer no push, subscription or change feed (measured on 12 September 2026).}
+\assumption{D3}{Some screens need several requests: the career needs six, the free rooms of a campus need one per room, up to 158, and a course page needs three in a row.}
+\assumption{D4}{A request is usually answered in 0.2 to 3 seconds, and occasionally not until a timeout of about 15 seconds.}
+\assumption{D5}{The student's timetable is known days ahead, and a lecture takes place in the room and at the time the timetable states.}
+\assumption{D6}{The bookings of a room for a given day rarely change during that day.}
+\assumption{D7}{iOS decides whether and when a background task runs. A refresh task gets at most 30 seconds; a processing task runs only when the system chooses, typically while charging.}
+\assumption{D8}{iOS reports truthfully whether the network is unavailable, metered or in Low Data Mode, and whether the phone is in Low Power Mode or hot.}
+\assumption{D9}{Students regularly pass through places with no connection, such as the metro.}
+\assumption{D10}{The data a server returns for a signed-in account belongs to that student, and each item in it can be told apart from the others by a stable identity such as an exam code or a lecture's id.}
+\assumption{D11}{The Politecnico tolerates the request volume of an unofficial client as long as it stays close to what a person using the official services would cause.}
+
+\noindent Dependencies, all already in the app: the store layer (\texttt{Resource},
+\texttt{Loader}, \texttt{Query}, \texttt{OfflineStore}), the warm-up and scroll
+prefetch, the freshness coordinator, the device pressure and network monitors, the
+exam update feed and the diagnostics report.

@@ -1,0 +1,13 @@
+% DRAFT, rewrite
+\section{Formal analysis using Alloy}
+% TODO: model in docs/alloy/loading.als, results in generated/alloy-results.tex.
+The rules worth checking formally are the ones about what a section may show, since
+they are easy to break when parts arrive in any order. The model, to be written
+after this document is approved, covers:
+\begin{itemize}
+  \item the states of a section and their transitions (section 2.1.2);
+  \item \idref{R2}: no trace in which a section is Empty before its part answered;
+  \item \idref{R3}: no trace in which a computed value is visible while one of its parts has neither arrived nor a stored copy;
+  \item \idref{R6} and \idref{R17}: a failure or a deadline never moves a section that shows content to a state without content;
+  \item \idref{R14} and \idref{R40}: a stored copy is only ever shown to the account it was fetched for.
+\end{itemize}
