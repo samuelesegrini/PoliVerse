@@ -22,7 +22,7 @@ a phone or waiting.
   \node[band, below=0.45cm of models] (policies) {\textbf{Policies} (pure values, new)\\[3pt]
     \comp{RelevanceOrder} \comp{DeadlinePolicy} \comp{SpeculativeBudget} \comp{TimetablePrefetch} \comp{ChangeDetector}};
   \node[band, below=0.45cm of policies] (store) {\textbf{Store layer} (actors)\\[3pt]
-    \comp{Resource} \comp{Progress} \comp{Loader} \comp{PartStore} \comp{RequestGate} \comp{LoadingLedger} \comp{OfflinePack}};
+    \comp{Resource} \comp{LoadProgress} \comp{Loader} \comp{OfflineStore} \comp{RequestGate} \comp{LoadingLedger} \comp{OfflinePack}};
   \node[band, below=0.45cm of store] (platform) {\textbf{Platform and existing services}\\[3pt]
     \comp{HTTP} \comp{OfflineStore} \comp{BackgroundRefresh} \comp{FreshnessCoordinator} \comp{NetworkMonitor} \comp{DevicePressure} \comp{NotificationModel} \comp{UpdateFeed} \comp{DiagnosticsReport}};
   \draw[uses] (ui) -- (models);
@@ -38,9 +38,9 @@ New components are marked (new); the others exist and change.
 
 \begin{description}[style=nextline, leftmargin=1.5em]
   \item[Resource] Declares one kind of remote data. Gains an optional \texttt{Part} type and a max age per part. A resource with one request declares nothing and compiles unchanged.
-  \item[Progress (new)] The typed handle a fetch reports parts through. Replaces the untyped task-local \texttt{Partial.sink}. Holds only the newest snapshot not yet consumed.
-  \item[Loader] One actor per resource. Now keeps an entry per part, asks the resource only for the parts that are missing or too old, files each part when it arrives, and applies the DeadlinePolicy.
-  \item[PartStore (new)] Reads and writes one file per part and account on top of \texttt{OfflineStore}, with the fetch time. Written atomically.
+  \item[LoadProgress (new)] The typed handle a fetch reports parts through. Replaces the untyped task-local \texttt{Partial.sink}. Holds only the newest snapshot not yet consumed. Not named \texttt{Progress}, which Foundation already has.
+  \item[Loader] One actor per resource. Now keeps the fetch time of each part, asks the resource only for the parts that are missing or too old, files and stores each part when it arrives, tells the queries watching the key, and applies the DeadlinePolicy. A part that failed is not asked again for a minute unless the student asks.
+  \item[OfflineStore] Unchanged. The loader writes two files per key and account through it: the value, and the fetch time of each part in it. Both are rewritten atomically each time a part arrives (decision 2).
   \item[Query] The observable handle a view reads. Gains which parts have arrived, which failed, where each came from (stored copy or network), and the changes of the last refresh.
   \item[RequestGate (new)] One actor for all hosts. Admits requests in two lanes, on-screen and speculative, caps speculative requests per host, tracks timeouts per host and fails fast while a host is not responding. Reports every request to the ledger.
   \item[LoadingLedger (new)] An actor that appends one small entry per request and per screen opening to a capped file, and computes the report.
@@ -66,9 +66,9 @@ Everything runs on the student's iPhone. There is no server of the project.
   \midrule
   App process, foreground & All components. Requests run in both lanes. \\
   App process, refresh task & Agenda and career refresh as today, then TimetablePrefetch, within 30 seconds. \\
-  App process, processing task & OfflinePack only. May be stopped by iOS at any time; resumes from PartStore. \\
+  App process, processing task & OfflinePack only. May be stopped by iOS at any time; resumes from the stored parts. \\
   Widget extension & Reads the shared container, as today. Sends no request. \\
-  App group container & PartStore files, NewMarks, the offline pack's state, the ledger file. \\
+  App group container & Stored values and part times, NewMarks, the offline pack's state, the ledger file. \\
   Keychain & Tokens, as today. Never read by the new components. \\
   Politecnico's hosts & Answer HTTPS requests. Unchanged. \\
   \bottomrule
@@ -85,30 +85,25 @@ protocol Resource: Sendable {
     associatedtype Part: Hashable & Sendable & CaseIterable = Whole
     static func maxAge(of part: Part) -> TimeInterval        // default: ttl
     func fetch(_ key: Key, env: Env, parts: Set<Part>,
-               over held: Value?, progress: Progress<Self>) async throws -> Value
+               over held: Value?, progress: LoadProgress<Self>)
+        async throws -> LoadProgress<Self>.Snapshot       // value, arrived, failed
 }
 
-struct Progress<R: Resource>: Sendable {
+struct LoadProgress<R: Resource>: Sendable {
     func report(_ value: R.Value, arrived: Set<R.Part>, failed: Set<R.Part> = [])
 }
 
 actor Loader<R: Resource> {
-    func value(_ key: R.Key, env: Env, force: Bool,
-               progress: Progress<R>?) async throws -> Snapshot
+    func value(_ key: R.Key, env: Env, force: Bool) async throws -> Snapshot
+    func dueParts(_ key: R.Key, env: Env, force: Bool) -> Set<R.Part>
+    func updates(_ key: R.Key, env: Env) -> AsyncStream<Snapshot>  // each part filed
     func warm(_ keys: some Sequence<R.Key>, env: Env)        // speculative lane
     func clear()                                             // sign-out
 }
 
-struct PartStore: Sendable {
-    func save<V: Codable>(_ value: V, part: String, of name: String, account: String)
-    func load<V: Codable>(_ type: V.Type, part: String, of name: String,
-                          account: String) async -> (value: V, age: TimeInterval)?
-    func removeAll(account: String)
-}
-
 @MainActor @Observable final class Query<R: Resource> {
     var value: R.Value? { get }
-    func phase(of part: R.Part) -> LoadPhase
+    func phase(of part: R.Part, isEmpty: Bool) -> LoadPhase
     func has(_ parts: R.Part...) -> Bool
     var changes: ChangeSet { get }                            // last refresh
 }
@@ -180,7 +175,7 @@ extension View {
   \lifeline{q}{3.2}{Query}
   \lifeline{l}{6.4}{Loader}
   \lifeline{r}{9.6}{Resource}
-  \lifeline{s}{12.8}{PartStore}
+  \lifeline{s}{12.8}{OfflineStore}
   \msg{0}{3.2}{1.2}{load()}
   \msg{3.2}{6.4}{1.8}{value(key, progress)}
   \msg{6.4}{12.8}{2.4}{load stored parts}
@@ -240,7 +235,7 @@ used (\idref{R36}).
 
 \subsubsection{UC4: no connection}
 \begin{enumerate}
-  \item The query asks the loader; the loader restores every stored part from PartStore.
+  \item The query asks the loader; the loader restores every stored part from OfflineStore.
   \item NetworkMonitor reports no connection, so RequestGate fails requests at once.
   \item Parts with a stored copy are \texttt{held(age:)}; parts without are \texttt{failed}; the section kit shows each accordingly (\idref{R23}).
   \item When the connection returns, FreshnessCoordinator runs a pass and only parts older than their max age are requested.
@@ -272,8 +267,8 @@ days.
 
 \subsection{Other design decisions}
 \begin{description}[style=nextline, leftmargin=1.5em]
-  \item[1. Progress is a parameter, not a task-local.] Alternative: keep \texttt{Partial.sink}. A task-local cannot be generic, so it is untyped and cast back, and it cannot say which parts arrived. Cost: the \texttt{fetch} signature changes; a default implementation forwards to the old one for resources without parts.
-  \item[2. One file per part.] Alternative: one file per resource, rewritten when each part arrives. Per-part files make each write small and atomic, so a kill between two parts loses nothing (\idref{R14}, \idref{R16}), and each carries its own age (\idref{R15}). Cost: restoring reads several small files; \idref{P5} bounds it.
+  \item[1. LoadProgress is a parameter, not a task-local.] Alternative: keep \texttt{Partial.sink}. A task-local cannot be generic, so it is untyped and cast back, and it cannot say which parts arrived. Cost: the \texttt{fetch} signature changes; a default implementation forwards to the old one for resources without parts.
+  \item[2. One value per key, with the fetch time of each part beside it.] Alternative, chosen in version 0.1 of this document: one file per part. It was dropped while building M2: a value is not a sum of independent pieces (the career's exam counts come from one request and sit inside the figures of another), so splitting it into files would need a split and a merge written for every resource. Instead the resource lays the parts that answered over the value held, and the loader rewrites the value and a small file of fetch times atomically each time a part arrives, the value first. A kill between two parts still loses nothing (\idref{R14}, \idref{R16}), and each part has its own age (\idref{R15}). Cost: every arrival rewrites the whole value, a few tens of kilobytes for the career, off the main thread; restoring reads two files, which helps \idref{P5}.
   \item[3. A deadline shows the stored copy and keeps the request.] Alternatives: cancel and retry, or send a second request in parallel. Both add load on the Politecnico's hosts, against assumption D11, and a late answer is still the freshest data.
   \item[4. The breaker is per host, in one gate.] Alternative: per resource. A timeout says something about the host, and all resources on that host benefit at once (\idref{R18}). One gate is also the only place that sees every request, which the ledger and the lanes need.
   \item[5. Prefetch follows the timetable, not habits.] Relies on assumption D5. A learned predictor needs data the ledger does not have yet and is out of scope.

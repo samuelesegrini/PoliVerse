@@ -13,7 +13,7 @@ the old one.
   Milestone & Content & Requirements \\
   \midrule
   M1 Ledger & RequestGate as a pass-through that records; LoadingLedger; the report; \texttt{screenLedger} on the main screens; baseline run on the iPhone 12 Pro & R34 to R39, P8 \\
-  M2 Parts & \texttt{Part} and \texttt{maxAge} on Resource; Progress; per-part Loader and PartStore; Query's phases; the career as first user; search in parallel & R1 to R3, R12, R14 to R16, R40 \\
+  M2 Parts & \texttt{Part} and \texttt{maxAge} on Resource; LoadProgress; per-part Loader and stored part times; Query's phases; the career as first user; search in parallel & R1 to R3, R12, R14 to R16, R40 \\
   M3 Section kit & \texttt{arriving}, SectionStatus, RevealRenderer, ShapeMemory; applied to Carriera, Appelli, Libretto and Oggi & R4 to R11, P1, P2, P6 \\
   M4 Rooms & RelevanceOrder; free rooms assigned per batch; map colours; BoundaryClock & R13, R24, R25, P3 \\
   M5 Slow parts & DeadlinePolicy in the loader; the host breaker in RequestGate & R17, R18 \\
@@ -32,14 +32,14 @@ Bottom-up, following the layers. Within a milestone: first the policy, alone, wi
 its unit tests; then the actor or model that uses it, against a stub transport;
 then the screens. A component is merged only when the layer under it is tested, so
 no stubs of lower layers are needed except the transport and the clock.
-RequestGate and Progress are thread-like dependencies of everything after them,
+RequestGate and LoadProgress are thread-like dependencies of everything after them,
 which is why they are in M1 and M2.
 
 \subsection{Test plan}
 \begin{description}[style=nextline, leftmargin=1.5em]
   \item[Static analysis] The existing checks: \texttt{scripts/swiftcheck.py} and \texttt{scripts/check-model-layer.sh}, with Swift 6 strict concurrency as the compiler's own analysis.
   \item[Unit] Every policy (RelevanceOrder, DeadlinePolicy, SpeculativeBudget, TimetablePrefetch, ChangeDetector) and the ledger's statistics, with values and a fixed clock. Each test's name carries the requirement's id, for example \texttt{test\_R13\_visibleBuildingsFirst}.
-  \item[Integration] Loader with PartStore and RequestGate over a stub \texttt{HTTP} that answers parts in a scripted order, after scripted delays on a test clock, or never. This is where \idref{R1} to \idref{R3}, \idref{R14} to \idref{R18} and \idref{R40} are tested: arrival in any order, a kill between two parts, a part that never answers, sign-out.
+  \item[Integration] Loader with OfflineStore and RequestGate over a stub resource or \texttt{HTTP} that answers parts in a scripted order, after scripted delays on a test clock, or never. This is where \idref{R1} to \idref{R3}, \idref{R14} to \idref{R18} and \idref{R40} are tested: arrival in any order, a kill between two parts, a part that never answers, sign-out.
   \item[System] UI tests on the simulator with fixtures: each state of a section is reached and asserted through its accessibility element; Reduce Motion; no connection. Then the device bench on the iPhone 12 Pro for \idref{P1} to \idref{P9}, read from the ledger.
   \item[Acceptance] UC1 to UC6 played by hand on the phone with a real account, including a real trip with no signal for UC4.
 \end{description}
