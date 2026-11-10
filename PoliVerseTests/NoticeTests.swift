@@ -102,6 +102,17 @@ struct NoticeTests {
         #expect(Notice.date(from: .string("2026-01-12T09:30:00.500Z")) != nil)
     }
 
+    /// `ISO8601DateFormatter` read an offset as well as `Z`; the format style
+    /// that replaced it must too, or a service writing `+01:00` would fall
+    /// through to the wall-clock reading and land an hour off.
+    @Test("An ISO 8601 offset is read as the same instant as Z")
+    func isoOffset() {
+        let utc = Notice.date(from: .string("2026-01-12T09:30:00Z"))
+        #expect(utc != nil)
+        #expect(Notice.date(from: .string("2026-01-12T10:30:00+01:00")) == utc)
+        #expect(Notice.date(from: .string("2026-01-12T10:30:00.000+01:00")) == utc)
+    }
+
     @Test("An unread flag is inverted rather than ignored")
     func unreadInverted() {
         #expect(Notice.readFlag(in: ["non_letto": .bool(true)]) == false)

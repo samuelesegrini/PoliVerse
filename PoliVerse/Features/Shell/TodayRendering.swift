@@ -22,13 +22,16 @@ nonisolated enum TodayRendering {
     }
 
     /// The pieces this launch draws the old way.
-    static let legacy: Set<Piece> = {
-        let arguments = CommandLine.arguments
+    static let legacy: Set<Piece> = legacy(in: CommandLine.arguments)
+
+    /// The pieces `-TodayLegacy <list>` names in `arguments`: a comma-separated
+    /// list of ``Piece`` names, or `all`. Unknown names are ignored.
+    static func legacy(in arguments: [String]) -> Set<Piece> {
         guard let index = arguments.firstIndex(of: "-TodayLegacy"), index + 1 < arguments.count else { return [] }
         let value = arguments[index + 1]
         if value == "all" { return Set(Piece.allCases) }
         return Set(value.split(separator: ",").compactMap { Piece(rawValue: String($0)) })
-    }()
+    }
 
     /// Whether this launch draws `piece` the old way.
     static func isLegacy(_ piece: Piece) -> Bool { legacy.contains(piece) }

@@ -45,6 +45,21 @@ struct CareersModelTests {
         #expect(careers.hasChoice)
     }
 
+    /// Onboarding, the mismatch banner and the profile all ask for the list
+    /// at once after signing in; on the shared loader they share one request.
+    @Test("Two loads at once send one request")
+    func concurrentLoadsJoin() async {
+        let http = FixtureHTTP([Self.listPath: Self.list([("111", "Attiva")])])
+        let careers = model(http)
+
+        async let first: Void = careers.load()
+        async let second: Void = careers.load()
+        _ = await (first, second)
+
+        #expect(careers.careers.count == 1)
+        #expect(await http.requests.count == 1)
+    }
+
     /// A switcher is not worth showing for a single enrolment.
     @Test("One enrolment offers no choice and suggests no switch")
     func singleCareerIsNoChoice() async {

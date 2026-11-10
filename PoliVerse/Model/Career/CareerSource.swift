@@ -94,8 +94,8 @@ nonisolated struct CareerSource: Resource {
         return payload
     }
 
-    /// One endpoint's answer, `nil` when it failed.
-    private enum Part: Sendable {
+    /// One endpoint's answer, `nil` when it failed. Internal for the tests.
+    enum Part: Sendable {
         case book(GradeBook?)
         case counters(ExamCountersDTO?)
         case sessions([ExamSession]?)
@@ -104,8 +104,8 @@ nonisolated struct CareerSource: Resource {
         case header(StudyPlanHeader?)
     }
 
-    /// The answers so far, and how they make a career.
-    private struct Parts {
+    /// The answers so far, and how they make a career. Internal for the tests.
+    struct Parts {
         var book: GradeBook?
         var counters: ExamCountersDTO?
         var sessions: [ExamSession]?
