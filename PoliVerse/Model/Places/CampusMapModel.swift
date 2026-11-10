@@ -37,7 +37,7 @@ final class CampusMapModel {
     /// Supplies the occupancy ``loadAvailability(campus:)`` colours the pins with.
     private let freeRooms: any RoomAvailability
     /// The transport the building geojson is fetched through.
-    private let http: any HTTP
+    private let coordinates: Loader<BuildingCoordinates>
     /// Diagnostic log for this type, under the `map` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "map")
 
@@ -70,7 +70,7 @@ final class CampusMapModel {
     init(catalogue: any RoomCatalogue, freeRooms: any RoomAvailability, http: any HTTP = PublicHTTP()) {
         self.catalogue = catalogue
         self.freeRooms = freeRooms
-        self.http = http
+        self.coordinates = Loader(BuildingCoordinates(http: http))
     }
 
     /// The campuses the catalogue knows.
@@ -121,16 +121,14 @@ final class CampusMapModel {
         }
         showsAvailability = false
 
-        if locations.isEmpty, let cached = await MapPlacement.cachedLocations() {
-            locations = cached
+        if locations.isEmpty, let cached = await coordinates.restore(Whole(), env: .public()) {
+            locations = cached.value
         }
         await place(campus: campus, load: mine)
 
         async let catalogueLoaded: Void = catalogue.load()
-        if !locationsRefreshed {
-            await refreshLocations()
-            await place(campus: campus, load: mine)
-        }
+        await loadLocations()
+        await place(campus: campus, load: mine)
         await catalogueLoaded
         await place(campus: campus, load: mine)
         log.notice("map: \(self.placed.count, privacy: .public) buildings placed")
@@ -140,21 +138,6 @@ final class CampusMapModel {
     @ObservationIgnored private var loads = 0
     /// Loads in flight, which ``isLoading`` reports.
     @ObservationIgnored private var loadsInFlight = 0
-    /// The coordinates fetch in flight, which a second load joins.
-    @ObservationIgnored private var locationsTask: Task<Void, Never>?
-
-    /// Refetches the coordinates, or waits for the refetch already running.
-    private func refreshLocations() async {
-        if let locationsTask {
-            await locationsTask.value
-            return
-        }
-        let task = Task(name: "map coordinates") { await self.loadLocations() }
-        locationsTask = task
-        await task.value
-        locationsTask = nil
-    }
-
     /// Recomputes the pins for a campus and starts revealing them.
     ///
     /// Does nothing before both coordinates and a catalogue are held, or when the
@@ -223,10 +206,6 @@ final class CampusMapModel {
     /// previous one.
     private var revealID = 0
 
-    /// Whether this launch has refetched the geojson. Cached coordinates are shown first
-    /// and refreshed once.
-    private var locationsRefreshed = false
-
     /// Colours the pins by how many of each building's rooms are free right now.
     ///
     /// Never automatic: this is one request per room, so it happens only when the student
@@ -264,17 +243,7 @@ final class CampusMapModel {
     /// coordinates to place pins with.
     private func loadLocations() async {
         do {
-            // The empty `filter` is required: without the parameter the
-            // service answers 400 rather than "everything".
-            let data = try await http.data(for: APIRequest(
-                host: .maps, path: "/spazi/edificio/geojson",
-                query: [.init(name: "filter", value: "")], authenticated: false))
-            locations = try await Compute.run {
-                let decoded = try JSONDecoder().decode(BuildingGeoJSON.self, from: data)
-                return Dictionary(decoded.locations.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-            }
-            locationsRefreshed = true
-            await MapPlacement.cache(locations)
+            locations = try await coordinates.value(Whole(), env: .public()).value
             log.notice("map: \(self.locations.count, privacy: .public) building coordinates")
         } catch {
             log.error("Building coordinates failed: \(error.localizedDescription)")
@@ -282,5 +251,34 @@ final class CampusMapModel {
             // there is nothing to show.
             if locations.isEmpty { errorMessage = userFacingMessage(error) }
         }
+    }
+}
+
+/// Coordinates are shared across campuses and refreshed once per loader lifetime.
+nonisolated struct BuildingCoordinates: Resource {
+    typealias Value = [String: BuildingLocation]
+    static let id = "building-locations"
+    static let persistence = Persistence.publicDisk
+    static let ttl = TimeInterval.infinity
+    let http: any HTTP
+
+    @concurrent
+    func fetch(_ key: Whole, env: Env, previous: Value?) async throws -> Value {
+        let data = try await http.data(for: APIRequest(
+            host: .maps, path: "/spazi/edificio/geojson",
+            query: [.init(name: "filter", value: "")], authenticated: false))
+        let decoded = try JSONDecoder().decode(BuildingGeoJSON.self, from: data)
+        return Dictionary(decoded.locations.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    func save(_ value: Value, to offline: OfflineStore, as name: String, account: String) {
+        DiskCache.save(value.values.map(MapPlacement.Stored.init), as: name)
+    }
+
+    @concurrent
+    func read(from offline: OfflineStore, as name: String, account: String) async -> (value: Value, age: TimeInterval)? {
+        guard let value = await MapPlacement.cachedLocations() else { return nil }
+        // Show the disk copy immediately, but refresh once this process asks.
+        return (value, .infinity)
     }
 }

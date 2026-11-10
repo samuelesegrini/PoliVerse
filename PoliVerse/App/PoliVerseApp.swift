@@ -45,6 +45,7 @@ struct PoliVerseApp: App {
     @State private var updates: UpdateFeed
     @State private var weBeep: WeBeepModel
     @State private var recordings: RecordingsModel
+    @State private var links: SessionLinks
     @State private var cieID = CieIDRouter()
     @State private var downloads = FileDownloadModel()
     @State private var rooms: RoomsModel
@@ -161,6 +162,43 @@ struct PoliVerseApp: App {
         _updates = State(initialValue: updates)
         let weBeep = WeBeepModel(session: session, feed: updates)
         _weBeep = State(initialValue: weBeep)
+        let links: SessionLinks
+        #if DEBUG
+        if let index = CommandLine.arguments.firstIndex(of: "-PreviewConnections")
+            ?? CommandLine.arguments.firstIndex(of: "-PreviewOnboarding"),
+           CommandLine.arguments.indices.contains(index + 1) {
+            let requested = CommandLine.arguments[index + 1]
+            let fullJourney = CommandLine.arguments[index] == "-PreviewOnboarding"
+            let state = fullJourney ? "connecting" : requested
+            let previewOnboarding = OnboardingState()
+            previewOnboarding.jumpJourney(to: fullJourney ? (JourneyFlow.Step(rawValue: requested) ?? .welcome) : .connections)
+            _onboarding = State(initialValue: previewOnboarding)
+            links = SessionLinks { connection, _, report in
+                if state == "connecting" || state == "progress" {
+                    try? await Task.sleep(for: .seconds(1.5))
+                    report(.sessionReady)
+                    try? await Task.sleep(for: .seconds(1.5))
+                    report(.accessVerified)
+                    if state == "connecting" { try? await Task.sleep(for: .seconds(3600)) }
+                    else { try? await Task.sleep(for: .seconds(1.5)) }
+                    return .connected
+                }
+                if state == "connected" { return .connected }
+                if state == "offline" { return .offline }
+                return connection == .weBeep ? .needsSignIn : .unavailable
+            }
+            links.connect()
+        } else {
+            links = SessionSeeder.links(session: session, weBeep: weBeep, network: network)
+        }
+        #else
+        links = SessionSeeder.links(session: session, weBeep: weBeep, network: network)
+        #endif
+        _links = State(initialValue: links)
+        session.login.willSignOut = { [weak links, weak weBeep] in
+            await links?.stop()
+            weBeep?.signOut()
+        }
         _recordings = State(initialValue: RecordingsModel(account: session))
 
         let agenda = AgendaModel(account: session)
@@ -350,10 +388,24 @@ struct PoliVerseApp: App {
         #endif
     }
 
+    /// UI fixtures render the real journey without launch refresh or account work.
+    @ViewBuilder
+    private var mainContent: some View {
+        #if DEBUG
+        if CommandLine.arguments.contains("-PreviewConnections") || CommandLine.arguments.contains("-PreviewOnboarding") {
+            JourneyView()
+        } else {
+            RootView()
+        }
+        #else
+        RootView()
+        #endif
+    }
+
     /// The app's root, with every service in its environment and the app-wide duties
     /// that follow the scene's phase.
     private var rootContent: some View {
-        withModels(RootView())
+        withModels(mainContent)
             // CieID hands control back through the app's URL scheme. Route it to
             // the router, which passes it to whichever login web view is
             // on screen so the session can continue where it left off.
@@ -412,6 +464,14 @@ struct PoliVerseApp: App {
             }
             // Reconnection and a career switch are watched from `init`, with
             // `Observations`: they matter with no window too.
+            .onChange(of: weBeep.isAuthenticated) { _, authenticated in
+                guard session.student != nil, !session.useMockData else { return }
+                if !authenticated {
+                    links.needsSignIn(.weBeep)
+                } else if links[.weBeep] == .needsSignIn || links[.weBeep] == .idle {
+                    links.retry(.weBeep)
+                }
+            }
             // The one guaranteed moment a login (or career switch) has
             // just finished: token in hand, the account confirmed by
             // `/jaf/internal/user`. Forced, because this is the pass that
@@ -429,9 +489,12 @@ struct PoliVerseApp: App {
             // network refresh by relaunching seconds apart.
             .onChange(of: session.state) { oldValue, newValue in
                 if case .signedIn = newValue {
+                    if oldValue == .loading, !session.useMockData { links.connect() }
                     let restored = oldValue == .loading
                         && !UserDefaults.standard.bool(forKey: "forceLaunchRefresh")
                     Task { await freshness.revalidate(force: !restored) }
+                } else if newValue == .signedOut {
+                    links.reset()
                 }
             }
     }
@@ -450,6 +513,7 @@ struct PoliVerseApp: App {
             .environment(updates)
             .environment(weBeep)
             .environment(recordings)
+            .environment(links)
             .environment(RecordingDownloads.shared)
             .environment(cieID)
             .environment(downloads)

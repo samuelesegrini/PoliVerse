@@ -271,3 +271,31 @@ Resolved — see [webeep.md](webeep.md). WeBeep is a stock Moodle and exposes a
 supported token handshake at `admin/tool/mobile/launch.php`; no scraping is
 needed. PoliFemo has no WeBeep code to borrow, but `toto04/webeep-sync` and
 `matteovisotto/myPoliFile` both do.
+
+## Linking after sign-in (2026-11-03)
+
+`SessionLinks` owns the three observable connection results. Once the official
+app's token is accepted, WeBeep token acquisition/verification and entry into the
+recordings archive run concurrently. Only an accepted archive is saved through
+`RecordingsWebKit.saveSession()`; copying SSO cookies does not count as a verified
+connection. The temporary login store is cleared after both attempts finish.
+
+The real-account journey includes one connections page after sign-in, with a
+spinner/result and an explicit repair action for each connection. Continue never
+waits for linking. Leaving the page does not cancel the work; Settings reads the
+same results. Webex authentication stays at first playback. Restored accounts
+verify their saved connections in the background without reopening onboarding.
+Sign-out cancels and joins linking before clearing credentials and cookies.
+
+`SessionLinksTests` covers concurrent start, independent completion, retry,
+offline/failure outcomes, and late completions after cancellation. A real-account
+check is still required to verify university redirects, second factors and cookie
+acceptance on a device. Debug builds accept `-PreviewConnections` with
+`connecting`, `connected`, `offline` or `attention` alongside sample-data launch
+arguments to inspect the actual onboarding page without an account.
+
+The onboarding loader is a continuous progress ring. It advances at four observed
+milestones: the attempt starts, the session is available, access is verified, and
+the connection is ready. It does not estimate server time or fill on a timer.
+Progress reports from cancelled or superseded attempts are ignored. The Debug
+`progress` preview plays these milestones to completion without an account.

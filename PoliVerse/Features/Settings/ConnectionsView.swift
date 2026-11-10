@@ -123,6 +123,9 @@ struct ConnectionsView: View {
 
             weBeepSection(colour: colours[.weBeep] ?? ramp.neutral)
             accountSection
+            if session.student != nil, !session.useMockData {
+                Section("Collegamenti") { ConnectionRows().listRowBackground(Color.clear) }
+            }
             servicesSection(colours: colours, neutral: ramp.neutral)
             pendingSection
             backgroundSection

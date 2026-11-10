@@ -29,9 +29,10 @@ struct JourneyFlowTests {
         #expect(!JourneyFlow.steps(in: .init(isSignedIn: true, notificationsDenied: true)).contains(.reminders))
     }
 
-    @Test("Signing in moves the journey on to the studies, then the reminders")
+    @Test("Real accounts see connections; sample data goes straight to studies")
     func signInLeadsToStudies() {
-        #expect(JourneyFlow.next(after: .signIn, in: .init(isSignedIn: true)) == .studies)
+        #expect(JourneyFlow.next(after: .signIn, in: .init(isSignedIn: true)) == .connections)
+        #expect(JourneyFlow.next(after: .connections, in: .init(isSignedIn: true)) == .studies)
         #expect(JourneyFlow.next(after: .signIn, in: .init(isSignedIn: true, isDemo: true)) == .studies)
         #expect(JourneyFlow.next(after: .studies, in: .init(isSignedIn: true)) == .reminders)
         #expect(JourneyFlow.next(after: .studies, in: .init(isSignedIn: true, isDemo: true)) == .atmosphere)
@@ -41,7 +42,8 @@ struct JourneyFlowTests {
     /// grant, so the account step is behind a one-way door once passed.
     @Test("No way back onto the sign-in once there is a session")
     func noBackOntoSignIn() {
-        #expect(!JourneyFlow.canGoBack(from: .studies, in: .init(isSignedIn: true)))
+        #expect(!JourneyFlow.canGoBack(from: .connections, in: .init(isSignedIn: true)))
+        #expect(JourneyFlow.canGoBack(from: .studies, in: .init(isSignedIn: true)))
         #expect(!JourneyFlow.canGoBack(from: .studies, in: .init(isSignedIn: true, isDemo: true)))
         #expect(JourneyFlow.canGoBack(from: .reminders, in: .init(isSignedIn: true)))
         #expect(JourneyFlow.canGoBack(from: .preview, in: .init()))

@@ -31,6 +31,291 @@
         }
       }
     },
+    "Lezioni, corsi e carriera, insieme" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classes, courses and academic progress, together"
+          }
+        }
+      }
+    },
+    "Il tuo Poli" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Poli"
+          }
+        }
+      }
+    },
+    "Aggiungi alla coda dei download" : {},
+    "Aggiungi alla coda dei download (%lld MB)" : {},
+    "Apple Maps" : {},
+    "Apri la tua app di autenticazione, per esempio Google Authenticator, e scrivi qui sotto il codice di Polimi." : {},
+    "Avvio" : {},
+    "Campus 3D" : {},
+    "Collegamenti" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connections"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collegamenti"
+          }
+        }
+      }
+    },
+    "Collegamento a WeBeep…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecting to WeBeep…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collegamento a WeBeep…"
+          }
+        }
+      }
+    },
+    "Collegamento all'archivio…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecting to the archive…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collegamento all'archivio…"
+          }
+        }
+      }
+    },
+    "Collegamento in corso…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecting…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collegamento in corso…"
+          }
+        }
+      }
+    },
+    "Completa l'accesso" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Complete sign-in"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completa l'accesso"
+          }
+        }
+      }
+    },
+    "Completa l'accesso nell'app %@, poi torna qui." : {},
+    "Cosa mostra la barra dei menu, e se l'app resta fuori dal Dock, si sceglie in Barra dei menu." : {},
+    "Da verificare" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not checked yet"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Da verificare"
+          }
+        }
+      }
+    },
+    "Download della registrazione" : {},
+    "Download interrotto · riprende all'apertura" : {},
+    "Download non riuscito" : {},
+    "Errore" : {},
+    "I download aspettano il Wi-Fi e rispettano la modalità Dati ridotti. Cambiare scelta riavvia quelli in corso." : {},
+    "I tuoi servizi,\n_collegati._" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your university,\n_connected._"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi servizi,\n_collegati._"
+          }
+        }
+      }
+    },
+    "Il collegamento automatico non è stato completato. Puoi accedere qui per usare i materiali." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic linking did not finish. Sign in here to access your materials."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il collegamento automatico non è stato completato. Puoi accedere qui per usare i materiali."
+          }
+        }
+      }
+    },
+    "In attesa del Wi-Fi" : {},
+    "In attesa della connessione" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for a connection"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In attesa della connessione"
+          }
+        }
+      }
+    },
+    "In coda per il download" : {},
+    "In pausa" : {},
+    "Non disponibile al momento" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Temporarily unavailable"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non disponibile al momento"
+          }
+        }
+      }
+    },
+    "Pronta" : {},
+    "Puoi continuare: i collegamenti proseguono in background. Li ritrovi in Impostazioni." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can continue while connections finish in the background. Find them again in Settings."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puoi continuare: i collegamenti proseguono in background. Li ritrovi in Impostazioni."
+          }
+        }
+      }
+    },
+    "Registrazione scaricata" : {},
+    "Risolvi" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resolve"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Risolvi"
+          }
+        }
+      }
+    },
+    "Scarica anche con la rete cellulare" : {},
+    "Scegli la matricola" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose your enrolment"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli la matricola"
+          }
+        }
+      }
+    },
+    "Togli dalla coda" : {},
+    "Un accesso, tre collegamenti. Se serve un altro passaggio, puoi completarlo qui." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One sign-in, three connections. If another step is needed, you can complete it here."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un accesso, tre collegamenti. Se serve un altro passaggio, puoi completarlo qui."
+          }
+        }
+      }
+    },
+    "Una lezione occupa circa 90 MB all’ora. Spento, i download aspettano il Wi-Fi e rispettano la modalità Dati ridotti." : {},
+    "Wi-Fi" : {},
+    "in attesa del Wi-Fi" : {},
+    "in coda" : {},
+    "·" : {},
     "" : {
       "localizations" : {
         "en" : {
@@ -4962,6 +5247,7 @@
       }
     },
     "Completa l'accesso nell'app CieID, poi torna qui." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

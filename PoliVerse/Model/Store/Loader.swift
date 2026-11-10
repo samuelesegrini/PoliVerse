@@ -114,14 +114,14 @@ actor Loader<R: Resource> {
         if let id = flightOf[key], flights[id]?.source == env.source { return true }
         guard let entry = entries[key], entry.source == env.source, let stamp = entry.stamp
         else { return true }
-        return clock.now - stamp >= .seconds(R.ttl)
+        return R.ttl.isFinite && clock.now - stamp >= .seconds(R.ttl)
     }
 
     /// Whether a key is held and fresh for this account.
     func isHeld(_ key: R.Key, env: Env) -> Bool {
         guard let entry = entries[key], entry.source == env.source, let stamp = entry.stamp
         else { return false }
-        return clock.now - stamp < .seconds(R.ttl)
+        return !R.ttl.isFinite || clock.now - stamp < .seconds(R.ttl)
     }
 
     // MARK: - Loading
@@ -225,7 +225,7 @@ actor Loader<R: Resource> {
     func put(_ value: R.Value, for key: R.Key, env: Env) {
         let now = clock.now
         entries[key] = Entry(value: value, fetchedAt: .now, stamp: now, lastUsed: now, source: env.source)
-        if R.persistence == .offline, !env.isSample, let matricola = env.matricola {
+        if R.persistence != .memory, !env.isSample, let matricola = persistenceAccount(env) {
             resource.save(value, to: offline, as: resource.storageName(for: key), account: matricola)
         }
         evictIfNeeded()
@@ -267,7 +267,7 @@ actor Loader<R: Resource> {
     /// - Returns: The restored snapshot, or `nil` when there was nothing to restore or
     ///   it was already restored for this account.
     func restore(_ key: R.Key, env: Env) async -> Snapshot? {
-        guard R.persistence == .offline, !env.isSample, let matricola = env.matricola else { return nil }
+        guard R.persistence != .memory, !env.isSample, let matricola = persistenceAccount(env) else { return nil }
         let name = resource.storageName(for: key)
         guard restored.insert("\(matricola)|\(name)").inserted else { return nil }
         guard let entry = await resource.read(from: offline, as: name, account: matricola) else { return nil }
@@ -357,12 +357,16 @@ actor Loader<R: Resource> {
         let date = Date.now
         for (key, value) in values {
             entries[key] = Entry(value: value, fetchedAt: date, stamp: now, lastUsed: now, source: flight.source)
-            if R.persistence == .offline, flight.source != "mock", flight.source != "anonymous" {
+            if R.persistence != .memory, flight.source != "mock", (R.persistence == .publicDisk || flight.source != "anonymous") {
                 resource.save(value, to: offline, as: resource.storageName(for: key), account: flight.source)
             }
         }
         evictIfNeeded()
         return .success(())
+    }
+
+    private func persistenceAccount(_ env: Env) -> String? {
+        R.persistence == .publicDisk ? "public" : env.matricola
     }
 
     private func snapshot(_ entry: Entry) -> Snapshot {

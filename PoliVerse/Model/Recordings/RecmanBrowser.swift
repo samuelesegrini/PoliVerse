@@ -85,13 +85,21 @@ final class RecmanBrowser: NSObject, WKNavigationDelegate {
         followedToList = false
         operation += 1
         let current = operation
-        return await withCheckedContinuation { continuation in
-            archiveWaiter = continuation
-            webView.load(URLRequest(url: start))
-            Task { [timeout] in
-                try? await Task.sleep(for: timeout)
+        return await withTaskCancellationHandler {
+            guard !Task.isCancelled else { return .failed("cancelled") }
+            return await withCheckedContinuation { continuation in
+                archiveWaiter = continuation
+                webView.load(URLRequest(url: start))
+                Task { [weak self, timeout] in
+                    try? await Task.sleep(for: timeout)
+                    guard let self, self.operation == current else { return }
+                    self.finishArchive(.failed("timeout at \(self.webView.url?.host ?? "?")"))
+                }
+            }
+        } onCancel: {
+            Task { @MainActor in
                 guard self.operation == current else { return }
-                self.finishArchive(.failed("timeout at \(self.webView.url?.host ?? "?")"))
+                self.finishArchive(.failed("cancelled"))
             }
         }
     }

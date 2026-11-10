@@ -80,3 +80,14 @@ final class StubAccount: Account {
         self.http = http
     }
 }
+
+/// A public service has no student identity or sample substitution.
+@MainActor
+final class PublicAccount: Account {
+    let matricola: String? = nil
+    let personCode: String? = nil
+    let lastName: String? = nil
+    let isSample = false
+    let http: any HTTP
+    init(http: any HTTP = PublicHTTP()) { self.http = http }
+}

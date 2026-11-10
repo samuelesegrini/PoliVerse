@@ -114,7 +114,7 @@ enum RecordingsWebKit {
         let cookies = await dataStore.httpCookieStore.allCookies()
             .filter { $0.domain.hasSuffix("polimi.it") || $0.domain.hasSuffix("webex.com") }
             .map(KeptCookie.init)
-        guard !cookies.isEmpty,
+        guard !Task.isCancelled, !cookies.isEmpty,
               let data = try? JSONEncoder().encode(KeptSession(savedAt: .now, cookies: cookies))
         else { return }
         do {
@@ -142,6 +142,7 @@ enum RecordingsWebKit {
         }
         let store = dataStore.httpCookieStore
         for cookie in kept.cookies.compactMap(\.cookie) {
+            guard !Task.isCancelled else { restored = false; return }
             await store.setCookie(cookie)
         }
         log.info("Recordings session restored: \(kept.cookies.count, privacy: .public) cookies")

@@ -10,6 +10,7 @@ struct CourseMaterialsView: View {
     @Environment(Session.self) private var session
     /// The shared ``WeBeepModel``, from the environment.
     @Environment(WeBeepModel.self) private var weBeep
+    @Environment(SessionLinks.self) private var links
     /// The shared ``FileDownloadModel``, from the environment.
     @Environment(FileDownloadModel.self) private var downloads
 
@@ -34,7 +35,7 @@ struct CourseMaterialsView: View {
 
     /// Whether the screen should offer a WeBeep sign-in rather than a list.
     private var needsLogin: Bool {
-        !session.useMockData && !weBeep.isAuthenticated
+        !session.useMockData && !weBeep.isAuthenticated && links[.weBeep] != .connecting
     }
 
     /// The look in use, which the page's materials and typeface come from.
@@ -71,11 +72,15 @@ struct CourseMaterialsView: View {
                 if query.isEmpty, !needsLogin {
                     hero(kinds)
                 }
+                if !weBeep.isAuthenticated, links[.weBeep] == .connecting {
+                    ProgressView("Collegamento a WeBeep…")
+                        .frame(maxWidth: .infinity, minHeight: 80)
+                }
                 if needsLogin {
                     VStack(alignment: .leading, spacing: 10) {
                         Label("Collega WeBeep", systemImage: "books.vertical")
                             .font(.headline)
-                        Text("WeBeep usa un accesso separato da quello dei servizi d'ateneo. Serve una sola volta.")
+                        Text("Il collegamento automatico non è stato completato. Puoi accedere qui per usare i materiali.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                         Button("Accedi a WeBeep") { showingLogin = true }
@@ -117,7 +122,7 @@ struct CourseMaterialsView: View {
                 ProgressView()
             } else if sections.isEmpty && !query.isEmpty {
                 ContentUnavailableView.search(text: query)
-            } else if sections.isEmpty && !needsLogin {
+            } else if sections.isEmpty && !needsLogin && links[.weBeep] != .connecting {
                 ContentUnavailableView("Nessun materiale", systemImage: "folder",
                                        description: Text("Questo corso non ha file pubblicati."))
             }
@@ -142,7 +147,7 @@ struct CourseMaterialsView: View {
         .sheet(isPresented: $showingLogin) {
             WeBeepLoginSheet { await weBeep.loadMaterials(for: course) }
         }
-        .task { await weBeep.loadMaterials(for: course) }
+        .task(id: weBeep.isAuthenticated) { await weBeep.loadMaterials(for: course) }
         .refreshable { await weBeep.loadMaterials(for: course, force: true) }
     }
 
@@ -364,7 +369,8 @@ struct WeBeepLoginSheet: View {
 
     /// The view's content.
     var body: some View {
-        NavigationStack {
+        SignInPresentation(title: "Accesso WeBeep", errorMessage: errorMessage,
+                           showingCieIDMissing: $showingCieIDMissing, cancel: { dismiss() }) {
             WeBeepLoginWebView(
                 router: cieID,
                 onToken: { token in
@@ -377,36 +383,7 @@ struct WeBeepLoginSheet: View {
                 },
                 onCieIDMissing: { showingCieIDMissing = true }
             )
-            .ignoresSafeArea(edges: .bottom)
-            .overlay(alignment: .bottom) {
-                if cieID.isAwaitingCieID {
-                    CieIDWaitingBanner()
-                } else if let errorMessage {
-                    Text(errorMessage)
-                        .font(.footnote)
-                        .padding(12)
-                        .frame(maxWidth: .infinity)
-                        .background(.orange.opacity(0.2))
-                        .foregroundStyle(.orange)
-                }
-            }
-            .navigationTitle("Accesso WeBeep")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Annulla") { dismiss() }
-                }
-            }
-            .alert("App CieID non installata", isPresented: $showingCieIDMissing) {
-                Button("Apri App Store") { cieID.openAppStore() }
-                Button("Annulla", role: .cancel) {}
-            } message: {
-                Text("Per accedere con la Carta d'Identità Elettronica serve l'app CieID.")
-            }
         }
-        // A web view asks for no size of its own; on the Mac the sheet would
-        // otherwise collapse to its title bar.
-        .macSheetSize(width: 1040, height: 860, resizable: true)
     }
 }
 

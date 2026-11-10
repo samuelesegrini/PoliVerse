@@ -35,6 +35,7 @@ struct PoliMiSignInButton: View {
     /// The shared ``WeBeepModel``, from the environment, signed in on the same session
     /// when it is not connected yet.
     @Environment(WeBeepModel.self) private var weBeep
+    @Environment(SessionLinks.self) private var links
 
     /// Whether the sign-in web view is up.
     /// Whether the prompt to install CieID is up.
@@ -202,6 +203,10 @@ struct PoliMiSignInButton: View {
         webError = nil
         isPreparing = true
         Task {
+            await links.stop()
+            weBeep.signOut()
+            await RecordingsWebKit.endSession()
+            await LoginWebKit.endSession()
             // Clears any stored token and ends the SSO session, so the IdP has
             // to mint a new grant rather than replay the old one. The returned
             // logout URL is not needed: the call has already ended the session,
@@ -215,14 +220,22 @@ struct PoliMiSignInButton: View {
     /// The sign-in web view, and what to do with what it produces: adopt the token, record the
     /// SPID list the page carried, or report a failure.
     private var webSheet: some View {
-        NavigationStack {
+        SignInPresentation(title: "Servizi Online", errorMessage: nil,
+                           showingCieIDMissing: $showingCieIDMissing, cancel: { showingWeb = false }) {
             PoliMiAppLoginWebView(
                 oauthParams: session.directory.oauth,
                 router: cieID,
                 onCredentials: { token in
                     showingWeb = false
+                    links.prepareForLogin()
                     Task {
                         await session.login.completeLogin(token: token)
+                        if session.student != nil {
+                            links.connect(freshLogin: true)
+                        } else {
+                            links.reset()
+                            await LoginWebKit.endSession()
+                        }
                         // Consumed either way: a hint that did not take is not
                         // worth re-applying to every future login.
                         session.login.pendingMatricola = nil
@@ -240,44 +253,9 @@ struct PoliMiSignInButton: View {
                 // Read off the page while we are there, so the list the app
                 // offers next time is the one the Politecnico is actually
                 // federating with.
-                onProvidersRead: { spid.adopt($0) },
-                // WeBeep rides on the session this sign-in leaves behind, so the
-                // student meets one second factor rather than two. Left alone
-                // when it is already connected.
-                onWeBeepToken: weBeepSeed
+                onProvidersRead: { spid.adopt($0) }
             )
-            .ignoresSafeArea(edges: .bottom)
-            .navigationTitle("Servizi Online")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Annulla") { showingWeb = false }
-                }
-            }
-            .overlay(alignment: .bottom) {
-                if cieID.isAwaitingCieID {
-                    CieIDWaitingBanner()
-                }
-            }
-            .alert("App CieID non installata", isPresented: $showingCieIDMissing) {
-                Button("Apri App Store") { cieID.openAppStore() }
-                Button("Annulla", role: .cancel) {}
-            } message: {
-                Text("Per accedere con la Carta d'Identità Elettronica serve l'app CieID.")
-            }
         }
-        // A web view asks for no size of its own, and a Mac sheet is only as
-        // large as its content asks: without this the sign-in opened as a
-        // title bar and a Cancel button, with the page squeezed to nothing.
-        .macSheetSize(width: 1040, height: 860, resizable: true)
-    }
-
-    /// Hands WeBeep the token a sign-in obtains for it on the same session, or `nil` when
-    /// WeBeep is already connected and is left alone.
-    private var weBeepSeed: ((WeBeepAuth.MoodleToken) -> Void)? {
-        guard !weBeep.isAuthenticated else { return nil }
-        let weBeep = weBeep
-        return { weBeep.store($0) }
     }
 
     /// Why the session failed, or `nil` when it has not.

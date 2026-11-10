@@ -18,6 +18,7 @@ struct CourseRecordingsView: View {
 
     /// The shared ``RecordingsModel``, from the environment.
     @Environment(RecordingsModel.self) private var model
+    @Environment(SessionLinks.self) private var links
     /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
     /// The shared ``RecordingDownloads``, from the environment.
@@ -130,7 +131,11 @@ struct CourseRecordingsView: View {
 
                 switch model.phase {
                 case .needsSignIn:
-                    signInCard
+                    if links[.recordings] == .connecting {
+                        ProgressView("Collegamento all'archivio…")
+                    } else {
+                        signInCard
+                    }
                 case .unavailable(let message):
                     unavailableCard(message)
                 case .idle, .loading:
@@ -189,7 +194,7 @@ struct CourseRecordingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .overlay {
             if recordings.isEmpty {
-                if model.phase == .loading {
+                if model.phase == .loading || links[.recordings] == .connecting {
                     ProgressView()
                 } else if model.phase == .idle {
                     ContentUnavailableView("Nessuna registrazione", systemImage: "play.rectangle",
@@ -245,7 +250,10 @@ struct CourseRecordingsView: View {
         } message: {
             Text("Non è stato possibile trovare il collegamento a Webex. Puoi cercarla nell'archivio dal browser.")
         }
-        .task { await model.load(course, entry: entry) }
+        .task(id: links[.recordings]) {
+            guard links[.recordings] != .connecting else { return }
+            await model.load(course, entry: entry)
+        }
         .refreshable { await model.load(course, force: true, entry: entry) }
     }
 

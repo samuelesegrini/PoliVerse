@@ -633,39 +633,6 @@ private struct JourneyToggleMark: View {
     }
 }
 
-/// How far through the journey: a white line over a track in landscape ink.
-struct JourneyProgress: View {
-    /// 0 at the first step, 1 at the last.
-    let fraction: Double
-    /// The position, spoken, where the line means nothing.
-    let label: String
-
-    /// The view's content.
-    var body: some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .journeyVibrant()
-                    .opacity(0.35)
-                Capsule()
-                    .fill(.white.opacity(0.85))
-                    // Never shorter than its own roundness, so the start of the
-                    // journey still shows a dot rather than nothing.
-                    .frame(width: max(3, proxy.size.width * fraction))
-            }
-        }
-        .frame(height: 3)
-        // About a third of the screen, centred: half what the room between
-        // the back button and the edge would give it. A hint of how far, not
-        // a bar to read.
-        .containerRelativeFrame(.horizontal) { width, _ in width * 0.3 }
-        .frame(maxWidth: .infinity)
-        .animation(.spring(response: 0.6, dampingFraction: 0.85), value: fraction)
-        .accessibilityElement()
-        .accessibilityLabel(label)
-    }
-}
-
 /// A round disc: a solid colour, or, given none, landscape ink.
 struct JourneyDisc: View {
     /// The colour, or `nil` for landscape ink.

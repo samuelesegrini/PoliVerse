@@ -1,7 +1,7 @@
 import SwiftUI
 import UserNotifications
 
-// The seven steps of ``JourneyView``. Each is only its content: the card, the
+// The steps of ``JourneyView``. Each is only its content: the card, the
 // landscape and the back button belong to the journey.
 
 // MARK: - Welcome
@@ -263,15 +263,11 @@ private extension View {
 ///
 /// The ways in are ``PoliMiSignInButton``'s, in a sheet: the choice between codice
 /// persona, SPID and CIE is the same one ``LoginView`` offers, and the promise that
-/// no credential is typed here is kept by that file. Career and WeBeep follow as
-/// sheets over this step, only when they apply.
+/// no credential is typed here is kept by that file. Connection results follow
+/// on their own page, without waiting for another sign-in.
 struct JourneySignIn: View {
     /// The shared ``Session``, from the environment.
     @Environment(Session.self) private var session
-    /// The shared ``CareersModel``, from the environment.
-    @Environment(CareersModel.self) private var careers
-    /// The shared ``WeBeepModel``, from the environment.
-    @Environment(WeBeepModel.self) private var weBeep
     /// The shared ``OnboardingState``, from the environment.
     @Environment(OnboardingState.self) private var onboarding
     /// Moves the journey on.
@@ -279,20 +275,8 @@ struct JourneySignIn: View {
 
     /// Whether the ways in are showing.
     @State private var showingMethods = false
-    /// The sheet that follows the sign-in, when one applies.
-    @State private var followUp: FollowUp?
     /// Whether the sample data is being loaded.
     @State private var isLoadingSample = false
-
-    /// What may follow the sign-in.
-    enum FollowUp: String, Identifiable {
-        /// More than one enrolment.
-        case career
-        /// Recordings asked for, and WeBeep not connected.
-        case weBeep
-        /// The raw value.
-        var id: String { rawValue }
-    }
 
     /// The view's content.
     var body: some View {
@@ -349,37 +333,11 @@ struct JourneySignIn: View {
             try? await Task.sleep(for: .milliseconds(400))
             showingMethods = true
         }
-        .sheet(item: $followUp) { followUp in
-            switch followUp {
-            case .career: JourneyCareerSheet { proceed(after: .career) }
-            case .weBeep: JourneyWeBeepSheet { proceed(after: .weBeep) }
-            }
-        }
-        // The token arriving is the only thing that moves this step on — the
-        // id changes at exactly that moment, and it covers a replay, where the
-        // session is already live.
         .task(id: session.student?.matricola) {
             guard session.student != nil, !session.useMockData else { return }
             showingMethods = false
-            await careers.load()
-            proceed(after: nil)
+            advance()
         }
-    }
-
-    /// Shows what follows the sign-in, in order, or moves on when nothing does.
-    ///
-    /// - Parameter done: The sheet just finished, if any.
-    private func proceed(after done: FollowUp?) {
-        if done == nil, careers.hasChoice {
-            followUp = .career
-            return
-        }
-        if done != .weBeep, JourneyFlow.offersWeBeep(for: onboarding.intents), !weBeep.isAuthenticated {
-            followUp = .weBeep
-            return
-        }
-        followUp = nil
-        advance()
     }
 
     /// One promise, dashed: said, not chosen.
@@ -444,7 +402,7 @@ private struct JourneyMethodsSheet: View {
 /// another one is a new sign-in: the same switch Impostazioni · Matricola makes —
 /// the favourite set while this token still works, then out and back in on it. The
 /// journey stays on the sign-in step and opens the ways in again by itself.
-private struct JourneyCareerSheet: View {
+struct JourneyCareerSheet: View {
     /// The shared ``CareersModel``, from the environment.
     @Environment(CareersModel.self) private var careers
     /// The shared ``Session``, from the environment.
@@ -574,55 +532,6 @@ private struct JourneyCareerSheet: View {
             onboarding.reopensSignIn = true
             await session.login.beginCareerRelogin(matricola: career.matricola)
             switching = false
-        }
-    }
-}
-
-/// WeBeep, offered only to someone who came for the recordings: they live there,
-/// behind a sign-in of their own.
-private struct JourneyWeBeepSheet: View {
-    /// The shared ``CourseModel``, from the environment.
-    @Environment(CourseModel.self) private var courses
-    /// Moves on.
-    let done: () -> Void
-
-    /// Whether WeBeep's own sign-in is up.
-    @State private var showingLogin = false
-
-    /// The view's content.
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 12) {
-                JourneyFlow.Intent.recordings.avatar(side: 76)
-                    .padding(.bottom, 4)
-                Text("I Video stanno su WeBeep")
-                    .font(.system(.title, design: .rounded, weight: .heavy))
-                    .multilineTextAlignment(.center)
-                Text("Hai scelto i Video: WeBeep ha un accesso tutto suo. Lo fai una volta, e lezioni e dispense si scaricano anche offline.")
-                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                    .foregroundStyle(JourneyInk.inkSoft)
-                    .multilineTextAlignment(.center)
-                    .padding(.bottom, 12)
-                JourneyAction(title: "Collega WeBeep", symbol: "link", disc: Flavor.RGB(hex: "#6A45C4")!.color) {
-                    showingLogin = true
-                }
-                Button("Più tardi", action: done)
-                    .font(.system(.body, design: .rounded, weight: .bold))
-                    .foregroundStyle(JourneyInk.inkSoft)
-                    .frame(minHeight: 44)
-                    .accessibilityIdentifier("onboarding-skip")
-            }
-            .padding(24)
-        }
-        .scrollBounceBehavior(.basedOnSize)
-        .presentationDetents([.medium, .large])
-        .interactiveDismissDisabled()
-        .modifier(JourneySheetStyle())
-        .sheet(isPresented: $showingLogin) {
-            WeBeepLoginSheet {
-                await courses.load(force: true)
-                done()
-            }
         }
     }
 }
@@ -837,12 +746,6 @@ struct JourneyReady: View {
     /// The view's content.
     var body: some View {
         VStack(spacing: 0) {
-            Label("Trascina giù per entrare", systemImage: "chevron.down")
-                .font(.system(.footnote, design: .rounded, weight: .heavy))
-                .foregroundStyle(.white.opacity(0.95))
-                .offset(y: shown && !reduceMotion ? 4 : 0)
-                .animation(reduceMotion ? nil : .easeInOut(duration: 0.8).repeatForever(), value: shown)
-                .accessibilityHidden(true)
             JourneyTitle(resource: "Tutto _pronto._")
                 .padding(.top, 18)
                 .padding(.bottom, 24)
@@ -859,7 +762,7 @@ struct JourneyReady: View {
             Spacer(minLength: 16)
             JourneyNote(text: "Si cambia tutto da Impostazioni.")
                 .padding(.bottom, 12)
-            JourneyAction(title: "Entra in PoliVerse", symbol: "arrow.down", action: enter)
+            JourneyAction(title: "Entra in PoliVerse", symbol: "arrow.right", action: enter)
         }
         .onAppear { shown = true }
     }
@@ -877,10 +780,8 @@ struct JourneyReady: View {
     /// What was set up, as the student would say it.
     private var lines: [Line] {
         var lines: [Line] = []
-        let chosen = JourneyFlow.expanded(onboarding.intents)
-        if let first = chosen.first {
-            lines.append(Line(title: Text("La tua Oggi"), detail: Text("Parte da: \(Self.list(chosen))"), avatar: first.avatar()))
-        }
+        lines.append(Line(title: Text("Il tuo Poli"), detail: Text("Lezioni, corsi e carriera, insieme"),
+                          avatar: JourneyFlow.Intent.timetable.avatar()))
         if session.useMockData {
             lines.append(Line(title: Text("Dati di esempio"), detail: Text("Il tuo account si collega da Impostazioni"),
                               avatar: JourneyAvatar(mark: .symbol("theatermasks.fill"), colours: (Color(white: 0.75), Color(white: 0.45)))))
@@ -899,20 +800,6 @@ struct JourneyReady: View {
         lines.append(Line(title: Text("Atmosfera"), detail: Self.swatchName(style.flavor),
                           avatar: JourneyAvatar(mark: .none, colours: (base.blended(with: .white, 0.35).color, base.color))))
         return lines
-    }
-
-    /// The answers as a short list: "orario, esami e video".
-    private static func list(_ intents: [JourneyFlow.Intent]) -> String {
-        let names = intents.map { intent -> String in
-            switch intent {
-            case .timetable: String(localized: "orario")
-            case .exams: String(localized: "esami")
-            case .recordings: String(localized: "video")
-            case .rooms: String(localized: "aule")
-            case .average, .everything: String(localized: "media")
-            }
-        }
-        return names.formatted(.list(type: .and))
     }
 
     /// The swatch a Flavor is, or "Su misura" for any other colour.

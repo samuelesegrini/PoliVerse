@@ -63,6 +63,8 @@ nonisolated struct Whole: Hashable, Sendable {
 nonisolated enum Persistence: Sendable {
     /// In memory only: public data, or data another file already keeps.
     case memory
+    /// Public data, shared across accounts in DiskCache.
+    case publicDisk
     /// Also on disk per account, restored at the next launch before the network answers.
     case offline
 }
@@ -192,11 +194,22 @@ extension Resource {
 
 extension Resource where Value: Codable {
     nonisolated func save(_ value: Value, to offline: OfflineStore, as name: String, account: String) {
-        offline.save(value, as: name, account: account)
+        if Self.persistence == .publicDisk { DiskCache.save(value, as: name) }
+        else { offline.save(value, as: name, account: account) }
     }
 
     nonisolated func read(from offline: OfflineStore, as name: String,
                           account: String) async -> (value: Value, age: TimeInterval)? {
-        await offline.loaded(Value.self, as: name, account: account).map { ($0.value, $0.age) }
+        if Self.persistence == .publicDisk {
+            return await Self.publicCopy(name)
+        }
+        return await offline.loaded(Value.self, as: name, account: account).map { ($0.value, $0.age) }
+    }
+}
+
+extension Resource where Value: Codable {
+    @concurrent
+    private static func publicCopy(_ name: String) async -> (value: Value, age: TimeInterval)? {
+        DiskCache.load(Value.self, as: name).map { ($0.value, Date.now.timeIntervalSince($0.storedAt)) }
     }
 }

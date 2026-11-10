@@ -14,8 +14,8 @@ import OSLog
 /// web view on the same store, and it gets through only because the identity provider
 /// answers from the cookie it already set. A page that would need the student — the
 /// Politecnico's chooser, a provider's own page — ends the walk, and that service keeps
-/// its own sign-in exactly as before. The recordings are given the session's cookies,
-/// which is what their own sign-in would have left in their store.
+/// its own sign-in exactly as before. The recordings use the session's cookies to
+/// enter the archive, then keep that accepted session across launches.
 @MainActor
 enum SessionSeeder {
     /// Diagnostic log for this type, under the `seeder` category.
@@ -37,29 +37,57 @@ enum SessionSeeder {
     /// ``RecmanBrowser`` gives.
     static let signInGrace: Duration = .seconds(3)
 
-    /// Signs WeBeep and the recordings in on the session in `store`.
-    ///
-    /// WeBeep goes first, because walking its sign-in adds the Shibboleth provider's own
-    /// cookies, which the recordings can then use too.
-    ///
-    /// - Parameters:
-    ///   - store: The store the Politecnico sign-in ran on, its cookies still in place.
-    ///   - deliverWeBeep: Called with the WeBeep token, or `nil` to leave WeBeep alone —
-    ///     when it is already connected, for instance.
-    static func seed(
-        from store: WKWebsiteDataStore,
-        weBeep deliverWeBeep: ((WeBeepAuth.MoodleToken) -> Void)?
-    ) async {
-        if let deliverWeBeep {
-            if let token = await weBeepToken(on: store) {
-                log.notice("WeBeep signed in on the Politecnico session")
-                deliverWeBeep(token)
-            } else {
-                log.notice("WeBeep could not be signed in on the Politecnico session; it keeps its own sign-in")
+    /// The live adapter for the linking module. Each connection verifies access;
+    /// copied cookies or a stored token alone never count as connected.
+    static func links(session: Session, weBeep: WeBeepModel, network: any Reachability) -> SessionLinks {
+        SessionLinks { connection, fresh, report in
+            guard network.isOnline else { return .offline }
+            guard session.student != nil, !session.useMockData else { return .idle }
+            switch connection {
+            case .university:
+                return .connected
+            case .weBeep:
+                if !weBeep.isAuthenticated, fresh {
+                    let result = await WeBeepWalk(store: LoginWebKit.dataStore).run(timeout: weBeepTimeout)
+                    guard !Task.isCancelled else { return .idle }
+                    switch result {
+                    case .token(let token): weBeep.store(token)
+                    case .needsStudent: return .needsSignIn
+                    case .unavailable: return network.isOnline ? .unavailable : .offline
+                    }
+                }
+                guard weBeep.isAuthenticated else { return .needsSignIn }
+                report(.sessionReady)
+                await weBeep.loadCourses()
+                guard !Task.isCancelled else { return .idle }
+                switch weBeep.state {
+                case .ready:
+                    report(.accessVerified)
+                    return .connected
+                case .needsLogin: return .needsSignIn
+                default: return network.isOnline ? .unavailable : .offline
+                }
+            case .recordings:
+                await RecordingsWebKit.restoreSession()
+                if fresh { await seedRecordings(from: LoginWebKit.dataStore) }
+                guard !Task.isCancelled else { return .idle }
+                report(.sessionReady)
+                let browser = RecmanBrowser()
+                let outcome = await browser.openArchive(from: RecordingsWebKit.entry)
+                guard !Task.isCancelled else { return .idle }
+                switch outcome {
+                case .archive:
+                    report(.accessVerified)
+                    await RecordingsWebKit.saveSession()
+                    report(.ready)
+                    return .connected
+                case .signInNeeded: return .needsSignIn
+                case .failed: return network.isOnline ? .unavailable : .offline
+                }
             }
+        } finishLogin: {
+            await LoginWebKit.endSession()
         }
-        let copied = await seedRecordings(from: store)
-        log.notice("Gave the recordings \(copied, privacy: .public) single sign-on cookies")
     }
 
     // MARK: - Recordings
@@ -87,6 +115,7 @@ enum SessionSeeder {
         let cookies = await store.httpCookieStore.allCookies().filter { isSSODomain($0.domain) }
         let target = RecordingsWebKit.dataStore.httpCookieStore
         for cookie in cookies {
+            guard !Task.isCancelled else { return 0 }
             await target.setCookie(cookie)
         }
         return cookies.count
@@ -142,15 +171,7 @@ enum SessionSeeder {
         return .follow
     }
 
-    /// Walks WeBeep's sign-in on the session in `store` and returns the token.
-    ///
-    /// - Parameter store: The store holding the single sign-on session.
-    /// - Returns: The token, or `nil` when the walk reached a page that needs the
-    ///   student, failed, or ran out of time.
-    static func weBeepToken(on store: WKWebsiteDataStore) async -> WeBeepAuth.MoodleToken? {
-        let walk = WeBeepWalk(store: store)
-        return await walk.run(timeout: weBeepTimeout)
-    }
+
 }
 
 /// One hidden walk through WeBeep's sign-in, following ``SessionSeeder/weBeepStep(for:launched:)``.
@@ -166,7 +187,10 @@ private final class WeBeepWalk: NSObject, WKNavigationDelegate {
     /// Counts navigations, so a sign-in page can be seen to have stayed put.
     private var navigations = 0
     /// Resumed exactly once, by ``finish(_:reason:)``.
-    private var continuation: CheckedContinuation<WeBeepAuth.MoodleToken?, Never>?
+    enum Result {
+        case token(WeBeepAuth.MoodleToken), needsStudent, unavailable
+    }
+    private var continuation: CheckedContinuation<Result, Never>?
 
     /// Creates the walk on `store`.
     ///
@@ -182,30 +206,35 @@ private final class WeBeepWalk: NSObject, WKNavigationDelegate {
     /// Starts at WeBeep's Shibboleth entry and waits for the token or for a reason to stop.
     ///
     /// - Parameter timeout: How long to wait.
-    /// - Returns: The token, or `nil`.
-    func run(timeout: Duration) async -> WeBeepAuth.MoodleToken? {
-        await withCheckedContinuation { continuation in
-            self.continuation = continuation
-            webView.load(URLRequest(url: WeBeepAuth.loginURL))
-            Task { [weak self] in
-                try? await Task.sleep(for: timeout)
-                self?.finish(nil, reason: "timed out")
+    /// - Returns: A token, an interaction request, or a temporary failure.
+    func run(timeout: Duration) async -> Result {
+        await withTaskCancellationHandler {
+            guard !Task.isCancelled else { return .unavailable }
+            return await withCheckedContinuation { continuation in
+                self.continuation = continuation
+                webView.load(URLRequest(url: WeBeepAuth.loginURL))
+                Task { [weak self] in
+                    try? await Task.sleep(for: timeout)
+                    self?.finish(.unavailable, reason: "timed out")
+                }
             }
+        } onCancel: {
+            Task { @MainActor in self.finish(.unavailable, reason: "cancelled") }
         }
     }
 
     /// Ends the walk, once.
     ///
     /// - Parameters:
-    ///   - token: What to hand back.
+    ///   - result: What to hand back.
     ///   - reason: Why, for the log.
-    private func finish(_ token: WeBeepAuth.MoodleToken?, reason: String) {
+    private func finish(_ result: Result, reason: String) {
         guard let continuation else { return }
         self.continuation = nil
         webView.stopLoading()
         webView.navigationDelegate = nil
         log.debug("WeBeep walk ended: \(reason, privacy: .public)")
-        continuation.resume(returning: token)
+        continuation.resume(returning: result)
     }
 
     /// Follows, launches, reads or stops, per ``SessionSeeder/weBeepStep(for:launched:)``.
@@ -218,9 +247,9 @@ private final class WeBeepWalk: NSObject, WKNavigationDelegate {
         switch SessionSeeder.weBeepStep(for: url, launched: launched) {
         case .token:
             do {
-                finish(try WeBeepAuth.token(from: url, passport: passport), reason: "token")
+                finish(.token(try WeBeepAuth.token(from: url, passport: passport)), reason: "token")
             } catch {
-                finish(nil, reason: "unreadable token redirect")
+                finish(.unavailable, reason: "unreadable token redirect")
             }
             return .cancel
         case .launch:
@@ -229,7 +258,7 @@ private final class WeBeepWalk: NSObject, WKNavigationDelegate {
             return .cancel
         case .needsStudent:
             // Host only: the path and query can carry session identifiers.
-            finish(nil, reason: "needs the student at \(url.host ?? "?")")
+            finish(.needsStudent, reason: "needs the student at \(url.host ?? "?")")
             return .cancel
         case .follow, .signInHop:
             return .allow
@@ -245,7 +274,7 @@ private final class WeBeepWalk: NSObject, WKNavigationDelegate {
         Task { [weak self] in
             try? await Task.sleep(for: SessionSeeder.signInGrace)
             guard let self, self.navigations == seen else { return }
-            self.finish(nil, reason: "sign-in page stayed at \(url.host ?? "?")")
+            self.finish(.needsStudent, reason: "sign-in page stayed at \(url.host ?? "?")")
         }
     }
 
@@ -260,7 +289,7 @@ private final class WeBeepWalk: NSObject, WKNavigationDelegate {
         // loaded in place of the dashboard — and -999 a load replaced by another.
         if nsError.domain == "WebKitErrorDomain", [101, 102].contains(nsError.code) { return }
         if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorCancelled { return }
-        finish(nil, reason: "failed \(nsError.domain) \(nsError.code)")
+        finish(.unavailable, reason: "failed \(nsError.domain) \(nsError.code)")
     }
 
     /// Stops on a failure after the page began to load.
@@ -271,6 +300,6 @@ private final class WeBeepWalk: NSObject, WKNavigationDelegate {
     ) {
         let nsError = error as NSError
         if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorCancelled { return }
-        finish(nil, reason: "failed \(nsError.domain) \(nsError.code)")
+        finish(.unavailable, reason: "failed \(nsError.domain) \(nsError.code)")
     }
 }

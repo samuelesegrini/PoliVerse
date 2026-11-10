@@ -65,10 +65,6 @@ struct PoliMiAppLoginWebView: View {
     /// Handed the SPID provider list the page carries, as JSON, each time the
     /// chooser loads. See ``SPIDCatalogue``.
     var onProvidersRead: (String) -> Void = { _ in }
-    /// Called with a WeBeep token obtained on the session this sign-in leaves behind,
-    /// or `nil` to leave WeBeep alone. See ``SessionSeeder``.
-    var onWeBeepToken: ((WeBeepAuth.MoodleToken) -> Void)?
-
     /// Diagnostic log for this type, under the `oauth` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "oauth")
 
@@ -321,23 +317,7 @@ struct PoliMiAppLoginWebView: View {
         else { return }
         didFinish = true
         log.notice("Credential reported by Servizi Online")
-        endSession()
         onCredentials(stored.token)
-    }
-
-    /// Ends the sign-in's web session, first using it once more to sign WeBeep and the
-    /// recordings in, so that neither asks for a sign-in — and a second factor — of its
-    /// own.
-    ///
-    /// The session dies with the flow, as it always did; the cache does not, which is
-    /// what makes the next login fast.
-    @MainActor
-    private func endSession() {
-        let onWeBeepToken = onWeBeepToken
-        Task {
-            await SessionSeeder.seed(from: LoginWebKit.dataStore, weBeep: onWeBeepToken)
-            await LoginWebKit.endSession()
-        }
     }
 
     /// Reads the credential if the app has stored one.
@@ -352,7 +332,6 @@ struct PoliMiAppLoginWebView: View {
 
         didFinish = true
         log.notice("Read credentials minted by the official app")
-        endSession()
         onCredentials(stored.token)
         return true
     }

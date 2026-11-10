@@ -4,17 +4,17 @@
 <dict>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
-	<key>com.apple.security.network.client</key>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.segrini.samuele.PoliVerse</string>
+	</array>
+	<key>com.apple.security.files.downloads.read-write</key>
 	<true/>
 	<key>com.apple.security.files.user-selected.read-write</key>
 	<true/>
-	<key>com.apple.security.files.downloads.read-write</key>
+	<key>com.apple.security.network.client</key>
 	<true/>
 	<key>com.apple.security.personal-information.calendars</key>
 	<true/>
-	<key>com.apple.security.application-groups</key>
-	<array>
-		<string>$(TeamIdentifierPrefix)segrini.samuele.PoliVerse</string>
-	</array>
 </dict>
 </plist>

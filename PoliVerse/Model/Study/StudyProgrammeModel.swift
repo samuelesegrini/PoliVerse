@@ -37,7 +37,8 @@ final class StudyProgrammeModel {
     @ObservationIgnored private var others: [String: StudyProgramme] = [:]
     @ObservationIgnored private var othersAttempted: Set<String> = []
     @ObservationIgnored private var loadedFor: String?
-    @ObservationIgnored private var plans: [String: [PlanTeaching]] = [:]
+    private var planPages: Loader<StudyPlanPage>
+    @ObservationIgnored private var resolvedPlans: Set<StudyPlanPage.Key> = []
     @ObservationIgnored private var locateAttempted: Set<String> = []
 
     /// A week: a plan page changes when the manifesto does, once a year.
@@ -57,6 +58,7 @@ final class StudyProgrammeModel {
          careers: (any Enrolments)? = nil,
          store: StudyProgrammeStore = StudyProgrammeStore()) {
         self.manifesti = manifesti
+        self.planPages = Loader(StudyPlanPage(manifesti: manifesti))
         self.account = account
         self.career = career
         self.careers = careers
@@ -87,7 +89,8 @@ final class StudyProgrammeModel {
             programme = store.programme(for: matricola)
             others = [:]
             othersAttempted = []
-            plans = [:]
+            planPages = Loader(StudyPlanPage(manifesti: manifesti))
+            resolvedPlans = []
             planCodes = []
         }
         guard locateAttempted.insert(matricola).inserted else { return }
@@ -118,7 +121,8 @@ final class StudyProgrammeModel {
         updated.links = current.links
         updated.needsReview = current.needsReview
         save(updated)
-        plans = [:]
+        planPages = Loader(StudyPlanPage(manifesti: manifesti))
+        resolvedPlans = []
         planCodes = []
         log.notice("study programme plan settled from *** to \(settled.plan, privacy: .public)")
     }
@@ -212,7 +216,7 @@ final class StudyProgrammeModel {
         guard let current = programme, current.isConfirmed else { return }
         let year = AcademicYear.recent().first?.code ?? current.selection.year
         let plan = await plan(forYear: year)
-        let gone = plan.isEmpty && plans[key(current.selection(forYear: year))] != nil
+        let gone = plan.isEmpty && resolvedPlans.contains(StudyPlanPage.Key(selection: current.selection(forYear: year), language: .current))
         let misfit = !ProgrammeInference.stillFits(libretto: librettoKeys, plan: Set(ProgrammeInference.keys(of: plan)))
         guard gone || misfit, var updated = programme else { return }
         updated.isConfirmed = false
@@ -232,7 +236,8 @@ final class StudyProgrammeModel {
             updated.links = previous.links
         }
         save(updated)
-        plans = [:]
+        planPages = Loader(StudyPlanPage(manifesti: manifesti))
+        resolvedPlans = []
         planCodes = []
     }
 
@@ -333,17 +338,6 @@ final class StudyProgrammeModel {
 
     // MARK: - Plan pages
 
-    /// The ``DiskCache`` record name one plan page is stored under.
-    ///
-    /// - Parameters:
-    ///   - selection: The position in the manifesto.
-    ///   - language: The language the page was read in.
-    /// - Returns: The record name.
-    private func key(_ selection: CatalogueSelection, language: PoliMiLanguage = .current) -> String {
-        ["plan", selection.year, selection.school, selection.degree, selection.plan, language.rawValue]
-            .joined(separator: "-").replacingOccurrences(of: "*", with: "x")
-    }
-
     /// The plan's teachings in an academic year: the manifesto of the year the
     /// course was taken, which is where its lecturers and schede are. Kept on
     /// disk for a week, so the course list and the scheda open without it.
@@ -366,55 +360,19 @@ final class StudyProgrammeModel {
     ///   - language: The language to read the page in.
     /// - Returns: The plan's teachings, or an empty array when the page is not this plan's.
     private func plan(of programme: StudyProgramme, year: String?, language: PoliMiLanguage = .current) async -> [PlanTeaching] {
-        let selection = programme.selection(forYear: year)
-        let name = key(selection, language: language)
-        if let cached = plans[name] { return cached }
-        if let stored = await Self.stored(name), stored.isFresh(within: Self.planLifetime) {
-            remember(stored.value, as: name, language: language)
-            return stored.value
+        let key = StudyPlanPage.Key(selection: programme.selection(forYear: year), language: language)
+        let loader = planPages
+        let env = Env.public()
+        let restored = await loader.restore(key, env: env)
+        let teachings: [PlanTeaching]
+        do {
+            teachings = try await loader.value(key, env: env).value
+            resolvedPlans.insert(key)
+        } catch {
+            teachings = await loader.cached(key, env: env)?.value ?? restored?.value ?? []
         }
-        guard let page = await manifesti.cataloguePage(selection, language: language) else {
-            // Offline: last week's plan beats none.
-            return await Self.stored(name)?.value ?? []
-        }
-        // The service settles a plan that does not exist that year onto
-        // another one: only its own plan counts.
-        let teachings = page.selection?.degree == selection.degree && page.selection?.plan == selection.plan
-            ? page.teachings : []
-        remember(teachings, as: name, language: language)
-        await Self.store(teachings, as: name)
-        return teachings
-    }
-
-    /// Holds a plan page in memory, and adds its codes to ``planCodes`` when it was read in
-    /// the interface's own language.
-    ///
-    /// - Parameters:
-    ///   - teachings: The page's teachings.
-    ///   - name: The record name the page is cached under.
-    ///   - language: The language it was read in.
-    private func remember(_ teachings: [PlanTeaching], as name: String, language: PoliMiLanguage) {
-        plans[name] = teachings
         if language == .current { planCodes.formUnion(teachings.map(\.teaching.code)) }
-    }
-
-    /// Reads a cached plan page on the global executor.
-    ///
-    /// - Parameter name: The record name.
-    /// - Returns: The page with its age, or `nil` when nothing is cached.
-    @concurrent
-    private static func stored(_ name: String) async -> DiskCache.Entry<[PlanTeaching]>? {
-        DiskCache.load([PlanTeaching].self, as: name)
-    }
-
-    /// Caches a plan page on the global executor.
-    ///
-    /// - Parameters:
-    ///   - teachings: The page's teachings.
-    ///   - name: The record name.
-    @concurrent
-    private static func store(_ teachings: [PlanTeaching], as name: String) async {
-        DiskCache.save(teachings, as: name)
+        return teachings
     }
 
     /// Which plan teaching a course is, in its own academic year: a link made
@@ -584,3 +542,31 @@ final class StudyProgrammeModel {
 /// `Sendable`, and a `Sendable` conformance stated in another file is
 /// retroactive.
 extension StudyProgrammeModel: TeachingCodes {}
+
+/// Public manifesto pages, keyed by the full selection and language.
+nonisolated struct StudyPlanPage: Resource {
+    struct Key: Hashable, Sendable {
+        let selection: CatalogueSelection
+        let language: PoliMiLanguage
+    }
+    typealias Value = [PlanTeaching]
+    static let id = "study-plan"
+    static let ttl: TimeInterval = 7 * 86400
+    static let persistence = Persistence.publicDisk
+    let manifesti: any ManifestoReading
+
+    func storageName(for key: Key) -> String {
+        let s = key.selection
+        return ["plan", s.year, s.school, s.degree, s.plan, s.campus, key.language.rawValue]
+            .joined(separator: "-").replacingOccurrences(of: "*", with: "x")
+    }
+
+    @concurrent
+    func fetch(_ key: Key, env: Env, previous: Value?) async throws -> Value {
+        guard let page = await manifesti.cataloguePage(key.selection, language: key.language) else {
+            throw URLError(.cannotLoadFromNetwork)
+        }
+        return page.selection?.degree == key.selection.degree && page.selection?.plan == key.selection.plan
+            ? page.teachings : []
+    }
+}

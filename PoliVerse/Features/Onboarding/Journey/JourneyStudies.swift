@@ -24,6 +24,13 @@ struct JourneyStudies: View {
     /// Whether the plan picker is up.
     @State private var choosingPlan = false
 
+    private var showsStudyPlan: Bool {
+        #if DEBUG
+        if CommandLine.arguments.contains("-PreviewOnboarding") { return true }
+        #endif
+        return !session.useMockData
+    }
+
     /// The view's content.
     var body: some View {
         VStack(spacing: 0) {
@@ -31,7 +38,7 @@ struct JourneyStudies: View {
                 .padding(.bottom, 24)
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    if !session.useMockData {
+                    if showsStudyPlan {
                         planSection
                     }
                     campusSection
@@ -43,6 +50,8 @@ struct JourneyStudies: View {
             Spacer(minLength: 16)
             JourneyAction(title: "Continua", action: finish)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("onboarding-studies")
         .task {
             await rooms.load()
             if !rooms.sites.contains(favourite), let biggest = rooms.biggestSite { favourite = biggest }

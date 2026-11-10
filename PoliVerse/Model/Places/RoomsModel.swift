@@ -23,32 +23,12 @@ import OSLog
 /// happen off the main actor.
 @Observable
 final class RoomsModel {
-    /// Every room in the catalogue, sorted by code.
-    private(set) var rooms: [Classroom] = []
-    /// The campuses present, sorted.
-    ///
-    /// Stored rather than computed, because view bodies read it and deriving a set over
-    /// the whole catalogue on every render is work the main thread need not repeat.
-    private(set) var campuses: [String] = []
-    /// `true` while a load is in flight.
-    private(set) var isLoading = false
-    /// The last load's error, or `nil` when it succeeded.
-    private(set) var errorMessage: String?
-
-    /// Diagnostic log for this type, under the `rooms` category.
-    private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "rooms")
-    /// The transport. The base URL comes from ``ServiceDirectory/Service/maps`` rather
-    /// than from here, so the models that read this service cannot drift apart.
-    private let http: any HTTP
-    /// Which ``DiskCache`` record holds the catalogue.
-    ///
-    /// Injectable only so a test cannot overwrite the real one. The cache is deliberately
-    /// not keyed by account — a campus is the same campus for everyone.
-    private let cacheName: String
-    /// The catalogue's fetch, joined across callers.
-    private let loader: Loader<RoomCatalogueResource>
-    /// Loads in flight, which ``isLoading`` reports.
-    @ObservationIgnored private var loadsInFlight = 0
+    var rooms: [Classroom] { previewCatalogue?.rooms ?? query.value?.rooms ?? [] }
+    var campuses: [String] { previewCatalogue?.campuses ?? query.value?.campuses ?? [] }
+    var isLoading: Bool { query.isLoading }
+    var errorMessage: String? { query.errorMessage }
+    private let query: Query<RoomCatalogueResource>
+    private var previewCatalogue: Catalogue?
 
     /// Seeds the catalogue and stops it fetching, for previews.
     ///
@@ -58,8 +38,7 @@ final class RoomsModel {
     /// - Parameter rooms: The catalogue to report.
     convenience init(preview rooms: [Classroom]) {
         self.init()
-        self.rooms = rooms
-        self.campuses = Array(Set(rooms.compactMap(\.campusName))).sorted()
+        self.previewCatalogue = Catalogue(rooms)
         self.skipsLoading = true
     }
 
@@ -76,59 +55,15 @@ final class RoomsModel {
     ///   - http: The transport.
     ///   - cacheName: Which ``DiskCache`` record holds the catalogue.
     init(http: any HTTP = PublicHTTP(), cacheName: String = "rooms") {
-        self.http = http
-        self.cacheName = cacheName
-        loader = Loader(RoomCatalogueResource(http: http, cacheName: cacheName))
-        // The cached catalogue is *not* read here: this runs while the app is
-        // launching, and decoding 350 rooms from disk on the main thread is a
-        // stall before anything is on screen. ``load(force:)`` reads it in the
-        // background instead, so the first screen that asks gets it.
+        query = Query(RoomCatalogueResource(http: http, cacheName: cacheName), account: PublicAccount(http: http))
     }
 
-    /// Publishes a catalogue and its campus list together.
-    ///
-    /// - Parameters:
-    ///   - rooms: The rooms to publish.
-    ///   - campuses: The campuses derived from them.
-    private func adopt(_ rooms: [Classroom], campuses: [String]) {
-        self.rooms = rooms
-        self.campuses = campuses
-    }
-
-    /// Loads the catalogue, serving the cached copy first.
-    ///
-    /// A call while a load is in flight waits for it. The catalogue is fetched when none
-    /// has been fetched today, or when `force` asks; the four catalogues are fetched
-    /// concurrently and joined off the main actor, and the result is cached. A failure
-    /// leaves whatever was held in place and sets ``errorMessage``.
-    ///
-    /// - Parameter force: Refetches even when today's catalogue is held.
     func load(force: Bool = false) async {
         guard !skipsLoading else { return }
-        loadsInFlight += 1
-        isLoading = true
-        defer {
-            loadsInFlight -= 1
-            if loadsInFlight == 0 { isLoading = false }
-        }
-        // Disk first, so callers have a catalogue to draw within a frame or
-        // two rather than after four network round-trips.
-        if rooms.isEmpty, let cached = await Self.cachedCatalogue(cacheName) {
-            adopt(cached.rooms, campuses: cached.campuses)
-        }
-        let env = Env.public(http)
-        guard await loader.isDue(Whole(), env: env, force: force) else { return }
-        errorMessage = nil
-        do {
-            let fetched = try await loader.value(Whole(), env: env, force: force).value
-            if fetched.rooms != rooms { adopt(fetched.rooms, campuses: fetched.campuses) }
-        } catch {
-            log.error("Room catalogue failed: \(error.localizedDescription)")
-            errorMessage = userFacingMessage(error)
-        }
+        await query.load(force: force)
     }
 
-    nonisolated struct Catalogue: Sendable {
+    nonisolated struct Catalogue: Sendable, Equatable {
         /// The rooms.
         let rooms: [Classroom]
         /// The campuses present, sorted.
@@ -210,34 +145,7 @@ final class RoomsModel {
         return Catalogue(joined)
     }
 
-    /// Reads the cached catalogue on the global executor.
-    ///
-    /// - Parameter name: The ``DiskCache`` record.
-    /// - Returns: The catalogue, or `nil` when nothing usable is cached.
-    @concurrent
-    private static func cachedCatalogue(_ name: String) async -> Catalogue? {
-        guard let cached = DiskCache.load([Classroom].self, as: name), !cached.value.isEmpty
-        else { return nil }
-        return Catalogue(cached.value)
-    }
 
-    /// Encodes and writes the catalogue on the global executor.
-    ///
-    /// - Parameters:
-    ///   - rooms: The rooms to cache.
-    ///   - name: The ``DiskCache`` record.
-    @concurrent
-    fileprivate static func cache(_ rooms: [Classroom], as name: String) async {
-        DiskCache.save(rooms, as: name)
-    }
-
-    /// Fetches and decodes one unauthenticated maps-service catalogue.
-    ///
-    /// - Parameters:
-    ///   - path: The catalogue's path below the maps host.
-    ///   - type: The shape to decode.
-    /// - Returns: The decoded catalogue.
-    /// - Throws: ``APIError``.
 }
 /// ``RoomsModel`` satisfies ``RoomCatalogue`` as it stands.
 ///
@@ -255,12 +163,24 @@ nonisolated struct RoomCatalogueResource: Resource {
     static let ttl: TimeInterval = 86_400
     /// Kept in ``DiskCache`` by name rather than per account: a campus is the same
     /// campus for everyone.
-    static let persistence = Persistence.memory
+    static let persistence = Persistence.publicDisk
 
     /// The transport.
     let http: any HTTP
     /// Which ``DiskCache`` record holds the catalogue.
     let cacheName: String
+
+    func storageName(for key: Whole) -> String { cacheName }
+
+    func save(_ value: Value, to offline: OfflineStore, as name: String, account: String) {
+        DiskCache.save(value.rooms, as: name)
+    }
+
+    @concurrent
+    func read(from offline: OfflineStore, as name: String, account: String) async -> (value: Value, age: TimeInterval)? {
+        guard let copy = DiskCache.load([Classroom].self, as: name), !copy.value.isEmpty else { return nil }
+        return (RoomsModel.Catalogue(copy.value), Date.now.timeIntervalSince(copy.storedAt))
+    }
 
     @concurrent
     func fetch(_ key: Whole, env: Env, previous: RoomsModel.Catalogue?) async throws -> RoomsModel.Catalogue {
@@ -278,7 +198,6 @@ nonisolated struct RoomCatalogueResource: Resource {
             sites: await sitesTask ?? [])
         Logger(subsystem: "segrini.samuele.PoliVerse", category: "rooms")
             .notice("rooms: \(rawRooms.count, privacy: .public) in catalogue, \(joined.rooms.count, privacy: .public) usable")
-        await RoomsModel.cache(joined.rooms, as: cacheName)
         return joined
     }
 

@@ -16,6 +16,8 @@ import UserNotifications
 final class LoginFlow {
     /// The session this flow drives. Unowned, because ``Session`` owns this.
     private unowned let session: Session
+    /// Cancels account-owned linking before any credentials are removed.
+    var willSignOut: () async -> Void = {}
     /// Diagnostic log for this type, under the `login` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "login")
 
@@ -315,6 +317,7 @@ final class LoginFlow {
     /// Under ``Session/useMockData`` it signs back in as ``Student/sample`` instead of
     /// reaching ``Session/State/signedOut``.
     func signOut() async {
+        await willSignOut()
         session.serviceAuthorizationFailed = false
         // Server-side invalidation, as the official app does. Best effort: the
         // local token is dropped either way.
