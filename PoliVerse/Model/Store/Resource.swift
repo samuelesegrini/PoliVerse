@@ -35,28 +35,12 @@ extension Env {
 }
 
 /// The key of a resource that has one value per account, such as the career.
-/// Where a fetch hands over what it has so far, before it is done.
-///
-/// A resource built from several requests (the career asks six endpoints) can
-/// call ``report(_:)`` with a value made from the parts that have arrived over
-/// the value it had before; the ``Query`` waiting on the fetch shows it at once,
-/// and the finished value replaces it. It travels as a task-local: the loader's
-/// flight is started from the waiting query's task and inherits it, so nothing
-/// in ``Loader`` or ``Resource`` has to carry it. A warm-up, with no one waiting,
-/// reports to no one.
-nonisolated enum Partial {
-    /// The waiting query's hand-over, set by ``Query`` around a load.
-    @TaskLocal static var sink: (@Sendable (any Sendable) async -> Void)?
-
-    /// Hands `value` to whoever is waiting on this fetch, if anyone is.
-    static func report(_ value: some Sendable) async {
-        await sink?(value)
-    }
-}
-
-nonisolated struct Whole: Hashable, Sendable {
+nonisolated struct Whole: Hashable, Sendable, CaseIterable {
     /// The one key.
     init() {}
+
+    /// The one value there is: as a ``Resource/Part``, it says "a single request".
+    static var allCases: [Whole] { [Whole()] }
 }
 
 /// Where a ``Loader`` keeps what it fetched.
@@ -89,6 +73,11 @@ nonisolated protocol Resource: Sendable {
     /// The shape this resource produces. A ``Persistence/offline`` resource's value
     /// must also be `Codable`, since the offline copy stores it.
     associatedtype Value: Sendable
+    /// The pieces a value is fetched in, when it takes several requests that each
+    /// fill a section of a screen: the career's libretto, its sittings, its counters.
+    /// ``Whole`` for data that arrives in one request, which is the default, so a
+    /// resource without parts declares nothing.
+    associatedtype Part: Hashable & Sendable & CaseIterable = Whole
 
     /// Names the offline file, the log category and the signpost's owner.
     ///
@@ -101,6 +90,15 @@ nonisolated protocol Resource: Sendable {
     /// Whether a fetched value is also written to disk per account. `.offline` by
     /// default; ignored for a value that is not `Codable`.
     static var persistence: Persistence { get }
+    /// How long one part is served without asking again. ``ttl`` by default; a
+    /// resource whose parts age differently says so here, and a refresh then asks
+    /// only for the parts that are old.
+    ///
+    /// - Parameter part: The part.
+    static func maxAge(of part: Part) -> TimeInterval
+    /// How long after a part failed before it is asked for again without the
+    /// student asking. A minute by default.
+    static var retryAfter: TimeInterval { get }
     /// How many keys the loader keeps in memory before dropping the least recently
     /// used. 128 by default.
     static var capacity: Int { get }
@@ -134,6 +132,27 @@ nonisolated protocol Resource: Sendable {
     @concurrent
     func fetch(_ keys: [Key], env: Env, previous: [Key: Value]) async throws -> [Key: Value]
 
+    /// Fetches some parts of one key, handing over what it has as each part answers.
+    ///
+    /// The loader calls this for a resource that declares a ``Part``. The default
+    /// forwards to ``fetch(_:env:previous:)-(Key,_,_)`` and reports every requested
+    /// part as arrived, so only a resource with real parts writes it.
+    ///
+    /// - Parameters:
+    ///   - key: What to fetch.
+    ///   - env: Whose data, through which transport.
+    ///   - parts: The parts to ask for; never empty. A part left out is still good
+    ///     and must not be requested.
+    ///   - held: What is held for this key. The result is laid over it, so a part
+    ///     not asked for, or failed, keeps what was there.
+    ///   - progress: Where to report the value after each part answers.
+    /// - Returns: The value, with the requested parts that answered and those that
+    ///   failed.
+    /// - Throws: When nothing worth showing came back.
+    @concurrent
+    func fetch(_ key: Key, env: Env, parts: Set<Part>, over held: Value?,
+               progress: LoadProgress<Self>) async throws -> LoadProgress<Self>.Snapshot
+
     /// The value under sample data, never fetched and never written to disk; `nil`
     /// for public data, which is the same for everyone and is fetched as usual.
     ///
@@ -163,6 +182,8 @@ nonisolated protocol Resource: Sendable {
 
 extension Resource {
     nonisolated static var ttl: TimeInterval { 300 }
+    nonisolated static func maxAge(of part: Part) -> TimeInterval { ttl }
+    nonisolated static var retryAfter: TimeInterval { 60 }
     nonisolated static var persistence: Persistence { .offline }
     nonisolated static var capacity: Int { 128 }
     nonisolated static var signpost: PerfSignpost.Name? { nil }
@@ -182,6 +203,14 @@ extension Resource {
             for try await (key, value) in group { values[key] = value }
             return values
         }
+    }
+}
+
+extension Resource {
+    @concurrent
+    nonisolated func fetch(_ key: Key, env: Env, parts: Set<Part>, over held: Value?,
+                           progress: LoadProgress<Self>) async throws -> LoadProgress<Self>.Snapshot {
+        .init(value: try await fetch(key, env: env, previous: held), arrived: parts, failed: [])
     }
 }
 

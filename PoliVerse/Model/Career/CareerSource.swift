@@ -5,9 +5,10 @@ import OSLog
 /// plan header and the target average set on Servizi Online.
 ///
 /// Six independent endpoints across three hosts, fetched concurrently because they
-/// are one screen and one being slow should not delay the rest. Each may fail on its
-/// own — a missing target average is the common case rather than an error — and the
-/// fetch throws only when both load-bearing calls came back empty.
+/// are one screen and one being slow should not delay the rest. Each is a ``Part``:
+/// it may fail on its own, is shown and stored as soon as it answers, and is asked
+/// again only when it is old. The fetch throws only when both load-bearing calls
+/// came back empty.
 nonisolated struct CareerSource: Resource {
     /// Names the offline record and the log category.
     static let id = "career"
@@ -52,50 +53,130 @@ nonisolated struct CareerSource: Resource {
     /// already on screen. ``Query`` keeps the previous value on this error.
     struct NothingLoaded: Error {}
 
-    /// Fetches the whole record.
-    ///
-    /// The six calls run concurrently and each returns `nil` on failure. With a
-    /// record already held (`previous`), each answer is shown over it as it lands,
-    /// through ``Partial``. The exam counts
-    /// come from the counters call, and the planned count is derived from the distinct
-    /// teachings in the sittings when the counters call fails.
+    /// The requests a career is made of. Each fills its own section of the screen,
+    /// is kept with its own age, and is asked again on its own.
+    enum Part: String, Hashable, Sendable, CaseIterable {
+        /// The aggregate figures: average, credits.
+        case book
+        /// How many exams were sat and registered for.
+        case counters
+        /// The exam sittings.
+        case sittings
+        /// The study plan with its results.
+        case libretto
+        /// The target average set on Servizi Online.
+        case target
+        /// The plan's header: the degree course and the year.
+        case header
+    }
+
+    /// The header and the target change a few times a year; the rest as marks are
+    /// published.
+    static func maxAge(of part: Part) -> TimeInterval {
+        switch part {
+        case .target, .header: 86_400
+        case .book, .counters, .sittings, .libretto: ttl
+        }
+    }
+
+    /// Fetches the whole record in one go, for a caller outside the loader.
     ///
     /// - Parameter env: The transport and the matricola.
-    /// - Returns: The record, with a `nil` piece left at its default.
-    /// - Throws: ``AuthError/notAuthenticated`` without a matricola, or ``NothingLoaded``
-    ///   when neither the grade book nor the sittings loaded.
+    /// - Returns: The record, laid over `previous`.
+    /// - Throws: As ``fetch(_:env:parts:over:progress:)``.
     @concurrent
     func fetch(_ key: Whole, env: Env, previous: Payload?) async throws -> Payload {
+        try await fetch(key, env: env, parts: Set(Part.allCases), over: previous, progress: LoadProgress()).value
+    }
+
+    /// Fetches some parts of the record.
+    ///
+    /// The calls run concurrently and each may fail on its own. After every answer
+    /// the record so far, laid over the one held, is reported with the parts in it,
+    /// so a section is shown as soon as its own request is back. The exam counts
+    /// come from the counters call, and the planned count is derived from the
+    /// distinct teachings in the sittings when the counters call fails.
+    ///
+    /// - Parameters:
+    ///   - env: The transport and the matricola.
+    ///   - wanted: The parts to ask for.
+    ///   - held: The record held, which a part not asked for, or failed, keeps.
+    ///   - progress: Where the record is reported as it fills.
+    /// - Returns: The record, with the parts that answered and those that failed.
+    /// - Throws: ``AuthError/notAuthenticated`` without a matricola, or ``NothingLoaded``
+    ///   when neither the grade book nor the sittings loaded of those asked, or
+    ///   nothing at all did.
+    @concurrent
+    func fetch(_ key: Whole, env: Env, parts wanted: Set<Part>, over held: Payload?,
+               progress: LoadProgress<CareerSource>) async throws -> LoadProgress<CareerSource>.Snapshot {
         guard let matricola = env.matricola else { throw AuthError.notAuthenticated }
         let refused = RefusalFlag()
+        let base = held ?? Payload()
 
-        // Independent endpoints, so run them together, and take each as it
-        // lands: with a career already on screen, every part that arrives is
-        // shown over it at once, rather than all six waiting for the slowest.
+        // Independent endpoints, so run them together, and take each as it lands
+        // rather than all waiting for the slowest.
         var parts = Parts()
-        await withTaskGroup(of: Part.self) { group in
-            group.addTask(name: "career gradebook") { .book(await Self.gradeBook(matricola: matricola, env, refused)) }
-            group.addTask(name: "career counters") { .counters(await Self.counters(env, refused)) }
-            group.addTask(name: "career sittings") { .sessions(await Self.sessions(env, refused)) }
-            group.addTask(name: "career libretto") { .libretto(await Self.libretto(matricola: matricola, env, refused)) }
-            group.addTask(name: "career target") { .target(await Self.target(matricola: matricola, env)) }
-            group.addTask(name: "career plan header") { .header(await Self.planHeader(matricola: matricola, env)) }
-            for await part in group {
-                parts.add(part)
-                if let previous, !parts.isComplete {
-                    await Partial.report(parts.payload(over: previous))
+        var arrived: Set<Part> = []
+        var failed: Set<Part> = []
+        await withTaskGroup(of: (Part, Answer, Bool).self) { group in
+            for part in wanted {
+                switch part {
+                case .book:
+                    group.addTask(name: "career gradebook") {
+                        let value = await Self.gradeBook(matricola: matricola, env, refused)
+                        return (Part.book, Answer.book(value), value != nil)
+                    }
+                case .counters:
+                    group.addTask(name: "career counters") {
+                        let value = await Self.counters(env, refused)
+                        return (Part.counters, Answer.counters(value), value != nil)
+                    }
+                case .sittings:
+                    group.addTask(name: "career sittings") {
+                        let value = await Self.sessions(env, refused)
+                        return (Part.sittings, Answer.sessions(value), value != nil)
+                    }
+                case .libretto:
+                    group.addTask(name: "career libretto") {
+                        let value = await Self.libretto(matricola: matricola, env, refused)
+                        return (Part.libretto, Answer.libretto(value), value != nil)
+                    }
+                case .target:
+                    group.addTask(name: "career target") {
+                        let answer = await Self.target(matricola: matricola, env)
+                        return (Part.target, Answer.target(answer?.value), answer != nil)
+                    }
+                case .header:
+                    group.addTask(name: "career plan header") {
+                        let value = await Self.planHeader(matricola: matricola, env)
+                        return (Part.header, Answer.header(value), value != nil)
+                    }
+                }
+            }
+            for await (part, answer, answered) in group {
+                parts.add(answer)
+                if answered { arrived.insert(part) } else { failed.insert(part) }
+                // Answered, and no target is set: the one shown before is gone.
+                if part == .target, answered, case .target(.none) = answer { parts.clearsTarget = true }
+                if !arrived.isEmpty, arrived.count + failed.count < wanted.count {
+                    progress.report(parts.payload(over: base), arrived: arrived, failed: failed)
                 }
             }
         }
+        // A view going away is not six failures.
+        try Task.checkCancellation()
 
-        guard parts.book != nil || parts.sessions != nil else { throw NothingLoaded() }
-        var payload = parts.payload(over: Payload())
-        payload.servicesRefused = await refused.value
-        return payload
+        let bearing = wanted.intersection([.book, .sittings])
+        guard bearing.isEmpty ? !arrived.isEmpty : !bearing.isDisjoint(with: arrived) else { throw NothingLoaded() }
+        var payload = parts.payload(over: base)
+        if !wanted.isDisjoint(with: [.book, .counters, .sittings, .libretto]) {
+            payload.servicesRefused = await refused.value
+        }
+        return .init(value: payload, arrived: arrived, failed: failed)
     }
 
     /// One endpoint's answer, `nil` when it failed. Internal for the tests.
-    enum Part: Sendable {
+    enum Answer: Sendable {
         case book(GradeBook?)
         case counters(ExamCountersDTO?)
         case sessions([ExamSession]?)
@@ -112,12 +193,14 @@ nonisolated struct CareerSource: Resource {
         var libretto: [LibrettoExam]?
         var target: Double?
         var header: StudyPlanHeader?
+        /// The target call answered that no target is set.
+        var clearsTarget = false
         /// How many of the six have answered, failed ones included.
         private var answered = 0
 
         var isComplete: Bool { answered == 6 }
 
-        mutating func add(_ part: Part) {
+        mutating func add(_ part: Answer) {
             answered += 1
             switch part {
             case .book(let value): book = value
@@ -137,7 +220,7 @@ nonisolated struct CareerSource: Resource {
         func payload(over base: Payload) -> Payload {
             var payload = base
             if let libretto { payload.libretto = libretto }
-            if let target { payload.officialTarget = target }
+            if let target { payload.officialTarget = target } else if clearsTarget { payload.officialTarget = nil }
             if let header { payload.planHeader = header }
             if var book {
                 // The gradebook endpoint no longer carries exam counts; they come
@@ -152,6 +235,10 @@ nonisolated struct CareerSource: Resource {
                 }
                 if book.examsPlanned == 0 { book.examsPlanned = base.gradeBook.examsPlanned }
                 payload.gradeBook = book
+            } else if let counters {
+                // The counters asked again on their own, over a grade book held.
+                payload.gradeBook.examsSubscribed = counters.num_iscriz ?? 0
+                payload.gradeBook.examsGiven = counters.num_esiti ?? 0
             }
             if let sessions {
                 payload.sessions = sessions
@@ -259,6 +346,11 @@ nonisolated struct CareerSource: Resource {
         }
     }
 
+    /// What the target call said: a target, or that none is set.
+    private struct TargetAnswer: Sendable {
+        var value: Double?
+    }
+
     /// Fetches the target average the student set on Servizi Online.
     ///
     /// Read leniently through ``JSONValue`` across several candidate field names, since
@@ -268,8 +360,9 @@ nonisolated struct CareerSource: Resource {
     /// - Parameters:
     ///   - matricola: Whose target to fetch.
     ///   - env: The transport.
-    /// - Returns: The target, or `nil` when none is set or the call failed.
-    private static func target(matricola: String, _ env: Env) async -> Double? {
+    /// - Returns: The answer, whose value is `nil` when no target is set, or `nil`
+    ///   when the call failed.
+    private static func target(matricola: String, _ env: Env) async -> TargetAnswer? {
         await attempt("Target average", nil) {
             let data = try await env.http.data(
                 for: APIRequest(host: .libretto, path: "/mediaobiettivo/\(matricola)"))
@@ -278,10 +371,10 @@ nonisolated struct CareerSource: Resource {
             #endif
             let value = try await BackgroundJSON.decode(JSONValue.self, from: data)
             let fields = value.objectValue ?? value.arrayValue?.first?.objectValue
-            return fields?.firstValue([
+            return TargetAnswer(value: fields?.firstValue([
                 "media", "media_obiettivo", "mediaObiettivo", "valore", "target",
-            ])?.doubleValue
-        } ?? nil
+            ])?.doubleValue)
+        }
     }
 
     /// Fetches the study plan's header, read leniently through ``JSONValue``.

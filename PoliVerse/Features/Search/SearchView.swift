@@ -199,6 +199,10 @@ struct SearchView: View {
     /// here would re-run all eight ranking passes on every keystroke, not
     /// just when the settled query changes.
     @State private var results: [(kind: Kind, items: [Result])] = []
+    /// How many of the sources searched here have finished loading.
+    @State private var sourcesLoaded = 0
+    /// The sources loaded when the page opens.
+    private static let sourceCount = 6
 
     /// Runs every match and groups what they found.
     ///
@@ -334,19 +338,29 @@ struct SearchView: View {
             }
             .onChange(of: tokens) { refreshResults() }
             .task {
-                await rooms.load()
-                await courses.load()
-                await agenda.load(around: .now)
-                await career.load()
-                // Cheap and already-windowed, so searching them costs nothing
-                // at the keystroke.
-                await news.load()
-                await notices.load()
-                // The searches above can finish after a query already
-                // settled (e.g. typing while cold), which would otherwise
-                // leave `results` stuck on a stale, thinner answer.
-                refreshResults()
+                // The six sources do not need each other's answers, so they are
+                // asked together rather than one after another: the slowest no
+                // longer holds back the five behind it.
+                let (rooms, courses, agenda) = (self.rooms, self.courses, self.agenda)
+                let (career, news, notices) = (self.career, self.news, self.notices)
+                sourcesLoaded = 0
+                await withTaskGroup(of: Void.self) { group in
+                    group.addTask { await rooms.load() }
+                    group.addTask { await courses.load() }
+                    group.addTask { await agenda.load(around: .now) }
+                    group.addTask { await career.load() }
+                    group.addTask { await news.load() }
+                    group.addTask { await notices.load() }
+                    for await _ in group {
+                        sourcesLoaded += 1
+                        // A source can land after a query already settled (typing
+                        // while cold), which would otherwise leave `results` on a
+                        // stale, thinner answer.
+                        refreshResults()
+                    }
+                }
             }
+            .screenLedger("Cerca", hasContent: sourcesLoaded > 0, isComplete: sourcesLoaded >= Self.sourceCount)
         }
         .specialPage(.search, style: style)
     }

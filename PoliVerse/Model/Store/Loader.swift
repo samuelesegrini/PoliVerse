@@ -23,6 +23,10 @@ import OSLog
 /// 5. **Persists** for ``Persistence/offline`` resources: each fetched value is
 ///    written per account, and ``restore(_:env:)`` puts it back at the next launch
 ///    before the network answers. A restore that a fetch overtook is dropped.
+/// 6. **Keeps parts apart.** For a resource that declares a ``Resource/Part``, each
+///    part has its own age: a refresh asks only for the parts that are old, a part
+///    that answers is held and written at once, whatever happens to the others, and
+///    ``updates(_:env:)`` tells whoever is watching.
 ///
 /// The fetch itself runs in the resource's `@concurrent` method, off this actor and
 /// off the main actor; this actor only files what comes back.
@@ -35,15 +39,37 @@ actor Loader<R: Resource> {
         let fetchedAt: Date
         /// `false` for a value restored from disk and not fetched since.
         let isFresh: Bool
+        /// When each part in ``value`` was fetched. A part missing here has never
+        /// answered for this account: what ``value`` shows for it is a default.
+        let parts: [R.Part: Date]
+        /// The parts that answered since the app started, rather than being restored.
+        let arrived: Set<R.Part>
+        /// The parts whose last request failed.
+        let failed: Set<R.Part>
+    }
+
+    /// What a fetch brings for one key.
+    private typealias Fetched = LoadProgress<R>.Snapshot
+
+    /// When one part was fetched.
+    private struct PartStamp {
+        /// On the calendar, for showing its age and for the offline copy.
+        var date: Date
+        /// On the monotonic clock, or `nil` for a restored part too old to count
+        /// as fresh.
+        var instant: ContinuousClock.Instant?
     }
 
     /// One held value.
     private struct Entry {
         var value: R.Value
         var fetchedAt: Date
-        /// When it was fetched on the monotonic clock, or `nil` for a restored value,
-        /// which is never fresh.
-        var stamp: ContinuousClock.Instant?
+        /// When each part was fetched. A resource without parts has one, ``Whole``.
+        var parts: [R.Part: PartStamp] = [:]
+        /// The parts a fetch answered since the app started.
+        var arrived: Set<R.Part> = []
+        /// The parts whose last request failed, and when.
+        var failed: [R.Part: ContinuousClock.Instant] = [:]
         var lastUsed: ContinuousClock.Instant
         /// ``Env/source`` of the load that produced it.
         var source: String
@@ -55,7 +81,7 @@ actor Loader<R: Resource> {
     /// One fetch in flight, for one or more keys.
     private struct Flight {
         /// The fetch.
-        let task: Task<[R.Key: R.Value], any Error>
+        let task: Task<[R.Key: Fetched], any Error>
         /// The fetch's outcome once filed on this actor. Callers await this rather
         /// than the fetch, so none resumes before the value is held.
         var filed: Task<Result<Void, any Error>, Never>?
@@ -68,7 +94,14 @@ actor Loader<R: Resource> {
         var waiters: Int
         /// Someone asked for a key of this warm-up while it was in flight.
         var claimed = false
+        /// The parts already filed while the fetch was still running.
+        var stamped: [R.Key: Set<R.Part>] = [:]
     }
+
+    /// Every part there is.
+    private static var allParts: Set<R.Part> { Set(R.Part.allCases) }
+    /// Whether the resource declares parts of its own.
+    private static var hasParts: Bool { R.Part.self != Whole.self }
 
     private let resource: R
     private let offline: OfflineStore
@@ -83,6 +116,8 @@ actor Loader<R: Resource> {
     private var nextFlight = 0
     /// `"<matricola>|<file>"` for every offline copy already restored.
     private var restored: Set<String> = []
+    /// Who is watching each key, and for which account.
+    private var watchers: [R.Key: [UUID: (source: String, continuation: AsyncStream<Snapshot>.Continuation)]] = [:]
 
     /// Creates a loader.
     ///
@@ -122,16 +157,64 @@ actor Loader<R: Resource> {
     func isDue(_ key: R.Key, env: Env, force: Bool = false) -> Bool {
         if force { return true }
         if let id = flightOf[key], flights[id]?.source == env.source { return true }
-        guard let entry = entries[key], entry.source == env.source, let stamp = entry.stamp
-        else { return true }
-        return R.ttl.isFinite && clock.now - stamp >= .seconds(R.ttl)
+        return !dueParts(key, env: env).isEmpty
     }
 
-    /// Whether a key is held and fresh for this account.
+    /// Whether a key is held and every part of it is fresh for this account.
     func isHeld(_ key: R.Key, env: Env) -> Bool {
-        guard let entry = entries[key], entry.source == env.source, let stamp = entry.stamp
-        else { return false }
-        return !R.ttl.isFinite || clock.now - stamp < .seconds(R.ttl)
+        guard let entry = entries[key], entry.source == env.source else { return false }
+        return expiredParts(of: entry).isEmpty
+    }
+
+    /// The parts a load of this key would ask for: those never fetched for this
+    /// account or older than ``Resource/maxAge(of:)``, leaving out a part that
+    /// failed less than ``Resource/retryAfter`` ago. Every part when `force`.
+    func dueParts(_ key: R.Key, env: Env, force: Bool = false) -> Set<R.Part> {
+        if force { return Self.allParts }
+        guard let entry = entries[key], entry.source == env.source else { return Self.allParts }
+        let now = clock.now
+        return expiredParts(of: entry).filter { part in
+            guard let failedAt = entry.failed[part] else { return true }
+            return now - failedAt >= .seconds(R.retryAfter)
+        }
+    }
+
+    /// The parts of an entry that are missing or past their age.
+    private func expiredParts(of entry: Entry) -> Set<R.Part> {
+        let now = clock.now
+        return Self.allParts.filter { part in
+            guard let instant = entry.parts[part]?.instant else { return true }
+            let maxAge = R.maxAge(of: part)
+            return maxAge.isFinite && now - instant >= .seconds(maxAge)
+        }
+    }
+
+    /// What is filed for a key from now on, newest only: every part that answers
+    /// while a fetch runs, and the fetch's end. For a ``Query`` to show a section as
+    /// soon as its part is in. Ends when the caller stops reading.
+    ///
+    /// - Parameters:
+    ///   - key: The key.
+    ///   - env: Whose data; another account's is never delivered.
+    func updates(_ key: R.Key, env: Env) -> AsyncStream<Snapshot> {
+        let (stream, continuation) = AsyncStream<Snapshot>.makeStream(bufferingPolicy: .bufferingNewest(1))
+        let id = UUID()
+        watchers[key, default: [:]][id] = (env.source, continuation)
+        continuation.onTermination = { _ in Task { await self.unwatch(key, id) } }
+        return stream
+    }
+
+    private func unwatch(_ key: R.Key, _ id: UUID) {
+        watchers[key]?[id] = nil
+        if watchers[key]?.isEmpty == true { watchers[key] = nil }
+    }
+
+    private func notify(_ key: R.Key, _ entry: Entry) {
+        guard let watching = watchers[key] else { return }
+        let snapshot = snapshot(entry)
+        for watcher in watching.values where watcher.source == entry.source {
+            watcher.continuation.yield(snapshot)
+        }
     }
 
     // MARK: - Loading
@@ -172,7 +255,7 @@ actor Loader<R: Resource> {
             }
         }
         if !toFetch.isEmpty {
-            waitingOn.insert(start(toFetch, env: env, priority: Task.currentPriority, warm: false))
+            waitingOn.insert(start(toFetch, env: env, priority: Task.currentPriority, warm: false, force: force))
         }
 
         var firstError: (any Error)?
@@ -203,7 +286,7 @@ actor Loader<R: Resource> {
             flightOf[key].flatMap { flights[$0] }?.source != env.source && isDue(key, env: env)
         }
         guard !due.isEmpty else { return }
-        _ = start(due, env: env, priority: .utility, warm: true)
+        _ = start(due, env: env, priority: .utility, warm: true, force: false)
     }
 
     /// Waits until every fetch in flight has been filed, including warm-ups.
@@ -235,10 +318,13 @@ actor Loader<R: Resource> {
     ///   - env: Whose it is.
     func put(_ value: R.Value, for key: R.Key, env: Env) {
         let now = clock.now
-        entries[key] = Entry(value: value, fetchedAt: .now, stamp: now, lastUsed: now, source: env.source)
-        if R.persistence != .memory, !env.isSample, let matricola = persistenceAccount(env) {
-            resource.save(value, to: offline, as: resource.storageName(for: key), account: matricola)
-        }
+        let date = Date.now
+        var entry = Entry(value: value, fetchedAt: date, lastUsed: now, source: env.source)
+        for part in Self.allParts { entry.parts[part] = PartStamp(date: date, instant: now) }
+        entry.arrived = Self.allParts
+        entries[key] = entry
+        persist(key, entry)
+        notify(key, entry)
         evictIfNeeded()
     }
 
@@ -281,13 +367,32 @@ actor Loader<R: Resource> {
         guard R.persistence != .memory, !env.isSample, let matricola = persistenceAccount(env) else { return nil }
         let name = resource.storageName(for: key)
         guard restored.insert("\(matricola)|\(name)").inserted else { return nil }
-        guard let entry = await resource.read(from: offline, as: name, account: matricola) else { return nil }
+        guard let saved = await resource.read(from: offline, as: name, account: matricola) else { return nil }
+        // Which parts the copy really holds, and how old each is. A copy written
+        // before parts were kept apart has no such list: every part is as old as
+        // the file.
+        var dates: [String: Date]?
+        if Self.hasParts, R.persistence == .offline {
+            dates = await offline.loaded([String: Date].self, as: name + Self.partsSuffix, account: matricola)?.value
+        }
         // Something newer landed while the file was read.
         if let held = entries[key], held.source == env.source { return nil }
-        // A negative age is a clock set back since the save: nothing to trust.
-        let stamp = (0..<R.ttl).contains(entry.age) ? clock.now.advanced(by: .seconds(-entry.age)) : nil
-        let restoredEntry = Entry(value: entry.value, fetchedAt: Date.now.addingTimeInterval(-entry.age),
-                                  stamp: stamp, lastUsed: clock.now, source: env.source)
+        let now = clock.now
+        let today = Date.now
+        var restoredEntry = Entry(value: saved.value, fetchedAt: today.addingTimeInterval(-saved.age),
+                                  lastUsed: now, source: env.source)
+        for part in Self.allParts {
+            var age = saved.age
+            if let dates {
+                // A part the copy never received stays missing, so it is asked for.
+                guard let date = dates[String(describing: part)] else { continue }
+                age = today.timeIntervalSince(date)
+            }
+            // A negative age is a clock set back since the save: nothing to trust.
+            let fresh = age >= 0 && age < R.maxAge(of: part)
+            restoredEntry.parts[part] = PartStamp(date: today.addingTimeInterval(-age),
+                                                  instant: fresh ? now.advanced(by: .seconds(-age)) : nil)
+        }
         entries[key] = restoredEntry
         evictIfNeeded()
         return snapshot(restoredEntry)
@@ -296,23 +401,66 @@ actor Loader<R: Resource> {
     // MARK: - Flights
 
     /// Starts one fetch for some keys.
-    private func start(_ keys: [R.Key], env: Env, priority: TaskPriority, warm: Bool) -> Int {
+    private func start(_ keys: [R.Key], env: Env, priority: TaskPriority, warm: Bool, force: Bool) -> Int {
         nextFlight += 1
         let id = nextFlight
         let resource = resource
         let previous = keys.reduce(into: [R.Key: R.Value]()) { result, key in
             if let entry = entries[key], entry.source == env.source { result[key] = entry.value }
         }
-        let task = Task(name: "\(R.id) \(warm ? "warm" : "fetch")", priority: priority) { @concurrent in
+        let all = Self.allParts
+        let hasParts = Self.hasParts
+        // Only the parts that are old, so a refresh costs what changed.
+        let wanted = keys.reduce(into: [R.Key: Set<R.Part>]()) { result, key in
+            let due = dueParts(key, env: env, force: force)
+            result[key] = due.isEmpty ? all : due
+        }
+        let task = Task(name: "\(R.id) \(warm ? "warm" : "fetch")", priority: priority) {
+            @concurrent () async throws -> [R.Key: Fetched] in
             let interval = R.signpost.map(PerfSignpost.begin)
             defer { interval.map(PerfSignpost.end) }
             if env.isSample {
-                let samples = keys.compactMap { key in resource.sample(key).map { (key, $0) } }
+                let samples = keys.compactMap { key in
+                    resource.sample(key).map { (key, Fetched(value: $0, arrived: all, failed: [])) }
+                }
                 if samples.count == keys.count { return Dictionary(uniqueKeysWithValues: samples) }
             }
             // What the requests of this fetch are for, read by ``RequestGate``.
             return try await LoadContext.$current.withValue(.init(part: R.id, speculative: warm)) {
-                try await resource.fetch(keys, env: env, previous: previous)
+                guard hasParts else {
+                    return try await resource.fetch(keys, env: env, previous: previous)
+                        .mapValues { Fetched(value: $0, arrived: all, failed: []) }
+                }
+                return try await withThrowingTaskGroup(of: (R.Key, Fetched).self) { group in
+                    for key in keys {
+                        let parts = wanted[key] ?? all
+                        let held = previous[key]
+                        group.addTask(name: "\(R.id) \(key)") {
+                            // Each part is filed as it answers, while the rest are
+                            // still on their way.
+                            let progress = LoadProgress<R>()
+                            let filing = Task {
+                                for await snapshot in progress.snapshots {
+                                    await self.filePartial(id, key: key, snapshot)
+                                }
+                            }
+                            do {
+                                let fetched = try await resource.fetch(key, env: env, parts: parts,
+                                                                       over: held, progress: progress)
+                                progress.finish()
+                                await filing.value
+                                return (key, fetched)
+                            } catch {
+                                progress.finish()
+                                await filing.value
+                                throw error
+                            }
+                        }
+                    }
+                    var fetched: [R.Key: Fetched] = [:]
+                    for try await (key, value) in group { fetched[key] = value }
+                    return fetched
+                }
             }
         }
         flights[id] = Flight(task: task, keys: keys, source: env.source, warm: warm, waiters: 0)
@@ -355,7 +503,7 @@ actor Loader<R: Resource> {
         let result = await task.result
         guard let flight = flights.removeValue(forKey: id) else { return .success(()) }
         for key in flight.keys where flightOf[key] == id { flightOf[key] = nil }
-        let values: [R.Key: R.Value]
+        let values: [R.Key: Fetched]
         switch result {
         case .success(let fetched):
             values = fetched
@@ -373,15 +521,65 @@ actor Loader<R: Resource> {
             LoadingLedger.shared.noteSpeculation(
                 part: R.id, sent: values.count, used: flight.claimed ? values.count : 0)
         }
-        for (key, value) in values {
-            entries[key] = Entry(value: value, fetchedAt: date, stamp: now, lastUsed: now, source: flight.source,
-                                 unusedWarmUp: flight.warm && !flight.claimed)
-            if R.persistence != .memory, flight.source != "mock", (R.persistence == .publicDisk || flight.source != "anonymous") {
-                resource.save(value, to: offline, as: resource.storageName(for: key), account: flight.source)
-            }
+        for (key, fetched) in values {
+            var entry = entries[key].flatMap { $0.source == flight.source ? $0 : nil }
+                ?? Entry(value: fetched.value, fetchedAt: date, lastUsed: now, source: flight.source)
+            entry.value = fetched.value
+            entry.fetchedAt = date
+            entry.lastUsed = now
+            entry.unusedWarmUp = flight.warm && !flight.claimed
+            stamp(&entry, with: fetched, alreadyStamped: flight.stamped[key] ?? [], now: now, date: date)
+            entries[key] = entry
+            persist(key, entry)
+            notify(key, entry)
         }
         evictIfNeeded()
         return .success(())
+    }
+
+    /// Files what a fetch still running has so far: the parts that answered are
+    /// held, written and announced now, so they survive whatever happens next.
+    private func filePartial(_ id: Int, key: R.Key, _ fetched: Fetched) {
+        guard var flight = flights[id] else { return }
+        let now = clock.now
+        let date = Date.now
+        var entry = entries[key].flatMap { $0.source == flight.source ? $0 : nil }
+            ?? Entry(value: fetched.value, fetchedAt: date, lastUsed: now, source: flight.source)
+        entry.value = fetched.value
+        stamp(&entry, with: fetched, alreadyStamped: flight.stamped[key] ?? [], now: now, date: date)
+        flight.stamped[key, default: []].formUnion(fetched.arrived)
+        flights[id] = flight
+        entries[key] = entry
+        persist(key, entry)
+        notify(key, entry)
+    }
+
+    /// Dates the parts a fetch answered and notes the ones that failed.
+    private func stamp(_ entry: inout Entry, with fetched: Fetched, alreadyStamped: Set<R.Part>,
+                       now: ContinuousClock.Instant, date: Date) {
+        for part in fetched.arrived {
+            if !alreadyStamped.contains(part) { entry.parts[part] = PartStamp(date: date, instant: now) }
+            entry.failed[part] = nil
+        }
+        entry.arrived.formUnion(fetched.arrived)
+        for part in fetched.failed.subtracting(fetched.arrived) { entry.failed[part] = now }
+    }
+
+    /// The suffix of the file that says when each part of a copy was fetched.
+    private static var partsSuffix: String { ".parts" }
+
+    /// Writes an entry's offline copy and, for a resource with parts, when each
+    /// part was fetched. The value first: cut between the two, the newest part is
+    /// asked for again rather than believed fresher than it is.
+    private func persist(_ key: R.Key, _ entry: Entry) {
+        guard R.persistence != .memory, entry.source != "mock",
+              R.persistence == .publicDisk || entry.source != "anonymous" else { return }
+        let name = resource.storageName(for: key)
+        resource.save(entry.value, to: offline, as: name, account: entry.source)
+        if Self.hasParts, R.persistence == .offline, R.Value.self is any Encodable.Type {
+            let dates = Dictionary(uniqueKeysWithValues: entry.parts.map { (String(describing: $0.key), $0.value.date) })
+            offline.save(dates, as: name + Self.partsSuffix, account: entry.source)
+        }
     }
 
     private func persistenceAccount(_ env: Env) -> String? {
@@ -389,7 +587,9 @@ actor Loader<R: Resource> {
     }
 
     private func snapshot(_ entry: Entry) -> Snapshot {
-        Snapshot(value: entry.value, fetchedAt: entry.fetchedAt, isFresh: entry.stamp != nil)
+        Snapshot(value: entry.value, fetchedAt: entry.fetchedAt,
+                 isFresh: Self.allParts.allSatisfy { entry.parts[$0]?.instant != nil },
+                 parts: entry.parts.mapValues(\.date), arrived: entry.arrived, failed: Set(entry.failed.keys))
     }
 
     private func evictIfNeeded() {

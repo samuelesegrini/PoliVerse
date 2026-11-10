@@ -78,6 +78,17 @@ final class CareerModel {
         examServicesRefused ? nil : query.errorMessage
     }
 
+    /// The state of the section that lists the sittings: its empty state may be
+    /// shown only when this says ``LoadPhase/empty``.
+    var sittingsPhase: LoadPhase { query.phase(of: .sittings, isEmpty: payload.sessions.isEmpty) }
+    /// The state of the section that shows the libretto.
+    var librettoPhase: LoadPhase { query.phase(of: .libretto, isEmpty: payload.libretto.isEmpty) }
+    /// Whether any request of the career has come back, with data or with an error.
+    /// Before that there is nothing to say about the career, not even that it is empty.
+    var hasAnswer: Bool {
+        !query.parts.isEmpty || query.errorMessage != nil || payload.servicesRefused
+    }
+
     /// The libretto's arithmetic. See ``StudyPlan``.
     var studyPlan: StudyPlan { StudyPlan(exams: libretto) }
     /// The sittings' questions. See ``Sittings``.
@@ -98,11 +109,14 @@ final class CareerModel {
     }
 
     /// The credit-weighted average of the recorded marks, or `nil` with no marks.
-    var weightedMean: Double? { studyPlan.weightedMean }
+    ///
+    /// Like the two below, `nil` until the libretto itself is in: a figure computed
+    /// from a libretto that has not answered would be a wrong number.
+    var weightedMean: Double? { query.has(.libretto) ? studyPlan.weightedMean : nil }
     /// The most recently marked teaching, or `nil` with none.
-    var lastGraded: LibrettoExam? { studyPlan.lastGraded }
+    var lastGraded: LibrettoExam? { query.has(.libretto) ? studyPlan.lastGraded : nil }
     /// How far the last mark moved the average, or `nil` when it cannot be told.
-    var meanDelta: Double? { studyPlan.meanDelta }
+    var meanDelta: Double? { query.has(.libretto) ? studyPlan.meanDelta : nil }
 
     /// Unmarked sittings still ahead, soonest first.
     var upcoming: [ExamSession] { sittings.upcoming() }

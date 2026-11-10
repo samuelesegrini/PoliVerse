@@ -32,6 +32,15 @@ final class Query<R: Resource> {
     /// Seconds since ``value`` was fetched, as of when it was assigned, or `nil` for
     /// sample data, a signed-out account, or before anything is held.
     private(set) var age: TimeInterval?
+    /// When each part of ``value`` was fetched. A part missing here has never
+    /// answered: what ``value`` holds for it is a default, not data.
+    private(set) var parts: [R.Part: Date] = [:]
+    /// The parts that answered since the app started, rather than being restored.
+    private(set) var arrived: Set<R.Part> = []
+    /// The parts whose last request failed.
+    private(set) var failed: Set<R.Part> = []
+    /// The parts the load in flight asked for that have not answered yet.
+    private(set) var pending: Set<R.Part> = []
 
     /// The key this query follows.
     let key: R.Key
@@ -41,6 +50,11 @@ final class Query<R: Resource> {
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "store")
     /// The load in flight, which a second caller joins rather than being turned away.
     @ObservationIgnored private var running: Task<Void, Never>?
+    /// When the load in flight reached for the network.
+    @ObservationIgnored private var asked: ContinuousClock.Instant?
+    /// The least time between two values shown while a fetch is handing over
+    /// its parts: a burst of answers costs one redraw, not one each.
+    private static var coalescing: Duration { .milliseconds(100) }
 
     /// Creates a query with a loader of its own.
     ///
@@ -81,6 +95,38 @@ final class Query<R: Resource> {
     var errorMessage: String? {
         if case .failed(let message) = phase { return message }
         return nil
+    }
+
+    /// Whether every one of some parts is in ``value``, restored or fetched.
+    ///
+    /// A figure computed from several parts is shown only when this is `true` for
+    /// all of them: an average over half the marks is a wrong number, not an
+    /// early one.
+    ///
+    /// - Parameter needed: The parts the figure is computed from.
+    func has(_ needed: R.Part...) -> Bool {
+        needed.allSatisfy { parts[$0] != nil }
+    }
+
+    /// The state of the section that shows one part.
+    ///
+    /// - Parameters:
+    ///   - part: The part the section shows.
+    ///   - isEmpty: Whether what ``value`` holds for it is empty.
+    /// - Returns: ``LoadPhase/empty`` only when the part answered with nothing and
+    ///   is not being asked again; while it is on its way, ``LoadPhase/waiting(since:)``.
+    func phase(of part: R.Part, isEmpty: Bool) -> LoadPhase {
+        let waited = asked.map { ContinuousClock.now - $0 } ?? .zero
+        if let date = parts[part] {
+            if !isEmpty {
+                return arrived.contains(part) ? .arrived : .held(age: max(0, Date.now.timeIntervalSince(date)))
+            }
+            return pending.contains(part) ? .waiting(since: waited) : .empty
+        }
+        if pending.contains(part) || phase == .loading { return .waiting(since: waited) }
+        if let message = errorMessage { return .failed(message) }
+        if failed.contains(part) { return .failed(String(localized: "Il servizio non ha risposto.")) }
+        return .waiting(since: .zero)
     }
 
     /// Loads the value: the offline copy first, then the network unless a fresh
@@ -125,16 +171,31 @@ final class Query<R: Resource> {
             return
         }
         if value == nil { setPhase(.loading) }
-        do {
-            // What a fetch has so far is shown as it arrives; see ``Partial``.
-            let snapshot = try await Partial.$sink.withValue({ [weak self] partial in
-                await self?.assignPartial(partial)
-            }) {
-                try await loader.value(key, env: env, force: force)
+        asked = .now
+        setPending(await loader.dueParts(key, env: env, force: force))
+        // What the fetch has so far is shown as each part is filed.
+        let filed = await loader.updates(key, env: env)
+        let watching = Task(name: "\(R.id) parts") { [weak self] in
+            for await snapshot in filed {
+                guard let self, !Task.isCancelled else { return }
+                self.assign(snapshot, env: env)
+                self.setPending(self.pending.subtracting(snapshot.arrived).subtracting(snapshot.failed))
+                try? await Task.sleep(for: Query.coalescing)
             }
+        }
+        defer {
+            asked = nil
+            setPending([])
+        }
+        do {
+            let snapshot = try await loader.value(key, env: env, force: force)
+            watching.cancel()
             assign(snapshot, env: env)
             setPhase(.idle)
         } catch {
+            watching.cancel()
+            // The parts that did answer stay: a failure never takes content away.
+            if let held = await loader.cached(key, env: env) { assign(held, env: env) }
             if !PoliMiAPI.isCancellation(error) {
                 log.error("\(R.id, privacy: .public) failed: \(error.localizedDescription)")
             }
@@ -155,17 +216,16 @@ final class Query<R: Resource> {
         let newAge: TimeInterval? = env.isSample || env.matricola == nil
             ? nil : max(0, Date.now.timeIntervalSince(snapshot.fetchedAt))
         if age != newAge { age = newAge }
+        if parts != snapshot.parts { parts = snapshot.parts }
+        if arrived != snapshot.arrived { arrived = snapshot.arrived }
+        if failed != snapshot.failed { failed = snapshot.failed }
+    }
+
+    private func setPending(_ new: Set<R.Part>) {
+        if pending != new { pending = new }
     }
 
     /// Whether two values are equal, when the type can say so.
-    /// Shows a value a fetch handed over before finishing. Its age stays that of
-    /// what was shown before: the value is not whole until the fetch ends.
-    private func assignPartial(_ partial: any Sendable) {
-        guard let partial = partial as? R.Value else { return }
-        let adjusted = resource.adjust(partial)
-        if !Self.same(value, adjusted) { value = adjusted }
-    }
-
     private static func same(_ old: R.Value?, _ new: R.Value) -> Bool {
         guard let old, let comparable = old as? any Equatable else { return false }
         return comparable.isEqual(to: new)
