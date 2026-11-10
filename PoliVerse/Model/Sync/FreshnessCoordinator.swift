@@ -66,6 +66,12 @@ final class FreshnessCoordinator {
     /// with the rest of the set, and optional for the tests and previews that build a
     /// bare coordinator with no status line to feed.
     var status: DataStatus?
+    /// The loads behind the screen the student is looking at, by registration
+    /// name. They start at `.userInitiated` and the rest at `.utility`, so the
+    /// open tab's data is decoded first and its requests are sent ahead. Set by
+    /// the shell when the tab changes; empty, every load runs at `.userInitiated`
+    /// as before.
+    @ObservationIgnored var foreground: Set<String> = []
     /// The pass currently running, if any. Later passes join it or chain behind it
     /// rather than racing it.
     private var inFlight: Task<Void, Never>?
@@ -197,6 +203,7 @@ final class FreshnessCoordinator {
         let previous = inFlight
         // `loads`, `status` and `log` by value, as before: the run belongs to
         // the app's data rather than to this object's lifetime.
+        let foreground = foreground
         let task = Task(name: "freshness.revalidate") { @MainActor [loads, status, log] in
             await previous?.value
             // Inside the chain, after the previous run: passes never overlap
@@ -208,7 +215,9 @@ final class FreshnessCoordinator {
             // Enqueued on the main actor in registration order, so they start
             // in that order; each suspends on the network and lets the next go.
             func start(_ load: Registration) -> Task<Void, Never> {
-                Task(name: "refresh \(load.name)") { @MainActor in
+                let priority: TaskPriority = foreground.isEmpty || foreground.contains(load.name)
+                    ? .userInitiated : .utility
+                return Task(name: "refresh \(load.name)", priority: priority) { @MainActor in
                     let interval = PerfSignpost.beginRefresh(load.name)
                     defer { PerfSignpost.end(interval) }
                     await load.run(force)

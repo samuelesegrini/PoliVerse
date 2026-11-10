@@ -54,7 +54,9 @@ nonisolated struct CareerSource: Resource {
 
     /// Fetches the whole record.
     ///
-    /// The six calls run concurrently and each returns `nil` on failure. The exam counts
+    /// The six calls run concurrently and each returns `nil` on failure. With a
+    /// record already held (`previous`), each answer is shown over it as it lands,
+    /// through ``Partial``. The exam counts
     /// come from the counters call, and the planned count is derived from the distinct
     /// teachings in the sittings when the counters call fails.
     ///
@@ -67,43 +69,100 @@ nonisolated struct CareerSource: Resource {
         guard let matricola = env.matricola else { throw AuthError.notAuthenticated }
         let refused = RefusalFlag()
 
-        // Independent endpoints, so run them together.
-        async let bookTask = Self.gradeBook(matricola: matricola, env, refused)
-        async let countersTask = Self.counters(env, refused)
-        async let sessionsTask = Self.sessions(env, refused)
-        async let librettoTask = Self.libretto(matricola: matricola, env, refused)
-        async let targetTask = Self.target(matricola: matricola, env)
-        async let headerTask = Self.planHeader(matricola: matricola, env)
+        // Independent endpoints, so run them together, and take each as it
+        // lands: with a career already on screen, every part that arrives is
+        // shown over it at once, rather than all six waiting for the slowest.
+        var parts = Parts()
+        await withTaskGroup(of: Part.self) { group in
+            group.addTask(name: "career gradebook") { .book(await Self.gradeBook(matricola: matricola, env, refused)) }
+            group.addTask(name: "career counters") { .counters(await Self.counters(env, refused)) }
+            group.addTask(name: "career sittings") { .sessions(await Self.sessions(env, refused)) }
+            group.addTask(name: "career libretto") { .libretto(await Self.libretto(matricola: matricola, env, refused)) }
+            group.addTask(name: "career target") { .target(await Self.target(matricola: matricola, env)) }
+            group.addTask(name: "career plan header") { .header(await Self.planHeader(matricola: matricola, env)) }
+            for await part in group {
+                parts.add(part)
+                if let previous, !parts.isComplete {
+                    await Partial.report(parts.payload(over: previous))
+                }
+            }
+        }
 
-        let (book, counters, sessions, libretto) =
-            await (bookTask, countersTask, sessionsTask, librettoTask)
-
-        guard book != nil || sessions != nil else { throw NothingLoaded() }
-
-        var payload = Payload()
-        payload.libretto = libretto ?? []
-        payload.officialTarget = await targetTask
-        payload.planHeader = await headerTask
+        guard parts.book != nil || parts.sessions != nil else { throw NothingLoaded() }
+        var payload = parts.payload(over: Payload())
         payload.servicesRefused = await refused.value
-
-        if var book {
-            // The gradebook endpoint no longer carries exam counts; they come
-            // from the IAE counters call instead.
-            if let counters {
-                book.examsSubscribed = counters.num_iscriz ?? 0
-                book.examsGiven = counters.num_esiti ?? 0
-            }
-            payload.gradeBook = book
-        }
-        if let sessions {
-            payload.sessions = sessions
-            // `/v1/insegn` knows the whole plan, so the planned count is
-            // derivable even when the counters call fails.
-            if payload.gradeBook.examsPlanned == 0 {
-                payload.gradeBook.examsPlanned = Set(sessions.map(\.courseCode)).count
-            }
-        }
         return payload
+    }
+
+    /// One endpoint's answer, `nil` when it failed.
+    private enum Part: Sendable {
+        case book(GradeBook?)
+        case counters(ExamCountersDTO?)
+        case sessions([ExamSession]?)
+        case libretto([LibrettoExam]?)
+        case target(Double?)
+        case header(StudyPlanHeader?)
+    }
+
+    /// The answers so far, and how they make a career.
+    private struct Parts {
+        var book: GradeBook?
+        var counters: ExamCountersDTO?
+        var sessions: [ExamSession]?
+        var libretto: [LibrettoExam]?
+        var target: Double?
+        var header: StudyPlanHeader?
+        /// How many of the six have answered, failed ones included.
+        private var answered = 0
+
+        var isComplete: Bool { answered == 6 }
+
+        mutating func add(_ part: Part) {
+            answered += 1
+            switch part {
+            case .book(let value): book = value
+            case .counters(let value): counters = value
+            case .sessions(let value): sessions = value
+            case .libretto(let value): libretto = value
+            case .target(let value): target = value
+            case .header(let value): header = value
+            }
+        }
+
+        /// The career from what has answered, laid over `base`: a part not
+        /// back yet, or failed, keeps what `base` had.
+        ///
+        /// Over an empty base this is exactly the career the six calls make
+        /// together; over the career shown before, a partial update of it.
+        func payload(over base: Payload) -> Payload {
+            var payload = base
+            if let libretto { payload.libretto = libretto }
+            if let target { payload.officialTarget = target }
+            if let header { payload.planHeader = header }
+            if var book {
+                // The gradebook endpoint no longer carries exam counts; they come
+                // from the IAE counters call instead.
+                if let counters {
+                    book.examsSubscribed = counters.num_iscriz ?? 0
+                    book.examsGiven = counters.num_esiti ?? 0
+                } else if base.gradeBook.examsGiven > 0 || base.gradeBook.examsSubscribed > 0 {
+                    // Counters not back yet: the counts shown before stand.
+                    book.examsSubscribed = base.gradeBook.examsSubscribed
+                    book.examsGiven = base.gradeBook.examsGiven
+                }
+                if book.examsPlanned == 0 { book.examsPlanned = base.gradeBook.examsPlanned }
+                payload.gradeBook = book
+            }
+            if let sessions {
+                payload.sessions = sessions
+                // `/v1/insegn` knows the whole plan, so the planned count is
+                // derivable even when the counters call fails.
+                if payload.gradeBook.examsPlanned == 0 {
+                    payload.gradeBook.examsPlanned = Set(sessions.map(\.courseCode)).count
+                }
+            }
+            return payload
+        }
     }
 
     /// The sample record: grade book, sittings and libretto.
@@ -256,6 +315,13 @@ nonisolated struct CareerSource: Resource {
     private static func attempt<T>(
         _ name: String, _ refused: RefusalFlag?, _ body: () async throws -> T?
     ) async -> T? {
+        // Each endpoint timed on its own: `career.load` is the slowest of six,
+        // and which one is slow decides what is worth showing first.
+        let started = ContinuousClock.now
+        defer {
+            let elapsed = ContinuousClock.now - started
+            log.notice("\(name, privacy: .public) took \(elapsed.components.seconds * 1000 + elapsed.components.attoseconds / 1_000_000_000_000_000, privacy: .public) ms")
+        }
         do {
             return try await body()
         } catch {

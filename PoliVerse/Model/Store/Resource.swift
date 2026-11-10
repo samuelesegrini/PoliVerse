@@ -35,6 +35,25 @@ extension Env {
 }
 
 /// The key of a resource that has one value per account, such as the career.
+/// Where a fetch hands over what it has so far, before it is done.
+///
+/// A resource built from several requests (the career asks six endpoints) can
+/// call ``report(_:)`` with a value made from the parts that have arrived over
+/// the value it had before; the ``Query`` waiting on the fetch shows it at once,
+/// and the finished value replaces it. It travels as a task-local: the loader's
+/// flight is started from the waiting query's task and inherits it, so nothing
+/// in ``Loader`` or ``Resource`` has to carry it. A warm-up, with no one waiting,
+/// reports to no one.
+nonisolated enum Partial {
+    /// The waiting query's hand-over, set by ``Query`` around a load.
+    @TaskLocal static var sink: (@Sendable (any Sendable) async -> Void)?
+
+    /// Hands `value` to whoever is waiting on this fetch, if anyone is.
+    static func report(_ value: some Sendable) async {
+        await sink?(value)
+    }
+}
+
 nonisolated struct Whole: Hashable, Sendable {
     /// The one key.
     init() {}

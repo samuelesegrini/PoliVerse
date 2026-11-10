@@ -126,7 +126,12 @@ final class Query<R: Resource> {
         }
         if value == nil { setPhase(.loading) }
         do {
-            let snapshot = try await loader.value(key, env: env, force: force)
+            // What a fetch has so far is shown as it arrives; see ``Partial``.
+            let snapshot = try await Partial.$sink.withValue({ [weak self] partial in
+                await self?.assignPartial(partial)
+            }) {
+                try await loader.value(key, env: env, force: force)
+            }
             assign(snapshot, env: env)
             setPhase(.idle)
         } catch {
@@ -153,6 +158,14 @@ final class Query<R: Resource> {
     }
 
     /// Whether two values are equal, when the type can say so.
+    /// Shows a value a fetch handed over before finishing. Its age stays that of
+    /// what was shown before: the value is not whole until the fetch ends.
+    private func assignPartial(_ partial: any Sendable) {
+        guard let partial = partial as? R.Value else { return }
+        let adjusted = resource.adjust(partial)
+        if !Self.same(value, adjusted) { value = adjusted }
+    }
+
     private static func same(_ old: R.Value?, _ new: R.Value) -> Bool {
         guard let old, let comparable = old as? any Equatable else { return false }
         return comparable.isEqual(to: new)

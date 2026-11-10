@@ -76,11 +76,11 @@ nonisolated struct PublicHTTP: HTTP {
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = request.method
         urlRequest.httpBody = request.body
-        urlRequest.timeoutInterval = 30
+        urlRequest.timeoutInterval = PoliMiAPI.timeout(for: request)
         urlRequest.setValue("application/json", forHTTPHeaderField: "Accept")
 
         do {
-            let (data, response) = try await session.data(for: urlRequest)
+            let (data, response) = try await fetch(urlRequest, retrying: request.method == "GET")
             guard let http = response as? HTTPURLResponse else { return data }
             guard (200..<300).contains(http.statusCode) else {
                 if http.statusCode == 404 { throw APIError.endpointGone(request.path) }
@@ -93,6 +93,17 @@ nonisolated struct PublicHTTP: HTTP {
         } catch {
             if PoliMiAPI.isCancellation(error) { throw APIError.cancelled }
             throw APIError.transport(error)
+        }
+    }
+
+    /// One request, asked once more after a timeout or a dropped connection when
+    /// it is a read. See ``PoliMiAPI/timeout(for:)``.
+    private func fetch(_ request: URLRequest, retrying: Bool) async throws -> (Data, URLResponse) {
+        do {
+            return try await session.data(for: request)
+        } catch let error where retrying && !PoliMiAPI.isCancellation(error) && PoliMiAPI.isTransient(error) {
+            try await Task.sleep(for: .milliseconds(500))
+            return try await session.data(for: request)
         }
     }
 }

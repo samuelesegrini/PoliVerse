@@ -414,6 +414,23 @@ nonisolated final class PoliMiAPI: Sendable {
         }
     }
 
+    /// How long a request may go without a byte before it fails and is retried.
+    ///
+    /// A read that stalls is cheaper to ask again than to wait out: one refresh
+    /// took 15.8 s on a real account, the shape of a connection gone quiet. Reads
+    /// are retried by ``send(_:)``, so 15 s of silence fails and asks once more;
+    /// writes keep 30 s, since a write that did land must not be sent twice.
+    ///
+    /// - Parameter request: The request.
+    /// - Returns: The idle timeout, in seconds.
+    static func timeout(for request: APIRequest) -> TimeInterval {
+        request.method == "GET" ? 15 : 30
+    }
+
+    /// Whether a transport error is worth one more attempt: a timeout or a
+    /// dropped connection, not a host that does not exist or no connection at all.
+    static func isTransient(_ error: any Error) -> Bool { isRetryable(error) }
+
     /// ``isRetryable(_:)``, exposed for tests.
     ///
     /// - Parameter error: The transport error to classify.
@@ -583,7 +600,7 @@ nonisolated final class PoliMiAPI: Sendable {
                                     forHTTPHeaderField: "poliAuthD_profile")
             }
         }
-        urlRequest.timeoutInterval = 30
+        urlRequest.timeoutInterval = Self.timeout(for: request)
         return urlRequest
     }
 }

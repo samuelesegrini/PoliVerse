@@ -44,6 +44,7 @@ struct RootView: View {
     #endif
     /// The shared ``AgendaModel``, from the environment.
     @Environment(AgendaModel.self) private var agenda
+    @Environment(FreshnessCoordinator.self) private var freshness
     /// The shared ``UpdateFeed``, from the environment.
     @Environment(UpdateFeed.self) private var feed
     /// Moved on when a lesson starts or ends, so the accessory follows the
@@ -290,6 +291,7 @@ struct RootView: View {
         // Hangs and hitches in the field arrive split by tab.
         .onChange(of: shell.selection, initial: true) { _, tab in
             PerformanceStates.tabSelected(shell.singlePage ? "single" : tab.rawValue)
+            freshness.foreground = shell.singlePage ? [] : Self.foregroundLoads(for: tab)
         }
         // A sidebar place is its own screen in the field numbers, not a fifth
         // reading of whichever tab happened to be selected behind it.
@@ -299,6 +301,7 @@ struct RootView: View {
         }
         .onChange(of: shell.singlePage) { _, single in
             PerformanceStates.tabSelected(single ? "single" : shell.selection.rawValue)
+            freshness.foreground = single ? [] : Self.foregroundLoads(for: shell.selection)
         }
         .onDisappear { PerformanceStates.tabSelected(nil) }
         // Selecting the search tab opens its field straight away, unless the
@@ -308,6 +311,18 @@ struct RootView: View {
     }
 
     /// The places, as a tab view on iPhone and iPad and as a sidebar on the Mac.
+    /// The refresh loads whose data `tab` shows, by their names in
+    /// ``FreshnessCoordinator/standard(courses:agenda:career:notices:news:weBeep:status:)``:
+    /// they go first after a launch or a return to the app.
+    static func foregroundLoads(for tab: NewDestination.Tab) -> Set<String> {
+        switch tab {
+        case .today: ["agenda", "courses"]
+        case .courses: ["courses", "agenda"]
+        case .career: ["career"]
+        case .search: []
+        }
+    }
+
     @ViewBuilder
     private var navigation: some View {
         #if os(macOS)
