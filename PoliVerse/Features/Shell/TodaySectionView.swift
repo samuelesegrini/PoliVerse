@@ -116,13 +116,7 @@ struct TodaySectionView: View {
             .foregroundStyle(Theme.onAccent)
             .padding(.horizontal, 14)
             .padding(.vertical, compact ? 9 : 13)
-            .background {
-                shape.fill(colour)
-                    .visualEffect { content, proxy in
-                        content.colorEffect(ShaderLibrary.glossSheen(.float2(proxy.size), .float(0.5)))
-                    }
-            }
-            .shadow(color: colour.opacity(0.3), radius: 8, y: 4)
+            .modifier(LessonCardSurface(colour: colour, shape: shape))
             .accessibilityElement(children: .combine)
         }
     }
@@ -476,6 +470,45 @@ private struct TitleOnlyUnlessTinted: LabelStyle {
             HStack(spacing: 6) { configuration.icon; configuration.title }
         } else {
             configuration.title
+        }
+    }
+}
+
+/// A lesson card's fill in its course's colour, lacquered, with a shadow under it.
+///
+/// The lacquer is a gradient and the shadow is cast by the shape alone, where
+/// before each card ran a shader and blurred a shadow out of its own text on every
+/// frame it moved. `-TodayLegacy sheen,shadow` brings both back.
+private struct LessonCardSurface: ViewModifier {
+    /// The course's colour.
+    let colour: Color
+    /// The card's outline.
+    let shape: RoundedRectangle
+
+    func body(content: Content) -> some View {
+        if TodayRendering.isLegacy(.shadow) {
+            content
+                .background { fill }
+                .shadow(color: colour.opacity(0.3), radius: 8, y: 4)
+        } else {
+            content.background {
+                fill.shadow(color: colour.opacity(0.3), radius: 8, y: 4)
+            }
+        }
+    }
+
+    /// The card's colour, lacquered.
+    private var fill: some View {
+        ZStack {
+            if TodayRendering.isLegacy(.sheen) {
+                shape.fill(colour)
+                    .visualEffect { content, proxy in
+                        content.colorEffect(ShaderLibrary.glossSheen(.float2(proxy.size), .float(0.5)))
+                    }
+            } else {
+                shape.fill(colour)
+                    .overlay { shape.fill(TodayRendering.sheen(strength: 0.5)) }
+            }
         }
     }
 }

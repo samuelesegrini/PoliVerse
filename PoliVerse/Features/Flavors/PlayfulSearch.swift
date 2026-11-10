@@ -74,9 +74,9 @@ struct PlayfulSearchHero: View {
         }
         .foregroundStyle(ink)
         .frame(maxWidth: .infinity, minHeight: 200, alignment: .bottomLeading)
-        .background(Self.campus.color, in: .rect(cornerRadius: 30, style: .continuous))
         .clipShape(.rect(cornerRadius: 30, style: .continuous))
-        .shadow(color: Self.campus.color.opacity(0.3), radius: effects ? 14 : 0, y: effects ? 8 : 0)
+        .cardBackground(Self.campus.color, in: .rect(cornerRadius: 30, style: .continuous),
+                        shadow: Self.campus.color.opacity(0.3), radius: effects ? 14 : 0, y: effects ? 8 : 0)
         .playfulLean(0, in: style)
         .accessibilityElement(children: .combine)
         .accessibilityHint("Apre le aule libere")

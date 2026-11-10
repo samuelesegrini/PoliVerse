@@ -246,9 +246,30 @@ struct TodayLanding: View {
                 }
                 withAnimation(.snappy) { draft?.wrappedValue.moveSections(difference.sources, before: target) }
             }
+        } else if usesGlass && !TodayRendering.isLegacy(.glassContainer) {
+            // Glass cards sampled together, in one pass, rather than one pass
+            // each. Spacing 0: cards apart never melt into each other. The
+            // stack repeats the page's spacing, which it now sits inside of.
+            GlassEffectContainer(spacing: 0) {
+                VStack(alignment: .leading, spacing: marked ? 28 : 24) {
+                    ForEach(style.visibleSections) { section in
+                        sectionZone(section)
+                    }
+                }
+            }
         } else {
             ForEach(style.visibleSections) { section in
                 sectionZone(section)
+            }
+        }
+    }
+
+    /// Whether any section on the page is drawn in glass.
+    private var usesGlass: Bool {
+        style.visibleSections.contains { section in
+            switch style.material(for: section) {
+            case .glass, .clearGlass, .tintedGlass: true
+            default: false
             }
         }
     }
