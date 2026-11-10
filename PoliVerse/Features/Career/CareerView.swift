@@ -156,6 +156,7 @@ struct CareerView: View {
             .frame(maxWidth: 700)
             .frame(maxWidth: .infinity)
         }
+        .endsRevealsOnScroll()
         .overlay {
             if career.isLoading && !career.hasAnswer && career.sessions.isEmpty && career.libretto.isEmpty {
                 ProgressView()
@@ -204,23 +205,23 @@ struct CareerView: View {
     ///
     /// - Parameter career: The career to draw.
     /// - Returns: The list, or an empty state.
-    @ViewBuilder
     private func libretto(_ career: CareerModel) -> some View {
         let groups = career.studyPlan.byYear
-        if groups.isEmpty {
-            gap(career.librettoPhase, waiting: "Carico il libretto…") {
-                ContentUnavailableView("Nessun esito", systemImage: "checkmark.seal",
-                                       description: Text("Il libretto non ha restituito insegnamenti."))
-            } retry: { await career.load(force: true) }
-        } else {
-            VStack(spacing: 10) {
-                ForEach(groups, id: \.year) { group in
-                    LibrettoYearCard(title: group.year, exams: group.exams,
-                                     isExpanded: isOpen(group.year, in: groups)) {
-                        withAnimation(.snappy(duration: 0.28)) { toggle(group.year, in: groups) }
-                    }
+        return VStack(spacing: 10) {
+            ForEach(Array(groups.enumerated()), id: \.element.year) { index, group in
+                LibrettoYearCard(title: group.year, exams: group.exams,
+                                 isExpanded: isOpen(group.year, in: groups)) {
+                    withAnimation(.snappy(duration: 0.28)) { toggle(group.year, in: groups) }
                 }
+                .revealed(order: index)
             }
+        }
+        .arriving(career.librettoPhase, hasRows: !groups.isEmpty, title: "Libretto",
+                  step: "Sto chiedendo il libretto al Politecnico", remember: "carriera.libretto",
+                  retry: { await career.load(force: true) }) {
+            ContentUnavailableView("Nessun esito", systemImage: "checkmark.seal",
+                                   description: Text("Il libretto non ha restituito insegnamenti."))
+                .padding(.top, 30)
         }
     }
 
@@ -249,74 +250,36 @@ struct CareerView: View {
     ///
     /// - Parameter career: The career to draw.
     /// - Returns: The list, or an empty state.
-    @ViewBuilder
     private func upcoming(_ career: CareerModel) -> some View {
         let sections = ExamAgenda.sections(from: career.sessions)
-        if sections.isEmpty {
-            gap(career.sittingsPhase, waiting: "Carico gli appelli…") {
-                ContentUnavailableView("Nessun appello", systemImage: "calendar.badge.clock",
-                                       description: Text("Non ci sono appelli in programma."))
-            } retry: { await career.load(force: true) }
-        } else {
-            VStack(alignment: .leading, spacing: 18) {
-                ForEach(sections) { section in
-                    VStack(alignment: .leading, spacing: 8) {
-                        LookHeading(verbatim: section.title)
-                        ForEach(section.exams) { exam in
-                            Button { selectedExam = exam } label: { ExamRow(exam: exam) }
-                                .buttonStyle(.plain)
-                        }
-                        if let footnote = section.footnote {
-                            Text(footnote)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 4)
-                        }
+        return VStack(alignment: .leading, spacing: 18) {
+            ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+                VStack(alignment: .leading, spacing: 8) {
+                    LookHeading(verbatim: section.title)
+                    ForEach(section.exams) { exam in
+                        Button { selectedExam = exam } label: { ExamRow(exam: exam) }
+                            .buttonStyle(.plain)
+                    }
+                    if let footnote = section.footnote {
+                        Text(footnote)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 4)
                     }
                 }
+                .revealed(order: index * 2)
             }
+        }
+        .arriving(career.sittingsPhase, hasRows: !sections.isEmpty, title: "Appelli",
+                  step: "Sto chiedendo gli appelli al Politecnico", remember: "carriera.appelli",
+                  retry: { await career.load(force: true) }) {
+            ContentUnavailableView("Nessun appello", systemImage: "calendar.badge.clock",
+                                   description: Text("Non ci sono appelli in programma."))
+                .padding(.top, 30)
         }
     }
 
     // MARK: - Nothing to show
-
-    /// What a section with nothing to list shows, by where its own request is:
-    /// still on its way, failed, or answered. Only an answer earns the empty state.
-    ///
-    /// - Parameters:
-    ///   - phase: The section's state.
-    ///   - waiting: What to say while the request is out.
-    ///   - empty: The empty state, for a section that answered with nothing.
-    ///   - retry: Asks again, for a section that failed.
-    /// - Returns: The view.
-    @ViewBuilder
-    private func gap(_ phase: LoadPhase, waiting: LocalizedStringKey,
-                     @ViewBuilder empty: () -> some View,
-                     retry: @escaping () async -> Void) -> some View {
-        switch phase {
-        case .waiting:
-            HStack(spacing: 10) {
-                ProgressView()
-                Text(waiting)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 30)
-        case .failed(let message):
-            ContentUnavailableView {
-                Label("Non disponibile", systemImage: "exclamationmark.triangle")
-            } description: {
-                Text(verbatim: message)
-            } actions: {
-                Button("Riprova") { Task { await retry() } }
-            }
-            .padding(.top, 30)
-        case .empty, .held, .arrived:
-            empty()
-                .padding(.top, 30)
-        }
-    }
 
     /// What the page says when there is no career to draw: the service's own answer where it gave one.
     ///

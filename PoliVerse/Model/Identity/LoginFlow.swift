@@ -330,6 +330,7 @@ final class LoginFlow {
         SpotlightIndex().clear()
         // The loading ledger describes this student's use of the app.
         await LoadingLedger.shared.erase()
+        ShapeMemory.shared.forget()
         // Same reason: reminders naming someone else's lectures would keep
         // arriving after they signed out.
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()

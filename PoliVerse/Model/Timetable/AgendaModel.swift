@@ -93,6 +93,12 @@ final class AgendaModel {
     /// Seconds since the week being looked at was fetched, or `nil` if never.
     private(set) var age: TimeInterval?
 
+    /// The weeks the Politecnico answered for since the app started, rather than
+    /// being read from a stored copy.
+    private(set) var answeredWeeks: Set<Date> = []
+    /// When the load in flight reached for the network, or `nil` with none.
+    private(set) var asked: ContinuousClock.Instant?
+
     /// The weeks held, by the Monday they start on, each in time order.
     @ObservationIgnored private var weeks: [Date: [AgendaEvent]] = [:]
     /// The deadlines held.
@@ -102,6 +108,8 @@ final class AgendaModel {
     @ObservationIgnored private var heldSource: String?
     /// The accounts whose offline copy has been restored this launch.
     @ObservationIgnored private var restored: Set<String> = []
+    /// How many loads that reached the network have ended.
+    @ObservationIgnored private var finishedLoads = 0
     /// Loads in flight, which ``isLoading`` reports.
     @ObservationIgnored private var loadsInFlight = 0
     /// Bumped by each rebuild, so an older one finishing late does not overwrite a newer.
@@ -176,9 +184,14 @@ final class AgendaModel {
         loadsInFlight += 1
         if !isLoading, events.isEmpty { isLoading = true }
         if errorMessage != nil { errorMessage = nil }
+        if asked == nil { asked = .now }
         defer {
             loadsInFlight -= 1
-            if loadsInFlight == 0, isLoading { isLoading = false }
+            finishedLoads += 1
+            if loadsInFlight == 0 {
+                if isLoading { isLoading = false }
+                asked = nil
+            }
         }
 
         async let lectures = fetchWeeks(wanted, env: env, force: force)
@@ -191,6 +204,8 @@ final class AgendaModel {
         switch weekResult {
         case .success(let snapshots):
             for (week, snapshot) in snapshots { weeks[week] = snapshot.value }
+            let answered = answeredWeeks.union(snapshots.filter { !$0.value.arrived.isEmpty }.keys)
+            if answered != answeredWeeks { answeredWeeks = answered }
             if let current = snapshots[AgendaWeeks.week(of: date)] ?? snapshots.values.first {
                 age = env.isSample ? nil : max(0, Date.now.timeIntervalSince(current.fetchedAt))
             }
@@ -204,6 +219,27 @@ final class AgendaModel {
 
         await rebuild()
         if case .success = weekResult { saveForWidgets() }
+    }
+
+    /// The state of a section that shows one day of the timetable.
+    ///
+    /// - Parameters:
+    ///   - day: The day the section shows.
+    ///   - isEmpty: Whether the section has nothing to list for it.
+    /// - Returns: ``LoadPhase/empty`` only when the day's week has answered, or a
+    ///   stored copy of it is held and nothing is being asked; while the week is on
+    ///   its way, ``LoadPhase/waiting(since:)``.
+    func phase(on day: Date, isEmpty: Bool) -> LoadPhase {
+        let week = AgendaWeeks.week(of: day)
+        if answeredWeeks.contains(week) { return isEmpty ? .empty : .arrived }
+        if !isEmpty { return .held(age: age ?? 0) }
+        if let asked { return .waiting(since: ContinuousClock.now - asked) }
+        if let errorMessage { return .failed(errorMessage) }
+        // `loadedRange` changes when a stored week is put back, which is when
+        // this answer does.
+        if let loadedRange, loadedRange.contains(day), weeks[week] != nil { return .empty }
+        // A load ended and brought nothing for this week: there is nothing to wait for.
+        return finishedLoads > 0 ? .empty : .waiting(since: .zero)
     }
 
     /// Loads the weeks around a date when its own week, the one before or the two
@@ -256,6 +292,7 @@ final class AgendaModel {
         weeks = [:]
         deadlines = []
         age = nil
+        if !answeredWeeks.isEmpty { answeredWeeks = [] }
     }
 
     /// Puts the last known timetable on screen before any request answers, once per
