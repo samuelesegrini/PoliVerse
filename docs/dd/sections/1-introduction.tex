@@ -1,0 +1,26 @@
+% DRAFT, rewrite
+\section{Introduction}
+
+\subsection{Scope}
+This document describes how the loading update specified in the RASD is built into
+PoliVerse. It covers the changes to the store layer, the new components beside it,
+the shared pieces of interface for a section's states, and the order in which they
+are implemented and tested. It does not redesign the screens or the existing
+networking code, and it adds no server.
+
+\subsection{Definitions, acronyms, abbreviations}
+The terms of the RASD apply. In addition:
+\printterms
+
+\noindent Store layer: the types under \texttt{PoliVerse/Model/Store}
+(\texttt{Resource}, \texttt{Loader}, \texttt{Query}, \texttt{Env}, \texttt{HTTP}).
+Lane: one of the two classes of request, on-screen or speculative.
+
+\subsection{Reference documents}
+Listed in section 7.
+
+\subsection{Overview}
+Section 2 gives the architecture: components, deployment, interfaces, runtime views
+and the decisions taken. Section 3 describes the interface of a section. Section 4
+traces requirements to components. Section 5 is the implementation, integration and
+test plan.

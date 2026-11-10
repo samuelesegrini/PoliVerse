@@ -1,0 +1,16 @@
+{\small
+\begin{longtable}{@{}l p{0.27\linewidth} l r r r p{0.33\linewidth}@{}}
+\toprule Id & Risk & Category & L & I & L$\times$I & Mitigation \\ \midrule
+\endhead
+K4 & The Politecnico changes or blocks an endpoint as happened before & business & 3 & 5 & 15 & No new endpoint; daily limit on speculative requests; stored copies keep screens usable \\
+K1 & The new fetch signature breaks the 19 existing resources or their tests & technical & 3 & 4 & 12 & Default implementation forwards to the old signature; migrate one resource (career) first \\
+K3 & iOS rarely runs the background tasks so prefetch and the pack seldom happen & technical & 4 & 3 & 12 & Also run the prefetch after every foreground pass; show pack state and a manual start \\
+K5 & Change detection reports changes that are not real and notifies wrongly & technical & 3 & 4 & 12 & Compare by identity only for kinds with stable ids; reuse the exam policy and its daily limit; fixtures from real payloads \\
+K8 & The estimate is too low for one developer working part time & project & 4 & 3 & 12 & Milestones ship one by one; M4 to M8 can be dropped or reordered without breaking earlier ones; earned value at each milestone \\
+K2 & The reveal causes hitches on the iPhone 12 Pro & technical & 3 & 3 & 9 & Measure P6 in M3 before applying it to more screens; fall back to a cross-fade per section \\
+K9 & Scope grows with new ideas during the build & project & 3 & 3 & 9 & New ideas go to the RASD as a new revision first; habit prediction stays out of scope \\
+K6 & Room bookings change during the day more often than assumed (D6) & technical & 2 & 3 & 6 & Boundary refresh re-requests rooms on screen; show the age of the bookings \\
+K7 & Stored parts and the offline pack grow beyond the storage limit & technical & 2 & 3 & 6 & Measure in M8 against P9; one campus only; delete parts of past weeks \\
+K10 & Deadline and breaker values hide answers that would have come & technical & 2 & 2 & 4 & Initial values confirmed with the ledger baseline before M5 ships \\
+\bottomrule
+\end{longtable}}

@@ -3,6 +3,7 @@
 # Needs latexmk (MacTeX: eval "$(/usr/libexec/path_helper)").
 set -e
 cd "$(dirname "$0")/../docs"
+python3 plan/plan.py > /dev/null
 status=0
 for doc in rasd dd plan; do
   [ -f "$doc/main.tex" ] || continue

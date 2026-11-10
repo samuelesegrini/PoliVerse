@@ -1,0 +1,55 @@
+% DRAFT, rewrite
+\section{User interface design}
+
+\subsection{A section's states}
+Screens do not draw their own spinners or empty states for a part. A section is
+wrapped in \texttt{arriving(phase, title:)}, which draws exactly one of these:
+
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}l X X@{}}
+  \toprule
+  Phase & What is drawn & Accessibility \\
+  \midrule
+  \texttt{held} & The content. If the copy stands in for a slow part, a small age label under the title. & Read as content. \\
+  \texttt{waiting}, under 300 ms & The remembered height, empty. & Hidden. \\
+  \texttt{waiting}, over 300 ms & The title and one soft waiting line where the first text line will be. & One element: ``Caricamento'' and the title. \\
+  \texttt{waiting}, over 3 s & The same, plus the step in progress or ``120 di 340''. & The step is read once. \\
+  \texttt{arrived} & The content, with the reveal if it is new. & Announced if the wait passed 3 s. \\
+  \texttt{empty} & The section's empty-state message. & Read as content. \\
+  \texttt{failed} & One line naming what is unavailable and ``Riprova''. & A button. \\
+  \bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{The reveal}
+\begin{itemize}
+  \item Text: a \texttt{TextRenderer} gives each word opacity 0 to 1, blur 6 to 0 pt and a 2 pt rise, staggered so that the whole section ends within 0.6 s; only the first three lines animate.
+  \item Rows and cards: \texttt{.transition(.blurReplace)}, each delayed after the one above, within the same 0.6 s.
+  \item Numbers: \texttt{.contentTransition(.numericText(value:))}.
+  \item On a refresh over visible content, only items in the change set animate, with a tint that fades.
+  \item A tap or a scroll ends the reveal at once. Reduce Motion replaces it with a 0.2 s cross-fade and removes the waiting line's movement.
+\end{itemize}
+
+\subsection{Lists that grow}
+A list that receives rows while the student has scrolled adds them below the
+visible rows. A sorted list that would reorder waits for the scroll to stop, then
+moves rows with the system's default list animation.
+
+\subsection{Map and 3D}
+Building colours on the map follow the order of arrival, which RelevanceOrder makes
+the order of distance from what is on screen. A building's 3D shell fades in by
+opacity when its model has loaded; no other effect is used, because shadows are
+what costs frames on the iPhone 12 Pro.
+
+\subsection{New pages in Impostazioni}
+\begin{itemize}
+  \item \textbf{Offline}: a switch for the pack, one row per item with ``pronto'' and its age or ``non ancora scaricato'', the space used, and ``Scarica ora''.
+  \item \textbf{Dati e batteria}: ``Prepara in anticipo'' on or off, ``Anche con rete cellulare'' off by default, and today's count of speculative requests against the limit.
+  \item \textbf{Notifiche}: one switch per kind of change: voto pubblicato, appello, lezione spostata. The haptic on arrival is a switch here, off by default.
+\end{itemize}
+
+\subsection{Diagnostics}
+The diagnostics report gains ``Caricamento'': per screen, the median and 90th
+percentile of time to first content and to the last part; per kind of part, the
+same for its duration and its share of failures; the share of speculative requests
+used; and ``campione troppo piccolo'' under 20 openings.

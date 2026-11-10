@@ -1,13 +1,32 @@
 % DRAFT, rewrite
 \section{Formal analysis using Alloy}
-% TODO: model in docs/alloy/loading.als, results in generated/alloy-results.tex.
-The rules worth checking formally are the ones about what a section may show, since
-they are easy to break when parts arrive in any order. The model, to be written
-after this document is approved, covers:
-\begin{itemize}
-  \item the states of a section and their transitions (section 2.1.2);
-  \item \idref{R2}: no trace in which a section is Empty before its part answered;
-  \item \idref{R3}: no trace in which a computed value is visible while one of its parts has neither arrived nor a stored copy;
-  \item \idref{R6} and \idref{R17}: a failure or a deadline never moves a section that shows content to a state without content;
-  \item \idref{R14} and \idref{R40}: a stored copy is only ever shown to the account it was fetched for.
-\end{itemize}
+The rules about what a section may show are easy to break when parts arrive in any
+order, so they are modelled in Alloy 6 (\texttt{docs/alloy/loading.als}). The model
+has the states of a section from section 2.1.2, the events that move it (time
+passing, an answer or a failure, retry, a later refresh, sign-out) and a value
+computed from several parts.
+
+\subsection{What is checked}
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}l l X l@{}}
+  \toprule
+  Command & Scope & What it shows & Result \\
+  \midrule
+  \texttt{run firstSignIn} & 4, 10 steps & Three sections with no stored copy can all arrive & to be run \\
+  \texttt{run slowThenRetried} & 4, 12 steps & A section can wait long, fail, be retried and arrive & to be run \\
+  \texttt{run averageAppears} & 4, 10 steps & A value computed from two parts can appear & to be run \\
+  \texttt{check EmptyOnlyAfterAnswer} & 4, 12 steps & \idref{R2}: never Empty before the part answered & to be run \\
+  \texttt{check ComputedNeedsAllInputs} & 4, 12 steps & \idref{R3}: a computed value is visible only with all its parts & to be run \\
+  \texttt{check ContentNeverLost} & 4, 12 steps & \idref{R6}, \idref{R17}: a failure never removes content & to be run \\
+  \texttt{check CopyBelongsToSession} & 4, 12 steps & \idref{R14}, \idref{R40}: no copy of another account survives sign-out & to be run \\
+  \texttt{check HeldShowsOwnCopy} & 4, 12 steps & A held section shows a copy of the account signed in & to be run \\
+  \bottomrule
+\end{tabularx}
+\end{center}
+% TODO: execute every command in the Alloy Analyzer and replace "to be run" with
+% the result (instance found / no counterexample / counterexample).
+The commands have not been executed yet; the results column is filled after a run
+in the Alloy Analyzer.
+
+\subsection{Model}
+\lstinputlisting[language=Alloy]{../alloy/loading.als}

@@ -1,0 +1,22 @@
+item,type,det,ret_or_ftr,complexity,weight
+Stored parts with fetch time and account,ILF,6,2,low,7
+Loading ledger entries,ILF,9,2,low,7
+New marks,ILF,3,1,low,7
+Offline pack state,ILF,5,1,low,7
+Speculative budget settings and daily count,ILF,5,1,low,7
+Career data of the Politecnico,EIF,20,6,average,7
+Room bookings of the Politecnico,EIF,6,1,low,5
+Timetable of the Politecnico,EIF,10,1,low,5
+Course pages and syllabi,EIF,12,2,low,5
+Retry a failed section,EI,2,1,low,3
+Switch the offline pack on or off and start it,EI,3,1,low,3
+Allow speculative requests on cellular,EI,2,1,low,3
+Enable kinds of change notification and the haptic,EI,5,1,low,3
+Sign out (delete copies marks and ledger),EI,1,3,low,3
+Screen shown part by part with section states,EO,8,3,average,5
+Free rooms in relevance order with boundary updates,EO,7,3,average,5
+Changed items marked and notified,EO,6,2,low,4
+Loading report with medians and percentiles,EO,9,1,low,4
+Offline pack status,EQ,5,1,low,3
+Stored copy shown with its age,EQ,4,1,low,3
+Prefetched part shown without a request,EQ,3,2,low,3
