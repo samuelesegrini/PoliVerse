@@ -68,7 +68,13 @@ final class Query<R: Resource> {
         self.loader = loader
     }
 
-    /// `true` while a load is in flight.
+    /// `true` while a load is in flight and nothing is held yet.
+    ///
+    /// Every screen reads it as "loading and empty", so a refresh over a held value
+    /// does not report it: flipping it on and off around a load that a cache or a
+    /// joined flight answers within the frame redrew every screen reading it twice
+    /// in that frame, and the Liquid Glass surfaces on them warned "glassEffect()
+    /// tried to update multiple times per frame".
     var isLoading: Bool { phase == .loading }
 
     /// The last load's error, or `nil` when it succeeded.
@@ -118,19 +124,24 @@ final class Query<R: Resource> {
             if let held = await loader.cached(key, env: env) { assign(held, env: env) }
             return
         }
-        phase = .loading
+        if value == nil { setPhase(.loading) }
         do {
             let snapshot = try await loader.value(key, env: env, force: force)
             assign(snapshot, env: env)
-            phase = .idle
+            setPhase(.idle)
         } catch {
             if !PoliMiAPI.isCancellation(error) {
                 log.error("\(R.id, privacy: .public) failed: \(error.localizedDescription)")
             }
             // Nil for a cancellation, which is a view going away rather than a
             // failure and must never reach the student.
-            phase = userFacingMessage(error).map(Phase.failed) ?? .idle
+            setPhase(userFacingMessage(error).map(Phase.failed) ?? .idle)
         }
+    }
+
+    /// Assigns the phase only when it changes, for the same reason as ``assign(_:env:)``.
+    private func setPhase(_ new: Phase) {
+        if phase != new { phase = new }
     }
 
     private func assign(_ snapshot: Loader<R>.Snapshot, env: Env) {
