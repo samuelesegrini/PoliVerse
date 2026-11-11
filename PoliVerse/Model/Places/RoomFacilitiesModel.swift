@@ -21,14 +21,45 @@ final class RoomFacilitiesModel {
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "aule")
     /// Fetches, caches and joins the two calls per room.
     private let loader: Loader<RoomDetailsResource>
+    /// Fetches and keeps the floor plans, so one prepared before a lecture opens at once.
+    private let plans: Loader<FloorPlanResource>
     /// Public data: nobody's account.
     private let env = Env.public()
 
     /// Builds the loader.
     ///
     /// - Parameter http: The transport the two public calls go through.
-    init(http: any HTTP = PublicHTTP()) {
+    ///   - plans: The floor plans' resource.
+    init(http: any HTTP = PublicHTTP(), plans: FloorPlanResource = FloorPlanResource()) {
         loader = Loader(RoomDetailsResource(http: http))
+        self.plans = Loader(plans)
+    }
+
+    /// A room's floor plan, as the endpoint sends it: held, joined or fetched.
+    ///
+    /// - Parameter room: The room, whose ``Classroom/floorPlanURL`` is used.
+    /// - Returns: The image's bytes, or `nil` when the room has no plan or it
+    ///   could not be fetched.
+    func floorPlan(for room: Classroom) async throws -> Data? {
+        guard let url = room.floorPlanURL else { return nil }
+        return try await plans.value(url, env: env).value
+    }
+
+    /// Warms the floor plans of rooms about to be opened, in the speculative lane.
+    ///
+    /// - Parameter rooms: The rooms.
+    func prefetchFloorPlans(_ rooms: some Sequence<Classroom>) {
+        let urls = rooms.compactMap(\.floorPlanURL)
+        guard !urls.isEmpty else { return }
+        Task(name: "floor plans warm") { [plans, env] in await plans.warm(urls, env: env) }
+    }
+
+    /// Whether a floor plan is held fresh, so opening the room draws it at once.
+    ///
+    /// - Parameter room: The room.
+    func hasFloorPlan(for room: Classroom) async -> Bool {
+        guard let url = room.floorPlanURL else { return false }
+        return await plans.isHeld(url, env: env)
     }
 
     /// Creates a model already holding the same equipment for every sample room.
@@ -80,9 +111,20 @@ final class RoomFacilitiesModel {
     ///
     /// - Parameter rooms: The rooms to warm.
     func prefetch(_ rooms: some Sequence<Classroom>) {
+        let rooms = Array(rooms)
+        Task(name: "facilities warm") { await warm(rooms) }
+    }
+
+    /// Starts warming rooms' equipment and floor plans and returns once the
+    /// fetches are under way, for a caller that then waits on ``settle()``.
+    ///
+    /// - Parameter rooms: The rooms to warm.
+    func warm(_ rooms: [Classroom], plans withPlans: Bool = false) async {
+        guard !DevicePressure.isHigh else { return }
         let ids = rooms.compactMap(\.occupancyID).filter { !isLoaded($0) }
-        guard !ids.isEmpty, !DevicePressure.isHigh else { return }
-        Task(name: "facilities warm") { [loader, env] in await loader.warm(ids, env: env) }
+        if !ids.isEmpty { await loader.warm(ids, env: env) }
+        let urls = withPlans ? rooms.compactMap(\.floorPlanURL) : []
+        if !urls.isEmpty { await plans.warm(urls, env: env) }
     }
 
     /// Waits for any warming to finish.
@@ -91,13 +133,17 @@ final class RoomFacilitiesModel {
     /// report success before the work has landed.
     func settle() async {
         await loader.settle()
+        await plans.settle()
     }
 
     /// Discards everything held, and empties the loader's cache.
     func clear() {
         equipment.removeAll()
         software.removeAll()
-        Task { [loader] in await loader.clear() }
+        Task { [loader, plans] in
+            await loader.clear()
+            await plans.clear()
+        }
     }
 }
 
@@ -157,6 +203,42 @@ nonisolated struct RoomDetailsResource: Resource {
                 .filter { !$0.name.isEmpty }
         } catch {
             return nil
+        }
+    }
+}
+
+/// A floor's plan with one room highlighted, from the public maps service.
+///
+/// Through a ``Loader`` rather than straight from the view, so a plan prepared
+/// before a lecture is there when the room is opened, and two views of one room
+/// cost one request. Held in memory for a day: plans change when a building is
+/// rearranged, not during a week.
+nonisolated struct FloorPlanResource: Resource {
+    typealias Key = URL
+    typealias Value = Data
+
+    /// The plan could not be fetched.
+    struct Unavailable: Error {}
+
+    static let id = "floor-plan"
+    static let ttl: TimeInterval = 86_400
+    static let persistence = Persistence.memory
+    static let capacity = 24
+
+    /// The session the image is fetched through.
+    var session: URLSession = .shared
+
+    @concurrent
+    func fetch(_ key: URL, env: Env, previous: Data?) async throws -> Data {
+        let session = session
+        return try await RequestGate.shared.run(host: ServiceDirectory.Service.maps.rawValue) {
+            var request = URLRequest(url: key)
+            request.timeoutInterval = 20
+            let (data, response) = try await session.data(for: request)
+            guard (response as? HTTPURLResponse)?.statusCode ?? 200 == 200, !data.isEmpty else {
+                throw Unavailable()
+            }
+            return data
         }
     }
 }

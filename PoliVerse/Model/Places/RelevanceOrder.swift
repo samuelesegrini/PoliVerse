@@ -40,6 +40,16 @@ nonisolated enum RelevanceOrder {
     ///   - rooms: The catalogue.
     /// - Returns: The building's code, or `nil` when the catalogue has no such room.
     static func building(ofRoom names: [String?], in rooms: [Classroom]) -> String? {
+        room(named: names, in: rooms)?.buildingCode
+    }
+
+    /// The room of the catalogue the timetable means by some names.
+    ///
+    /// - Parameters:
+    ///   - names: The names the timetable gives the room: its code, its name.
+    ///   - rooms: The catalogue.
+    /// - Returns: The room, or `nil` when none of the names is in the catalogue.
+    static func room(named names: [String?], in rooms: [Classroom]) -> Classroom? {
         // The timetable writes "Aula B.3.2" where the catalogue has "B.3.2".
         let wanted = Set(names.compactMap { name -> String? in
             guard var text = name?.trimmingCharacters(in: .whitespaces).lowercased() else { return nil }
@@ -50,7 +60,7 @@ nonisolated enum RelevanceOrder {
         return rooms.first { room in
             wanted.contains(room.id.lowercased())
                 || (room.roomCode.map { wanted.contains($0.lowercased()) } ?? false)
-        }?.buildingCode
+        }
     }
 }
 

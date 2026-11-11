@@ -822,6 +822,25 @@ final class WeBeepModel {
 /// `Sendable`, and a `Sendable` conformance stated in another file is
 /// retroactive.
 extension WeBeepModel: CourseEnrolments {
+    /// Warms the page of the enrolled course a lecture belongs to, in the
+    /// speculative lane, so opening the course before the lecture sends nothing.
+    ///
+    /// Matched by name, as ``Course/matches(_:)`` matches the timetable. Nothing
+    /// happens without a WeBeep token or when no enrolled course matches.
+    ///
+    /// - Parameter title: The lecture's title.
+    func warmPage(forLecture title: String) async {
+        guard let pages else { return }
+        let ids = courses.filter { Course(moodle: $0).matches(title: title) }.map(\.id)
+        guard !ids.isEmpty else { return }
+        await pages.warm(ids, env: Env(session))
+    }
+
+    /// Waits for every warm-up of course pages to land, for the background refresh.
+    func settlePages() async {
+        await pages?.settle()
+    }
+
     /// The enrolled teachings, loading them first if they are not held yet.
     ///
     /// - Returns: The teachings.

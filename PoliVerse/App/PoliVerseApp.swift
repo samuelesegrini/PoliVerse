@@ -52,7 +52,9 @@ struct PoliVerseApp: App {
     @State private var notices: NoticeModel
     @State private var news: NewsModel
     @State private var freeRooms: FreeRoomsModel
-    @State private var facilities = RoomFacilitiesModel()
+    @State private var facilities: RoomFacilitiesModel
+    /// Prepares what the next hour's lectures need.
+    private let lecturePrefetch: LecturePrefetch
     @State private var campusMap: CampusMapModel
     @State private var careers: CareersModel
     @State private var notifications: NotificationModel
@@ -152,6 +154,8 @@ struct PoliVerseApp: App {
         _cart = State(initialValue: cart)
         let freeRooms = FreeRoomsModel(catalogue: rooms)
         _freeRooms = State(initialValue: freeRooms)
+        let facilities = RoomFacilitiesModel()
+        _facilities = State(initialValue: facilities)
         _campusMap = State(initialValue: CampusMapModel(catalogue: rooms, freeRooms: freeRooms))
         // Before the feed, which delivers through it: a change a load notices
         // is news, from the foreground or from a background refresh alike.
@@ -263,6 +267,21 @@ struct PoliVerseApp: App {
             notices: notices, news: news, weBeep: weBeep, status: status)
         _freshness = State(initialValue: freshness)
 
+        // What the next hour's lectures need: the room's day, plan and
+        // equipment, and the course page. After a foreground pass, once what
+        // is on screen has landed, and in the background refresh below.
+        let lecturePrefetch = LecturePrefetch(
+            lectures: { agenda.events },
+            room: { names, day in
+                if rooms.rooms.isEmpty { await rooms.load() }
+                guard let room = RelevanceOrder.room(named: names, in: rooms.rooms) else { return }
+                await freeRooms.warm([room], on: day)
+                await facilities.warm([room], plans: true)
+            },
+            course: { title in await weBeep.warmPage(forLecture: title) })
+        self.lecturePrefetch = lecturePrefetch
+        freshness.register("lecture-prefetch", afterScreen: true) { _ in await lecturePrefetch.run() }
+
         // Watched here rather than with `onChange` on the window's view: iOS
         // launches the app in the background for refreshes and the Watch, with
         // no view, and a queued change should still go out when signal returns.
@@ -302,6 +321,11 @@ struct PoliVerseApp: App {
             defer { PerfSignpost.end(interval) }
             await agenda.load(force: true)
             await career.load(force: true)
+            // Within the speculative budget; landed before the task ends.
+            await lecturePrefetch.run()
+            await freeRooms.settleWarmUps()
+            await facilities.settle()
+            await weBeep.settlePages()
             // The Watch hears of the refresh here or not at all: the view
             // that sends it the day does not run while the app is in the
             // background.

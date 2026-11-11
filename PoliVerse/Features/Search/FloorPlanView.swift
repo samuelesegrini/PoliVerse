@@ -9,6 +9,8 @@ import SwiftUI
 struct FloorPlanView: View {
     /// The room whose floor the plan shows.
     let room: Classroom
+    /// Holds the plans, so one prepared before a lecture is drawn at once.
+    @Environment(RoomFacilitiesModel.self) private var facilities
     /// The fetched plan, or `nil` before it has loaded.
     /// `true` when the plan could not be fetched.
     @State private var image: PlatformImage?
@@ -65,8 +67,7 @@ struct FloorPlanView: View {
         guard loadedURL != url else { return }
         image = nil
         do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-            guard (response as? HTTPURLResponse)?.statusCode ?? 200 == 200,
+            guard let data = try await facilities.floorPlan(for: room),
                   let decoded = PlatformImage(data: data) else { failed = true; return }
             #if os(iOS)
             image = await decoded.byPreparingForDisplay() ?? decoded

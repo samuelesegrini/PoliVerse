@@ -260,7 +260,14 @@ nonisolated extension Course {
     /// - Returns: `true` when the two name the same teaching. Always `false` when either
     ///   name is empty.
     func matches(_ event: AgendaEvent) -> Bool {
-        let title = event.title.lowercased(), target = name.lowercased()
+        matches(title: event.title)
+    }
+
+    /// Whether a timetable title names this course, as ``matches(_:)`` decides.
+    ///
+    /// - Parameter title: The title.
+    func matches(title: String) -> Bool {
+        let title = title.lowercased(), target = name.lowercased()
         guard !title.isEmpty, !target.isEmpty else { return false }
         return title.contains(target) || target.contains(title)
     }

@@ -2,6 +2,7 @@ import Foundation
 import Network
 import Observation
 import OSLog
+import Synchronization
 
 /// Whether the device has a usable connection.
 ///
@@ -47,6 +48,9 @@ final class NetworkMonitor {
                 self.isOnline = online
                 self.isExpensive = path.isExpensive
             }
+            // Off the main actor too: the request gate reads it for every
+            // speculative request, from wherever that request runs.
+            NetworkPath.update(expensive: path.isExpensive, constrained: path.isConstrained)
         }
         // Starts optimistic: `NWPathMonitor` reports asynchronously, and a
         // first frame claiming "offline" before the first callback would be
@@ -72,5 +76,33 @@ final class StubReachability: Reachability {
     /// - Parameter isOnline: The value to report.
     init(isOnline: Bool = true) {
         self.isOnline = isOnline
+    }
+}
+
+/// The current network's cost, readable from any thread.
+///
+/// ``NetworkMonitor`` is main-actor bound, and the request gate decides about a
+/// speculative request wherever that request runs; this is the copy it reads.
+nonisolated enum NetworkPath {
+    /// What is known about the path.
+    struct State: Equatable, Sendable {
+        /// Metered: cellular, or a personal hotspot.
+        var expensive = false
+        /// Low Data Mode is on.
+        var constrained = false
+    }
+
+    private static let state = Mutex(State())
+
+    /// The path as last reported.
+    static var current: State { state.withLock { $0 } }
+
+    /// Notes the path, as the monitor reports it.
+    ///
+    /// - Parameters:
+    ///   - expensive: Whether it is metered.
+    ///   - constrained: Whether Low Data Mode is on.
+    static func update(expensive: Bool, constrained: Bool) {
+        state.withLock { $0 = State(expensive: expensive, constrained: constrained) }
     }
 }

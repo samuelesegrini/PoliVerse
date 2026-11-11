@@ -511,15 +511,33 @@ final class FreeRoomsModel {
     /// wait on its neighbours; opening one being warmed raises its fetch.
     /// Nothing is warmed while the phone is hot or saving power (``DevicePressure``).
     ///
-    /// - Parameter rooms: The rooms to warm.
-    func prefetch(_ rooms: some Sequence<Classroom>) {
-        let stamp = PoliMiDate.queryString(day)
+    /// - Parameters:
+    ///   - rooms: The rooms to warm.
+    ///   - other: The day to warm them for, when not the one on screen.
+    func prefetch(_ rooms: some Sequence<Classroom>, on other: Date? = nil) {
+        let rooms = Array(rooms)
+        Task(name: "occupancy warm") { await warm(rooms, on: other) }
+    }
+
+    /// Starts warming rooms' bookings and returns once the fetches are under way,
+    /// for a caller that then waits on ``settle()``.
+    ///
+    /// - Parameters:
+    ///   - rooms: The rooms to warm.
+    ///   - other: The day to warm them for, when not the one on screen.
+    func warm(_ rooms: [Classroom], on other: Date? = nil) async {
+        let stamp = PoliMiDate.queryString(other ?? day)
         let keys = rooms.compactMap { room -> OccupancyKey? in
             guard let occupancyID = room.occupancyID else { return nil }
             return OccupancyKey(roomID: room.id, occupancyID: occupancyID, day: stamp)
         }
         guard !keys.isEmpty, !DevicePressure.isHigh else { return }
-        Task(name: "occupancy warm") { [loader, env] in await loader.warm(keys, env: env) }
+        await loader.warm(keys, env: env)
+    }
+
+    /// Waits for every warm-up of bookings to land, for the background refresh.
+    func settleWarmUps() async {
+        await loader.settle()
     }
 
     /// Hands the widget the room references it needs to fetch a campus by itself.
@@ -587,9 +605,15 @@ nonisolated struct OccupancyResource: Resource {
         let calendar = PoliMiDate.romeCalendar
         let day = calendar.date(from: calendar.dateComponents(
             [.year, .month, .day], from: PoliMiDate.parse(key.day) ?? .now)) ?? .now
-        guard case .busy(let bands) = await RoomOccupancy.fetch(
-            occupancyID: key.occupancyID, on: day, session: session)
-        else { throw Unavailable() }
+        // Through the gate, like every other request: noted in the ledger, and
+        // a warm-up of a room's day runs in the speculative lane.
+        let session = session
+        let answer = try await RequestGate.shared.run(host: ServiceDirectory.Service.maps.rawValue) {
+            let answer = await RoomOccupancy.fetch(occupancyID: key.occupancyID, on: day, session: session)
+            if case .failed = answer { throw Unavailable() }
+            return answer
+        }
+        guard case .busy(let bands) = answer else { throw Unavailable() }
         return bands.enumerated().map { index, band in
             RoomBooking(id: "\(key.roomID)-\(index)", start: band.start, end: band.end, title: nil)
         }
