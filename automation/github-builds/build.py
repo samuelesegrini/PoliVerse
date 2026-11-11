@@ -75,6 +75,19 @@ def simulator():
                 'com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro', runtime])
 
 
+def prepare_simulator(identifier):
+    devices = json.loads(run(['xcrun', 'simctl', 'list', 'devices', 'available', '--json']))['devices']
+    device = next(d for entries in devices.values() for d in entries if d['udid'] == identifier)
+    if device['state'] == 'Shutdown':
+        run(['xcrun', 'simctl', 'boot', identifier])
+    try:
+        # A fresh runtime can take longer than Xcode's 60-second launch timeout.
+        subprocess.run(['xcrun', 'simctl', 'bootstatus', identifier, '-b'],
+                       check=True, timeout=300)
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError('Simulator did not become ready within five minutes') from error
+
+
 def build(args, base):
     source = base / 'source'
     if not source.exists():
@@ -101,6 +114,8 @@ def build(args, base):
               'CURRENT_PROJECT_VERSION=' + datetime.datetime.now().strftime('%Y%m%d%H%M'),
               'POLIVERSE_BUILD_COMMIT=' + commit, 'POLIVERSE_BUILD_CHANNEL=local']
     sim = simulator() if args.test or args.platform == 'simulator' else None
+    if sim is not None:
+        prepare_simulator(sim)
     if args.test:
         run(common + ['test', '-destination', 'platform=iOS Simulator,id=' + sim,
                       'CODE_SIGNING_ALLOWED=NO'], cwd=source, log=logs / 'tests.log')
@@ -125,8 +140,6 @@ def build(args, base):
             run(['xcrun', 'devicectl', 'device', 'install', 'app', '--device', device, str(app)],
                 log=logs / 'install.log')
         else:
-            run(['xcrun', 'simctl', 'boot', sim]) if 'Booted' not in run(['xcrun', 'simctl', 'list', 'devices', sim]) else None
-            run(['xcrun', 'simctl', 'bootstatus', sim, '-b'])
             run(['xcrun', 'simctl', 'install', sim, str(app)])
         summary('Installed successfully. Open PoliVerse on the device.')
     (base / 'last-success.json').write_text(json.dumps(identity))
