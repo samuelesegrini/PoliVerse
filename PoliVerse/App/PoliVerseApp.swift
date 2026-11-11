@@ -67,6 +67,7 @@ struct PoliVerseApp: App {
     @State private var liveActivity = LiveActivityController()
     @State private var onboarding = OnboardingState()
     @State private var whatsNew = WhatsNewState()
+    @State private var featureFlags = FeatureFlags()
     @State private var spid = SPIDCatalogue()
     @State private var loginMemory = LoginMethodMemory()
     @State private var freshness: FreshnessCoordinator
@@ -568,6 +569,7 @@ struct PoliVerseApp: App {
             .environment(status)
             .environment(onboarding)
             .environment(whatsNew)
+            .environment(featureFlags)
             .environment(spid)
             .environment(loginMemory)
             #if os(macOS)

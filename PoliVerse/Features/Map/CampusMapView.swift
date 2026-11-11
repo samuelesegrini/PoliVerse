@@ -8,13 +8,13 @@ import SwiftUI
 /// ellipses and bounding boxes rather than footprints, so nothing is drawn
 /// from them. See ``BuildingLocation``.
 struct CampusMapView: View {
-    /// Which map Impostazioni chose.
-    @AppStorage(CampusMapKind.storageKey) private var kind: CampusMapKind = .apple
+    /// Opt-in preview features for this install.
+    @Environment(FeatureFlags.self) private var flags
 
     /// The view's content.
     var body: some View {
         #if DEBUG && os(iOS)
-        if kind == .model3D {
+        if flags.isEnabled(.campus3D) {
             Trifoglio3DView()
                 .navigationTitle("Mappa")
                 .navigationBarTitleDisplayMode(.inline)
@@ -24,28 +24,6 @@ struct CampusMapView: View {
         #else
         AppleCampusMap()
         #endif
-    }
-}
-
-/// Which map the Mappa screen shows: Apple's, or the campus drawn in 3D.
-///
-/// The 3D campus is a prototype built only into debug builds, so release builds always
-/// show Apple's map and Impostazioni does not offer the choice.
-enum CampusMapKind: String, CaseIterable, Identifiable {
-    case apple
-    case model3D
-
-    /// Where the choice is kept.
-    static let storageKey = "campusMapKind"
-
-    var id: Self { self }
-
-    /// The choice's name in Impostazioni.
-    var title: LocalizedStringKey {
-        switch self {
-        case .apple: "Apple Maps"
-        case .model3D: "Campus 3D"
-        }
     }
 }
 

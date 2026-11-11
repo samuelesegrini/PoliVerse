@@ -334,10 +334,6 @@ struct SettingsLayoutSection: View {
     @AppStorage(AppLayout.storageKey) private var layout: AppLayout = .tabs
     /// Whether opening Cerca brings the keyboard up.
     @AppStorage(SearchTabKeyboard.storageKey) private var searchOpensKeyboard = true
-    #if DEBUG && os(iOS)
-    /// Which map Mappa shows.
-    @AppStorage(CampusMapKind.storageKey) private var mapKind: CampusMapKind = .apple
-    #endif
     /// Wide enough to draw the choices as an iPad rather than a phone.
     @Environment(\.horizontalSizeClass) private var sizeClass
 
@@ -369,20 +365,6 @@ struct SettingsLayoutSection: View {
                     }
                 }
             }
-
-            #if DEBUG && os(iOS)
-            // The 3D campus is a debug-only prototype: release builds keep Apple's map.
-            Picker(selection: $mapKind) {
-                ForEach(CampusMapKind.allCases) { Text($0.title).tag($0) }
-            } label: {
-                Label {
-                    Text("Mappa")
-                } icon: {
-                    SettingsIcon(symbol: "map", tone: .neutral)
-                }
-            }
-            .accessibilityIdentifier("settings-map-kind")
-            #endif
         } header: {
             Text("Disposizione")
         } footer: {
@@ -628,6 +610,22 @@ struct SettingsAboutSection: View {
                         SettingsIcon(symbol: "info.circle", tone: .neutral)
                     }
                 }
+            }
+            NavigationLink { ReleaseHistoryView() } label: {
+                Label { Text("Tutte le novità") } icon: {
+                    SettingsIcon(symbol: "clock.arrow.circlepath", tone: .neutral)
+                }
+            }
+            .accessibilityIdentifier("settings-release-history")
+            NavigationLink { BetaFeaturesView() } label: {
+                Label { Text("Funzioni in anteprima") } icon: {
+                    SettingsIcon(symbol: "flask", tone: .neutral)
+                }
+            }
+            .accessibilityIdentifier("settings-beta")
+            LabeledContent("Build", value: BuildIdentity().channel)
+            if let url = BuildIdentity().commitURL, let commit = BuildIdentity().commit {
+                Link("Codice di questa build (\(commit.prefix(7)))", destination: url)
             }
             // The first run, again: the tour and the settings it asks for
             // once. Impostazioni closes first, because the flow takes the

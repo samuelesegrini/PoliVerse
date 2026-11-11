@@ -128,6 +128,7 @@ extension View {
             .environment(PreviewEnvironment.status)
             .environment(PreviewEnvironment.onboarding)
             .environment(PreviewEnvironment.whatsNew)
+            .environment(FeatureFlags())
             .environment(PreviewEnvironment.spid)
             .environment(PreviewEnvironment.loginMemory)
             .tint(Theme.brand)
