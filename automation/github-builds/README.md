@@ -16,12 +16,15 @@ Open GitHub → `PoliVerse-builds` → Actions → **Build PoliVerse on Mac** �
 - `configuration`: `Debug` includes optional beta prototypes; `Release` excludes
   them, even if an old saved switch is on.
 - `install`: install the finished device/simulator app. Uncheck for Mac builds.
-- `test`: run the unit suite first, on a dedicated `PoliVerse CI` simulator.
+- `test`: optionally run the unit suite first, on a dedicated `PoliVerse CI` simulator
+  (off by default for phone builds).
   The runner boots it and waits for readiness before invoking Xcode, including
   the longer first boot of a fresh runtime.
 
 Scheduled jobs check `main` about every 15 minutes (GitHub can delay schedules).
-They run tests and build for the simulator without installing on your phone.
+They build a signed iPhone app without installing it. Build-only jobs use a
+generic iOS destination and need no connected phone. Simulator tests are an
+explicit manual option so simulator availability does not block normal builds.
 The single Mac runner processes jobs one at a time; scheduled checks do not
 cancel queued manual phone builds. A commit already attempted is skipped; manually run the workflow to retry a
 failure. GitHub may disable scheduled workflows in an inactive repository.

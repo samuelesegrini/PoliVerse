@@ -19,7 +19,7 @@ is deployed separately from these public templates.
 3. Run unit and navigation tests, including `ReleaseControlsUITests` after
    changing Settings. Check light/dark and large text.
 4. Merge the reviewed feature PR. The private workflow's next scheduled check
-   tests/builds `main`. For a phone install, run it manually with platform
+   builds `main` for iPhone. For a phone install, run it manually with platform
    `device` and `install` enabled.
 
 An existing installation shows unseen release notes after onboarding. A new
