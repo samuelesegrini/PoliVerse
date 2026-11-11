@@ -58,6 +58,42 @@ nonisolated class PoliVerseUITestCase: XCTestCase {
         return app
     }
 
+    // MARK: The signed-in account
+
+    /// An app on the account signed in on the device, not yet launched.
+    ///
+    /// - Parameter forcingRefresh: Makes the launch refresh ask the network for
+    ///   everything, as a first launch of the day would. Without it, a relaunch seconds
+    ///   after the last serves the offline copies and measures no network at all.
+    @MainActor func makeSignedInApp(forcingRefresh: Bool = true) -> XCUIApplication {
+        let app = makeApp(data: .signedInAccount)
+        if forcingRefresh { app.launchArguments += ["-forceLaunchRefresh", "<true/>"] }
+        app.launchArguments += Self.extraArguments
+        return app
+    }
+
+    /// Launch arguments a device run adds without a code change, such as
+    /// `-TodayLegacy all` for the drawing A/B: `POLIVERSE_EXTRA_ARGS`, split on
+    /// spaces, which `xcodebuild` passes through as `TEST_RUNNER_POLIVERSE_EXTRA_ARGS`.
+    static var extraArguments: [String] {
+        (ProcessInfo.processInfo.environment["POLIVERSE_EXTRA_ARGS"] ?? "")
+            .split(separator: " ").map(String.init)
+    }
+
+    /// A launched app on the signed-in account, sitting on Oggi.
+    ///
+    /// - Throws: A skip when nobody is signed in on the device.
+    @MainActor func launchSignedIn(forcingRefresh: Bool = true) throws -> XCUIApplication {
+        let app = makeSignedInApp(forcingRefresh: forcingRefresh)
+        app.launch()
+        if app.buttons["today-customize"].firstMatch.waitForExistence(timeout: 30) { return app }
+        if app.buttons["Codice persona e password"].firstMatch.exists {
+            throw XCTSkip("Nobody is signed in on this device: sign in to PoliVerse by hand, then run again")
+        }
+        XCTFail("The app never reached Oggi")
+        return app
+    }
+
     // MARK: Waiting
 
     /// Waits for an element and fails with a sentence naming what was missing,
