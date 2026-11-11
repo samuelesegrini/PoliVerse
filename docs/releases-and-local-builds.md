@@ -53,3 +53,10 @@ with the safe Apple Maps fallback until they opt in on the new page.
 These flags are local switches for bundled code. There is no configuration
 server or remote kill switch. Add remote configuration only when needed, with
 validated data, cached defaults and explicit expiry/failure behavior.
+
+For the release-controls UI walkthrough use
+`bash scripts/test-release-controls.sh <simulator-udid>`. It runs the regular
+and accessibility-size flows in light mode, then the dark-mode flow, restoring
+the simulator's original appearance afterwards. An optional second argument
+reuses a DerivedData directory. The simulator's system appearance is set
+explicitly: iOS ignores the `AppleInterfaceStyle` launch argument.

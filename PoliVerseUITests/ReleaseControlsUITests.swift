@@ -6,6 +6,7 @@ nonisolated final class ReleaseControlsUITests: PoliVerseUITestCase {
         walk(textSize: nil)
     }
 
+    /// Run through scripts/test-release-controls.sh, which sets the simulator appearance.
     @MainActor func testHistoryAndBetaInDarkMode() {
         walk(textSize: nil, appearance: "Dark")
     }
@@ -16,7 +17,7 @@ nonisolated final class ReleaseControlsUITests: PoliVerseUITestCase {
 
     @MainActor private func walk(textSize: String?, appearance: String = "Light") {
         let app = makeApp(textSize: textSize)
-        app.launchArguments += ["-lastSeenReleaseVersion", "2.1", "-AppleInterfaceStyle", appearance]
+        app.launchArguments += ["-lastSeenReleaseVersion", "2.1"]
         let variant = appearance + (textSize == nil ? "" : "-AX")
         app.launch()
         tap(app.buttons["bar-settings"].firstMatch, "Oggi has no Settings button", timeout: 30)
