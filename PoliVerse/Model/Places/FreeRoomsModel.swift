@@ -22,6 +22,21 @@ import OSLog
 /// ``concurrency``, are cached per room and day, and are shared with the room detail
 /// screen, so a room already fetched costs nothing.
 ///
+/// ## Order
+///
+/// The rooms are asked about in ``RelevanceOrder``: the buildings on the map in front
+/// of the student first, then their next lecture's building. Each batch is listed as
+/// soon as it answers, so the first rooms on screen are the nearest ones, a second
+/// after opening rather than when the whole campus is in.
+///
+/// ## Boundaries
+///
+/// Whether a room is free changes only when one of its bookings starts or ends
+/// (``BoundaryClock``). The model sleeps until the next such instant and then says
+/// so through ``boundaryTick``: the screens recompute from the bookings held, without
+/// a request, and a screen that is showing rooms may ask again about the rooms
+/// that just changed, once.
+///
 /// ## Freshness
 ///
 /// A pass is repeated after one minute rather than the usual five, because occupancy
@@ -49,6 +64,17 @@ final class FreeRoomsModel {
     /// Not persisted: occupancy is never restored from disk here, so the only age worth
     /// reporting is the one since this session's pass.
     private(set) var loadedAt: Date?
+
+    /// Bumped at every booking boundary of the rooms held: what is free now has
+    /// changed, though nothing was fetched.
+    private(set) var boundaryTick = 0
+
+    /// The codes of the buildings in the map area on screen, asked about first.
+    @ObservationIgnored var visibleBuildings: Set<String> = []
+    /// What the timetable calls the room of the student's next lecture today: the
+    /// code on the door, its name. Its building is asked about right after the
+    /// ones on the map.
+    @ObservationIgnored var nextLectureRoom: () -> [String?] = { [] }
 
     /// The day being shown.
     var day: Date = .now
@@ -207,6 +233,8 @@ final class FreeRoomsModel {
     ///
     /// - Returns: The free rooms, by name. Empty outside ``teachingDay``.
     func freeNow() -> [RoomSchedule] {
+        // Read so that a screen listing these is drawn again at each boundary.
+        _ = boundaryTick
         let now = Date.now
         guard teachingDay.contains(now) else { return [] }
         let window = DateInterval(
@@ -227,6 +255,15 @@ final class FreeRoomsModel {
     ///
     /// - Parameter force: Runs the pass however recent the last one was.
     func load(force: Bool = false) async {
+        await load(force: force, eachBatch: nil)
+    }
+
+    /// ``load(force:)``, telling the caller each time more rooms are listed.
+    ///
+    /// - Parameters:
+    ///   - force: Runs the pass however recent the last one was.
+    ///   - eachBatch: Called after each batch of rooms has been added to ``rooms``.
+    func load(force: Bool, eachBatch: (@MainActor () async -> Void)?) async {
         guard !skipsLoading else { return }
         await catalogue.load()
         if campus == nil { campus = FavouriteCampus.resolve(FavouriteCampus.stored, among: catalogue.campuses,
@@ -250,8 +287,13 @@ final class FreeRoomsModel {
         // Whether this is still the pass the screen is waiting for.
         func isCurrent() -> Bool { inFlight?.pass == pass && !Task.isCancelled }
 
-        let wanted = catalogue.rooms(matching: "", campus: campus)
-            .filter { $0.occupancyID != nil }
+        // Most wanted first: each batch is on screen as soon as it answers.
+        let wanted = RelevanceOrder.order(
+            catalogue.rooms(matching: "", campus: campus).filter { $0.occupancyID != nil },
+            visible: visibleBuildings,
+            nextLecture: RelevanceOrder.building(ofRoom: nextLectureRoom(), in: catalogue.rooms),
+            favourite: FavouriteCampus.resolve(FavouriteCampus.stored, among: catalogue.campuses,
+                                               mainCampus: catalogue.mainCampus(inSite:)))
         guard !wanted.isEmpty else {
             rooms = []
             errorMessage = String(localized: "Nessuna aula in questa sede.")
@@ -260,6 +302,11 @@ final class FreeRoomsModel {
 
         let stamp = PoliMiDate.queryString(day)
         progress = (0, wanted.count)
+        let wantedIDs = Set(wanted.map(\.id))
+        // The rooms on screen are replaced batch by batch only when they are of
+        // this day and campus; another day's bookings are not shown under this one.
+        let staysListed = lastPass?.key == key
+        if !staysListed, !rooms.isEmpty { rooms = [] }
 
         var loaded: [RoomSchedule] = []
         var hidden: [String] = []
@@ -303,9 +350,17 @@ final class FreeRoomsModel {
                 }
             }
             progress = (min(batch + concurrency, wanted.count), wanted.count)
+            // Listed now, not when the last room of the campus has answered. A
+            // room listed before keeps its bookings until it answers again.
+            let answered = Set(loaded.map(\.id))
+            let before = rooms.filter { !answered.contains($0.id) && wantedIDs.contains($0.id) && staysListed }
+            let listed = loaded + before
+            if rooms != listed { rooms = listed }
+            await eachBatch?()
+            guard isCurrent() else { return }
         }
 
-        rooms = loaded
+        if rooms != loaded { rooms = loaded }
         hiddenRooms = hidden.sorted()
         // Only a pass that produced rooms counts. A campus where every request
         // failed leaves `loaded` empty, and stamping that would both suppress
@@ -313,8 +368,70 @@ final class FreeRoomsModel {
         // same rule the ``Loader`` follows for every other service.
         if !loaded.isEmpty { markLoaded() }
         saveWidgetSnapshot()
+        watchBoundaries()
         let booked = loaded.reduce(0) { $0 + $1.bookings.count }
         log.notice("aule \(stamp, privacy: .public): \(loaded.count, privacy: .public) rooms, \(booked, privacy: .public) bookings, \(hidden.count, privacy: .public) hidden, \(self.freeRooms().count, privacy: .public) with free time")
+    }
+
+    // MARK: - Boundaries
+
+    /// The task asleep until the next booking boundary.
+    @ObservationIgnored private var boundaryWatch: Task<Void, Never>?
+    /// The boundary that last passed, and whether its rooms were asked about again.
+    @ObservationIgnored private var lastBoundary: (at: Date, refreshed: Bool)?
+
+    /// Sleeps until each booking boundary of the rooms held, for today only, and
+    /// bumps ``boundaryTick`` as it passes. One sleep to a known instant, not a
+    /// timer: with no boundary ahead, nothing runs.
+    private func watchBoundaries() {
+        boundaryWatch?.cancel()
+        guard PoliMiDate.romeCalendar.isDateInToday(day), !rooms.isEmpty else { return }
+        boundaryWatch = Task(name: "room boundaries") { [weak self] in
+            while let self, let next = BoundaryClock.next(after: .now, in: self.rooms) {
+                try? await Task.sleep(for: .seconds(max(0, next.timeIntervalSinceNow) + 0.5))
+                guard !Task.isCancelled else { return }
+                self.lastBoundary = (next, false)
+                self.boundaryTick += 1
+            }
+        }
+    }
+
+    /// Asks again about the rooms whose booking just started or ended, at most
+    /// once per boundary. Called by a screen that is showing rooms when
+    /// ``boundaryTick`` changes; with no screen asking, nothing is sent.
+    func refreshAfterBoundary() async {
+        guard let boundary = lastBoundary, !boundary.refreshed, inFlight == nil else { return }
+        lastBoundary = (boundary.at, true)
+        let changing = Set(BoundaryClock.rooms(changingAt: boundary.at, in: rooms))
+        let stamp = PoliMiDate.queryString(day)
+        var fresh: [String: [RoomBooking]] = [:]
+        let keys = rooms.filter { changing.contains($0.id) }.compactMap { room -> OccupancyKey? in
+            room.occupancyID.map { OccupancyKey(roomID: room.id, occupancyID: $0, day: stamp) }
+        }
+        for batch in stride(from: 0, to: keys.count, by: concurrency) {
+            let slice = Array(keys[batch..<min(batch + concurrency, keys.count)])
+            await withTaskGroup(of: (String, [RoomBooking]?).self) { group in
+                for key in slice {
+                    group.addTask(name: "occupancy \(key.roomID)") { [loader, env] in
+                        (key.roomID, try? await loader.value(key, env: env, force: true).value)
+                    }
+                }
+                for await (id, bookings) in group {
+                    if let bookings { fresh[id] = bookings }
+                }
+            }
+        }
+        guard !fresh.isEmpty, stamp == PoliMiDate.queryString(day) else { return }
+        let updated = rooms.map { room -> RoomSchedule in
+            guard let bookings = fresh[room.id] else { return room }
+            var copy = room
+            copy.bookings = bookings
+            return copy
+        }
+        if updated != rooms {
+            rooms = updated
+            watchBoundaries()
+        }
     }
 
     /// Publishes the day's bookings for the free-rooms widget.

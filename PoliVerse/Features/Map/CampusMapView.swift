@@ -55,6 +55,8 @@ private struct AppleCampusMap: View {
     @Environment(CampusMapModel.self) private var map
     /// The shared ``RoomsModel``, from the environment.
     @Environment(RoomsModel.self) private var rooms
+    /// The shared ``FreeRoomsModel``: its booking boundaries recolour the map.
+    @Environment(FreeRoomsModel.self) private var aule
 
     /// The campus on screen. Changing it moves the camera to that city at once and places its
     /// pins when they arrive.
@@ -92,6 +94,21 @@ private struct AppleCampusMap: View {
         // The map is drawn at once; pins arrive as they are placed, and the
         // camera frames them the first time there are any.
         .task { await map.load(campus: campus) }
+        // The buildings in view are the first asked about when the student
+        // wants to see which are free.
+        .onMapCameraChange(frequency: .onEnd) { context in
+            map.noteVisible(region: context.region)
+        }
+        // A booking started or ended: the colours are counted again from the
+        // bookings held, and only the rooms that changed are asked about.
+        .onChange(of: aule.boundaryTick) { _, _ in
+            guard map.showsAvailability else { return }
+            Task {
+                await map.recolour()
+                await aule.refreshAfterBoundary()
+                await map.recolour()
+            }
+        }
         // Framed once per campus, as soon as its pins are placed — not on
         // every re-placement, which would pull the camera from under a pan.
         // Off the full placement rather than the pins revealed so far, so the

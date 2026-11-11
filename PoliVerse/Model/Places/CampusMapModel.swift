@@ -225,15 +225,39 @@ final class CampusMapModel {
         if freeRooms.campus != campus, campus != nil {
             freeRooms.campus = campus
         }
-        await freeRooms.load()
-        let free = Set(freeRooms.freeNow().map(\.id))
-        guard !free.isEmpty || !freeRooms.rooms.isEmpty else { return }
+        // Coloured as each batch of rooms answers: the buildings on screen are
+        // asked about first, so they take their colour within a second.
+        await freeRooms.load(force: false) { [weak self] in await self?.recolour() }
+        await recolour()
+    }
 
-        placed = await MapPlacement.colouredInBackground(
-            placed, rooms: catalogue.rooms, covered: Set(freeRooms.rooms.map(\.id)), free: free)
+    /// Colours the pins from the occupancy held now, without asking for any.
+    ///
+    /// Called as rooms arrive, and again whenever a booking starts or ends: what
+    /// is free changes then, though nothing new was fetched.
+    func recolour() async {
+        guard !placed.isEmpty else { return }
+        let covered = Set(freeRooms.rooms.map(\.id))
+        guard !covered.isEmpty else { return }
+        let free = Set(freeRooms.freeNow().map(\.id))
+        let before = placed
+        let coloured = await MapPlacement.colouredInBackground(
+            before, rooms: catalogue.rooms, covered: covered, free: free)
+        // A campus placed while this was being counted wins.
+        guard placed == before, coloured.contains(where: { $0.freeRooms != nil }) else { return }
+        showsAvailability = true
+        guard coloured != placed else { return }
+        placed = coloured
         let shownIDs = Set(pins.map(\.id))
         pins = placed.filter { shownIDs.contains($0.id) }
-        showsAvailability = true
+    }
+
+    /// Notes the part of the map on screen, so its buildings are the first asked
+    /// about when availability is requested.
+    ///
+    /// - Parameter region: The region the camera shows.
+    func noteVisible(region: MKCoordinateRegion) {
+        freeRooms.visibleBuildings = MapPlacement.buildings(in: region, among: placed)
     }
 
     /// Fetches the building coordinates from the public geojson and caches them.

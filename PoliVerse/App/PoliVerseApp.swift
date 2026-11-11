@@ -204,6 +204,11 @@ struct PoliVerseApp: App {
         let agenda = AgendaModel(account: session)
         _agenda = State(initialValue: agenda)
         _personalTimetable = State(initialValue: PersonalTimetableModel(cart: cart, agenda: agenda))
+        // The building of the next lecture is asked about early in a free-rooms pass.
+        freeRooms.nextLectureRoom = { [weak agenda] in
+            guard let event = CurrentClass.pick(from: agenda?.events ?? [], now: .now)?.event else { return [] }
+            return [event.roomAcronym, event.room]
+        }
         let career = CareerModel(account: session, feed: updates, pending: pending)
         _career = State(initialValue: career)
         // Before the course list, which reads teaching codes out of it.

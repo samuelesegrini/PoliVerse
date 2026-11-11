@@ -31,6 +31,13 @@ protocol RoomAvailability: AnyObject, Sendable {
     /// The rooms free at this moment.
     func freeNow() -> [RoomSchedule]
     func load(force: Bool) async
+    /// The codes of the buildings in the map area on screen, which are asked
+    /// about before the rest of the campus.
+    var visibleBuildings: Set<String> { get set }
+    /// ``load(force:)``, telling the caller each time more rooms have answered,
+    /// so the map colours a building when its rooms are in and not when the
+    /// whole campus is.
+    func load(force: Bool, eachBatch: (@MainActor () async -> Void)?) async
 }
 
 
