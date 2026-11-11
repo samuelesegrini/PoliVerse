@@ -52,7 +52,7 @@ New components are marked (new); the others exist and change.
   \item[BoundaryClock (new)] Computes the next booking boundary from stored bookings and wakes the models that show rooms.
   \item[ChangeDetector (new)] Compares the items of a fetched part with its stored copy by identity and returns what was added, changed and removed.
   \item[NewMarks (new)] Keeps, per account, the identities of items marked as new until their section has been on screen.
-  \item[Section kit (new)] The shared interface pieces: the \texttt{arriving} modifier, RevealRenderer, SectionStatus and ShapeMemory.
+  \item[Section kit (new)] The shared interface pieces: SectionStage decides what a section draws from its phase and the time waited; SectionStatus draws it; the \texttt{arriving} modifier puts it in place of rows a section does not have; \texttt{reveals}, \texttt{revealed} and RevealRenderer play the reveal; ShapeMemory keeps each section's last height.
   \item[Existing services] \texttt{BackgroundRefresh} gains the prefetch call and a processing task. \texttt{FreshnessCoordinator} calls the prefetch after a pass. \texttt{UpdateFeed} becomes one consumer of ChangeDetector. \texttt{DiagnosticsReport} gains the ledger section.
 \end{description}
 
@@ -157,11 +157,19 @@ enum ChangeDetector {
 
 \begin{lstlisting}
 // Section kit.
+enum SectionStage {            // content | quiet | waiting(showsStep) | empty | failed
+    init(_ phase: LoadPhase, hasRows: Bool, waited: Duration)
+}
 extension View {
-    func arriving(_ phase: LoadPhase, title: LocalizedStringKey,
-                  retry: (() async -> Void)? = nil) -> some View
-    func revealed(order: Int, isNew: Bool) -> some View
-    func screenLedger(_ name: String) -> some View
+    func arriving(_ phase: LoadPhase, hasRows: Bool, title: LocalizedStringResource,
+                  showsTitle: Bool, step: LocalizedStringResource?, remember: String?,
+                  retry: (() async -> Void)?, empty: () -> some View) -> some View
+    func reveals(_ phase: LoadPhase, hasRows: Bool,
+                 title: LocalizedStringResource) -> some View
+    func revealed(order: Int) -> some View
+    func revealedText() -> some View
+    func endsRevealsOnScroll() -> some View
+    func screenLedger(_ name: String, hasContent: Bool, isComplete: Bool) -> some View
 }
 \end{lstlisting}
 

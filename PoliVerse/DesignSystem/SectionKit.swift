@@ -14,14 +14,14 @@ import SwiftUI
 // MARK: - The reveal's state
 
 /// Whether the section a view sits in is revealing its rows right now.
-nonisolated struct Reveal: Equatable, Sendable {
+nonisolated struct SectionReveal: Equatable, Sendable {
     /// Rows that appear now fade in rather than being there at once.
     var plays = false
     /// Reduce Motion is on: a cross-fade, nothing moving.
     var reduced = false
 }
 
-extension Reveal {
+extension SectionReveal {
     /// A change that takes effect now, replacing whatever was animating.
     @MainActor static var atOnce: Transaction {
         var transaction = Transaction()
@@ -32,7 +32,7 @@ extension Reveal {
 
 extension EnvironmentValues {
     /// The reveal of the section around a view. Set by `reveals(_:hasRows:title:)`.
-    @Entry var reveal = Reveal()
+    @Entry var reveal = SectionReveal()
 }
 
 /// Lets a scroll anywhere end every reveal in progress.
@@ -97,7 +97,7 @@ private struct RevealsModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .environment(\.reveal, Reveal(plays: plays, reduced: reduceMotion))
+            .environment(\.reveal, SectionReveal(plays: plays, reduced: reduceMotion))
             .onAppear { note(state) }
             .onChange(of: state) { _, new in note(new) }
             .onChange(of: RevealSession.shared.interruptions) { stop() }
@@ -193,9 +193,9 @@ private struct RevealedModifier: ViewModifier {
     /// what it already is replaces nothing, so it is nudged and then set.
     private func settle() {
         guard progress != nil else { return }
-        withTransaction(Reveal.atOnce) { progress = 0.999 }
+        withTransaction(SectionReveal.atOnce) { progress = 0.999 }
         Task {
-            withTransaction(Reveal.atOnce) { progress = 1 }
+            withTransaction(SectionReveal.atOnce) { progress = 1 }
         }
     }
 }
@@ -278,9 +278,9 @@ private struct RevealedTextModifier: ViewModifier {
             }
             .onChange(of: reveal.plays) { _, plays in
                 guard !plays, progress != nil else { return }
-                withTransaction(Reveal.atOnce) { progress = 0.999 }
+                withTransaction(SectionReveal.atOnce) { progress = 0.999 }
                 Task {
-                    withTransaction(Reveal.atOnce) { progress = 1 }
+                    withTransaction(SectionReveal.atOnce) { progress = 1 }
                 }
             }
     }
