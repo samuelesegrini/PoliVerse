@@ -153,6 +153,16 @@ nonisolated protocol Resource: Sendable {
     func fetch(_ key: Key, env: Env, parts: Set<Part>, over held: Value?,
                progress: LoadProgress<Self>) async throws -> LoadProgress<Self>.Snapshot
 
+    /// What a fetched part changed with respect to the copy held, by the identity
+    /// of its items. Nothing by default: only a resource whose items keep their
+    /// id from one answer to the next says so, through ``ChangeDetector``.
+    ///
+    /// - Parameters:
+    ///   - part: The part that just answered.
+    ///   - old: The value held before it did.
+    ///   - new: The value with the answer in it.
+    func changes(in part: Part, from old: Value, to new: Value) -> ChangeSet
+
     /// The value under sample data, never fetched and never written to disk; `nil`
     /// for public data, which is the same for everyone and is fetched as usual.
     ///
@@ -187,6 +197,7 @@ extension Resource {
     nonisolated static var persistence: Persistence { .offline }
     nonisolated static var capacity: Int { 128 }
     nonisolated static var signpost: PerfSignpost.Name? { nil }
+    nonisolated func changes(in part: Part, from old: Value, to new: Value) -> ChangeSet { ChangeSet() }
     nonisolated func sample(_ key: Key) -> Value? { nil }
     nonisolated func adjust(_ value: Value) -> Value { value }
     nonisolated func storageName(for key: Key) -> String { Self.id }

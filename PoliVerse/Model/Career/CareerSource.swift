@@ -79,6 +79,59 @@ nonisolated struct CareerSource: Resource {
         }
     }
 
+    /// What of a sitting is worth pointing out when it changes. The count of
+    /// students enrolled moves all day and the student's own enrolment is their
+    /// doing, so neither is here.
+    private struct SittingFacts: Identifiable, Equatable {
+        let id: Int
+        let date: Date?
+        let room: String?
+        /// The enrolment window has opened. Still `true` once the student has
+        /// enrolled, the window has shut or a mark is out, so none of those is
+        /// a change by itself.
+        let hasOpened: Bool
+        let grade: String?
+        let refusable: Bool
+        let hasCorrections: Bool
+
+        init(_ sitting: ExamSession) {
+            id = sitting.id
+            date = sitting.date
+            room = sitting.room?.trimmingCharacters(in: .whitespaces)
+            hasOpened = sitting.status != .notYetOpen
+            grade = sitting.grade?.display
+            refusable = sitting.grade?.refusable ?? false
+            hasCorrections = sitting.hasCorrections
+        }
+    }
+
+    /// What of a libretto row is worth pointing out when it changes: its result.
+    private struct ResultFacts: Identifiable, Equatable {
+        let id: String
+        let isPassed: Bool
+        let grade: Int?
+        let hasLode: Bool
+
+        init(_ exam: LibrettoExam) {
+            id = exam.id
+            isPassed = exam.isPassed
+            grade = exam.grade
+            hasLode = exam.hasLode
+        }
+    }
+
+    /// The sittings and the libretto have items with stable ids; the figures do not.
+    func changes(in part: Part, from old: Payload, to new: Payload) -> ChangeSet {
+        switch part {
+        case .sittings:
+            ChangeDetector.changes(from: old.sessions.map(SittingFacts.init), to: new.sessions.map(SittingFacts.init))
+        case .libretto:
+            ChangeDetector.changes(from: old.libretto.map(ResultFacts.init), to: new.libretto.map(ResultFacts.init))
+        case .book, .counters, .target, .header:
+            ChangeSet()
+        }
+    }
+
     /// Fetches the whole record in one go, for a caller outside the loader.
     ///
     /// - Parameter env: The transport and the matricola.

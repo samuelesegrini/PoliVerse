@@ -42,6 +42,7 @@ struct LibrettoYearCard: View {
                 ForEach(exams) { exam in
                     Divider().padding(.leading, 16)
                     LibrettoRow(exam: exam)
+                        .newMark(exam.id, in: CareerModel.librettoSection)
                 }
             }
         }

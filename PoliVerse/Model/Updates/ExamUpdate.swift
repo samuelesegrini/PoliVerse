@@ -9,8 +9,8 @@ import Foundation
 ///
 /// ``ExamChangeDetector`` produces the updates read from the exam services and the
 /// libretto; ``MaterialChangeDetector``, ``AnnouncementDetector`` and
-/// ``AssignmentDetector`` produce the ones read from WeBeep. ``ExamUpdatePolicy``
-/// decides what the student is told.
+/// ``AssignmentDetector`` produce the ones read from WeBeep; ``LectureMoves`` the ones
+/// read from the timetable. ``ExamUpdatePolicy`` decides what the student is told.
 ///
 /// See `docs/academic-intelligence-layer.md` §6 for the event model.
 nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
@@ -35,6 +35,9 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         /// A WeBeep assignment appeared, or its deadline moved. ``examDate`` carries the
         /// deadline.
         case assignmentAdded, deadlineChanged
+        /// A lecture still ahead changed room or time. ``examDate`` carries its
+        /// new start.
+        case lectureMoved
 
         /// The SF Symbol shown beside the update.
         var symbol: String {
@@ -57,6 +60,7 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
             case .announcementPosted: "text.bubble"
             case .assignmentAdded: "tray.and.arrow.up"
             case .deadlineChanged: "clock.badge.exclamationmark"
+            case .lectureMoved: "calendar.badge.clock"
             }
         }
     }
@@ -69,6 +73,8 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         case libretto
         /// A WeBeep course page, `core_course_get_contents` and the forum calls.
         case webeep
+        /// The timetable, `agenda/v1/matricola/…/events`.
+        case agenda
 
         /// The service's name as the student is shown it.
         var label: String {
@@ -76,6 +82,7 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
             case .exams: String(localized: "Servizi Online · iscrizione esami")
             case .libretto: String(localized: "Servizi Online · libretto")
             case .webeep: String(localized: "WeBeep · pagina del corso")
+            case .agenda: String(localized: "Servizi Online · orario")
             }
         }
     }
@@ -220,6 +227,7 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
         case .announcementPosted: String(localized: "Nuovo annuncio del docente")
         case .assignmentAdded: String(localized: "Nuova consegna")
         case .deadlineChanged: String(localized: "Scadenza della consegna cambiata")
+        case .lectureMoved: String(localized: "Lezione spostata")
         }
     }
 
@@ -230,7 +238,7 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
     var detail: String? {
         switch kind {
         case .roomPublished: newValue.map(RoomNaming.sentence)
-        case .roomChanged:
+        case .roomChanged, .lectureMoved:
             if let oldValue, let newValue { String(localized: "Da \(oldValue) a \(newValue)") } else { nil }
         case .gradePublished, .gradeRecorded: newValue.map { String(localized: "Voto: \($0)") }
         case .resultsPosted where lookup?.found == true:
@@ -316,8 +324,9 @@ nonisolated struct ExamUpdate: Identifiable, Sendable, Equatable, Codable {
 /// `docs/academic-intelligence-layer.md` §13.
 nonisolated enum UpdateCategory: String, Sendable, Codable, CaseIterable, Identifiable {
     /// Marks and results files; sittings' rooms and dates; enrolment windows; lecturers'
-    /// announcements, notices and solutions; and course material and hand-ins.
-    case results, roomsAndDates, enrolments, teachers, coursework
+    /// announcements, notices and solutions; course material and hand-ins; and lectures
+    /// moved to another room or time.
+    case results, roomsAndDates, enrolments, teachers, coursework, lectures
 
     /// The raw value.
     var id: String { rawValue }
@@ -335,6 +344,7 @@ nonisolated enum UpdateCategory: String, Sendable, Codable, CaseIterable, Identi
         case .enrolments: String(localized: "Iscrizioni agli appelli")
         case .teachers: String(localized: "Annunci, avvisi e soluzioni")
         case .coursework: String(localized: "Materiali e consegne")
+        case .lectures: String(localized: "Lezioni spostate")
         }
     }
 }
@@ -352,6 +362,7 @@ extension ExamUpdate.Kind {
         case .discovered, .enrolmentOpened, .enrolled, .unenrolled: .enrolments
         case .announcementPosted, .examNoticePosted, .solutionsPosted: .teachers
         case .materialAdded, .assignmentAdded, .deadlineChanged: .coursework
+        case .lectureMoved: .lectures
         }
     }
 }

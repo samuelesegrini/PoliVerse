@@ -331,6 +331,8 @@ final class LoginFlow {
         // The loading ledger describes this student's use of the app.
         await LoadingLedger.shared.erase()
         ShapeMemory.shared.forget()
+        // The marks on screen; their file goes with the offline copies below.
+        NewMarks.shared.forget()
         // Same reason: reminders naming someone else's lectures would keep
         // arriving after they signed out.
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()

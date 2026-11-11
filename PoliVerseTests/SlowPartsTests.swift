@@ -181,7 +181,11 @@ struct HostPausesTests {
     @Test("R18: la riga di stato dice quale servizio non risponde, e smette quando risponde")
     func test_R18_statusNamesTheService() {
         let pauses = HostPauses()
-        let status = DataStatus(session: Session(), network: NetworkMonitor(), pauses: pauses)
+        // Said outright: another suite leaves sample data on in the defaults a
+        // new session reads, and sample data comes before everything else.
+        let session = Session()
+        session.useMockData = false
+        let status = DataStatus(session: session, network: NetworkMonitor(), pauses: pauses)
         #expect(status.state == .idle)
 
         pauses.set("agenda", pausedFor: .seconds(30))

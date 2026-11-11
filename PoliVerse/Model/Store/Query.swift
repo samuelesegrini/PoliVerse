@@ -45,6 +45,13 @@ final class Query<R: Resource> {
     /// that copy stands in, and the section says how old it is.
     private(set) var overdue: Set<R.Part> = []
 
+    /// What the last answer of each part changed with respect to the copy held
+    /// before it, by the identity of the items.
+    private(set) var changes: [R.Part: ChangeSet] = [:]
+    /// Told once, when a part answers over a copy and something in it changed:
+    /// the part and what changed. For marking the items as new.
+    @ObservationIgnored var onChanges: ((R.Part, ChangeSet) -> Void)?
+
     /// The key this query follows.
     let key: R.Key
     private let resource: R
@@ -116,6 +123,14 @@ final class Query<R: Resource> {
     /// - Parameter needed: The parts the figure is computed from.
     func has(_ needed: R.Part...) -> Bool {
         needed.allSatisfy { parts[$0] != nil }
+    }
+
+    /// What the last refresh changed in one part. Empty when the part was
+    /// restored, answered over nothing, or answered the same.
+    ///
+    /// - Parameter part: The part.
+    func changes(of part: R.Part) -> ChangeSet {
+        changes[part] ?? ChangeSet()
     }
 
     /// The state of the section that shows one part.
@@ -242,7 +257,13 @@ final class Query<R: Resource> {
         let newAge: TimeInterval? = env.isSample || env.matricola == nil
             ? nil : max(0, Date.now.timeIntervalSince(snapshot.fetchedAt))
         if age != newAge { age = newAge }
+        // A part dated anew has just answered: what it changed is news once.
+        let news = snapshot.changes.filter { part, set in
+            !set.isEmpty && snapshot.parts[part] != parts[part]
+        }
+        if changes != snapshot.changes { changes = snapshot.changes }
         if parts != snapshot.parts { parts = snapshot.parts }
+        for (part, set) in news { onChanges?(part, set) }
         if arrived != snapshot.arrived { arrived = snapshot.arrived }
         if failed != snapshot.failed { failed = snapshot.failed }
     }

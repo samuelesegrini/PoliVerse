@@ -115,6 +115,11 @@ final class AgendaModel {
     /// Bumped by each rebuild, so an older one finishing late does not overwrite a newer.
     @ObservationIgnored private var generation = 0
 
+    /// Told the lectures a refresh found moved, and whose they are. The app passes
+    /// ``UpdateFeed/recordLectures(_:account:)``. Assigned after construction, as
+    /// the feed is built elsewhere.
+    @ObservationIgnored var onLectureMoves: (([LectureMove], String) async -> Void)?
+
     /// Whose agenda to load, and the transport.
     private let account: any Account
     /// The weeks' fetches: joined, kept fresh, batched.
@@ -203,7 +208,18 @@ final class AgendaModel {
 
         switch weekResult {
         case .success(let snapshots):
-            for (week, snapshot) in snapshots { weeks[week] = snapshot.value }
+            // Against the copy held, before it is replaced: a lecture that kept
+            // its id and changed room or start has moved.
+            var moves: [LectureMove] = []
+            for (week, snapshot) in snapshots {
+                if let held = weeks[week], !snapshot.arrived.isEmpty {
+                    moves += LectureMoves.moves(from: held, to: snapshot.value, now: .now)
+                }
+                weeks[week] = snapshot.value
+            }
+            if !moves.isEmpty, !env.isSample, let matricola = env.matricola {
+                await onLectureMoves?(moves, matricola)
+            }
             let answered = answeredWeeks.union(snapshots.filter { !$0.value.arrived.isEmpty }.keys)
             if answered != answeredWeeks { answeredWeeks = answered }
             if let current = snapshots[AgendaWeeks.week(of: date)] ?? snapshots.values.first {

@@ -208,6 +208,12 @@ nonisolated enum ExamUpdatePolicy {
             let soon = (0...roomHorizon).contains(untilExam)
             return soon && AssignmentDetector.movedEarlier(update) ? .push : .digest
 
+        case .lectureMoved:
+            // Worth an interruption while there is still time to go to the
+            // right door: within the week, rationed like any ordinary push.
+            // Further ahead, the evening summary is soon enough.
+            return (0...roomHorizon).contains(untilExam) ? .push : .digest
+
         case .announcementPosted:
             // §11.2 teacherCommunication: Media, and worth a push when it
             // talks about a sitting the student has in play (the detector

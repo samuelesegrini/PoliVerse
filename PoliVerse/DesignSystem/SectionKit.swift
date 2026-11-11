@@ -9,6 +9,10 @@ import SwiftUI
 // - `reveals(_:hasRows:title:)`, `revealed(order:)` and `revealedText()` play the
 //   reveal when rows arrive from the network after a wait, and only then.
 //
+// - `newMark(_:in:)` marks a row a refresh added or changed, and writes it in
+//   again when that happens under the student's eyes; `clearsNewMarks(in:)`
+//   takes the marks away once the section has been looked at.
+//
 // What to draw when is decided by ``SectionStage`` and ``RevealPlan``.
 
 // MARK: - The reveal's state
@@ -465,6 +469,118 @@ struct LateLabel: View {
     }
 }
 
+// MARK: - New and changed rows
+
+/// A row a refresh added or changed: a dot until its section has been looked
+/// at, and the row's own reveal when the change lands while it is on screen.
+///
+/// Only these rows move on a refresh. The rest of the section was there and
+/// stays as it is, so what moves is what is new.
+private struct NewMarkModifier: ViewModifier {
+    let ids: [String]
+    let section: String
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// How far the row's reveal is; 1 at rest.
+    @State private var progress = 1.0
+    @State private var playing = false
+    @State private var ending: Task<Void, Never>?
+
+    private var isNew: Bool {
+        ids.contains { NewMarks.shared.isNew($0, in: section) }
+    }
+
+    func body(content: Content) -> some View {
+        let isNew = isNew
+        content
+            .opacity(progress)
+            .blur(radius: reduceMotion ? 0 : 6 * (1 - progress))
+            .offset(y: reduceMotion ? 0 : 2 * (1 - progress))
+            .overlay(alignment: .topTrailing) {
+                if isNew {
+                    Circle()
+                        .fill(.tint)
+                        .frame(width: 8, height: 8)
+                        .padding(8)
+                        .transition(.opacity)
+                        .accessibilityHidden(true)
+                }
+            }
+            .animation(.easeOut(duration: RevealPlan.reduced), value: isNew)
+            .accessibilityValue(isNew ? Text("Nuovo") : Text(verbatim: ""))
+            .onAppear {
+                // Added by the refresh that just ended, not marked days ago.
+                if ids.contains(where: { NewMarks.shared.justMarked($0, in: section) }) { play() }
+            }
+            .onChange(of: isNew) { _, new in
+                if new { play() }
+            }
+            .onChange(of: RevealSession.shared.interruptions) { settle() }
+            .onDisappear { settle() }
+    }
+
+    private func play() {
+        ending?.cancel()
+        if !playing {
+            playing = true
+            RevealSession.shared.began()
+        }
+        withTransaction(SectionReveal.atOnce) { progress = 0 }
+        let length = reduceMotion ? RevealPlan.reduced : RevealPlan.item
+        ending = Task {
+            withAnimation(reduceMotion ? .easeInOut(duration: length) : .easeOut(duration: length)) { progress = 1 }
+            try? await Task.sleep(for: .seconds(length))
+            guard !Task.isCancelled else { return }
+            finish()
+        }
+    }
+
+    /// A scroll, or the row going away: in place at once.
+    private func settle() {
+        guard playing else { return }
+        ending?.cancel()
+        withTransaction(SectionReveal.atOnce) { progress = 0.999 }
+        Task {
+            withTransaction(SectionReveal.atOnce) { progress = 1 }
+        }
+        finish()
+    }
+
+    private func finish() {
+        guard playing else { return }
+        playing = false
+        RevealSession.shared.ended()
+    }
+}
+
+/// Takes a section's marks away once it has been on screen long enough to have
+/// been looked at: when the student moves on, or puts the app away.
+private struct ClearsNewMarksModifier: ViewModifier {
+    let section: String
+
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var appeared: ContinuousClock.Instant?
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { appeared = .now }
+            .onDisappear { leave() }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .background {
+                    leave()
+                } else if phase == .active, appeared == nil {
+                    appeared = .now
+                }
+            }
+    }
+
+    private func leave() {
+        guard let appeared else { return }
+        self.appeared = nil
+        if NewMarks.wasSeen(shownFor: ContinuousClock.now - appeared) { NewMarks.shared.seen(section) }
+    }
+}
+
 /// A section's rows, or its status while it has none.
 private struct ArrivingModifier<Empty: View>: ViewModifier {
     let phase: LoadPhase
@@ -540,6 +656,33 @@ extension View {
     /// Marks a text of a revealing section to come into focus piece by piece.
     func revealedText() -> some View {
         modifier(RevealedTextModifier())
+    }
+
+    /// Marks this row as new while one of its items is, and writes it in again
+    /// when a refresh changes it on screen.
+    ///
+    /// - Parameters:
+    ///   - ids: The identities of the items the row shows.
+    ///   - section: The section the items are marked in.
+    func newMark(_ ids: [String], in section: String) -> some View {
+        modifier(NewMarkModifier(ids: ids, section: section))
+    }
+
+    /// Marks this row as new while its item is.
+    ///
+    /// - Parameters:
+    ///   - id: The item's identity.
+    ///   - section: The section the item is marked in.
+    func newMark(_ id: String, in section: String) -> some View {
+        newMark([id], in: section)
+    }
+
+    /// Removes the marks of a section once this view, which shows it, has been
+    /// on screen.
+    ///
+    /// - Parameter section: The section.
+    func clearsNewMarks(in section: String) -> some View {
+        modifier(ClearsNewMarksModifier(section: section))
     }
 
     /// Ends every reveal in progress when the student scrolls this view.

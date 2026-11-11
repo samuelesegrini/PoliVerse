@@ -23,6 +23,14 @@ final class CareerModel {
     /// Diagnostic log for this type, under the `career` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "career")
 
+    /// Where the sittings and results a refresh changed are marked as new.
+    private let marks: NewMarks
+
+    /// The section the sittings are marked in.
+    nonisolated static let sittingsSection = "carriera.appelli"
+    /// The section the libretto's rows are marked in.
+    nonisolated static let librettoSection = "carriera.libretto"
+
     /// Where a target average goes when it cannot be sent now.
     private let pending: PendingChanges?
 
@@ -37,13 +45,25 @@ final class CareerModel {
     ///   - feed: Told about every successful load.
     ///   - pending: Where an undeliverable target average is queued.
     ///   - offline: Where the record and the widget snapshot are stored.
+    ///   - marks: Where changed sittings and results are marked as new.
     init(account: any Account, feed: UpdateFeed, pending: PendingChanges? = nil,
-         offline: OfflineStore = .shared) {
+         offline: OfflineStore = .shared, marks: NewMarks = .shared) {
         self.account = account
         self.feed = feed
         self.pending = pending
         self.offline = offline
+        self.marks = marks
         self.query = Query(CareerSource(), account: account, offline: offline)
+        // As each part answers, not at the end of the load: a sitting that
+        // changed is marked while the libretto is still on its way.
+        let matricola = account.isSample ? nil : account.matricola
+        query.onChanges = { [marks] part, changes in
+            switch part {
+            case .sittings: marks.mark(changes.marked, in: Self.sittingsSection, account: matricola)
+            case .libretto: marks.mark(changes.marked, in: Self.librettoSection, account: matricola)
+            case .book, .counters, .target, .header: break
+            }
+        }
     }
 
     // MARK: - What the screens read
@@ -167,6 +187,7 @@ final class CareerModel {
         } else {
             feed.show(account: account.matricola)
         }
+        marks.show(account: account.isSample ? nil : account.matricola)
 
         await query.load(force: force)
 

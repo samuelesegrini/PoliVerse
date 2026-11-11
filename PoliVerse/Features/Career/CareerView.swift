@@ -213,9 +213,13 @@ struct CareerView: View {
                                  isExpanded: isOpen(group.year, in: groups)) {
                     withAnimation(.snappy(duration: 0.28)) { toggle(group.year, in: groups) }
                 }
+                // A closed year still says that something in it is new.
+                .newMark(isOpen(group.year, in: groups) ? [] : group.exams.map(\.id),
+                         in: CareerModel.librettoSection)
                 .revealed(order: index)
             }
         }
+        .clearsNewMarks(in: CareerModel.librettoSection)
         .arriving(career.librettoPhase, hasRows: !groups.isEmpty, title: "Libretto",
                   step: "Sto chiedendo il libretto al Politecnico", remember: "carriera.libretto",
                   retry: { await career.load(force: true) }) {
@@ -259,6 +263,7 @@ struct CareerView: View {
                     ForEach(section.exams) { exam in
                         Button { selectedExam = exam } label: { ExamRow(exam: exam) }
                             .buttonStyle(.plain)
+                            .newMark(String(exam.id), in: CareerModel.sittingsSection)
                     }
                     if let footnote = section.footnote {
                         Text(footnote)
@@ -270,6 +275,7 @@ struct CareerView: View {
                 .revealed(order: index * 2)
             }
         }
+        .clearsNewMarks(in: CareerModel.sittingsSection)
         .arriving(career.sittingsPhase, hasRows: !sections.isEmpty, title: "Appelli",
                   step: "Sto chiedendo gli appelli al Politecnico", remember: "carriera.appelli",
                   retry: { await career.load(force: true) }) {

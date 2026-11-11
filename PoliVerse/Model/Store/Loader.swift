@@ -27,6 +27,9 @@ import OSLog
 ///    part has its own age: a refresh asks only for the parts that are old, a part
 ///    that answers is held and written at once, whatever happens to the others, and
 ///    ``updates(_:env:)`` tells whoever is watching.
+/// 7. **Notices changes.** When a part answers over a copy already held, the
+///    resource is asked what changed, by the identity of the items, and the answer
+///    travels with the snapshot.
 ///
 /// The fetch itself runs in the resource's `@concurrent` method, off this actor and
 /// off the main actor; this actor only files what comes back.
@@ -46,6 +49,9 @@ actor Loader<R: Resource> {
         let arrived: Set<R.Part>
         /// The parts whose last request failed.
         let failed: Set<R.Part>
+        /// What the last answer of each part changed with respect to the copy
+        /// held before it. A part that answered over nothing is not here.
+        let changes: [R.Part: ChangeSet]
     }
 
     /// What a fetch brings for one key.
@@ -70,6 +76,8 @@ actor Loader<R: Resource> {
         var arrived: Set<R.Part> = []
         /// The parts whose last request failed, and when.
         var failed: [R.Part: ContinuousClock.Instant] = [:]
+        /// What the last answer of each part changed in the copy held before it.
+        var changes: [R.Part: ChangeSet] = [:]
         var lastUsed: ContinuousClock.Instant
         /// ``Env/source`` of the load that produced it.
         var source: String
@@ -522,13 +530,14 @@ actor Loader<R: Resource> {
                 part: R.id, sent: values.count, used: flight.claimed ? values.count : 0)
         }
         for (key, fetched) in values {
-            var entry = entries[key].flatMap { $0.source == flight.source ? $0 : nil }
-                ?? Entry(value: fetched.value, fetchedAt: date, lastUsed: now, source: flight.source)
+            let held = entries[key].flatMap { $0.source == flight.source ? $0 : nil }
+            var entry = held ?? Entry(value: fetched.value, fetchedAt: date, lastUsed: now, source: flight.source)
             entry.value = fetched.value
             entry.fetchedAt = date
             entry.lastUsed = now
             entry.unusedWarmUp = flight.warm && !flight.claimed
-            stamp(&entry, with: fetched, alreadyStamped: flight.stamped[key] ?? [], now: now, date: date)
+            stamp(&entry, with: fetched, over: held?.value, alreadyStamped: flight.stamped[key] ?? [],
+                  now: now, date: date)
             entries[key] = entry
             persist(key, entry)
             notify(key, entry)
@@ -543,10 +552,11 @@ actor Loader<R: Resource> {
         guard var flight = flights[id] else { return }
         let now = clock.now
         let date = Date.now
-        var entry = entries[key].flatMap { $0.source == flight.source ? $0 : nil }
-            ?? Entry(value: fetched.value, fetchedAt: date, lastUsed: now, source: flight.source)
+        let held = entries[key].flatMap { $0.source == flight.source ? $0 : nil }
+        var entry = held ?? Entry(value: fetched.value, fetchedAt: date, lastUsed: now, source: flight.source)
         entry.value = fetched.value
-        stamp(&entry, with: fetched, alreadyStamped: flight.stamped[key] ?? [], now: now, date: date)
+        stamp(&entry, with: fetched, over: held?.value, alreadyStamped: flight.stamped[key] ?? [],
+              now: now, date: date)
         flight.stamped[key, default: []].formUnion(fetched.arrived)
         flights[id] = flight
         entries[key] = entry
@@ -554,11 +564,24 @@ actor Loader<R: Resource> {
         notify(key, entry)
     }
 
-    /// Dates the parts a fetch answered and notes the ones that failed.
-    private func stamp(_ entry: inout Entry, with fetched: Fetched, alreadyStamped: Set<R.Part>,
-                       now: ContinuousClock.Instant, date: Date) {
+    /// Dates the parts a fetch answered, notes what each changed in the copy
+    /// held before it, and notes the parts that failed.
+    ///
+    /// - Parameter before: The value held before this answer, or `nil` when
+    ///   nothing was: an answer over nothing is a first look, not a change.
+    private func stamp(_ entry: inout Entry, with fetched: Fetched, over before: R.Value?,
+                       alreadyStamped: Set<R.Part>, now: ContinuousClock.Instant, date: Date) {
         for part in fetched.arrived {
-            if !alreadyStamped.contains(part) { entry.parts[part] = PartStamp(date: date, instant: now) }
+            if !alreadyStamped.contains(part) {
+                // Compared only with a copy of this very part: what the value
+                // shows for a part that never answered is a default.
+                if let before, entry.parts[part] != nil {
+                    entry.changes[part] = resource.changes(in: part, from: before, to: fetched.value)
+                } else {
+                    entry.changes[part] = nil
+                }
+                entry.parts[part] = PartStamp(date: date, instant: now)
+            }
             entry.failed[part] = nil
         }
         entry.arrived.formUnion(fetched.arrived)
@@ -589,7 +612,8 @@ actor Loader<R: Resource> {
     private func snapshot(_ entry: Entry) -> Snapshot {
         Snapshot(value: entry.value, fetchedAt: entry.fetchedAt,
                  isFresh: Self.allParts.allSatisfy { entry.parts[$0]?.instant != nil },
-                 parts: entry.parts.mapValues(\.date), arrived: entry.arrived, failed: Set(entry.failed.keys))
+                 parts: entry.parts.mapValues(\.date), arrived: entry.arrived, failed: Set(entry.failed.keys),
+                 changes: entry.changes)
     }
 
     private func evictIfNeeded() {

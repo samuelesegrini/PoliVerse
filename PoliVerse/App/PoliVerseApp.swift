@@ -202,6 +202,10 @@ struct PoliVerseApp: App {
         _recordings = State(initialValue: RecordingsModel(account: session))
 
         let agenda = AgendaModel(account: session)
+        // A lecture moved to another room or time is news like a moved sitting.
+        agenda.onLectureMoves = { [weak updates] moves, account in
+            await updates?.recordLectures(moves, account: account)
+        }
         _agenda = State(initialValue: agenda)
         _personalTimetable = State(initialValue: PersonalTimetableModel(cart: cart, agenda: agenda))
         // The building of the next lecture is asked about early in a free-rooms pass.
