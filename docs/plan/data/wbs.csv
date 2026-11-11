@@ -18,37 +18,37 @@ M2.4,Career as first user,M2,8,M2.3,,,100,no
 M2.5,Search sources in parallel,M2,4,M1.5,,,100,no
 M2.6,Integration tests with scripted transport,M2,10,M2.4,,,100,yes
 M3,Section kit,,,,,,,no
-M3.1,arriving modifier and SectionStatus,M3,10,M2.3,2026-11-19,2026-11-26,0,no
-M3.2,RevealRenderer,M3,12,M3.1,2026-11-26,2026-12-04,0,no
-M3.3,ShapeMemory,M3,4,M3.1,2026-12-04,2026-12-08,0,no
-M3.4,Carriera Appelli Libretto,M3,8,M3.2 M2.6,2026-12-08,2026-12-14,0,no
-M3.5,Oggi,M3,6,M3.2,2026-12-14,2026-12-17,0,no
-M3.6,UI tests and hitch measurement,M3,8,M3.3 M3.4 M3.5,2026-12-17,2026-12-23,0,yes
+M3.1,arriving modifier and SectionStatus,M3,10,M2.3,,,100,no
+M3.2,RevealRenderer,M3,12,M3.1,,,100,no
+M3.3,ShapeMemory,M3,4,M3.1,,,100,no
+M3.4,Carriera Appelli Libretto,M3,8,M3.2 M2.6,,,100,no
+M3.5,Oggi,M3,6,M3.2,,,100,no
+M3.6,UI tests and hitch measurement,M3,8,M3.3 M3.4 M3.5,2026-11-19,2026-11-23,40,yes
 M4,Rooms,,,,,,,no
-M4.1,RelevanceOrder,M4,4,M1.5,2026-12-23,2026-12-25,0,no
-M4.2,Rooms assigned per batch and stable list,M4,8,M4.1 M3.1,2026-12-25,2026-12-31,0,no
-M4.3,Map colours as rooms arrive,M4,6,M4.2,2026-12-31,2027-01-05,0,no
-M4.4,BoundaryClock,M4,8,M4.2,2027-01-05,2027-01-11,0,no
-M4.5,Tests and first-room measurement,M4,6,M4.3 M4.4,2027-01-11,2027-01-14,0,yes
+M4.1,RelevanceOrder,M4,4,M1.5,2026-11-23,2026-11-25,0,no
+M4.2,Rooms assigned per batch and stable list,M4,8,M4.1 M3.1,2026-11-25,2026-12-01,0,no
+M4.3,Map colours as rooms arrive,M4,6,M4.2,2026-12-01,2026-12-04,0,no
+M4.4,BoundaryClock,M4,8,M4.2,2026-12-04,2026-12-10,0,no
+M4.5,Tests and first-room measurement,M4,6,M4.3 M4.4,2026-12-10,2026-12-15,0,yes
 M5,Slow parts,,,,,,,no
-M5.1,DeadlinePolicy in the loader,M5,8,M2.6,2027-01-14,2027-01-20,0,no
-M5.2,Host breaker in RequestGate,M5,8,M1.5,2027-01-20,2027-01-26,0,no
-M5.3,Tests with a transport that never answers,M5,6,M5.1 M5.2,2027-01-26,2027-01-29,0,yes
+M5.1,DeadlinePolicy in the loader,M5,8,M2.6,2026-12-15,2026-12-21,0,no
+M5.2,Host breaker in RequestGate,M5,8,M1.5,2026-12-21,2026-12-25,0,no
+M5.3,Tests with a transport that never answers,M5,6,M5.1 M5.2,2026-12-25,2026-12-30,0,yes
 M6,Changes,,,,,,,no
-M6.1,ChangeDetector and changes on Query,M6,10,M2.6,2027-01-29,2027-02-05,0,no
-M6.2,NewMarks and the mark in the section kit,M6,8,M6.1 M3.6,2027-02-05,2027-02-11,0,no
-M6.3,UpdateFeed as consumer and new notification kinds,M6,10,M6.1,2027-02-11,2027-02-18,0,no
-M6.4,Tests with fixtures,M6,6,M6.2 M6.3,2027-02-18,2027-02-23,0,yes
+M6.1,ChangeDetector and changes on Query,M6,10,M2.6,2026-12-30,2027-01-06,0,no
+M6.2,NewMarks and the mark in the section kit,M6,8,M6.1 M3.6,2027-01-06,2027-01-12,0,no
+M6.3,UpdateFeed as consumer and new notification kinds,M6,10,M6.1,2027-01-12,2027-01-19,0,no
+M6.4,Tests with fixtures,M6,6,M6.2 M6.3,2027-01-19,2027-01-22,0,yes
 M7,Prefetch,,,,,,,no
-M7.1,SpeculativeBudget and its settings page,M7,10,M1.5,2027-02-23,2027-03-02,0,no
-M7.2,Lanes in RequestGate,M7,8,M7.1,2027-03-02,2027-03-08,0,no
-M7.3,TimetablePrefetch and its two triggers,M7,10,M7.2 M2.6,2027-03-08,2027-03-15,0,no
-M7.4,Tests and hit-rate check,M7,8,M7.3,2027-03-15,2027-03-19,0,yes
+M7.1,SpeculativeBudget and its settings page,M7,10,M1.5,2027-01-22,2027-01-29,0,no
+M7.2,Lanes in RequestGate,M7,8,M7.1,2027-01-29,2027-02-04,0,no
+M7.3,TimetablePrefetch and its two triggers,M7,10,M7.2 M2.6,2027-02-04,2027-02-11,0,no
+M7.4,Tests and hit-rate check,M7,8,M7.3,2027-02-11,2027-02-17,0,yes
 M8,Offline,,,,,,,no
-M8.1,OfflinePack and the processing task,M8,14,M7.4,2027-03-19,2027-03-30,0,no
-M8.2,Offline page in Impostazioni,M8,8,M8.1,2027-03-30,2027-04-05,0,no
-M8.3,Behaviour with no connection on every pack screen,M8,10,M8.1 M3.6,2027-04-05,2027-04-12,0,no
-M8.4,Tests and storage measurement,M8,8,M8.2 M8.3,2027-04-12,2027-04-16,0,yes
+M8.1,OfflinePack and the processing task,M8,14,M7.4,2027-02-17,2027-02-26,0,no
+M8.2,Offline page in Impostazioni,M8,8,M8.1,2027-02-26,2027-03-04,0,no
+M8.3,Behaviour with no connection on every pack screen,M8,10,M8.1 M3.6,2027-03-04,2027-03-11,0,no
+M8.4,Tests and storage measurement,M8,8,M8.2 M8.3,2027-03-11,2027-03-17,0,yes
 A,Acceptance,,,,,,,no
-A1,Use cases played on the phone,A,8,M4.5 M5.3 M6.4 M8.4,2027-04-16,2027-04-22,0,no
-A2,Fixes from acceptance,A,12,A1,2027-04-22,2027-04-30,0,yes
+A1,Use cases played on the phone,A,8,M4.5 M5.3 M6.4 M8.4,2027-03-17,2027-03-23,0,no
+A2,Fixes from acceptance,A,12,A1,2027-03-23,2027-03-31,0,yes
