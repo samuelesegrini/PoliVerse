@@ -169,7 +169,13 @@ nonisolated final class RealDataLoadingTests: PoliVerseUITestCase {
         let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: clear)
         if XCTWaiter().wait(for: [enabled], timeout: 15) == .completed {
             clear.tap()
-            settle(2)
+            // With nothing left the button goes grey: said in the log, so a run
+            // whose copies were still there is not read as an empty start.
+            let disabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == false"), object: clear)
+            let emptied = XCTWaiter().wait(for: [disabled], timeout: 5) == .completed
+            print("LOADING copies emptied=\(emptied)")
+        } else {
+            print("LOADING copies emptied=already")
         }
         app.terminate()
     }
