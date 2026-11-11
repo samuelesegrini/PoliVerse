@@ -1,7 +1,7 @@
 id,description,category,likelihood,impact,mitigation,status,updated
 K1,The new fetch signature breaks the 19 existing resources or their tests,technical,3,4,Default implementation forwards to the old signature; migrate one resource (career) first,open,2026-11-10
 K2,The reveal causes hitches on the iPhone 12 Pro,technical,3,3,Measure P6 in M3 before applying it to more screens; fall back to a cross-fade per section,open,2026-11-10
-K3,iOS rarely runs the background tasks so prefetch and the pack seldom happen,technical,4,3,Also run the prefetch after every foreground pass; show pack state and a manual start,open,2026-11-10
+K3,iOS rarely runs the background tasks so prefetch and the pack seldom happen,technical,4,3,Built in M7: the prefetch also runs after every foreground pass; the background run waits for its warm-ups; the count of requests sent ahead is shown in Dati e archiviazione. The pack's manual start comes with M8,open,2026-11-11
 K4,The Politecnico changes or blocks an endpoint as happened before,business,3,5,No new endpoint; daily limit on speculative requests; stored copies keep screens usable,open,2026-11-10
 K5,Change detection reports changes that are not real and notifies wrongly,technical,2,4,Built in M6: a first look and an empty answer are not compared; a sitting is compared on the facts that matter; a lecture is a move only if it keeps its id; the exam policy and its daily limit decide the notification. Still to see on real data whether ids are stable,open,2026-11-11
 K6,Room bookings change during the day more often than assumed (D6),technical,2,3,Boundary refresh re-requests rooms on screen; show the age of the bookings,open,2026-11-10

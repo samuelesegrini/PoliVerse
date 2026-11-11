@@ -40,15 +40,15 @@ M6.2,NewMarks and the mark in the section kit,M6,8,M6.1 M3.6,,,100,no
 M6.3,Lecture moves into UpdateFeed and the new notification kind,M6,10,M6.1,,,100,no
 M6.4,Tests with fixtures,M6,6,M6.2 M6.3,,,100,yes
 M7,Prefetch,,,,,,,no
-M7.1,SpeculativeBudget and its settings page,M7,10,M1.5,2026-11-25,2026-12-02,0,no
-M7.2,Lanes in RequestGate,M7,8,M7.1,2026-12-02,2026-12-08,0,no
-M7.3,TimetablePrefetch and its two triggers,M7,10,M7.2 M2.6,2026-12-08,2026-12-15,0,no
-M7.4,Tests and hit-rate check,M7,8,M7.3,2026-12-15,2026-12-21,0,yes
+M7.1,SpeculativeBudget and its settings section,M7,10,M1.5,,,100,no
+M7.2,Lanes in RequestGate,M7,8,M7.1,,,100,no
+M7.3,TimetablePrefetch and its two triggers,M7,10,M7.2 M2.6,,,100,no
+M7.4,Tests and hit-rate check,M7,8,M7.3,2026-11-25,2026-11-27,50,yes
 M8,Offline,,,,,,,no
-M8.1,OfflinePack and the processing task,M8,14,M7.4,2026-12-21,2026-12-30,0,no
-M8.2,Offline page in Impostazioni,M8,8,M8.1,2026-12-30,2027-01-05,0,no
-M8.3,Behaviour with no connection on every pack screen,M8,10,M8.1 M3.6,2027-01-05,2027-01-12,0,no
-M8.4,Tests and storage measurement,M8,8,M8.2 M8.3,2027-01-12,2027-01-18,0,yes
+M8.1,OfflinePack and the processing task,M8,14,M7.4,2026-11-27,2026-12-08,0,no
+M8.2,Offline page in Impostazioni,M8,8,M8.1,2026-12-08,2026-12-14,0,no
+M8.3,Behaviour with no connection on every pack screen,M8,10,M8.1 M3.6,2026-12-14,2026-12-21,0,no
+M8.4,Tests and storage measurement,M8,8,M8.2 M8.3,2026-12-21,2026-12-25,0,yes
 A,Acceptance,,,,,,,no
-A1,Use cases played on the phone,A,8,M4.5 M5.3 M6.4 M8.4,2027-01-18,2027-01-22,0,no
-A2,Fixes from acceptance,A,12,A1,2027-01-22,2027-02-01,0,yes
+A1,Use cases played on the phone,A,8,M4.5 M5.3 M6.4 M8.4,2026-12-25,2026-12-31,0,no
+A2,Fixes from acceptance,A,12,A1,2026-12-31,2027-01-08,0,yes

@@ -18,7 +18,7 @@ a phone or waiting.
   \node[band] (ui) {\textbf{Views}\\[3pt]
     \comp{Screens} \comp{Section kit: \texttt{arriving}, RevealRenderer, SectionStatus, ShapeMemory}};
   \node[band, below=0.45cm of ui] (models) {\textbf{Observable models} (main actor)\\[3pt]
-    \comp{Query} \comp{FreeRoomsModel} \comp{CampusMapModel} \comp{SearchModel} \comp{NewMarks} \comp{BoundaryClock}};
+    \comp{Query} \comp{FreeRoomsModel} \comp{CampusMapModel} \comp{SearchModel} \comp{NewMarks} \comp{BoundaryClock} \comp{LecturePrefetch}};
   \node[band, below=0.45cm of models] (policies) {\textbf{Policies} (pure values, new)\\[3pt]
     \comp{RelevanceOrder} \comp{DeadlinePolicy} \comp{SpeculativeBudget} \comp{TimetablePrefetch} \comp{ChangeDetector} \comp{LectureMoves}};
   \node[band, below=0.45cm of policies] (store) {\textbf{Store layer} (actors)\\[3pt]
@@ -48,8 +48,9 @@ New components are marked (new); the others exist and change.
   \item[LoadingLedger (new)] An actor that appends one small entry per request and per screen opening to a capped file, and computes the report.
   \item[RelevanceOrder (new)] Orders the rooms of a campus from the map area on screen, the next lecture's building and the favourite campus.
   \item[DeadlinePolicy (new)] Says, for a part and the time it has been waiting, whether to keep waiting or to show the stored copy.
-  \item[SpeculativeBudget (new)] Says whether a speculative request may be sent now, from the network path, the device pressure, the student's settings and today's count.
-  \item[TimetablePrefetch (new)] From the timetable and the current time, lists the parts to warm.
+  \item[SpeculativeBudget (new)] Says whether a speculative request may be sent now, and how many, from the network path, Low Power Mode and the thermal state, the student's settings and today's count. RequestGate asks it for every speculative request and keeps today's count (SpeculativeCount, by the day in Rome), so the budget binds every warm-up of the app, not only the prefetch. NetworkPath is the copy of the path's cost and Low Data Mode that the gate reads off the main actor.
+  \item[TimetablePrefetch (new)] From the timetable and the current time, lists what the lectures of the next hour need: each room once (its bookings for the day, its floor plan, its equipment) and each course once (its WeBeep page), soonest first, with the requests each costs.
+  \item[LecturePrefetch (new)] Runs TimetablePrefetch, asks the gate how many requests the budget allows, keeps the items that fit, and hands each to whoever warms it. It names no service: the warming is passed in. The building's 3D model is not on the list, because it ships with the app (in preview only today) and costs no request.
   \item[OfflinePack (new)] Owns the list of parts of the pack, runs it in a processing task, and publishes what is stored and how old.
   \item[BoundaryClock (new)] Computes the next booking boundary from stored bookings, and which rooms change at it. FreeRoomsModel sleeps until that instant and tells the screens that show rooms.
   \item[ChangeDetector (new)] Compares the items of a fetched part with its stored copy by identity and returns what was added, changed and removed. A stored copy with no items and an answer with no items are not compared: the first is a first look, the second is what the Politecnico's services answer between sessions.
@@ -68,7 +69,7 @@ Everything runs on the student's iPhone. There is no server of the project.
   Node & What runs or lives there \\
   \midrule
   App process, foreground & All components. Requests run in both lanes. \\
-  App process, refresh task & Agenda and career refresh as today, then TimetablePrefetch, within 30 seconds. \\
+  App process, refresh task & Agenda and career refresh as today, then LecturePrefetch, waiting for its warm-ups to land, within 30 seconds. \\
   App process, processing task & OfflinePack only. May be stopped by iOS at any time; resumes from the stored parts. \\
   Widget extension & Reads the shared container, as today. Sends no request. \\
   App group container & Stored values and part times, NewMarks, the offline pack's state, the ledger file. \\
@@ -129,10 +130,12 @@ enum LoadPhase: Equatable {
 }
 
 actor RequestGate {
-    enum Lane { case onScreen, speculative }
-    func run<T: Sendable>(host: String, pausable: Bool,       // lane: with M7
+    enum Lane { case onScreen, speculative }                  // from LoadContext and priority
+    func run<T: Sendable>(host: String, pausable: Bool,
                           _ request: @Sendable () async throws -> T) async throws -> T
     func isPaused(_ host: String) -> Bool                     // reads fail at once
+    func allowance(for count: Int) -> Int                     // what the budget allows now
+    func sentToday() -> Int
 }
 
 struct HostBreaker {           // the instant is given, never read
@@ -171,13 +174,16 @@ struct DeadlinePolicy {
     func decision(waited: Duration, hasStoredCopy: Bool) -> Decision  // .wait | .showStored
 }
 struct SpeculativeBudget {
-    struct Device { var lowData, metered, lowPower: Bool; var thermal: ThermalLevel }
-    struct Settings { var allowMetered: Bool; var dailyLimit: Int = 600 }
-    func allows(_ count: Int, device: Device, settings: Settings, sentToday: Int) -> Int
+    struct Device { var lowData, metered, lowPower: Bool; var thermal: ThermalState }
+    struct Settings { var enabled = true, allowMetered = false; var dailyLimit = 600 }
+    static func refusal(device: Device, settings: Settings, sentToday: Int) -> Refusal?
+    static func allows(_ count: Int, device: Device, settings: Settings, sentToday: Int) -> Int
 }
+enum PrefetchItem { case room(names: [String], day: Date), course(title: String); var cost: Int }
 enum TimetablePrefetch {
     static func wanted(now: Date, lectures: [AgendaEvent],
                        lead: TimeInterval = 3600) -> [PrefetchItem]
+    static func fitting(_ items: [PrefetchItem], allowance: Int) -> [PrefetchItem]
 }
 struct ChangeSet { var added, changed, removed: Set<String> }   // identities only
 enum ChangeDetector {
@@ -261,25 +267,36 @@ service (\idref{R18}).
 \centering
 \begin{tikzpicture}
   \renewcommand\seqdepth{6.6}
-  \lifeline{t}{0}{Trigger}
+  \lifeline{t}{0}{LecturePrefetch}
   \lifeline{p}{3.4}{TimetablePrefetch}
-  \lifeline{b}{6.8}{SpeculativeBudget}
+  \lifeline{b}{6.8}{RequestGate}
   \lifeline{l}{10.0}{Loaders}
-  \lifeline{g}{13.0}{RequestGate}
+  \lifeline{g}{13.0}{Politecnico}
   \msg{0}{3.4}{1.2}{wanted(now, lectures)}
   \msg[dashed]{3.4}{0}{1.8}{items}
-  \msg{0}{6.8}{2.6}{allows(count, device, settings)}
+  \msg{0}{6.8}{2.6}{allowance(for: cost)}
   \msg[dashed]{6.8}{0}{3.2}{granted n}
-  \msg{0}{10.0}{4.0}{warm(first n keys)}
-  \msg{10.0}{13.0}{4.6}{run(host, speculative)}
-  \msg[dashed]{13.0}{10.0}{5.4}{answer}
+  \msg{0}{10.0}{4.0}{warm(items that fit)}
+  \msg{10.0}{6.8}{4.6}{run(host), speculative}
+  \msg{6.8}{13.0}{5.2}{request, when the lane has room}
+  \msg[dashed]{13.0}{10.0}{5.9}{answer}
 \end{tikzpicture}
-\caption{Prefetch. RequestGate records each request in the ledger. The trigger is FreshnessCoordinator after a foreground pass, or BackgroundRefresh.}
+\caption{Prefetch. FreshnessCoordinator runs LecturePrefetch after a foreground pass, once what is on screen has landed; BackgroundRefresh runs it after the agenda and the career and waits for its warm-ups. RequestGate checks the budget again for each request and records it in the ledger.}
 \end{figure}
+
+A speculative request runs only when the budget allows it at that instant, at most
+two to a host at a time, and only while no request for the screen is in flight to
+that host (\idref{R30} to \idref{R33}). A warm-up the student starts waiting for is
+raised to their priority by the loader, and the gate then puts its requests in the
+screen's lane. A request refused by the budget throws without being sent and is not
+counted.
 
 When the student later opens the room or the course, the loader finds the part
 fresh and sends nothing (\idref{R20}); the ledger marks the speculative request as
-used (\idref{R36}).
+used (\idref{R36}). For that to hold the floor plan is now read through a loader
+(FloorPlanResource, in memory for a day) instead of straight from the view, and the
+room's bookings go through the gate like every other request. The plan and the
+bookings stay in memory; M8 puts them on disk for the offline pack.
 
 \subsubsection{UC4: no connection}
 \begin{enumerate}
@@ -325,5 +342,6 @@ days.
   \item[7. The ledger is the app's own file.] Alternatives: signposts or MetricKit alone. Signposts cannot be read back on the phone, and MetricKit delivers one aggregate a day without per-part detail. The ledger stores no content (\idref{R38}).
   \item[8. A boundary is one sleep until a known instant.] Relies on assumption D6. It is not polling: nothing is sent unless a boundary passed and the screen is visible.
   \item[9. The offline pack uses a processing task.] The refresh task's 30 seconds cannot hold it (assumption D7). The pack is resumable because every part is filed when it arrives.
+  \item[11. The budget lives in the gate, not in the prefetch.] Alternative: only TimetablePrefetch asks the budget. The app already warmed neighbouring rooms, weeks and course pages before M7; checking in the gate makes \idref{R30} to \idref{R33} hold for all of them, and the count is exact because it counts requests sent rather than items planned. LecturePrefetch still asks first, so it does not start what the budget would refuse. Cost: a warm-up refused by the budget fails like a request that failed, so the loader asks again a minute later at the earliest.
   \item[10. No separate package yet.] The store layer stays in the app target until this update has shipped; \texttt{Packages/} is also ignored by git today. Moving it is a later, mechanical step.
 \end{description}
