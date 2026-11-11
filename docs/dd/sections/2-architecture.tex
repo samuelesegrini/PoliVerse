@@ -49,7 +49,7 @@ New components are marked (new); the others exist and change.
   \item[SpeculativeBudget (new)] Says whether a speculative request may be sent now, from the network path, the device pressure, the student's settings and today's count.
   \item[TimetablePrefetch (new)] From the timetable and the current time, lists the parts to warm.
   \item[OfflinePack (new)] Owns the list of parts of the pack, runs it in a processing task, and publishes what is stored and how old.
-  \item[BoundaryClock (new)] Computes the next booking boundary from stored bookings and wakes the models that show rooms.
+  \item[BoundaryClock (new)] Computes the next booking boundary from stored bookings, and which rooms change at it. FreeRoomsModel sleeps until that instant and tells the screens that show rooms.
   \item[ChangeDetector (new)] Compares the items of a fetched part with its stored copy by identity and returns what was added, changed and removed.
   \item[NewMarks (new)] Keeps, per account, the identities of items marked as new until their section has been on screen.
   \item[Section kit (new)] The shared interface pieces: SectionStage decides what a section draws from its phase and the time waited; SectionStatus draws it; the \texttt{arriving} modifier puts it in place of rows a section does not have; \texttt{reveals}, \texttt{revealed} and RevealRenderer play the reveal; ShapeMemory keeps each section's last height.
@@ -134,8 +134,16 @@ actor LoadingLedger {
 \begin{lstlisting}
 // Policies: values in, decision out. No clock, no singletons.
 enum RelevanceOrder {
-    static func order(_ rooms: [Classroom], visible: Set<BuildingID>,
-                      nextLecture: BuildingID?, favourite: CampusID?) -> [Classroom]
+    static func order(_ rooms: [Classroom], visible: Set<String>,   // building codes
+                      nextLecture: String?, favourite: String?) -> [Classroom]
+    static func building(ofRoom names: [String?], in rooms: [Classroom]) -> String?
+}
+enum StableOrder {             // rows shown keep their places while rows arrive
+    static func merge<ID: Hashable>(shown: [ID], sorted: [ID], settle: Bool) -> [ID]
+}
+enum BoundaryClock {           // lead: free now means free for the next 30 min
+    static func next(after now: Date, in rooms: [RoomSchedule]) -> Date?
+    static func rooms(changingAt boundary: Date, in rooms: [RoomSchedule]) -> [String]
 }
 struct DeadlinePolicy {
     var deadline: Duration = .seconds(4)
@@ -211,9 +219,9 @@ running (\idref{R17}).
 \begin{enumerate}
   \item FreeRoomsModel asks RelevanceOrder for the order of the campus's rooms, giving it the buildings on the map, the next lecture's building and the favourite campus.
   \item It requests bookings eight at a time in that order through the occupancy loader, on the on-screen lane.
-  \item After each batch it assigns the rooms received so far; the list and the map observe them.
-  \item BoundaryClock computes the earliest booking boundary among the stored bookings and sleeps until then.
-  \item At the boundary the model recomputes ``free now'' from stored bookings, and requests again the rooms on screen, once (\idref{R24}, \idref{R25}).
+  \item After each batch it assigns the rooms received so far and tells the caller; the list observes them and the map recolours its pins from them. Rooms listed by an earlier pass of the same day and campus stay listed until they answer again.
+  \item When the pass ends the model asks BoundaryClock for the earliest instant at which a room's answer changes (a booking's end, or half an hour before its start) and sleeps until then. With no such instant ahead nothing runs.
+  \item At the boundary the model bumps \texttt{boundaryTick}. ``Free now'' is computed from stored bookings, so the list and the map are drawn again without a request (\idref{R24}). A screen that is showing rooms then asks again about the rooms that change at that instant only, once per boundary (\idref{R25}).
 \end{enumerate}
 
 \subsubsection{UC3: prefetch before a lecture}

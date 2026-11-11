@@ -1,10 +1,11 @@
 % Design document for the loading update of PoliVerse. Build: scripts/docs.sh
 \documentclass[dd]{se2doc}
 \input{../meta}
-\docversion{0.3}
+\docversion{0.4}
 \revision{0.1}{10 Nov 2026}{First draft, from RASD 1.0}
 \revision{0.2}{10 Nov 2026}{After building M2: one stored value per key with the fetch time of each part (decision 2); Progress named LoadProgress; the loader's \texttt{updates} and \texttt{dueParts}}
 \revision{0.3}{10 Nov 2026}{After building M3: the section kit as built (SectionStage, \texttt{arriving} with \texttt{hasRows}, \texttt{reveals}); the reveal's timing and when it plays}
+\revision{0.4}{11 Nov 2026}{After building M4: RelevanceOrder, StableOrder and BoundaryClock as built; at a boundary only the rooms that change are asked about}
 \input{../glossary}
 \usepackage{float}
 \usetikzlibrary{positioning,arrows.meta,fit}
