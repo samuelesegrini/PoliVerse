@@ -34,10 +34,18 @@ when there are several. Sections say nothing more than their \texttt{late} or
   \item Text: a \texttt{TextRenderer} gives each group of five glyphs, about a word, opacity 0 to 1, blur 6 to 0 pt and a 2 pt rise, staggered so that the whole text ends within 0.6 s; only the first three lines animate piece by piece, the rest fade as one. The layout a renderer receives has glyphs and runs, not words.
   \item Rows and cards: opacity, a 6 pt blur and a 2 pt rise over 0.3 s, each starting 0.05 s after the one above and none later than 0.3 s, so the section ends within 0.6 s however long it is.
   \item Numbers: \texttt{.contentTransition(.numericText(value:))}.
-  \item On a refresh over visible content, only items in the change set animate, with a tint that fades.
+  \item On a refresh over visible content, only the rows the refresh added or changed replay their reveal, and their mark comes in with it. Every other row stays as it is.
   \item The reveal plays only when rows arrive from the network in a section that was seen waiting. Rows that are there when the screen opens, a stored copy, or a day paged to are drawn at once.
   \item A tap or a scroll ends the reveal at once. Reduce Motion replaces it with a 0.2 s cross-fade and removes the waiting line's movement.
 \end{itemize}
+
+\subsection{New and changed items}
+A row that a refresh added or changed carries a mark: a small dot in the accent
+colour at its top trailing corner, read by VoiceOver as ``Nuovo'' after the row.
+In the libretto a closed year carries the mark when one of its results does. The
+marks of a section go away once the section has been on screen for at least a
+second and the student leaves it or puts the app away; a section flicked past
+keeps them. Appelli and Libretto in Carriera are the first sections with marks.
 
 \subsection{Lists that grow}
 A list that receives rows while the student has scrolled adds them below the
@@ -57,7 +65,7 @@ what costs frames on the iPhone 12 Pro.
 \begin{itemize}
   \item \textbf{Offline}: a switch for the pack, one row per item with ``pronto'' and its age or ``non ancora scaricato'', the space used, and ``Scarica ora''.
   \item \textbf{Dati e batteria}: ``Prepara in anticipo'' on or off, ``Anche con rete cellulare'' off by default, and today's count of speculative requests against the limit.
-  \item \textbf{Notifiche}: one switch per kind of change: voto pubblicato, appello, lezione spostata. The haptic on arrival is a switch here, off by default.
+  \item \textbf{Promemoria}, which exists: the switches for the kinds of news gain ``Lezioni spostate''; marks and sittings already had theirs. A new switch at the foot of the page, ``Vibrazione all'arrivo dei dati'', off by default, enables the haptic of \idref{R10}.
 \end{itemize}
 
 \subsection{Diagnostics}

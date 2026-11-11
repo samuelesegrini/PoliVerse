@@ -1,12 +1,13 @@
 % Design document for the loading update of PoliVerse. Build: scripts/docs.sh
 \documentclass[dd]{se2doc}
 \input{../meta}
-\docversion{0.5}
+\docversion{0.6}
 \revision{0.1}{10 Nov 2026}{First draft, from RASD 1.0}
 \revision{0.2}{10 Nov 2026}{After building M2: one stored value per key with the fetch time of each part (decision 2); Progress named LoadProgress; the loader's \texttt{updates} and \texttt{dueParts}}
 \revision{0.3}{10 Nov 2026}{After building M3: the section kit as built (SectionStage, \texttt{arriving} with \texttt{hasRows}, \texttt{reveals}); the reveal's timing and when it plays}
 \revision{0.4}{11 Nov 2026}{After building M4: RelevanceOrder, StableOrder and BoundaryClock as built; at a boundary only the rooms that change are asked about}
 \revision{0.5}{11 Nov 2026}{After building M5: the deadline is applied by Query, which marks a part \texttt{late}; HostBreaker and HostPauses as built; only reads are answered from stored copies while a host is paused}
+\revision{0.6}{11 Nov 2026}{After building M6: a resource says what a part changed, through ChangeDetector; NewMarks and the mark as built; LectureMoves for the timetable; the exam detector stays beside the generic one (decision 6)}
 \input{../glossary}
 \usepackage{float}
 \usetikzlibrary{positioning,arrows.meta,fit}
@@ -50,10 +51,10 @@
 \traces{R23}{Loader, Query, Section kit}
 \traces{R24}{BoundaryClock, FreeRoomsModel}
 \traces{R25}{BoundaryClock, FreeRoomsModel, CampusMapModel}
-\traces{R26}{ChangeDetector, Query}
-\traces{R27}{NewMarks, Section kit}
-\traces{R28}{Query (\texttt{changes}), Section kit (RevealRenderer)}
-\traces{R29}{ChangeDetector, UpdateFeed, NotificationModel}
+\traces{R26}{ChangeDetector, Resource (\texttt{changes}), Loader}
+\traces{R27}{NewMarks, Section kit (\texttt{newMark}, \texttt{clearsNewMarks})}
+\traces{R28}{Query (\texttt{changes}, \texttt{onChanges}), NewMarks, Section kit (\texttt{newMark})}
+\traces{R29}{LectureMoves, ChangeDetector, UpdateFeed, NotificationModel}
 \traces{R30}{SpeculativeBudget, NetworkMonitor}
 \traces{R31}{SpeculativeBudget, DevicePressure}
 \traces{R32}{RequestGate (lanes)}
