@@ -17,6 +17,8 @@ Open GitHub → `PoliVerse-builds` → Actions → **Build PoliVerse on Mac** �
   them, even if an old saved switch is on.
 - `install`: install the finished device/simulator app. Uncheck for Mac builds.
 - `test`: run the unit suite first, on a dedicated `PoliVerse CI` simulator.
+  The runner boots it and waits for readiness before invoking Xcode, including
+  the longer first boot of a fresh runtime.
 
 Scheduled jobs check `main` about every 15 minutes (GitHub can delay schedules).
 They run tests and build for the simulator without installing on your phone.
