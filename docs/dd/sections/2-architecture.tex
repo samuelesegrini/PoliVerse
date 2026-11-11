@@ -39,10 +39,12 @@ New components are marked (new); the others exist and change.
 \begin{description}[style=nextline, leftmargin=1.5em]
   \item[Resource] Declares one kind of remote data. Gains an optional \texttt{Part} type and a max age per part. A resource with one request declares nothing and compiles unchanged.
   \item[LoadProgress (new)] The typed handle a fetch reports parts through. Replaces the untyped task-local \texttt{Partial.sink}. Holds only the newest snapshot not yet consumed. Not named \texttt{Progress}, which Foundation already has.
-  \item[Loader] One actor per resource. Now keeps the fetch time of each part, asks the resource only for the parts that are missing or too old, files and stores each part when it arrives, tells the queries watching the key, and applies the DeadlinePolicy. A part that failed is not asked again for a minute unless the student asks.
+  \item[Loader] One actor per resource. Now keeps the fetch time of each part, asks the resource only for the parts that are missing or too old, files and stores each part when it arrives, and tells the queries watching the key. A part that failed is not asked again for a minute unless the student asks.
   \item[OfflineStore] Unchanged. The loader writes two files per key and account through it: the value, and the fetch time of each part in it. Both are rewritten atomically each time a part arrives (decision 2).
-  \item[Query] The observable handle a view reads. Gains which parts have arrived, which failed, where each came from (stored copy or network), and the changes of the last refresh.
-  \item[RequestGate (new)] One actor for all hosts. Admits requests in two lanes, on-screen and speculative, caps speculative requests per host, tracks timeouts per host and fails fast while a host is not responding. Reports every request to the ledger.
+  \item[Query] The observable handle a view reads. Gains which parts have arrived, which failed, where each came from (stored copy or network), and the changes of the last refresh. It also applies the DeadlinePolicy: when the deadline passes it marks as \texttt{late} the parts still awaited that have a stored copy.
+  \item[RequestGate (new)] One actor for all hosts. Admits requests in two lanes, on-screen and speculative, caps speculative requests per host, and keeps the HostBreaker: while a host is paused a read to it throws \texttt{HostPaused} without being sent. Reports every request to the ledger.
+  \item[HostBreaker (new)] A value that counts consecutive timeouts per host and says whether a host is paused at a given instant. Any answer, an error status included, clears the count; a cancelled request says nothing.
+  \item[HostPauses (new)] The main-actor face of the breaker: the names of the services paused now, as the student knows them. A pause ends there by itself. DataStatus reads it for the status line.
   \item[LoadingLedger (new)] An actor that appends one small entry per request and per screen opening to a capped file, and computes the report.
   \item[RelevanceOrder (new)] Orders the rooms of a campus from the map area on screen, the next lecture's building and the favourite campus.
   \item[DeadlinePolicy (new)] Says, for a part and the time it has been waiting, whether to keep waiting or to show the stored copy.
@@ -109,15 +111,22 @@ actor Loader<R: Resource> {
 }
 
 enum LoadPhase: Equatable {
-    case held(age: TimeInterval), waiting(since: Duration), arrived, empty
+    case held(age: TimeInterval), late(age: TimeInterval)   // late: a copy stands in
+    case waiting(since: Duration), arrived, empty
     case failed(String)
 }
 
 actor RequestGate {
     enum Lane { case onScreen, speculative }
-    func run<T: Sendable>(host: String, lane: Lane, part: String,
+    func run<T: Sendable>(host: String, pausable: Bool,       // lane: with M7
                           _ request: @Sendable () async throws -> T) async throws -> T
-    func isOpen(_ host: String) -> Bool                       // false while failing fast
+    func isPaused(_ host: String) -> Bool                     // reads fail at once
+}
+
+struct HostBreaker {           // the instant is given, never read
+    var threshold = 2, pause: Duration = .seconds(30)
+    func isPaused(_ host: String, at now: Instant) -> Bool
+    mutating func note(_ outcome: Outcome, host: String, at now: Instant) -> Change?
 }
 
 actor LoadingLedger {
@@ -212,8 +221,12 @@ than their max age (\idref{R15}, \idref{R16}). Reports are buffered newest-only 
 the query consumes them at most every 100 ms (\idref{R4}). If the view goes away,
 the fetch is cancelled as today, and the parts already saved stay (\idref{R14}).
 When a part has waited longer than the deadline and a stored copy exists, the
-loader hands the query that copy with \texttt{held(age:)} and keeps the request
-running (\idref{R17}).
+query marks it \texttt{late(age:)}: its section keeps the copy on screen under a
+label with its age, and the request goes on untouched (\idref{R17}). The answer,
+when it comes, replaces the copy like any other. After two consecutive timeouts
+from a host the gate pauses it for 30 s: reads to it throw at once, so every
+section falls back on its copy without waiting, and the status line names the
+service (\idref{R18}).
 
 \subsubsection{UC2: free rooms}
 \begin{enumerate}
@@ -285,8 +298,8 @@ days.
 \begin{description}[style=nextline, leftmargin=1.5em]
   \item[1. LoadProgress is a parameter, not a task-local.] Alternative: keep \texttt{Partial.sink}. A task-local cannot be generic, so it is untyped and cast back, and it cannot say which parts arrived. Cost: the \texttt{fetch} signature changes; a default implementation forwards to the old one for resources without parts.
   \item[2. One value per key, with the fetch time of each part beside it.] Alternative, chosen in version 0.1 of this document: one file per part. It was dropped while building M2: a value is not a sum of independent pieces (the career's exam counts come from one request and sit inside the figures of another), so splitting it into files would need a split and a merge written for every resource. Instead the resource lays the parts that answered over the value held, and the loader rewrites the value and a small file of fetch times atomically each time a part arrives, the value first. A kill between two parts still loses nothing (\idref{R14}, \idref{R16}), and each part has its own age (\idref{R15}). Cost: every arrival rewrites the whole value, a few tens of kilobytes for the career, off the main thread; restoring reads two files, which helps \idref{P5}.
-  \item[3. A deadline shows the stored copy and keeps the request.] Alternatives: cancel and retry, or send a second request in parallel. Both add load on the Politecnico's hosts, against assumption D11, and a late answer is still the freshest data.
-  \item[4. The breaker is per host, in one gate.] Alternative: per resource. A timeout says something about the host, and all resources on that host benefit at once (\idref{R18}). One gate is also the only place that sees every request, which the ledger and the lanes need.
+  \item[3. A deadline shows the stored copy and keeps the request.] Alternatives: cancel and retry, or send a second request in parallel. Both add load on the Politecnico's hosts, against assumption D11, and a late answer is still the freshest data. The deadline is applied in the query, not in the loader as first planned: the loader's flight is shared by every query on a key and must not change, while standing in a copy is a matter of what one screen shows.
+  \item[4. The breaker is per host, in one gate.] Alternative: per resource. A timeout says something about the host, and all resources on that host benefit at once (\idref{R18}). One gate is also the only place that sees every request, which the ledger and the lanes need. Only reads are answered from stored copies while a host is paused: what the student does, such as enrolling in an exam, is always sent. An error status counts as an answer, since the host is there.
   \item[5. Prefetch follows the timetable, not habits.] Relies on assumption D5. A learned predictor needs data the ledger does not have yet and is out of scope.
   \item[6. Changes are found by identity, generically.] Alternative: one detector per kind of data, as UpdateFeed does today for exams. Relies on assumption D10. Values expose their items as \texttt{Identifiable \& Equatable}; kinds without stable ids are not compared.
   \item[7. The ledger is the app's own file.] Alternatives: signposts or MetricKit alone. Signposts cannot be read back on the phone, and MetricKit delivers one aggregate a day without per-part detail. The ledger stores no content (\idref{R38}).

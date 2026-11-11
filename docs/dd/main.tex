@@ -1,11 +1,12 @@
 % Design document for the loading update of PoliVerse. Build: scripts/docs.sh
 \documentclass[dd]{se2doc}
 \input{../meta}
-\docversion{0.4}
+\docversion{0.5}
 \revision{0.1}{10 Nov 2026}{First draft, from RASD 1.0}
 \revision{0.2}{10 Nov 2026}{After building M2: one stored value per key with the fetch time of each part (decision 2); Progress named LoadProgress; the loader's \texttt{updates} and \texttt{dueParts}}
 \revision{0.3}{10 Nov 2026}{After building M3: the section kit as built (SectionStage, \texttt{arriving} with \texttt{hasRows}, \texttt{reveals}); the reveal's timing and when it plays}
 \revision{0.4}{11 Nov 2026}{After building M4: RelevanceOrder, StableOrder and BoundaryClock as built; at a boundary only the rooms that change are asked about}
+\revision{0.5}{11 Nov 2026}{After building M5: the deadline is applied by Query, which marks a part \texttt{late}; HostBreaker and HostPauses as built; only reads are answered from stored copies while a host is paused}
 \input{../glossary}
 \usepackage{float}
 \usetikzlibrary{positioning,arrows.meta,fit}
@@ -40,8 +41,8 @@
 \traces{R14}{Loader, OfflineStore}
 \traces{R15}{Resource (\texttt{maxAge}), Loader}
 \traces{R16}{Loader, OfflineStore}
-\traces{R17}{DeadlinePolicy, Loader, Query}
-\traces{R18}{RequestGate (host breaker), DataStatus}
+\traces{R17}{DeadlinePolicy, Query (\texttt{late}), Section kit (LateLabel)}
+\traces{R18}{HostBreaker, RequestGate, HostPauses, DataStatus}
 \traces{R19}{TimetablePrefetch, BackgroundRefresh, FreshnessCoordinator}
 \traces{R20}{Loader (\texttt{warm}), OfflineStore}
 \traces{R21}{OfflinePack, BackgroundRefresh}

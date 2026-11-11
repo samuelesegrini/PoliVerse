@@ -12,7 +12,8 @@ replaces only rows that do not exist.
   \toprule
   Phase & What is drawn & Accessibility \\
   \midrule
-  \texttt{held} & The content. If the copy stands in for a slow part, a small age label under the title. & Read as content. \\
+  \texttt{held} & The content. & Read as content. \\
+  \texttt{late} & The content, under one line: ``Dati di 12 min fa, sto aggiornando''. The line goes when the answer arrives. & The line is read before the content. \\
   \texttt{waiting}, under 300 ms & The remembered height, empty. & Hidden. \\
   \texttt{waiting}, over 300 ms & The title and one soft waiting line where the first text line will be. & One element: ``Caricamento'' and the title. \\
   \texttt{waiting}, over 3 s & The same, plus the step in progress or ``120 di 340''. & The step is read once. \\
@@ -22,6 +23,11 @@ replaces only rows that do not exist.
   \bottomrule
 \end{tabularx}
 \end{center}
+
+A service that is paused after two timeouts is named once for the whole app, in
+the status line: ``Carriera non risponde: mostro i dati salvati'', or the count
+when there are several. Sections say nothing more than their \texttt{late} or
+\texttt{failed} state.
 
 \subsection{The reveal}
 \begin{itemize}
