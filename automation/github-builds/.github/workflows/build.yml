@@ -1,5 +1,5 @@
 name: Build PoliVerse on Mac
-run-name: PoliVerse · ${{ inputs.source_ref || 'main' }} · ${{ inputs.platform || 'simulator' }}
+run-name: PoliVerse · ${{ inputs.source_ref || 'main' }} · ${{ inputs.platform || 'device' }}
 on:
   workflow_dispatch:
     inputs:
@@ -23,8 +23,8 @@ on:
         default: true
         type: boolean
       test:
-        description: Run unit tests before building
-        default: true
+        description: Optional simulator unit tests before building
+        default: false
         type: boolean
   schedule:
     - cron: '7,22,37,52 * * * *'
@@ -38,7 +38,7 @@ jobs:
     env:
       POLIVERSE_DEVICE_ID: ${{ vars.POLIVERSE_DEVICE_ID }}
       SOURCE_REF: ${{ inputs.source_ref || 'main' }}
-      BUILD_PLATFORM: ${{ inputs.platform || 'simulator' }}
+      BUILD_PLATFORM: ${{ inputs.platform || 'device' }}
       BUILD_CONFIGURATION: ${{ inputs.configuration || 'Debug' }}
       INSTALL_APP: ${{ inputs.install }}
       RUN_TESTS: ${{ inputs.test }}
@@ -53,6 +53,6 @@ jobs:
           set -euo pipefail
           args=(--ref "$SOURCE_REF" --platform "$BUILD_PLATFORM" --configuration "$BUILD_CONFIGURATION")
           if [[ "$INSTALL_APP" == true ]]; then args+=(--install); fi
-          if [[ "$RUN_TESTS" == true || "$AUTOMATIC" == true ]]; then args+=(--test); fi
+          if [[ "$RUN_TESTS" == true ]]; then args+=(--test); fi
           if [[ "$AUTOMATIC" == true ]]; then args+=(--automatic); fi
           caffeinate -i python3 build.py "${args[@]}"

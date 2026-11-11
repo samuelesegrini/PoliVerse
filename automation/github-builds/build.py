@@ -122,9 +122,10 @@ def build(args, base):
         summary('Unit tests passed.')
     if args.platform == 'device':
         device = os.environ.get('POLIVERSE_DEVICE_ID', '')
-        if not re.fullmatch(r'[A-Fa-f0-9-]{20,40}', device):
+        if args.install and not re.fullmatch(r'[A-Fa-f0-9-]{20,40}', device):
             raise RuntimeError('Set POLIVERSE_DEVICE_ID to the paired iPhone UDID')
-        destination, suffix = 'id=' + device, '-iphoneos'
+        destination = 'id=' + device if args.install else 'generic/platform=iOS'
+        suffix = '-iphoneos'
         signing = ['-allowProvisioningUpdates']
     elif args.platform == 'simulator':
         destination, suffix, signing = 'platform=iOS Simulator,id=' + sim, '-iphonesimulator', ['CODE_SIGNING_ALLOWED=NO']
