@@ -87,25 +87,47 @@ private struct MaterialSurface: ViewModifier {
             case .frosted:
                 content.background(.thinMaterial, in: shape)
             case .glow:
-                content
-                    .background {
-                        ZStack {
-                            shape.fill(palette.surface)
-                            // A sheen from the top corner, brighter than white.
-                            shape.fill(LinearGradient(colors: [palette.accent.hdr(1.2).opacity(0.35), .clear],
-                                                      startPoint: .topLeading, endPoint: .center))
-                        }
-                    }
+                let glow = palette.accent.hdr(1).opacity(0.4)
+                let legacyShadow = TodayRendering.isLegacy(.shadow)
+                let lit = content
+                    // Cast by the card's shape, not blurred out of its text on
+                    // every frame it moves. See ``TodayRendering``.
+                    .background { GlowFill(palette: palette, shape: shape, shadow: legacyShadow ? nil : glow) }
                     .overlay {
                         shape.strokeBorder(
                             LinearGradient(colors: [palette.accent.hdr(1.8), palette.accent.opacity(0.25), palette.accent.hdr(1.2)],
                                            startPoint: .topLeading, endPoint: .bottomTrailing),
                             lineWidth: 1.5)
                     }
-                    .shadow(color: palette.accent.hdr(1).opacity(0.4), radius: 14)
+                if legacyShadow {
+                    lit.shadow(color: glow, radius: 14)
+                } else {
+                    lit
+                }
             case .bare:
                 content
             }
+        }
+    }
+}
+
+/// The Glow card's fill, with its glow cast by the shape when one is given.
+private struct GlowFill: View {
+    let palette: Flavor.Palette
+    let shape: RoundedRectangle
+    let shadow: Color?
+
+    var body: some View {
+        let fill = ZStack {
+            shape.fill(palette.surface)
+            // A sheen from the top corner, brighter than white.
+            shape.fill(LinearGradient(colors: [palette.accent.hdr(1.2).opacity(0.35), .clear],
+                                      startPoint: .topLeading, endPoint: .center))
+        }
+        if let shadow {
+            fill.shadow(color: shadow, radius: 14)
+        } else {
+            fill
         }
     }
 }

@@ -181,13 +181,24 @@ private struct StickerItem: View {
             .accessibilityAction(named: "Rimuovi") { onEdit(.remove) }
     }
 
+    /// The sticker's picture with its edge: baked into a bitmap while it holds
+    /// still, live while it can be moved, pinched and turned.
+    @ViewBuilder
+    private func face(side: CGFloat) -> some View {
+        if outline && !movable && !TodayRendering.isLegacy(.stickerEdge) {
+            BakedSticker(content: sticker.content, side: side)
+        } else {
+            StickerContentView(content: sticker.content)
+                .frame(width: side, height: side)
+                .stickerOutline(outline)
+        }
+    }
+
     /// The sticker at its size and turn, with its outline, selection ring, remove
     /// button, handle and action menu. Split from ``body`` so the type checker
     /// can take the chain in two parts.
     private func decorated(side: CGFloat, angle: Angle) -> some View {
-        StickerContentView(content: sticker.content)
-            .frame(width: side, height: side)
-            .stickerOutline(outline)
+        face(side: side)
             .overlay {
                 if selected {
                     RoundedRectangle(cornerRadius: 10 / previewScale, style: .continuous)
@@ -368,6 +379,11 @@ struct StickerContentView: View {
     /// Fills the frame, cropping, as a photo does; stickers fit whole.
     var fill = false
 
+    /// The stored image, once read and decoded off the main thread.
+    @State private var loaded: PlatformImage?
+    /// The stored image could not be read.
+    @State private var missing = false
+
     /// The view's content.
     var body: some View {
         switch content {
@@ -377,15 +393,27 @@ struct StickerContentView: View {
                 .minimumScaleFactor(0.05)
                 .lineLimit(1)
         case .image(let id):
-            if let image = StickerImages.image(for: id) {
-                Image(platformImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: fill ? .fill : .fit)
-            } else {
-                Image(systemName: "questionmark.square.dashed")
-                    .resizable()
-                    .scaledToFit()
-                    .foregroundStyle(.tertiary)
+            ZStack {
+                // Drawn at once when another view already decoded it; read
+                // and decoded off the main thread otherwise, so a page full of
+                // stickers does not open on file reads.
+                if let image = StickerImages.cached(id) ?? loaded {
+                    Image(platformImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: fill ? .fill : .fit)
+                } else if missing {
+                    Image(systemName: "questionmark.square.dashed")
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundStyle(.tertiary)
+                } else {
+                    Color.clear
+                }
+            }
+            .task(id: id) {
+                guard StickerImages.cached(id) == nil else { return }
+                loaded = await StickerImages.load(id)
+                missing = loaded == nil
             }
         }
     }
@@ -397,15 +425,35 @@ enum StickerImages {
     /// Decoded images by sticker id, dropped under memory pressure.
     private static let cache = NSCache<NSString, PlatformImage>()
 
-    /// A sticker's image, decoded once and kept.
+    /// A sticker's image if it was already decoded, without touching the disk.
+    ///
+    /// - Parameter id: The sticker's id in ``StickerStore``.
+    /// - Returns: The image, or `nil` when it has not been loaded yet.
+    static func cached(_ id: String) -> PlatformImage? {
+        cache.object(forKey: id as NSString)
+    }
+
+    /// A sticker's image, read and decoded off the main thread once, then kept.
     ///
     /// - Parameter id: The sticker's id in ``StickerStore``.
     /// - Returns: The image, or `nil` when there is none to decode.
-    static func image(for id: String) -> PlatformImage? {
-        if let cached = cache.object(forKey: id as NSString) { return cached }
-        guard let data = StickerStore.shared.data(for: id), let image = PlatformImage(data: data) else { return nil }
-        cache.setObject(image, forKey: id as NSString)
-        return image
+    static func load(_ id: String) async -> PlatformImage? {
+        if let cached = cached(id) { return cached }
+        guard let data = await read(id), let image = PlatformImage(data: data) else { return nil }
+        #if os(iOS)
+        // Decoded now, off the main thread, rather than on the first frame that draws it.
+        let prepared = await image.byPreparingForDisplay() ?? image
+        #else
+        let prepared = image
+        #endif
+        cache.setObject(prepared, forKey: id as NSString)
+        return prepared
+    }
+
+    /// The stored file's bytes, read off the main thread.
+    @concurrent
+    private nonisolated static func read(_ id: String) async -> Data? {
+        StickerStore.shared.data(for: id)
     }
 }
 

@@ -1,0 +1,75 @@
+% DRAFT, rewrite
+\section{User interface design}
+
+\subsection{A section's states}
+Screens do not draw their own spinners or empty states for a part. A section's rows
+are wrapped in \texttt{arriving(phase, hasRows:, title:)}, which draws exactly one of
+these. Rows already on screen stay there whatever their part is doing: the status
+replaces only rows that do not exist.
+
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}l X X@{}}
+  \toprule
+  Phase & What is drawn & Accessibility \\
+  \midrule
+  \texttt{held} & The content. & Read as content. \\
+  \texttt{late} & The content, under one line: ``Dati di 12 min fa, sto aggiornando''. The line goes when the answer arrives. & The line is read before the content. \\
+  \texttt{waiting}, under 300 ms & The remembered height, empty. & Hidden. \\
+  \texttt{waiting}, over 300 ms & The title and one soft waiting line where the first text line will be. & One element: ``Caricamento'' and the title. \\
+  \texttt{waiting}, over 3 s & The same, plus the step in progress or ``120 di 340''. & The step is read once. \\
+  \texttt{arrived} & The content, with the reveal if it is new. & Announced if the wait passed 3 s. \\
+  \texttt{empty} & The section's empty-state message. & Read as content. \\
+  \texttt{failed} & One line naming what is unavailable and ``Riprova''. & A button. \\
+  \bottomrule
+\end{tabularx}
+\end{center}
+
+A service that is paused after two timeouts is named once for the whole app, in
+the status line: ``Carriera non risponde: mostro i dati salvati'', or the count
+when there are several. Sections say nothing more than their \texttt{late} or
+\texttt{failed} state.
+
+\subsection{The reveal}
+\begin{itemize}
+  \item Text: a \texttt{TextRenderer} gives each group of five glyphs, about a word, opacity 0 to 1, blur 6 to 0 pt and a 2 pt rise, staggered so that the whole text ends within 0.6 s; only the first three lines animate piece by piece, the rest fade as one. The layout a renderer receives has glyphs and runs, not words.
+  \item Rows and cards: opacity, a 6 pt blur and a 2 pt rise over 0.3 s, each starting 0.05 s after the one above and none later than 0.3 s, so the section ends within 0.6 s however long it is.
+  \item Numbers: \texttt{.contentTransition(.numericText(value:))}.
+  \item On a refresh over visible content, only the rows the refresh added or changed replay their reveal, and their mark comes in with it. Every other row stays as it is.
+  \item The reveal plays only when rows arrive from the network in a section that was seen waiting. Rows that are there when the screen opens, a stored copy, or a day paged to are drawn at once.
+  \item A tap or a scroll ends the reveal at once. Reduce Motion replaces it with a 0.2 s cross-fade and removes the waiting line's movement.
+\end{itemize}
+
+\subsection{New and changed items}
+A row that a refresh added or changed carries a mark: a small dot in the accent
+colour at its top trailing corner, read by VoiceOver as ``Nuovo'' after the row.
+In the libretto a closed year carries the mark when one of its results does. The
+marks of a section go away once the section has been on screen for at least a
+second and the student leaves it or puts the app away; a section flicked past
+keeps them. Appelli and Libretto in Carriera are the first sections with marks.
+
+\subsection{Lists that grow}
+A list that receives rows while the student has scrolled adds them below the
+visible rows. A sorted list that would reorder waits for the scroll to stop, then
+moves rows with the system's default list animation. Aule libere is the first such
+list: while a campus is arriving the rooms shown keep their places, a line under
+the header says how many rooms have answered, and ``nessuna aula libera'' is not
+said until the whole campus has.
+
+\subsection{Map and 3D}
+Building colours on the map follow the order of arrival, which RelevanceOrder makes
+the order of distance from what is on screen. A building's 3D shell fades in by
+opacity when its model has loaded; no other effect is used, because shadows are
+what costs frames on the iPhone 12 Pro.
+
+\subsection{New pages in Impostazioni}
+\begin{itemize}
+  \item \textbf{Offline}: a switch for the pack, one row per item with ``pronto'' and its age or ``non ancora scaricato'', the space used, and ``Scarica ora''.
+  \item \textbf{Dati e archiviazione}, which exists, gains a section ``Preparazione in anticipo'' rather than a page of its own: ``Prepara in anticipo'' on by default, ``Anche con la rete cellulare'' off by default and shown only while the first is on, and ``Richieste in anticipo oggi'' with today's count against the limit. The footer says what is prepared and when it is not.
+  \item \textbf{Promemoria}, which exists: the switches for the kinds of news gain ``Lezioni spostate''; marks and sittings already had theirs. A new switch at the foot of the page, ``Vibrazione all'arrivo dei dati'', off by default, enables the haptic of \idref{R10}.
+\end{itemize}
+
+\subsection{Diagnostics}
+The diagnostics report gains ``Caricamento'': per screen, the median and 90th
+percentile of time to first content and to the last part; per kind of part, the
+same for its duration and its share of failures; the share of speculative requests
+used; and ``campione troppo piccolo'' under 20 openings.

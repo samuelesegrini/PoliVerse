@@ -170,6 +170,13 @@ nonisolated final class PoliMiAPI: Sendable {
     /// can drop the token and send the student back to sign-in.
     private let onInvalidScope: @Sendable () async -> Void
 
+    /// Called when an authenticated request finds no usable token: none is stored, or
+    /// the identity provider refused the refresh and the pair was dropped.
+    ///
+    /// Without it the session stayed signed in over a missing token, and every screen
+    /// kept asking for its data and failing with "Non hai effettuato l'accesso".
+    private let onTokenLost: @Sendable () async -> Void
+
     /// Creates the authenticated transport.
     ///
     /// - Parameters:
@@ -178,6 +185,7 @@ nonisolated final class PoliMiAPI: Sendable {
     ///   - profileID: Supplies the signed-in student's profile.
     ///   - matricola: Supplies the matricola, for the services that require it.
     ///   - onInvalidScope: Called on a scope refusal from a service the app depends on.
+    ///   - onTokenLost: Called when an authenticated request finds no usable token.
     ///   - session: The session requests are issued through.
     init(
         tokens: TokenStore,
@@ -185,6 +193,7 @@ nonisolated final class PoliMiAPI: Sendable {
         profileID: @escaping @Sendable () async -> Int = { PoliMiProfile.student },
         matricola: @escaping @Sendable () async -> String? = { nil },
         onInvalidScope: @escaping @Sendable () async -> Void = {},
+        onTokenLost: @escaping @Sendable () async -> Void = {},
         session: URLSession = APISession.shared
     ) {
         self.tokens = tokens
@@ -192,6 +201,7 @@ nonisolated final class PoliMiAPI: Sendable {
         self.profileID = profileID
         self.matricola = matricola
         self.onInvalidScope = onInvalidScope
+        self.onTokenLost = onTokenLost
         self.session = session
     }
 
@@ -291,11 +301,27 @@ nonisolated final class PoliMiAPI: Sendable {
     ///   status is classified.
     @discardableResult
     func send(_ request: APIRequest) async throws -> Data {
+        // Timed as one request, retries and token refresh included: that is the
+        // wait the caller had.
+        // What the student does is always sent; only reads fall back on stored copies.
+        try await RequestGate.shared.run(host: request.host.rawValue, pausable: request.method == "GET") {
+            try await self.transmit(request)
+        }
+    }
+
+    /// The pipeline behind ``send(_:)``, without the ledger's timing.
+    private func transmit(_ request: APIRequest) async throws -> Data {
         var attempt = 0
         var didRetryAuth = false
 
         while true {
-            let urlRequest = try await makeURLRequest(request)
+            let urlRequest: URLRequest
+            do {
+                urlRequest = try await makeURLRequest(request)
+            } catch let error as AuthError {
+                await onTokenLost()
+                throw error
+            }
 
             do {
                 let (data, response) = try await session.data(for: urlRequest)
@@ -376,6 +402,8 @@ nonisolated final class PoliMiAPI: Sendable {
             } catch let error as APIError {
                 throw error
             } catch let error as AuthError {
+                // A refresh after a 401 was refused: the pair is gone.
+                await onTokenLost()
                 throw error
             } catch {
                 // Cancellation first: it is not a failure, and retrying a
@@ -395,6 +423,23 @@ nonisolated final class PoliMiAPI: Sendable {
             }
         }
     }
+
+    /// How long a request may go without a byte before it fails and is retried.
+    ///
+    /// A read that stalls is cheaper to ask again than to wait out: one refresh
+    /// took 15.8 s on a real account, the shape of a connection gone quiet. Reads
+    /// are retried by ``send(_:)``, so 15 s of silence fails and asks once more;
+    /// writes keep 30 s, since a write that did land must not be sent twice.
+    ///
+    /// - Parameter request: The request.
+    /// - Returns: The idle timeout, in seconds.
+    static func timeout(for request: APIRequest) -> TimeInterval {
+        request.method == "GET" ? 15 : 30
+    }
+
+    /// Whether a transport error is worth one more attempt: a timeout or a
+    /// dropped connection, not a host that does not exist or no connection at all.
+    static func isTransient(_ error: any Error) -> Bool { isRetryable(error) }
 
     /// ``isRetryable(_:)``, exposed for tests.
     ///
@@ -565,7 +610,7 @@ nonisolated final class PoliMiAPI: Sendable {
                                     forHTTPHeaderField: "poliAuthD_profile")
             }
         }
-        urlRequest.timeoutInterval = 30
+        urlRequest.timeoutInterval = Self.timeout(for: request)
         return urlRequest
     }
 }

@@ -8,10 +8,33 @@ import SwiftUI
 /// ellipses and bounding boxes rather than footprints, so nothing is drawn
 /// from them. See ``BuildingLocation``.
 struct CampusMapView: View {
+    /// Opt-in preview features for this install.
+    @Environment(FeatureFlags.self) private var flags
+
+    /// The view's content.
+    var body: some View {
+        #if DEBUG && os(iOS)
+        if flags.isEnabled(.campus3D) {
+            Trifoglio3DView()
+                .navigationTitle("Mappa")
+                .navigationBarTitleDisplayMode(.inline)
+        } else {
+            AppleCampusMap()
+        }
+        #else
+        AppleCampusMap()
+        #endif
+    }
+}
+
+/// Apple's map of the campus, with a pin per building.
+private struct AppleCampusMap: View {
     /// The shared ``CampusMapModel``, from the environment.
     @Environment(CampusMapModel.self) private var map
     /// The shared ``RoomsModel``, from the environment.
     @Environment(RoomsModel.self) private var rooms
+    /// The shared ``FreeRoomsModel``: its booking boundaries recolour the map.
+    @Environment(FreeRoomsModel.self) private var aule
 
     /// The campus on screen. Changing it moves the camera to that city at once and places its
     /// pins when they arrive.
@@ -49,6 +72,21 @@ struct CampusMapView: View {
         // The map is drawn at once; pins arrive as they are placed, and the
         // camera frames them the first time there are any.
         .task { await map.load(campus: campus) }
+        // The buildings in view are the first asked about when the student
+        // wants to see which are free.
+        .onMapCameraChange(frequency: .onEnd) { context in
+            map.noteVisible(region: context.region)
+        }
+        // A booking started or ended: the colours are counted again from the
+        // bookings held, and only the rooms that changed are asked about.
+        .onChange(of: aule.boundaryTick) { _, _ in
+            guard map.showsAvailability else { return }
+            Task {
+                await map.recolour()
+                await aule.refreshAfterBoundary()
+                await map.recolour()
+            }
+        }
         // Framed once per campus, as soon as its pins are placed — not on
         // every re-placement, which would pull the camera from under a pan.
         // Off the full placement rather than the pins revealed so far, so the

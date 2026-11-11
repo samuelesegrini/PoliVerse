@@ -1,0 +1,129 @@
+#usda 1.0
+(
+    defaultPrim = "Root"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "Root"
+{
+    def Material "LuceCotta"
+    {
+        asset inputs:BaseTexture = @Trifoglio3DWhite.png@
+        color3f inputs:Tint = (1, 1, 1)
+        token outputs:mtlx:surface.connect = </Root/LuceCotta/Unlit.outputs:out>
+        token outputs:realitykit:vertex
+
+        def Shader "Unlit"
+        {
+            uniform token info:id = "ND_realitykit_unlit_surfaceshader"
+            bool inputs:applyPostProcessToneMap = 1
+            color3f inputs:color.connect = </Root/LuceCotta/Lit.outputs:out>
+            token outputs:out
+        }
+        def Shader "Image"
+        {
+            uniform token info:id = "ND_image_color3"
+            asset inputs:file.connect = </Root/LuceCotta.inputs:BaseTexture>
+            color3f outputs:out
+        }
+        def Shader "Albedo"
+        {
+            uniform token info:id = "ND_multiply_color3"
+            color3f inputs:in1.connect = </Root/LuceCotta/Image.outputs:out>
+            color3f inputs:in2.connect = </Root/LuceCotta.inputs:Tint>
+            color3f outputs:out
+        }
+        def Shader "Normal"
+        {
+            uniform token info:id = "ND_normal_vector3"
+            string inputs:space = "world"
+            float3 outputs:out
+        }
+        def Shader "Up"
+        {
+            uniform token info:id = "ND_separate3_vector3"
+            float3 inputs:in.connect = </Root/LuceCotta/Normal.outputs:out>
+            float outputs:outx
+            float outputs:outy
+            float outputs:outz
+        }
+        def Shader "SunDot"
+        {
+            uniform token info:id = "ND_dotproduct_vector3"
+            float3 inputs:in1.connect = </Root/LuceCotta/Normal.outputs:out>
+            float3 inputs:in2 = (-0.5518254, 0.7970811, 0.2452557)
+            float outputs:out
+        }
+        def Shader "Sun"
+        {
+            uniform token info:id = "ND_max_float"
+            float inputs:in1.connect = </Root/LuceCotta/SunDot.outputs:out>
+            float inputs:in2 = 0
+            float outputs:out
+        }
+        def Shader "FillDot"
+        {
+            uniform token info:id = "ND_dotproduct_vector3"
+            float3 inputs:in1.connect = </Root/LuceCotta/Normal.outputs:out>
+            float3 inputs:in2 = (0.5345225, 0.4810702, -0.6948792)
+            float outputs:out
+        }
+        def Shader "Fill"
+        {
+            uniform token info:id = "ND_max_float"
+            float inputs:in1.connect = </Root/LuceCotta/FillDot.outputs:out>
+            float inputs:in2 = 0
+            float outputs:out
+        }
+        def Shader "W0"
+        {
+            uniform token info:id = "ND_multiply_float"
+            float inputs:in1.connect = </Root/LuceCotta/Up.outputs:outy>
+            float inputs:in2 = 0.635
+            float outputs:out
+        }
+        def Shader "W1"
+        {
+            uniform token info:id = "ND_multiply_float"
+            float inputs:in1.connect = </Root/LuceCotta/Sun.outputs:out>
+            float inputs:in2 = 0.6057
+            float outputs:out
+        }
+        def Shader "W2"
+        {
+            uniform token info:id = "ND_multiply_float"
+            float inputs:in1.connect = </Root/LuceCotta/Fill.outputs:out>
+            float inputs:in2 = -0.3153
+            float outputs:out
+        }
+        def Shader "S0"
+        {
+            uniform token info:id = "ND_add_float"
+            float inputs:in1.connect = </Root/LuceCotta/W0.outputs:out>
+            float inputs:in2 = 1.1562
+            float outputs:out
+        }
+        def Shader "S1"
+        {
+            uniform token info:id = "ND_add_float"
+            float inputs:in1.connect = </Root/LuceCotta/S0.outputs:out>
+            float inputs:in2.connect = </Root/LuceCotta/W1.outputs:out>
+            float outputs:out
+        }
+        def Shader "Light"
+        {
+            uniform token info:id = "ND_add_float"
+            float inputs:in1.connect = </Root/LuceCotta/S1.outputs:out>
+            float inputs:in2.connect = </Root/LuceCotta/W2.outputs:out>
+            float outputs:out
+        }
+        def Shader "Lit"
+        {
+            uniform token info:id = "ND_multiply_color3FA"
+            color3f inputs:in1.connect = </Root/LuceCotta/Albedo.outputs:out>
+            float inputs:in2.connect = </Root/LuceCotta/Light.outputs:out>
+            color3f outputs:out
+        }
+    }
+}

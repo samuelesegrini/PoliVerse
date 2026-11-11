@@ -22,6 +22,7 @@ struct TodayTab: View {
 
     /// The view's content.
     var body: some View {
+        Group {
         #if os(macOS)
         // The Mac has room for the day in two columns; see ``MacTodayView``.
         NavigationStack(path: Binding(get: { shell.todayPath }, set: { shell.todayPath = $0 })) {
@@ -31,6 +32,8 @@ struct TodayTab: View {
         #else
         iPhoneBody
         #endif
+        }
+        .specialPage(.today, style: style)
     }
 
     /// Oggi on iPhone and iPad.
@@ -65,7 +68,10 @@ struct TodayTab: View {
             }
             // Using the page behind the panel tucks the panel away, as in Maps.
             .onScrollPhaseChange { _, phase in
-                if phase == .interacting { minimizePanel() }
+                if phase == .interacting {
+                    minimizePanel()
+                    RevealSession.shared.interrupt()
+                }
             }
             .simultaneousGesture(TapGesture().onEnded(minimizePanel))
             .dataStatusLine()

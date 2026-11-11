@@ -297,7 +297,7 @@ extension ExamUpdate.Kind {
         case .materialAdded: .secondary
         case .announcementPosted: Theme.brand
         case .assignmentAdded: .indigo
-        case .deadlineChanged: .orange
+        case .deadlineChanged, .lectureMoved: .orange
         }
     }
 }

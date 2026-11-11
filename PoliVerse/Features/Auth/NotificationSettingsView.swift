@@ -37,6 +37,8 @@ struct NotificationSettingsView: View {
     /// Whether the interface is in light or dark mode.
     @Environment(\.colorScheme) private var scheme
     @Environment(\.look) private var style
+    /// Whether a section that arrives after a long wait gives a light tap.
+    @AppStorage("arrivalHaptic") private var arrivalHaptic = false
 
     /// Whether every pending reminder is listed, rather than the first few.
     @State private var showsAllScheduled = false
@@ -116,6 +118,7 @@ struct NotificationSettingsView: View {
                 resultsFileSection
                 scheduledSection(colours: colours, neutral: ramp.neutral)
             }
+            arrivalSection
         }
         .lookList()
         .navigationTitle("Promemoria")
@@ -215,6 +218,16 @@ struct NotificationSettingsView: View {
             Text(enabled
                  ? "Ciò che conta — un esito, un’aula, un appello spostato — arriva subito; il resto nel riepilogo. Un tipo spento non notifica ma resta visibile nell’app."
                  : "Le novità restano nell’app, senza notifiche.")
+        }
+    }
+
+    /// The tap when a section that kept the student waiting fills in. Not a
+    /// notification, so it does not depend on iOS allowing them.
+    private var arrivalSection: some View {
+        Section {
+            Toggle("Vibrazione all’arrivo dei dati", isOn: $arrivalHaptic)
+        } footer: {
+            Text("Un tocco leggero quando una sezione rimasta in attesa per più di tre secondi si riempie.")
         }
     }
 

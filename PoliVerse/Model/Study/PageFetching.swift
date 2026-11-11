@@ -118,7 +118,9 @@ nonisolated final class ScrapedSite: PageFetching {
     /// - Returns: The markup, or `nil` on any failure or a non-200 status.
     private func send(_ request: URLRequest, describing url: URL) async -> String? {
         do {
-            let (data, response) = try await session.data(for: request)
+            let (data, response) = try await RequestGate.shared.run(host: "manifesti") { [session] in
+                try await session.data(for: request)
+            }
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
                 return nil
             }

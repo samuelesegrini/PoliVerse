@@ -25,6 +25,7 @@ private let now = PoliMiDate.romeCalendar.date(
     let rome = Date.FormatStyle(date: .abbreviated, time: .shortened, timeZone: PoliMiDate.romeCalendar.timeZone)
     let rows = plan.map { "\($0.fireDate.formatted(rome))  \($0.kind)  \($0.title)" }
     let beforeNow = plan.filter { $0.fireDate < now }
+    _ = (rows, beforeNow)
 }
 
 #Playground("Oggi: In arrivo") {
@@ -34,6 +35,7 @@ private let now = PoliMiDate.romeCalendar.date(
         exams: ExamSession.samples(now: now),
         now: now, limit: 5)
     let rows = items.map { "\($0.date.formatted())  \($0.source)  \($0.title)" }
+    _ = rows
 }
 
 #Playground("Agenda payload") {
@@ -45,5 +47,6 @@ private let now = PoliMiDate.romeCalendar.date(
       "title": {"it": "Senza id"}}]
     """
     let events = try JSONDecoder().decode([AgendaEventDTO].self, from: Data(json.utf8)).map { $0.toEvent() }
+    _ = events
 }
 #endif

@@ -1,36 +1,11 @@
 import SwiftUI
 
-/// Personalizza, opened from Oggi's bar: the student's looks, the way the Lock
-/// Screen keeps its wallpapers.
-///
-/// **The gallery.** The saved looks are cards on black, the last one an empty
-/// card to add another. The look in the middle is the look the app uses —
-/// swiping is choosing, and every look stays saved, so swiping back undoes it.
-/// Tapping the middle card goes back to the app wearing it. Pulling a card up
-/// lifts it off the gallery and shows the trash under it; the delete is
-/// immediate, with Annulla offered for a few seconds. With one look left the
-/// card only stretches: the page always needs one.
-///
-/// **Editing.** Personalizza hands the middle card to ``LookEditor``: its page
-/// moves from the card straight into the editor, and back onto the card on
-/// leaving, never covering the screen. The editor works on a draft: Fine keeps
-/// it, Annulla drops it.
-///
-/// **Adding.** The + button, or the empty card, opens ``NewLookGallery``;
-/// picking a starting point opens the editor on it, and Aggiungi asks once what
-/// the app should wear with it (``AppPairQuestion``): pair it with the page, or
-/// dress it in ``AppLookEditor``. Either way the new look goes in use.
-///
-/// Laid over the app by ``RootView``. The look in use starts covering the
-/// screen, exactly where the app is, and shrinks into the middle card while
-/// the gallery fades in; closing grows it back over the app before the gallery
-/// goes, and puts the look's icon on the Home Screen.
+/// The saved looks on black: browsing is local; applying is explicit.
+/// The same card grows into its editor and returns to the gallery.
 struct CustomizeOggi: View {
     /// The environment's `shell`.
     @Environment(\.shell) private var shell
     @AppStorage(TodayStyle.storageKey) private var active = TodayStyle()
-    @AppStorage(TodayStyle.libraryKey) private var storedLibrary = ""
-    @AppStorage(TodayStyle.selectionKey) private var storedSelection = 0
 
     /// The saved looks and which one the page uses.
     @State private var library: LookLibrary
@@ -51,15 +26,9 @@ struct CustomizeOggi: View {
     /// The look just deleted, while Annulla can still bring it back.
     @State private var removed: RemovedLook?
     /// The look being edited, if any.
-    @State private var edit: LookEdit?
+    @State private var edit: LookEditingSession?
     @State private var addingLook = false
-    /// The question at the end of adding is up.
-    @State private var askingApp = false
-    /// The app half's editor is up, straight after adding a look.
-    @State private var customisingApp = false
-    /// The app half as it was when its editor opened, for its Annulla.
-    @State private var appBefore = AppLook()
-
+    @State private var showsLibraryError = false
     /// How much smaller than the screen a card is.
     static let cardScale: CGFloat = 0.68
     /// The curve a card grows to cover the screen on, and shrinks back.
@@ -71,9 +40,7 @@ struct CustomizeOggi: View {
     init() {
         // Read before the first layout, so the carousel starts on the look in
         // use instead of scrolling to it while it shrinks.
-        let defaults = UserDefaults.standard
-        let looks = TodayStyle.library(from: defaults.string(forKey: TodayStyle.libraryKey) ?? "", active: TodayStyle())
-        let library = LookLibrary(looks: looks, selection: defaults.integer(forKey: TodayStyle.selectionKey))
+        let library = LookLibrary.load()
         _library = State(initialValue: library)
         _page = State(initialValue: library.selection)
     }
@@ -87,26 +54,24 @@ struct CustomizeOggi: View {
     /// Full size: covering the screen on the way in and out, and for editing.
     private var filled: Bool { expanded }
 
-    /// The draft the editors change.
-    private var draft: Binding<TodayStyle> {
-        Binding { edit?.draft ?? library.active } set: { edit?.draft = $0 }
-    }
-
     /// The view's content.
     var body: some View {
         GeometryReader { proxy in
             stage(proxy)
         }
+        .allowsHitTesting(library.canPersist)
+        .alert("Libreria non leggibile", isPresented: $showsLibraryError) {
+            Button("Chiudi") { shell.isCustomizing = false }
+        } message: {
+            Text("I look salvati non sono stati modificati. Il look in uso rimane disponibile nell’app.")
+        }
         .onAppear {
+            guard library.canPersist else { showsLibraryError = true; return }
+            library.persist()
             withAnimation(Self.expand) { expanded = false }
         }
         .sheet(isPresented: $addingLook) {
             NewLookGallery(current: library.active, pick: startAdding)
-        }
-        .sheet(isPresented: $askingApp) {
-            AppPairQuestion(look: draft.wrappedValue, pair: pairAndAdd, customise: customiseApp)
-                .presentationDetents([.height(500)])
-                .interactiveDismissDisabled()
         }
         .sensoryFeedback(.lift, trigger: lifted) { _, new in new }
     }
@@ -127,6 +92,14 @@ struct CustomizeOggi: View {
             Color.black
                 .opacity(expanded ? 0 : 1)
             carousel(screen: screen, insets: insets, card: card)
+            if edit == nil, !filled {
+                Button("Chiudi", systemImage: "xmark", action: dismissGallery)
+                    .labelStyle(.iconOnly).buttonStyle(.glass).buttonBorderShape(.circle).tint(.white)
+                    .accessibilityIdentifier("customize-close")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .padding(.top, insets.top + 8).padding(.trailing, 20)
+                    .zIndex(1)
+            }
             chrome(screen: screen, insets: insets, card: card)
                 .opacity(filled || edit != nil ? 0 : 1)
                 .allowsHitTesting(!filled && edit == nil)
@@ -137,17 +110,14 @@ struct CustomizeOggi: View {
                 // The middle card's place, which an edit's page starts from and goes back to.
                 let origin = CGRect(x: (screen.width - card.width) / 2, y: (screen.height - card.height) / 2,
                                     width: card.width, height: card.height)
-                LookEditor(look: draft, original: edit.original, isNew: edit.index == nil, insets: insets,
-                           cancel: { cancelEditing() }, done: { finishEditing() }, delete: deletion,
+                LookEditor(edit: Binding(get: { self.edit ?? edit }, set: { if self.edit != nil { self.edit = $0 } }), insets: insets,
+                           cancel: cancelEditing, done: { finishEditing(apply: true) },
+                           saveOnly: edit.index == library.selection ? nil : { finishEditing(apply: false) }, delete: deletion,
                            origin: edit.index == nil ? nil : origin)
                     .transition(edit.index == nil ? .move(edge: .bottom) : .identity)
                     .zIndex(2)
             }
-            if customisingApp {
-                AppLookEditor(look: draft, screen: screen, insets: insets, cancel: cancelApp, done: finishApp)
-                    .transition(.move(edge: .bottom))
-                    .zIndex(3)
-            }
+
         }
         .frame(width: screen.width, height: screen.height)
         // Takes every touch while it is up, growing back included, so none
@@ -207,8 +177,7 @@ struct CustomizeOggi: View {
             // the middle. Every look stays saved, so swiping back undoes it.
             .onChange(of: page) { _, page in
                 if lift != 0 { withAnimation(.snappy) { drop() } }
-                guard edit == nil, let page, page < library.looks.count else { return }
-                use(page)
+                // Scrolling changes only which card is previewed.
             }
         }
     }
@@ -222,18 +191,25 @@ struct CustomizeOggi: View {
                 // A card whose look changes — its neighbour sliding into its
                 // place after a delete — is a new card, not the page animating
                 // from one look into the other.
-                .id(look.rawValue)
+                .id(library.ids[index])
                 .shadow(color: .black.opacity(0.3), radius: 18, y: 8)
                 .contentShape(.rect(cornerRadius: 48 * Self.cardScale))
+                .overlay(alignment: .topTrailing) {
+                    if index == library.selection {
+                        Text("In uso").font(.caption.weight(.semibold))
+                            .padding(8).background(.regularMaterial, in: .capsule).padding(12)
+                            .accessibilityIdentifier("customize-active-\(index)")
+                    }
+                }
                 .onTapGesture { tap(index) }
                 .gesture(liftGesture(for: index))
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Text(look.displayName(at: index)))
-                .accessibilityValue(Text("\(index + 1) di \(library.looks.count)"))
+                .accessibilityValue(Text("\(index + 1) di \(library.looks.count) · \(index == library.selection ? String(localized: "In uso") : String(localized: "Anteprima"))"))
                 .accessibilityAddTraits(.isButton)
-                .accessibilityHint(index == middle ? Text("Tocca per tornare all'app") : Text("Tocca per usarlo"))
+                .accessibilityHint(index == middle ? Text("Tocca per usare questo look") : Text("Tocca per vedere l’anteprima"))
                 .accessibilityAction(named: "Personalizza") { if index == middle { beginEditing() } }
-                .accessibilityAction(named: "Elimina Flavor") {
+                .accessibilityAction(named: "Elimina look") {
                     if index == middle, library.canRemove { delete(index) }
                 }
                 .accessibilityIdentifier("customize-card-\(index)")
@@ -242,7 +218,7 @@ struct CustomizeOggi: View {
                 .contentShape(.rect(cornerRadius: 48 * Self.cardScale))
                 .onTapGesture { tap(index) }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Nuovo Flavor")
+                .accessibilityLabel("Nuovo look")
                 .accessibilityAddTraits(.isButton)
                 .accessibilityIdentifier("customize-card-new")
         }
@@ -307,7 +283,7 @@ struct CustomizeOggi: View {
             // where VoiceOver and a test find it.
             .padding(.top, cardTop - 52)
 
-            Button("Elimina Flavor", systemImage: "trash", role: .destructive) { delete(middle) }
+            Button("Elimina look", systemImage: "trash", role: .destructive) { delete(middle) }
                 .labelStyle(.iconOnly)
                 .font(.system(size: 30, weight: .medium))
                 .foregroundStyle(.red)
@@ -334,7 +310,7 @@ struct CustomizeOggi: View {
 
     /// The name of the card in the middle.
     private var title: String {
-        onNewCard ? String(localized: "Nuovo Flavor").uppercased()
+        onNewCard ? String(localized: "Nuovo look").uppercased()
             : library.looks[middle].displayName(at: middle).uppercased()
     }
 
@@ -348,7 +324,7 @@ struct CustomizeOggi: View {
     /// Flavor eliminato, with the way back, for a few seconds.
     private func undoToast(_ removed: RemovedLook) -> some View {
         HStack(spacing: 12) {
-            Text("Flavor eliminato")
+            Text("Look eliminato")
                 .font(.subheadline.weight(.semibold))
             Button("Annulla") { undoDelete() }
                 .buttonStyle(.glass)
@@ -382,7 +358,7 @@ struct CustomizeOggi: View {
             }
             .animation(.snappy, value: page)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text("Flavor \(min(middle + 1, library.looks.count)) di \(library.looks.count)"))
+            .accessibilityLabel(Text("Look \(min(middle + 1, library.looks.count)) di \(library.looks.count)"))
 
             HStack(spacing: 12) {
                 Button { beginEditing() } label: {
@@ -396,8 +372,15 @@ struct CustomizeOggi: View {
 
                 // The same 44-point label as Personalizza inside the same
                 // glass style, so the two come out the same height.
+                if !onNewCard {
+                    Button("Usa look", action: close)
+                        .font(.subheadline.weight(.semibold))
+                        .buttonStyle(.glassProminent)
+                        .foregroundStyle(.black)
+                        .accessibilityIdentifier("customize-use")
+                }
                 Button { addingLook = true } label: {
-                    Label("Nuovo Flavor", systemImage: "plus")
+                    Label("Nuovo look", systemImage: "plus")
                         .labelStyle(.iconOnly)
                         .font(.title2)
                         .frame(width: 44, height: 44)
@@ -435,21 +418,21 @@ struct CustomizeOggi: View {
         lift = 0
     }
 
-    /// Makes one look the page's.
-    ///
-    /// - Parameter index: Which look.
-    private func use(_ index: Int) {
-        guard index != library.selection, library.looks.indices.contains(index) else { return }
+    /// The only commit to the application's appearance. Never called by browsing.
+    private func apply(_ index: Int) {
+        guard library.canPersist else { return }
         library.use(index)
         active = library.active
-        storedSelection = library.selection
+        library.persist()
+        let icon = library.active.resolved.appIconName
+        Task { await AppIconSwitcher.apply(icon) }
     }
 
     /// Sends the lifted card away, then deletes it and offers it back. Deleting
     /// the look in use hands the page to its neighbour.
     private func delete(_ index: Int) {
         guard library.canRemove, library.looks.indices.contains(index) else { return }
-        let look = library.looks[index], selection = library.selection
+        let look = library.looks[index], selection = library.selection, lookID = library.ids[index]
         withAnimation(.easeIn(duration: 0.3)) {
             removing = index
         } completion: {
@@ -457,7 +440,7 @@ struct CustomizeOggi: View {
             // from the top where the deleted one went. The cards after it are
             // put a place to the right instead, then slide into the gap.
             guard library.remove(at: index) else { return }
-            active = library.active
+            if index == selection { apply(library.selection) }
             removing = nil
             closing = index
             DispatchQueue.main.async {
@@ -468,15 +451,15 @@ struct CustomizeOggi: View {
             // there only if the page moves with it.
             page = min(index, library.looks.count - 1)
             persist()
-            withAnimation(.snappy) { removed = RemovedLook(look: look, index: index, selection: selection) }
+            withAnimation(.snappy) { removed = RemovedLook(look: look, index: index, selection: selection, lookID: lookID) }
         }
     }
 
     /// Puts the deleted look back where it was, in use as it was.
     private func undoDelete() {
         guard let removed else { return }
-        library.restore(removed.look, at: removed.index, selection: removed.selection)
-        active = library.active
+        library.restore(removed.look, at: removed.index, selection: removed.selection, id: removed.lookID)
+        apply(library.selection)
         persist()
         withAnimation(.snappy) {
             self.removed = nil
@@ -487,8 +470,7 @@ struct CustomizeOggi: View {
     /// Writes the library and the selection out; past the undo, also drops
     /// sticker images no saved look draws any more.
     private func persist(pruning: Bool = false) {
-        storedLibrary = TodayStyle.encodeLibrary(library.looks)
-        storedSelection = library.selection
+        library.persist()
         guard pruning, removed == nil else { return }
         let inUse = library.looks.reduce(into: active.storedImageIDs) { $0.formUnion($1.storedImageIDs) }
         StickerStore.shared.prune(keeping: inUse)
@@ -497,15 +479,20 @@ struct CustomizeOggi: View {
     /// Grows the middle card back over the app, puts its icon on the Home
     /// Screen, then goes. The app is already wearing the middle look.
     private func close() {
+        guard library.looks.indices.contains(middle) else { return }
+        apply(middle)
+        dismissGallery()
+    }
+
+    private func dismissGallery() {
         drop()
         removed = nil
         persist(pruning: true)
-        let icon = library.active.resolved.appIconName
+        page = library.selection
         withAnimation(Self.expand) {
             expanded = true
         } completion: {
             shell.isCustomizing = false
-            Task { await AppIconSwitcher.apply(icon) }
         }
     }
 
@@ -518,7 +505,7 @@ struct CustomizeOggi: View {
         let index = middle, look = library.looks[index]
         drop()
         withAnimation(.smooth(duration: 0.3)) {
-            edit = LookEdit(draft: look, original: look, index: index)
+            edit = LookEditingSession(draft: look, original: look, index: index)
         }
     }
 
@@ -528,7 +515,7 @@ struct CustomizeOggi: View {
     private func startAdding(_ look: TodayStyle) {
         addingLook = false
         withAnimation(.spring(duration: 0.5, bounce: 0.08)) {
-            edit = LookEdit(draft: look, original: look, index: nil)
+            edit = LookEditingSession(draft: look, original: look, index: nil)
         }
     }
 
@@ -551,72 +538,14 @@ struct CustomizeOggi: View {
         delete(index)
     }
 
-    /// Keeps the draft: a saved look is written back; a new one asks about the app first.
-    private func finishEditing() {
+    /// Both new and saved looks use the same commit, with no second App editor.
+    private func finishEditing(apply shouldApply: Bool) {
         guard let edit else { return }
-        guard let index = edit.index else {
-            askingApp = true
-            return
-        }
-        library.save(edit.draft, at: index)
-        if index == library.selection { active = library.active }
+        let index = edit.save(in: &library)
         persist()
-        // The editor has already put its page back on the card.
-        withAnimation(.smooth(duration: 0.25)) { self.edit = nil }
+        withAnimation(.smooth(duration: 0.25)) { self.edit = nil; page = index }
+        if shouldApply { close() }
     }
-
-    // MARK: - The app half
-
-    /// Pairs the new look's app with its page, and adds it.
-    private func pairAndAdd() {
-        edit?.draft.pairApp()
-        askingApp = false
-        addNew()
-    }
-
-    /// Opens the app half before adding the new look.
-    private func customiseApp() {
-        askingApp = false
-        appBefore = draft.wrappedValue.app
-        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { customisingApp = true }
-    }
-
-    /// Puts the app half back, and asks the question again.
-    private func cancelApp() {
-        edit?.draft.app = appBefore
-        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { customisingApp = false }
-        askingApp = true
-    }
-
-    /// Keeps the app half and adds the look.
-    private func finishApp() {
-        withAnimation(.spring(duration: 0.45, bounce: 0.05)) { customisingApp = false }
-        addNew()
-    }
-
-    /// Adds the new look at the end and puts it in use: the editor slides
-    /// away over the gallery, which has it in the middle.
-    private func addNew() {
-        guard let edit else { return }
-        library.append(edit.draft)
-        let index = library.looks.count - 1
-        library.use(index)
-        active = library.active
-        persist()
-        page = index
-        withAnimation(.spring(duration: 0.5, bounce: 0.05)) { self.edit = nil }
-    }
-}
-
-/// A look being edited: the draft the editor changes, what it started as, and
-/// where it goes.
-private struct LookEdit: Equatable {
-    /// The look as it is being changed.
-    var draft: TodayStyle
-    /// The look as editing found it.
-    let original: TodayStyle
-    /// Its place in the library; `nil` for a look being added.
-    let index: Int?
 }
 
 /// A deleted look, kept while Annulla can bring it back.
@@ -627,6 +556,7 @@ private struct RemovedLook: Equatable {
     let index: Int
     /// Which look was in use before it went.
     let selection: Int
+    let lookID: UUID
     /// Tells two deletes of equal looks apart, so each gets its own countdown.
     let id = UUID()
 }
@@ -644,7 +574,7 @@ private struct NewLookCard: View {
                         .font(.system(size: 28, weight: .light))
                         .frame(width: 58, height: 58)
                         .glassEffect(.regular, in: .circle)
-                    Text("Nuovo Flavor")
+                    Text("Nuovo look")
                         .font(.subheadline.weight(.semibold))
                 }
                 .foregroundStyle(.white.opacity(0.8))
@@ -745,7 +675,7 @@ private struct FillScreen: GeometryEffect {
     CustomizeOggi().previewEnvironment()
 }
 
-#Preview("Nuovo Flavor") {
+#Preview("Nuovo look") {
     NewLookGallery(current: TodayStyle.presets[3]) { _ in }
         .previewEnvironment()
 }

@@ -1,0 +1,173 @@
+{
+  "csie": "MIA0403",
+  "piani": [
+    {
+      "csip": "MIA040300S",
+      "nome": "Seminterrato",
+      "aule": {
+        "MIA040300S001": {
+          "sigla": "25.S.1",
+          "posti": 148,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA040300S005": {
+          "sigla": "25.S.2",
+          "posti": 144,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA040300S007": {
+          "sigla": "25.S.3",
+          "posti": 141,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0403000",
+      "nome": "Terra",
+      "aule": {
+        "MIA0403000001": {
+          "sigla": "25.0.1",
+          "posti": 144,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0403000004": {
+          "sigla": "25.0.2",
+          "posti": 144,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0403001",
+      "nome": "Primo",
+      "aule": {
+        "MIA0403001001": {
+          "sigla": "25.1.1",
+          "posti": 50,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0403001002": {
+          "sigla": "25.1.2",
+          "posti": 54,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0403001005": {
+          "sigla": "25.1.3",
+          "posti": 54,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0403001006": {
+          "sigla": "25.1.4",
+          "posti": 50,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0403001007": {
+          "sigla": "25.1.5",
+          "posti": 50,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0403001008": {
+          "sigla": "25.1.6",
+          "posti": 50,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIA0403002",
+      "nome": "Secondo",
+      "aule": {
+        "MIA0403002001": {
+          "sigla": "25.2.1",
+          "posti": 148,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0403002004": {
+          "sigla": "25.2.2",
+          "posti": 154,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIA0403002005": {
+          "sigla": "25.2.3",
+          "posti": 120,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    }
+  ]
+}

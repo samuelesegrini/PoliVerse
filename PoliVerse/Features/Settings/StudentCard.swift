@@ -72,7 +72,7 @@ struct StudentCard: View {
         .task(id: student?.email) {
             guard let student else { qr = nil; return }
             let contact = ProfileContact(student: student)
-            qr = await Task.detached(priority: .utility) { contact.qrCode(scale: 8) }.value
+            qr = await Compute.run { contact.qrCode(scale: 8) }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)

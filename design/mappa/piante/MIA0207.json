@@ -1,0 +1,15 @@
+{
+  "csie": "MIA0207",
+  "piani": [
+    {
+      "csip": "MIA020700S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0207000",
+      "nome": "Terra",
+      "aule": {}
+    }
+  ]
+}

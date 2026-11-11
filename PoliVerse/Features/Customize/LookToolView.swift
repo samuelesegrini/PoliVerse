@@ -96,6 +96,21 @@ struct LookToolView: View {
         .accessibilityIdentifier("tool-\(tool.id)")
     }
 
+    /// Tiles share selection, animation and accessibility identity; their faces stay specific.
+    private func tiles<Value: Identifiable & Equatable, Face: View>(
+        _ values: [Value], selection: Binding<Value>, prefix: String,
+        title: @escaping (Value) -> LocalizedStringKey, @ViewBuilder face: @escaping (Value) -> Face
+    ) -> some View where Value.ID == String {
+        ToolRow(layout: layout) {
+            ForEach(values) { value in
+                ToolTile(title: Text(title(value)), chosen: selection.wrappedValue == value) {
+                    withAnimation(.snappy) { selection.wrappedValue = value }
+                } face: { face(value) }
+                .accessibilityIdentifier("\(prefix)-\(value.id)")
+            }
+        }
+    }
+
     /// Controls that bring no padding of their own, lined up with the rows.
     private func padded<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         content()
@@ -215,33 +230,19 @@ struct LookToolView: View {
 
     /// The papers, each drawn in the look's colour and grain.
     private var paper: some View {
-        ToolRow(layout: layout) {
-            ForEach(TodayPaper.allCases) { paper in
-                ToolTile(title: Text(paper.title), chosen: look.paper == paper) {
-                    withAnimation(.snappy) { look.paper = paper }
-                } face: {
-                    TodayBackgroundView(background: .plain, flavor: drawn.flavor, paper: paper, grain: drawn.grain,
-                                        mode: drawn.appearance.flavorMode)
-                        .environment(\.colorScheme, pageScheme)
-                }
-                .accessibilityIdentifier("paper-\(paper.rawValue)")
-            }
+        tiles(TodayPaper.allCases, selection: $look.paper, prefix: "paper", title: { $0.title }) { paper in
+            TodayBackgroundView(background: .plain, flavor: drawn.flavor, paper: paper, grain: drawn.grain,
+                                mode: drawn.appearance.flavorMode)
+                .environment(\.colorScheme, pageScheme)
         }
     }
 
     /// The patterns, each drawn over the look's paper.
     private var motif: some View {
-        ToolRow(layout: layout) {
-            ForEach(TodayBackground.allCases) { background in
-                ToolTile(title: Text(background.title), chosen: look.background == background) {
-                    withAnimation(.snappy) { look.background = background }
-                } face: {
-                    TodayBackgroundView(background: background, flavor: drawn.flavor, paper: drawn.paper,
-                                        mode: drawn.appearance.flavorMode)
-                        .environment(\.colorScheme, pageScheme)
-                }
-                .accessibilityIdentifier("motif-\(background.rawValue)")
-            }
+        tiles(TodayBackground.allCases, selection: $look.background, prefix: "motif", title: { $0.title }) { background in
+            TodayBackgroundView(background: background, flavor: drawn.flavor, paper: drawn.paper,
+                                mode: drawn.appearance.flavorMode)
+                .environment(\.colorScheme, pageScheme)
         }
     }
 
@@ -263,19 +264,12 @@ struct LookToolView: View {
     /// The date's typefaces, each a "28" in it; then the rest of the text.
     private var typeface: some View {
         VStack(alignment: .leading, spacing: 12) {
-            ToolRow(layout: layout) {
-                ForEach(TodayStyle.DateFont.allCases) { font in
-                    ToolTile(title: Text(font.title), chosen: look.dateFont == font) {
-                        withAnimation(.snappy) { look.dateFont = font }
-                    } face: {
-                        Text(verbatim: "28")
-                            .font(font.font(size: 24, weight: look.dateWeight))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(Color(white: 0.11))
-                    }
-                    .accessibilityIdentifier("date-font-\(font.rawValue)")
-                }
+            tiles(TodayStyle.DateFont.allCases, selection: $look.dateFont, prefix: "date-font", title: { $0.title }) { font in
+                Text(verbatim: "28")
+                    .font(font.font(size: 24, weight: look.dateWeight))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(white: 0.11))
             }
             ToolGroup(title: "Il resto del testo") {
                 ChipRow(layout: layout) {
@@ -637,16 +631,9 @@ struct LookToolView: View {
 
     /// What the cards are made of, each drawn on the page.
     private var surface: some View {
-        ToolRow(layout: layout) {
-            ForEach(TodayMaterial.allCases) { material in
-                ToolTile(title: Text(material.title), chosen: look.material == material) {
-                    withAnimation(.snappy) { look.material = material }
-                } face: {
-                    MaterialPreview(material: material, style: drawn)
-                        .environment(\.colorScheme, pageScheme)
-                }
-                .accessibilityIdentifier("material-\(material.rawValue)")
-            }
+        tiles(TodayMaterial.allCases, selection: $look.material, prefix: "material", title: { $0.title }) { material in
+            MaterialPreview(material: material, style: drawn)
+                .environment(\.colorScheme, pageScheme)
         }
     }
 

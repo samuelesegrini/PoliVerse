@@ -21,43 +21,83 @@ struct SectionSettings: View {
     /// The look being edited.
     @Binding var look: TodayStyle
 
-    /// The view's content.
-    @ViewBuilder
+    var showsForm = true
+
+    private var section: TodaySection { look.section(kind) ?? TodaySection(kind: kind) }
+    private func binding<Value>(_ path: WritableKeyPath<TodaySection, Value>) -> Binding<Value> {
+        Binding { (look.section(kind) ?? TodaySection(kind: kind))[keyPath: path] }
+            set: { value in withAnimation(.snappy) { look.updateSection(kind) { $0[keyPath: path] = value } } }
+    }
+
     var body: some View {
-        if let section = look.section(kind) {
-            if kind.forms.count > 1 {
-                GlassSegmentedPicker("Forma", selection: binding(section.form) { $0.form = $1 }, options: kind.forms) { form in
-                    Label(form.title, systemImage: form.systemImage).labelStyle(.titleOnly)
+        if look.section(kind) != nil {
+            if showsForm, kind.forms.count > 1 {
+                GlassSegmentedPicker("Forma", selection: binding(\.form), options: kind.forms) {
+                    Label($0.title, systemImage: $0.systemImage).labelStyle(.titleOnly)
                 }
                 .accessibilityIdentifier("section-form")
             }
+            materials
+            GlassSegmentedPicker("Densità", selection: binding(\.density)) { Text($0.title) }
             if kind.listsItems {
-                Stepper(value: binding(section.itemLimit) { $0.itemLimit = $1 }, in: TodaySection.itemLimits) {
-                    Text("Elementi: \(section.itemLimit)")
+                Stepper(value: binding(\.itemLimit), in: TodaySection.itemLimits) {
+                    Text("Elementi mostrati: \(section.itemLimit)")
                 }
             }
-            Toggle("Compatta", isOn: binding(section.density == .compact) { $0.density = $1 ? .compact : .comfortable })
-            Toggle("Nel colore della data", isOn: binding(section.tinted) { $0.tinted = $1 })
+            Toggle("Nel tuo colore", isOn: binding(\.tinted))
             if kind.hasCourseColours, section.form == .list {
-                Toggle("Colori dei corsi", isOn: binding(section.courseColours) { $0.courseColours = $1 })
+                Toggle("Colori dei corsi", isOn: binding(\.courseColours))
             }
-            Picker("Superficie", selection: binding(section.material) { $0.material = $1 }) {
-                Text("Come le altre").tag(TodayMaterial?.none)
-                ForEach(TodayMaterial.allCases) { material in
-                    Text(material.title).tag(Optional(material))
-                }
-            }
-            .pickerStyle(.menu)
         }
     }
 
-    /// A binding to one of the section's settings, animating its change.
-    private func binding<Value>(_ value: Value, _ set: @escaping (inout TodaySection, Value) -> Void) -> Binding<Value> {
-        Binding {
-            value
-        } set: { new in
-            withAnimation(.snappy) { look.updateSection(kind) { set(&$0, new) } }
+    /// The materials as swatches, the page's own first.
+    private var materials: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Superficie")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            ScrollView(.horizontal) {
+                HStack(spacing: 10) {
+                    swatch(nil, title: "Come la pagina")
+                    ForEach(TodayMaterial.allCases) { material in
+                        swatch(material, title: material.title)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+            .scrollIndicators(.hidden)
         }
+    }
+
+    /// One material as a small preview, ringed when chosen.
+    ///
+    /// - Parameters:
+    ///   - material: The material, or `nil` to follow the page's.
+    ///   - title: What it is called.
+    /// - Returns: The swatch.
+    private func swatch(_ material: TodayMaterial?, title: LocalizedStringKey) -> some View {
+        let chosen = section.material == material
+        return Button {
+            withAnimation(.snappy) { look.updateSection(kind) { $0.material = material } }
+        } label: {
+            VStack(spacing: 5) {
+                MaterialPreview(material: material ?? look.material, style: look)
+                    .frame(width: 62, height: 52)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14)
+                            .strokeBorder(chosen ? AnyShapeStyle(.tint) : AnyShapeStyle(.clear), lineWidth: 2.5)
+                    }
+                Text(title)
+                    .font(.caption2.weight(chosen ? .semibold : .regular))
+                    .foregroundStyle(chosen ? .primary : .secondary)
+                    .lineLimit(1)
+            }
+            .frame(width: 66)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("section-material-\(material?.rawValue ?? "page")")
+        .accessibilityAddTraits(chosen ? .isSelected : [])
     }
 }
 

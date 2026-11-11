@@ -4,8 +4,9 @@ import OSLog
 
 /// Everything the app has noticed changing, for the signed-in student.
 ///
-/// Two services feed it — ``CareerModel`` with the sittings and the libretto,
-/// ``WeBeepModel`` with the course pages — and both go through here because they share
+/// Three services feed it — ``CareerModel`` with the sittings and the libretto,
+/// ``WeBeepModel`` with the course pages, ``AgendaModel`` with the lectures that
+/// moved — and all go through here because they share
 /// one ``ExamUpdateLog``: one file per matricola, one daily budget, one evening summary.
 /// Written separately, each would overwrite the other's readings and the budget would
 /// count half the pushes.
@@ -282,6 +283,22 @@ final class UpdateFeed {
             log.materials = (log.materials ?? [:]).merging([key: detected.snapshot]) { _, new in new }
             log.deadlines = (log.deadlines ?? [:]).merging([key: detected.deadlines]) { _, new in new }
             return detected.updates
+        }
+    }
+
+    /// Records the lectures a refresh of the timetable found moved.
+    ///
+    /// The comparison is ``LectureMoves``'s, made where the stored week and the
+    /// fetched one are both at hand; here each move becomes an update and goes
+    /// through the same policy, budget and log as the exam news.
+    ///
+    /// - Parameters:
+    ///   - moves: The lectures that changed room or time.
+    ///   - account: Whose timetable this is.
+    func recordLectures(_ moves: [LectureMove], account: String) async {
+        guard !moves.isEmpty else { return }
+        await record(account: account) { _, now in
+            moves.map { LectureMoves.update(for: $0, now: now) }
         }
     }
 

@@ -23,6 +23,14 @@ final class CareerModel {
     /// Diagnostic log for this type, under the `career` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "career")
 
+    /// Where the sittings and results a refresh changed are marked as new.
+    private let marks: NewMarks
+
+    /// The section the sittings are marked in.
+    nonisolated static let sittingsSection = "carriera.appelli"
+    /// The section the libretto's rows are marked in.
+    nonisolated static let librettoSection = "carriera.libretto"
+
     /// Where a target average goes when it cannot be sent now.
     private let pending: PendingChanges?
 
@@ -37,13 +45,25 @@ final class CareerModel {
     ///   - feed: Told about every successful load.
     ///   - pending: Where an undeliverable target average is queued.
     ///   - offline: Where the record and the widget snapshot are stored.
+    ///   - marks: Where changed sittings and results are marked as new.
     init(account: any Account, feed: UpdateFeed, pending: PendingChanges? = nil,
-         offline: OfflineStore = .shared) {
+         offline: OfflineStore = .shared, marks: NewMarks = .shared) {
         self.account = account
         self.feed = feed
         self.pending = pending
         self.offline = offline
+        self.marks = marks
         self.query = Query(CareerSource(), account: account, offline: offline)
+        // As each part answers, not at the end of the load: a sitting that
+        // changed is marked while the libretto is still on its way.
+        let matricola = account.isSample ? nil : account.matricola
+        query.onChanges = { [marks] part, changes in
+            switch part {
+            case .sittings: marks.mark(changes.marked, in: Self.sittingsSection, account: matricola)
+            case .libretto: marks.mark(changes.marked, in: Self.librettoSection, account: matricola)
+            case .book, .counters, .target, .header: break
+            }
+        }
     }
 
     // MARK: - What the screens read
@@ -78,6 +98,17 @@ final class CareerModel {
         examServicesRefused ? nil : query.errorMessage
     }
 
+    /// The state of the section that lists the sittings: its empty state may be
+    /// shown only when this says ``LoadPhase/empty``.
+    var sittingsPhase: LoadPhase { query.phase(of: .sittings, isEmpty: payload.sessions.isEmpty) }
+    /// The state of the section that shows the libretto.
+    var librettoPhase: LoadPhase { query.phase(of: .libretto, isEmpty: payload.libretto.isEmpty) }
+    /// Whether any request of the career has come back, with data or with an error.
+    /// Before that there is nothing to say about the career, not even that it is empty.
+    var hasAnswer: Bool {
+        !query.parts.isEmpty || query.errorMessage != nil || payload.servicesRefused
+    }
+
     /// The libretto's arithmetic. See ``StudyPlan``.
     var studyPlan: StudyPlan { StudyPlan(exams: libretto) }
     /// The sittings' questions. See ``Sittings``.
@@ -98,11 +129,14 @@ final class CareerModel {
     }
 
     /// The credit-weighted average of the recorded marks, or `nil` with no marks.
-    var weightedMean: Double? { studyPlan.weightedMean }
+    ///
+    /// Like the two below, `nil` until the libretto itself is in: a figure computed
+    /// from a libretto that has not answered would be a wrong number.
+    var weightedMean: Double? { query.has(.libretto) ? studyPlan.weightedMean : nil }
     /// The most recently marked teaching, or `nil` with none.
-    var lastGraded: LibrettoExam? { studyPlan.lastGraded }
+    var lastGraded: LibrettoExam? { query.has(.libretto) ? studyPlan.lastGraded : nil }
     /// How far the last mark moved the average, or `nil` when it cannot be told.
-    var meanDelta: Double? { studyPlan.meanDelta }
+    var meanDelta: Double? { query.has(.libretto) ? studyPlan.meanDelta : nil }
 
     /// Unmarked sittings still ahead, soonest first.
     var upcoming: [ExamSession] { sittings.upcoming() }
@@ -153,6 +187,7 @@ final class CareerModel {
         } else {
             feed.show(account: account.matricola)
         }
+        marks.show(account: account.isSample ? nil : account.matricola)
 
         await query.load(force: force)
 

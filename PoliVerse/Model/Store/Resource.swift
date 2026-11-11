@@ -35,15 +35,20 @@ extension Env {
 }
 
 /// The key of a resource that has one value per account, such as the career.
-nonisolated struct Whole: Hashable, Sendable {
+nonisolated struct Whole: Hashable, Sendable, CaseIterable {
     /// The one key.
     init() {}
+
+    /// The one value there is: as a ``Resource/Part``, it says "a single request".
+    static var allCases: [Whole] { [Whole()] }
 }
 
 /// Where a ``Loader`` keeps what it fetched.
 nonisolated enum Persistence: Sendable {
     /// In memory only: public data, or data another file already keeps.
     case memory
+    /// Public data, shared across accounts in DiskCache.
+    case publicDisk
     /// Also on disk per account, restored at the next launch before the network answers.
     case offline
 }
@@ -68,6 +73,11 @@ nonisolated protocol Resource: Sendable {
     /// The shape this resource produces. A ``Persistence/offline`` resource's value
     /// must also be `Codable`, since the offline copy stores it.
     associatedtype Value: Sendable
+    /// The pieces a value is fetched in, when it takes several requests that each
+    /// fill a section of a screen: the career's libretto, its sittings, its counters.
+    /// ``Whole`` for data that arrives in one request, which is the default, so a
+    /// resource without parts declares nothing.
+    associatedtype Part: Hashable & Sendable & CaseIterable = Whole
 
     /// Names the offline file, the log category and the signpost's owner.
     ///
@@ -80,6 +90,15 @@ nonisolated protocol Resource: Sendable {
     /// Whether a fetched value is also written to disk per account. `.offline` by
     /// default; ignored for a value that is not `Codable`.
     static var persistence: Persistence { get }
+    /// How long one part is served without asking again. ``ttl`` by default; a
+    /// resource whose parts age differently says so here, and a refresh then asks
+    /// only for the parts that are old.
+    ///
+    /// - Parameter part: The part.
+    static func maxAge(of part: Part) -> TimeInterval
+    /// How long after a part failed before it is asked for again without the
+    /// student asking. A minute by default.
+    static var retryAfter: TimeInterval { get }
     /// How many keys the loader keeps in memory before dropping the least recently
     /// used. 128 by default.
     static var capacity: Int { get }
@@ -113,6 +132,37 @@ nonisolated protocol Resource: Sendable {
     @concurrent
     func fetch(_ keys: [Key], env: Env, previous: [Key: Value]) async throws -> [Key: Value]
 
+    /// Fetches some parts of one key, handing over what it has as each part answers.
+    ///
+    /// The loader calls this for a resource that declares a ``Part``. The default
+    /// forwards to ``fetch(_:env:previous:)-(Key,_,_)`` and reports every requested
+    /// part as arrived, so only a resource with real parts writes it.
+    ///
+    /// - Parameters:
+    ///   - key: What to fetch.
+    ///   - env: Whose data, through which transport.
+    ///   - parts: The parts to ask for; never empty. A part left out is still good
+    ///     and must not be requested.
+    ///   - held: What is held for this key. The result is laid over it, so a part
+    ///     not asked for, or failed, keeps what was there.
+    ///   - progress: Where to report the value after each part answers.
+    /// - Returns: The value, with the requested parts that answered and those that
+    ///   failed.
+    /// - Throws: When nothing worth showing came back.
+    @concurrent
+    func fetch(_ key: Key, env: Env, parts: Set<Part>, over held: Value?,
+               progress: LoadProgress<Self>) async throws -> LoadProgress<Self>.Snapshot
+
+    /// What a fetched part changed with respect to the copy held, by the identity
+    /// of its items. Nothing by default: only a resource whose items keep their
+    /// id from one answer to the next says so, through ``ChangeDetector``.
+    ///
+    /// - Parameters:
+    ///   - part: The part that just answered.
+    ///   - old: The value held before it did.
+    ///   - new: The value with the answer in it.
+    func changes(in part: Part, from old: Value, to new: Value) -> ChangeSet
+
     /// The value under sample data, never fetched and never written to disk; `nil`
     /// for public data, which is the same for everyone and is fetched as usual.
     ///
@@ -142,9 +192,12 @@ nonisolated protocol Resource: Sendable {
 
 extension Resource {
     nonisolated static var ttl: TimeInterval { 300 }
+    nonisolated static func maxAge(of part: Part) -> TimeInterval { ttl }
+    nonisolated static var retryAfter: TimeInterval { 60 }
     nonisolated static var persistence: Persistence { .offline }
     nonisolated static var capacity: Int { 128 }
     nonisolated static var signpost: PerfSignpost.Name? { nil }
+    nonisolated func changes(in part: Part, from old: Value, to new: Value) -> ChangeSet { ChangeSet() }
     nonisolated func sample(_ key: Key) -> Value? { nil }
     nonisolated func adjust(_ value: Value) -> Value { value }
     nonisolated func storageName(for key: Key) -> String { Self.id }
@@ -165,6 +218,14 @@ extension Resource {
 }
 
 extension Resource {
+    @concurrent
+    nonisolated func fetch(_ key: Key, env: Env, parts: Set<Part>, over held: Value?,
+                           progress: LoadProgress<Self>) async throws -> LoadProgress<Self>.Snapshot {
+        .init(value: try await fetch(key, env: env, previous: held), arrived: parts, failed: [])
+    }
+}
+
+extension Resource {
     nonisolated func save(_ value: Value, to offline: OfflineStore, as name: String, account: String) {}
 
     nonisolated func read(from offline: OfflineStore, as name: String,
@@ -173,11 +234,22 @@ extension Resource {
 
 extension Resource where Value: Codable {
     nonisolated func save(_ value: Value, to offline: OfflineStore, as name: String, account: String) {
-        offline.save(value, as: name, account: account)
+        if Self.persistence == .publicDisk { DiskCache.save(value, as: name) }
+        else { offline.save(value, as: name, account: account) }
     }
 
     nonisolated func read(from offline: OfflineStore, as name: String,
                           account: String) async -> (value: Value, age: TimeInterval)? {
-        await offline.loaded(Value.self, as: name, account: account).map { ($0.value, $0.age) }
+        if Self.persistence == .publicDisk {
+            return await Self.publicCopy(name)
+        }
+        return await offline.loaded(Value.self, as: name, account: account).map { ($0.value, $0.age) }
+    }
+}
+
+extension Resource where Value: Codable {
+    @concurrent
+    private static func publicCopy(_ name: String) async -> (value: Value, age: TimeInterval)? {
+        DiskCache.load(Value.self, as: name).map { ($0.value, Date.now.timeIntervalSince($0.storedAt)) }
     }
 }

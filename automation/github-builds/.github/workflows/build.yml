@@ -1,0 +1,58 @@
+name: Build PoliVerse on Mac
+run-name: PoliVerse · ${{ inputs.source_ref || 'main' }} · ${{ inputs.platform || 'simulator' }}
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: PoliVerse branch to build (main after merging)
+        default: main
+        required: true
+        type: string
+      platform:
+        description: Build destination
+        default: device
+        type: choice
+        options: [device, simulator, mac]
+      configuration:
+        description: Debug includes optional beta prototypes
+        default: Debug
+        type: choice
+        options: [Debug, Release]
+      install:
+        description: Install on the paired iPhone or simulator
+        default: true
+        type: boolean
+      test:
+        description: Run unit tests before building
+        default: true
+        type: boolean
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+permissions:
+  contents: read
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, macOS, ARM64, poliverse-builds]
+    timeout-minutes: 60
+    env:
+      POLIVERSE_DEVICE_ID: ${{ vars.POLIVERSE_DEVICE_ID }}
+      SOURCE_REF: ${{ inputs.source_ref || 'main' }}
+      BUILD_PLATFORM: ${{ inputs.platform || 'simulator' }}
+      BUILD_CONFIGURATION: ${{ inputs.configuration || 'Debug' }}
+      INSTALL_APP: ${{ inputs.install }}
+      RUN_TESTS: ${{ inputs.test }}
+      AUTOMATIC: ${{ github.event_name == 'schedule' }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Build and optionally install
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--ref "$SOURCE_REF" --platform "$BUILD_PLATFORM" --configuration "$BUILD_CONFIGURATION")
+          if [[ "$INSTALL_APP" == true ]]; then args+=(--install); fi
+          if [[ "$RUN_TESTS" == true || "$AUTOMATIC" == true ]]; then args+=(--test); fi
+          if [[ "$AUTOMATIC" == true ]]; then args+=(--automatic); fi
+          caffeinate -i python3 build.py "${args[@]}"

@@ -1,0 +1,50 @@
+{
+  "csie": "MIA0202",
+  "piani": [
+    {
+      "csip": "MIA020200S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0202S0S",
+      "nome": "Seminterrato Soppalco",
+      "aule": {}
+    },
+    {
+      "csip": "MIA020200R",
+      "nome": "Rialzato",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0202001",
+      "nome": "Primo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0202002",
+      "nome": "Secondo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0202003",
+      "nome": "Terzo",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0202004",
+      "nome": "Quarto",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0202005",
+      "nome": "Quinto",
+      "aule": {}
+    },
+    {
+      "csip": "MIA0202006",
+      "nome": "Sesto",
+      "aule": {}
+    }
+  ]
+}

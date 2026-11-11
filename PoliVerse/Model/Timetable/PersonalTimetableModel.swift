@@ -104,14 +104,38 @@ final class PersonalTimetableModel {
     init(cart: TimetableCart, agenda: (any TimetablePublishing)? = nil, preview: PersonalTimetable? = nil) {
         self.cart = cart
         self.agenda = agenda
-        timetable = preview ?? DiskCache.load(PersonalTimetable.self, as: Self.cacheName)?.value
-        selection = timetable?.sources.map(\.teaching) ?? []
-        sectionChoices = timetable?.sections ?? [:]
-        bracketChoices = timetable?.brackets ?? [:]
-        catalogue = timetable?.catalogue
-        yearsOfCourse = Dictionary(timetable?.sources.compactMap { source in source.yearOfCourse.map { (source.code, $0) } } ?? [],
+        if let preview {
+            adopt(preview)
+        } else {
+            // Read off the main thread: this model is built in the app's
+            // init, and a file read and decode there is time before the first
+            // frame. The agenda gets the timetable a moment later.
+            Task(name: "personal timetable restore") { [weak self] in
+                guard let stored = await Self.stored(Self.cacheName) else { return }
+                // A build that finished first is newer than the file.
+                guard let self, self.timetable == nil else { return }
+                self.adopt(stored)
+            }
+        }
+    }
+
+    /// Takes `timetable` as the current one, with the choices it was built from,
+    /// and publishes it to the agenda.
+    private func adopt(_ timetable: PersonalTimetable) {
+        self.timetable = timetable
+        selection = timetable.sources.map(\.teaching)
+        sectionChoices = timetable.sections
+        bracketChoices = timetable.brackets
+        catalogue = timetable.catalogue
+        yearsOfCourse = Dictionary(timetable.sources.compactMap { source in source.yearOfCourse.map { (source.code, $0) } },
                                    uniquingKeysWith: { first, _ in first })
         agenda?.personalTimetable = timetable
+    }
+
+    /// The stored timetable, read and decoded on the global executor.
+    @concurrent
+    private nonisolated static func stored(_ name: String) async -> PersonalTimetable? {
+        DiskCache.load(PersonalTimetable.self, as: name)?.value
     }
 
     /// `true` while a build is running.

@@ -27,6 +27,7 @@ struct CourseNewsTally: Identifiable {
 /// Ordered by how much is new, not by the clock: what is on now is Oggi's,
 /// and the lesson bar above the tabs.
 struct PlayfulNewsRail: View {
+    @Environment(\.specialEffectsEnabled) private var effects
     /// The courses with something new, most first.
     let news: [CourseNewsTally]
 
@@ -93,7 +94,7 @@ struct PlayfulNewsRail: View {
                         .accessibilityHidden(true)
                 }
                 .clipShape(.rect(cornerRadius: 30, style: .continuous))
-                .shadow(color: item.colour.color.opacity(0.35), radius: 14, y: 8)
+                .shadow(color: item.colour.color.opacity(0.35), radius: effects ? 14 : 0, y: effects ? 8 : 0)
         }
         .accessibilityElement(children: .combine)
     }
@@ -111,6 +112,7 @@ struct PlayfulNewsRail: View {
 /// Every course as a book on a shelf: a spine in its colour, as tall as its
 /// credits, the name running up it.
 struct PlayfulShelf: View {
+    @Environment(\.specialEffectsEnabled) private var effects
     /// The courses, favourites first.
     let courses: [(course: Course, colour: Flavor.RGB)]
 
@@ -136,7 +138,7 @@ struct PlayfulShelf: View {
                         NavigationLink(value: entry.course) { spine(entry.course, colour: entry.colour) }
                             .buttonStyle(.plain)
                             // Only the last book leans, against nothing.
-                            .rotationEffect(index == courses.count - 1 ? .degrees(style.lean(3).degrees * 2) : .zero,
+                            .rotationEffect(effects && index == courses.count - 1 ? .degrees(style.lean(3).degrees * 2) : .zero,
                                             anchor: .bottomLeading)
                     }
                 }

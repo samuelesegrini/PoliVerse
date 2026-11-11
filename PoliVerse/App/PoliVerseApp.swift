@@ -1,3 +1,4 @@
+import Observation
 import SwiftUI
 import UserNotifications
 
@@ -44,13 +45,16 @@ struct PoliVerseApp: App {
     @State private var updates: UpdateFeed
     @State private var weBeep: WeBeepModel
     @State private var recordings: RecordingsModel
+    @State private var links: SessionLinks
     @State private var cieID = CieIDRouter()
     @State private var downloads = FileDownloadModel()
     @State private var rooms: RoomsModel
     @State private var notices: NoticeModel
     @State private var news: NewsModel
     @State private var freeRooms: FreeRoomsModel
-    @State private var facilities = RoomFacilitiesModel()
+    @State private var facilities: RoomFacilitiesModel
+    /// Prepares what the next hour's lectures need.
+    private let lecturePrefetch: LecturePrefetch
     @State private var campusMap: CampusMapModel
     @State private var careers: CareersModel
     @State private var notifications: NotificationModel
@@ -63,6 +67,7 @@ struct PoliVerseApp: App {
     @State private var liveActivity = LiveActivityController()
     @State private var onboarding = OnboardingState()
     @State private var whatsNew = WhatsNewState()
+    @State private var featureFlags = FeatureFlags()
     @State private var spid = SPIDCatalogue()
     @State private var loginMemory = LoginMethodMemory()
     @State private var freshness: FreshnessCoordinator
@@ -150,6 +155,8 @@ struct PoliVerseApp: App {
         _cart = State(initialValue: cart)
         let freeRooms = FreeRoomsModel(catalogue: rooms)
         _freeRooms = State(initialValue: freeRooms)
+        let facilities = RoomFacilitiesModel()
+        _facilities = State(initialValue: facilities)
         _campusMap = State(initialValue: CampusMapModel(catalogue: rooms, freeRooms: freeRooms))
         // Before the feed, which delivers through it: a change a load notices
         // is news, from the foreground or from a background refresh alike.
@@ -160,11 +167,57 @@ struct PoliVerseApp: App {
         _updates = State(initialValue: updates)
         let weBeep = WeBeepModel(session: session, feed: updates)
         _weBeep = State(initialValue: weBeep)
+        let links: SessionLinks
+        #if DEBUG
+        if let index = CommandLine.arguments.firstIndex(of: "-PreviewConnections")
+            ?? CommandLine.arguments.firstIndex(of: "-PreviewOnboarding"),
+           CommandLine.arguments.indices.contains(index + 1) {
+            let requested = CommandLine.arguments[index + 1]
+            let fullJourney = CommandLine.arguments[index] == "-PreviewOnboarding"
+            let state = fullJourney ? "connecting" : requested
+            let previewOnboarding = OnboardingState()
+            previewOnboarding.jumpJourney(to: fullJourney ? (JourneyFlow.Step(rawValue: requested) ?? .welcome) : .connections)
+            _onboarding = State(initialValue: previewOnboarding)
+            links = SessionLinks { connection, _, report in
+                if state == "connecting" || state == "progress" {
+                    try? await Task.sleep(for: .seconds(1.5))
+                    report(.sessionReady)
+                    try? await Task.sleep(for: .seconds(1.5))
+                    report(.accessVerified)
+                    if state == "connecting" { try? await Task.sleep(for: .seconds(3600)) }
+                    else { try? await Task.sleep(for: .seconds(1.5)) }
+                    return .connected
+                }
+                if state == "connected" { return .connected }
+                if state == "offline" { return .offline }
+                return connection == .weBeep ? .needsSignIn : .unavailable
+            }
+            links.connect()
+        } else {
+            links = SessionSeeder.links(session: session, weBeep: weBeep, network: network)
+        }
+        #else
+        links = SessionSeeder.links(session: session, weBeep: weBeep, network: network)
+        #endif
+        _links = State(initialValue: links)
+        session.login.willSignOut = { [weak links, weak weBeep] in
+            await links?.stop()
+            weBeep?.signOut()
+        }
         _recordings = State(initialValue: RecordingsModel(account: session))
 
         let agenda = AgendaModel(account: session)
+        // A lecture moved to another room or time is news like a moved sitting.
+        agenda.onLectureMoves = { [weak updates] moves, account in
+            await updates?.recordLectures(moves, account: account)
+        }
         _agenda = State(initialValue: agenda)
         _personalTimetable = State(initialValue: PersonalTimetableModel(cart: cart, agenda: agenda))
+        // The building of the next lecture is asked about early in a free-rooms pass.
+        freeRooms.nextLectureRoom = { [weak agenda] in
+            guard let event = CurrentClass.pick(from: agenda?.events ?? [], now: .now)?.event else { return [] }
+            return [event.roomAcronym, event.room]
+        }
         let career = CareerModel(account: session, feed: updates, pending: pending)
         _career = State(initialValue: career)
         // Before the course list, which reads teaching codes out of it.
@@ -215,6 +268,51 @@ struct PoliVerseApp: App {
             notices: notices, news: news, weBeep: weBeep, status: status)
         _freshness = State(initialValue: freshness)
 
+        // What the next hour's lectures need: the room's day, plan and
+        // equipment, and the course page. After a foreground pass, once what
+        // is on screen has landed, and in the background refresh below.
+        let lecturePrefetch = LecturePrefetch(
+            lectures: { agenda.events },
+            room: { names, day in
+                if rooms.rooms.isEmpty { await rooms.load() }
+                guard let room = RelevanceOrder.room(named: names, in: rooms.rooms) else { return }
+                await freeRooms.warm([room], on: day)
+                await facilities.warm([room], plans: true)
+            },
+            course: { title in await weBeep.warmPage(forLecture: title) })
+        self.lecturePrefetch = lecturePrefetch
+        freshness.register("lecture-prefetch", afterScreen: true) { _ in await lecturePrefetch.run() }
+
+        // Watched here rather than with `onChange` on the window's view: iOS
+        // launches the app in the background for refreshes and the Watch, with
+        // no view, and a queued change should still go out when signal returns.
+        // `Observations` (Swift 6.2) follows the models directly, whether or
+        // not anything is on screen.
+        //
+        // The moment signal returns is the moment to send what was queued, not
+        // the next time the student happens to open a tab. Forced, unlike the
+        // foreground path: whatever is on screen was fetched before the outage.
+        // Only with someone signed in: a pass without an account fails every service.
+        Task(name: "reconnection") { @MainActor in
+            var wasOnline = network.isOnline
+            for await online in Observations({ network.isOnline }) {
+                defer { wasOnline = online }
+                guard online, !wasOnline else { continue }
+                await pending.flush()
+                if session.student != nil {
+                    await freshness.revalidate(force: true)
+                }
+            }
+        }
+        // The queue is per matricola, so switching career must show that
+        // career's waiting changes rather than the last one's. The first value
+        // is the one at launch, which the queue already read in its init.
+        Task(name: "career switch") { @MainActor in
+            for await _ in Observations({ session.student?.matricola }).dropFirst() {
+                await pending.refresh()
+            }
+        }
+
         // Deliberately narrower than the coordinator's list: a background
         // refresh gets about 30 seconds in total, so it warms the two screens
         // a student opens to and leaves the rest to the next foregrounding.
@@ -224,6 +322,11 @@ struct PoliVerseApp: App {
             defer { PerfSignpost.end(interval) }
             await agenda.load(force: true)
             await career.load(force: true)
+            // Within the speculative budget; landed before the task ends.
+            await lecturePrefetch.run()
+            await freeRooms.settleWarmUps()
+            await facilities.settle()
+            await weBeep.settlePages()
             // The Watch hears of the refresh here or not at all: the view
             // that sends it the day does not run while the app is in the
             // background.
@@ -258,7 +361,17 @@ struct PoliVerseApp: App {
     var body: some Scene {
         #if os(macOS)
         Window("PoliVerse", id: Self.mainWindowID) {
+            #if DEBUG
+            // `-Trifoglio3D` opens the 3D prototype instead of the app, for when the
+            // preview host cannot start. See ``Trifoglio3DView``.
+            if CommandLine.arguments.contains("-Trifoglio3D") {
+                Trifoglio3DView()
+            } else {
+                rootContent
+            }
+            #else
             rootContent
+            #endif
         }
         .defaultSize(width: 1280, height: 840)
         // Opens at launch even when the last session ended with it closed; the menu bar
@@ -289,7 +402,17 @@ struct PoliVerseApp: App {
         }
         #else
         WindowGroup(id: Self.mainWindowID) {
+            #if DEBUG
+            // `-Trifoglio3D` opens the 3D prototype instead of the app, for when the
+            // preview host cannot start. See ``Trifoglio3DView``.
+            if CommandLine.arguments.contains("-Trifoglio3D") {
+                Trifoglio3DView()
+            } else {
+                rootContent
+            }
+            #else
             rootContent
+            #endif
         }
         // A saved lecture that finished downloading while the app was not running:
         // iOS relaunches it to hand the file over, and waits for the move.
@@ -299,10 +422,24 @@ struct PoliVerseApp: App {
         #endif
     }
 
+    /// UI fixtures render the real journey without launch refresh or account work.
+    @ViewBuilder
+    private var mainContent: some View {
+        #if DEBUG
+        if CommandLine.arguments.contains("-PreviewConnections") || CommandLine.arguments.contains("-PreviewOnboarding") {
+            JourneyView()
+        } else {
+            RootView()
+        }
+        #else
+        RootView()
+        #endif
+    }
+
     /// The app's root, with every service in its environment and the app-wide duties
     /// that follow the scene's phase.
     private var rootContent: some View {
-        withModels(RootView())
+        withModels(mainContent)
             // CieID hands control back through the app's URL scheme. Route it to
             // the router, which passes it to whichever login web view is
             // on screen so the session can continue where it left off.
@@ -359,23 +496,15 @@ struct PoliVerseApp: App {
                     }
                 }
             }
-            // The moment signal returns is the moment to send what was
-            // queued — not the next time the user happens to open a tab.
-            .onChange(of: network.isOnline) { _, online in
-                if online {
-                    Task {
-                        await pending.flush()
-                        // Forced, unlike the foreground path: whatever is
-                        // on screen was fetched before the outage, and the
-                        // window has no way of knowing that.
-                        await freshness.revalidate(force: true)
-                    }
+            // Reconnection and a career switch are watched from `init`, with
+            // `Observations`: they matter with no window too.
+            .onChange(of: weBeep.isAuthenticated) { _, authenticated in
+                guard session.student != nil, !session.useMockData else { return }
+                if !authenticated {
+                    links.needsSignIn(.weBeep)
+                } else if links[.weBeep] == .needsSignIn || links[.weBeep] == .idle {
+                    links.retry(.weBeep)
                 }
-            }
-            // The queue is per matricola, so switching career must show
-            // that career's waiting changes rather than the last one's.
-            .onChange(of: session.student?.matricola) { _, _ in
-                Task { await pending.refresh() }
             }
             // The one guaranteed moment a login (or career switch) has
             // just finished: token in hand, the account confirmed by
@@ -394,9 +523,12 @@ struct PoliVerseApp: App {
             // network refresh by relaunching seconds apart.
             .onChange(of: session.state) { oldValue, newValue in
                 if case .signedIn = newValue {
+                    if oldValue == .loading, !session.useMockData { links.connect() }
                     let restored = oldValue == .loading
                         && !UserDefaults.standard.bool(forKey: "forceLaunchRefresh")
                     Task { await freshness.revalidate(force: !restored) }
+                } else if newValue == .signedOut {
+                    links.reset()
                 }
             }
     }
@@ -415,6 +547,7 @@ struct PoliVerseApp: App {
             .environment(updates)
             .environment(weBeep)
             .environment(recordings)
+            .environment(links)
             .environment(RecordingDownloads.shared)
             .environment(cieID)
             .environment(downloads)
@@ -436,6 +569,7 @@ struct PoliVerseApp: App {
             .environment(status)
             .environment(onboarding)
             .environment(whatsNew)
+            .environment(featureFlags)
             .environment(spid)
             .environment(loginMemory)
             #if os(macOS)

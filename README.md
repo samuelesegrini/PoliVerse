@@ -124,3 +124,7 @@ conflict.
 The Politecnico has no public API. What the app talks to is the private backend
 behind the official app, documented in [docs/polimi-auth.md](docs/polimi-auth.md),
 including where our approach differs from PoliFemo's and why.
+
+## Releases and builds from your phone
+
+[Release notes, optional beta features, and private GitHub-to-Mac builds](docs/releases-and-local-builds.md).

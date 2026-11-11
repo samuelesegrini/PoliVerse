@@ -7,6 +7,7 @@ import SwiftUI
 /// Replaces the date and the sections, not the bar: the day stepper and the
 /// menus are the same in every Flavor.
 struct PlayfulToday: View {
+    @Environment(\.specialEffectsEnabled) private var effects
     /// The day the page is about.
     let day: Date
     /// The look, already resolved.
@@ -147,8 +148,8 @@ struct PlayfulToday: View {
         .foregroundStyle(palette.onMain)
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.main, in: .rect(cornerRadius: 28, style: .continuous))
-        .shadow(color: palette.main.opacity(0.3), radius: 16, y: 8)
+        .cardBackground(palette.main, in: .rect(cornerRadius: 28, style: .continuous),
+                        shadow: palette.main.opacity(0.3), radius: effects ? 16 : 0, y: effects ? 8 : 0)
         .playfulLean(0, in: style)
     }
 
@@ -376,10 +377,11 @@ private struct DayBar: View {
 
 /// A dashed line between a ticket's rows.
 private struct DashedDivider: View {
+    @Environment(\.specialEffectsEnabled) private var effects
     /// The view's content.
     var body: some View {
         Rectangle()
-            .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+            .stroke(style: StrokeStyle(lineWidth: 1, dash: effects ? [4, 3] : []))
             .frame(height: 1)
             .foregroundStyle(.separator)
     }

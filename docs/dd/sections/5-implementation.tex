@@ -1,0 +1,52 @@
+% DRAFT, rewrite
+\section{Implementation, integration and test plan}
+
+\subsection{Order of implementation}
+Eight milestones, each shippable by itself on the existing branch. The ledger
+comes first so that every later milestone is measured against a baseline. The two
+changes to the store layer's interface come second, before any screen depends on
+the old one.
+
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}l X l@{}}
+  \toprule
+  Milestone & Content & Requirements \\
+  \midrule
+  M1 Ledger & RequestGate as a pass-through that records; LoadingLedger; the report; \texttt{screenLedger} on the main screens; baseline run on the iPhone 12 Pro & R34 to R39, P8 \\
+  M2 Parts & \texttt{Part} and \texttt{maxAge} on Resource; LoadProgress; per-part Loader and stored part times; Query's phases; the career as first user; search in parallel & R1 to R3, R12, R14 to R16, R40 \\
+  M3 Section kit & \texttt{arriving}, SectionStatus, RevealRenderer, ShapeMemory; applied to Carriera, Appelli, Libretto and Oggi & R4 to R11, P1, P2, P6 \\
+  M4 Rooms & RelevanceOrder; free rooms assigned per batch; map colours; BoundaryClock & R13, R24, R25, P3 \\
+  M5 Slow parts & DeadlinePolicy applied by Query, the \texttt{late} phase and its label; HostBreaker in RequestGate; HostPauses and the status line & R17, R18 \\
+  M6 Changes & ChangeDetector; \texttt{changes} on Resource, Loader and Query; NewMarks and \texttt{newMark}, on Appelli and Libretto; LectureMoves into UpdateFeed; the ``Lezioni spostate'' kind and the haptic switch & R26 to R29 \\
+  M7 Prefetch & SpeculativeBudget and today's count in RequestGate; lanes in RequestGate; TimetablePrefetch and LecturePrefetch; its two triggers; floor plans through a loader; the settings section & R19, R20, R30 to R33, P7 \\
+  M8 Offline & OfflinePack and its processing task; the Offline page; behaviour with no connection on every screen of the pack & R21 to R23, P5, P9 \\
+  \bottomrule
+\end{tabularx}
+\end{center}
+
+P4, the time to the last part, is checked at the end of every milestone against the
+baseline of M1.
+
+\subsection{Integration strategy}
+Bottom-up, following the layers. Within a milestone: first the policy, alone, with
+its unit tests; then the actor or model that uses it, against a stub transport;
+then the screens. A component is merged only when the layer under it is tested, so
+no stubs of lower layers are needed except the transport and the clock.
+RequestGate and LoadProgress are thread-like dependencies of everything after them,
+which is why they are in M1 and M2.
+
+\subsection{Test plan}
+\begin{description}[style=nextline, leftmargin=1.5em]
+  \item[Static analysis] The existing checks: \texttt{scripts/swiftcheck.py} and \texttt{scripts/check-model-layer.sh}, with Swift 6 strict concurrency as the compiler's own analysis.
+  \item[Unit] Every policy (RelevanceOrder, DeadlinePolicy, SpeculativeBudget, TimetablePrefetch, ChangeDetector) and the ledger's statistics, with values and a fixed clock. Each test's name carries the requirement's id, for example \texttt{test\_R13\_visibleBuildingsFirst}.
+  \item[Integration] Loader with OfflineStore and RequestGate over a stub resource or \texttt{HTTP} that answers parts in a scripted order, after scripted delays on a test clock, or never. This is where \idref{R1} to \idref{R3}, \idref{R14} to \idref{R18} and \idref{R40} are tested: arrival in any order, a kill between two parts, a part that never answers, sign-out.
+  \item[System] UI tests on the simulator with fixtures: each state of a section is reached and asserted through its accessibility element; Reduce Motion; no connection. Then the device bench on the iPhone 12 Pro for \idref{P1} to \idref{P9}, read from the ledger.
+  \item[Acceptance] UC1 to UC6 played by hand on the phone with a real account, including a real trip with no signal for UC4.
+\end{description}
+
+\subsection{What is hard to test, and how}
+\begin{itemize}
+  \item Background tasks cannot be forced on a phone outside the debugger. The prefetch and the pack are functions called by the task handlers, tested directly; the handlers themselves are exercised with the debugger's simulate commands.
+  \item Notifications for changes need a change on the server. ChangeDetector, LectureMoves and the policy are tested with fixtures; one acceptance run waits for a real change. Whether the agenda keeps a lecture's id when it moves (assumption D10) can only be seen then: if it does not, a move is missed, never invented.
+  \item The reveal's cost depends on the phone. \idref{P6} is measured on the iPhone 12 Pro only, in the same interleaved rounds used for the 3D bench.
+\end{itemize}

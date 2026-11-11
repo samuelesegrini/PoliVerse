@@ -39,33 +39,6 @@ nonisolated final class RealDataPerformanceTests: PoliVerseUITestCase {
             "Real-data measurements run only from the PoliVerseRealData scheme")
     }
 
-    // MARK: Launch
-
-    /// An app on the signed-in account, not yet launched.
-    ///
-    /// - Parameter forcingRefresh: Makes the launch refresh ask the network for
-    ///   everything, as a first launch of the day would. Without it, a relaunch seconds
-    ///   after the last serves the offline copies and measures no network at all.
-    @MainActor private func makeSignedInApp(forcingRefresh: Bool = true) -> XCUIApplication {
-        let app = makeApp(data: .signedInAccount)
-        if forcingRefresh { app.launchArguments += ["-forceLaunchRefresh", "<true/>"] }
-        return app
-    }
-
-    /// A launched app on the signed-in account, sitting on Oggi.
-    ///
-    /// - Throws: A skip when nobody is signed in on the device.
-    @MainActor private func launchSignedIn() throws -> XCUIApplication {
-        let app = makeSignedInApp()
-        app.launch()
-        if app.buttons["today-customize"].firstMatch.waitForExistence(timeout: 30) { return app }
-        if app.buttons["Codice persona e password"].firstMatch.exists {
-            throw XCTSkip("Nobody is signed in on this device: sign in to PoliVerse by hand, then run again")
-        }
-        XCTFail("The app never reached Oggi")
-        return app
-    }
-
     /// Cold launch until the app responds, with the real Keychain token and the
     /// real offline copies behind session restore.
     @MainActor func testLaunchOnTheAccount() throws {

@@ -111,15 +111,15 @@ final class WatchBridge: NSObject {
         // `@Sendable` spelled out: the class is main-actor isolated, and a
         // closure inferred to be would trap when WatchConnectivity calls it
         // on its own queue.
-        session.sendMessage([WatchSnapshot.requestKey: true], replyHandler: { @Sendable reply in
+        session.sendMessage([WatchSnapshot.requestKey: true], replyHandler: { @Sendable [weak self] reply in
             let data = reply[WatchSnapshot.payloadKey] as? Data
-            Task { @MainActor [weak self] in
+            Task { @MainActor in
                 if let data { self?.adopt(data) }
                 self?.finish(current)
             }
-        }, errorHandler: { @Sendable error in
+        }, errorHandler: { @Sendable [weak self] error in
             let reason = error.localizedDescription
-            Task { @MainActor [weak self] in
+            Task { @MainActor in
                 self?.log.notice("request failed: \(reason, privacy: .public)")
                 self?.finish(current)
             }

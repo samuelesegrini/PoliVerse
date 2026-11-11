@@ -32,15 +32,40 @@ final class Query<R: Resource> {
     /// Seconds since ``value`` was fetched, as of when it was assigned, or `nil` for
     /// sample data, a signed-out account, or before anything is held.
     private(set) var age: TimeInterval?
+    /// When each part of ``value`` was fetched. A part missing here has never
+    /// answered: what ``value`` holds for it is a default, not data.
+    private(set) var parts: [R.Part: Date] = [:]
+    /// The parts that answered since the app started, rather than being restored.
+    private(set) var arrived: Set<R.Part> = []
+    /// The parts whose last request failed.
+    private(set) var failed: Set<R.Part> = []
+    /// The parts the load in flight asked for that have not answered yet.
+    private(set) var pending: Set<R.Part> = []
+    /// The parts still awaited past the deadline while a copy of them is held:
+    /// that copy stands in, and the section says how old it is.
+    private(set) var overdue: Set<R.Part> = []
+
+    /// What the last answer of each part changed with respect to the copy held
+    /// before it, by the identity of the items.
+    private(set) var changes: [R.Part: ChangeSet] = [:]
+    /// Told once, when a part answers over a copy and something in it changed:
+    /// the part and what changed. For marking the items as new.
+    @ObservationIgnored var onChanges: ((R.Part, ChangeSet) -> Void)?
 
     /// The key this query follows.
     let key: R.Key
     private let resource: R
     private let loader: Loader<R>
     private let account: any Account
+    private let deadlines: DeadlinePolicy
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "store")
     /// The load in flight, which a second caller joins rather than being turned away.
     @ObservationIgnored private var running: Task<Void, Never>?
+    /// When the load in flight reached for the network.
+    @ObservationIgnored private var asked: ContinuousClock.Instant?
+    /// The least time between two values shown while a fetch is handing over
+    /// its parts: a burst of answers costs one redraw, not one each.
+    private static var coalescing: Duration { .milliseconds(100) }
 
     /// Creates a query with a loader of its own.
     ///
@@ -49,8 +74,11 @@ final class Query<R: Resource> {
     ///   - key: Which key.
     ///   - account: Whose data.
     ///   - offline: Where the offline copy lives.
-    convenience init(_ resource: R, key: R.Key, account: any Account, offline: OfflineStore = .shared) {
-        self.init(resource, key: key, account: account, loader: Loader(resource, offline: offline))
+    ///   - deadlines: How long a part is waited for before its stored copy stands in.
+    convenience init(_ resource: R, key: R.Key, account: any Account, offline: OfflineStore = .shared,
+                     deadlines: DeadlinePolicy = DeadlinePolicy()) {
+        self.init(resource, key: key, account: account, loader: Loader(resource, offline: offline),
+                  deadlines: deadlines)
     }
 
     /// Creates a query sharing a loader with others, so two screens asking for one
@@ -61,20 +89,73 @@ final class Query<R: Resource> {
     ///   - key: Which key.
     ///   - account: Whose data.
     ///   - loader: The loader to go through.
-    init(_ resource: R, key: R.Key, account: any Account, loader: Loader<R>) {
+    ///   - deadlines: How long a part is waited for before its stored copy stands in.
+    init(_ resource: R, key: R.Key, account: any Account, loader: Loader<R>,
+         deadlines: DeadlinePolicy = DeadlinePolicy()) {
         self.resource = resource
         self.key = key
         self.account = account
         self.loader = loader
+        self.deadlines = deadlines
     }
 
-    /// `true` while a load is in flight.
+    /// `true` while a load is in flight and nothing is held yet.
+    ///
+    /// Every screen reads it as "loading and empty", so a refresh over a held value
+    /// does not report it: flipping it on and off around a load that a cache or a
+    /// joined flight answers within the frame redrew every screen reading it twice
+    /// in that frame, and the Liquid Glass surfaces on them warned "glassEffect()
+    /// tried to update multiple times per frame".
     var isLoading: Bool { phase == .loading }
 
     /// The last load's error, or `nil` when it succeeded.
     var errorMessage: String? {
         if case .failed(let message) = phase { return message }
         return nil
+    }
+
+    /// Whether every one of some parts is in ``value``, restored or fetched.
+    ///
+    /// A figure computed from several parts is shown only when this is `true` for
+    /// all of them: an average over half the marks is a wrong number, not an
+    /// early one.
+    ///
+    /// - Parameter needed: The parts the figure is computed from.
+    func has(_ needed: R.Part...) -> Bool {
+        needed.allSatisfy { parts[$0] != nil }
+    }
+
+    /// What the last refresh changed in one part. Empty when the part was
+    /// restored, answered over nothing, or answered the same.
+    ///
+    /// - Parameter part: The part.
+    func changes(of part: R.Part) -> ChangeSet {
+        changes[part] ?? ChangeSet()
+    }
+
+    /// The state of the section that shows one part.
+    ///
+    /// - Parameters:
+    ///   - part: The part the section shows.
+    ///   - isEmpty: Whether what ``value`` holds for it is empty.
+    /// - Returns: ``LoadPhase/empty`` only when the part answered with nothing and
+    ///   is not being asked again; while it is on its way, ``LoadPhase/waiting(since:)``,
+    ///   and once it is late and a copy is held, ``LoadPhase/late(age:)``.
+    func phase(of part: R.Part, isEmpty: Bool) -> LoadPhase {
+        let waited = asked.map { ContinuousClock.now - $0 } ?? .zero
+        if let date = parts[part] {
+            let age = max(0, Date.now.timeIntervalSince(date))
+            // Late: the copy held is what there is to show, empty or not.
+            if overdue.contains(part) { return .late(age: age) }
+            if !isEmpty {
+                return arrived.contains(part) ? .arrived : .held(age: age)
+            }
+            return pending.contains(part) ? .waiting(since: waited) : .empty
+        }
+        if pending.contains(part) || phase == .loading { return .waiting(since: waited) }
+        if let message = errorMessage { return .failed(message) }
+        if failed.contains(part) { return .failed(String(localized: "Il servizio non ha risposto.")) }
+        return .waiting(since: .zero)
     }
 
     /// Loads the value: the offline copy first, then the network unless a fresh
@@ -118,19 +199,56 @@ final class Query<R: Resource> {
             if let held = await loader.cached(key, env: env) { assign(held, env: env) }
             return
         }
-        phase = .loading
+        if value == nil { setPhase(.loading) }
+        asked = .now
+        setPending(await loader.dueParts(key, env: env, force: force))
+        // What the fetch has so far is shown as each part is filed.
+        let filed = await loader.updates(key, env: env)
+        let watching = Task(name: "\(R.id) parts") { [weak self] in
+            for await snapshot in filed {
+                guard let self, !Task.isCancelled else { return }
+                self.assign(snapshot, env: env)
+                self.setPending(self.pending.subtracting(snapshot.arrived).subtracting(snapshot.failed))
+                try? await Task.sleep(for: Query.coalescing)
+            }
+        }
+        // Past the deadline the copies held stand in for the parts still awaited.
+        // The request is not touched: a late answer replaces the copy as any other.
+        let deadline = Task(name: "\(R.id) deadline") { [weak self, deadlines] in
+            try? await Task.sleep(for: deadlines.deadline)
+            guard let self, !Task.isCancelled, let asked = self.asked else { return }
+            let waited = ContinuousClock.now - asked
+            let late = self.pending.filter {
+                deadlines.decision(waited: waited, hasStoredCopy: self.parts[$0] != nil) == .showStored
+            }
+            if self.overdue != late { self.overdue = late }
+        }
+        defer {
+            deadline.cancel()
+            asked = nil
+            setPending([])
+        }
         do {
             let snapshot = try await loader.value(key, env: env, force: force)
+            watching.cancel()
             assign(snapshot, env: env)
-            phase = .idle
+            setPhase(.idle)
         } catch {
+            watching.cancel()
+            // The parts that did answer stay: a failure never takes content away.
+            if let held = await loader.cached(key, env: env) { assign(held, env: env) }
             if !PoliMiAPI.isCancellation(error) {
                 log.error("\(R.id, privacy: .public) failed: \(error.localizedDescription)")
             }
             // Nil for a cancellation, which is a view going away rather than a
             // failure and must never reach the student.
-            phase = userFacingMessage(error).map(Phase.failed) ?? .idle
+            setPhase(userFacingMessage(error).map(Phase.failed) ?? .idle)
         }
+    }
+
+    /// Assigns the phase only when it changes, for the same reason as ``assign(_:env:)``.
+    private func setPhase(_ new: Phase) {
+        if phase != new { phase = new }
     }
 
     private func assign(_ snapshot: Loader<R>.Snapshot, env: Env) {
@@ -139,6 +257,22 @@ final class Query<R: Resource> {
         let newAge: TimeInterval? = env.isSample || env.matricola == nil
             ? nil : max(0, Date.now.timeIntervalSince(snapshot.fetchedAt))
         if age != newAge { age = newAge }
+        // A part dated anew has just answered: what it changed is news once.
+        let news = snapshot.changes.filter { part, set in
+            !set.isEmpty && snapshot.parts[part] != parts[part]
+        }
+        if changes != snapshot.changes { changes = snapshot.changes }
+        if parts != snapshot.parts { parts = snapshot.parts }
+        for (part, set) in news { onChanges?(part, set) }
+        if arrived != snapshot.arrived { arrived = snapshot.arrived }
+        if failed != snapshot.failed { failed = snapshot.failed }
+    }
+
+    private func setPending(_ new: Set<R.Part>) {
+        if pending != new { pending = new }
+        // A part that answered or failed is no longer late.
+        let late = overdue.intersection(new)
+        if overdue != late { overdue = late }
     }
 
     /// Whether two values are equal, when the type can say so.
@@ -155,8 +289,10 @@ extension Query where R.Key == Whole {
     ///   - resource: What to load.
     ///   - account: Whose data.
     ///   - offline: Where the offline copy lives.
-    convenience init(_ resource: R, account: any Account, offline: OfflineStore = .shared) {
-        self.init(resource, key: Whole(), account: account, offline: offline)
+    ///   - deadlines: How long a part is waited for before its stored copy stands in.
+    convenience init(_ resource: R, account: any Account, offline: OfflineStore = .shared,
+                     deadlines: DeadlinePolicy = DeadlinePolicy()) {
+        self.init(resource, key: Whole(), account: account, offline: offline, deadlines: deadlines)
     }
 }
 

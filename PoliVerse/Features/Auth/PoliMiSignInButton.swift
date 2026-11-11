@@ -32,6 +32,10 @@ struct PoliMiSignInButton: View {
     @Environment(SPIDCatalogue.self) private var spid
     /// The shared ``LoginMethodMemory``, from the environment.
     @Environment(LoginMethodMemory.self) private var loginMemory
+    /// The shared ``WeBeepModel``, from the environment, signed in on the same session
+    /// when it is not connected yet.
+    @Environment(WeBeepModel.self) private var weBeep
+    @Environment(SessionLinks.self) private var links
 
     /// Whether the sign-in web view is up.
     /// Whether the prompt to install CieID is up.
@@ -90,14 +94,18 @@ struct PoliMiSignInButton: View {
                 .buttonStyle(.glass)
                 .controlSize(.large)
 
-                Button { start(.cie) } label: {
-                    Label("Entra con CIE", systemImage: "creditcard")
-                        .font(.subheadline.weight(.medium))
-                        .frame(maxWidth: .infinity)
+                // Not twice: when CIE was the last way in, the filled button
+                // above already says "Entra con CIE".
+                if !isCIERemembered {
+                    Button { start(.cie) } label: {
+                        Label("Entra con CIE", systemImage: "creditcard")
+                            .font(.subheadline.weight(.medium))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .disabled(isPreparing)
+                    .buttonStyle(.glass)
+                    .controlSize(.large)
                 }
-                .disabled(isPreparing)
-                .buttonStyle(.glass)
-                .controlSize(.large)
 
                 // The Politecnico's own warning, said before the tap rather
                 // than in a paragraph on the page the student is about to be
@@ -160,6 +168,13 @@ struct PoliMiSignInButton: View {
         return false
     }
 
+    /// Whether the remembered method is CIE, whose own button would then repeat the primary
+    /// one.
+    private var isCIERemembered: Bool {
+        if case .cie = remembered { return true }
+        return false
+    }
+
     /// The primary button's label, named after the remembered method.
     private var primaryTitle: LocalizedStringKey {
         switch remembered {
@@ -188,6 +203,10 @@ struct PoliMiSignInButton: View {
         webError = nil
         isPreparing = true
         Task {
+            await links.stop()
+            weBeep.signOut()
+            await RecordingsWebKit.endSession()
+            await LoginWebKit.endSession()
             // Clears any stored token and ends the SSO session, so the IdP has
             // to mint a new grant rather than replay the old one. The returned
             // logout URL is not needed: the call has already ended the session,
@@ -201,14 +220,22 @@ struct PoliMiSignInButton: View {
     /// The sign-in web view, and what to do with what it produces: adopt the token, record the
     /// SPID list the page carried, or report a failure.
     private var webSheet: some View {
-        NavigationStack {
+        SignInPresentation(title: "Servizi Online", errorMessage: nil,
+                           showingCieIDMissing: $showingCieIDMissing, cancel: { showingWeb = false }) {
             PoliMiAppLoginWebView(
                 oauthParams: session.directory.oauth,
                 router: cieID,
                 onCredentials: { token in
                     showingWeb = false
+                    links.prepareForLogin()
                     Task {
                         await session.login.completeLogin(token: token)
+                        if session.student != nil {
+                            links.connect(freshLogin: true)
+                        } else {
+                            links.reset()
+                            await LoginWebKit.endSession()
+                        }
                         // Consumed either way: a hint that did not take is not
                         // worth re-applying to every future login.
                         session.login.pendingMatricola = nil
@@ -228,25 +255,6 @@ struct PoliMiSignInButton: View {
                 // federating with.
                 onProvidersRead: { spid.adopt($0) }
             )
-            .ignoresSafeArea(edges: .bottom)
-            .navigationTitle("Servizi Online")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Annulla") { showingWeb = false }
-                }
-            }
-            .overlay(alignment: .bottom) {
-                if cieID.isAwaitingCieID {
-                    CieIDWaitingBanner()
-                }
-            }
-            .alert("App CieID non installata", isPresented: $showingCieIDMissing) {
-                Button("Apri App Store") { cieID.openAppStore() }
-                Button("Annulla", role: .cancel) {}
-            } message: {
-                Text("Per accedere con la Carta d'Identità Elettronica serve l'app CieID.")
-            }
         }
     }
 
@@ -302,6 +310,9 @@ struct SPIDProviderPicker: View {
                     .padding(.bottom, 8)
             }
         }
+        // A list asks for little height of its own, and a Mac sheet is only as
+        // large as its content asks.
+        .macSheetSize(width: 420, height: 560)
     }
 }
 

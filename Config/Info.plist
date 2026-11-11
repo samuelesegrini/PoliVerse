@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>PoliVerseBuildCommit</key>
+	<string>$(POLIVERSE_BUILD_COMMIT)</string>
+	<key>PoliVerseBuildChannel</key>
+	<string>$(POLIVERSE_BUILD_CHANNEL)</string>
 	<!-- Must match ``BackgroundRefresh/taskIdentifier`` exactly: registering
 	     an identifier that is not listed here throws at launch. -->
 	<key>BGTaskSchedulerPermittedIdentifiers</key>

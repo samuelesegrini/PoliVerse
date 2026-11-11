@@ -46,20 +46,6 @@ static float hash21(float2 point, float seed) {
     return here + edge * (1.0h - here.a);
 }
 
-// Three colours drifting as soft blobs: the moving face of a Flavor.
-[[ stitchable ]] half4 flavorFlow(float2 position, half4 color, float2 size, float time,
-                                  half4 main, half4 accent, half4 extra) {
-    float2 uv = position / max(size, float2(1.0));
-    float2 p1 = float2(0.22 + 0.16 * sin(time * 0.70), 0.30 + 0.22 * cos(time * 0.50));
-    float2 p2 = float2(0.78 + 0.14 * cos(time * 0.60), 0.35 + 0.20 * sin(time * 0.80));
-    float2 p3 = float2(0.50 + 0.26 * sin(time * 0.45), 0.90 + 0.10 * cos(time * 0.90));
-    float w1 = 1.0 / (0.015 + dot(uv - p1, uv - p1));
-    float w2 = 1.0 / (0.015 + dot(uv - p2, uv - p2));
-    float w3 = 1.0 / (0.015 + dot(uv - p3, uv - p3));
-    half3 mixed = (main.rgb * half(w1) + accent.rgb * half(w2) + extra.rgb * half(w3)) / half(w1 + w2 + w3);
-    return half4(mixed * color.a, color.a);
-}
-
 // A glossy button's light: a bright band from the top, a soft shade at the
 // bottom, as on a rounded, lacquered surface.
 [[ stitchable ]] half4 glossSheen(float2 position, half4 color, float2 size, float strength) {

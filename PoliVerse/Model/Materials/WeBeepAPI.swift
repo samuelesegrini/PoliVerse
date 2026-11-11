@@ -86,8 +86,11 @@ nonisolated final class WeBeepAPI: Sendable {
         request.timeoutInterval = 30
 
         let data: Data
+        let prepared = request
         do {
-            (data, _) = try await session.data(for: request)
+            (data, _) = try await RequestGate.shared.run(host: ServiceDirectory.Service.weBeep.rawValue) { [session] in
+                try await session.data(for: prepared)
+            }
         } catch {
             throw Failure.transport(error)
         }

@@ -63,6 +63,21 @@ nonisolated enum MapPlacement {
         }
     }
 
+    /// The buildings whose pin is inside a region of the map.
+    ///
+    /// - Parameters:
+    ///   - region: The region the camera shows.
+    ///   - pins: The pins placed.
+    /// - Returns: The codes of the buildings inside it.
+    static func buildings(in region: MKCoordinateRegion, among pins: [MapPin]) -> Set<String> {
+        let latitude = region.span.latitudeDelta / 2
+        let longitude = region.span.longitudeDelta / 2
+        return Set(pins.lazy.filter { pin in
+            abs(pin.coordinate.latitude - region.center.latitude) <= latitude
+                && abs(pin.coordinate.longitude - region.center.longitude) <= longitude
+        }.map(\.id))
+    }
+
     /// ``coloured(_:rooms:covered:free:)`` on the global executor.
     ///
     /// - Parameters:

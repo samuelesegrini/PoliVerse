@@ -1,0 +1,59 @@
+\begin{longtable}{@{}l p{0.42\linewidth} r p{0.16\linewidth} r l@{}}
+\toprule Id & Task & Hours & Depends on & Float & Critical \\
+\endhead
+\midrule \textbf{D} & \textbf{Documents} & \textbf{23} & & & \\
+D1 & RASD & 8 &  & 0 & yes \\
+D2 & Design document & 8 & D1 & 0 & yes \\
+D3 & Alloy model and its check & 4 & D1 & 150 &  \\
+D4 & Project plan & 3 & D1 & 151 &  \\
+\midrule \textbf{M1} & \textbf{Loading ledger} & \textbf{30} & & & \\
+M1.1 & RequestGate as recording pass-through & 8 & D2 & 0 & yes \\
+M1.2 & LoadingLedger and its file & 8 & M1.1 & 0 & yes \\
+M1.3 & Report in diagnostics & 6 & M1.2 & 0 & yes \\
+M1.4 & Screen tokens on the main screens & 4 & M1.2 & 2 &  \\
+M1.5 & Baseline run on the iPhone 12 Pro & 4 & M1.3 M1.4 & 0 & yes \\
+\midrule \textbf{M2} & \textbf{Parts} & \textbf{54} & & & \\
+M2.1 & Part type and LoadProgress on Resource & 8 & M1.5 & 0 & yes \\
+M2.2 & Loader per part and stored part times & 16 & M2.1 & 0 & yes \\
+M2.3 & Query phases & 8 & M2.2 & 0 & yes \\
+M2.4 & Career as first user & 8 & M2.3 & 0 & yes \\
+M2.5 & Search sources in parallel & 4 & M1.5 & 116 &  \\
+M2.6 & Integration tests with scripted transport & 10 & M2.4 & 0 & yes \\
+\midrule \textbf{M3} & \textbf{Section kit} & \textbf{48} & & & \\
+M3.1 & arriving modifier and SectionStatus & 10 & M2.3 & 12 &  \\
+M3.2 & RevealRenderer & 12 & M3.1 & 12 &  \\
+M3.3 & ShapeMemory & 4 & M3.1 & 28 &  \\
+M3.4 & Carriera Appelli Libretto & 8 & M3.2 M2.6 & 12 &  \\
+M3.5 & Oggi & 6 & M3.2 & 14 &  \\
+M3.6 & UI tests and hitch measurement & 8 & M3.3 M3.4 M3.5 & 12 &  \\
+\midrule \textbf{M4} & \textbf{Rooms} & \textbf{32} & & & \\
+M4.1 & RelevanceOrder & 4 & M1.5 & 74 &  \\
+M4.2 & Rooms assigned per batch and stable list & 8 & M4.1 M3.1 & 36 &  \\
+M4.3 & Map colours as rooms arrive & 6 & M4.2 & 38 &  \\
+M4.4 & BoundaryClock & 8 & M4.2 & 36 &  \\
+M4.5 & Tests and first-room measurement & 6 & M4.3 M4.4 & 36 &  \\
+\midrule \textbf{M5} & \textbf{Slow parts} & \textbf{22} & & & \\
+M5.1 & DeadlinePolicy and the late phase & 8 & M2.6 & 36 &  \\
+M5.2 & Host breaker in RequestGate & 8 & M1.5 & 86 &  \\
+M5.3 & Tests with a transport that never answers & 6 & M5.1 M5.2 & 36 &  \\
+\midrule \textbf{M6} & \textbf{Changes} & \textbf{34} & & & \\
+M6.1 & ChangeDetector and changes on Query & 10 & M2.6 & 24 &  \\
+M6.2 & NewMarks and the mark in the section kit & 8 & M6.1 M3.6 & 16 &  \\
+M6.3 & Lecture moves into UpdateFeed and the new notification kind & 10 & M6.1 & 24 &  \\
+M6.4 & Tests with fixtures & 6 & M6.2 M6.3 & 16 &  \\
+\midrule \textbf{M7} & \textbf{Prefetch} & \textbf{36} & & & \\
+M7.1 & SpeculativeBudget and its settings section & 10 & M1.5 & 32 &  \\
+M7.2 & Lanes in RequestGate & 8 & M7.1 & 32 &  \\
+M7.3 & TimetablePrefetch and its two triggers & 10 & M7.2 M2.6 & 0 & yes \\
+M7.4 & Tests and hit-rate check & 8 & M7.3 & 0 & yes \\
+\midrule \textbf{M8} & \textbf{Offline} & \textbf{40} & & & \\
+M8.1 & OfflinePack and the processing task & 14 & M7.4 & 0 & yes \\
+M8.2 & Offline page in Impostazioni & 8 & M8.1 & 2 &  \\
+M8.3 & Behaviour with no connection on every pack screen & 10 & M8.1 M3.6 & 0 & yes \\
+M8.4 & Tests and storage measurement & 8 & M8.2 M8.3 & 0 & yes \\
+\midrule \textbf{A} & \textbf{Acceptance} & \textbf{20} & & & \\
+A1 & Use cases played on the phone & 8 & M4.5 M5.3 M6.4 M8.4 & 0 & yes \\
+A2 & Fixes from acceptance & 12 & A1 & 0 & yes \\
+\midrule & \textbf{Budget at completion} & \textbf{339} & & & \\
+\bottomrule
+\end{longtable}

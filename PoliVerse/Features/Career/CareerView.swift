@@ -76,9 +76,13 @@ struct CareerView: View {
                 .navigationDestination(isPresented: $showingManifesti) { ManifestiView() }
                 .navigationDestination(isPresented: $showingTimetable) { PersonalTimetableView() }
                 .task { await career.load() }
+                .screenLedger("Carriera",
+                              hasContent: !career.sessions.isEmpty || !career.libretto.isEmpty,
+                              isComplete: !career.isLoading && (!career.sessions.isEmpty || !career.libretto.isEmpty))
                 .refreshable { await career.load(force: true) }
                 .detailPresentation(item: $selectedExam) { ExamDetailView(exam: $0) }
         }
+        .specialPage(.career, style: style)
     }
 
     // MARK: - The page
@@ -129,8 +133,11 @@ struct CareerView: View {
                 // The libretto counts too: the three calls fail separately,
                 // and a libretto that arrived must not be hidden behind
                 // "nessun dato" because the other two did not.
-                if career.gradeBook == .empty && career.sessions.isEmpty
-                    && career.libretto.isEmpty && !career.isLoading {
+                let nothing = career.gradeBook == .empty && career.sessions.isEmpty && career.libretto.isEmpty
+                if nothing && !career.hasAnswer {
+                    // Nothing has come back yet: not even "no data" can be said.
+                    EmptyView()
+                } else if nothing && !career.isLoading {
                     unavailable(career)
                 } else {
                     Picker("Sezione", selection: $scope) {
@@ -149,8 +156,9 @@ struct CareerView: View {
             .frame(maxWidth: 700)
             .frame(maxWidth: .infinity)
         }
+        .endsRevealsOnScroll()
         .overlay {
-            if career.isLoading && career.sessions.isEmpty && career.libretto.isEmpty {
+            if career.isLoading && !career.hasAnswer && career.sessions.isEmpty && career.libretto.isEmpty {
                 ProgressView()
             }
         }
@@ -197,22 +205,27 @@ struct CareerView: View {
     ///
     /// - Parameter career: The career to draw.
     /// - Returns: The list, or an empty state.
-    @ViewBuilder
     private func libretto(_ career: CareerModel) -> some View {
         let groups = career.studyPlan.byYear
-        if groups.isEmpty {
+        return VStack(spacing: 10) {
+            ForEach(Array(groups.enumerated()), id: \.element.year) { index, group in
+                LibrettoYearCard(title: group.year, exams: group.exams,
+                                 isExpanded: isOpen(group.year, in: groups)) {
+                    withAnimation(.snappy(duration: 0.28)) { toggle(group.year, in: groups) }
+                }
+                // A closed year still says that something in it is new.
+                .newMark(isOpen(group.year, in: groups) ? [] : group.exams.map(\.id),
+                         in: CareerModel.librettoSection)
+                .revealed(order: index)
+            }
+        }
+        .clearsNewMarks(in: CareerModel.librettoSection)
+        .arriving(career.librettoPhase, hasRows: !groups.isEmpty, title: "Libretto",
+                  step: "Sto chiedendo il libretto al Politecnico", remember: "carriera.libretto",
+                  retry: { await career.load(force: true) }) {
             ContentUnavailableView("Nessun esito", systemImage: "checkmark.seal",
                                    description: Text("Il libretto non ha restituito insegnamenti."))
                 .padding(.top, 30)
-        } else {
-            VStack(spacing: 10) {
-                ForEach(groups, id: \.year) { group in
-                    LibrettoYearCard(title: group.year, exams: group.exams,
-                                     isExpanded: isOpen(group.year, in: groups)) {
-                        withAnimation(.snappy(duration: 0.28)) { toggle(group.year, in: groups) }
-                    }
-                }
-            }
         }
     }
 
@@ -241,31 +254,34 @@ struct CareerView: View {
     ///
     /// - Parameter career: The career to draw.
     /// - Returns: The list, or an empty state.
-    @ViewBuilder
     private func upcoming(_ career: CareerModel) -> some View {
         let sections = ExamAgenda.sections(from: career.sessions)
-        if sections.isEmpty {
+        return VStack(alignment: .leading, spacing: 18) {
+            ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+                VStack(alignment: .leading, spacing: 8) {
+                    LookHeading(verbatim: section.title)
+                    ForEach(section.exams) { exam in
+                        Button { selectedExam = exam } label: { ExamRow(exam: exam) }
+                            .buttonStyle(.plain)
+                            .newMark(String(exam.id), in: CareerModel.sittingsSection)
+                    }
+                    if let footnote = section.footnote {
+                        Text(footnote)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 4)
+                    }
+                }
+                .revealed(order: index * 2)
+            }
+        }
+        .clearsNewMarks(in: CareerModel.sittingsSection)
+        .arriving(career.sittingsPhase, hasRows: !sections.isEmpty, title: "Appelli",
+                  step: "Sto chiedendo gli appelli al Politecnico", remember: "carriera.appelli",
+                  retry: { await career.load(force: true) }) {
             ContentUnavailableView("Nessun appello", systemImage: "calendar.badge.clock",
                                    description: Text("Non ci sono appelli in programma."))
                 .padding(.top, 30)
-        } else {
-            VStack(alignment: .leading, spacing: 18) {
-                ForEach(sections) { section in
-                    VStack(alignment: .leading, spacing: 8) {
-                        LookHeading(verbatim: section.title)
-                        ForEach(section.exams) { exam in
-                            Button { selectedExam = exam } label: { ExamRow(exam: exam) }
-                                .buttonStyle(.plain)
-                        }
-                        if let footnote = section.footnote {
-                            Text(footnote)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 4)
-                        }
-                    }
-                }
-            }
         }
     }
 

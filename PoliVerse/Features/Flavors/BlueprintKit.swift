@@ -48,6 +48,7 @@ extension Font {
 
 /// The page itself: blue paper squared in white, a heavier line every fifth square.
 struct BlueprintPaper: View {
+    @Environment(\.specialEffectsEnabled) private var effects
     /// The look, already resolved.
     let style: TodayStyle
 
@@ -55,6 +56,7 @@ struct BlueprintPaper: View {
     var body: some View {
         let spacing = style.specialSettings.grid.spacing
         Canvas { context, size in
+            guard effects else { return }
             var fine = Path(), heavy = Path()
             var index = 0
             var x: CGFloat = 0
@@ -87,12 +89,14 @@ struct LookBackground: View {
     let style: TodayStyle
     /// Rounded here for thumbnails, as ``TodayBackgroundView`` rounds itself.
     var cornerRadius: CGFloat = 0
+    var page: SpecialPage = .today
 
     /// The view's content.
     var body: some View {
         switch style.special {
         case .blueprint:
             BlueprintPaper(style: style)
+                .specialPage(page, style: style)
                 .clipShape(.rect(cornerRadius: cornerRadius))
         case .playful, nil:
             TodayBackgroundView(style: style, cornerRadius: cornerRadius)
@@ -102,6 +106,7 @@ struct LookBackground: View {
 
 /// A box ruled in white, with its label cut into the top edge.
 struct BlueprintBox<Content: View>: View {
+    @Environment(\.specialEffectsEnabled) private var effects
     /// The label: a letter and what the box is, "A · PROSSIMA".
     var label: String?
     /// Dashed rather than solid: for what is past or less certain.
@@ -120,7 +125,7 @@ struct BlueprintBox<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .overlay {
                 Rectangle()
-                    .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: dashed ? [6, 4] : []))
+                    .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: dashed && effects ? [6, 4] : []))
                     .foregroundStyle(.white.opacity(dashed ? 0.7 : 0.95))
             }
             .overlay(alignment: .topLeading) {
@@ -179,10 +184,11 @@ struct BlueprintHeading: View {
 
 /// A row of a Blueprint table, a dashed rule under it.
 struct BlueprintRule: View {
+    @Environment(\.specialEffectsEnabled) private var effects
     /// The view's content.
     var body: some View {
         Rectangle()
-            .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+            .stroke(style: StrokeStyle(lineWidth: 1, dash: effects ? [4, 3] : []))
             .frame(height: 1)
             .foregroundStyle(.white.opacity(0.55))
             .accessibilityHidden(true)

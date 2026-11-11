@@ -1,0 +1,37 @@
+% RASD for the loading update of PoliVerse. Build: scripts/docs.sh
+\documentclass[rasd]{se2doc}
+\input{../meta}
+\docversion{1.0}
+\revision{0.1}{10 Nov 2026}{First draft: goals, assumptions, requirements and use cases}
+\revision{1.0}{10 Nov 2026}{Requirements agreed; Alloy model added to section 4}
+\input{../glossary}
+\usetikzlibrary{positioning,arrows.meta,shapes.multipart,fit}
+
+% Values marked with a dagger are initial values, see section 1.3.
+\newcommand\initial{\textsuperscript{\dag}}
+
+\begin{document}
+\maketitle
+
+\input{sections/1-introduction}
+\input{sections/2-overall-description}
+\input{sections/3-specific-requirements}
+\input{sections/4-formal-analysis}
+
+\section{Effort spent}
+% TODO: one \effort{task}{hours} per task, then \printeffort.
+To be recorded as the work proceeds.
+
+\section{References}
+\begin{enumerate}
+  \item \emph{Partial loading in PoliVerse}, analysis document, 10 November 2026.
+  \item \emph{New capabilities for partial loading}, analysis document, 10 November 2026.
+  \item \texttt{docs/data-loading-architecture.md}: the store layer (\texttt{Resource}, \texttt{Loader}, \texttt{Query}).
+  \item \texttt{docs/data-freshness.md}: what the Politecnico's servers return, measured on 12 September 2026.
+  \item \texttt{docs/metrickit-performance.md}: load times measured on an iPhone 12 Pro.
+  \item \texttt{docs/lazy-loading.md}: prefetching and launch time.
+  \item Apple, \emph{Human Interface Guidelines: Loading}.
+  \item Apple, \emph{Choosing background strategies for your app}, BackgroundTasks documentation.
+\end{enumerate}
+
+\end{document}

@@ -123,11 +123,15 @@ struct ConnectionsView: View {
 
             weBeepSection(colour: colours[.weBeep] ?? ramp.neutral)
             accountSection
+            if session.student != nil, !session.useMockData {
+                Section("Collegamenti") { ConnectionRows().listRowBackground(Color.clear) }
+            }
             servicesSection(colours: colours, neutral: ramp.neutral)
             pendingSection
             backgroundSection
             deviceSection
             performanceSection
+            loadingSection
             reportSection
 
             Section {
@@ -483,6 +487,56 @@ struct ConnectionsView: View {
             }
             .lookRow()
         }
+    }
+
+    /// How long loading took, from the loading ledger: per screen, then per kind of data.
+    @ViewBuilder
+    private var loadingSection: some View {
+        if let loading = snapshot?.loading, !loading.isEmpty {
+            Section {
+                ForEach(loading.screens) { screen in
+                    LabeledContent(screen.name) {
+                        VStack(alignment: .trailing, spacing: 1) {
+                            Text(Self.times(first: screen.firstContent, complete: screen.complete))
+                            Text(screen.isEnough ? "\(screen.openings) aperture" : "\(screen.openings) aperture, campione troppo piccolo")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .multilineTextAlignment(.trailing)
+                    }
+                }
+                ForEach(loading.parts) { part in
+                    LabeledContent {
+                        VStack(alignment: .trailing, spacing: 1) {
+                            Text(part.duration.map { "\($0.median) ms, p90 \($0.p90) ms" } ?? "—")
+                            Text("\(part.count) richieste, \(Int((part.failureShare * 100).rounded()))% fallite")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .multilineTextAlignment(.trailing)
+                    } label: {
+                        Text(verbatim: "\(part.part) · \(part.host)")
+                    }
+                }
+                if let share = loading.speculativeUsedShare {
+                    LabeledContent("Richieste anticipate usate") {
+                        Text("\(Int((share * 100).rounded()))% di \(loading.speculativeSent)")
+                    }
+                }
+            } header: {
+                Text("Caricamento")
+            } footer: {
+                Text("Tempi misurati su questo dispositivo negli ultimi \(loading.days) giorni: mediana e 90° percentile. Nessun contenuto viene registrato, solo durate ed esiti.")
+            }
+            .lookRow()
+        }
+    }
+
+    /// A screen's two times on one line.
+    private static func times(first: LedgerReport.Spread?, complete: LedgerReport.Spread?) -> String {
+        let first = first.map { "primo \($0.median) ms" } ?? "primo —"
+        let complete = complete.map { "completa \($0.median) ms" } ?? "completa —"
+        return "\(first), \(complete)"
     }
 
     /// The whole page as text, to attach to a bug report, with or without the matricola.

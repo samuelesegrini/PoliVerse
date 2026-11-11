@@ -1,0 +1,345 @@
+{
+  "csie": "MIB0211",
+  "piani": [
+    {
+      "csip": "MIB021100S",
+      "nome": "Seminterrato",
+      "aule": {}
+    },
+    {
+      "csip": "MIB0211000",
+      "nome": "Terra",
+      "aule": {
+        "MIB0211000003a": {
+          "sigla": "B2.0.1 - D.I.",
+          "posti": 84,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIB0211001",
+      "nome": "Primo",
+      "aule": {
+        "MIB0211001015": {
+          "sigla": "B2.1.1",
+          "posti": 276,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211001006": {
+          "sigla": "B2.1.10",
+          "posti": 112,
+          "dotazioni": [
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211001009b": {
+          "sigla": "B2.1.11",
+          "posti": 48,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211001009a": {
+          "sigla": "B2.1.12",
+          "posti": 48,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211001010a": {
+          "sigla": "B2.1.13",
+          "posti": 48,
+          "dotazioni": [
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211001010b": {
+          "sigla": "B2.1.14",
+          "posti": 48,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211001013": {
+          "sigla": "B2.1.15",
+          "posti": 112,
+          "dotazioni": [
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211001014": {
+          "sigla": "B2.1.16",
+          "posti": 117,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIB0211001016": {
+          "sigla": "B2.1.2",
+          "posti": 108,
+          "dotazioni": [
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211001017": {
+          "sigla": "B2.1.3",
+          "posti": 108,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211001020": {
+          "sigla": "B2.1.5",
+          "posti": 102,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211001021": {
+          "sigla": "B2.1.6",
+          "posti": 96,
+          "dotazioni": [
+            "proiettore",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211001001": {
+          "sigla": "B2.1.8",
+          "posti": 98,
+          "dotazioni": [
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211001003": {
+          "sigla": "B2.1.9",
+          "posti": 265,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIB0211002",
+      "nome": "Secondo",
+      "aule": {
+        "MIB0211002014": {
+          "sigla": "B2.2.1",
+          "posti": 284,
+          "dotazioni": [
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211002005": {
+          "sigla": "B2.2.10",
+          "posti": 90,
+          "dotazioni": [
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211002008a": {
+          "sigla": "B2.2.11",
+          "posti": 64,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211002008b": {
+          "sigla": "B2.2.12",
+          "posti": 147,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIB0211002009": {
+          "sigla": "B2.2.13",
+          "posti": 160,
+          "dotazioni": [
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211002012": {
+          "sigla": "B2.2.14",
+          "posti": 96,
+          "dotazioni": [
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211002013": {
+          "sigla": "B2.2.15",
+          "posti": 101,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIB0211002015": {
+          "sigla": "B2.2.2",
+          "posti": 78,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211002016": {
+          "sigla": "B2.2.3",
+          "posti": 112,
+          "dotazioni": [
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211002019": {
+          "sigla": "B2.2.4",
+          "posti": 64,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211002020b": {
+          "sigla": "B2.2.5",
+          "posti": 124,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        },
+        "MIB0211002020a": {
+          "sigla": "B2.2.6",
+          "posti": 64,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211002001": {
+          "sigla": "B2.2.7",
+          "posti": 112,
+          "dotazioni": [
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211002003": {
+          "sigla": "B2.2.8",
+          "posti": 284,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211002004": {
+          "sigla": "B2.2.9",
+          "posti": 89,
+          "dotazioni": [
+            "proiettore",
+            "microfono",
+            "oscurabile",
+            "cattedra",
+            "prese"
+          ]
+        }
+      }
+    },
+    {
+      "csip": "MIB0211003",
+      "nome": "Terzo",
+      "aule": {
+        "MIB0211003001": {
+          "sigla": "B2.3.1",
+          "posti": 88,
+          "dotazioni": [
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211003002": {
+          "sigla": "B2.3.2",
+          "posti": 64,
+          "dotazioni": [
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211003003": {
+          "sigla": "B2.3.3",
+          "posti": 102,
+          "dotazioni": [
+            "oscurabile",
+            "cattedra"
+          ]
+        },
+        "MIB0211003004": {
+          "sigla": "B2.3.4",
+          "posti": 112,
+          "dotazioni": [
+            "oscurabile",
+            "cattedra"
+          ]
+        }
+      }
+    }
+  ]
+}

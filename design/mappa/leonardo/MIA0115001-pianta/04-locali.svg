@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-19.5 268.9 39.6 66.4" width="395.9" height="663.8">
+<path id="MIA0115001001" data-tipo="corridoio" d="M3.8 301.3L3.4 301.3L3.4 298.9L1.7 298.9L1.7 303.1L1.4 303.1L1.4 306.9L0.8 306.9L0.8 308.2L1.4 308.2L1.4 318.1L1.4 318.1L1.4 319.1L2 319.1L2 319.2L2.9 319.2L2.9 319.1L5.2 319.1L5.2 318.1L5.1 318.1L5.1 317.6L2.9 317.6L2.9 315.1L3.2 315.1L3.2 312.9L2.9 312.9L2.9 309.6L3.2 309.6L3.2 308.6L2.9 308.6L2.9 308.5L3.2 308.5L3.2 307.4L2.9 307.4L2.9 304.1L3.1 304.1L3.2 304.1L3.2 303.1L2.9 303.1L2.9 302.6L3.4 302.6L3.4 302.4L3.8 302.5Z" fill="#FFFFFF" fill-rule="evenodd"/>
+<path id="MIA0115001002" data-tipo="tecnico" d="M-0.8 303.1L-0.8 304.4L1.3 304.4L1.3 304.1L1.4 304.1L1.4 303.2L1.3 303.2L1.3 303.1Z" fill="#E4E7EC" fill-rule="evenodd"/>
+<path id="MIA0115001003" data-tipo="scale" d="M0.8 306.9L-0.9 306.9L-0.9 303.1L-2.3 303.1L-2.3 308.2L0.8 308.2Z" fill="#E9EBEF" fill-rule="evenodd"/>
+<path id="MIA0115001004a" data-tipo="wc" d="M1.3 310.6L1.3 308.6L-0.9 308.6L-0.9 310.6Z" fill="#EEF0F3" fill-rule="evenodd"/>
+<path id="MIA0115001004b" data-tipo="tecnico" d="M-2.1 308.6L-0.9 308.6L-0.9 309.6L-2.1 309.6Z" fill="#E4E7EC" fill-rule="evenodd"/>
+<path id="MIA0115001004c" data-tipo="tecnico" d="M-0.9 309.6L-2.1 309.6L-2.1 310.6L-0.9 310.6Z" fill="#E4E7EC" fill-rule="evenodd"/>
+<path id="MIA0115001005" data-tipo="corridoio" d="M1.3 312.5L0.8 312.5L0.8 312.6L-0.2 312.6L-0.2 312.5L-0.2 312.5L-0.2 312.4L-0.4 312.4L-0.4 311.6L-0.2 311.6L-0.2 310.8L-0.2 310.8L-0.2 310.6L0.8 310.6L0.8 310.8L1.3 310.8L1.3 311.5L1.4 311.5L1.4 312.4L1.3 312.4Z" fill="#FFFFFF" fill-rule="evenodd"/>
+<path id="MIA0115001006" data-tipo="wc" d="M-2.1 310.8L-0.4 310.8L-0.4 312.5L-2.1 312.5Z" fill="#EEF0F3" fill-rule="evenodd"/>
+<path id="MIA0115001007a" data-tipo="wc" d="M-0.9 314.6L-0.9 312.7L0.9 312.6L0.9 313.5L1.1 313.5L1.1 314.6Z" fill="#EEF0F3" fill-rule="evenodd"/>
+<path id="MIA0115001007b" data-tipo="tecnico" d="M-2.1 312.7L-0.9 312.7L-0.9 313.6L-2.1 313.6Z" fill="#E4E7EC" fill-rule="evenodd"/>
+<path id="MIA0115001007c" data-tipo="tecnico" d="M-0.9 313.6L-2.1 313.6L-2.1 314.6L-0.9 314.6Z" fill="#E4E7EC" fill-rule="evenodd"/>
+<path id="MIA0115001008" data-tipo="locale" d="M1.3 317.5L-2.6 317.5L-2.6 317.7L-2.8 317.7L-2.8 314.8L1.4 314.8L1.4 315.8L1.3 315.8Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0115001009" data-tipo="corridoio" d="M1.4 319.1L1.4 318L-2.6 318L-2.6 317.8L-2.8 317.8L-2.8 322.3L-0.1 322.3L-0.1 319.1Z" fill="#FFFFFF" fill-rule="evenodd"/>
+<path id="MIA0115001010" data-tipo="locale" d="M0 319.6L0 322.3L5.1 322.2L5.1 319.6L3 319.6L3 319.2L1.9 319.2L1.9 319.6Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0115001011" data-tipo="locale" d="M5.2 322.2L7.9 322.2L7.9 317.8L6.5 317.8L6.5 318L5.2 318Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0115001012" data-tipo="locale" d="M6.5 317.7L6.5 317.5L3.4 317.5L3.4 315.1L3.2 315.1L3.2 314.1L7.9 314.1L7.9 317.7Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0115001013" data-tipo="locale" d="M6.1 314L6.1 313.8L5.8 313.8L5.8 314L3.2 314L3.2 312.9L3.4 312.9L3.4 311.4L7.9 311.3L7.9 314Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0115001014" data-tipo="locale" d="M3.4 311.2L3.4 309.6L3.2 309.6L3.2 308.6L7.9 308.6L7.9 311.2Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0115001015" data-tipo="locale" d="M6.4 308.5L6.4 308.2L5.8 308.2L5.8 308.5L3.2 308.5L3.2 307.4L3.3 307.4L3.3 305.8L7.8 305.8L7.9 308.5Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0115001016" data-tipo="locale" d="M3.3 305.7L3.3 304.1L3.2 304.1L3.2 303.1L7.8 303.1L7.8 305.7Z" fill="#F3F4F7" fill-rule="evenodd"/>
+</svg>

@@ -1,0 +1,243 @@
+% DRAFT, rewrite
+\section{Specific requirements}
+
+\subsection{External interface requirements}
+
+\subsubsection{User interfaces}
+Every section of a screen is in exactly one of the states of the state diagram in
+section 2.1.2, and each state has one look, shared by all screens:
+\begin{itemize}
+  \item Held: the content, with no indicator over it.
+  \item Waiting, short: the section's space, empty.
+  \item Waiting: the section's title and one soft waiting line where the first line of text will be. No grey placeholder blocks.
+  \item Waiting, long: the same, plus one line naming the step in progress or a count.
+  \item Arrived: the content writes itself in with the reveal.
+  \item Empty: the empty-state message.
+  \item Failed: one line in the section naming what is unavailable, with a retry control.
+\end{itemize}
+Impostazioni gains one page for the offline pack and one for the speculative
+budget. The diagnostics report gains the loading ledger.
+
+\subsubsection{Hardware interfaces}
+None beyond the phone itself. The haptic of \idref{R10} uses the system's feedback
+generator.
+
+\subsubsection{Software interfaces}
+iOS 27: BackgroundTasks for the refresh and processing tasks, Network for the path's
+state, UserNotifications for local notifications, WidgetKit for reloading widgets
+after a part changes.
+
+\subsubsection{Communication interfaces}
+HTTPS to the Politecnico's hosts already used by the app. The update adds no new
+host and no new endpoint.
+
+\subsection{Functional requirements}
+
+\subsubsection{Partial display}
+\requirement{R1}{The app shall show each section of a screen as soon as its part has arrived, without waiting for the other parts of that screen (\idref{G1}, \idref{D1}, \idref{D3}).}
+\requirement{R2}{The app shall not show a section's empty-state message before the request for that section's part has answered (\idref{G2}).}
+\requirement{R3}{The app shall not show a value computed from several parts until every part it is computed from has arrived or has a stored copy (\idref{G2}).}
+\requirement{R4}{While parts of a screen arrive, the app shall update that screen at most once every 100 ms, always with the newest state (\idref{G1}).}
+\requirement{R5}{When a section has no stored copy and its part has not answered, the app shall show nothing for the first 300 ms, then the section's title with a waiting line, and after 3 s also the step in progress, or the count of items received out of the total when the total is known (\idref{G1}, \idref{G2}).}
+\requirement{R6}{When a part fails and has no stored copy, the app shall show a failure line with a retry control inside that section only, and shall leave every other section of the screen as it is (\idref{G1}).}
+\requirement{R7}{The app shall play the reveal for content that arrives for the first time or that changed, and shall show content read from a stored copy without animation (\idref{G1}, \idref{G5}).}
+\requirement{R8}{The reveal of a section shall end within 0.6 s, shall end at once when the student taps or scrolls, and shall be a 0.2 s cross-fade when Reduce Motion is on (\idref{G1}).}
+\requirement{R9}{When new rows arrive in a list the student has scrolled, the app shall not change the position on screen of the rows already visible (\idref{G1}).}
+\requirement{R10}{When a section that has been waiting for more than 3 s arrives, the app shall announce it to VoiceOver and, if the student enabled it, give one light haptic (\idref{G1}).}
+\requirement{R11}{While a section waits, the app shall hold for it the height it had the last time it was shown on this phone, if any (\idref{G1}).}
+\requirement{R12}{The app shall start together all requests of a screen that do not need each other's answers (\idref{G1}, \idref{D3}).}
+
+\subsubsection{Relevance order}
+\requirement{R13}{When a screen needs one request per room, the app shall send them in this order: rooms of buildings in the map area on screen, rooms of the building of the student's next lecture today, rooms of the favourite campus, all remaining rooms (\idref{G1}, \idref{D3}).}
+
+\subsubsection{Parts stored and aged one by one}
+\requirement{R14}{The app shall store each part on the phone when it arrives, with the time it was fetched and the account it belongs to, whether or not the other parts of the same load arrive (\idref{G1}, \idref{G4}).}
+\requirement{R15}{Each kind of part shall have its own max age, and a refresh shall request only the parts whose stored copy is older than their max age or missing (\idref{G6}, \idref{D2}).}
+\requirement{R16}{When a load is interrupted and started again, the app shall request only the parts that had not arrived (\idref{G1}).}
+
+\subsubsection{Part deadlines}
+\requirement{R17}{When a part has not answered after 4 s\initial{} and a stored copy exists, the app shall show the stored copy with its age, keep waiting for the answer in the background, and replace the copy when the answer arrives (\idref{G1}, \idref{D4}).}
+\requirement{R18}{After two\initial{} consecutive timeouts from a host, the app shall, for the next 30 s\initial, answer requests to that host from stored copies at once and show which service is not responding (\idref{G1}, \idref{D4}).}
+
+\subsubsection{Timetable prefetch}
+\requirement{R19}{Whenever the app runs, in the foreground or in a background refresh, and a lecture of the student starts within the next 60 minutes\initial, the app shall prefetch that room's bookings for the day, its floor plan, its building's 3D model and the course page (\idref{G3}, \idref{D5}, \idref{D7}).}
+\requirement{R20}{When the student opens a part that was prefetched and is younger than its max age, the app shall show it without sending a request (\idref{G3}).}
+
+\subsubsection{Offline pack}
+\requirement{R21}{At most once a day, when the network is not metered and iOS grants a processing task, the app shall fetch and store: the timetable of the current and the next week, tomorrow's bookings for the favourite campus, that campus's floor plans and 3D models, and the page and syllabus of each enrolled course (\idref{G4}, \idref{D7}, \idref{D9}).}
+\requirement{R22}{Impostazioni shall list each item of the offline pack with whether it is stored and how old it is, and shall let the student switch the pack off and start it by hand (\idref{G4}, \idref{G6}).}
+\requirement{R23}{With no connection, the app shall show each section from its stored copy with its age, and shall show a failure only in sections that have no stored copy (\idref{G4}, \idref{D9}).}
+
+\subsubsection{Boundary refresh}
+\requirement{R24}{At each booking boundary of a room whose bookings for the day are stored, the app shall recompute whether the room is free from the stored bookings, without sending a request (\idref{G1}, \idref{G6}, \idref{D6}).}
+\requirement{R25}{While Aule libere or the map is on screen, the app shall request again the bookings of the rooms on screen at most once per booking boundary, and shall not poll on a timer (\idref{G5}, \idref{D2}, \idref{D6}).}
+
+\subsubsection{Change awareness}
+\requirement{R26}{When a fetched part replaces a stored copy, the app shall determine which items were added, changed or removed, comparing items by their identity (\idref{G5}, \idref{D10}).}
+\requirement{R27}{The app shall mark added and changed items as new until the student has had their section on screen (\idref{G5}).}
+\requirement{R28}{On a refresh over content already on screen, the app shall play the reveal only for the added and changed items (\idref{G5}).}
+\requirement{R29}{When a refresh finds a change of a kind the student enabled (a grade published, an exam sitting opened or changed, a lecture moved to another room or time), the app shall deliver one local notification for it, within the daily limit already applied to exam updates (\idref{G5}, \idref{D2}, \idref{D7}).}
+
+\subsubsection{Speculative budget}
+\requirement{R30}{The app shall send no speculative request while Low Data Mode is on, and none on a metered network unless the student allowed it in Impostazioni (\idref{G6}, \idref{D8}).}
+\requirement{R31}{The app shall send no speculative request while Low Power Mode is on or the phone's thermal state is serious or critical (\idref{G6}, \idref{D8}).}
+\requirement{R32}{The app shall run at most two\initial{} speculative requests per host at a time, and shall give a request for a section on screen precedence over them (\idref{G1}, \idref{G6}).}
+\requirement{R33}{The app shall send at most 600\initial{} speculative requests per day to the Politecnico's hosts, and shall stop prefetching and the offline pack for the day when the limit is reached (\idref{G6}, \idref{D11}).}
+
+\subsubsection{Loading ledger}
+\requirement{R34}{For every request the app shall record the kind of part, the host, the start time, the duration, the outcome, and whether it was speculative (\idref{G7}).}
+\requirement{R35}{For every opening of a screen the app shall record the time to first content and the time until its last part arrived (\idref{G7}).}
+\requirement{R36}{For every speculative request the app shall record whether its result was shown to the student before it passed its max age (\idref{G7}, \idref{G6}).}
+\requirement{R37}{The diagnostics report shall show, per screen and per kind of part, the median and the 90th percentile of the recorded times over the last 14 days, and the share of speculative requests that were used (\idref{G7}).}
+
+\subsubsection{Privacy}
+The update stores personal data only on the phone: copies of parts the app already
+shows, and the ledger.
+\requirement{R38}{The ledger shall contain no content of any part, no token and no matricola: only the fields of \idref{R34} to \idref{R36} (\idref{G7}).}
+\requirement{R39}{The app shall keep stored copies and the ledger only on the phone, shall send them to no one, and shall include the ledger in a diagnostics report only when the student shares that report (\idref{G7}, \idref{D10}).}
+\requirement{R40}{At sign-out the app shall delete every stored copy of that account, the marks of \idref{R27} and the ledger (\idref{G4}, \idref{D10}).}
+
+\subsubsection{Use cases}
+Actors: the Student and the Developer as initiators; the Politecnico's servers and
+iOS as supporting actors.
+
+\begin{usecase}{UC1}{Open a screen built from several parts}
+  \ucfield{Actors}{Student, Politecnico's servers}
+  \ucfield{Entry}{The student is signed in and opens a screen with no stored copy, for example Carriera after the first sign-in.}
+  \ucfield{Flow}{\begin{enumerate}
+    \item The app starts the requests for all parts together.
+    \item After 300 ms each section still waiting shows its title and a waiting line.
+    \item A part answers; its section writes itself in.
+    \item Steps repeat until every part has answered.
+    \item Values computed from several parts appear once all of them are there.
+  \end{enumerate}}
+  \ucfield{Exit}{Every section shows content or its empty state, and every part is stored.}
+  \ucfield{Exceptions}{A part fails: its section shows a failure line with retry; the others are unaffected. A part is slow and a stored copy exists: the copy is shown with its age. The student leaves the screen: the parts that arrived stay stored.}
+\end{usecase}
+
+\begin{usecase}{UC2}{Find a free room nearby}
+  \ucfield{Actors}{Student, Politecnico's servers}
+  \ucfield{Entry}{The student opens Aule libere or the map for a campus.}
+  \ucfield{Flow}{\begin{enumerate}
+    \item The app orders the rooms by relevance and requests their bookings.
+    \item Free rooms are listed, and buildings coloured, as their answers arrive, with a count of rooms received.
+    \item The student reads the list while the rest arrives below.
+    \item At the next booking boundary the list updates from stored bookings.
+  \end{enumerate}}
+  \ucfield{Exit}{The student sees the rooms free now, the nearest relevant ones first.}
+  \ucfield{Exceptions}{A room's bookings are hidden or fail: the room is not listed as free. No connection: stored bookings for the day are used and their age shown.}
+\end{usecase}
+
+\begin{usecase}{UC3}{Open what a lecture needs}
+  \ucfield{Actors}{Student, iOS, Politecnico's servers}
+  \ucfield{Entry}{A lecture of the student starts within 60 minutes and the app has run in that time, in the foreground or in a background refresh.}
+  \ucfield{Flow}{\begin{enumerate}
+    \item The app checks the speculative budget.
+    \item The app prefetches the room's bookings, floor plan, building model and course page.
+    \item The student opens the room or the course.
+    \item The app shows the prefetched parts at once.
+  \end{enumerate}}
+  \ucfield{Exit}{The student sees the room and the course without waiting.}
+  \ucfield{Exceptions}{The budget forbids speculative requests, or iOS did not run the app: the parts load as in UC1 when opened.}
+\end{usecase}
+
+\begin{usecase}{UC4}{Use the app with no connection}
+  \ucfield{Actors}{Student, iOS}
+  \ucfield{Entry}{The offline pack ran since the last change of week, and the phone has no connection.}
+  \ucfield{Flow}{\begin{enumerate}
+    \item The student opens the timetable, a room, a course page or the campus.
+    \item The app shows the stored copies with their age.
+    \item The student opens Impostazioni and reads what is ready offline.
+  \end{enumerate}}
+  \ucfield{Exit}{The student has consulted the data without any request being sent.}
+  \ucfield{Exceptions}{A section has no stored copy: it alone shows that it is unavailable offline. The connection returns: the app refreshes the parts older than their max age.}
+\end{usecase}
+
+\begin{usecase}{UC5}{See what changed}
+  \ucfield{Actors}{Student, iOS, Politecnico's servers}
+  \ucfield{Entry}{A stored copy exists and the server's data has changed since it was fetched.}
+  \ucfield{Flow}{\begin{enumerate}
+    \item The app refreshes the part, in the background or when the student opens the app.
+    \item The app compares the answer with the stored copy.
+    \item If the change is of an enabled kind, the app delivers a notification.
+    \item The student opens the section; the changed items write themselves in and are marked as new.
+    \item The marks are removed once the section has been on screen.
+  \end{enumerate}}
+  \ucfield{Exit}{The student has seen what changed, and the stored copy is the new one.}
+  \ucfield{Exceptions}{Nothing changed: nothing animates and nothing is marked. Notifications are not permitted or the daily limit is reached: only the marks are shown.}
+\end{usecase}
+
+\begin{usecase}{UC6}{Judge a loading change from measurements}
+  \ucfield{Actors}{Developer}
+  \ucfield{Entry}{The app has been used on a phone with the ledger recording.}
+  \ucfield{Flow}{\begin{enumerate}
+    \item The developer opens the diagnostics report.
+    \item The developer reads, per screen, the time to first content and to the last part, and the share of speculative requests used.
+    \item The developer compares them with the baseline.
+  \end{enumerate}}
+  \ucfield{Exit}{The developer knows whether the change met the performance requirements.}
+  \ucfield{Exceptions}{Fewer than 20 openings of a screen were recorded: the report says the sample is too small.}
+\end{usecase}
+
+\subsubsection{Mapping}
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+  \toprule
+  Use case & Requirements \\
+  \midrule
+  UC1 & R1 to R12, R14, R16, R17, R18 \\
+  UC2 & R1, R4, R5, R9, R13, R23, R24, R25 \\
+  UC3 & R19, R20, R30 to R33 \\
+  UC4 & R21, R22, R23, R15 \\
+  UC5 & R26 to R29, R7 \\
+  UC6 & R34 to R39 \\
+  \bottomrule
+\end{tabularx}
+
+\medskip
+\begin{tabularx}{\linewidth}{@{}l X X@{}}
+  \toprule
+  Goal & Requirements & Assumptions relied on \\
+  \midrule
+  G1 & R1, R4 to R14, R16 to R18, R24, R32 & D1, D3, D4, D6 \\
+  G2 & R2, R3, R5 & none \\
+  G3 & R19, R20 & D5, D7 \\
+  G4 & R14, R21, R22, R23, R40 & D7, D9, D10 \\
+  G5 & R7, R25 to R29 & D2, D6, D7, D10 \\
+  G6 & R15, R22, R24, R30 to R33, R36 & D2, D6, D8, D11 \\
+  G7 & R34 to R39 & none \\
+  \bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Performance requirements}
+All are measured with the loading ledger on an iPhone 12 Pro, on Wi-Fi, over at
+least 20 openings, against the baseline.
+\requirement{P1}{A section shall be on screen within 150 ms\initial{} of the arrival of its part, at the 90th percentile (\idref{G1}).}
+\requirement{P2}{On a screen with no stored copy, the time to first content shall be no more than the answer time of its fastest part plus 150 ms\initial (\idref{G1}).}
+\requirement{P3}{In Aule libere with no stored copy, the first free room shall be listed within 2 s\initial{} of opening, at the median (\idref{G1}).}
+\requirement{P4}{The time until the last part of a screen arrives shall be no more than 5\% above the baseline (\idref{G1}).}
+\requirement{P5}{A screen with stored copies of all its parts shall show them within 100 ms of opening (\idref{G1}).}
+\requirement{P6}{While sections arrive and during reveals, the hitch time ratio shall stay below 10 ms per second (\idref{G1}).}
+\requirement{P7}{At least half\initial{} of the speculative requests of a week shall be used (\idref{R36}); below that, the prefetch rule is revised (\idref{G6}).}
+\requirement{P8}{Recording one ledger entry shall take less than 1 ms on the main thread, and the ledger shall occupy at most 1 MB (\idref{G7}).}
+\requirement{P9}{The offline pack shall occupy at most 200 MB\initial{} and shall finish within the time iOS grants, resuming on the next run from the parts already stored (\idref{G4}).}
+
+\subsection{Design constraints}
+\begin{itemize}
+  \item iOS 27 as deployment target; Swift 6 with strict concurrency; SwiftUI.
+  \item No server operated by the project, no paid service, no third-party dependency.
+  \item Built inside the existing store layer; a resource with one request compiles unchanged.
+  \item No grey placeholder blocks in any waiting state.
+  \item Apple's Human Interface Guidelines for loading, motion and accessibility.
+  \item The app is unofficial: it uses only the endpoints it already uses, and stays within \idref{R33}.
+\end{itemize}
+
+\subsection{Software system attributes}
+\begin{description}[style=nextline, leftmargin=1.5em]
+  \item[Reliability] A failed or slow part never removes content already on screen. A stored copy is never shown to an account other than the one it was fetched for. Killing the app at any moment leaves every stored copy readable.
+  \item[Availability] With stored copies, every screen in the offline pack opens with no connection (\idref{R23}). The app depends on no service besides the Politecnico's.
+  \item[Security] Stored copies stay in the app's container with the file protection the app already uses, and are deleted at sign-out (\idref{R40}). Tokens stay in the Keychain and never enter a stored copy or the ledger (\idref{R38}).
+  \item[Maintainability] Screens use the shared pieces for the section states; no screen draws its own spinner or empty state for a part. Every requirement has at least one automated test whose name carries its id, for example \texttt{test\_R03\_...}.
+  \item[Portability] The store layer with this update compiles for the iPhone, Apple Watch and Mac targets of the app without changes specific to one of them.
+\end{description}

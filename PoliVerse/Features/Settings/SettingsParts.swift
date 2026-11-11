@@ -611,6 +611,22 @@ struct SettingsAboutSection: View {
                     }
                 }
             }
+            NavigationLink { ReleaseHistoryView() } label: {
+                Label { Text("Tutte le novità") } icon: {
+                    SettingsIcon(symbol: "clock.arrow.circlepath", tone: .neutral)
+                }
+            }
+            .accessibilityIdentifier("settings-release-history")
+            NavigationLink { BetaFeaturesView() } label: {
+                Label { Text("Funzioni in anteprima") } icon: {
+                    SettingsIcon(symbol: "flask", tone: .neutral)
+                }
+            }
+            .accessibilityIdentifier("settings-beta")
+            LabeledContent("Build", value: BuildIdentity().channel)
+            if let url = BuildIdentity().commitURL, let commit = BuildIdentity().commit {
+                Link("Codice di questa build (\(commit.prefix(7)))", destination: url)
+            }
             // The first run, again: the tour and the settings it asks for
             // once. Impostazioni closes first, because the flow takes the
             // place of the app underneath it.

@@ -116,6 +116,15 @@ nonisolated struct SpecialSettings: Codable, Equatable, Hashable, Sendable {
     var pair = 0
     /// How close the squares of Blueprint's paper are.
     var grid = Grid.fine
+    private var presentations: [String: SpecialPresentation] = [:]
+
+    func presentation(for page: SpecialPage) -> SpecialPresentation {
+        presentations[page.rawValue] ?? .characteristic
+    }
+
+    mutating func setPresentation(_ value: SpecialPresentation, for page: SpecialPage) {
+        presentations[page.rawValue] = value == .characteristic ? nil : value
+    }
 
     /// Every knob at its starting place.
     init() {}
@@ -126,6 +135,11 @@ nonisolated struct SpecialSettings: Codable, Equatable, Hashable, Sendable {
     /// - Throws: Whatever the decoder throws.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let raw = try? container.decode([String: JSONValue].self, forKey: .presentations) {
+            for (page, value) in raw where SpecialPage(rawValue: page) != nil {
+                if case .string(let name) = value { presentations[page] = SpecialPresentation(rawValue: name) }
+            }
+        }
         chaos = (try? container.decodeIfPresent(Chaos.self, forKey: .chaos)) ?? chaos
         pair = max(try container.decodeIfPresent(Int.self, forKey: .pair) ?? pair, 0)
         grid = (try? container.decodeIfPresent(Grid.self, forKey: .grid)) ?? grid
@@ -239,4 +253,47 @@ extension EnvironmentValues {
     /// recipe. Personalizza's previews set their own, so what they draw is the
     /// look being edited.
     @Entry var look: TodayStyle = TodayStyle()
+}
+
+/// A special recipe keeps its own layout on every page, with optional quieter decoration.
+nonisolated enum SpecialPage: String, Codable, CaseIterable, Identifiable, Sendable {
+    case today, courses, career, search
+    var id: String { rawValue }
+    var title: LocalizedStringKey {
+        switch self {
+        case .today: "Oggi"
+        case .courses: "Corsi"
+        case .career: "Carriera"
+        case .search: "Cerca"
+        }
+    }
+}
+
+nonisolated enum SpecialPresentation: String, Codable, CaseIterable, Identifiable, Sendable {
+    case characteristic, essential
+    var id: String { rawValue }
+    var title: LocalizedStringKey { self == .characteristic ? "Caratteristico" : "Essenziale" }
+}
+
+extension EnvironmentValues {
+    @Entry var specialEffectsEnabled = true
+}
+
+private struct SpecialPageEffects: ViewModifier {
+    let page: SpecialPage
+    let style: TodayStyle
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.systemPrefersReducedResourceUsage) private var reducedResources
+
+    func body(content: Content) -> some View {
+        content.environment(\.specialEffectsEnabled,
+                            style.specialSettings.presentation(for: page) == .characteristic
+                                && !reduceMotion && !reducedResources)
+    }
+}
+
+extension View {
+    func specialPage(_ page: SpecialPage, style: TodayStyle) -> some View {
+        modifier(SpecialPageEffects(page: page, style: style))
+    }
 }

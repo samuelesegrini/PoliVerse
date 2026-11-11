@@ -112,9 +112,8 @@ final class WeBeepModel {
         set { UserDefaults.standard.set(newValue, forKey: Self.userIDKey) }
     }
     private static let userIDKey = "webeepUserID"
-    /// The course list being fetched, which a second caller joins: the refresh at
-    /// launch asks for it from Corsi and from the update sweep at once.
-    private var coursesLoad: Task<Void, Never>?
+    /// The enrolled courses, with concurrent requests joined and offline storage.
+    private var enrolments: Loader<WeBeepCourses>?
     /// Moodle course id per ``Course/id``, remembered once a course has been matched by
     /// code or name.
     private var courseIDByCode: [String: Int] = [:]
@@ -149,6 +148,27 @@ final class WeBeepModel {
     private func connect(_ client: WeBeepAPI) {
         api = client
         pages = Loader(CoursePage(api: client))
+        enrolments = Loader(WeBeepCourses(fetchCourses: { [weak self] in
+            guard let self, self.api === client else { throw CancellationError() }
+            if let known = self.userID {
+                do {
+                    let courses = try await client.courses(userID: known)
+                    guard self.api === client else { throw CancellationError() }
+                    return courses
+                }
+                catch {
+                    try Task.checkCancellation()
+                    guard self.api === client else { throw CancellationError() }
+                    self.userID = nil
+                }
+            }
+            let info = try await client.siteInfo()
+            guard self.api === client else { throw CancellationError() }
+            self.userID = info.userid
+            let courses = try await client.courses(userID: info.userid)
+            guard self.api === client else { throw CancellationError() }
+            return courses
+        }))
     }
 
     /// The contents of a course page, through the page loader.
@@ -180,10 +200,11 @@ final class WeBeepModel {
         KeychainStore.delete(account: keychainAccount)
         api = nil
         pages = nil
+        enrolments = nil
         userID = nil
         lastSweep = nil
         courses = []
-        keepCourses()
+        OfflineStore.shared.save(courses, as: WeBeepCourses.id, account: session.student?.matricola)
         sections = []
         courseIDByCode = [:]
         state = .needsLogin
@@ -248,61 +269,32 @@ final class WeBeepModel {
             state = .needsLogin
             return
         }
-        if let coursesLoad {
-            await coursesLoad.value
-            return
-        }
-        let task = Task(name: "webeep courses") { await self.fetchCourses() }
-        coursesLoad = task
-        await task.value
-        coursesLoad = nil
-    }
-
-    /// Where the course list is kept between launches.
-    private static let coursesCacheName = "webeep-courses"
-
-    /// Puts the course list kept from the last launch in place, if none is held.
-    private func restoreCourses(account: String) async {
-        guard let kept = await OfflineStore.shared.loaded(
-            [MoodleCourse].self, as: Self.coursesCacheName, account: account)?.value,
-              courses.isEmpty, api != nil else { return }
-        courses = kept
-    }
-
-    /// The course list, by the Moodle user id held or else learned from the site info.
-    ///
-    /// A failure with a held id asks for the id again before giving up, so an id that
-    /// no longer matches the token costs a round trip rather than the connection.
-    private func fetchCourses() async {
-        guard let api else { return }
+        guard let enrolments else { return }
+        let env = Env(session)
         state = .loading
         do {
-            if let known = userID {
-                do {
-                    courses = try await api.courses(userID: known)
-                    keepCourses()
-                    state = .ready
-                    return
-                } catch {
-                    guard !Task.isCancelled else { throw error }
-                    userID = nil
-                }
-            }
-            let info = try await api.siteInfo()
-            userID = info.userid
-            courses = try await api.courses(userID: info.userid)
-            keepCourses()
+            if let account = env.matricola { await restoreCourses(account: account) }
+            // Keep the existing refresh policy: each call refreshes, concurrent calls join.
+            let fetched = try await enrolments.value(Whole(), env: env, force: true)
+            guard self.enrolments === enrolments, Env(session).source == env.source else { return }
+            courses = fetched.value
             state = .ready
-        } catch let error as WeBeepAPI.Failure {
-            handle(error)
         } catch {
-            state = .failed(error.localizedDescription)
+            guard self.enrolments === enrolments, Env(session).source == env.source else { return }
+            if let failure = error as? WeBeepAPI.Failure { handle(failure) }
+            else if !PoliMiAPI.isCancellation(error) { state = .failed(error.localizedDescription) }
         }
     }
 
-    /// Keeps the course list for the next launch's update sweep.
-    private func keepCourses() {
-        OfflineStore.shared.save(courses, as: Self.coursesCacheName, account: session.student?.matricola)
+    /// Restores through the same loader used for foreground course requests.
+    private func restoreCourses(account: String) async {
+        guard courses.isEmpty, let enrolments else { return }
+        let env = Env(session)
+        guard env.matricola == account,
+              let kept = await enrolments.restore(Whole(), env: env),
+              self.enrolments === enrolments, Env(session).source == env.source,
+              courses.isEmpty else { return }
+        courses = kept.value
     }
 
     /// Fetches one course's files into ``sections``.
@@ -743,7 +735,7 @@ final class WeBeepModel {
     ///   matched, or the call failed — none of which is the same as a page with no forums.
     func forums(for course: Course) async -> [CourseForum]? {
         if session.useMockData { return CourseForum.samples }
-        guard let api else { return nil }
+        guard api != nil else { return nil }
         if courses.isEmpty { await loadCourses() }
         guard let moodleID = moodleCourseID(for: course) else { return nil }
         do {
@@ -766,7 +758,7 @@ final class WeBeepModel {
     /// - Returns: The link, or `nil` when WeBeep is not connected, the course cannot be
     ///   matched, or its page has no such link.
     func recordingsEntry(for course: Course) async -> URL? {
-        guard !session.useMockData, let api else { return nil }
+        guard !session.useMockData, api != nil else { return nil }
         if courses.isEmpty { await loadCourses() }
         guard let moodleID = moodleCourseID(for: course) else { return nil }
         do {
@@ -830,6 +822,25 @@ final class WeBeepModel {
 /// `Sendable`, and a `Sendable` conformance stated in another file is
 /// retroactive.
 extension WeBeepModel: CourseEnrolments {
+    /// Warms the page of the enrolled course a lecture belongs to, in the
+    /// speculative lane, so opening the course before the lecture sends nothing.
+    ///
+    /// Matched by name, as ``Course/matches(_:)`` matches the timetable. Nothing
+    /// happens without a WeBeep token or when no enrolled course matches.
+    ///
+    /// - Parameter title: The lecture's title.
+    func warmPage(forLecture title: String) async {
+        guard let pages else { return }
+        let ids = courses.filter { Course(moodle: $0).matches(title: title) }.map(\.id)
+        guard !ids.isEmpty else { return }
+        await pages.warm(ids, env: Env(session))
+    }
+
+    /// Waits for every warm-up of course pages to land, for the background refresh.
+    func settlePages() async {
+        await pages?.settle()
+    }
+
     /// The enrolled teachings, loading them first if they are not held yet.
     ///
     /// - Returns: The teachings.
@@ -878,5 +889,18 @@ nonisolated struct MaterialsListing: Resource {
     @concurrent
     func fetch(_ key: String, env: Env, previous: [WeBeepSection]?) async throws -> [WeBeepSection] {
         throw BuiltFromPage()
+    }
+}
+
+/// The enrolled Moodle courses, sharing the standard joining and offline storage.
+nonisolated struct WeBeepCourses: Resource {
+    typealias Value = [MoodleCourse]
+    static let id = "webeep-courses"
+
+    let fetchCourses: @MainActor @Sendable () async throws -> [MoodleCourse]
+
+    @concurrent
+    func fetch(_ key: Whole, env: Env, previous: Value?) async throws -> Value {
+        try await fetchCourses()
     }
 }

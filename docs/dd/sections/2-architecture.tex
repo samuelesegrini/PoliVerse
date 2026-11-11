@@ -1,0 +1,347 @@
+% DRAFT, rewrite
+\section{Architectural design}
+
+\subsection{Overview}
+The app keeps its four layers: views, observable models, the store layer and the
+platform. The update adds no layer. It extends the store layer so that a load is
+made of parts, and it adds a row of policies: small value types with no state of
+their own that decide order, deadlines, budget, prefetch and changes. Policies take
+the clock and the device state as arguments, so each is tested without a network,
+a phone or waiting.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  band/.style={draw, rounded corners=3pt, text width=14.6cm, align=left, inner sep=6pt, font=\small},
+  uses/.style={-{Stealth[length=5pt]}, thin}]
+  \newcommand\comp[1]{\fbox{\strut #1}\hspace{3pt}}
+  \node[band] (ui) {\textbf{Views}\\[3pt]
+    \comp{Screens} \comp{Section kit: \texttt{arriving}, RevealRenderer, SectionStatus, ShapeMemory}};
+  \node[band, below=0.45cm of ui] (models) {\textbf{Observable models} (main actor)\\[3pt]
+    \comp{Query} \comp{FreeRoomsModel} \comp{CampusMapModel} \comp{SearchModel} \comp{NewMarks} \comp{BoundaryClock} \comp{LecturePrefetch}};
+  \node[band, below=0.45cm of models] (policies) {\textbf{Policies} (pure values, new)\\[3pt]
+    \comp{RelevanceOrder} \comp{DeadlinePolicy} \comp{SpeculativeBudget} \comp{TimetablePrefetch} \comp{ChangeDetector} \comp{LectureMoves}};
+  \node[band, below=0.45cm of policies] (store) {\textbf{Store layer} (actors)\\[3pt]
+    \comp{Resource} \comp{LoadProgress} \comp{Loader} \comp{OfflineStore} \comp{RequestGate} \comp{LoadingLedger} \comp{OfflinePack}};
+  \node[band, below=0.45cm of store] (platform) {\textbf{Platform and existing services}\\[3pt]
+    \comp{HTTP} \comp{OfflineStore} \comp{BackgroundRefresh} \comp{FreshnessCoordinator} \comp{NetworkMonitor} \comp{DevicePressure} \comp{NotificationModel} \comp{UpdateFeed} \comp{DiagnosticsReport}};
+  \draw[uses] (ui) -- (models);
+  \draw[uses] (models) -- (policies);
+  \draw[uses] (policies) -- (store);
+  \draw[uses] (store) -- (platform);
+\end{tikzpicture}
+\caption{Components by layer. An arrow means ``uses''; a layer also uses every layer below it.}
+\end{figure}
+
+\subsection{Component view}
+New components are marked (new); the others exist and change.
+
+\begin{description}[style=nextline, leftmargin=1.5em]
+  \item[Resource] Declares one kind of remote data. Gains an optional \texttt{Part} type and a max age per part. A resource with one request declares nothing and compiles unchanged. A resource whose items keep their id from one answer to the next also says what a fetched part changed in the copy held, by calling ChangeDetector on those items; the default says nothing changed.
+  \item[LoadProgress (new)] The typed handle a fetch reports parts through. Replaces the untyped task-local \texttt{Partial.sink}. Holds only the newest snapshot not yet consumed. Not named \texttt{Progress}, which Foundation already has.
+  \item[Loader] One actor per resource. Now keeps the fetch time of each part, asks the resource only for the parts that are missing or too old, files and stores each part when it arrives, asks the resource what the part changed when it answers over a copy of itself, and tells the queries watching the key. A part that failed is not asked again for a minute unless the student asks.
+  \item[OfflineStore] Unchanged. The loader writes two files per key and account through it: the value, and the fetch time of each part in it. Both are rewritten atomically each time a part arrives (decision 2).
+  \item[Query] The observable handle a view reads. Gains which parts have arrived, which failed, where each came from (stored copy or network), and the changes of the last refresh. It also applies the DeadlinePolicy: when the deadline passes it marks as \texttt{late} the parts still awaited that have a stored copy.
+  \item[RequestGate (new)] One actor for all hosts. Admits requests in two lanes, on-screen and speculative, caps speculative requests per host, and keeps the HostBreaker: while a host is paused a read to it throws \texttt{HostPaused} without being sent. Reports every request to the ledger.
+  \item[HostBreaker (new)] A value that counts consecutive timeouts per host and says whether a host is paused at a given instant. Any answer, an error status included, clears the count; a cancelled request says nothing.
+  \item[HostPauses (new)] The main-actor face of the breaker: the names of the services paused now, as the student knows them. A pause ends there by itself. DataStatus reads it for the status line.
+  \item[LoadingLedger (new)] An actor that appends one small entry per request and per screen opening to a capped file, and computes the report.
+  \item[RelevanceOrder (new)] Orders the rooms of a campus from the map area on screen, the next lecture's building and the favourite campus.
+  \item[DeadlinePolicy (new)] Says, for a part and the time it has been waiting, whether to keep waiting or to show the stored copy.
+  \item[SpeculativeBudget (new)] Says whether a speculative request may be sent now, and how many, from the network path, Low Power Mode and the thermal state, the student's settings and today's count. RequestGate asks it for every speculative request and keeps today's count (SpeculativeCount, by the day in Rome), so the budget binds every warm-up of the app, not only the prefetch. NetworkPath is the copy of the path's cost and Low Data Mode that the gate reads off the main actor.
+  \item[TimetablePrefetch (new)] From the timetable and the current time, lists what the lectures of the next hour need: each room once (its bookings for the day, its floor plan, its equipment) and each course once (its WeBeep page), soonest first, with the requests each costs.
+  \item[LecturePrefetch (new)] Runs TimetablePrefetch, asks the gate how many requests the budget allows, keeps the items that fit, and hands each to whoever warms it. It names no service: the warming is passed in. The building's 3D model is not on the list, because it ships with the app (in preview only today) and costs no request.
+  \item[OfflinePack (new)] Owns the list of parts of the pack, runs it in a processing task, and publishes what is stored and how old.
+  \item[BoundaryClock (new)] Computes the next booking boundary from stored bookings, and which rooms change at it. FreeRoomsModel sleeps until that instant and tells the screens that show rooms.
+  \item[ChangeDetector (new)] Compares the items of a fetched part with its stored copy by identity and returns what was added, changed and removed. A stored copy with no items and an answer with no items are not compared: the first is a first look, the second is what the Politecnico's services answer between sessions.
+  \item[LectureMoves (new)] From the stored copy of a week and the week just fetched, lists the lectures still ahead that kept their id and changed room or start, and words each as an update for UpdateFeed.
+  \item[NewMarks (new)] Keeps, per account, the identities of items marked as new, section by section, in one small file beside the stored copies, until their section has been on screen for a second. It also remembers which were marked in the last 0.6 s, so that a row appearing now is written in and one marked yesterday is drawn at once.
+  \item[Section kit (new)] The shared interface pieces: SectionStage decides what a section draws from its phase and the time waited; SectionStatus draws it; the \texttt{arriving} modifier puts it in place of rows a section does not have; \texttt{reveals}, \texttt{revealed} and RevealRenderer play the reveal; \texttt{newMark} draws the mark on a row and replays that row's reveal when a refresh changes it; \texttt{clearsNewMarks} tells NewMarks that a section has been seen; ShapeMemory keeps each section's last height.
+  \item[Existing services] \texttt{BackgroundRefresh} gains the prefetch call and a processing task. \texttt{FreshnessCoordinator} calls the prefetch after a pass. \texttt{UpdateFeed} gains the lectures that moved, found with ChangeDetector, beside the exam news it already had. \texttt{AgendaModel} compares each fetched week with the one it held and hands the moves over. \texttt{DiagnosticsReport} gains the ledger section.
+\end{description}
+
+\subsection{Deployment view}
+Everything runs on the student's iPhone. There is no server of the project.
+
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+  \toprule
+  Node & What runs or lives there \\
+  \midrule
+  App process, foreground & All components. Requests run in both lanes. \\
+  App process, refresh task & Agenda and career refresh as today, then LecturePrefetch, waiting for its warm-ups to land, within 30 seconds. \\
+  App process, processing task & OfflinePack only. May be stopped by iOS at any time; resumes from the stored parts. \\
+  Widget extension & Reads the shared container, as today. Sends no request. \\
+  App group container & Stored values and part times, NewMarks, the offline pack's state, the ledger file. \\
+  Keychain & Tokens, as today. Never read by the new components. \\
+  Politecnico's hosts & Answer HTTPS requests. Unchanged. \\
+  \bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Component interfaces}
+The signatures fix names and responsibilities; bodies and access levels are decided
+in the code.
+
+\begin{lstlisting}
+// Resource: parts are optional. Part == Whole means "one request".
+protocol Resource: Sendable {
+    associatedtype Part: Hashable & Sendable & CaseIterable = Whole
+    static func maxAge(of part: Part) -> TimeInterval        // default: ttl
+    func fetch(_ key: Key, env: Env, parts: Set<Part>,
+               over held: Value?, progress: LoadProgress<Self>)
+        async throws -> LoadProgress<Self>.Snapshot       // value, arrived, failed
+    func changes(in part: Part, from old: Value, to new: Value) -> ChangeSet  // default: none
+}
+
+struct LoadProgress<R: Resource>: Sendable {
+    func report(_ value: R.Value, arrived: Set<R.Part>, failed: Set<R.Part> = [])
+}
+
+actor Loader<R: Resource> {
+    func value(_ key: R.Key, env: Env, force: Bool) async throws -> Snapshot
+    func dueParts(_ key: R.Key, env: Env, force: Bool) -> Set<R.Part>
+    func updates(_ key: R.Key, env: Env) -> AsyncStream<Snapshot>  // each part filed
+    func warm(_ keys: some Sequence<R.Key>, env: Env)        // speculative lane
+    func clear()                                             // sign-out
+}
+
+@MainActor @Observable final class Query<R: Resource> {
+    var value: R.Value? { get }
+    func phase(of part: R.Part, isEmpty: Bool) -> LoadPhase
+    func has(_ parts: R.Part...) -> Bool
+    func changes(of part: R.Part) -> ChangeSet                // last refresh
+    var onChanges: ((R.Part, ChangeSet) -> Void)?             // told once per refresh
+}
+
+@MainActor @Observable final class NewMarks {
+    func show(account: String?)
+    func mark(_ ids: Set<String>, in section: String, account: String?)
+    func isNew(_ id: String, in section: String) -> Bool
+    func justMarked(_ id: String, in section: String) -> Bool
+    func seen(_ section: String)
+    func forget()                                             // sign-out
+}
+
+enum LoadPhase: Equatable {
+    case held(age: TimeInterval), late(age: TimeInterval)   // late: a copy stands in
+    case waiting(since: Duration), arrived, empty
+    case failed(String)
+}
+
+actor RequestGate {
+    enum Lane { case onScreen, speculative }                  // from LoadContext and priority
+    func run<T: Sendable>(host: String, pausable: Bool,
+                          _ request: @Sendable () async throws -> T) async throws -> T
+    func isPaused(_ host: String) -> Bool                     // reads fail at once
+    func allowance(for count: Int) -> Int                     // what the budget allows now
+    func sentToday() -> Int
+}
+
+struct HostBreaker {           // the instant is given, never read
+    var threshold = 2, pause: Duration = .seconds(30)
+    func isPaused(_ host: String, at now: Instant) -> Bool
+    mutating func note(_ outcome: Outcome, host: String, at now: Instant) -> Change?
+}
+
+actor LoadingLedger {
+    func record(_ entry: RequestEntry)
+    func opened(_ screen: String) -> ScreenToken
+    func firstContent(_ token: ScreenToken)
+    func completed(_ token: ScreenToken)
+    func used(_ speculative: RequestID)
+    func report(days: Int) async -> LedgerReport
+    func erase()
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+// Policies: values in, decision out. No clock, no singletons.
+enum RelevanceOrder {
+    static func order(_ rooms: [Classroom], visible: Set<String>,   // building codes
+                      nextLecture: String?, favourite: String?) -> [Classroom]
+    static func building(ofRoom names: [String?], in rooms: [Classroom]) -> String?
+}
+enum StableOrder {             // rows shown keep their places while rows arrive
+    static func merge<ID: Hashable>(shown: [ID], sorted: [ID], settle: Bool) -> [ID]
+}
+enum BoundaryClock {           // lead: free now means free for the next 30 min
+    static func next(after now: Date, in rooms: [RoomSchedule]) -> Date?
+    static func rooms(changingAt boundary: Date, in rooms: [RoomSchedule]) -> [String]
+}
+struct DeadlinePolicy {
+    var deadline: Duration = .seconds(4)
+    func decision(waited: Duration, hasStoredCopy: Bool) -> Decision  // .wait | .showStored
+}
+struct SpeculativeBudget {
+    struct Device { var lowData, metered, lowPower: Bool; var thermal: ThermalState }
+    struct Settings { var enabled = true, allowMetered = false; var dailyLimit = 600 }
+    static func refusal(device: Device, settings: Settings, sentToday: Int) -> Refusal?
+    static func allows(_ count: Int, device: Device, settings: Settings, sentToday: Int) -> Int
+}
+enum PrefetchItem { case room(names: [String], day: Date), course(title: String); var cost: Int }
+enum TimetablePrefetch {
+    static func wanted(now: Date, lectures: [AgendaEvent],
+                       lead: TimeInterval = 3600) -> [PrefetchItem]
+    static func fitting(_ items: [PrefetchItem], allowance: Int) -> [PrefetchItem]
+}
+struct ChangeSet { var added, changed, removed: Set<String> }   // identities only
+enum ChangeDetector {
+    static func changes<I: Identifiable & Equatable>(from old: [I], to new: [I]) -> ChangeSet
+}
+enum LectureMoves {
+    static func moves(from old: [AgendaEvent], to new: [AgendaEvent], now: Date) -> [LectureMove]
+    static func update(for move: LectureMove, now: Date) -> ExamUpdate
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+// Section kit.
+enum SectionStage {            // content | quiet | waiting(showsStep) | empty | failed
+    init(_ phase: LoadPhase, hasRows: Bool, waited: Duration)
+}
+extension View {
+    func arriving(_ phase: LoadPhase, hasRows: Bool, title: LocalizedStringResource,
+                  showsTitle: Bool, step: LocalizedStringResource?, remember: String?,
+                  retry: (() async -> Void)?, empty: () -> some View) -> some View
+    func reveals(_ phase: LoadPhase, hasRows: Bool,
+                 title: LocalizedStringResource) -> some View
+    func revealed(order: Int) -> some View
+    func revealedText() -> some View
+    func newMark(_ id: String, in section: String) -> some View
+    func clearsNewMarks(in section: String) -> some View
+    func endsRevealsOnScroll() -> some View
+    func screenLedger(_ name: String, hasContent: Bool, isComplete: Bool) -> some View
+}
+\end{lstlisting}
+
+\subsection{Runtime view}
+
+\subsubsection{UC1: a screen built from several parts}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \lifeline{v}{0}{View}
+  \lifeline{q}{3.2}{Query}
+  \lifeline{l}{6.4}{Loader}
+  \lifeline{r}{9.6}{Resource}
+  \lifeline{s}{12.8}{OfflineStore}
+  \msg{0}{3.2}{1.2}{load()}
+  \msg{3.2}{6.4}{1.8}{value(key, progress)}
+  \msg{6.4}{12.8}{2.4}{load stored parts}
+  \msg{6.4}{9.6}{3.0}{fetch(missing parts)}
+  \msg[dashed]{9.6}{6.4}{3.9}{report(part A)}
+  \msg{6.4}{12.8}{4.5}{save(part A)}
+  \msg[dashed]{6.4}{3.2}{5.1}{snapshot, arrived \{A\}}
+  \msg[dashed]{3.2}{0}{5.7}{phase(A) = arrived}
+  \msg[dashed]{9.6}{6.4}{6.6}{report(part B) \dots}
+  \msg[dashed]{6.4}{3.2}{7.2}{final value}
+  \msg[dashed]{3.2}{0}{7.8}{all parts arrived}
+\end{tikzpicture}
+\caption{A load with parts. Each request inside \texttt{fetch} passes through RequestGate, which records it in the ledger.}
+\end{figure}
+
+The loader passes the resource only the parts that have no stored copy younger
+than their max age (\idref{R15}, \idref{R16}). Reports are buffered newest-only and
+the query consumes them at most every 100 ms (\idref{R4}). If the view goes away,
+the fetch is cancelled as today, and the parts already saved stay (\idref{R14}).
+When a part has waited longer than the deadline and a stored copy exists, the
+query marks it \texttt{late(age:)}: its section keeps the copy on screen under a
+label with its age, and the request goes on untouched (\idref{R17}). The answer,
+when it comes, replaces the copy like any other. After two consecutive timeouts
+from a host the gate pauses it for 30 s: reads to it throw at once, so every
+section falls back on its copy without waiting, and the status line names the
+service (\idref{R18}).
+
+\subsubsection{UC2: free rooms}
+\begin{enumerate}
+  \item FreeRoomsModel asks RelevanceOrder for the order of the campus's rooms, giving it the buildings on the map, the next lecture's building and the favourite campus.
+  \item It requests bookings eight at a time in that order through the occupancy loader, on the on-screen lane.
+  \item After each batch it assigns the rooms received so far and tells the caller; the list observes them and the map recolours its pins from them. Rooms listed by an earlier pass of the same day and campus stay listed until they answer again.
+  \item When the pass ends the model asks BoundaryClock for the earliest instant at which a room's answer changes (a booking's end, or half an hour before its start) and sleeps until then. With no such instant ahead nothing runs.
+  \item At the boundary the model bumps \texttt{boundaryTick}. ``Free now'' is computed from stored bookings, so the list and the map are drawn again without a request (\idref{R24}). A screen that is showing rooms then asks again about the rooms that change at that instant only, once per boundary (\idref{R25}).
+\end{enumerate}
+
+\subsubsection{UC3: prefetch before a lecture}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \renewcommand\seqdepth{6.6}
+  \lifeline{t}{0}{LecturePrefetch}
+  \lifeline{p}{3.4}{TimetablePrefetch}
+  \lifeline{b}{6.8}{RequestGate}
+  \lifeline{l}{10.0}{Loaders}
+  \lifeline{g}{13.0}{Politecnico}
+  \msg{0}{3.4}{1.2}{wanted(now, lectures)}
+  \msg[dashed]{3.4}{0}{1.8}{items}
+  \msg{0}{6.8}{2.6}{allowance(for: cost)}
+  \msg[dashed]{6.8}{0}{3.2}{granted n}
+  \msg{0}{10.0}{4.0}{warm(items that fit)}
+  \msg{10.0}{6.8}{4.6}{run(host), speculative}
+  \msg{6.8}{13.0}{5.2}{request, when the lane has room}
+  \msg[dashed]{13.0}{10.0}{5.9}{answer}
+\end{tikzpicture}
+\caption{Prefetch. FreshnessCoordinator runs LecturePrefetch after a foreground pass, once what is on screen has landed; BackgroundRefresh runs it after the agenda and the career and waits for its warm-ups. RequestGate checks the budget again for each request and records it in the ledger.}
+\end{figure}
+
+A speculative request runs only when the budget allows it at that instant, at most
+two to a host at a time, and only while no request for the screen is in flight to
+that host (\idref{R30} to \idref{R33}). A warm-up the student starts waiting for is
+raised to their priority by the loader, and the gate then puts its requests in the
+screen's lane. A request refused by the budget throws without being sent and is not
+counted.
+
+When the student later opens the room or the course, the loader finds the part
+fresh and sends nothing (\idref{R20}); the ledger marks the speculative request as
+used (\idref{R36}). For that to hold the floor plan is now read through a loader
+(FloorPlanResource, in memory for a day) instead of straight from the view, and the
+room's bookings go through the gate like every other request. The plan and the
+bookings stay in memory; M8 puts them on disk for the offline pack.
+
+\subsubsection{UC4: no connection}
+\begin{enumerate}
+  \item The query asks the loader; the loader restores every stored part from OfflineStore.
+  \item NetworkMonitor reports no connection, so RequestGate fails requests at once.
+  \item Parts with a stored copy are \texttt{held(age:)}; parts without are \texttt{failed}; the section kit shows each accordingly (\idref{R23}).
+  \item When the connection returns, FreshnessCoordinator runs a pass and only parts older than their max age are requested.
+\end{enumerate}
+
+\subsubsection{UC5: a change}
+\begin{enumerate}
+  \item A refresh brings a part that has a stored copy, in memory or put back from disk.
+  \item While filing it, the loader asks the resource what the part changed; the resource hands the old and new items to ChangeDetector (\idref{R26}). The change set travels with the snapshot.
+  \item The query keeps it (\texttt{changes}) and, the first time it sees that answer, tells its model through \texttt{onChanges}. CareerModel marks the added and changed sittings and results in NewMarks.
+  \item Rows carrying \texttt{newMark} show the mark, and a row whose mark comes on while it is on screen replays its reveal; no other row moves (\idref{R28}). When the section has been on screen for a second and the student moves on, NewMarks removes its marks (\idref{R27}).
+  \item For the timetable, AgendaModel compares the week it held with the fetched one through LectureMoves and hands the moves to UpdateFeed. Like the exam news, they pass through ExamUpdatePolicy, which decides whether to notify within the daily limit (\idref{R29}).
+\end{enumerate}
+
+\subsubsection{UC6: the ledger}
+\texttt{screenLedger} opens a token when a screen appears, the first \texttt{arriving}
+section to reach \texttt{arrived} or \texttt{held} marks first content, and the
+last marks completion. DiagnosticsReport asks the ledger for the report over 14
+days.
+
+\subsection{Selected architectural styles and patterns}
+\begin{itemize}
+  \item \textbf{Layers}, as today: a view never talks to a loader, a loader never to a view.
+  \item \textbf{Functional core, imperative shell}: decisions live in policies that are pure; actors and models only carry them out.
+  \item \textbf{Actors for coordination}: Loader, RequestGate and LoadingLedger hold shared state; work proportional to a payload stays in \texttt{@concurrent} functions.
+  \item \textbf{Observer} through Observation: models are \texttt{@Observable} on the main actor.
+  \item \textbf{Stale-while-revalidate}, now per part.
+  \item \textbf{Circuit breaker} per host, inside RequestGate.
+\end{itemize}
+
+\subsection{Other design decisions}
+\begin{description}[style=nextline, leftmargin=1.5em]
+  \item[1. LoadProgress is a parameter, not a task-local.] Alternative: keep \texttt{Partial.sink}. A task-local cannot be generic, so it is untyped and cast back, and it cannot say which parts arrived. Cost: the \texttt{fetch} signature changes; a default implementation forwards to the old one for resources without parts.
+  \item[2. One value per key, with the fetch time of each part beside it.] Alternative, chosen in version 0.1 of this document: one file per part. It was dropped while building M2: a value is not a sum of independent pieces (the career's exam counts come from one request and sit inside the figures of another), so splitting it into files would need a split and a merge written for every resource. Instead the resource lays the parts that answered over the value held, and the loader rewrites the value and a small file of fetch times atomically each time a part arrives, the value first. A kill between two parts still loses nothing (\idref{R14}, \idref{R16}), and each part has its own age (\idref{R15}). Cost: every arrival rewrites the whole value, a few tens of kilobytes for the career, off the main thread; restoring reads two files, which helps \idref{P5}.
+  \item[3. A deadline shows the stored copy and keeps the request.] Alternatives: cancel and retry, or send a second request in parallel. Both add load on the Politecnico's hosts, against assumption D11, and a late answer is still the freshest data. The deadline is applied in the query, not in the loader as first planned: the loader's flight is shared by every query on a key and must not change, while standing in a copy is a matter of what one screen shows.
+  \item[4. The breaker is per host, in one gate.] Alternative: per resource. A timeout says something about the host, and all resources on that host benefit at once (\idref{R18}). One gate is also the only place that sees every request, which the ledger and the lanes need. Only reads are answered from stored copies while a host is paused: what the student does, such as enrolling in an exam, is always sent. An error status counts as an answer, since the host is there.
+  \item[5. Prefetch follows the timetable, not habits.] Relies on assumption D5. A learned predictor needs data the ledger does not have yet and is out of scope.
+  \item[6. Changes are found by identity, generically.] Alternative: one detector per kind of data, as UpdateFeed does today for exams. Relies on assumption D10. Values expose their items as \texttt{Identifiable \& Equatable}; kinds without stable ids are not compared. As built, the resource chooses what of an item counts: a sitting is compared on its date, room, mark and whether its window has opened, not on the number of students enrolled, which moves all day, nor on the student's own enrolment. The exam detector of UpdateFeed is kept beside the generic one rather than replaced: its rules (two consecutive misses before a sitting counts as withdrawn, a mark and its refusal window as one notice) need the history of readings, which a comparison of two answers does not have. The generic detector feeds the marks and the lectures that moved.
+  \item[7. The ledger is the app's own file.] Alternatives: signposts or MetricKit alone. Signposts cannot be read back on the phone, and MetricKit delivers one aggregate a day without per-part detail. The ledger stores no content (\idref{R38}).
+  \item[8. A boundary is one sleep until a known instant.] Relies on assumption D6. It is not polling: nothing is sent unless a boundary passed and the screen is visible.
+  \item[9. The offline pack uses a processing task.] The refresh task's 30 seconds cannot hold it (assumption D7). The pack is resumable because every part is filed when it arrives.
+  \item[11. The budget lives in the gate, not in the prefetch.] Alternative: only TimetablePrefetch asks the budget. The app already warmed neighbouring rooms, weeks and course pages before M7; checking in the gate makes \idref{R30} to \idref{R33} hold for all of them, and the count is exact because it counts requests sent rather than items planned. LecturePrefetch still asks first, so it does not start what the budget would refuse. Cost: a warm-up refused by the budget fails like a request that failed, so the loader asks again a minute later at the earliest.
+  \item[10. No separate package yet.] The store layer stays in the app target until this update has shipped; \texttt{Packages/} is also ignored by git today. Moving it is a later, mechanical step.
+\end{description}

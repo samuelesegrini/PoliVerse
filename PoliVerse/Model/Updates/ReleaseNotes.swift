@@ -69,6 +69,17 @@ nonisolated enum ReleaseNotes {
     /// The notes, newest first. This is the list to edit before a release.
     static let all: [ReleaseNote] = [
         ReleaseNote(
+            version: "2.1",
+            headline: "Le novità, a portata di mano.",
+            items: [
+                .init(symbol: "clock.arrow.circlepath", title: "Ritrova le novità",
+                      detail: "In Impostazioni trovi anche le novità delle versioni precedenti, da rileggere quando vuoi."),
+                .init(symbol: "flask", title: "Scegli le anteprime",
+                      detail: "Scopri le funzioni in prova disponibili nella tua build. Puoi attivarle e disattivarle in qualsiasi momento da Impostazioni."),
+                .init(symbol: "bubble.left.and.bubble.right", title: "Dicci come va",
+                      detail: "Dalla pagina delle anteprime puoi aprire una segnalazione e aiutarci a migliorare PoliVerse."),
+            ]),
+        ReleaseNote(
             version: "2.0",
             headline: "Il Politecnico come lo vuoi tu.",
             items: [

@@ -51,36 +51,6 @@ private struct StickerOutline: ViewModifier {
     }
 }
 
-/// A Flavor's three colours drifting slowly, for its tile and preview.
-struct FlavorFlowView: View {
-    /// The Flavor whose three colours drift.
-    let flavor: Flavor
-    /// Whether the reader has asked for reduced motion.
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// iOS 27: the system asks apps to do less — Low Power Mode, a hot device.
-    /// A shader redrawn thirty times a second is the first thing to stop.
-    @Environment(\.systemPrefersReducedResourceUsage) private var reducedResources
-
-    /// The view's content.
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || reducedResources)) { timeline in
-            let time = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3600)
-            // Resolved here, on the main actor: the effect closure is Sendable.
-            let main = flavor.main.color, accent = flavor.accentColour.color, extra = flavor.extraColour.color
-            // An explicit opaque fill: the default foreground in a glass sheet
-            // is translucent, and the shader keeps its alpha.
-            Rectangle()
-                .fill(.white)
-                .visualEffect { content, proxy in
-                    content.colorEffect(ShaderLibrary.flavorFlow(
-                        .float2(proxy.size), .float(time),
-                        .color(main), .color(accent), .color(extra)))
-                }
-        }
-        .accessibilityHidden(true)
-    }
-}
-
 // MARK: - Glossy buttons
 
 /// A lacquered button in the Flavor's colours, with a coloured glow: filled

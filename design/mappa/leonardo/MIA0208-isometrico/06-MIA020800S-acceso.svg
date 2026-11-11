@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="91 -45.1 183.7 174.4" width="367.4" height="348.8">
+<defs><linearGradient id="iso-lit-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><linearGradient id="iso-lit-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#FFD47E"/></linearGradient><linearGradient id="iso-lit-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE2A2"/><stop offset="1" stop-color="#ECB65A"/></linearGradient></defs>
+<polygon points="208.4,98.1 121.2,48.2 121.2,44.2 208.4,94.1" fill="#F2F3F6"/>
+<polygon points="234.7,82.7 208.4,98.1 208.4,94.1 234.7,78.7" fill="#D4D8DF"/>
+<polygon points="234.7,78.7 208.4,94.1 121.2,44.2 147.7,28.9" fill="#FFFFFF"/>
+<polygon points="208.4,97.3 122.6,48.2 122.6,44.2 208.4,93.3" fill="#FFD98A" opacity="0.55"/>
+<polygon points="208.4,93.3 122.6,44.2 122.6,30.2 208.4,79.3" fill="url(#iso-lit-l)"/>
+<polygon points="208.4,93.3 199.8,88.4 199.8,74.4 208.4,79.3" fill="#B87A24" opacity="0.14"/>
+<polygon points="182.6,78.6 174.1,73.7 174.1,59.7 182.6,64.6" fill="#FFFFFF" opacity="0.18"/>
+<polygon points="156.9,63.8 148.3,58.9 148.3,44.9 156.9,49.8" fill="#B87A24" opacity="0.14"/>
+<polygon points="148.3,58.9 139.8,54 139.8,40 148.3,44.9" fill="#B87A24" opacity="0.14"/>
+<polygon points="208.4,86.3 122.6,37.2 122.6,30.2 208.4,79.3" fill="url(#iso-lit-glow)"/>
+<polygon points="233.3,82.7 208.4,97.3 208.4,93.3 233.3,78.7" fill="#FFD98A" opacity="0.55"/>
+<polygon points="233.3,78.7 208.4,93.3 208.4,79.3 233.3,64.7" fill="url(#iso-lit-r)"/>
+<polygon points="216.7,88.4 208.4,93.3 208.4,79.3 216.7,74.4" fill="#B87A24" opacity="0.14"/>
+<polygon points="233.3,71.7 208.4,86.3 208.4,79.3 233.3,64.7" fill="url(#iso-lit-glow)"/>
+<path d="M208.4 90.1L122.6 41M233.3 75.5L208.4 90.1" stroke="#D9963A" stroke-width="1.1" opacity="0.4"/>
+<path d="M199.8 88.4V74.4M191.2 83.5V69.5M182.6 78.6V64.6M174.1 73.7V59.7M165.5 68.7V54.7M156.9 63.8V49.8M148.3 58.9V44.9M139.8 54V40M131.2 49.1V35.1M225 83.6V69.6M216.7 88.4V74.4" stroke="#9C7434" stroke-width="1.2" opacity="0.55"/>
+</svg>

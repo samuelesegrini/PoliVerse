@@ -102,17 +102,11 @@ enum LookPart: String, CaseIterable, Identifiable {
             next.name = look.name
             next.app = look.app
         case .colour:
-            next.flavor = original.flavor
-            next.appearance = original.appearance
+            next = next.wearing(original, only: .colours)
         case .background:
-            next.background = original.background
-            next.paper = original.paper
-            next.grain = original.grain
+            next = next.wearing(original, only: .background)
         case .date:
-            next.dateFont = original.dateFont
-            next.dateWeight = original.dateWeight
-            next.dateSize = original.dateSize
-            next.dateColour = original.dateColour
+            next = next.wearing(original, only: .date)
             next.dateLayout = original.dateLayout
             next.dateAlignment = original.dateAlignment
             next.textDesign = original.textDesign
@@ -273,7 +267,7 @@ extension TodayStyle {
 
 /// Personalizza's undo and redo: every change to the draft, with a burst of
 /// changes — a slider dragged, a name typed — taken back as one.
-struct EditHistory {
+struct EditHistory: Equatable {
     /// Looks to go back to, the latest last.
     private(set) var past: [TodayStyle] = []
     /// Looks undone, to go forward to again, the latest last.

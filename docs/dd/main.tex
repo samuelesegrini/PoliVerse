@@ -1,0 +1,108 @@
+% Design document for the loading update of PoliVerse. Build: scripts/docs.sh
+\documentclass[dd]{se2doc}
+\input{../meta}
+\docversion{0.7}
+\revision{0.1}{10 Nov 2026}{First draft, from RASD 1.0}
+\revision{0.2}{10 Nov 2026}{After building M2: one stored value per key with the fetch time of each part (decision 2); Progress named LoadProgress; the loader's \texttt{updates} and \texttt{dueParts}}
+\revision{0.3}{10 Nov 2026}{After building M3: the section kit as built (SectionStage, \texttt{arriving} with \texttt{hasRows}, \texttt{reveals}); the reveal's timing and when it plays}
+\revision{0.4}{11 Nov 2026}{After building M4: RelevanceOrder, StableOrder and BoundaryClock as built; at a boundary only the rooms that change are asked about}
+\revision{0.5}{11 Nov 2026}{After building M5: the deadline is applied by Query, which marks a part \texttt{late}; HostBreaker and HostPauses as built; only reads are answered from stored copies while a host is paused}
+\revision{0.6}{11 Nov 2026}{After building M6: a resource says what a part changed, through ChangeDetector; NewMarks and the mark as built; LectureMoves for the timetable; the exam detector stays beside the generic one (decision 6)}
+\revision{0.7}{11 Nov 2026}{After building M7: the budget is applied in RequestGate to every speculative request; LecturePrefetch runs TimetablePrefetch; floor plans through a loader; the settings in Dati e archiviazione; no 3D model to fetch}
+\input{../glossary}
+\usepackage{float}
+\usetikzlibrary{positioning,arrows.meta,fit}
+% Requirement ids live in the RASD, so here they print as plain text.
+\renewcommand\idref[1]{#1}
+\lstset{language=Swift,numbers=none,xleftmargin=0pt,framexleftmargin=0pt}
+
+% Sequence diagrams: \lifeline{name}{x}{label}, \msg[style]{from x}{to x}{y}{label}
+\newcommand\seqdepth{8}
+\newcommand\lifeline[3]{%
+  \node[draw, font=\small, minimum height=0.6cm, inner xsep=5pt] (#1) at (#2,0) {#3};
+  \draw[dashed, thin] (#1.south) -- (#2,-\seqdepth);}
+\newcommand\msg[5][]{%
+  \draw[-{Stealth[length=5pt]}, thin, #1] (#2,-#4) -- node[above=1pt, font=\scriptsize, inner sep=1pt, fill=white]{#5} (#3,-#4);}
+\newcommand\selfmsg[3]{% x, y, label
+  \draw[-{Stealth[length=5pt]}, thin] (#1,-#2) -- ++(0.5,0) -- ++(0,-0.35) -- ++(-0.5,0);
+  \node[font=\scriptsize, anchor=west] at (#1+0.55,-#2-0.17) {#3};}
+
+\traces{R1}{LoadProgress, Loader, Query, Section kit}
+\traces{R2}{Query (LoadPhase), Section kit}
+\traces{R3}{Query (\texttt{has}), Section kit}
+\traces{R4}{LoadProgress (newest-only buffer), Loader (\texttt{updates}), Query}
+\traces{R5}{Section kit (\texttt{arriving}, SectionStatus)}
+\traces{R6}{Query (\texttt{failed}), Section kit (SectionStatus)}
+\traces{R7}{Section kit (RevealRenderer), Query (\texttt{origin})}
+\traces{R8}{Section kit (RevealRenderer)}
+\traces{R9}{Section kit (\texttt{arriving} for lists)}
+\traces{R10}{Section kit (\texttt{arriving})}
+\traces{R11}{Section kit (ShapeMemory)}
+\traces{R12}{Resource conformances, SearchModel}
+\traces{R13}{RelevanceOrder, FreeRoomsModel}
+\traces{R14}{Loader, OfflineStore}
+\traces{R15}{Resource (\texttt{maxAge}), Loader}
+\traces{R16}{Loader, OfflineStore}
+\traces{R17}{DeadlinePolicy, Query (\texttt{late}), Section kit (LateLabel)}
+\traces{R18}{HostBreaker, RequestGate, HostPauses, DataStatus}
+\traces{R19}{TimetablePrefetch, LecturePrefetch, BackgroundRefresh, FreshnessCoordinator}
+\traces{R20}{Loader (\texttt{warm}), FloorPlanResource, CoursePage}
+\traces{R21}{OfflinePack, BackgroundRefresh}
+\traces{R22}{OfflinePack, Impostazioni}
+\traces{R23}{Loader, Query, Section kit}
+\traces{R24}{BoundaryClock, FreeRoomsModel}
+\traces{R25}{BoundaryClock, FreeRoomsModel, CampusMapModel}
+\traces{R26}{ChangeDetector, Resource (\texttt{changes}), Loader}
+\traces{R27}{NewMarks, Section kit (\texttt{newMark}, \texttt{clearsNewMarks})}
+\traces{R28}{Query (\texttt{changes}, \texttt{onChanges}), NewMarks, Section kit (\texttt{newMark})}
+\traces{R29}{LectureMoves, ChangeDetector, UpdateFeed, NotificationModel}
+\traces{R30}{SpeculativeBudget, NetworkPath, RequestGate}
+\traces{R31}{SpeculativeBudget, RequestGate}
+\traces{R32}{RequestGate (lanes)}
+\traces{R33}{SpeculativeBudget, SpeculativeCount, RequestGate, LecturePrefetch}
+\traces{R34}{LoadingLedger, RequestGate}
+\traces{R35}{LoadingLedger, Section kit (\texttt{screenLedger})}
+\traces{R36}{LoadingLedger, Loader}
+\traces{R37}{LedgerReport, DiagnosticsReport}
+\traces{R38}{LoadingLedger (entry type)}
+\traces{R39}{LoadingLedger, ReportArchive}
+\traces{R40}{Loader (\texttt{clear}), OfflineStore, NewMarks, LoadingLedger}
+\traces{P1}{Query, Section kit}
+\traces{P2}{LoadProgress, Loader}
+\traces{P3}{RelevanceOrder, FreeRoomsModel}
+\traces{P4}{RequestGate, Loader}
+\traces{P5}{OfflineStore, Loader (\texttt{restore})}
+\traces{P6}{Section kit (RevealRenderer), LoadProgress}
+\traces{P7}{TimetablePrefetch, Loader, LoadingLedger}
+\traces{P8}{LoadingLedger}
+\traces{P9}{OfflinePack, OfflineStore}
+
+\begin{document}
+\maketitle
+
+\input{sections/1-introduction}
+\input{sections/2-architecture}
+\input{sections/3-user-interface}
+
+\section{Requirements traceability}
+Every requirement of the RASD maps to at least one component, and every component of
+section 2.2 appears at least once.
+\printtraceability
+
+\input{sections/5-implementation}
+
+\section{Effort spent}
+% TODO: one \effort{task}{hours} per task, then \printeffort.
+To be recorded as the work proceeds.
+
+\section{References}
+\begin{enumerate}
+  \item \emph{PoliVerse Loading Update, RASD}, version 1.0.
+  \item \texttt{docs/data-loading-architecture.md}: the store layer as built.
+  \item \texttt{docs/data-freshness.md}: refresh triggers and what the servers return.
+  \item \emph{Partial loading in PoliVerse} and \emph{New capabilities for partial loading}, analysis documents, 10 November 2026.
+  \item Apple, \emph{Create custom visual effects with SwiftUI}, WWDC24, for \texttt{TextRenderer}.
+  \item Apple, BackgroundTasks, Network and UserNotifications framework documentation.
+\end{enumerate}
+
+\end{document}

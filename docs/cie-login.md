@@ -125,6 +125,18 @@ The lines worth watching are the app's own, under subsystem
 `Resuming session after CieID`. These log at `info` so they persist in the
 device log.
 
+## The credentials route must not be intercepted
+
+For the Polimi App client the Politecnico supports CIE only through **"Entra con le
+tue credenziali CIE"** (its login page says so). That form, on
+`idserver.servizicie.interno.gov.it`, posts the username and password to
+`/idp/login/livello2`. The SDK's interception condition matches any path containing
+`livello2`, so as first written it cancelled that POST and handed a bare GET to
+CieID, dropping what the student had typed. `isHandoffToCieID(_:method:)` now leaves
+form posts and every page on the provider's own host alone; the second factor
+(CieID push or SMS OTP) follows on that host, inside the web view. Read off the live
+page on 2026-10-22.
+
 ## Verified
 
 - Both schemes are registered and iOS delivers them to PoliVerse; an

@@ -1,0 +1,78 @@
+% DRAFT, rewrite
+\section{Introduction}
+
+\subsection{Purpose}
+PoliVerse is an unofficial app for students of the Politecnico di Milano. It shows
+courses, materials, the timetable, the career and the campus in one place. This
+document specifies one update to it: how the app loads data and how it shows data
+that is still on its way.
+
+Today several screens wait for every request to answer before showing anything, the
+app cannot tell ``empty'' from ``not here yet'', and nothing is prepared before the
+student asks for it. The update serves the following goals.
+
+\goal{G1}{A student who opens a screen sees its first useful content without waiting for everything on that screen.}
+\goal{G2}{A student is never shown a statement or a number that is false only because data is still on its way.}
+\goal{G3}{A student who is about to attend a lecture finds what they need for it already on the phone.}
+\goal{G4}{A student can consult the timetable, the campus, the rooms and their courses with no network connection.}
+\goal{G5}{A student notices what changed since they last looked without reading everything again.}
+\goal{G6}{Work the student did not ask for never spends their mobile data or battery beyond what they allowed, and stays within a fixed number of requests to the Politecnico.}
+\goal{G7}{The developer can tell from measurements taken on a phone whether a change to loading helped.}
+
+\subsection{Scope}
+The machine is the PoliVerse app on iPhone, with its widgets and background tasks.
+The world is the student, the phone and its network, and the Politecnico's servers.
+The project runs no server of its own.
+
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}X l@{}}
+  \toprule
+  Phenomenon & Kind \\
+  \midrule
+  A lecture takes place in a room at a given time & World \\
+  A room is booked or a booking is withdrawn & World \\
+  A grade is published, an exam sitting opens, a lecture is moved & World \\
+  The student travels through a place with no signal & World \\
+  The student opens a screen, scrolls, taps a retry control & Shared, world controlled \\
+  A server answers a request, fails, or does not answer & Shared, world controlled \\
+  The network becomes available, metered or unavailable & Shared, world controlled \\
+  iOS grants background time; reports Low Data Mode, Low Power Mode and heat & Shared, world controlled \\
+  The app sends a request to a server & Shared, machine controlled \\
+  The app shows, updates or animates a section & Shared, machine controlled \\
+  The app delivers a local notification or a haptic & Shared, machine controlled \\
+  The app keeps a stored copy, orders requests, records the ledger & Machine \\
+  \bottomrule
+\end{tabularx}
+\end{center}
+
+In scope: showing sections as their parts arrive, the order of requests, storing and
+ageing parts one by one, deadlines for slow parts, prefetching from the timetable, an
+offline pack, refreshing at booking boundaries, noticing changes, the limits on
+speculative requests, and the loading ledger.
+
+Out of scope: any server operated by the project and therefore real push; predicting
+the next screen from the student's habits; changes to what the screens contain;
+loading of recordings' video, which has its own download manager.
+
+\subsection{Definitions, acronyms, abbreviations}
+\printterms
+
+\noindent Acronyms: RASD, Requirements Analysis and Specification Document; DD, Design
+Document; UC, use case; HIG, Human Interface Guidelines; TTL, time to live.
+
+\noindent A number followed by \initial{} is an initial value. It is a requirement as
+written, and it is confirmed or changed once the loading ledger (\idref{R34}) has
+produced a baseline.
+
+\subsection{Revision history}
+See the table under the title.
+
+\subsection{Reference documents}
+Listed in section 6.
+
+\subsection{Document structure}
+Section 2 describes the update from the outside: scenarios, the domain, the
+functions, the users and the assumptions about the world. Section 3 lists the
+requirements: interfaces, functional requirements with their use cases, performance
+requirements, constraints and system attributes. Section 4 states what is checked
+formally. Sections 5 and 6 hold the effort spent and the references.

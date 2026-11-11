@@ -28,7 +28,8 @@ struct RecordingsSignInSheet: View {
 
     /// The view's content.
     var body: some View {
-        NavigationStack {
+        SignInPresentation(title: title, errorMessage: errorMessage,
+                           showingCieIDMissing: $showingCieIDMissing, cancel: { dismiss() }) {
             AuthWebView(
                 startURL: start,
                 router: cieID,
@@ -44,32 +45,6 @@ struct RecordingsSignInSheet: View {
                 dataStore: RecordingsWebKit.dataStore,
                 adoptsCookies: false
             )
-            .ignoresSafeArea(edges: .bottom)
-            .overlay(alignment: .bottom) {
-                if cieID.isAwaitingCieID {
-                    CieIDWaitingBanner()
-                } else if let errorMessage {
-                    Text(errorMessage)
-                        .font(.footnote)
-                        .padding(12)
-                        .frame(maxWidth: .infinity)
-                        .background(.orange.opacity(0.2))
-                        .foregroundStyle(.orange)
-                }
-            }
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Annulla") { dismiss() }
-                }
-            }
-            .alert("App CieID non installata", isPresented: $showingCieIDMissing) {
-                Button("Apri App Store") { cieID.openAppStore() }
-                Button("Annulla", role: .cancel) {}
-            } message: {
-                Text("Per accedere con la Carta d'Identità Elettronica serve l'app CieID.")
-            }
         }
     }
 }

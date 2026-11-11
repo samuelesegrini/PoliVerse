@@ -163,10 +163,11 @@ nonisolated enum ResultsFileReader {
     ///   - identifiers: The student's matricola and person code.
     /// - Returns: What the file said, or `nil` when it cannot be read.
     static func read(_ data: Data, mimetype: String?, fileName: String, identifiers: [String]) async -> ResultsLookup? {
-        await Task.detached(priority: .utility) {
+        // Off the main actor, at the caller's priority, and cancelled with it.
+        await Compute.run {
             text(from: data, mimetype: mimetype, fileName: fileName)
                 .map { lookup(text: $0, identifiers: identifiers) }
-        }.value
+        }
     }
 
     /// The text of a file, for the formats readable without a third-party library: PDF

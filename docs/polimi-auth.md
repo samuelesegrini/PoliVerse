@@ -151,6 +151,28 @@ no credential is read and login does not complete.
 
 There is no token exchange to perform — the app has already done it.
 
+## Second factors
+
+Researched 2026-10-22; the full comparison is in the project's research doc. Since
+20 January 2022 every sign-in needs a second factor, and which one depends on the
+student, not the app:
+
+| Who | Second factor | Where it happens |
+| --- | --- | --- |
+| Italian students | SPID or CIE level 2 (by law) | the provider's page: app approval, SMS OTP |
+| Foreign students, staff, PhD | Polimi 2FA: TOTP from an authenticator app (SMS for staff and PhD) | aunicalogin, after the password |
+
+What the app does about it, and nothing more: `SessionSeeder` signs WeBeep and the
+recordings in on the session the PoliMi sign-in leaves behind (one second factor
+instead of three); `IdentityAppHandoff` opens a provider's app when its page links to
+it, such as PosteID's universal link
+`appregistry-posteid.mobile.poste.it/jod-login-schema/btcs/pid/access/…`, and leaves
+the page polling; `LoginWebKit.autofillHints` marks aunicalogin's fields for AutoFill.
+
+Ruled out: storing the TOTP secret or a native code field (the Regolamento counts the
+OTP as a credential, art. 2 lett. a and art. 19 c.6), and `ASWebAuthenticationSession`
+for the PoliMi token (see above). PoliMi offers no passkeys.
+
 ## Hosts
 
 | Host | Purpose |
@@ -249,3 +271,31 @@ Resolved — see [webeep.md](webeep.md). WeBeep is a stock Moodle and exposes a
 supported token handshake at `admin/tool/mobile/launch.php`; no scraping is
 needed. PoliFemo has no WeBeep code to borrow, but `toto04/webeep-sync` and
 `matteovisotto/myPoliFile` both do.
+
+## Linking after sign-in (2026-11-03)
+
+`SessionLinks` owns the three observable connection results. Once the official
+app's token is accepted, WeBeep token acquisition/verification and entry into the
+recordings archive run concurrently. Only an accepted archive is saved through
+`RecordingsWebKit.saveSession()`; copying SSO cookies does not count as a verified
+connection. The temporary login store is cleared after both attempts finish.
+
+The real-account journey includes one connections page after sign-in, with a
+spinner/result and an explicit repair action for each connection. Continue never
+waits for linking. Leaving the page does not cancel the work; Settings reads the
+same results. Webex authentication stays at first playback. Restored accounts
+verify their saved connections in the background without reopening onboarding.
+Sign-out cancels and joins linking before clearing credentials and cookies.
+
+`SessionLinksTests` covers concurrent start, independent completion, retry,
+offline/failure outcomes, and late completions after cancellation. A real-account
+check is still required to verify university redirects, second factors and cookie
+acceptance on a device. Debug builds accept `-PreviewConnections` with
+`connecting`, `connected`, `offline` or `attention` alongside sample-data launch
+arguments to inspect the actual onboarding page without an account.
+
+The onboarding loader is a continuous progress ring. It advances at four observed
+milestones: the attempt starts, the session is available, access is verified, and
+the connection is ready. It does not estimate server time or fill on a timer.
+Progress reports from cancelled or superseded attempts are ignored. The Debug
+`progress` preview plays these milestones to completion without an account.

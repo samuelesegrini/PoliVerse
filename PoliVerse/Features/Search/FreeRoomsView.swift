@@ -11,10 +11,17 @@ struct FreeRoomsView: View {
     /// Whether to list only the rooms free now, rather than every room with a gap today.
     @State private var minimumMinutes = 30
     @State private var onlyNow = true
+    /// The rooms listed, in the order they are on screen, and which list they are
+    /// of. Rooms arriving go below these while the pass runs.
+    @State private var shown: (list: String, ids: [String]) = ("", [])
+    /// Whether the list is being scrolled: it is not reordered under a finger.
+    @State private var scrolling = false
 
     /// The view's content.
     var body: some View {
         @Bindable var aule = aule
+        let rows = self.rows
+        let ids = rows.map(\.room.id)
 
         List {
             Section {
@@ -41,9 +48,18 @@ struct FreeRoomsView: View {
             }
             .lookRow()
 
-            content
+            content(rows)
         }
         .lookList()
+        .animation(.default, value: ids)
+        .onChange(of: ids, initial: true) { _, ids in shown = (list, ids) }
+        .onScrollPhaseChange { _, phase in scrolling = phase.isScrolling }
+        // A booking started or ended: the list is drawn again from the bookings
+        // held, and the rooms that changed are asked about once.
+        .onChange(of: aule.boundaryTick) { _, _ in
+            guard scenePhase == .active else { return }
+            Task { await aule.refreshAfterBoundary() }
+        }
         .safeAreaInset(edge: .top, spacing: 0) { FreshnessBar(age: aule.age) }
         .navigationTitle("Aule libere")
         .navigationBarTitleDisplayMode(.inline)
@@ -53,6 +69,8 @@ struct FreeRoomsView: View {
         .task(id: "\(aule.day.timeIntervalSince1970)|\(aule.campus ?? "")") {
             await aule.load()
         }
+        .screenLedger("Aule libere", hasContent: !aule.rooms.isEmpty,
+                      isComplete: !aule.isLoading && !aule.rooms.isEmpty)
         .refreshable { await aule.load(force: true) }
         // Free rooms is not in ``FreshnessCoordinator``: a campus pass is up
         // to 158 requests, which is not something to spend every time the app
@@ -74,10 +92,51 @@ struct FreeRoomsView: View {
         PoliMiDate.romeCalendar.isDateInToday(aule.day)
     }
 
+    /// Whether the list on screen is the rooms free now.
+    private var showsNow: Bool { onlyNow && isToday }
+
+    /// Names the list on screen, so an order kept for one is not applied to another.
+    private var list: String {
+        "\(showsNow)|\(minimumMinutes)|\(aule.day.timeIntervalSince1970)|\(aule.campus ?? "")"
+    }
+
+    /// The rooms to list, in the order to list them.
+    ///
+    /// While rooms are arriving or the list is being scrolled, the rows on screen
+    /// keep their places and new rooms go below (``StableOrder``); once the pass
+    /// is over and the list is still, it takes its sorted order.
+    private var rows: [(room: RoomSchedule, slots: [DateInterval])] {
+        let sorted: [(room: RoomSchedule, slots: [DateInterval])] = showsNow
+            ? aule.freeNow().map { ($0, []) }
+            : aule.freeRooms(minimumMinutes: minimumMinutes)
+        let order = StableOrder.merge(
+            shown: shown.list == list ? shown.ids : [],
+            sorted: sorted.map(\.room.id),
+            settle: !aule.isLoading && !scrolling)
+        let byID = Dictionary(sorted.map { ($0.room.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return order.compactMap { byID[$0] }
+    }
+
+    /// How far the pass is, while rooms are already listed.
+    @ViewBuilder
+    private var arriving: some View {
+        if aule.isLoading {
+            HStack(spacing: 8) {
+                ProgressView()
+                Text("\(aule.progress.done) di \(aule.progress.total) aule")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
     /// The rooms, or what is happening instead: a pass in flight, a failure, or a campus with
     /// nothing to show.
+    ///
+    /// - Parameter rows: The rooms to list, in order.
     @ViewBuilder
-    private var content: some View {
+    private func content(_ rows: [(room: RoomSchedule, slots: [DateInterval])]) -> some View {
         if let message = aule.errorMessage {
             ContentUnavailableView("Aule non disponibili",
                                    systemImage: "building.2",
@@ -94,18 +153,20 @@ struct FreeRoomsView: View {
                 }
             }
             .lookRow()
-        } else if onlyNow && isToday {
-            freeNowSection
+        } else if showsNow {
+            freeNowSection(rows.map(\.room))
         } else {
-            daySection
+            daySection(rows)
         }
     }
 
     /// The rooms free for the next half hour, by name.
-    private var freeNowSection: some View {
-        let free = aule.freeNow()
-        return Section {
-            if free.isEmpty {
+    private func freeNowSection(_ free: [RoomSchedule]) -> some View {
+        Section {
+            arriving
+            if free.isEmpty, aule.isLoading {
+                // Not yet "none": the rooms asked so far are busy, the rest are coming.
+            } else if free.isEmpty {
                 Text("Nessuna aula libera in questo momento.")
                     .foregroundStyle(.secondary)
             } else {
@@ -126,10 +187,12 @@ struct FreeRoomsView: View {
     }
 
     /// Every room with a gap today, most free time first, each with its gaps.
-    private var daySection: some View {
-        let results = aule.freeRooms(minimumMinutes: minimumMinutes)
-        return Section {
-            if results.isEmpty {
+    private func daySection(_ results: [(room: RoomSchedule, slots: [DateInterval])]) -> some View {
+        Section {
+            arriving
+            if results.isEmpty, aule.isLoading {
+                // Not yet "none": the rest of the campus is still coming.
+            } else if results.isEmpty {
                 Text("Nessuna aula con un intervallo libero abbastanza lungo.")
                     .foregroundStyle(.secondary)
             } else {

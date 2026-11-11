@@ -39,13 +39,20 @@ struct TodaySectionView: View {
 
     /// The view's content.
     var body: some View {
+        let hasRows = !collapsed && !entries(now: .now).isEmpty
         VStack(alignment: .leading, spacing: compact ? 6 : 10) {
             Label(section.kind.title, systemImage: section.kind.systemImage)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(section.tinted ? AnyShapeStyle(accent) : AnyShapeStyle(.primary))
                 .labelStyle(TitleOnlyUnlessTinted(tinted: section.tinted))
             card
+                // The height the rows take, held the next time the section waits.
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                    if hasRows { ShapeMemory.shared.remember(height, for: memoryName) }
+                }
         }
+        // Rows that arrive after a wait come into focus; rows already there do not.
+        .reveals(phase(isEmpty: !hasRows), hasRows: hasRows, title: name)
         // In the look's text design. Set here and on the greeting rather than
         // on the whole page, where it would restyle the date's system faces.
         .fontDesign(style.textDesign.design)
@@ -62,8 +69,9 @@ struct TodaySectionView: View {
             let lessons = TodayDigest.timetable(events: agenda.events(on: day), day: day)
             // Each lesson its own card in its course's colour.
             VStack(spacing: compact ? 6 : 8) {
-                ForEach(lessons) { lesson in
+                ForEach(Array(lessons.enumerated()), id: \.element.id) { index, lesson in
                     lessonCard(lesson)
+                        .revealed(order: index)
                 }
             }
         } else if section.form == .tiles && !collapsed && !entries.isEmpty {
@@ -116,13 +124,7 @@ struct TodaySectionView: View {
             .foregroundStyle(Theme.onAccent)
             .padding(.horizontal, 14)
             .padding(.vertical, compact ? 9 : 13)
-            .background {
-                shape.fill(colour)
-                    .visualEffect { content, proxy in
-                        content.colorEffect(ShaderLibrary.glossSheen(.float2(proxy.size), .float(0.5)))
-                    }
-            }
-            .shadow(color: colour.opacity(0.3), radius: 8, y: 4)
+            .modifier(LessonCardSurface(colour: colour, shape: shape))
             .accessibilityElement(children: .combine)
         }
     }
@@ -173,7 +175,11 @@ struct TodaySectionView: View {
             }
             .padding(.vertical, 12)
         } else if entries.isEmpty {
-            empty(emptyText)
+            // Waiting, failed, or answered with nothing: only the last may say so.
+            SectionStatus(phase: phase(isEmpty: true), title: name, showsTitle: false,
+                          memory: memoryName, retry: { await reload() }) {
+                empty(emptyText)
+            }
         } else {
             switch section.form {
             case .list: rows(entries)
@@ -237,6 +243,68 @@ struct TodaySectionView: View {
         }
     }
 
+    // MARK: - Where the section's data is
+
+    /// The section's name, for its status line and VoiceOver.
+    private var name: LocalizedStringResource {
+        switch section.kind {
+        case .currentClass: "Lezione in corso"
+        case .upcoming: "In arrivo"
+        case .timetable: "Orario"
+        case .deadlines: "Scadenze"
+        case .exams: "Esami"
+        }
+    }
+
+    /// The name the section's height is remembered under.
+    private var memoryName: String { "oggi.\(section.kind.rawValue)" }
+
+    /// Where the data this section lists is: on its way, failed, held or answered.
+    ///
+    /// - Parameter isEmpty: Whether the section has nothing to list.
+    private func phase(isEmpty: Bool) -> LoadPhase {
+        switch section.kind {
+        case .currentClass:
+            return agenda.phase(on: .now, isEmpty: isEmpty)
+        case .timetable:
+            return agenda.phase(on: day, isEmpty: isEmpty)
+        case .exams:
+            return examsPhase(isEmpty: isEmpty)
+        case .deadlines:
+            // Deadlines come from what the feed already holds: nothing to wait for.
+            return isEmpty ? .empty : .held(age: 0)
+        case .upcoming:
+            guard isEmpty else { return .held(age: 0) }
+            let lessons = agenda.phase(on: .now, isEmpty: true)
+            let exams = examsPhase(isEmpty: true)
+            // Still empty only when both sources have answered.
+            if case .waiting = lessons { return lessons }
+            if case .waiting = exams { return exams }
+            if case .failed = lessons, case .failed = exams { return lessons }
+            return .empty
+        }
+    }
+
+    /// The sittings' phase, for a section that lists only the ones ahead.
+    private func examsPhase(isEmpty: Bool) -> LoadPhase {
+        let sittings = career.sittingsPhase
+        if isEmpty { return sittings.showsContent ? .empty : sittings }
+        return sittings.showsContent ? sittings : .held(age: 0)
+    }
+
+    /// Asks again for what this section lists.
+    private func reload() async {
+        switch section.kind {
+        case .currentClass, .timetable, .deadlines:
+            await agenda.load(around: day, force: true)
+        case .exams:
+            await career.load(force: true)
+        case .upcoming:
+            await agenda.load(around: day, force: true)
+            await career.load(force: true)
+        }
+    }
+
     /// What an empty section says, in the words its kind calls for.
     private var emptyText: LocalizedStringKey {
         switch section.kind {
@@ -252,9 +320,9 @@ struct TodaySectionView: View {
 
     /// One row per entry: the shape every section had before forms.
     private func rows(_ entries: [TodayEntry]) -> some View {
-        ForEach(entries) { entry in
-            row(symbol: entry.symbol, title: entry.title, detail: entry.detail,
-                trailing: entry.when, last: entry.id == entries.last?.id, opens: entry.opens)
+        ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+            row(entry, last: entry.id == entries.last?.id)
+                .revealed(order: index)
         }
     }
 
@@ -280,6 +348,7 @@ struct TodaySectionView: View {
                             Text(lead.title)
                                 .font(.headline)
                                 .lineLimit(2)
+                                .revealedText()
                             if let detail = lead.detail, !detail.isEmpty {
                                 Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                             }
@@ -416,62 +485,39 @@ struct TodaySectionView: View {
         .padding(.vertical, compact ? 4 : 6)
     }
 
-    /// One row, opening its detail when there is one.
-    ///
-    /// - Parameters:
-    ///   - symbol: The row's SF Symbol.
-    ///   - title: What it is.
-    ///   - detail: One more line, if any.
-    ///   - trailing: When it is.
-    ///   - last: True for the last row, which draws no divider.
-    ///   - opens: The screen a tap opens, if any.
-    /// - Returns: The row.
-    private func row(symbol: String, title: String, detail: String?, trailing: String, last: Bool,
-                     opens: TodayDetail? = nil) -> some View {
-        opening(opens) {
-            rowContent(symbol: symbol, title: title, detail: detail, trailing: trailing, last: last)
-        }
-    }
-
-    /// A row's own layout, without the tap.
-    ///
-    /// - Parameters:
-    ///   - symbol: The row's SF Symbol.
-    ///   - title: What it is.
-    ///   - detail: One more line, dropped in the compact density.
-    ///   - trailing: When it is.
-    ///   - last: True for the last row, which draws no divider.
-    /// - Returns: The row's content.
-    private func rowContent(symbol: String, title: String, detail: String?, trailing: String, last: Bool) -> some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                Image(systemName: symbol)
-                    .font(compact ? .subheadline : .body)
-                    .foregroundStyle(accent)
-                    .frame(width: 24)
-                if compact {
-                    Text(title).font(.subheadline).lineLimit(1)
-                } else {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(title).font(.subheadline.weight(.medium)).lineLimit(1)
-                        if let detail, !detail.isEmpty {
-                            Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+    /// One entry, with its detail action and density-specific layout kept together.
+    private func row(_ entry: TodayEntry, last: Bool) -> some View {
+        opening(entry.opens) {
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    Image(systemName: entry.symbol)
+                        .font(compact ? .subheadline : .body)
+                        .foregroundStyle(accent)
+                        .frame(width: 24)
+                    if compact {
+                        Text(entry.title).font(.subheadline).lineLimit(1)
+                    } else {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(entry.title).font(.subheadline.weight(.medium)).lineLimit(1)
+                            if let detail = entry.detail, !detail.isEmpty {
+                                Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                            }
                         }
                     }
+                    Spacer(minLength: 8)
+                    Text(entry.when)
+                        .font(.caption.weight(.medium))
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
-                Spacer(minLength: 8)
-                Text(trailing)
-                    .font(.caption.weight(.medium))
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                .padding(.vertical, compact ? 7 : 10)
+                if !last {
+                    Divider().padding(.leading, 36)
+                }
             }
-            .padding(.vertical, compact ? 7 : 10)
-            if !last {
-                Divider().padding(.leading, 36)
-            }
+            .accessibilityElement(children: .combine)
         }
-        .accessibilityElement(children: .combine)
     }
 
     /// The line a section shows in place of its list when there is nothing.
@@ -500,6 +546,45 @@ private struct TitleOnlyUnlessTinted: LabelStyle {
             HStack(spacing: 6) { configuration.icon; configuration.title }
         } else {
             configuration.title
+        }
+    }
+}
+
+/// A lesson card's fill in its course's colour, lacquered, with a shadow under it.
+///
+/// The lacquer is a gradient and the shadow is cast by the shape alone, where
+/// before each card ran a shader and blurred a shadow out of its own text on every
+/// frame it moved. `-TodayLegacy sheen,shadow` brings both back.
+private struct LessonCardSurface: ViewModifier {
+    /// The course's colour.
+    let colour: Color
+    /// The card's outline.
+    let shape: RoundedRectangle
+
+    func body(content: Content) -> some View {
+        if TodayRendering.isLegacy(.shadow) {
+            content
+                .background { fill }
+                .shadow(color: colour.opacity(0.3), radius: 8, y: 4)
+        } else {
+            content.background {
+                fill.shadow(color: colour.opacity(0.3), radius: 8, y: 4)
+            }
+        }
+    }
+
+    /// The card's colour, lacquered.
+    private var fill: some View {
+        ZStack {
+            if TodayRendering.isLegacy(.sheen) {
+                shape.fill(colour)
+                    .visualEffect { content, proxy in
+                        content.colorEffect(ShaderLibrary.glossSheen(.float2(proxy.size), .float(0.5)))
+                    }
+            } else {
+                shape.fill(colour)
+                    .overlay { shape.fill(TodayRendering.sheen(strength: 0.5)) }
+            }
         }
     }
 }

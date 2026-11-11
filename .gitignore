@@ -26,3 +26,11 @@ Packages/
 # Secrets
 *.xcconfig.local
 Secrets.plist
+
+# LaTeX documents (docs/rasd, docs/dd, docs/plan)
+*.aux
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+docs/out/

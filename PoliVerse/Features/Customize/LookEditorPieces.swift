@@ -51,7 +51,7 @@ struct ModeBar: View {
             .buttonStyle(.glass)
             .buttonBorderShape(.circle)
             .tint(.primary)
-            .accessibilityLabel(Text("Annulla"))
+            .accessibilityLabel(Text("Annulla modifiche: \(Text(mode.title))"))
             .accessibilityIdentifier("customize-mode-cancel")
             Spacer()
             Text(mode.title)
@@ -66,7 +66,7 @@ struct ModeBar: View {
             .buttonStyle(.glassProminent)
             .buttonBorderShape(.circle)
             .keyboardShortcut(.return, modifiers: .command)
-            .accessibilityLabel(Text("Fine"))
+            .accessibilityLabel(Text("Conferma \(Text(mode.title))"))
             .accessibilityIdentifier("customize-mode-done")
         }
         .frame(height: 48)
@@ -102,7 +102,7 @@ struct UndoRedoCapsule: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.body.weight(.semibold))
-                .frame(width: 42, height: 44)
+                .frame(width: 44, height: 44)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)

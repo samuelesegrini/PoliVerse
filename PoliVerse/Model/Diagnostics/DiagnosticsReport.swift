@@ -143,6 +143,9 @@ nonisolated struct DiagnosticsSnapshot: Equatable, Sendable {
     var background: Background
     /// What the report archive holds.
     var performance: Performance
+    /// How long loading took over the last two weeks, from the ``LoadingLedger``.
+    /// `nil` when nothing was recorded.
+    var loading: LedgerReport?
 }
 
 /// A ``DiagnosticsSnapshot`` as text, to paste into an email or an issue.
@@ -253,6 +256,27 @@ nonisolated struct DiagnosticsReport: Sendable {
         section("Prestazioni")
         line("Rapporti MetricKit", "\(snapshot.performance.metricReports) metriche, \(snapshot.performance.diagnosticReports) diagnostiche")
         if let latest = snapshot.performance.latest { line("Ultimo rapporto", date(latest)) }
+
+        if let loading = snapshot.loading, !loading.isEmpty {
+            section("Caricamento (ultimi \(loading.days) giorni)")
+            func spread(_ spread: LedgerReport.Spread?) -> String {
+                spread.map { "mediana \($0.median) ms, p90 \($0.p90) ms" } ?? "nessun dato"
+            }
+            for screen in loading.screens {
+                let note = screen.isEnough ? "" : " (campione troppo piccolo)"
+                line("Schermata \(screen.name)", "\(screen.openings) aperture\(note)")
+                line("  primo contenuto", spread(screen.firstContent))
+                line("  completa", spread(screen.complete))
+            }
+            for part in loading.parts {
+                let failures = Int((part.failureShare * 100).rounded())
+                line("\(part.part) su \(part.host)",
+                     "\(part.count) richieste, \(spread(part.duration)), \(failures)% fallite, \(part.timeouts) scadute")
+            }
+            if let share = loading.speculativeUsedShare {
+                line("Richieste anticipate", "\(loading.speculativeSent), usate \(Int((share * 100).rounded()))%")
+            }
+        }
 
         text = lines.joined(separator: "\n")
     }

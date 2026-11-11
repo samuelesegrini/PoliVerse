@@ -66,6 +66,13 @@ nonisolated struct PublicHTTP: HTTP {
     ///   1200 bytes of the body, ``APIError/cancelled`` for a cancellation, and
     ///   ``APIError/transport(_:)`` for anything else.
     func data(for request: APIRequest) async throws -> Data {
+        try await RequestGate.shared.run(host: request.host.rawValue, pausable: request.method == "GET") {
+            try await self.perform(request)
+        }
+    }
+
+    /// The request behind ``data(for:)``, without the ledger's timing.
+    private func perform(_ request: APIRequest) async throws -> Data {
         let base = directory?.routedURL(for: request.host) ?? request.host.fallback
         guard var components = URLComponents(
             url: base.appendingPathComponent(request.path), resolvingAgainstBaseURL: false)
@@ -76,11 +83,11 @@ nonisolated struct PublicHTTP: HTTP {
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = request.method
         urlRequest.httpBody = request.body
-        urlRequest.timeoutInterval = 30
+        urlRequest.timeoutInterval = PoliMiAPI.timeout(for: request)
         urlRequest.setValue("application/json", forHTTPHeaderField: "Accept")
 
         do {
-            let (data, response) = try await session.data(for: urlRequest)
+            let (data, response) = try await fetch(urlRequest, retrying: request.method == "GET")
             guard let http = response as? HTTPURLResponse else { return data }
             guard (200..<300).contains(http.statusCode) else {
                 if http.statusCode == 404 { throw APIError.endpointGone(request.path) }
@@ -93,6 +100,17 @@ nonisolated struct PublicHTTP: HTTP {
         } catch {
             if PoliMiAPI.isCancellation(error) { throw APIError.cancelled }
             throw APIError.transport(error)
+        }
+    }
+
+    /// One request, asked once more after a timeout or a dropped connection when
+    /// it is a read. See ``PoliMiAPI/timeout(for:)``.
+    private func fetch(_ request: URLRequest, retrying: Bool) async throws -> (Data, URLResponse) {
+        do {
+            return try await session.data(for: request)
+        } catch let error where retrying && !PoliMiAPI.isCancellation(error) && PoliMiAPI.isTransient(error) {
+            try await Task.sleep(for: .milliseconds(500))
+            return try await session.data(for: request)
         }
     }
 }

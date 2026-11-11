@@ -1,0 +1,55 @@
+{
+ "csie": "MIA0108",
+ "nome": "Alessandro Amerio",
+ "numero": "8",
+ "piani": [
+  {
+   "csip": "MIA010800S",
+   "quota": -4.2,
+   "aule": []
+  },
+  {
+   "csip": "MIA0108000",
+   "quota": 0.3,
+   "aule": [
+    {
+     "csiv": "MIA0108000011",
+     "sigla": "8.0.1",
+     "posti": 260,
+     "centro": [
+      93.66,
+      1.3,
+      149.88
+     ],
+     "interno": {
+      "occhio": [
+       91.13,
+       4.17,
+       158.18
+      ],
+      "guarda": [
+       100.05,
+       1.85,
+       149.34
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "csip": "MIA0108001",
+   "quota": 5.9,
+   "aule": []
+  },
+  {
+   "csip": "MIA0108002",
+   "quota": 10.4,
+   "aule": []
+  }
+ ],
+ "centro": [
+  108.81,
+  132.64
+ ],
+ "altezza": 16.4
+}

@@ -1,0 +1,88 @@
+% Project plan for the loading update of PoliVerse. Numbers come from plan.py.
+\documentclass[plan]{se2doc}
+\input{../meta}
+\docversion{0.1}
+\revision{0.1}{10 Nov 2026}{First plan, from RASD 1.0 and DD 0.1}
+\usepackage{float}
+\input{generated/schedule-facts}
+
+\begin{document}
+\maketitle
+
+% DRAFT, rewrite
+\section{Scope and success criteria}
+The plan covers the loading update specified in the RASD and designed in the DD:
+eight milestones of implementation, the documents, and an acceptance test on the
+phone. One developer works on it part time.
+
+The update succeeds when:
+\begin{itemize}
+  \item every requirement R1 to R40 has a passing test that carries its id;
+  \item the performance requirements P1 to P9 hold on the iPhone 12 Pro, read from the loading ledger against the baseline of milestone M1;
+  \item the six use cases pass when played by hand with a real account.
+\end{itemize}
+
+\section{Estimate}
+\subsection{Function points}
+The functions are counted from the RASD's use cases and data. Weights are the IFPUG
+defaults (ILF 7/10/15, EIF 5/7/10, EI 3/4/6, EO 4/5/7, EQ 3/4/6).
+% TODO: check weights and COCOMO constants against the slides of lecture 06.
+\input{generated/fp-table}
+
+\subsection{Size and effort}
+\input{generated/estimate}
+Assumptions:
+\begin{itemize}
+  \item 53 lines per function point: the usual backfiring figure for Java-like languages. No published figure exists for Swift.
+  \item COCOMO II post-architecture, all scale factors and effort multipliers nominal.
+\end{itemize}
+The result is far above the bottom-up total of \planbac{} hours in the next
+section. That is expected: the model is calibrated on teams building a product
+from nothing, with all its overheads, while this update extends a store layer that
+exists and is done by one person who knows it. The estimate is kept as an upper
+bound and as a number to compare with the hours actually logged. The schedule
+uses the bottom-up figures.
+
+\section{WBS and schedule}
+\subsection{Work breakdown}
+Leaves are 3 to 16 hours. Float and the critical path come from the dependencies
+alone, as if tasks could run in parallel.
+\input{generated/wbs-table}
+
+\noindent Critical path (\plancriticalhours{} hours): \plancritical.
+
+\subsection{Schedule}
+With one developer the tasks run one after another, milestone after milestone.
+The schedule assumes 10 hours a week, as 2 hours on each working day, from
+\planstart. \planleft{} hours remain, and the planned end is \planend.
+
+\begin{figure}[H]
+\centering
+\input{generated/gantt}
+\caption{Schedule. Dark bars are on the critical path; diamonds close a milestone.}
+\end{figure}
+
+\input{generated/milestones}
+
+\section{Risk management}
+Likelihood and impact are on a scale of 1 to 5.
+\input{generated/risk-register}
+\begin{figure}[H]
+\centering
+\input{generated/risk-plot}
+\caption{Open risks by likelihood and impact.}
+\end{figure}
+% TODO: redraw the plot the way lecture 06 draws it once the slide is at hand.
+
+\section{Monitoring}
+Hours are logged in \texttt{data/hours.csv} and progress in the
+\texttt{percent\_complete} column of \texttt{data/wbs.csv}. At the end of each
+milestone the earned value is computed (planned value, earned value, actual cost,
+their variances and indices, and the estimate at completion) and a row is added to
+\texttt{data/ev.csv}. No hours have been logged yet, so there is no row.
+
+\section{Hours per task}
+% TODO: \effort{task}{hours} per task from data/hours.csv, then \printeffort.
+To be recorded as the work proceeds.
+
+\end{document}

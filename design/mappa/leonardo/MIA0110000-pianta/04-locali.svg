@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="113.5 96.5 38.1 31.5" width="380.6" height="314.6">
+<path id="MIA0110000001" data-tipo="corridoio" d="M135.2 109.5L137.4 109.5L137.4 109.4L138.5 109.4L138.5 111.6L138.9 111.6L138.9 115.3L135.2 115.3Z" fill="#FFFFFF" fill-rule="evenodd"/>
+<path id="MIA0110000002" data-tipo="tecnico" d="M139.1 109.5L138.5 109.5L138.5 111.5L138.9 111.5L138.9 111.1L139.1 111.1Z" fill="#E4E7EC" fill-rule="evenodd"/>
+<path id="MIA0110000003" data-tipo="locale" d="M134.8 111.4L134.8 109.5L134.7 109.5L134.7 109L131.9 109L131.9 111.4L132.7 111.4L132.7 111.5L133.4 111.5L133.4 111.4Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0110000004" data-tipo="corridoio" d="M135.1 111.5L133.4 111.5L133.4 111.5L131.7 111.5L131.7 113L132.1 113L132.1 113L132.8 113L132.8 113L133.2 113L133.2 113L135.1 113Z" fill="#FFFFFF" fill-rule="evenodd"/>
+<path id="MIA0110000005" data-tipo="locale" d="M133.1 115.3L134.7 115.3L134.7 115.1L134.9 115.1L134.9 113.1L134.1 113.1L134.1 113L133.2 113L133.2 113.1L133.1 113.1Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0110000006" data-tipo="locale" d="M132 115.3L133 115.3L133 113.1L132.8 113.1L132.8 113L132.1 113L132.1 113.1L132 113.1Z" fill="#F3F4F7" fill-rule="evenodd"/>
+<path id="MIA0110000007a" data-tipo="corridoio" d="M131.6 109L129.7 109L129.7 108.8L128.5 108.8L128.5 109L126.3 109L126.3 115.3L131.6 115.3Z" fill="#FFFFFF" fill-rule="evenodd"/>
+</svg>

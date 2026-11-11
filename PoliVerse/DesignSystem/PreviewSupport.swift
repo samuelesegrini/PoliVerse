@@ -27,6 +27,7 @@ enum PreviewEnvironment {
     /// The sample WeBeep model.
     static let weBeep = WeBeepModel(session: session, feed: updates)
     static let recordings = RecordingsModel(account: session)
+    static let links = SessionLinks { _, _, _ in .connected }
     /// The sample course list.
     static let courses = CourseModel(account: session, enrolments: weBeep)
     /// The sample timetable.
@@ -106,6 +107,7 @@ extension View {
             .environment(PreviewEnvironment.notifications)
             .environment(PreviewEnvironment.weBeep)
             .environment(PreviewEnvironment.recordings)
+            .environment(PreviewEnvironment.links)
             .environment(RecordingDownloads.shared)
             .environment(PreviewEnvironment.notices)
             .environment(PreviewEnvironment.news)
@@ -126,6 +128,7 @@ extension View {
             .environment(PreviewEnvironment.status)
             .environment(PreviewEnvironment.onboarding)
             .environment(PreviewEnvironment.whatsNew)
+            .environment(FeatureFlags())
             .environment(PreviewEnvironment.spid)
             .environment(PreviewEnvironment.loginMemory)
             .tint(Theme.brand)

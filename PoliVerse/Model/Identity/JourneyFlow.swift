@@ -22,13 +22,15 @@ nonisolated enum JourneyFlow {
         case preview
         /// The Politecnico's sign-in, or the sample data.
         case signIn
+        /// Live results of linking the three university connections.
+        case connections
         /// The degree course and approved plan (PSPA), and the favourite campus.
         case studies
         /// Which reminders, then the permission.
         case reminders
         /// The look's colour.
         case atmosphere
-        /// What was set up; pulling the card down opens the app.
+        /// What was set up; the final button reveals the app.
         case ready
 
         /// The raw value.
@@ -89,15 +91,15 @@ nonisolated enum JourneyFlow {
     /// The studies step is always there: the sample data has no plan to confirm, but
     /// a campus is worth choosing either way.
     ///
-    /// Reminders are dropped for the sample data — the app schedules nothing from
-    /// invented lectures — and once iOS has refused. Career and WeBeep are not steps:
-    /// they are sheets over ``Step/signIn``, shown only when they apply, so the
-    /// sequence does not change length under the student halfway through.
+    /// Sample data skips connections and reminders. Real accounts see a skippable
+    /// connections page; reminders are also skipped once iOS has refused.
     ///
     /// - Parameter context: What the journey should take into account.
     /// - Returns: The applicable steps.
     static func steps(in context: Context) -> [Step] {
-        var steps: [Step] = [.welcome, .intents, .preview, .signIn, .studies]
+        var steps: [Step] = [.welcome, .intents, .preview, .signIn]
+        if !context.isDemo { steps.append(.connections) }
+        steps.append(.studies)
         if !context.isDemo, !context.notificationsDenied { steps.append(.reminders) }
         steps += [.atmosphere, .ready]
         return steps

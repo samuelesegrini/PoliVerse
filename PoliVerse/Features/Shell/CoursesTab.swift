@@ -11,7 +11,7 @@ struct CoursesTab: View {
             MacCoursesView()
             #else
             NewDestination.courses.screen
-                .flavorPaper()
+                .flavorPaper(.courses)
                 .profileButton()
                 .dataStatusLine()
             #endif

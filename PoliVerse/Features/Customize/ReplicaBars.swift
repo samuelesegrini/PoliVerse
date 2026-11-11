@@ -82,21 +82,19 @@ struct ReplicaAccessory: View {
 /// The tab bar as the app draws it: whole, or minimised to the selected tab
 /// the way it shrinks while a page scrolls.
 struct ReplicaTabBar: View {
-    /// Which tab is drawn as chosen: 0 Oggi, 1 Corsi, 2 Carriera.
-    var selected = 0
+    /// Which content tab is drawn as chosen.
+    var selected = NewDestination.Tab.today
     /// Drawn minimised: the selected tab alone, and search.
     var minimized = false
 
     /// The bar's tabs, in order.
-    private static let tabs: [(title: LocalizedStringKey, icon: String)] = [
-        ("Oggi", "calendar.day.timeline.left"), ("Corsi", "books.vertical"), ("Carriera", "graduationcap"),
-    ]
+    private static let tabs = NewDestination.Tab.allCases.filter { $0 != .search }
 
     /// The view's content.
     var body: some View {
         HStack(spacing: 10) {
             if minimized {
-                Image(systemName: Self.tabs[selected].icon)
+                Image(systemName: selected.systemImage)
                     .symbolVariant(.fill)
                     .font(.system(size: 20))
                     .foregroundStyle(.tint)
@@ -105,8 +103,8 @@ struct ReplicaTabBar: View {
                 Spacer(minLength: 0)
             } else {
                 HStack(spacing: 0) {
-                    ForEach(Self.tabs.indices, id: \.self) { index in
-                        tab(Self.tabs[index].title, Self.tabs[index].icon, selected: index == selected)
+                    ForEach(Self.tabs, id: \.self) { item in
+                        tab(item.title, item.systemImage, selected: item == selected)
                     }
                 }
                 .padding(4)
@@ -114,7 +112,7 @@ struct ReplicaTabBar: View {
                 .glassEffect(.regular, in: .capsule)
             }
 
-            Image(systemName: "magnifyingglass")
+            Image(systemName: NewDestination.Tab.search.systemImage)
                 .font(.system(size: 20, weight: .medium))
                 .frame(width: minimized ? 52 : 62, height: minimized ? 52 : 62)
                 .glassEffect(.regular, in: .circle)

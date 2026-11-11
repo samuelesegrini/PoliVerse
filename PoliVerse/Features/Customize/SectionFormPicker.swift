@@ -315,34 +315,10 @@ private struct SectionControlsCard: View {
     /// Takes the section off the page.
     var onHide: () -> Void
 
-    /// The section, read from the look and written back to it.
-    private var section: Binding<TodaySection> {
-        Binding {
-            style.section(kind) ?? TodaySection(kind: kind)
-        } set: { new in
-            style.updateSection(kind) { $0 = new }
-        }
-    }
-
     /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            materials
-            GlassSegmentedPicker("Densità", selection: section.density) { Text($0.title) }
-
-            if kind.listsItems {
-                Stepper(value: section.itemLimit, in: TodaySection.itemLimits) {
-                    Text("Elementi mostrati: \(section.wrappedValue.itemLimit)")
-                        .font(.subheadline)
-                }
-            }
-            Toggle("Nel tuo colore", isOn: section.tinted)
-                .font(.subheadline)
-            // Course colours draw one card per lesson: only the list has them.
-            if kind.hasCourseColours, section.wrappedValue.form == .list {
-                Toggle("Colori dei corsi", isOn: section.courseColours)
-                    .font(.subheadline)
-            }
+            SectionSettings(kind: kind, look: $style, showsForm: false)
             Spacer(minLength: 0)
             VStack(alignment: .leading, spacing: 4) {
                 Button("Nascondi dalla pagina", systemImage: "eye.slash", role: .destructive, action: onHide)
@@ -373,54 +349,7 @@ private struct SectionControlsCard: View {
         .shadow(color: .black.opacity(0.14), radius: 16, y: 8)
     }
 
-    /// The materials as swatches, the page's own first.
-    private var materials: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Superficie")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-            ScrollView(.horizontal) {
-                HStack(spacing: 10) {
-                    swatch(nil, title: "Come la pagina")
-                    ForEach(TodayMaterial.allCases) { material in
-                        swatch(material, title: material.title)
-                    }
-                }
-                .padding(.vertical, 2)
-            }
-            .scrollIndicators(.hidden)
-        }
-    }
 
-    /// One material as a small preview, ringed when chosen.
-    ///
-    /// - Parameters:
-    ///   - material: The material, or `nil` to follow the page's.
-    ///   - title: What it is called.
-    /// - Returns: The swatch.
-    private func swatch(_ material: TodayMaterial?, title: LocalizedStringKey) -> some View {
-        let chosen = section.wrappedValue.material == material
-        return Button {
-            withAnimation(.snappy) { style.updateSection(kind) { $0.material = material } }
-        } label: {
-            VStack(spacing: 5) {
-                MaterialPreview(material: material ?? style.material, style: style)
-                    .frame(width: 62, height: 52)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 14)
-                            .strokeBorder(chosen ? AnyShapeStyle(.tint) : AnyShapeStyle(.clear), lineWidth: 2.5)
-                    }
-                Text(title)
-                    .font(.caption2.weight(chosen ? .semibold : .regular))
-                    .foregroundStyle(chosen ? .primary : .secondary)
-                    .lineLimit(1)
-            }
-            .frame(width: 66)
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("section-material-\(material?.rawValue ?? "page")")
-        .accessibilityAddTraits(chosen ? .isSelected : [])
-    }
 }
 
 #Preview("Forma") {

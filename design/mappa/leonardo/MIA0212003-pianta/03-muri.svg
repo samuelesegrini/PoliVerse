@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-53.1 -40 40.7 54" width="407.2" height="539.6">
+<defs><clipPath id="pl-guscio"><path d="M-40.9 -27.7L-24.6 -27.8L-24.5 1.8L-40.8 1.8Z"/></clipPath></defs>
+<path d="M-40.9 -27.7L-24.6 -27.8L-24.5 1.8L-40.8 1.8Z" fill="#B9BFC9" fill-rule="evenodd"/>
+<path d="M-26.7 -22.3L-26.7 -21.5L-25.8 -21.5L-25.8 -22.3ZM-30.5 -24.3L-30.5 -25.4L-31.4 -25.5L-31.4 -24.4ZM-30.9 -21.4L-30.9 -22.2L-31.8 -22.2L-31.8 -21.4Z" fill="#FFFFFF" clip-path="url(#pl-guscio)"/>
+</svg>

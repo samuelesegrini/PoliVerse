@@ -1,21 +1,8 @@
 import SwiftUI
 import UserNotifications
 
-/// The first run: a full-screen landscape that passes from dawn to the colour the
-/// student picks, asking what the app is for before it asks for the account.
-///
-/// ## Why this replaced ``OnboardingView``
-///
-/// The old flow was right about what to ask and wrong about when: its second screen
-/// was the Politecnico's login, before the student had seen anything of theirs. Here
-/// the account is the fourth step. First the student says what they are here for,
-/// sees the Oggi those answers make on sample data, and only then connects it —
-/// "Rendila mia" rather than "Accedi".
-///
-/// ``OnboardingView`` and its steps are kept, unused, until this has been lived with.
-///
-/// The sequence is ``JourneyFlow``; where it has got to is ``OnboardingState``, which
-/// outlives this view when signing in swaps it out.
+/// The first-run landscape, account linking and additional settings.
+/// The sequence and cursor live in JourneyFlow and OnboardingState.
 struct JourneyView: View {
     /// The shared ``OnboardingState``, from the environment.
     @Environment(OnboardingState.self) private var onboarding
@@ -25,12 +12,12 @@ struct JourneyView: View {
     @Environment(NotificationModel.self) private var notifications
     /// The shared ``WhatsNewState``, from the environment.
     @Environment(WhatsNewState.self) private var whatsNew
-    /// The look in use, which the atmosphere step colours and the ready step orders.
+    /// The look in use, coloured by the atmosphere step.
     @AppStorage(TodayStyle.storageKey) private var style = TodayStyle()
     /// Whether the reader has asked for reduced motion.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// How far the last card has been pulled down.
+    /// The final page’s offset during the button-triggered reveal.
     @State private var pull: CGFloat = 0
     /// Whether the card is on its way off, after which nothing may pull it.
     @State private var isEntering = false
@@ -45,7 +32,13 @@ struct JourneyView: View {
     /// What the journey knows right now. Rebuilt on every render, since signing in
     /// changes it.
     private var context: JourneyFlow.Context {
-        JourneyFlow.Context(
+        #if DEBUG
+        if CommandLine.arguments.contains("-PreviewOnboarding") {
+            return JourneyFlow.Context(
+                isSignedIn: ![JourneyFlow.Step.welcome, .intents, .preview, .signIn].contains(step))
+        }
+        #endif
+        return JourneyFlow.Context(
             isSignedIn: session.student != nil,
             isDemo: session.useMockData,
             notificationsDenied: notifications.authorization == .denied)
@@ -80,15 +73,6 @@ struct JourneyView: View {
         ZStack(alignment: .top) {
             JourneyLandscape(palette: palette)
             VStack(spacing: 0) {
-                // A handle only where the page can be pulled.
-                if step == .ready {
-                    Capsule()
-                        .fill(.white.opacity(0.7))
-                        .frame(width: 60, height: 5)
-                        .padding(.top, 4)
-                        .accessibilityHidden(true)
-                        .transition(.opacity)
-                }
                 topBar
                 content(height: height)
                     // One geometry for the whole page: what a step lays out a
@@ -108,12 +92,10 @@ struct JourneyView: View {
         // pulled away, so it reads as a page leaving rather than a sliding wall.
         .clipShape(.rect(cornerRadius: min(pull * 0.35, 48), style: .continuous))
         .ignoresSafeArea()
-        .gesture(pullDown(height: height), isEnabled: step == .ready && !isEntering)
         .simultaneousGesture(swipeBack, isEnabled: JourneyFlow.canGoBack(from: step, in: context))
     }
 
-    /// The back button, where the journey allows one, and the line that says how far
-    /// through the journey is.
+    /// Back navigation, without a progress indicator.
     private var topBar: some View {
         HStack(spacing: 12) {
             if JourneyFlow.canGoBack(from: step, in: context) {
@@ -130,26 +112,10 @@ struct JourneyView: View {
             } else {
                 Color.clear.frame(width: 44, height: 44)
             }
-            // Not on the welcome: nothing has started yet.
-            if step != .welcome {
-                JourneyProgress(fraction: progress.fraction, label: progress.label)
-            } else {
-                Spacer()
-            }
+            Spacer()
             Color.clear.frame(width: 44, height: 44)
         }
         .frame(height: 44)
-    }
-
-    /// How far through the journey the step on screen is.
-    ///
-    /// Counted over the steps that apply now, so choosing the sample data, which
-    /// drops the reminders, moves the line on rather than leaving a gap.
-    private var progress: (fraction: Double, label: String) {
-        let steps = JourneyFlow.steps(in: context)
-        guard let index = steps.firstIndex(of: step), steps.count > 1 else { return (0, "") }
-        return (Double(index) / Double(steps.count - 1),
-                String(localized: "Passo \(index + 1) di \(steps.count)"))
     }
 
     /// The step's own content.
@@ -159,11 +125,29 @@ struct JourneyView: View {
         case .welcome:
             JourneyWelcome(start: advance) { move(back: false) { onboarding.jumpJourney(to: .signIn) } }
         case .intents:
+            #if DEBUG
+            if JourneyFeaturesPrototype.isEnabled {
+                JourneyFeaturesPrototype(chapter: .day, advance: advance)
+            } else {
+                JourneyIntents(advance: advance)
+            }
+            #else
             JourneyIntents(advance: advance)
+            #endif
         case .preview:
+            #if DEBUG
+            if JourneyFeaturesPrototype.isEnabled {
+                JourneyFeaturesPrototype(chapter: .study, advance: advance)
+            } else {
+                JourneyPreview(advance: advance, change: back)
+            }
+            #else
             JourneyPreview(advance: advance, change: back)
+            #endif
         case .signIn:
             JourneySignIn(advance: advance)
+        case .connections:
+            JourneyConnections(advance: advance)
         case .studies:
             JourneyStudies(advance: advance)
         case .reminders:
@@ -179,8 +163,14 @@ struct JourneyView: View {
     private var palette: JourneyPalette {
         switch step {
         case .welcome: .dawn
-        case .intents, .preview: .meadow
-        case .signIn, .studies: .lake
+        case .intents: .meadow
+        case .preview:
+            #if DEBUG
+            JourneyFeaturesPrototype.isEnabled ? .lake : .meadow
+            #else
+            .meadow
+            #endif
+        case .signIn, .connections, .studies: .lake
         case .reminders: .sunset
         case .atmosphere, .ready: .flavor(style.flavor)
         }
@@ -248,32 +238,12 @@ struct JourneyView: View {
             }
     }
 
-    /// The pull that takes the last card off the app.
-    ///
-    /// - Parameter height: How far the card has to travel to be gone.
-    private func pullDown(height: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 10)
-            .onChanged { value in
-                let distance = value.translation.height
-                // Upwards resists, like a sheet already at its top.
-                pull = distance < 0 ? distance * 0.15 : distance
-            }
-            .onEnded { value in
-                if value.translation.height > 170 || value.predictedEndTranslation.height > 420 {
-                    enter(height: height)
-                } else {
-                    withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) { pull = 0 }
-                }
-            }
-    }
-
-    /// Sets the app up as the journey decided and takes the card away.
+    /// Finishes onboarding and reveals the app from the bottom button.
     ///
     /// - Parameter height: How far the card has to travel to be gone.
     private func enter(height: CGFloat) {
         guard !isEntering else { return }
         isEntering = true
-        applyToLook { $0.lead(with: JourneyFlow.leadingSections(for: onboarding.intents)) }
         whatsNew.adoptFirstRun()
         withAnimation(reduceMotion ? .easeOut(duration: 0.25) : .smooth(duration: 0.5)) {
             pull = height + 40
@@ -291,11 +261,11 @@ struct JourneyView: View {
         let defaults = UserDefaults.standard
         let stored = defaults.string(forKey: TodayStyle.libraryKey) ?? ""
         guard !stored.isEmpty else { return }
-        var looks = TodayStyle.library(from: stored, active: style)
-        let selection = defaults.integer(forKey: TodayStyle.selectionKey)
-        guard looks.indices.contains(selection) else { return }
-        change(&looks[selection])
-        defaults.set(TodayStyle.encodeLibrary(looks), forKey: TodayStyle.libraryKey)
+        var library = LookLibrary.load(defaults)
+        var updated = library.active
+        change(&updated)
+        library.save(updated, at: library.selection)
+        library.persist(to: defaults)
     }
 }
 

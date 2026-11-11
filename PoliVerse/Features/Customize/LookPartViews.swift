@@ -202,17 +202,31 @@ struct ThemeTile: View {
         .buttonStyle(.plain)
         .contextMenu {
             Button("Usa “\(caption)”", systemImage: "checkmark.circle") { take(.all) }
-            if theme.special == nil {
-                Button("Solo i colori", systemImage: "paintpalette") { take(.colours) }
-                Button("Solo lo sfondo", systemImage: "square.dashed") { take(.background) }
-                Button("Solo la data", systemImage: "textformat.size") { take(.date) }
-            }
+            partialActions
+
         } preview: {
             LookScreen(look: theme, scale: 0.5, cornerRadius: 48)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(caption)
         .accessibilityAddTraits(chosen ? [.isButton, .isSelected] : .isButton)
+        .overlay(alignment: .topTrailing) {
+            if theme.special == nil {
+                Menu { partialActions } label: {
+                    Image(systemName: "ellipsis.circle.fill").padding(8)
+                        .background(.regularMaterial, in: .circle)
+                }
+                .accessibilityLabel("Applica una parte del tema")
+            }
+        }
+    }
+
+    @ViewBuilder private var partialActions: some View {
+        if theme.special == nil {
+            Button("Solo i colori", systemImage: "paintpalette") { take(.colours) }
+            Button("Solo lo sfondo", systemImage: "square.dashed") { take(.background) }
+            Button("Solo la data", systemImage: "textformat.size") { take(.date) }
+        }
     }
 
     /// Takes the theme, or one part of it.

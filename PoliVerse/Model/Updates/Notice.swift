@@ -130,15 +130,11 @@ nonisolated extension Notice {
         return raw
     }
 
-    /// ISO 8601 without fractional seconds. Shared, which `ISO8601DateFormatter` documents
-    /// as safe.
-    private nonisolated(unsafe) static let isoPlain = ISO8601DateFormatter()
+    /// ISO 8601 without fractional seconds: a value type, safe to share without
+    /// the `nonisolated(unsafe)` an `ISO8601DateFormatter` needed.
+    private static let isoPlain = Date.ISO8601FormatStyle()
     /// ISO 8601 with fractional seconds.
-    private nonisolated(unsafe) static let isoFractional: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
+    private static let isoFractional = Date.ISO8601FormatStyle(includingFractionalSeconds: true)
 
     /// A timestamp in any of the forms these services use.
     ///
@@ -159,8 +155,8 @@ nonisolated extension Notice {
                 : Date(timeIntervalSince1970: number)
         }
         guard let text = value.stringValue?.nonEmpty else { return nil }
-        if let iso = isoPlain.date(from: text) { return iso }
-        if let iso = isoFractional.date(from: text) { return iso }
+        if let iso = try? isoPlain.parse(text) { return iso }
+        if let iso = try? isoFractional.parse(text) { return iso }
         // Falls through to the agenda's reading: wall clock, Europe/Rome.
         if let wallClock = PoliMiDate.parse(text) { return wallClock }
         // The agenda separates date from time with `T`; JAF's own services

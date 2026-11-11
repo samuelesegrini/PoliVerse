@@ -23,6 +23,26 @@ nonisolated enum NewDestination: String, CaseIterable, Identifiable, Hashable, S
     nonisolated enum Tab: String, CaseIterable, Hashable, Sendable {
         /// The four tabs of the tab layout.
         case today, courses, career, search
+
+        /// Labels shared by the live navigation and the look gallery's replica.
+        var title: LocalizedStringKey {
+            switch self {
+            case .today: "Oggi"
+            case .courses: NewDestination.courses.title
+            case .career: NewDestination.career.title
+            case .search: "Cerca"
+            }
+        }
+
+        /// Base symbols; each surface chooses the platform's outline or fill variant.
+        var systemImage: String {
+            switch self {
+            case .today: "calendar.day.timeline.left"
+            case .courses: NewDestination.courses.systemImage
+            case .career: NewDestination.career.systemImage
+            case .search: "magnifyingglass"
+            }
+        }
     }
 
     /// Which tab this place is reached through.
