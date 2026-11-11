@@ -6,35 +6,30 @@ struct BetaFeaturesView: View {
 
     var body: some View {
         List {
-            Section {
-                ForEach(flags.availableFeatures) { feature in
+            ForEach(flags.availableFeatures) { feature in
+                Section {
                     Toggle(isOn: Binding(get: { flags.isEnabled(feature) },
                                          set: { flags.setEnabled($0, for: feature) })) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(feature.title)
-                            Text(feature.detail)
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
+                        Text(feature.title)
                     }
                     .accessibilityIdentifier("beta-" + feature.rawValue)
+                } footer: {
+                    Text(feature.detail)
                 }
+                .lookRow()
+            }
+            Section {
                 if flags.availableFeatures.isEmpty {
                     Text("Nessuna funzione in anteprima disponibile in questa build.")
                         .foregroundStyle(.secondary)
+                } else {
+                    Button("Disattiva tutte le anteprime") { flags.reset() }
+                        .accessibilityIdentifier("beta-reset")
                 }
             } footer: {
                 Text("Le anteprime sono facoltative e possono cambiare. Le scelte restano su questo dispositivo e funzionano anche senza connessione.")
             }
             .lookRow()
-
-            if !flags.availableFeatures.isEmpty {
-                Section {
-                    Button("Disattiva tutte le anteprime") { flags.reset() }
-                        .accessibilityIdentifier("beta-reset")
-                }
-                .lookRow()
-            }
             Section {
                 Link(destination: URL(string: "https://github.com/samuelesegrini/PoliVerse/issues/new")!) {
                     Label("Segnala un problema", systemImage: "bubble.left.and.bubble.right")
@@ -45,7 +40,7 @@ struct BetaFeaturesView: View {
             .lookRow()
         }
         .lookList()
-        .navigationTitle("Funzioni in anteprima")
+        .navigationTitle("Anteprime")
         .accessibilityIdentifier("beta-features")
     }
 }

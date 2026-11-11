@@ -37,7 +37,10 @@ app groups or changes the app identifier to conceal them.
 From the PoliVerse repository run `python3 automation/github-builds/setup.py`.
 It uses the existing `gh` login, creates the private repository, publishes these
 files, downloads and verifies GitHub's Apple Silicon runner, and installs it as
-a login-session service. Credentials are registered directly with the runner;
+a login-session service. The service uses `SessionCreate=false` so signing
+uses the logged-in user’s existing keychain session, rather than a separate
+locked security session (see [actions/runner#3407](https://github.com/actions/runner/issues/3407)).
+Credentials are registered directly with the runner;
 no token goes into the source repository or workflow.
 
 Set the private repository variable `POLIVERSE_DEVICE_ID` to the iPhone UDID

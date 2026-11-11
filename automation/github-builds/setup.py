@@ -2,6 +2,7 @@
 """One-time provisioning of a private control repository and Mac login-session runner."""
 import hashlib
 import json
+import plistlib
 from pathlib import Path
 import shutil
 import subprocess
@@ -62,6 +63,13 @@ def main():
     service = runner / '.service'
     if not service.exists():
         run(['./svc.sh', 'install'], cwd=runner)
+    # The default runner template creates a new security session, which cannot
+    # use this logged-in user's signing key (actions/runner#3407).
+    subprocess.run(['./svc.sh', 'stop'], cwd=runner, capture_output=True)
+    plist = Path(service.read_text().strip())
+    settings = plistlib.loads(plist.read_bytes())
+    settings['SessionCreate'] = False
+    plist.write_bytes(plistlib.dumps(settings))
     print(run(['./svc.sh', 'start'], cwd=runner))
     print('Ready: https://github.com/' + repo + '/actions', flush=True)
 

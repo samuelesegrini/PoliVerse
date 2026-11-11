@@ -17,6 +17,7 @@ struct FeatureFlagsTests {
             let flags = FeatureFlags(defaults: defaults, available: [.campus3D])
             #expect(!flags.isEnabled(.campus3D))
             flags.setEnabled(true, for: .campus3D)
+            #expect(flags.isEnabled(.campus3D))
             #expect(FeatureFlags(defaults: defaults, available: [.campus3D]).isEnabled(.campus3D))
             flags.setEnabled(false, for: .campus3D)
             #expect(!FeatureFlags(defaults: defaults, available: [.campus3D]).isEnabled(.campus3D))
