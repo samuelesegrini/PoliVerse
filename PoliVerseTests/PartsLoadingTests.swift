@@ -130,6 +130,11 @@ struct PartsLoadingTests {
         return false
     }
 
+    private func isLate(_ phase: LoadPhase) -> Bool {
+        if case .late = phase { return true }
+        return false
+    }
+
     private func isHeldCopy(_ phase: LoadPhase) -> Bool {
         if case .held = phase { return true }
         return false
@@ -396,6 +401,57 @@ struct PartsLoadingTests {
         #expect(isHeldCopy(second.phase(of: .a, isEmpty: false)))
         #expect(second.arrived.isEmpty)
         #expect(await script.asked.count == 1)
+    }
+
+    // MARK: - R17: a part that does not answer
+
+    @Test("R17: una parte che non risponde lascia sullo schermo la copia salvata con la sua età, e la risposta tardiva la sostituisce")
+    func test_R17_storedCopyStandsInForASlowPart() async {
+        let script = Script()
+        let query = Query(Aging(script: script), account: StubAccount(matricola: "111"),
+                          offline: OfflineStore(directory: folder()),
+                          deadlines: DeadlinePolicy(deadline: .milliseconds(60)))
+        await query.load()
+        #expect(query.phase(of: .c, isEmpty: false) == .arrived)
+
+        // `c` is old now, and the server does not answer for it.
+        try? await Task.sleep(for: .milliseconds(80))
+        await script.set(.c, .value(2))
+        await script.hold(.c)
+        let loading = Task { await query.load() }
+        await until { query.overdue == [.c] }
+        // The copy is still there, said to be a copy, and the request is still out.
+        #expect(query.value == ["a": 1, "b": 1, "c": 1])
+        #expect(isLate(query.phase(of: .c, isEmpty: false)))
+        #expect(isLate(query.phase(of: .c, isEmpty: true)))
+        #expect(query.phase(of: .a, isEmpty: false) == .arrived)
+        #expect(query.pending == [.c])
+
+        await script.release(.c)
+        await loading.value
+        #expect(query.value == ["a": 1, "b": 1, "c": 2])
+        #expect(query.overdue.isEmpty)
+        #expect(query.phase(of: .c, isEmpty: false) == .arrived)
+    }
+
+    @Test("R17: senza una copia salvata la parte lenta resta in attesa, non diventa una copia")
+    func test_R17_slowPartWithoutACopyKeepsWaiting() async {
+        let script = Script()
+        await script.answer(in: [.b, .a, .c])
+        await script.hold(.a)
+        let query = Query(Lettered(script: script), account: StubAccount(matricola: "111"),
+                          offline: OfflineStore(directory: folder()),
+                          deadlines: DeadlinePolicy(deadline: .milliseconds(40)))
+        let loading = Task { await query.load() }
+        await until { query.has(.b) }
+        try? await Task.sleep(for: .milliseconds(120))
+
+        #expect(query.overdue.isEmpty)
+        #expect(isWaiting(query.phase(of: .a, isEmpty: true)))
+
+        await script.release(.a)
+        await loading.value
+        #expect(query.phase(of: .a, isEmpty: false) == .arrived)
     }
 
     // MARK: - The career, the first resource by parts

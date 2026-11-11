@@ -303,7 +303,8 @@ nonisolated final class PoliMiAPI: Sendable {
     func send(_ request: APIRequest) async throws -> Data {
         // Timed as one request, retries and token refresh included: that is the
         // wait the caller had.
-        try await RequestGate.shared.run(host: request.host.rawValue) {
+        // What the student does is always sent; only reads fall back on stored copies.
+        try await RequestGate.shared.run(host: request.host.rawValue, pausable: request.method == "GET") {
             try await self.transmit(request)
         }
     }

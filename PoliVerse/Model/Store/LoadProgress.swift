@@ -54,6 +54,9 @@ nonisolated struct LoadProgress<R: Resource>: Sendable {
 nonisolated enum LoadPhase: Equatable, Sendable {
     /// A stored copy is shown, fetched this long ago.
     case held(age: TimeInterval)
+    /// A stored copy, fetched this long ago, stands in for a part that was asked
+    /// for and has not answered in time. The request is still running.
+    case late(age: TimeInterval)
     /// Nothing to show yet; the request left this long ago.
     case waiting(since: Duration)
     /// The part answered with content.
@@ -66,7 +69,7 @@ nonisolated enum LoadPhase: Equatable, Sendable {
     /// Whether the section has real data on screen.
     var showsContent: Bool {
         switch self {
-        case .held, .arrived: true
+        case .held, .late, .arrived: true
         case .waiting, .empty, .failed: false
         }
     }

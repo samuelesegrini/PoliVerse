@@ -31,6 +31,10 @@ final class DataStatus {
         case updated(Date)
         /// No usable connection. What is on screen came from the offline copy.
         case offline
+        /// One or more services timed out twice in a row and are being left alone
+        /// for half a minute, named here as the student knows them. What is on
+        /// screen for them is the stored copy.
+        case notResponding([String])
         /// The last pass could not reach one or more services, named here as they appear
         /// on screen.
         case failed([String])
@@ -65,6 +69,8 @@ final class DataStatus {
     private let session: Session
     /// Source of reachability, which outranks per-service failures.
     private let network: NetworkMonitor
+    /// Source of the services paused after repeated timeouts.
+    private let pauses: HostPauses
     /// This instance's quiet interval.
     private let quietInterval: Duration
     /// This instance's confirmation interval.
@@ -75,14 +81,16 @@ final class DataStatus {
     /// - Parameters:
     ///   - session: Supplies the sample-data flag and the sign-in state.
     ///   - network: Supplies reachability.
+    ///   - pauses: Supplies the services that are not responding.
     ///   - quietInterval: How long a pass must run before it is announced.
     ///     Shortened in tests.
     ///   - confirmationInterval: How long the confirmation is held.
-    init(session: Session, network: NetworkMonitor,
+    init(session: Session, network: NetworkMonitor, pauses: HostPauses = .shared,
          quietInterval: Duration = DataStatus.quietInterval,
          confirmationInterval: Duration = DataStatus.confirmationInterval) {
         self.session = session
         self.network = network
+        self.pauses = pauses
         self.quietInterval = quietInterval
         self.confirmationInterval = confirmationInterval
     }
@@ -93,12 +101,16 @@ final class DataStatus {
     ///    rather than merely old.
     /// 2. ``State/offline`` — explains any failures, so it is reported instead of
     ///    them.
-    /// 3. ``State/failed(_:)`` — only when an account is signed in; without one
+    /// 3. ``State/notResponding(_:)`` — a service being left alone right now,
+    ///    which is fresher news than the last pass's failures.
+    /// 4. ``State/failed(_:)`` — only when an account is signed in; without one
     ///    every service fails at once and the login screen already says why.
-    /// 4. ``State/refreshing``, then ``State/updated(_:)``, then ``State/idle``.
+    /// 5. ``State/refreshing``, then ``State/updated(_:)``, then ``State/idle``.
     var state: State {
         if session.useMockData { return .sample }
         if !network.isOnline { return .offline }
+        let silent = pauses.names
+        if !silent.isEmpty { return .notResponding(silent) }
         // Without an account every service fails at once, and five names in a
         // row is the app blaming the Politecnico for a student who has simply
         // signed out. The login screen already says the true thing there.
@@ -134,7 +146,7 @@ final class DataStatus {
         switch state {
         case .sample: .sample
         case .failed: .attention
-        case .idle, .refreshing, .updated, .offline: nil
+        case .idle, .refreshing, .updated, .offline, .notResponding: nil
         }
     }
 
@@ -150,6 +162,10 @@ final class DataStatus {
             "Dati di esempio"
         case .offline:
             "Senza connessione"
+        case .notResponding(let services) where services.count == 1:
+            "\(services[0]) non risponde: mostro i dati salvati"
+        case .notResponding(let services):
+            "\(services.count) servizi non rispondono: mostro i dati salvati"
         case .failed(let services) where services.count == 1:
             "\(services[0]): aggiornamento non riuscito"
         case .failed(let services):
@@ -172,6 +188,7 @@ final class DataStatus {
         switch state {
         case .sample: "theatermasks.fill"
         case .offline: "wifi.slash"
+        case .notResponding: "hourglass"
         case .failed: "exclamationmark.triangle.fill"
         case .refreshing: "arrow.clockwise"
         case .updated, .idle: "checkmark.circle"

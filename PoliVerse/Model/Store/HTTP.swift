@@ -66,7 +66,7 @@ nonisolated struct PublicHTTP: HTTP {
     ///   1200 bytes of the body, ``APIError/cancelled`` for a cancellation, and
     ///   ``APIError/transport(_:)`` for anything else.
     func data(for request: APIRequest) async throws -> Data {
-        try await RequestGate.shared.run(host: request.host.rawValue) {
+        try await RequestGate.shared.run(host: request.host.rawValue, pausable: request.method == "GET") {
             try await self.perform(request)
         }
     }

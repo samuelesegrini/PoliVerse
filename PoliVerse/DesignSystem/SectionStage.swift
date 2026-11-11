@@ -44,7 +44,7 @@ nonisolated enum SectionStage: Equatable, Sendable {
             self = total < Self.quietTime ? .quiet : .waiting(showsStep: total >= Self.patience)
         case .failed(let message):
             self = .failed(message)
-        case .empty, .held, .arrived:
+        case .empty, .held, .late, .arrived:
             // The part answered, or a stored answer is held, and none of it is
             // for this section.
             self = .empty

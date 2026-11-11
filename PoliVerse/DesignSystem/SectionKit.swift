@@ -432,6 +432,39 @@ private struct WaitingLine: View {
     }
 }
 
+/// Says that the rows under it are a stored copy, and how old, while the part
+/// they belong to is still being waited for.
+struct LateLabel: View {
+    /// Seconds since the copy was fetched.
+    let age: TimeInterval
+
+    var body: some View {
+        Label(Self.text(age: age), systemImage: "clock.arrow.circlepath")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 4)
+            .transition(.opacity)
+            .accessibilityIdentifier("section-late")
+    }
+
+    /// The label for a copy of some age.
+    ///
+    /// - Parameter age: Seconds since the copy was fetched.
+    nonisolated static func text(age: TimeInterval) -> String {
+        let minutes = Int(max(0, age) / 60)
+        let when: String
+        switch minutes {
+        case ..<1: when = String(localized: "di poco fa")
+        case ..<60: when = String(localized: "di \(minutes) min fa")
+        case ..<120: when = String(localized: "di un'ora fa")
+        case ..<2880: when = String(localized: "di \(minutes / 60) ore fa")
+        default: when = String(localized: "di \(minutes / 1440) giorni fa")
+        }
+        return String(localized: "Dati \(when), sto aggiornando")
+    }
+}
+
 /// A section's rows, or its status while it has none.
 private struct ArrivingModifier<Empty: View>: ViewModifier {
     let phase: LoadPhase
@@ -443,13 +476,23 @@ private struct ArrivingModifier<Empty: View>: ViewModifier {
     let retry: (() async -> Void)?
     let empty: Empty
 
+    /// How old the copy on screen is, when it stands in for a slow part.
+    private var lateAge: TimeInterval? {
+        if case .late(let age) = phase { return age }
+        return nil
+    }
+
     func body(content: Content) -> some View {
         Group {
             if hasRows {
-                content
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
-                        if let memory { ShapeMemory.shared.remember(height, for: memory) }
-                    }
+                VStack(alignment: .leading, spacing: 8) {
+                    if let lateAge { LateLabel(age: lateAge) }
+                    content
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                            if let memory { ShapeMemory.shared.remember(height, for: memory) }
+                        }
+                }
+                .animation(.easeOut(duration: RevealPlan.reduced), value: lateAge != nil)
             } else {
                 SectionStatus(phase: phase, title: title, showsTitle: showsTitle, step: step,
                               memory: memory, retry: retry) { empty }

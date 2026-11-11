@@ -41,12 +41,16 @@ final class Query<R: Resource> {
     private(set) var failed: Set<R.Part> = []
     /// The parts the load in flight asked for that have not answered yet.
     private(set) var pending: Set<R.Part> = []
+    /// The parts still awaited past the deadline while a copy of them is held:
+    /// that copy stands in, and the section says how old it is.
+    private(set) var overdue: Set<R.Part> = []
 
     /// The key this query follows.
     let key: R.Key
     private let resource: R
     private let loader: Loader<R>
     private let account: any Account
+    private let deadlines: DeadlinePolicy
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "store")
     /// The load in flight, which a second caller joins rather than being turned away.
     @ObservationIgnored private var running: Task<Void, Never>?
@@ -63,8 +67,11 @@ final class Query<R: Resource> {
     ///   - key: Which key.
     ///   - account: Whose data.
     ///   - offline: Where the offline copy lives.
-    convenience init(_ resource: R, key: R.Key, account: any Account, offline: OfflineStore = .shared) {
-        self.init(resource, key: key, account: account, loader: Loader(resource, offline: offline))
+    ///   - deadlines: How long a part is waited for before its stored copy stands in.
+    convenience init(_ resource: R, key: R.Key, account: any Account, offline: OfflineStore = .shared,
+                     deadlines: DeadlinePolicy = DeadlinePolicy()) {
+        self.init(resource, key: key, account: account, loader: Loader(resource, offline: offline),
+                  deadlines: deadlines)
     }
 
     /// Creates a query sharing a loader with others, so two screens asking for one
@@ -75,11 +82,14 @@ final class Query<R: Resource> {
     ///   - key: Which key.
     ///   - account: Whose data.
     ///   - loader: The loader to go through.
-    init(_ resource: R, key: R.Key, account: any Account, loader: Loader<R>) {
+    ///   - deadlines: How long a part is waited for before its stored copy stands in.
+    init(_ resource: R, key: R.Key, account: any Account, loader: Loader<R>,
+         deadlines: DeadlinePolicy = DeadlinePolicy()) {
         self.resource = resource
         self.key = key
         self.account = account
         self.loader = loader
+        self.deadlines = deadlines
     }
 
     /// `true` while a load is in flight and nothing is held yet.
@@ -114,12 +124,16 @@ final class Query<R: Resource> {
     ///   - part: The part the section shows.
     ///   - isEmpty: Whether what ``value`` holds for it is empty.
     /// - Returns: ``LoadPhase/empty`` only when the part answered with nothing and
-    ///   is not being asked again; while it is on its way, ``LoadPhase/waiting(since:)``.
+    ///   is not being asked again; while it is on its way, ``LoadPhase/waiting(since:)``,
+    ///   and once it is late and a copy is held, ``LoadPhase/late(age:)``.
     func phase(of part: R.Part, isEmpty: Bool) -> LoadPhase {
         let waited = asked.map { ContinuousClock.now - $0 } ?? .zero
         if let date = parts[part] {
+            let age = max(0, Date.now.timeIntervalSince(date))
+            // Late: the copy held is what there is to show, empty or not.
+            if overdue.contains(part) { return .late(age: age) }
             if !isEmpty {
-                return arrived.contains(part) ? .arrived : .held(age: max(0, Date.now.timeIntervalSince(date)))
+                return arrived.contains(part) ? .arrived : .held(age: age)
             }
             return pending.contains(part) ? .waiting(since: waited) : .empty
         }
@@ -183,7 +197,19 @@ final class Query<R: Resource> {
                 try? await Task.sleep(for: Query.coalescing)
             }
         }
+        // Past the deadline the copies held stand in for the parts still awaited.
+        // The request is not touched: a late answer replaces the copy as any other.
+        let deadline = Task(name: "\(R.id) deadline") { [weak self, deadlines] in
+            try? await Task.sleep(for: deadlines.deadline)
+            guard let self, !Task.isCancelled, let asked = self.asked else { return }
+            let waited = ContinuousClock.now - asked
+            let late = self.pending.filter {
+                deadlines.decision(waited: waited, hasStoredCopy: self.parts[$0] != nil) == .showStored
+            }
+            if self.overdue != late { self.overdue = late }
+        }
         defer {
+            deadline.cancel()
             asked = nil
             setPending([])
         }
@@ -223,6 +249,9 @@ final class Query<R: Resource> {
 
     private func setPending(_ new: Set<R.Part>) {
         if pending != new { pending = new }
+        // A part that answered or failed is no longer late.
+        let late = overdue.intersection(new)
+        if overdue != late { overdue = late }
     }
 
     /// Whether two values are equal, when the type can say so.
@@ -239,8 +268,10 @@ extension Query where R.Key == Whole {
     ///   - resource: What to load.
     ///   - account: Whose data.
     ///   - offline: Where the offline copy lives.
-    convenience init(_ resource: R, account: any Account, offline: OfflineStore = .shared) {
-        self.init(resource, key: Whole(), account: account, offline: offline)
+    ///   - deadlines: How long a part is waited for before its stored copy stands in.
+    convenience init(_ resource: R, account: any Account, offline: OfflineStore = .shared,
+                     deadlines: DeadlinePolicy = DeadlinePolicy()) {
+        self.init(resource, key: Whole(), account: account, offline: offline, deadlines: deadlines)
     }
 }
 

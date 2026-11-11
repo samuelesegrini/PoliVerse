@@ -65,7 +65,7 @@ struct DataStatusLine: View {
     /// for the two that resolve themselves.
     private var tint: Color {
         switch status.state {
-        case .sample, .failed: .orange
+        case .sample, .failed, .notResponding: .orange
         case .offline, .refreshing, .updated, .idle: .secondary
         }
     }
