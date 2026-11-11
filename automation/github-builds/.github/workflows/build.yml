@@ -30,9 +30,6 @@ on:
     - cron: '7,22,37,52 * * * *'
 permissions:
   contents: read
-concurrency:
-  group: poliverse-local-build
-  cancel-in-progress: false
 jobs:
   build:
     if: github.ref == 'refs/heads/main'

@@ -20,7 +20,8 @@ Open GitHub → `PoliVerse-builds` → Actions → **Build PoliVerse on Mac** �
 
 Scheduled jobs check `main` about every 15 minutes (GitHub can delay schedules).
 They run tests and build for the simulator without installing on your phone.
-A commit already attempted is skipped; manually run the workflow to retry a
+The single Mac runner processes jobs one at a time; scheduled checks do not
+cancel queued manual phone builds. A commit already attempted is skipped; manually run the workflow to retry a
 failure. GitHub may disable scheduled workflows in an inactive repository.
 
 The Mac must be awake, logged in, online, and running the runner. `caffeinate`
