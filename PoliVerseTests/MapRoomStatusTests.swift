@@ -47,6 +47,9 @@ struct MapRoomStatusTests {
         #expect(MapCounts.free(3, of: 11, locale: it) == "3 libere su 11")
         #expect(MapCounts.free(0, of: 4, locale: it) == "nessuna libera su 4")
         #expect(MapCounts.freeNow(1, locale: it) == "1 libera ora")
+        #expect(MapCounts.freeNowTitle(1, locale: it) == "1 aula libera ora")
+        #expect(MapCounts.freeNowTitle(12, locale: it) == "12 aule libere ora")
+        #expect(MapCounts.freeNowTitle(0, locale: it) == "Nessuna aula libera ora")
     }
 
     // MARK: The room's sentence

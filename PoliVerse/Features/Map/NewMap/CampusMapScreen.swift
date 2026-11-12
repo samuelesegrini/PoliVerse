@@ -50,6 +50,12 @@ struct CampusMapScreen: View {
     @State private var details: Classroom?
     /// Whether Aule libere is pushed in the panel.
     @State private var showsFreeRooms = false
+    /// Metres from the starting point's building to the buildings of the free rooms.
+    @State private var freeMetres: [String: Double] = [:]
+    /// Minutes on foot to the next lesson from the one before it, when both rooms are known.
+    @State private var walk: (event: Int, minutes: Int, from: String)?
+    /// The rooms and buildings opened from the search, most recent first, as text.
+    @AppStorage("newMap.recents") private var recentsText = ""
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.shell) private var shell
@@ -108,6 +114,10 @@ struct CampusMapScreen: View {
                 }
                 .accessibilityLabel(parentTitle.map { Text("Torna a \($0)") } ?? Text("Indietro"))
                 .accessibilityIdentifier("newmap-back")
+            }
+            // The campus, as the title: choosing another moves the free count with it.
+            if !nearbyMode, scene.level == .campus, aule.campuses.count > 1 {
+                ToolbarItem(placement: .topBarLeading) { campusMenu }
             }
             // "Libere vicino a te" keeps its filters over the map, as in the design: the way
             // out, green, and how long the rooms must stay free.
@@ -169,6 +179,13 @@ struct CampusMapScreen: View {
             withAnimation(.snappy) { detent = MapDetents.for(level) }
         }
         .task { await rooms.load() }
+        // The free count follows the campus in the title; the 3D campus until one is chosen.
+        .task(id: shownCampus ?? "") {
+            if aule.campus == nil, let campus = mapCampus { aule.campus = campus }
+            await aule.load()
+            await measureFree()
+        }
+        .task(id: nextLesson?.event.id ?? -1) { await measureWalk() }
         .task {
             // Once the campus is drawn, straight to the room the map was opened for.
             guard let target else { return }
@@ -371,14 +388,16 @@ struct CampusMapScreen: View {
     /// The lesson to go to, the way to the free rooms, and the modelled buildings.
     @ViewBuilder
     private var campusBody: some View {
-        if let next = CurrentClass.forAccessory(from: agenda.events(on: .now), now: .now) {
+        if let next = nextLesson {
             nextClassCard(next)
         }
+        freeRow
         HStack(spacing: 8) {
             Button {
-                openNearby()
+                openFree()
             } label: {
-                chip("Libere ora", symbol: "checkmark", symbolColor: .freeRoom, on: false)
+                chip("Libere ora", symbol: "checkmark", symbolColor: .freeRoom, on: false,
+                     count: freeSummary.flatMap { $0.count > 0 ? $0.count : nil })
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Aule libere ora")
@@ -410,8 +429,9 @@ struct CampusMapScreen: View {
         }
     }
 
-    /// A filter or shortcut chip of the panel.
-    private func chip(_ title: LocalizedStringKey, symbol: String?, symbolColor: Color?, on: Bool) -> some View {
+    /// A filter or shortcut chip of the panel, with a count in a green badge when given.
+    private func chip(_ title: LocalizedStringKey, symbol: String?, symbolColor: Color?, on: Bool,
+                      count: Int? = nil) -> some View {
         HStack(spacing: 6) {
             if let symbol {
                 Image(systemName: symbol)
@@ -419,6 +439,16 @@ struct CampusMapScreen: View {
                     .foregroundStyle(on ? AnyShapeStyle(onTint) : symbolColor.map(AnyShapeStyle.init) ?? AnyShapeStyle(.secondary))
             }
             Text(title).foregroundStyle(on ? onTint : .primary)
+            if let count {
+                Text(count, format: .number)
+                    .font(.caption.weight(.bold))
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 2)
+                    .background(Color.freeRoom, in: .capsule)
+                    .contentTransition(.numericText())
+            }
         }
         .font(.subheadline.weight(.medium))
         .padding(.horizontal, 14)
@@ -457,6 +487,12 @@ struct CampusMapScreen: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
+                    if let walk, walk.event == next.event.id {
+                        Label("\(walk.minutes) min a piedi da \(walk.from)", systemImage: "figure.walk")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
                 Spacer(minLength: 4)
                 Text(time).font(.subheadline.weight(.semibold)).monospacedDigit()
@@ -494,6 +530,169 @@ struct CampusMapScreen: View {
         .padding(14)
         .background(cardFill, in: innerShape)
         .containerShape(.rect(cornerRadius: 16))
+    }
+
+    // MARK: Campus, free count, next lesson
+
+    /// The campus the 3D model is of: the one most of the modelled buildings' rooms are on.
+    private var mapCampus: String? {
+        var counts: [String: Int] = [:]
+        for room in rooms.rooms where Trifoglio3DScene.buildings.contains(room.buildingCode) {
+            if let campus = room.campusName { counts[campus, default: 0] += 1 }
+        }
+        return counts.max { $0.value < $1.value }?.key
+    }
+
+    /// The campus in the title, which the free count is of.
+    private var shownCampus: String? { aule.campus ?? mapCampus }
+
+    /// The campuses with a building drawn in 3D.
+    private var modelledCampuses: Set<String> {
+        Set(rooms.rooms.filter { Trifoglio3DScene.buildings.contains($0.buildingCode) }.compactMap(\.campusName))
+    }
+
+    /// Whether the campus in the title has buildings drawn in 3D.
+    private var campusHas3D: Bool {
+        guard let shownCampus, !modelledCampuses.isEmpty else { return true }
+        return modelledCampuses.contains(shownCampus)
+    }
+
+    /// The campuses grouped by site, sites by name: the service counts free rooms per
+    /// address, and a student knows the site the address is in.
+    private var campusesBySite: [(site: String, campuses: [String])] {
+        var siteOf: [String: String] = [:]
+        for room in rooms.rooms {
+            if let campus = room.campusName, let site = room.siteName { siteOf[campus] = site }
+        }
+        let groups = Dictionary(grouping: aule.campuses) { siteOf[$0] ?? String(localized: "Altre sedi") }
+        return groups.keys.sorted().map { ($0, groups[$0]!.sorted()) }
+    }
+
+    /// The free rooms of the campus in the title and the nearest, once its bookings are in.
+    private var freeSummary: MapFreeSummary.Summary? {
+        guard !aule.rooms.isEmpty else { return nil }
+        return MapFreeSummary.make(free: freeRooms, campus: shownCampus,
+                                   origin: defaultOrigin()?.csie, metres: freeMetres)
+    }
+
+    /// The rooms free now, with where they are.
+    private var freeRooms: [MapFreeSummary.Room] {
+        let byID = Dictionary(rooms.rooms.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return aule.freeNow().compactMap { schedule in
+            byID[schedule.id].map { .init(id: $0.id, campus: $0.campusName, building: $0.buildingCode) }
+        }
+    }
+
+    /// The campus menu in the title.
+    private var campusMenu: some View {
+        Menu {
+            Picker("Sede", selection: Binding(get: { shownCampus }, set: { aule.campus = $0 })) {
+                ForEach(campusesBySite, id: \.site) { group in
+                    Section(group.site) {
+                        ForEach(group.campuses, id: \.self) { name in
+                            if modelledCampuses.contains(name) {
+                                Label(name, systemImage: "view.3d").tag(String?.some(name))
+                            } else {
+                                Text(name).tag(String?.some(name))
+                            }
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text(shownCampus ?? String(localized: "Sede")).lineLimit(1)
+                Image(systemName: "chevron.down").font(.caption.weight(.bold))
+            }
+            .fontWeight(.semibold)
+        }
+        .accessibilityLabel(Text("Sede: \(shownCampus ?? "")"))
+        .accessibilityIdentifier("newmap-campus")
+    }
+
+    /// "12 aule libere ora · la più vicina 3.0.1", opening the free rooms; on a campus without
+    /// a 3D model, a line saying so as well.
+    @ViewBuilder
+    private var freeRow: some View {
+        if let summary = freeSummary {
+            Button {
+                openFree()
+            } label: {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(MapCounts.freeNowTitle(summary.count))
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                        if let nearest = summary.nearest {
+                            Text("La più vicina: **\(nearest)**\(nearestPlace(nearest))")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        } else if !campusHas3D, let campus = mapCampus {
+                            Text("La mappa 3D per ora c'è solo per \(campus).")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.forward")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 12)
+                .background(cardFill, in: innerShape)
+                .containerShape(.rect(cornerRadius: 16))
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("newmap-free-summary")
+        }
+    }
+
+    /// ", stesso edificio" or ", Edificio 4" after the nearest room's code.
+    private func nearestPlace(_ id: String) -> String {
+        guard let room = rooms.rooms.first(where: { $0.id == id }) else { return "" }
+        if room.buildingCode == defaultOrigin()?.csie { return String(localized: ", stesso edificio") }
+        return room.buildingName.map { ", \($0)" } ?? ""
+    }
+
+    /// The free rooms: near you on the 3D campus, the list of Aule libere elsewhere.
+    private func openFree() {
+        if campusHas3D { openNearby() } else { showsFreeRooms = true }
+    }
+
+    /// The lesson in progress or the next today.
+    private var nextLesson: CurrentClass? {
+        CurrentClass.forAccessory(from: agenda.events(on: .now), now: .now)
+    }
+
+    /// Reads how far the free rooms' buildings are from the starting point.
+    private func measureFree() async {
+        guard let origin = defaultOrigin()?.csie, let from = await map.coordinate(of: origin) else { return }
+        var metres: [String: Double] = [:]
+        for building in Set(freeRooms.map(\.building)) {
+            guard let to = await map.coordinate(of: building) else { continue }
+            metres[building] = MapNearby.metres(from: from, to: to)
+        }
+        freeMetres = metres
+    }
+
+    /// Reads the walk to the next lesson from the lesson before it today.
+    private func measureWalk() async {
+        guard let next = nextLesson else { walk = nil; return }
+        let before = agenda.events(on: .now)
+            .filter { $0.end <= next.event.start && $0.id != next.event.id }
+            .max { $0.end < $1.end }
+        func room(_ event: AgendaEvent) -> Classroom? {
+            RelevanceOrder.room(named: [event.roomAcronym, event.room], in: rooms.rooms)
+        }
+        guard let before, let start = room(before), let end = room(next.event),
+              start.buildingCode != end.buildingCode,
+              let a = await map.coordinate(of: start.buildingCode),
+              let b = await map.coordinate(of: end.buildingCode) else { walk = nil; return }
+        let from = start.buildingName ?? start.id
+        walk = (next.event.id, MapWalk.minutes(metres: MapNearby.metres(from: a, to: b)), from)
     }
 
     // MARK: Free near you
@@ -849,10 +1048,22 @@ struct CampusMapScreen: View {
     @ViewBuilder
     private func searchResults(now: Date) -> some View {
         let hits = MapSearch.hits(for: query, plans: scene.plans, catalogue: rooms.rooms)
+        let recents = MapRecents.decode(recentsText)
         if query.trimmingCharacters(in: .whitespaces).isEmpty {
-            Text("Scrivi il codice di un'aula, come 3.1.2 o T.1.2, oppure il numero di un edificio.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            if recents.isEmpty {
+                Text("Scrivi il codice di un'aula, come 3.1.2 o T.1.2, oppure il numero di un edificio.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                HStack {
+                    sectionHeader("Recenti")
+                    Spacer()
+                    Button("Cancella") { recentsText = "" }
+                        .font(.footnote.weight(.semibold))
+                        .padding(.bottom, -8)
+                }
+                recentsCard(recents, now: now)
+            }
         } else if hits.isEmpty {
             Text("Nessuna aula o edificio del campus 3D con “\(query)”.")
                 .font(.subheadline)
@@ -885,6 +1096,7 @@ struct CampusMapScreen: View {
     private func hitsCard(_ hits: [MapSearch.Hit], now: Date) -> some View {
         listCard(hits, id: \.id) { hit in
             Button {
+                remember(hit)
                 endSearch()
                 Task { await scene.go(to: hit.level) }
             } label: {
@@ -894,6 +1106,42 @@ struct CampusMapScreen: View {
             }
             .buttonStyle(.plain)
         }
+    }
+
+    /// The recent searches in a card, each taking the camera there again.
+    private func recentsCard(_ recents: [MapRecent], now: Date) -> some View {
+        listCard(recents, id: \.id) { recent in
+            Button {
+                recentsText = MapRecents.encode(MapRecents.adding(recent, to: recents))
+                endSearch()
+                Task {
+                    switch recent.kind {
+                    case .building: await scene.go(to: .building(recent.id))
+                    case .room:
+                        if let floor = recent.floor { await scene.go(to: .room(floor: floor, room: recent.id)) }
+                    }
+                }
+            } label: {
+                let trailing: AnyView? = recent.kind == .room
+                    ? AnyView(statusTag(status(of: classroom(recent.id), now: now), now: now)) : nil
+                row(title: recent.title, detail: recent.detail, trailing: trailing, symbol: "clock.arrow.circlepath")
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    /// Keeps a search result among the recent ones.
+    private func remember(_ hit: MapSearch.Hit) {
+        let recent: MapRecent
+        switch hit.level {
+        case .room(let floor, let room):
+            recent = MapRecent(kind: .room, id: room, floor: floor, title: hit.title, detail: hit.detail)
+        case .building(let csie):
+            recent = MapRecent(kind: .building, id: csie, floor: nil, title: hit.title, detail: hit.detail)
+        default:
+            return
+        }
+        recentsText = MapRecents.encode(MapRecents.adding(recent, to: MapRecents.decode(recentsText)))
     }
 
     /// Closes the search page.

@@ -74,6 +74,12 @@ nonisolated enum MapCounts {
         return inflected(AttributedString(localized: "^[\(free) libera](inflect: true) ora", locale: locale))
     }
 
+    /// "Nessuna aula libera ora", "1 aula libera ora", "12 aule libere ora".
+    static func freeNowTitle(_ free: Int, locale: Locale = .current) -> String {
+        guard free > 0 else { return String(localized: "Nessuna aula libera ora", locale: locale) }
+        return inflected(AttributedString(localized: "^[\(free) aula libera](inflect: true) ora", locale: locale))
+    }
+
     private static func inflected(_ text: AttributedString) -> String {
         String(text.characters)
     }
