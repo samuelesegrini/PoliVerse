@@ -31,10 +31,20 @@ VICINO = 3                                           # scarto per canale entro c
 
 
 def vetri():
-    """I colori di vetro dei gusci: {hex: luce o None}. Fuori quelli usati anche per altro."""
+    """I colori di vetro dei gusci: {hex: luce o None}. Un colore conta solo se ogni nome che
+    lo porta è un vetro: il grigio di `METALLO`, che un guscio usa anche per `VETRO`, resta
+    fuori, o di notte si accendono ringhiere e parapetti."""
     nomi = {}
-    for f in [QUI / "esporta3d.py", *sorted((QUI / "gusci").glob("*.py"))]:
-        for nome, hex_ in re.findall(r"(\w+)\s*=\s*\"(#[0-9A-Fa-f]{6})\"", f.read_text()):
+    sorgenti = [QUI / "esporta3d.py", *sorted((QUI / "gusci").glob("*.py")),
+                *sorted((QUI / "giuriati").glob("*.py")), *sorted((QUI / "esterni").glob("*.py"))]
+    for f in sorgenti:
+        testo = f.read_text()
+        # `A, B = "#…", "#…"`: ogni nome con il suo colore, non l'ultimo nome con il primo colore.
+        for sinistra, destra in re.findall(r"^\s*([\w, ]+?)\s*=\s*((?:\"#[0-9A-Fa-f]{6}\"\s*,?\s*)+)", testo, re.M):
+            for nome, hex_ in zip(re.findall(r"\w+", sinistra), re.findall(r"#[0-9A-Fa-f]{6}", destra)):
+                nomi.setdefault(hex_.upper(), set()).add(nome.lower())
+        # `vetro="#…"` fra gli argomenti di una chiamata.
+        for nome, hex_ in re.findall(r"[(,]\s*(\w+)\s*=\s*\"(#[0-9A-Fa-f]{6})\"", testo):
             nomi.setdefault(hex_.upper(), set()).add(nome.lower())
     out = {}
     for hex_, ns in sorted(nomi.items()):

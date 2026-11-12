@@ -1074,7 +1074,7 @@ final class Trifoglio3DScene {
     ///
     /// - Parameter translation: The drag's movement since the last call, in points.
     func pan(by translation: CGSize) {
-        guard !isMoving, viewSize.height > 0 else { return }
+        guard viewSize.height > 0 else { return }
         // Metres under one point at the centre of the screen; further along the ground the
         // lower the camera looks, capped so a flat view does not fling the map away.
         let metres = 2 * distance * tan(fieldOfView * .pi / 360) / Float(viewSize.height)
@@ -1098,7 +1098,6 @@ final class Trifoglio3DScene {
     ///
     /// - Parameter angle: The twist since the last call, in radians, clockwise positive.
     func rotate(by angle: Double) {
-        guard !isMoving else { return }
         azimuth += Float(angle)
         aim()
     }
@@ -1108,7 +1107,6 @@ final class Trifoglio3DScene {
     ///
     /// - Parameter points: The drag's vertical movement since the last call; up tilts more.
     func tilt(by points: CGFloat) {
-        guard !isMoving else { return }
         polar = min(max(polar - Float(points) * 0.004, 0.1), 1.45)
         aim()
     }
