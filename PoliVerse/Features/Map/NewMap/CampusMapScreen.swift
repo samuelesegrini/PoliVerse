@@ -20,8 +20,10 @@ struct CampusMapScreen: View {
     @State private var occupancy = MapOccupancy()
     /// Whether the panel is pulled up.
     @State private var expanded = false
-    /// Whether the panel is searching.
+    /// Whether the search sheet is open.
     @State private var searching = false
+    /// Whether the search sheet's field has the keyboard.
+    @State private var searchFieldActive = false
     /// What is typed in the search field.
     @State private var query = ""
     /// What the search shows: everything, rooms only or buildings only.
@@ -32,8 +34,6 @@ struct CampusMapScreen: View {
     @State private var details: Classroom?
     /// Whether Aule libere is open in a sheet.
     @State private var showsFreeRooms = false
-    /// Whether the search field has the keyboard.
-    @FocusState private var searchFocused: Bool
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.shell) private var shell
@@ -62,7 +62,7 @@ struct CampusMapScreen: View {
                 Trifoglio3DStage(scene: scene, dark: dark)
                     .ignoresSafeArea()
                 TimelineView(.everyMinute) { context in
-                    panel(now: context.date, maxHeight: searching ? proxy.size.height - 8 : proxy.size.height * (expanded ? 0.8 : 0.5))
+                    panel(now: context.date, maxHeight: proxy.size.height * panelCap)
                 }
                 .padding(.horizontal, 8)
                 .padding(.bottom, 8)
@@ -73,16 +73,19 @@ struct CampusMapScreen: View {
         // Only the map's own search makes room for the keyboard. Opened from Cerca with a room
         // just typed, the keyboard is still going down during the push, and the whole screen
         // was laid out above it, leaving a white band under the panel.
-        .ignoresSafeArea(searching ? [] : .keyboard, edges: .bottom)
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .background(dark ? Color(red: 0.05, green: 0.06, blue: 0.09) : Color(red: 0.91, green: 0.93, blue: 0.95))
         // The system bar stays, clear over the scene. On the campus its back button returns to
         // where the map was opened from, swipe included; deeper in, a button in the same place
         // goes up one level instead, so there is never more than one.
+        // Named for the back stack and VoiceOver, but no title drawn over the scene, where it
+        // would blend in with the roofs.
         .navigationTitle("Mappa")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationBarBackButtonHidden(scene.level != .campus)
         .toolbar {
+            ToolbarItem(placement: .principal) { Text(verbatim: "") }
             if let parent = parentTitle {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
@@ -115,6 +118,9 @@ struct CampusMapScreen: View {
                         ToolbarItem(placement: .confirmationAction) { Button("Fine") { details = nil } }
                     }
             }
+        }
+        .sheet(isPresented: $searching, onDismiss: { query = ""; scope = .all }) {
+            searchSheet
         }
         .sheet(isPresented: $showsFreeRooms) {
             NavigationStack {
@@ -244,7 +250,10 @@ struct CampusMapScreen: View {
             .padding(.bottom, 26)
         }
         .frame(maxWidth: 640)
-        .background(sheetFill, in: .rect(cornerRadius: 34))
+        // Concentric with the screen at the bottom, where the panel sits 8 points from the
+        // display's rounded corners, and the shape everything inside follows.
+        .containerShape(.rect(cornerRadius: 34))
+        .background(sheetFill, in: panelShape)
         .shadow(color: .black.opacity(dark ? 0.5 : 0.16), radius: 20, y: 8)
         .animation(.snappy, value: scene.level)
         .accessibilityElement(children: .contain)
@@ -254,35 +263,10 @@ struct CampusMapScreen: View {
     /// The panel's header: the search field on the campus, else where the camera is.
     @ViewBuilder
     private func header(now: Date) -> some View {
-        if searching {
-            HStack(spacing: 10) {
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                    TextField("Aule ed edifici", text: $query)
-                        .focused($searchFocused)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .submitLabel(.search)
-                        .accessibilityIdentifier("newmap-search-field")
-                }
-                .padding(.horizontal, 14)
-                .frame(height: 44)
-                .background(Color.secondary.opacity(0.14), in: .capsule)
-                Button {
-                    endSearch()
-                } label: {
-                    Image(systemName: "xmark").font(.body.weight(.semibold)).frame(width: 22, height: 22)
-                }
-                .buttonStyle(.bordered)
-                .buttonBorderShape(.capsule)
-                .accessibilityLabel("Chiudi la ricerca")
-            }
-        } else {
             switch scene.level {
             case .campus:
                 Button {
                     searching = true
-                    searchFocused = true
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "magnifyingglass")
@@ -292,8 +276,8 @@ struct CampusMapScreen: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 14)
                     .frame(height: 44)
-                    .background(Color.secondary.opacity(0.14), in: .capsule)
-                    .contentShape(.capsule)
+                    .background(Color.secondary.opacity(0.14), in: innerShape)
+                    .contentShape(innerShape)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("newmap-search")
@@ -311,7 +295,6 @@ struct CampusMapScreen: View {
                     statusLine(classroom(csiv), now: now)
                 }
             }
-        }
     }
 
     /// A title, what it holds, and the button that closes back to the campus.
@@ -344,15 +327,11 @@ struct CampusMapScreen: View {
     @ViewBuilder
     private func bodyContent(now: Date) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            if searching {
-                searchResults(now: now)
-            } else {
-                switch scene.level {
-                case .campus: campusBody
-                case .building(let csie): buildingBody(csie, now: now)
-                case .floor(let csip): floorBody(csip, now: now)
-                case .room(let csip, let csiv), .inside(let csip, let csiv): roomBody(floor: csip, room: csiv, now: now)
-                }
+            switch scene.level {
+            case .campus: campusBody
+            case .building(let csie): buildingBody(csie, now: now)
+            case .floor(let csip): floorBody(csip, now: now)
+            case .room(let csip, let csiv), .inside(let csip, let csiv): roomBody(floor: csip, room: csiv, now: now)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -480,7 +459,8 @@ struct CampusMapScreen: View {
             }
         }
         .padding(14)
-        .background(cardFill, in: .rect(cornerRadius: 26))
+        .background(cardFill, in: innerShape)
+        .containerShape(.rect(cornerRadius: 16))
     }
 
     // MARK: Building
@@ -521,10 +501,10 @@ struct CampusMapScreen: View {
             if known, !csivs.isEmpty {
                 Capsule()
                     .fill(Color.secondary.opacity(0.18))
-                    .frame(width: 64, height: 6)
+                    .frame(width: 44, height: 6)
                     .overlay(alignment: .leading) {
                         Capsule().fill(.green)
-                            .frame(width: 64 * CGFloat(free) / CGFloat(csivs.count), height: 6)
+                            .frame(width: 44 * CGFloat(free) / CGFloat(csivs.count), height: 6)
                     }
                     .accessibilityHidden(true)
             }
@@ -543,11 +523,7 @@ struct CampusMapScreen: View {
     /// The floor's rooms with their status, all or only the free ones.
     @ViewBuilder
     private func floorBody(_ csip: String, now: Date) -> some View {
-        Picker("Mostra", selection: $onlyFree) {
-            Text("Tutte").tag(false)
-            Text("Libere ora").tag(true)
-        }
-        .pickerStyle(.segmented)
+        segmented
 
         let all = (scene.plan?.piani.first { $0.csip == csip }?.aule ?? [])
             .sorted { $0.sigla.localizedStandardCompare($1.sigla) == .orderedAscending }
@@ -568,6 +544,38 @@ struct CampusMapScreen: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+
+    /// All the floor's rooms or only the free ones, as a segmented control with a body-size
+    /// label and room around it: the system one is too small under the thumb here.
+    private var segmented: some View {
+        HStack(spacing: 0) {
+            ForEach([false, true], id: \.self) { free in
+                let on = onlyFree == free
+                Button {
+                    withAnimation(.snappy) { onlyFree = free }
+                } label: {
+                    Text(free ? "Libere ora" : "Tutte")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .background {
+                            if on {
+                                ConcentricRectangle(corners: .concentric(minimum: .fixed(8)), isUniform: true)
+                                    .fill(cardFill).shadow(color: .black.opacity(0.12), radius: 3, y: 1)
+                            }
+                        }
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .padding(3)
+        .containerShape(.rect(cornerRadius: 16))
+        .background(Color.secondary.opacity(0.14), in: innerShape)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Mostra")
     }
 
     // MARK: Room
@@ -605,13 +613,14 @@ struct CampusMapScreen: View {
         .controlSize(.large)
 
         if let bookings = occupancy.bookings(of: room) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Oggi").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
-                OccupancyTimeline(bookings: bookings, day: aule.teachingDay)
+                MapDayStrip(bookings: bookings, day: aule.teachingDay, mine: myLessons(in: room).map(\.interval), now: now)
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(cardFill, in: .rect(cornerRadius: 22))
+            .background(cardFill, in: innerShape)
+            .containerShape(.rect(cornerRadius: 16))
         }
         let seats = scene.plan?.piani.flatMap(\.aule).first { $0.csiv == csiv }?.posti ?? room?.capacity
         let facts = [seats.map { String(localized: "\($0) posti") },
@@ -675,13 +684,48 @@ struct CampusMapScreen: View {
         }
     }
 
-    /// Closes the search and puts the keyboard away.
+    /// Closes the search sheet.
     private func endSearch() {
-        searchFocused = false
         searching = false
-        query = ""
-        scope = .all
         expanded = false
+    }
+
+    /// The search, a full page over the map like the rest of the system's searches: the
+    /// native field with its own clear button, the system close button, and the results.
+    private var searchSheet: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    searchResults(now: .now)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 4)
+                .padding(.bottom, 24)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .background(Color(uiColor: .systemGroupedBackground))
+            .navigationTitle("Cerca sulla mappa")
+            .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $query, isPresented: $searchFieldActive,
+                        placement: .navigationBarDrawer(displayMode: .always),
+                        prompt: Text("Aule ed edifici"))
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .close) { searching = false }
+                }
+            }
+            .onAppear { searchFieldActive = true }
+        }
+        .presentationDetents([.large])
+    }
+
+    /// How tall the panel may be, as a share of the screen: half on the campus (more when
+    /// pulled up), more inside a building, so a floor list or a room's day fits whole.
+    private var panelCap: CGFloat {
+        if expanded { return 0.8 }
+        return scene.level == .campus ? 0.5 : 0.6
     }
 
     // MARK: - Pieces
@@ -696,6 +740,16 @@ struct CampusMapScreen: View {
     /// the text; the glass is kept for what floats over the map.
     private var sheetFill: Color {
         (dark ? Color(uiColor: .secondarySystemBackground) : Color(uiColor: .systemGroupedBackground)).opacity(0.97)
+    }
+
+    /// The panel's outline: concentric with the display at the bottom, a fixed radius on top.
+    private var panelShape: ConcentricRectangle {
+        ConcentricRectangle(uniformTopCorners: .fixed(34), uniformBottomCorners: .concentric(minimum: .fixed(34)))
+    }
+
+    /// What sits inside the panel, a card or a field: concentric with it, given its padding.
+    private var innerShape: ConcentricRectangle {
+        ConcentricRectangle(corners: .concentric(minimum: .fixed(12)), isUniform: true)
     }
 
     /// The label on a filled tint button: white on the navy, dark on the light blue of night.
@@ -724,8 +778,9 @@ struct CampusMapScreen: View {
                 if index < items.count - 1 { Divider() }
             }
         }
-        .padding(.horizontal, 14)
-        .background(cardFill, in: .rect(cornerRadius: 22))
+        .padding(.horizontal, 18)
+        .background(cardFill, in: innerShape)
+            .containerShape(.rect(cornerRadius: 16))
     }
 
     /// One row of a list in the panel.
@@ -760,51 +815,56 @@ struct CampusMapScreen: View {
         let known = statuses.filter { $0 != .unknown }
         let free = statuses.filter(\.isFree).count
         let text = known.isEmpty
-            ? String(localized: "\(csivs.count) aule")
-            : String(localized: "\(free) libere su \(csivs.count)")
-        return AnyView(Text(text).font(.subheadline).foregroundStyle(free > 0 ? Color.green : Color.secondary))
+            ? MapCounts.rooms(csivs.count)
+            : MapCounts.free(free, of: csivs.count)
+        return AnyView(Text(text).font(.subheadline).lineLimit(1).minimumScaleFactor(0.85)
+            .foregroundStyle(free > 0 ? Color.green : Color.secondary))
     }
 
-    /// A room's status as a short tag: free with a tick, busy with a clock, nothing when unknown.
+    /// A room's status as a short tag in its colour: green while free, red while busy, nothing when unknown.
     @ViewBuilder
     private func statusTag(_ status: MapRoomStatus, now: Date) -> some View {
         switch status {
         case .unknown:
             EmptyView()
+        // The colour says it: green while free, red while busy, without icons.
         case .free(let until):
-            Label(until.map { String(localized: "fino alle \(clock($0))") } ?? String(localized: "libera"),
-                  systemImage: "checkmark.circle.fill")
+            Text(until.map { String(localized: "fino alle \(clock($0))") } ?? String(localized: "libera"))
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.green)
-                .labelStyle(.titleAndIcon)
+                .accessibilityLabel(until.map { Text("Libera fino alle \(clock($0))") } ?? Text("Libera"))
         case .busy(let until, _):
-            Label(String(localized: "fino alle \(clock(until))"), systemImage: "clock")
+            Text(String(localized: "occupata fino alle \(clock(until))"))
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .labelStyle(.titleAndIcon)
+                .foregroundStyle(.red)
+                .accessibilityLabel(Text("Occupata fino alle \(clock(until))"))
         }
     }
 
     /// The room's status in a sentence, and whether the student's next lesson is in it.
     @ViewBuilder
     private func statusLine(_ room: Classroom?, now: Date) -> some View {
-        let status = status(of: room, now: now)
-        let text: String = switch status {
-        case .unknown:
-            aule.teachingDay.contains(now) || room == nil
-                ? String(localized: "Occupazione non disponibile")
-                : String(localized: "Fuori dall'orario delle lezioni")
-        case .free(let until):
-            until.map { String(localized: "Libera fino alle \(clock($0))") }
-                ?? String(localized: "Libera per il resto della giornata")
-        case .busy(let until, let what):
-            what.map { String(localized: "Occupata fino alle \(clock(until)) · \($0)") }
-                ?? String(localized: "Occupata fino alle \(clock(until))")
+        let day = aule.teachingDay
+        let bookings = occupancy.bookings(of: room)
+        let (text, tone): (String, MapRoomTone) = if room == nil {
+            (String(localized: "Stato non disponibile"), .unknown)
+        } else if bookings == nil, day.contains(now) {
+            (String(localized: "Controllo le prenotazioni…"), .unknown)
+        } else if !day.contains(now), now < day.start {
+            (String(localized: "Fuori dall'orario delle lezioni"), .unknown)
+        } else {
+            MapRoomSentence.make(bookings: bookings ?? [], own: myLessons(in: room).map {
+                MapOwnLesson(title: $0.title, interval: $0.interval)
+            }, now: now, dayEnd: day.end)
         }
-        Label(text, systemImage: status.isFree ? "checkmark.circle.fill" : "clock")
-            .font(.subheadline)
-            .foregroundStyle(status.isFree ? Color.green : Color.secondary)
-            .labelStyle(.titleAndIcon)
+        // The colour says it, as in the lists: green while free, red while busy, the tint
+        // for the student's own lesson.
+        Text(text)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(tone == .free ? AnyShapeStyle(Color.green)
+                             : tone == .busy ? AnyShapeStyle(Color.red)
+                             : tone == .mine ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     /// The status of a room at a moment, from the bookings held; unknown outside today's
@@ -813,6 +873,17 @@ struct CampusMapScreen: View {
         let day = aule.teachingDay
         guard day.contains(now) else { return .unknown }
         return MapRoomStatus.of(occupancy.bookings(of: room), at: now, dayEnd: day.end)
+    }
+
+    /// The student's own lessons today in a room: the day strip draws them in the tint and
+    /// the room's sentence names them.
+    private func myLessons(in room: Classroom?) -> [(title: String, interval: DateInterval)] {
+        guard let room else { return [] }
+        return agenda.events(on: .now).compactMap { event in
+            let held = RelevanceOrder.room(named: [event.roomAcronym, event.room], in: rooms.rooms)
+            guard held?.id == room.id else { return nil }
+            return (event.title, DateInterval(start: event.start, end: max(event.start, event.end)))
+        }
     }
 
     /// The catalogue's room for a space code of the model.
@@ -837,20 +908,22 @@ struct CampusMapScreen: View {
     private func buildingSubtitle(_ csie: String, now: Date) -> String {
         let floors = scene.plans[csie]?.piani ?? []
         let csivs = floors.flatMap(\.aule).map(\.csiv)
-        let free = csivs.filter { status(of: classroom($0), now: now).isFree }.count
-        var parts = ["Leonardo", String(localized: "\(floors.count) piani"), String(localized: "\(csivs.count) aule")]
-        if free > 0 { parts.append(String(localized: "\(free) libere ora")) }
+        let statuses = csivs.map { status(of: classroom($0), now: now) }
+        let free = statuses.filter(\.isFree).count
+        var parts = ["Leonardo", MapCounts.floors(floors.count), MapCounts.rooms(csivs.count)]
+        if statuses.contains(where: { $0 != .unknown }) { parts.append(MapCounts.freeNow(free)) }
         return parts.joined(separator: " · ")
     }
 
     /// "Edificio 3 · 3 libere su 7" for a floor.
     private func floorSubtitle(_ csip: String, now: Date) -> String {
         let csivs = scene.plan?.piani.first { $0.csip == csip }?.aule.map(\.csiv) ?? []
-        let free = csivs.filter { status(of: classroom($0), now: now).isFree }.count
+        let statuses = csivs.map { status(of: classroom($0), now: now) }
+        let free = statuses.filter(\.isFree).count
         let building = MapNames.building(scene.plan, csie: scene.csie)
-        return free > 0
-            ? "\(building) · " + String(localized: "\(free) libere su \(csivs.count)")
-            : "\(building) · " + String(localized: "\(csivs.count) aule")
+        return statuses.contains(where: { $0 != .unknown })
+            ? "\(building) · " + MapCounts.free(free, of: csivs.count)
+            : "\(building) · " + MapCounts.rooms(csivs.count)
     }
 
     /// A time of day as the app writes it.
@@ -1068,5 +1141,98 @@ enum MapSearchScope: CaseIterable {
         case .rooms: "Aule"
         case .buildings: "Edifici"
         }
+    }
+}
+
+/// A room's teaching day at a glance: a light green track for the free time, each booking a
+/// red block (the student's own lesson in the tint), a thin line with a dot for now, and the
+/// hours every three underneath. Red means busy here, so "now" is drawn in the primary colour.
+private struct MapDayStrip: View {
+    /// The room's bookings for the day.
+    let bookings: [RoomBooking]
+    /// The span the track covers.
+    let day: DateInterval
+    /// The student's own lessons in the room.
+    let mine: [DateInterval]
+    /// The moment the marker shows.
+    let now: Date
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            GeometryReader { geometry in
+                let width = geometry.size.width
+                ZStack(alignment: .topLeading) {
+                    ConcentricRectangle(corners: .concentric(minimum: .fixed(6)), isUniform: true)
+                        .fill(Color.green.opacity(0.22))
+                        .frame(height: 30)
+                        .offset(y: 6)
+                    ForEach(bookings) { booking in
+                        let frame = slot(booking.interval, width: width)
+                        if frame.width > 0 {
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(isMine(booking) ? AnyShapeStyle(.tint) : AnyShapeStyle(Color.red.opacity(0.8)))
+                                .frame(width: max(frame.width - 2, 3), height: 30)
+                                .offset(x: frame.start + 1, y: 6)
+                        }
+                    }
+                    if day.contains(now) {
+                        let x = position(now, width: width)
+                        Rectangle().fill(.primary).frame(width: 2, height: 38).offset(x: x - 1, y: 2)
+                        Circle().fill(.primary).frame(width: 8, height: 8).offset(x: x - 4, y: -2)
+                    }
+                }
+            }
+            .frame(height: 40)
+
+            GeometryReader { geometry in
+                ForEach(hours, id: \.self) { hour in
+                    Text(hour.formatted(.dateTime.hour(.defaultDigits(amPM: .omitted))))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize()
+                        .position(x: position(hour, width: geometry.size.width), y: 6)
+                }
+            }
+            .frame(height: 12)
+        }
+        .accessibilityElement()
+        .accessibilityLabel(accessibilityText)
+    }
+
+    /// The hours labelled under the track: every three from the start of the day.
+    private var hours: [Date] {
+        var result: [Date] = []
+        var hour = Calendar.current.dateInterval(of: .hour, for: day.start)?.start ?? day.start
+        if hour < day.start { hour = hour.addingTimeInterval(3600) }
+        while hour <= day.end {
+            result.append(hour)
+            hour = hour.addingTimeInterval(3 * 3600)
+        }
+        return result
+    }
+
+    private func position(_ date: Date, width: CGFloat) -> CGFloat {
+        guard day.duration > 0 else { return 0 }
+        let fraction = min(max(date.timeIntervalSince(day.start) / day.duration, 0), 1)
+        return width * fraction
+    }
+
+    private func slot(_ interval: DateInterval, width: CGFloat) -> (start: CGFloat, width: CGFloat) {
+        let start = position(max(interval.start, day.start), width: width)
+        let end = position(min(interval.end, day.end), width: width)
+        return (start, max(end - start, 0))
+    }
+
+    private func isMine(_ booking: RoomBooking) -> Bool {
+        mine.contains { $0.intersects(booking.interval) && $0.intersection(with: booking.interval)?.duration ?? 0 > 0 }
+    }
+
+    private var accessibilityText: Text {
+        guard !bookings.isEmpty else { return Text("Libera tutto il giorno") }
+        let ranges = bookings
+            .sorted { $0.start < $1.start }
+            .map { "\($0.start.formatted(date: .omitted, time: .shortened))–\($0.end.formatted(date: .omitted, time: .shortened))" }
+            .joined(separator: ", ")
+        return Text("Occupata \(ranges)")
     }
 }
