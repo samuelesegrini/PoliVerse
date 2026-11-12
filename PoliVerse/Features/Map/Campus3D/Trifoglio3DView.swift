@@ -232,7 +232,7 @@ final class Trifoglio3DScene {
     var reduceMotion = false
     /// The night palette: the models' colours dimmed towards blue and the lights turned down.
     /// The lit classroom keeps its warm glow, which then reads as a lamp in the dark.
-    var dark = false {
+    @ObservationIgnored var dark = false {
         didSet {
             guard dark != oldValue else { return }
             setLights()
