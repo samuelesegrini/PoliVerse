@@ -24,6 +24,8 @@ struct CampusMapScreen: View {
     @State private var searching = false
     /// What is typed in the search field.
     @State private var query = ""
+    /// What the search shows: everything, rooms only or buildings only.
+    @State private var scope = MapSearchScope.all
     /// Whether a floor's list shows only the free rooms.
     @State private var onlyFree = false
     /// The room whose full page is open in a sheet.
@@ -60,24 +62,44 @@ struct CampusMapScreen: View {
                 Trifoglio3DStage(scene: scene, dark: dark)
                     .ignoresSafeArea()
                 TimelineView(.everyMinute) { context in
-                    panel(now: context.date, maxHeight: proxy.size.height * (expanded || searching ? 0.8 : 0.5))
+                    panel(now: context.date, maxHeight: searching ? proxy.size.height - 8 : proxy.size.height * (expanded ? 0.8 : 0.5))
                 }
                 .padding(.horizontal, 8)
                 .padding(.bottom, 8)
             }
             .ignoresSafeArea(.container, edges: .bottom)
-            .overlay(alignment: .topLeading) { backButton.padding(.leading, 16).padding(.top, 4) }
-            .overlay(alignment: .topTrailing) { floorColumn.padding(.trailing, 16).padding(.top, 56) }
+            .overlay(alignment: .topTrailing) { floorColumn.padding(.trailing, 16).padding(.top, 8) }
         }
         // Only the map's own search makes room for the keyboard. Opened from Cerca with a room
         // just typed, the keyboard is still going down during the push, and the whole screen
         // was laid out above it, leaving a white band under the panel.
         .ignoresSafeArea(searching ? [] : .keyboard, edges: .bottom)
         .background(dark ? Color(red: 0.05, green: 0.06, blue: 0.09) : Color(red: 0.91, green: 0.93, blue: 0.95))
-        // The screen draws its own back button: the system one would sit above it, and pushed
-        // from Cerca it stayed on screen with the bar hidden alone.
-        .navigationBarBackButtonHidden(true)
-        .toolbar(.hidden, for: .navigationBar)
+        // The system bar stays, clear over the scene. On the campus its back button returns to
+        // where the map was opened from, swipe included; deeper in, a button in the same place
+        // goes up one level instead, so there is never more than one.
+        .navigationTitle("Mappa")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .navigationBarBackButtonHidden(scene.level != .campus)
+        .toolbar {
+            if let parent = parentTitle {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        Task { await goUp() }
+                    } label: {
+                        // Text beside the chevron, as the system back button draws it: a
+                        // Label in a toolbar would show the icon alone.
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.backward").fontWeight(.semibold)
+                            Text(parent)
+                        }
+                    }
+                    .accessibilityLabel(Text("Torna a \(parent)"))
+                    .accessibilityIdentifier("newmap-back")
+                }
+            }
+        }
         .toolbar(.hidden, for: .tabBar)
         // The current class accessory hangs from the tab view, not the tab bar, so hiding the
         // bar leaves it floating over the panel.
@@ -128,28 +150,6 @@ struct CampusMapScreen: View {
 
     // MARK: - Over the scene
 
-    /// Goes up one level: from a room to its floor, from a floor to its building, from a
-    /// building to the campus, and from the campus back to where the map was opened from.
-    private var backButton: some View {
-        Button {
-            Task { await goUp() }
-        } label: {
-            if let parent = parentTitle {
-                Label(parent, systemImage: "chevron.backward")
-                    .font(.subheadline.weight(.semibold))
-            } else {
-                Image(systemName: "chevron.backward")
-                    .font(.body.weight(.semibold))
-                    .frame(width: 22, height: 22)
-            }
-        }
-        .buttonStyle(.glass)
-        .mapGlassLabel(dark: dark)
-        .controlSize(.large)
-        .accessibilityLabel(parentTitle.map { Text("Torna a \($0)") } ?? Text("Indietro"))
-        .accessibilityIdentifier("newmap-back")
-    }
-
     /// The level the back button goes to, named; `nil` on the campus, where it leaves the map.
     private var parentTitle: String? {
         switch scene.level {
@@ -161,7 +161,8 @@ struct CampusMapScreen: View {
         }
     }
 
-    /// One level up. See ``backButton``.
+    /// One level up: from a room to its floor, from a floor to its building, from a building to
+    /// the campus.
     private func goUp() async {
         switch scene.level {
         case .campus: dismiss()
@@ -243,8 +244,10 @@ struct CampusMapScreen: View {
             .padding(.bottom, 26)
         }
         .frame(maxWidth: 640)
-        .glassEffect(.regular, in: .rect(cornerRadius: 34))
+        .background(sheetFill, in: .rect(cornerRadius: 34))
+        .shadow(color: .black.opacity(dark ? 0.5 : 0.16), radius: 20, y: 8)
         .animation(.snappy, value: scene.level)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("newmap-panel")
     }
 
@@ -270,8 +273,8 @@ struct CampusMapScreen: View {
                 } label: {
                     Image(systemName: "xmark").font(.body.weight(.semibold)).frame(width: 22, height: 22)
                 }
-                .buttonStyle(.glass)
-                .mapGlassLabel(dark: dark)
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
                 .accessibilityLabel("Chiudi la ricerca")
             }
         } else {
@@ -301,7 +304,7 @@ struct CampusMapScreen: View {
                 titleRow(MapNames.floor(csip), subtitle: floorSubtitle(csip, now: now))
             case .room(let csip, let csiv), .inside(let csip, let csiv):
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("\(MapNames.building(scene.plan, csie: scene.csie)) › \(MapNames.floor(csip))")
+                    Text("Leonardo › \(MapNames.building(scene.plan, csie: scene.csie)) › \(MapNames.floor(csip))")
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(.secondary)
                     titleRow(String(localized: "Aula \(sigla(csiv))"), subtitle: nil, large: true)
@@ -363,20 +366,28 @@ struct CampusMapScreen: View {
         if let next = CurrentClass.forAccessory(from: agenda.events(on: .now), now: .now) {
             nextClassCard(next)
         }
-        Button {
-            showsFreeRooms = true
-        } label: {
-            Label("Aule libere", systemImage: "checkmark.circle")
+        HStack(spacing: 8) {
+            Button {
+                showsFreeRooms = true
+            } label: {
+                chip("Libere ora", symbol: "checkmark", symbolColor: .green, on: false)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Aule libere ora")
+            .accessibilityIdentifier("newmap-free-rooms")
+            Button {
+                withAnimation(.snappy) { expanded.toggle() }
+            } label: {
+                chip("Edifici", symbol: "building.2", symbolColor: nil, on: expanded)
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(expanded ? .isSelected : [])
         }
-        .buttonStyle(.glass)
-        .mapGlassLabel(dark: dark)
-        .accessibilityIdentifier("newmap-free-rooms")
 
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Edifici")
-                .font(.headline)
-                .padding(.bottom, 6)
-            ForEach(modelledBuildings, id: \.self) { csie in
+        // The buildings wait behind their chip, or a pull on the panel: on opening, the
+        // panel holds only the search, the lesson and the chips.
+        if expanded {
+            listCard(modelledBuildings, id: \.self) { csie in
                 Button {
                     Task { await scene.go(to: .building(csie)) }
                 } label: {
@@ -386,6 +397,23 @@ struct CampusMapScreen: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+
+    /// A filter or shortcut chip of the panel.
+    private func chip(_ title: LocalizedStringKey, symbol: String?, symbolColor: Color?, on: Bool) -> some View {
+        HStack(spacing: 6) {
+            if let symbol {
+                Image(systemName: symbol)
+                    .fontWeight(.bold)
+                    .foregroundStyle(on ? AnyShapeStyle(onTint) : symbolColor.map(AnyShapeStyle.init) ?? AnyShapeStyle(.secondary))
+            }
+            Text(title).foregroundStyle(on ? onTint : .primary)
+        }
+        .font(.subheadline.weight(.medium))
+        .padding(.horizontal, 14)
+        .frame(height: 36)
+        .background(on ? AnyShapeStyle(.tint) : AnyShapeStyle(Color.secondary.opacity(0.14)), in: .capsule)
+        .contentShape(.capsule)
     }
 
     /// The modelled buildings with a plan, by number.
@@ -420,6 +448,7 @@ struct CampusMapScreen: View {
                         .lineLimit(1)
                 }
                 Spacer(minLength: 4)
+                Text(time).font(.subheadline.weight(.semibold)).monospacedDigit()
             }
             // A room the catalogue does not know (an online lesson, a room outside the
             // Politecnico) has no way there and no place on the map: no buttons, not empty ones.
@@ -432,7 +461,9 @@ struct CampusMapScreen: View {
                             Label("Indicazioni", systemImage: "figure.walk")
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.glassProminent)
+                        .buttonStyle(.borderedProminent)
+                        .buttonBorderShape(.capsule)
+                        .foregroundStyle(onTint)
                     }
                     if let level {
                         Button {
@@ -440,8 +471,8 @@ struct CampusMapScreen: View {
                         } label: {
                             Text("Mostra aula").frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.glass)
-                        .mapGlassLabel(dark: dark)
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule)
                         .accessibilityIdentifier("newmap-show-next")
                     }
                 }
@@ -449,7 +480,7 @@ struct CampusMapScreen: View {
             }
         }
         .padding(14)
-        .background(Color.primary.opacity(0.05), in: .rect(cornerRadius: 22))
+        .background(cardFill, in: .rect(cornerRadius: 26))
     }
 
     // MARK: Building
@@ -462,20 +493,49 @@ struct CampusMapScreen: View {
         } label: {
             Label("Indicazioni", systemImage: "figure.walk").frame(maxWidth: .infinity)
         }
-        .buttonStyle(.glassProminent)
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .foregroundStyle(onTint)
         .controlSize(.large)
 
-        VStack(spacing: 0) {
-            ForEach((scene.plans[csie]?.piani ?? []).reversed()) { floor in
-                Button {
-                    Task { await scene.go(to: .floor(floor.csip)) }
-                } label: {
-                    row(title: MapNames.floor(floor.csip), detail: nil,
-                        trailing: countLabel(floor.aule.map(\.csiv), now: now))
-                }
-                .buttonStyle(.plain)
+        listCard((scene.plans[csie]?.piani ?? []).reversed(), id: \.csip) { floor in
+            Button {
+                Task { await scene.go(to: .floor(floor.csip)) }
+            } label: {
+                floorRow(floor.csip, csivs: floor.aule.map(\.csiv), now: now)
             }
+            .buttonStyle(.plain)
         }
+    }
+
+    /// A floor in the building's list: its name, how much of it is free as a bar, and the count.
+    private func floorRow(_ csip: String, csivs: [String], now: Date) -> some View {
+        let statuses = csivs.map { status(of: classroom($0), now: now) }
+        let known = statuses.contains { $0 != .unknown }
+        let free = statuses.filter(\.isFree).count
+        return HStack(spacing: 12) {
+            Text(MapNames.floor(csip))
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.primary)
+                .frame(minWidth: 84, alignment: .leading)
+            if known, !csivs.isEmpty {
+                Capsule()
+                    .fill(Color.secondary.opacity(0.18))
+                    .frame(width: 64, height: 6)
+                    .overlay(alignment: .leading) {
+                        Capsule().fill(.green)
+                            .frame(width: 64 * CGFloat(free) / CGFloat(csivs.count), height: 6)
+                    }
+                    .accessibilityHidden(true)
+            }
+            Spacer(minLength: 8)
+            countLabel(csivs, now: now)
+            Image(systemName: "chevron.forward")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 12)
+        .contentShape(.rect)
     }
 
     // MARK: Floor
@@ -492,8 +552,13 @@ struct CampusMapScreen: View {
         let all = (scene.plan?.piani.first { $0.csip == csip }?.aule ?? [])
             .sorted { $0.sigla.localizedStandardCompare($1.sigla) == .orderedAscending }
         let shown = onlyFree ? all.filter { status(of: classroom($0.csiv), now: now).isFree } : all
-        VStack(spacing: 0) {
-            ForEach(shown) { room in
+        if shown.isEmpty {
+            Text(onlyFree ? "Nessuna aula libera ora su questo piano." : "Nessuna aula su questo piano.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .padding(.vertical, 8)
+        } else {
+            listCard(shown, id: \.csiv) { room in
                 Button {
                     Task { await scene.go(to: .room(floor: csip, room: room.csiv)) }
                 } label: {
@@ -501,12 +566,6 @@ struct CampusMapScreen: View {
                         trailing: AnyView(statusTag(status(of: classroom(room.csiv), now: now), now: now)))
                 }
                 .buttonStyle(.plain)
-            }
-            if shown.isEmpty {
-                Text(onlyFree ? "Nessuna aula libera ora su questo piano." : "Nessuna aula su questo piano.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 8)
             }
         }
     }
@@ -523,22 +582,24 @@ struct CampusMapScreen: View {
             } label: {
                 Label("Indicazioni", systemImage: "figure.walk").frame(maxWidth: .infinity)
             }
-            .buttonStyle(.glassProminent)
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .foregroundStyle(onTint)
             if scene.interior(csiv) != nil {
                 if case .inside = scene.level {
                     Button("Esci") { Task { await scene.go(to: .room(floor: csip, room: csiv)) } }
-                        .buttonStyle(.glass)
-                        .mapGlassLabel(dark: dark)
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule)
                 } else {
                     Button("Entra") { Task { await scene.go(to: .inside(floor: csip, room: csiv)) } }
-                        .buttonStyle(.glass)
-                        .mapGlassLabel(dark: dark)
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule)
                 }
             }
             if let room {
                 Button("Dettagli") { details = room }
-                    .buttonStyle(.glass)
-                    .mapGlassLabel(dark: dark)
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
             }
         }
         .controlSize(.large)
@@ -548,6 +609,9 @@ struct CampusMapScreen: View {
                 Text("Oggi").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
                 OccupancyTimeline(bookings: bookings, day: aule.teachingDay)
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(cardFill, in: .rect(cornerRadius: 22))
         }
         let seats = scene.plan?.piani.flatMap(\.aule).first { $0.csiv == csiv }?.posti ?? room?.capacity
         let facts = [seats.map { String(localized: "\($0) posti") },
@@ -573,18 +637,41 @@ struct CampusMapScreen: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
-        VStack(spacing: 0) {
-            ForEach(hits) { hit in
+        HStack(spacing: 6) {
+            ForEach(MapSearchScope.allCases, id: \.self) { option in
                 Button {
-                    endSearch()
-                    Task { await scene.go(to: hit.level) }
+                    scope = option
                 } label: {
-                    let trailing: AnyView? = hit.csiv.map { AnyView(statusTag(status(of: classroom($0), now: now), now: now)) }
-                    row(title: hit.title, detail: hit.detail, trailing: trailing,
-                        symbol: hit.csiv == nil ? "building.2" : "door.left.hand.open")
+                    chip(option.title, symbol: nil, symbolColor: nil, on: scope == option)
                 }
                 .buttonStyle(.plain)
+                .accessibilityAddTraits(scope == option ? .isSelected : [])
             }
+        }
+        let roomHits = scope == .buildings ? [] : hits.filter { $0.csiv != nil }
+        let buildingHits = scope == .rooms ? [] : hits.filter { $0.csiv == nil }
+        if !roomHits.isEmpty {
+            sectionHeader("Aule")
+            hitsCard(roomHits, now: now)
+        }
+        if !buildingHits.isEmpty {
+            sectionHeader("Edifici")
+            hitsCard(buildingHits, now: now)
+        }
+    }
+
+    /// Search results in a card, each one taking the camera there.
+    private func hitsCard(_ hits: [MapSearch.Hit], now: Date) -> some View {
+        listCard(hits, id: \.id) { hit in
+            Button {
+                endSearch()
+                Task { await scene.go(to: hit.level) }
+            } label: {
+                let trailing: AnyView? = hit.csiv.map { AnyView(statusTag(status(of: classroom($0), now: now), now: now)) }
+                row(title: hit.title, detail: hit.detail, trailing: trailing,
+                    symbol: hit.csiv == nil ? "building.2" : "door.left.hand.open")
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -593,10 +680,53 @@ struct CampusMapScreen: View {
         searchFocused = false
         searching = false
         query = ""
+        scope = .all
         expanded = false
     }
 
     // MARK: - Pieces
+
+    /// The fill of the cards that group rows inside the glass panel: white by day, a light
+    /// veil at night.
+    private var cardFill: Color {
+        dark ? Color(uiColor: .tertiarySystemBackground) : Color.white
+    }
+
+    /// The panel itself: nearly opaque, so the scene's roofs and lawns do not show through
+    /// the text; the glass is kept for what floats over the map.
+    private var sheetFill: Color {
+        (dark ? Color(uiColor: .secondarySystemBackground) : Color(uiColor: .systemGroupedBackground)).opacity(0.97)
+    }
+
+    /// The label on a filled tint button: white on the navy, dark on the light blue of night.
+    private var onTint: Color {
+        dark ? Color(white: 0.08) : .white
+    }
+
+    /// A small heading over a card.
+    private func sectionHeader(_ title: LocalizedStringKey) -> some View {
+        Text(title)
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+            .padding(.horizontal, 4)
+            .padding(.bottom, -8)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    /// Rows grouped in a card, with hairlines between them.
+    private func listCard<Item, ID: Hashable, Row: View>(
+        _ items: [Item], id: KeyPath<Item, ID>, @ViewBuilder row: @escaping (Item) -> Row
+    ) -> some View {
+        VStack(spacing: 0) {
+            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                row(item)
+                if index < items.count - 1 { Divider() }
+            }
+        }
+        .padding(.horizontal, 14)
+        .background(cardFill, in: .rect(cornerRadius: 22))
+    }
 
     /// One row of a list in the panel.
     private func row(title: String, detail: String?, trailing: AnyView?, symbol: String? = nil) -> some View {
@@ -708,7 +838,7 @@ struct CampusMapScreen: View {
         let floors = scene.plans[csie]?.piani ?? []
         let csivs = floors.flatMap(\.aule).map(\.csiv)
         let free = csivs.filter { status(of: classroom($0), now: now).isFree }.count
-        var parts = [String(localized: "\(floors.count) piani"), String(localized: "\(csivs.count) aule")]
+        var parts = ["Leonardo", String(localized: "\(floors.count) piani"), String(localized: "\(csivs.count) aule")]
         if free > 0 { parts.append(String(localized: "\(free) libere ora")) }
         return parts.joined(separator: " · ")
     }
@@ -883,22 +1013,6 @@ enum MapSearch {
     }
 }
 
-/// The label of a clear glass button at night: the tint, dark navy or the look's blue, reads
-/// poorly on dark glass, so the label turns white there. Prominent buttons keep the tint.
-private struct MapGlassLabel: ViewModifier {
-    /// Whether the night palette is on.
-    let dark: Bool
-
-    func body(content: Content) -> some View {
-        if dark { content.tint(.white) } else { content }
-    }
-}
-
-private extension View {
-    /// See ``MapGlassLabel``.
-    func mapGlassLabel(dark: Bool) -> some View { modifier(MapGlassLabel(dark: dark)) }
-}
-
 /// Names for the model's buildings and floors.
 enum MapNames {
     /// "Edificio 3", from the plan's number; a building with no number goes by its name, such
@@ -942,3 +1056,17 @@ enum MapNames {
     CampusMapScreen().previewInNavigation()
 }
 #endif
+
+/// What the map's search shows.
+enum MapSearchScope: CaseIterable {
+    case all, rooms, buildings
+
+    /// The chip's name.
+    var title: LocalizedStringKey {
+        switch self {
+        case .all: "Tutto"
+        case .rooms: "Aule"
+        case .buildings: "Edifici"
+        }
+    }
+}

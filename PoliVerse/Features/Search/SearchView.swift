@@ -39,6 +39,11 @@ struct SearchView: View {
     @Environment(\.colorScheme) private var scheme
     /// The reader's text size: the campus tiles go to one column at accessibility sizes.
     @Environment(\.dynamicTypeSize) private var typeSize
+    /// Opt-in preview features: with the new map, a room's best match leads straight to it.
+    @Environment(FeatureFlags.self) private var flags
+    /// The buildings' coordinates, for walking directions from a best match.
+    @Environment(CampusMapModel.self) private var campusMap
+    @Environment(\.openURL) private var openURL
     @Environment(\.look) private var style
     /// The latest searches, newest first, one per line.
     @AppStorage("searchRecents") private var storedRecents = ""
@@ -703,6 +708,7 @@ struct SearchView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     LookHeading("Migliore corrispondenza")
                     resultLink(hit) { TopHitPanel(result: hit, query: trimmed, colour: colour(for: hit.kind.symbol)) }
+                    mapActions(for: hit)
                 }
             }
             ForEach(results, id: \.kind) { group in
@@ -738,6 +744,40 @@ struct SearchView: View {
                 }
             }
         }
+    }
+
+    /// For a room the new map can show, the two things a student wants from it: see it on the
+    /// map, and the walk there.
+    @ViewBuilder
+    private func mapActions(for hit: Result) -> some View {
+        #if DEBUG && os(iOS)
+        if case .room(let room) = hit, flags.isEnabled(.newMap), CampusMapScreen.canShow(room) {
+            HStack(spacing: 8) {
+                NavigationLink { CampusMapScreen(target: room) } label: {
+                    Text("Mostra sulla mappa")
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .simultaneousGesture(TapGesture().onEnded { remember(trimmed) })
+                .closesKeyboardOnTap()
+                Button {
+                    Task {
+                        guard let point = await campusMap.coordinate(of: room.buildingCode),
+                              let url = URL(string: "http://maps.apple.com/?daddr=\(point.latitude),\(point.longitude)&dirflg=w")
+                        else { return }
+                        openURL(url)
+                    }
+                } label: {
+                    Label("Indicazioni", systemImage: "figure.walk").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
+            .buttonBorderShape(.capsule)
+            .controlSize(.large)
+        }
+        #endif
     }
 
     /// A result as whatever opens it: a push, a sheet, or nothing for a file.
