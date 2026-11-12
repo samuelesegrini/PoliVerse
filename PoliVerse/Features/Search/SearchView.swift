@@ -427,6 +427,7 @@ struct SearchView: View {
                                   colour: colour(for: "map"))
                     }
                     .buttonStyle(.plain)
+                    .closesKeyboardOnTap()
                     NavigationLink { StudyPlanView() } label: {
                         PlaceTile(title: Text("Piano di studi"), detail: Text("Piano e simulazione"),
                                   symbol: "list.bullet.rectangle", colour: colour(for: "list.bullet.rectangle"))
@@ -502,6 +503,7 @@ struct SearchView: View {
                                   colour: colour(for: place.systemImage))
                     }
                     .buttonStyle(.plain)
+                    .closesKeyboardOnTap()
                     .accessibilityIdentifier("place-\(place.id)")
                 }
                 NavigationLink { RoomsView() } label: {
@@ -522,6 +524,7 @@ struct SearchView: View {
                 Label(NewDestination.map.title, systemImage: NewDestination.map.systemImage)
                     .frame(maxWidth: .infinity, minHeight: 32)
             }
+            .closesKeyboardOnTap()
             .accessibilityIdentifier("place-map")
             NavigationLink { RoomsView() } label: {
                 Label("Aule", systemImage: "building.2")
@@ -753,6 +756,7 @@ struct SearchView: View {
             NavigationLink { RoomDestination(room: room) } label: { label() }
                 .buttonStyle(.plain)
                 .simultaneousGesture(TapGesture().onEnded { remember(trimmed) })
+                .closesKeyboardOnTap()
         case .exam(let exam):
             Button { remember(trimmed); selectedExam = exam } label: { label() }
                 .buttonStyle(.plain)
@@ -1070,4 +1074,20 @@ private struct ResultRow: View {
 
 #Preview("Cerca") {
     SearchView().previewEnvironment()
+}
+
+private extension View {
+    /// Closes Cerca's keyboard as the link is tapped, before the push. The tab's search field
+    /// keeps the keyboard up when Cerca opens, and the new map, which hides the tab bar, was
+    /// laid out above the keyboard and kept that height after it went down: a white band
+    /// under its panel.
+    func closesKeyboardOnTap() -> some View {
+        #if os(iOS)
+        simultaneousGesture(TapGesture().onEnded {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        })
+        #else
+        self
+        #endif
+    }
 }
