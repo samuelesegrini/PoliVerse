@@ -140,6 +140,7 @@ struct CampusMapScreen: View {
             }
         }
         .buttonStyle(.glass)
+        .mapGlassLabel(dark: dark)
         .controlSize(.large)
         .accessibilityLabel(parentTitle.map { Text("Torna a \($0)") } ?? Text("Indietro"))
         .accessibilityIdentifier("newmap-back")
@@ -266,6 +267,7 @@ struct CampusMapScreen: View {
                     Image(systemName: "xmark").font(.body.weight(.semibold)).frame(width: 22, height: 22)
                 }
                 .buttonStyle(.glass)
+                .mapGlassLabel(dark: dark)
                 .accessibilityLabel("Chiudi la ricerca")
             }
         } else {
@@ -363,6 +365,7 @@ struct CampusMapScreen: View {
             Label("Aule libere", systemImage: "checkmark.circle")
         }
         .buttonStyle(.glass)
+        .mapGlassLabel(dark: dark)
         .accessibilityIdentifier("newmap-free-rooms")
 
         VStack(alignment: .leading, spacing: 0) {
@@ -434,6 +437,7 @@ struct CampusMapScreen: View {
                             Text("Mostra aula").frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.glass)
+                        .mapGlassLabel(dark: dark)
                         .accessibilityIdentifier("newmap-show-next")
                     }
                 }
@@ -520,14 +524,17 @@ struct CampusMapScreen: View {
                 if case .inside = scene.level {
                     Button("Esci") { Task { await scene.go(to: .room(floor: csip, room: csiv)) } }
                         .buttonStyle(.glass)
+                        .mapGlassLabel(dark: dark)
                 } else {
                     Button("Entra") { Task { await scene.go(to: .inside(floor: csip, room: csiv)) } }
                         .buttonStyle(.glass)
+                        .mapGlassLabel(dark: dark)
                 }
             }
             if let room {
                 Button("Dettagli") { details = room }
                     .buttonStyle(.glass)
+                    .mapGlassLabel(dark: dark)
             }
         }
         .controlSize(.large)
@@ -870,6 +877,22 @@ enum MapSearch {
         rooms.sort { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
         return Array((buildings + rooms).prefix(20))
     }
+}
+
+/// The label of a clear glass button at night: the tint, dark navy or the look's blue, reads
+/// poorly on dark glass, so the label turns white there. Prominent buttons keep the tint.
+private struct MapGlassLabel: ViewModifier {
+    /// Whether the night palette is on.
+    let dark: Bool
+
+    func body(content: Content) -> some View {
+        if dark { content.tint(.white) } else { content }
+    }
+}
+
+private extension View {
+    /// See ``MapGlassLabel``.
+    func mapGlassLabel(dark: Bool) -> some View { modifier(MapGlassLabel(dark: dark)) }
 }
 
 /// Names for the model's buildings and floors.
