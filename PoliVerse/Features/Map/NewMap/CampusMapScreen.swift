@@ -18,9 +18,15 @@ struct CampusMapScreen: View {
     @State private var scene = Trifoglio3DScene()
     /// The bookings of the rooms in the buildings visited, read through ``FreeRoomsModel``.
     @State private var occupancy = MapOccupancy()
-    /// Whether the panel is pulled up.
+    /// Whether the buildings list is open on the campus.
     @State private var expanded = false
-    /// Whether the search sheet is open.
+    /// Whether the panel, a system sheet, is up: while the map is on screen.
+    @State private var sheetShown = false
+    /// How tall the panel sheet stands.
+    @State private var detent = MapDetents.compact
+    /// The detent before the search took the whole height, to go back to.
+    @State private var detentBeforeSearch = MapDetents.compact
+    /// Whether the search page is pushed in the panel.
     @State private var searching = false
     /// Whether the search sheet's field has the keyboard.
     @State private var searchFieldActive = false
@@ -28,11 +34,21 @@ struct CampusMapScreen: View {
     @State private var query = ""
     /// What the search shows: everything, rooms only or buildings only.
     @State private var scope = MapSearchScope.all
+    /// Whether the panel shows the free rooms near a starting point, in place of the level.
+    @State private var nearbyMode = false
+    /// How long a room must stay free to be listed there, in minutes.
+    @State private var nearbyMinutes = 60
+    /// Where the nearby rooms are counted from.
+    @State private var nearbyOrigin: MapNearby.Origin?
+    /// Metres from the origin's building to each modelled building, when the coordinates are known.
+    @State private var nearbyDistances: [String: Double] = [:]
+    /// Whether bookings are still being read for the nearby rooms.
+    @State private var nearbyLoading = false
     /// Whether a floor's list shows only the free rooms.
     @State private var onlyFree = false
-    /// The room whose full page is open in a sheet.
+    /// The room whose full page is pushed in the panel.
     @State private var details: Classroom?
-    /// Whether Aule libere is open in a sheet.
+    /// Whether Aule libere is pushed in the panel.
     @State private var showsFreeRooms = false
 
     @Environment(\.dismiss) private var dismiss
@@ -57,19 +73,9 @@ struct CampusMapScreen: View {
 
     /// The view's content.
     var body: some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .bottom) {
-                Trifoglio3DStage(scene: scene, dark: dark)
-                    .ignoresSafeArea()
-                TimelineView(.everyMinute) { context in
-                    panel(now: context.date, maxHeight: proxy.size.height * panelCap)
-                }
-                .padding(.horizontal, 8)
-                .padding(.bottom, 8)
-            }
-            .ignoresSafeArea(.container, edges: .bottom)
+        Trifoglio3DStage(scene: scene, dark: dark)
+            .ignoresSafeArea()
             .overlay(alignment: .topTrailing) { floorColumn.padding(.trailing, 16).padding(.top, 8) }
-        }
         // Only the map's own search makes room for the keyboard. Opened from Cerca with a room
         // just typed, the keyboard is still going down during the push, and the whole screen
         // was laid out above it, leaving a white band under the panel.
@@ -83,52 +89,53 @@ struct CampusMapScreen: View {
         .navigationTitle("Mappa")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
-        .navigationBarBackButtonHidden(scene.level != .campus)
+        // The back button is the map's own, in the system's place and glass: with the panel
+        // presented as a sheet, leaving must put the sheet away first, which the system back
+        // button and its swipe would not wait for.
+        .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .principal) { Text(verbatim: "") }
-            if let parent = parentTitle {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        Task { await goUp() }
-                    } label: {
-                        // Text beside the chevron, as the system back button draws it: a
-                        // Label in a toolbar would show the icon alone.
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.backward").fontWeight(.semibold)
-                            Text(parent)
-                        }
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    Task { await goUp() }
+                } label: {
+                    // Text beside the chevron, as the system back button draws it: a
+                    // Label in a toolbar would show the icon alone.
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.backward").fontWeight(.semibold)
+                        if let parent = parentTitle { Text(parent) }
                     }
-                    .accessibilityLabel(Text("Torna a \(parent)"))
-                    .accessibilityIdentifier("newmap-back")
                 }
+                .accessibilityLabel(parentTitle.map { Text("Torna a \($0)") } ?? Text("Indietro"))
+                .accessibilityIdentifier("newmap-back")
             }
         }
         .toolbar(.hidden, for: .tabBar)
         // The current class accessory hangs from the tab view, not the tab bar, so hiding the
         // bar leaves it floating over the panel.
-        .onAppear { shell.coversTabBar = true }
-        .onDisappear { shell.coversTabBar = false }
+        .onAppear {
+            shell.coversTabBar = true
+            sheetShown = true
+        }
+        .onDisappear {
+            shell.coversTabBar = false
+            sheetShown = false
+        }
         // A container, so the identifier does not replace those of the buttons inside.
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("newmap")
-        .sheet(item: $details) { room in
-            NavigationStack {
-                ClassroomDetailView(room: room)
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) { Button("Fine") { details = nil } }
-                    }
-            }
+        // The panel is a system sheet, as in Maps: its detents, drag and animations are the
+        // system's, the scene stays usable under it up to the middle detent, and it cannot be
+        // swiped away.
+        .sheet(isPresented: $sheetShown) {
+            panelSheet
+                .presentationDetents([MapDetents.compact, MapDetents.medium, MapDetents.room, .large], selection: $detent)
+                .presentationBackgroundInteraction(.enabled(upThrough: MapDetents.room))
+                .presentationDragIndicator(.visible)
+                .interactiveDismissDisabled()
         }
-        .sheet(isPresented: $searching, onDismiss: { query = ""; scope = .all }) {
-            searchSheet
-        }
-        .sheet(isPresented: $showsFreeRooms) {
-            NavigationStack {
-                FreeRoomsView()
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) { Button("Fine") { showsFreeRooms = false } }
-                    }
-            }
+        .onChange(of: scene.level) { _, level in
+            withAnimation(.snappy) { detent = MapDetents.for(level) }
         }
         .task { await rooms.load() }
         .task {
@@ -171,7 +178,10 @@ struct CampusMapScreen: View {
     /// the campus.
     private func goUp() async {
         switch scene.level {
-        case .campus: dismiss()
+        case .campus:
+            sheetShown = false
+            try? await Task.sleep(for: .milliseconds(250))
+            dismiss()
         case .building: await scene.go(to: .campus)
         case .floor: await scene.go(to: .building(scene.csie))
         case .room(let csip, _): await scene.go(to: .floor(csip))
@@ -211,51 +221,30 @@ struct CampusMapScreen: View {
 
     // MARK: - The panel
 
-    /// The glass panel at the bottom: a header that stays, and a body that scrolls only when
-    /// it does not fit.
-    ///
-    /// - Parameters:
-    ///   - now: The moment the statuses are read against.
-    ///   - maxHeight: The tallest the panel may be.
-    private func panel(now: Date, maxHeight: CGFloat) -> some View {
-        CappedHeight(maxHeight: maxHeight) {
-            VStack(alignment: .leading, spacing: 12) {
-                Capsule()
-                    .fill(Color.secondary.opacity(0.45))
-                    .frame(width: 36, height: 5)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 14)
-                    .contentShape(.rect)
-                    .onTapGesture { withAnimation(.snappy) { expanded.toggle() } }
-                    .gesture(DragGesture(minimumDistance: 8).onEnded { value in
-                        withAnimation(.snappy) { expanded = value.translation.height < 0 }
-                    })
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityLabel(expanded ? Text("Riduci il pannello") : Text("Espandi il pannello"))
-
-                if let failure = scene.failure {
-                    Text(failure).font(.footnote).foregroundStyle(.red)
-                }
-                header(now: now)
-                ViewThatFits(in: .vertical) {
-                    bodyContent(now: now)
-                    ScrollView {
-                        bodyContent(now: now)
+    /// The panel's content in the sheet: a header that stays, the body, and the pages pushed
+    /// from it (the search, a room's details, Aule libere).
+    private var panelSheet: some View {
+        NavigationStack {
+            TimelineView(.everyMinute) { context in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        if let failure = scene.failure {
+                            Text(failure).font(.footnote).foregroundStyle(.red)
+                        }
+                        header(now: context.date)
+                        bodyContent(now: context.date)
                     }
-                    .scrollIndicators(.hidden)
+                    .padding(.horizontal, 18)
+                    .padding(.top, 18)
+                    .padding(.bottom, 24)
                 }
+                .scrollBounceBehavior(.basedOnSize)
             }
-            .padding(.horizontal, 18)
-            .padding(.top, 6)
-            .padding(.bottom, 26)
+            .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(isPresented: $searching) { searchPage }
+            .navigationDestination(item: $details) { room in ClassroomDetailView(room: room) }
+            .navigationDestination(isPresented: $showsFreeRooms) { FreeRoomsView() }
         }
-        .frame(maxWidth: 640)
-        // Concentric with the screen at the bottom, where the panel sits 8 points from the
-        // display's rounded corners, and the shape everything inside follows.
-        .containerShape(.rect(cornerRadius: 34))
-        .background(sheetFill, in: panelShape)
-        .shadow(color: .black.opacity(dark ? 0.5 : 0.16), radius: 20, y: 8)
-        .animation(.snappy, value: scene.level)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("newmap-panel")
     }
@@ -263,6 +252,9 @@ struct CampusMapScreen: View {
     /// The panel's header: the search field on the campus, else where the camera is.
     @ViewBuilder
     private func header(now: Date) -> some View {
+        if nearbyMode {
+            nearbyHeader
+        } else {
             switch scene.level {
             case .campus:
                 Button {
@@ -295,6 +287,7 @@ struct CampusMapScreen: View {
                     statusLine(classroom(csiv), now: now)
                 }
             }
+        }
     }
 
     /// A title, what it holds, and the button that closes back to the campus.
@@ -327,11 +320,15 @@ struct CampusMapScreen: View {
     @ViewBuilder
     private func bodyContent(now: Date) -> some View {
         VStack(alignment: .leading, spacing: 14) {
+            if nearbyMode {
+                nearbyBody(now: now)
+            } else {
             switch scene.level {
             case .campus: campusBody
             case .building(let csie): buildingBody(csie, now: now)
             case .floor(let csip): floorBody(csip, now: now)
             case .room(let csip, let csiv), .inside(let csip, let csiv): roomBody(floor: csip, room: csiv, now: now)
+            }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -347,7 +344,7 @@ struct CampusMapScreen: View {
         }
         HStack(spacing: 8) {
             Button {
-                showsFreeRooms = true
+                openNearby()
             } label: {
                 chip("Libere ora", symbol: "checkmark", symbolColor: .green, on: false)
             }
@@ -355,7 +352,10 @@ struct CampusMapScreen: View {
             .accessibilityLabel("Aule libere ora")
             .accessibilityIdentifier("newmap-free-rooms")
             Button {
-                withAnimation(.snappy) { expanded.toggle() }
+                withAnimation(.snappy) {
+                    expanded.toggle()
+                    detent = expanded ? MapDetents.medium : MapDetents.compact
+                }
             } label: {
                 chip("Edifici", symbol: "building.2", symbolColor: nil, on: expanded)
             }
@@ -452,6 +452,7 @@ struct CampusMapScreen: View {
                         }
                         .buttonStyle(.bordered)
                         .buttonBorderShape(.capsule)
+                        .foregroundStyle(onGrey)
                         .accessibilityIdentifier("newmap-show-next")
                     }
                 }
@@ -461,6 +462,228 @@ struct CampusMapScreen: View {
         .padding(14)
         .background(cardFill, in: innerShape)
         .containerShape(.rect(cornerRadius: 16))
+    }
+
+    // MARK: Free near you
+
+    /// Opens "Libere vicino a te" from the best starting point there is, and reads the rooms
+    /// around it.
+    private func openNearby() {
+        nearbyOrigin = defaultOrigin()
+        withAnimation(.snappy) {
+            nearbyMode = true
+            detent = MapDetents.medium
+        }
+        Task { await loadNearby() }
+    }
+
+    /// Leaves "Libere vicino a te" for the level on screen.
+    private func closeNearby() {
+        withAnimation(.snappy) {
+            nearbyMode = false
+            detent = MapDetents.for(scene.level)
+        }
+    }
+
+    /// The room of the lesson just ended or in progress, else the building or floor on
+    /// screen, else the next lesson's building, else the first modelled building.
+    private func defaultOrigin() -> MapNearby.Origin? {
+        let now = Date.now
+        let events = agenda.events(on: now)
+        func place(of event: AgendaEvent) -> Classroom? {
+            RelevanceOrder.room(named: [event.roomAcronym, event.room], in: rooms.rooms)
+                .flatMap { scene.plans[$0.buildingCode] == nil ? nil : $0 }
+        }
+        if let event = events.last(where: { $0.start <= now && $0.end >= now.addingTimeInterval(-30 * 60) }),
+           let room = place(of: event) {
+            let reason = event.end <= now ? String(localized: "lezione appena finita") : String(localized: "lezione in corso")
+            return .init(csie: room.buildingCode, csip: room.floorCode, reason: reason)
+        }
+        if scene.level != .campus, scene.plans[scene.csie] != nil {
+            return .init(csie: scene.csie, csip: currentFloor, reason: String(localized: "sullo schermo"))
+        }
+        if let event = events.first(where: { $0.start > now }), let room = place(of: event) {
+            return .init(csie: room.buildingCode, csip: nil, reason: String(localized: "prossima lezione"))
+        }
+        return modelledBuildings.first.map { .init(csie: $0, csip: nil, reason: nil) }
+    }
+
+    /// Reads the distances, then the bookings of the origin's building (its floor first) and
+    /// of the three nearest, six rooms at a time.
+    private func loadNearby() async {
+        guard let origin = nearbyOrigin else { return }
+        nearbyLoading = true
+        defer { nearbyLoading = false }
+        if let from = await map.coordinate(of: origin.csie) {
+            var distances: [String: Double] = [:]
+            for csie in modelledBuildings {
+                guard let to = await map.coordinate(of: csie) else { continue }
+                distances[csie] = MapNearby.metres(from: from, to: to)
+            }
+            nearbyDistances = distances
+        } else {
+            nearbyDistances = [:]
+        }
+        for csie in nearbyBuildings(from: origin) {
+            let wanted = rooms.rooms
+                .filter { $0.buildingCode == csie }
+                .sorted { ($0.floorCode == origin.csip ? 0 : 1) < ($1.floorCode == origin.csip ? 0 : 1) }
+            await occupancy.load(wanted, from: aule)
+        }
+    }
+
+    /// The origin's building and the three nearest modelled ones.
+    private func nearbyBuildings(from origin: MapNearby.Origin) -> [String] {
+        let others = modelledBuildings.filter { $0 != origin.csie }
+            .sorted { (nearbyDistances[$0] ?? .infinity) < (nearbyDistances[$1] ?? .infinity) }
+        return [origin.csie] + others.prefix(3)
+    }
+
+    /// The title, the way out, the starting point and how long the rooms must stay free.
+    private var nearbyHeader: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Libere vicino a te").font(.title2.bold()).accessibilityAddTraits(.isHeader)
+                Spacer(minLength: 8)
+                Button {
+                    closeNearby()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.footnote.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 30, height: 30)
+                        .background(Color.secondary.opacity(0.16), in: .circle)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Chiudi Libere vicino a te")
+            }
+            HStack(spacing: 8) {
+                Menu {
+                    ForEach(modelledBuildings, id: \.self) { csie in
+                        Button(MapNames.building(scene.plans[csie], csie: csie)) {
+                            nearbyOrigin = .init(csie: csie, csip: nil, reason: nil)
+                            Task { await loadNearby() }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(originLabel).lineLimit(1)
+                        Image(systemName: "chevron.down").font(.caption2.weight(.bold))
+                    }
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 12)
+                    .frame(height: 32)
+                    .background(Color.secondary.opacity(0.14), in: innerShape)
+                }
+                Menu {
+                    Picker("Libere per", selection: $nearbyMinutes) {
+                        Text("Per 30 min").tag(30)
+                        Text("Per 1 ora").tag(60)
+                        Text("Per 2 ore").tag(120)
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(durationLabel)
+                        Image(systemName: "chevron.down").font(.caption2.weight(.bold))
+                    }
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 12)
+                    .frame(height: 32)
+                    .background(Color.secondary.opacity(0.14), in: innerShape)
+                }
+            }
+        }
+    }
+
+    /// "Da Edificio 3, 1° piano · lezione appena finita".
+    private var originLabel: String {
+        guard let origin = nearbyOrigin else { return String(localized: "Scegli un edificio") }
+        var place = MapNames.building(scene.plans[origin.csie], csie: origin.csie)
+        if let csip = origin.csip { place += ", " + MapNames.floor(csip) }
+        let from = String(localized: "Da \(place)")
+        return origin.reason.map { "\(from) · \($0)" } ?? from
+    }
+
+    private var durationLabel: String {
+        switch nearbyMinutes {
+        case 30: String(localized: "Per 30 min")
+        case 120: String(localized: "Per 2 ore")
+        default: String(localized: "Per 1 ora")
+        }
+    }
+
+    /// The free rooms around the origin, nearest first, each taking the camera there.
+    @ViewBuilder
+    private func nearbyBody(now: Date) -> some View {
+        let candidates = nearbyCandidates(now: now)
+        if candidates.isEmpty, !nearbyLoading {
+            Text("Nessuna aula libera qui vicino \(durationLabel.lowercased()).")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        } else if !candidates.isEmpty {
+            listCard(candidates, id: \.csiv) { item in
+                Button {
+                    closeNearby()
+                    Task { await scene.go(to: .room(floor: item.csip, room: item.csiv)) }
+                } label: {
+                    HStack(spacing: 12) {
+                        Text(item.sigla).font(.body.weight(.bold)).frame(minWidth: 54, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(item.relation).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+                            if let seats = item.seats {
+                                Text("\(seats) posti").font(.footnote).foregroundStyle(.secondary)
+                            }
+                        }
+                        Spacer(minLength: 8)
+                        Text(item.until.map { String(localized: "fino alle \(clock($0))") } ?? String(localized: "tutto il giorno"))
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.green)
+                    }
+                    .padding(.vertical, 10)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        if nearbyLoading {
+            Text("Controllo le altre aule…").font(.footnote).foregroundStyle(.secondary)
+        }
+    }
+
+    /// The modelled rooms near the origin that stay free for the chosen time, nearest first.
+    private func nearbyCandidates(now: Date) -> [MapNearby.Item] {
+        guard let origin = nearbyOrigin else { return [] }
+        let buildings = nearbyBuildings(from: origin)
+        let wanted = now.addingTimeInterval(Double(nearbyMinutes) * 60)
+        var items: [MapNearby.Item] = []
+        for (rank, csie) in buildings.enumerated() {
+            guard let plan = scene.plans[csie] else { continue }
+            let originIndex = origin.csip.flatMap { csip in plan.piani.firstIndex { $0.csip == csip } }
+            for (index, floor) in plan.piani.enumerated() {
+                for room in floor.aule {
+                    guard case .free(let until) = status(of: classroom(room.csiv), now: now),
+                          until.map({ $0 >= wanted }) ?? true else { continue }
+                    let relation: String
+                    let steps: Int
+                    if rank == 0 {
+                        steps = originIndex.map { abs(index - $0) } ?? index
+                        relation = originIndex.map { MapNearby.relation(floorsUp: index - $0) }
+                            ?? MapNames.floor(floor.csip)
+                    } else {
+                        steps = 0
+                        let name = MapNames.building(plan, csie: csie)
+                        relation = nearbyDistances[csie].map { "\(name) · \(Int(($0 / 10).rounded()) * 10) m" } ?? name
+                    }
+                    items.append(.init(csiv: room.csiv, csip: floor.csip, sigla: room.sigla, seats: room.posti,
+                                       relation: relation, until: until, rank: rank, steps: steps))
+                }
+            }
+        }
+        return items.sorted {
+            ($0.rank, $0.steps, $0.sigla) < ($1.rank, $1.steps, $1.sigla)
+        }
     }
 
     // MARK: Building
@@ -546,36 +769,13 @@ struct CampusMapScreen: View {
         }
     }
 
-    /// All the floor's rooms or only the free ones, as a segmented control with a body-size
-    /// label and room around it: the system one is too small under the thumb here.
+    /// All the floor's rooms or only the free ones: the system's segmented control.
     private var segmented: some View {
-        HStack(spacing: 0) {
-            ForEach([false, true], id: \.self) { free in
-                let on = onlyFree == free
-                Button {
-                    withAnimation(.snappy) { onlyFree = free }
-                } label: {
-                    Text(free ? "Libere ora" : "Tutte")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .background {
-                            if on {
-                                ConcentricRectangle(corners: .concentric(minimum: .fixed(8)), isUniform: true)
-                                    .fill(cardFill).shadow(color: .black.opacity(0.12), radius: 3, y: 1)
-                            }
-                        }
-                        .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(on ? .isSelected : [])
-            }
+        Picker("Mostra", selection: $onlyFree) {
+            Text("Tutte").tag(false)
+            Text("Libere ora").tag(true)
         }
-        .padding(3)
-        .containerShape(.rect(cornerRadius: 16))
-        .background(Color.secondary.opacity(0.14), in: innerShape)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Mostra")
+        .pickerStyle(.segmented)
     }
 
     // MARK: Room
@@ -598,16 +798,19 @@ struct CampusMapScreen: View {
                     Button("Esci") { Task { await scene.go(to: .room(floor: csip, room: csiv)) } }
                         .buttonStyle(.bordered)
                         .buttonBorderShape(.capsule)
+                        .foregroundStyle(onGrey)
                 } else {
                     Button("Entra") { Task { await scene.go(to: .inside(floor: csip, room: csiv)) } }
                         .buttonStyle(.bordered)
                         .buttonBorderShape(.capsule)
+                        .foregroundStyle(onGrey)
                 }
             }
             if let room {
                 Button("Dettagli") { details = room }
                     .buttonStyle(.bordered)
                     .buttonBorderShape(.capsule)
+                    .foregroundStyle(onGrey)
             }
         }
         .controlSize(.large)
@@ -684,48 +887,50 @@ struct CampusMapScreen: View {
         }
     }
 
-    /// Closes the search sheet.
+    /// Closes the search page.
     private func endSearch() {
+        searchFieldActive = false
         searching = false
-        expanded = false
     }
 
-    /// The search, a full page over the map like the rest of the system's searches: the
-    /// native field with its own clear button, the system close button, and the results.
-    private var searchSheet: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    searchResults(now: .now)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 4)
-                .padding(.bottom, 24)
+    /// The search, pushed in the panel with the sheet at full height: the native field with
+    /// its own clear button, the system close button, and the results.
+    private var searchPage: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                searchResults(now: .now)
             }
-            .scrollDismissesKeyboard(.interactively)
-            .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("Cerca sulla mappa")
-            .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $query, isPresented: $searchFieldActive,
-                        placement: .navigationBarDrawer(displayMode: .always),
-                        prompt: Text("Aule ed edifici"))
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled()
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(role: .close) { searching = false }
-                }
-            }
-            .onAppear { searchFieldActive = true }
+            .padding(.horizontal, 16)
+            .padding(.top, 4)
+            .padding(.bottom, 24)
         }
-        .presentationDetents([.large])
-    }
-
-    /// How tall the panel may be, as a share of the screen: half on the campus (more when
-    /// pulled up), more inside a building, so a floor list or a room's day fits whole.
-    private var panelCap: CGFloat {
-        if expanded { return 0.8 }
-        return scene.level == .campus ? 0.5 : 0.6
+        .scrollDismissesKeyboard(.interactively)
+        .navigationTitle("Cerca sulla mappa")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .searchable(text: $query, isPresented: $searchFieldActive,
+                    placement: .navigationBarDrawer(displayMode: .always),
+                    prompt: Text("Aule ed edifici"))
+        .textInputAutocapitalization(.never)
+        .autocorrectionDisabled()
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button(role: .close) { endSearch() }
+            }
+        }
+        .onAppear {
+            detentBeforeSearch = detent == .large ? MapDetents.compact : detent
+            withAnimation(.snappy) { detent = .large }
+            searchFieldActive = true
+        }
+        .onDisappear {
+            query = ""
+            scope = .all
+            // A result has moved the camera: the sheet takes that level's height.
+            withAnimation(.snappy) {
+                detent = scene.level == .campus ? detentBeforeSearch : MapDetents.for(scene.level)
+            }
+        }
     }
 
     // MARK: - Pieces
@@ -736,20 +941,15 @@ struct CampusMapScreen: View {
         dark ? Color(uiColor: .tertiarySystemBackground) : Color.white
     }
 
-    /// The panel itself: nearly opaque, so the scene's roofs and lawns do not show through
-    /// the text; the glass is kept for what floats over the map.
-    private var sheetFill: Color {
-        (dark ? Color(uiColor: .secondarySystemBackground) : Color(uiColor: .systemGroupedBackground)).opacity(0.97)
-    }
-
-    /// The panel's outline: concentric with the display at the bottom, a fixed radius on top.
-    private var panelShape: ConcentricRectangle {
-        ConcentricRectangle(uniformTopCorners: .fixed(34), uniformBottomCorners: .concentric(minimum: .fixed(34)))
-    }
-
     /// What sits inside the panel, a card or a field: concentric with it, given its padding.
     private var innerShape: ConcentricRectangle {
         ConcentricRectangle(corners: .concentric(minimum: .fixed(12)), isUniform: true)
+    }
+
+    /// The label on a grey button: the tint by day; white at night, where the light blue on
+    /// grey glass hardly reads.
+    private var onGrey: AnyShapeStyle {
+        dark ? AnyShapeStyle(Color.white) : AnyShapeStyle(.tint)
     }
 
     /// The label on a filled tint button: white on the navy, dark on the light blue of night.
@@ -857,13 +1057,10 @@ struct CampusMapScreen: View {
                 MapOwnLesson(title: $0.title, interval: $0.interval)
             }, now: now, dayEnd: day.end)
         }
-        // The colour says it, as in the lists: green while free, red while busy, the tint
-        // for the student's own lesson.
-        Text(text)
-            .font(.subheadline.weight(.medium))
-            .foregroundStyle(tone == .free ? AnyShapeStyle(Color.green)
-                             : tone == .busy ? AnyShapeStyle(Color.red)
-                             : tone == .mine ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+        // Plain text, with only the parts that matter in bold; grey while nothing is known.
+        Text(MapRoomSentence.styled(text))
+            .font(.subheadline)
+            .foregroundStyle(tone == .unknown ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
             .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -984,24 +1181,6 @@ final class MapOccupancy {
     /// A room's bookings, when they have been read.
     func bookings(of room: Classroom?) -> [RoomBooking]? {
         room.flatMap { bookings[$0.id] }
-    }
-}
-
-/// Proposes at most `maxHeight` to its content and takes the content's own size, so the
-/// panel is as tall as what it holds and scrolls only past the cap. A `frame(maxHeight:)`
-/// would instead grow every panel to the cap.
-struct CappedHeight: Layout {
-    /// The tallest the content may be.
-    var maxHeight: CGFloat
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        guard let content = subviews.first else { return .zero }
-        let height = min(proposal.height ?? maxHeight, maxHeight)
-        return content.sizeThatFits(ProposedViewSize(width: proposal.width, height: height))
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        subviews.first?.place(at: bounds.origin, proposal: ProposedViewSize(bounds.size))
     }
 }
 
@@ -1234,5 +1413,66 @@ private struct MapDayStrip: View {
             .map { "\($0.start.formatted(date: .omitted, time: .shortened))–\($0.end.formatted(date: .omitted, time: .shortened))" }
             .joined(separator: ", ")
         return Text("Occupata \(ranges)")
+    }
+}
+
+/// The heights the panel sheet stands at: compact on the campus, half-way inside a building,
+/// and the whole screen for the search.
+enum MapDetents {
+    static let compact = PresentationDetent.fraction(0.34)
+    static let medium = PresentationDetent.fraction(0.6)
+    /// A room's panel holds its sentence, buttons, day and facts without scrolling.
+    static let room = PresentationDetent.fraction(0.68)
+
+    /// The height for a level of the map.
+    static func `for`(_ level: Trifoglio3DLevel) -> PresentationDetent {
+        switch level {
+        case .campus: compact
+        case .building, .floor: medium
+        case .room, .inside: room
+        }
+    }
+}
+
+/// "Libere vicino a te": where the rooms are counted from, and how near each one is.
+enum MapNearby {
+    /// The starting point: a building, a floor when known, and why it was picked.
+    struct Origin: Equatable {
+        let csie: String
+        let csip: String?
+        let reason: String?
+    }
+
+    /// One free room in the list.
+    struct Item {
+        let csiv: String
+        let csip: String
+        let sigla: String
+        let seats: Int?
+        let relation: String
+        let until: Date?
+        /// 0 for the origin's building, then by distance.
+        let rank: Int
+        /// Floors away from the origin, in its building.
+        let steps: Int
+    }
+
+    /// "Stesso piano", "Un piano sopra", "Due piani sotto".
+    static func relation(floorsUp: Int) -> String {
+        switch floorsUp {
+        case 0: String(localized: "Stesso piano")
+        case 1: String(localized: "Un piano sopra")
+        case -1: String(localized: "Un piano sotto")
+        case 2: String(localized: "Due piani sopra")
+        case -2: String(localized: "Due piani sotto")
+        case let n where n > 0: String(localized: "\(n) piani sopra")
+        default: String(localized: "\(-floorsUp) piani sotto")
+        }
+    }
+
+    /// The straight-line distance between two points, in metres.
+    static func metres(from a: CLLocationCoordinate2D, to b: CLLocationCoordinate2D) -> Double {
+        CLLocation(latitude: a.latitude, longitude: a.longitude)
+            .distance(from: CLLocation(latitude: b.latitude, longitude: b.longitude))
     }
 }

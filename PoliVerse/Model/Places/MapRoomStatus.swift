@@ -99,9 +99,11 @@ nonisolated enum MapRoomTone: Sendable, Equatable {
     case unknown
 }
 
-/// What a room is doing and what happens next, in one sentence: "Occupata da Fisica I fino
-/// alle 12:15, poi libera fino alle 14:15." or "Libera ancora per 20 minuti, poi la tua
-/// lezione di Analisi II." Pure, so every branch is tested.
+/// What a room is doing and what happens next, in one sentence: "**Occupata** da Fisica I
+/// fino alle **12:15**, poi **libera** fino alle **14:15**." or "**Libera** ancora per
+/// **20 minuti**, poi **la tua lezione di Analisi II**." The text is inline Markdown, with
+/// the parts that matter in bold; ``styled(_:)`` turns it into the attributed string shown.
+/// Pure, so every branch is tested.
 nonisolated enum MapRoomSentence {
     /// The sentence and its tone.
     ///
@@ -111,13 +113,20 @@ nonisolated enum MapRoomSentence {
     ///   - now: The moment to read against.
     ///   - dayEnd: The end of the teaching day.
     ///   - locale: The locale times and numbers are written in.
+    /// The sentence as shown: plain text, bold where the Markdown says.
+    static func styled(_ markdown: String) -> AttributedString {
+        (try? AttributedString(markdown: markdown,
+                               options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+            ?? AttributedString(markdown)
+    }
+
     static func make(bookings: [RoomBooking]?, own: [MapOwnLesson], now: Date, dayEnd: Date,
                      locale: Locale = .current) -> (text: String, tone: MapRoomTone) {
         guard let bookings else {
             return (String(localized: "Stato non disponibile", locale: locale), .unknown)
         }
         if now >= dayEnd {
-            return (String(localized: "Libera: niente in programma fino a domani.", locale: locale), .free)
+            return (String(localized: "**Libera**: niente in programma fino a domani.", locale: locale), .free)
         }
         let sorted = bookings.sorted { $0.start < $1.start }
         func clock(_ date: Date) -> String { date.formatted(.dateTime.hour().minute().locale(locale)) }
@@ -137,43 +146,44 @@ nonisolated enum MapRoomSentence {
         if let current = sorted.first(where: { $0.start <= now && now < $0.end }) {
             if let lesson = mine(current) {
                 let end = max(current.end, lesson.interval.end)
-                return (String(localized: "C'è la tua lezione di \(lesson.title) fino alle \(clock(end)).", locale: locale), .mine)
+                return (String(localized: "C'è **la tua lezione di \(lesson.title)** fino alle **\(clock(end))**.", locale: locale), .mine)
             }
             let end = joinedEnd(from: current)
-            let head = current.title.map { String(localized: "Occupata da \($0) fino alle \(clock(end))", locale: locale) }
-                ?? String(localized: "Occupata fino alle \(clock(end))", locale: locale)
+            let head = current.title.map { String(localized: "**Occupata** da \($0) fino alle **\(clock(end))**", locale: locale) }
+                ?? String(localized: "**Occupata** fino alle **\(clock(end))**", locale: locale)
             let next = sorted.first { $0.start >= end && $0.start < dayEnd }
             let tail: String
             if let next, let lesson = mine(next), next.start <= end + MapRoomStatus.joinGap {
-                tail = String(localized: ", poi la tua lezione di \(lesson.title).", locale: locale)
+                tail = String(localized: ", poi **la tua lezione di \(lesson.title)**.", locale: locale)
             } else if let next {
-                tail = String(localized: ", poi libera fino alle \(clock(next.start)).", locale: locale)
+                tail = String(localized: ", poi **libera** fino alle **\(clock(next.start))**.", locale: locale)
             } else {
-                tail = String(localized: ", poi libera per il resto della giornata.", locale: locale)
+                tail = String(localized: ", poi **libera** per il resto della giornata.", locale: locale)
             }
             return (head + tail, .busy)
         }
 
         guard let next = sorted.first(where: { $0.start > now && $0.start < dayEnd }) else {
-            return (String(localized: "Libera per il resto della giornata.", locale: locale), .free)
+            return (String(localized: "**Libera** per il resto della giornata.", locale: locale), .free)
         }
         let minutes = Int((next.start.timeIntervalSince(now) / 60).rounded(.down))
         let lesson = mine(next)
         if minutes < 60 {
-            let head = String(AttributedString(
-                localized: "Libera ancora per ^[\(max(minutes, 1)) minuto](inflect: true)", locale: locale).characters)
+            let span = String(AttributedString(
+                localized: "^[\(max(minutes, 1)) minuto](inflect: true)", locale: locale).characters)
+            let head = String(localized: "**Libera** ancora per **\(span)**", locale: locale)
             let tail: String
             if let lesson {
-                tail = String(localized: ", poi la tua lezione di \(lesson.title).", locale: locale)
+                tail = String(localized: ", poi **la tua lezione di \(lesson.title)**.", locale: locale)
             } else {
                 let end = clock(joinedEnd(from: next))
-                tail = next.title.map { String(localized: ", poi \($0) fino alle \(end).", locale: locale) }
-                    ?? String(localized: ", poi occupata fino alle \(end).", locale: locale)
+                tail = next.title.map { String(localized: ", poi **\($0)** fino alle **\(end)**.", locale: locale) }
+                    ?? String(localized: ", poi **occupata** fino alle **\(end)**.", locale: locale)
             }
             return (head + tail, .free)
         }
-        let head = String(localized: "Libera fino alle \(clock(next.start))", locale: locale)
-        let tail = lesson.map { String(localized: ", poi la tua lezione di \($0.title).", locale: locale) } ?? "."
+        let head = String(localized: "**Libera** fino alle **\(clock(next.start))**", locale: locale)
+        let tail = lesson.map { String(localized: ", poi **la tua lezione di \($0.title)**.", locale: locale) } ?? "."
         return (head + tail, .free)
     }
 }

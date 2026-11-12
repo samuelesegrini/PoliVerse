@@ -69,38 +69,47 @@ struct MapRoomStatusTests {
     func sentenceBusyThenFree() {
         let result = sentence([booking(0, 120, "Fisica I"), booking(240, 300)], now: 60)
         #expect(result.tone == .busy)
-        #expect(result.text == "Occupata da Fisica I fino alle \(clock(120)), poi libera fino alle \(clock(240)).")
+        #expect(result.text == "**Occupata** da Fisica I fino alle **\(clock(120))**, poi **libera** fino alle **\(clock(240))**.")
     }
 
     @Test("Occupata e poi la tua lezione subito dopo")
     func sentenceBusyThenMine() {
         let result = sentence([booking(0, 120), booking(130, 230)], own: [lesson(130, 230, "Analisi II")], now: 60)
-        #expect(result.text == "Occupata fino alle \(clock(120)), poi la tua lezione di Analisi II.")
+        #expect(result.text == "**Occupata** fino alle **\(clock(120))**, poi **la tua lezione di Analisi II**.")
     }
 
     @Test("Occupata e poi libera per il resto della giornata")
     func sentenceBusyThenRestOfDay() {
-        #expect(sentence([booking(0, 120)], now: 60).text == "Occupata fino alle \(clock(120)), poi libera per il resto della giornata.")
+        #expect(sentence([booking(0, 120)], now: 60).text == "**Occupata** fino alle **\(clock(120))**, poi **libera** per il resto della giornata.")
     }
 
     @Test("C'è la tua lezione adesso")
     func sentenceMineNow() {
         let result = sentence([booking(0, 120)], own: [lesson(0, 120, "Analisi II")], now: 60)
-        #expect(result == ("C'è la tua lezione di Analisi II fino alle \(clock(120)).", .mine))
+        #expect(result == ("C'è **la tua lezione di Analisi II** fino alle **\(clock(120))**.", .mine))
     }
 
     @Test("Libera ancora per poco, al singolare e al plurale")
     func sentenceFreeShortly() {
-        #expect(sentence([booking(61, 120)], now: 60).text == "Libera ancora per 1 minuto, poi occupata fino alle \(clock(120)).")
-        #expect(sentence([booking(80, 120, "Fisica I")], now: 60).text == "Libera ancora per 20 minuti, poi Fisica I fino alle \(clock(120)).")
-        #expect(sentence([booking(80, 120)], own: [lesson(80, 120, "Analisi II")], now: 60).text == "Libera ancora per 20 minuti, poi la tua lezione di Analisi II.")
+        #expect(sentence([booking(61, 120)], now: 60).text == "**Libera** ancora per **1 minuto**, poi **occupata** fino alle **\(clock(120))**.")
+        #expect(sentence([booking(80, 120, "Fisica I")], now: 60).text == "**Libera** ancora per **20 minuti**, poi **Fisica I** fino alle **\(clock(120))**.")
+        #expect(sentence([booking(80, 120)], own: [lesson(80, 120, "Analisi II")], now: 60).text == "**Libera** ancora per **20 minuti**, poi **la tua lezione di Analisi II**.")
     }
 
     @Test("Libera fino alla prossima prenotazione, o per il resto del giorno")
     func sentenceFree() {
-        #expect(sentence([booking(240, 300)], now: 60) == ("Libera fino alle \(clock(240)).", .free))
-        #expect(sentence([booking(240, 300)], own: [lesson(240, 300, "Analisi II")], now: 60).text == "Libera fino alle \(clock(240)), poi la tua lezione di Analisi II.")
-        #expect(sentence([booking(0, 30)], now: 60).text == "Libera per il resto della giornata.")
-        #expect(sentence([], now: 800).text == "Libera: niente in programma fino a domani.")
+        #expect(sentence([booking(240, 300)], now: 60) == ("**Libera** fino alle **\(clock(240))**.", .free))
+        #expect(sentence([booking(240, 300)], own: [lesson(240, 300, "Analisi II")], now: 60).text == "**Libera** fino alle **\(clock(240))**, poi **la tua lezione di Analisi II**.")
+        #expect(sentence([booking(0, 30)], now: 60).text == "**Libera** per il resto della giornata.")
+        #expect(sentence([], now: 800).text == "**Libera**: niente in programma fino a domani.")
+    }
+
+    @Test("In grassetto solo le parti importanti")
+    func sentenceBold() {
+        let styled = MapRoomSentence.styled("**Occupata** fino alle **12:15**, poi **libera**.")
+        #expect(String(styled.characters) == "Occupata fino alle 12:15, poi libera.")
+        let bold = styled.runs.filter { $0.inlinePresentationIntent?.contains(.stronglyEmphasized) == true }
+            .map { String(styled[$0.range].characters) }
+        #expect(bold == ["Occupata", "12:15", "libera"])
     }
 }
