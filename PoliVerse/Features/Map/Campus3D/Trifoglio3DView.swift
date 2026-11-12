@@ -1070,11 +1070,17 @@ final class Trifoglio3DScene {
         if case .inside = level { orbit(by: translation) } else { pan(by: translation) }
     }
 
+    /// Whether the map moves freely under the fingers: only on the campus, and not during a
+    /// flight. With a building, a floor or a classroom chosen the camera stays on it, so
+    /// nobody loses what they chose by wandering off.
+    private var isFree: Bool { level == .campus && !isMoving
+    }
+
     /// Slides the point the camera looks at over the ground, so the map follows the finger.
     ///
     /// - Parameter translation: The drag's movement since the last call, in points.
     func pan(by translation: CGSize) {
-        guard viewSize.height > 0 else { return }
+        guard isFree, viewSize.height > 0 else { return }
         // Metres under one point at the centre of the screen; further along the ground the
         // lower the camera looks, capped so a flat view does not fling the map away.
         let metres = 2 * distance * tan(fieldOfView * .pi / 360) / Float(viewSize.height)
@@ -1098,6 +1104,7 @@ final class Trifoglio3DScene {
     ///
     /// - Parameter angle: The twist since the last call, in radians, clockwise positive.
     func rotate(by angle: Double) {
+        guard isFree else { return }
         azimuth += Float(angle)
         aim()
     }
@@ -1107,6 +1114,7 @@ final class Trifoglio3DScene {
     ///
     /// - Parameter points: The drag's vertical movement since the last call; up tilts more.
     func tilt(by points: CGFloat) {
+        guard isFree else { return }
         polar = min(max(polar - Float(points) * 0.004, 0.1), 1.45)
         aim()
     }
@@ -1115,6 +1123,7 @@ final class Trifoglio3DScene {
     ///
     /// - Parameter scale: The pinch's change since the last call; above 1 comes nearer.
     func zoom(by scale: CGFloat) {
+        guard isFree else { return }
         distance = min(max(distance / Float(scale), 12), 900)
         aim()
     }

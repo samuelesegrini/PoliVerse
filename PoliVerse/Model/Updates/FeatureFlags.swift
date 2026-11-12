@@ -20,7 +20,7 @@ nonisolated enum BetaFeature: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .campus3D: [
             "Dal campus all’aula: edificio, piano e aula con un tocco",
-            "Mappa libera: trascina per spostarti, pizzica, ruota e inclina con due dita",
+            "Campus libero: trascina per spostarti, pizzica, ruota e inclina con due dita",
             "Piante dei piani e aule dentro gli edifici modellati",
             "Di notte con l’aspetto scuro: campus al chiaro di luna e finestre accese",
         ]
