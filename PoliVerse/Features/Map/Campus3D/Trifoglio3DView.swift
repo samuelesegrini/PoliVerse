@@ -1373,6 +1373,20 @@ final class Trifoglio3DScene {
     }
 }
 
+extension View {
+    /// Adds the two-finger vertical drag that tilts the camera; on the Mac, which has no
+    /// such gesture, nothing.
+    @ViewBuilder
+    func trifoglio3DTilt(_ onChange: @escaping (CGFloat, Bool) -> Void) -> some View {
+        #if os(iOS)
+        gesture(Trifoglio3DTiltGesture(onChange: onChange))
+        #else
+        self
+        #endif
+    }
+}
+
+#if os(iOS)
 /// A two-finger vertical drag, which SwiftUI's own gestures cannot tell from one finger's:
 /// tilts the camera, as in Apple Maps.
 struct Trifoglio3DTiltGesture: UIGestureRecognizerRepresentable {
@@ -1394,6 +1408,7 @@ struct Trifoglio3DTiltGesture: UIGestureRecognizerRepresentable {
         onChange(active ? moved : 0, active)
     }
 }
+#endif
 
 /// The walk on screen: the 3D scene, where you are, and what you can go to next.
 struct Trifoglio3DView: View {
@@ -1454,10 +1469,10 @@ struct Trifoglio3DView: View {
                     lastTwist = value.rotation.radians
                 }
                 .onEnded { _ in lastTwist = 0 })
-            .gesture(Trifoglio3DTiltGesture { change, active in
+            .trifoglio3DTilt { change, active in
                 isTilting = active
                 scene.tilt(by: change)
-            })
+            }
             .simultaneousGesture(MagnifyGesture()
                 .onChanged { value in
                     scene.zoom(by: value.magnification / lastPinch)
