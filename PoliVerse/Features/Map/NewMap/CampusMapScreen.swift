@@ -103,11 +103,42 @@ struct CampusMapScreen: View {
                     // Label in a toolbar would show the icon alone.
                     HStack(spacing: 4) {
                         Image(systemName: "chevron.backward").fontWeight(.semibold)
-                        if let parent = parentTitle { Text(parent) }
+                        if !nearbyMode, let parent = parentTitle { Text(parent) }
                     }
                 }
                 .accessibilityLabel(parentTitle.map { Text("Torna a \($0)") } ?? Text("Indietro"))
                 .accessibilityIdentifier("newmap-back")
+            }
+            // "Libere vicino a te" keeps its filters over the map, as in the design: the way
+            // out, green, and how long the rooms must stay free.
+            if nearbyMode {
+                ToolbarItemGroup(placement: .topBarLeading) {
+                    Button {
+                        closeNearby()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text("Libere ora")
+                            Image(systemName: "xmark").font(.caption.weight(.bold))
+                        }
+                        .fontWeight(.semibold)
+                    }
+                    .buttonStyle(.glassProminent)
+                    .tint(.green)
+                    .accessibilityLabel("Esci da Libere ora")
+                    Menu {
+                        Picker("Libere per", selection: $nearbyMinutes) {
+                            Text("Per 30 min").tag(30)
+                            Text("Per 1 ora").tag(60)
+                            Text("Per 2 ore").tag(120)
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text(durationLabel)
+                            Image(systemName: "chevron.down").font(.caption.weight(.bold))
+                        }
+                        .fontWeight(.semibold)
+                    }
+                }
             }
         }
         .toolbar(.hidden, for: .tabBar)
@@ -130,7 +161,7 @@ struct CampusMapScreen: View {
         .sheet(isPresented: $sheetShown) {
             panelSheet
                 .presentationDetents([MapDetents.compact, MapDetents.medium, MapDetents.room, .large], selection: $detent)
-                .presentationBackgroundInteraction(.enabled(upThrough: MapDetents.room))
+                .presentationBackgroundInteraction(.enabled(upThrough: MapDetents.medium))
                 .presentationDragIndicator(.visible)
                 .interactiveDismissDisabled()
         }
@@ -227,7 +258,7 @@ struct CampusMapScreen: View {
         NavigationStack {
             TimelineView(.everyMinute) { context in
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 12) {
                         if let failure = scene.failure {
                             Text(failure).font(.footnote).foregroundStyle(.red)
                         }
@@ -235,7 +266,7 @@ struct CampusMapScreen: View {
                         bodyContent(now: context.date)
                     }
                     .padding(.horizontal, 18)
-                    .padding(.top, 18)
+                    .padding(.top, 14)
                     .padding(.bottom, 24)
                 }
                 .scrollBounceBehavior(.basedOnSize)
@@ -541,58 +572,25 @@ struct CampusMapScreen: View {
 
     /// The title, the way out, the starting point and how long the rooms must stay free.
     private var nearbyHeader: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Libere vicino a te").font(.title2.bold()).accessibilityAddTraits(.isHeader)
-                Spacer(minLength: 8)
-                Button {
-                    closeNearby()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.footnote.weight(.bold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 30, height: 30)
-                        .background(Color.secondary.opacity(0.16), in: .circle)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Libere vicino a te").font(.title2.bold()).accessibilityAddTraits(.isHeader)
+            Menu {
+                ForEach(modelledBuildings, id: \.self) { csie in
+                    Button(MapNames.building(scene.plans[csie], csie: csie)) {
+                        nearbyOrigin = .init(csie: csie, csip: nil, reason: nil)
+                        Task { await loadNearby() }
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Chiudi Libere vicino a te")
-            }
-            HStack(spacing: 8) {
-                Menu {
-                    ForEach(modelledBuildings, id: \.self) { csie in
-                        Button(MapNames.building(scene.plans[csie], csie: csie)) {
-                            nearbyOrigin = .init(csie: csie, csip: nil, reason: nil)
-                            Task { await loadNearby() }
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        Text(originLabel).lineLimit(1)
-                        Image(systemName: "chevron.down").font(.caption2.weight(.bold))
-                    }
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, 12)
-                    .frame(height: 32)
-                    .background(Color.secondary.opacity(0.14), in: innerShape)
+            } label: {
+                HStack(spacing: 6) {
+                    Text(originLabel).lineLimit(1)
+                    Image(systemName: "chevron.down").font(.caption2.weight(.bold))
                 }
-                Menu {
-                    Picker("Libere per", selection: $nearbyMinutes) {
-                        Text("Per 30 min").tag(30)
-                        Text("Per 1 ora").tag(60)
-                        Text("Per 2 ore").tag(120)
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        Text(durationLabel)
-                        Image(systemName: "chevron.down").font(.caption2.weight(.bold))
-                    }
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, 12)
-                    .frame(height: 32)
-                    .background(Color.secondary.opacity(0.14), in: innerShape)
-                }
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 12)
+                .frame(height: 32)
+                .background(Color.secondary.opacity(0.14), in: .capsule)
             }
         }
     }
@@ -622,6 +620,10 @@ struct CampusMapScreen: View {
             Text("Nessuna aula libera qui vicino \(durationLabel.lowercased()).")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 16)
+                .background(cardFill, in: innerShape)
         } else if !candidates.isEmpty {
             listCard(candidates, id: \.csiv) { item in
                 Button {
@@ -629,7 +631,7 @@ struct CampusMapScreen: View {
                     Task { await scene.go(to: .room(floor: item.csip, room: item.csiv)) }
                 } label: {
                     HStack(spacing: 12) {
-                        Text(item.sigla).font(.body.weight(.bold)).frame(minWidth: 54, alignment: .leading)
+                        Text(item.sigla).font(.body.weight(.bold)).frame(width: 58, alignment: .leading)
                         VStack(alignment: .leading, spacing: 1) {
                             Text(item.relation).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
                             if let seats = item.seats {
@@ -776,6 +778,7 @@ struct CampusMapScreen: View {
             Text("Libere ora").tag(true)
         }
         .pickerStyle(.segmented)
+        .controlSize(.extraLarge)
     }
 
     // MARK: Room
@@ -1421,8 +1424,8 @@ private struct MapDayStrip: View {
 enum MapDetents {
     static let compact = PresentationDetent.fraction(0.34)
     static let medium = PresentationDetent.fraction(0.6)
-    /// A room's panel holds its sentence, buttons, day and facts without scrolling.
-    static let room = PresentationDetent.fraction(0.68)
+    /// A room's panel, as in the design: the lit room stays in view above it.
+    static let room = PresentationDetent.fraction(0.5)
 
     /// The height for a level of the map.
     static func `for`(_ level: Trifoglio3DLevel) -> PresentationDetent {
