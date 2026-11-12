@@ -19,6 +19,13 @@ import SwiftUI
 // with the few visited last kept and the rest let go. The numbers this is tuned against,
 // and the bench that measures them, are in `prototypes/trifoglio-3d-PROTOTYPE/banco/`.
 
+/// The colour type RealityKit's materials and lights take on this platform.
+#if canImport(UIKit)
+typealias Trifoglio3DColour = UIColor
+#else
+typealias Trifoglio3DColour = NSColor
+#endif
+
 /// Where the camera stands on the walk from the campus to a classroom.
 enum Trifoglio3DLevel: Equatable {
     /// The whole campus from above.
@@ -212,6 +219,16 @@ final class Trifoglio3DScene {
     var viewSize: CGSize = .zero
     /// When on, every animation jumps to its end.
     var reduceMotion = false
+    /// The night palette: the models' colours dimmed towards blue and the lights turned down.
+    /// The lit classroom keeps its warm glow, which then reads as a lamp in the dark.
+    var dark = false {
+        didSet {
+            guard dark != oldValue else { return }
+            setLights()
+            // Colours still under RealityKit's light need nothing: the lights above dim them.
+            if !bakedMaterials.isEmpty { Task { await setBakedLight() } }
+        }
+    }
 
     /// The buildings that have floors to walk into, in the order the campus offers them.
     static let buildings = ["MIA0203", "MIA0201", "MIA0101", "MIA0102", "MIA0103", "MIA0104", "MIA0106", "MIA0314", "MIA0403", "MIA1401", "MIA0306", "MIA0301", "MIA0302", "MIA0402", "MIA0601", "MIA0603", "MIA0901", "MIA0202", "MIA0206", "MIA0207", "MIA0208", "MIA0209", "MIA0214", "MIA0113", "MIA0109", "MIA0110", "MIA0114", "MIA0115", "MIA0105", "MIA0107", "MIA0108", "MIA0111", "MIA0112", "MIA0205", "MIA0212", "MIA0215"]
@@ -347,11 +364,10 @@ final class Trifoglio3DScene {
         root.addChild(camera)
 
         // No shadows yet: the walk opens on the campus, which casts none (see `move(to:)`).
-        sun.components.set(DirectionalLightComponent(color: .white, intensity: 2600))
+        setLights()
         sun.look(at: [20, 0, 140], from: [-160, 260, 220], relativeTo: nil)
         root.addChild(sun)
         // A weaker light from the other side, so walls in shade are grey rather than black.
-        fill.components.set(DirectionalLightComponent(color: .white, intensity: 900))
         fill.look(at: [20, 0, 140], from: [220, 180, -120], relativeTo: nil)
         root.addChild(fill)
         content.add(root)
@@ -610,6 +626,29 @@ final class Trifoglio3DScene {
         }
     }
 
+    /// Sets the sun and the weaker light for day or, with ``dark``, for night: a dim bluish
+    /// moonlight. A shadow already on the sun stays.
+    private func setLights() {
+        let colour: Trifoglio3DColour = dark ? .init(red: 0.62, green: 0.72, blue: 1, alpha: 1) : .white
+        var sunLight = sun.components[DirectionalLightComponent.self] ?? DirectionalLightComponent()
+        sunLight.color = colour
+        sunLight.intensity = dark ? 650 : 2600
+        sun.components.set(sunLight)
+        var fillLight = fill.components[DirectionalLightComponent.self] ?? DirectionalLightComponent()
+        fillLight.color = colour
+        fillLight.intensity = dark ? 220 : 900
+        fill.components.set(fillLight)
+    }
+
+    /// A model's colour as the baked light draws it: itself by day, dimmed towards blue with ``dark``.
+    private func shade(_ tint: Trifoglio3DColour) -> Trifoglio3DColour {
+        guard dark, let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let parts = tint.cgColor.converted(to: space, intent: .defaultIntent, options: nil)?.components,
+              parts.count == 4
+        else { return tint }
+        return .init(red: parts[0] * 0.24, green: parts[1] * 0.28, blue: parts[2] * 0.38, alpha: parts[3])
+    }
+
     /// Puts the campus and Giuriati under the baked light of ``Trifoglio3DTuning/bakedLight``,
     /// or back under RealityKit's: run after each model is read and whenever the knob turns.
     ///
@@ -636,7 +675,7 @@ final class Trifoglio3DScene {
                         if let texture = lit.baseColor.texture {
                             try? baked.setParameter(name: "BaseTexture", value: .textureResource(texture.resource))
                         }
-                        try? baked.setParameter(name: "Tint", value: .color(lit.baseColor.tint.cgColor))
+                        try? baked.setParameter(name: "Tint", value: .color(shade(lit.baseColor.tint).cgColor))
                         baked.faceCulling = lit.faceCulling
                         return baked
                     }
@@ -646,7 +685,7 @@ final class Trifoglio3DScene {
                         guard let lit = material as? PhysicallyBasedMaterial,
                               var baked = try? CustomMaterial(surfaceShader: shader, lightingModel: .unlit)
                         else { return material }
-                        baked.baseColor = .init(tint: lit.baseColor.tint,
+                        baked.baseColor = .init(tint: shade(lit.baseColor.tint),
                                                 texture: lit.baseColor.texture.map { .init($0.resource) })
                         baked.faceCulling = lit.faceCulling
                         baked.custom.value = SIMD4(weights[0], weights[1], weights[2], weights[3])
@@ -1248,6 +1287,18 @@ struct Trifoglio3DView: View {
     @State private var lastPinch: CGFloat = 1
     /// Reduce Motion, which makes every move a jump.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Whether the scene turns to its night palette when the system is in dark mode
+    /// (``BetaFeature/campus3DDark``); otherwise it stays as by day.
+    var followsDarkMode = false
+    /// The system's appearance.
+    @Environment(\.colorScheme) private var colorScheme
+    /// Whether the night palette is on.
+    private var dark: Bool { followsDarkMode && colorScheme == .dark }
+
+    /// - Parameter followsDarkMode: Whether the scene turns to its night palette in dark mode.
+    init(followsDarkMode: Bool = false) {
+        self.followsDarkMode = followsDarkMode
+    }
     /// The bench that measures the walk on this device.
     @State private var bench = Trifoglio3DBench()
     /// Whether the bench's results are on screen.
@@ -1292,10 +1343,12 @@ struct Trifoglio3DView: View {
             .onAppear {
                 scene.viewSize = proxy.size
                 scene.reduceMotion = reduceMotion
+                scene.dark = dark
             }
+            .onChange(of: dark) { _, dark in scene.dark = dark }
             .onChange(of: proxy.size) { _, size in scene.viewSize = size }
         }
-        .background(Color(red: 0.91, green: 0.93, blue: 0.95))
+        .background(dark ? Color(red: 0.05, green: 0.06, blue: 0.09) : Color(red: 0.91, green: 0.93, blue: 0.95))
         .ignoresSafeArea(edges: .bottom)
         .safeAreaInset(edge: .top) { crumbs }
         .safeAreaInset(edge: .bottom) { panel }

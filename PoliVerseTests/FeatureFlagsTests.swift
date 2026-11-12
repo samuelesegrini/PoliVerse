@@ -36,6 +36,19 @@ struct FeatureFlagsTests {
         }
     }
 
+    @Test("Il campus di notte si sceglie a parte dal Campus 3D")
+    func darkCampusIsSeparate() {
+        withDefaults { defaults in
+            let flags = FeatureFlags(defaults: defaults, available: [.campus3D, .campus3DDark])
+            flags.setEnabled(true, for: .campus3D)
+            #expect(!flags.isEnabled(.campus3DDark))
+            flags.setEnabled(true, for: .campus3DDark)
+            #expect(flags.isEnabled(.campus3DDark))
+            flags.reset()
+            #expect(!flags.isEnabled(.campus3D) && !flags.isEnabled(.campus3DDark))
+        }
+    }
+
     @Test("Il ripristino cancella anche le anteprime non disponibili")
     func reset() {
         withDefaults { defaults in
