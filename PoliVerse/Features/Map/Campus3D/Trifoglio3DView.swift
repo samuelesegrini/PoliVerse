@@ -1417,10 +1417,13 @@ struct Trifoglio3DTiltGesture: UIGestureRecognizerRepresentable {
 }
 #endif
 
-/// The walk on screen: the 3D scene, where you are, and what you can go to next.
-struct Trifoglio3DView: View {
+/// The scene on screen with its gestures and the lit classroom's label: what the prototype
+/// and the new map (``CampusMapScreen``) both draw, each with its own controls around it.
+struct Trifoglio3DStage: View {
     /// The scene and its animations.
-    @State private var scene = Trifoglio3DScene()
+    let scene: Trifoglio3DScene
+    /// Whether the night palette is on.
+    var dark = false
     /// The drag's translation at the last change, to turn the orbit by the difference.
     @State private var lastDrag: CGSize = .zero
     /// The pinch's scale at the last change, to zoom by the difference.
@@ -1431,22 +1434,6 @@ struct Trifoglio3DView: View {
     @State private var isTilting = false
     /// Reduce Motion, which makes every move a jump.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Whether the scene turns to its night palette when the system is in dark mode, as in
-    /// the app's map; the bench and the preview stay as by day.
-    var followsDarkMode = false
-    /// The system's appearance.
-    @Environment(\.colorScheme) private var colorScheme
-    /// Whether the night palette is on.
-    private var dark: Bool { followsDarkMode && colorScheme == .dark }
-
-    /// - Parameter followsDarkMode: Whether the scene turns to its night palette in dark mode.
-    init(followsDarkMode: Bool = false) {
-        self.followsDarkMode = followsDarkMode
-    }
-    /// The bench that measures the walk on this device.
-    @State private var bench = Trifoglio3DBench()
-    /// Whether the bench's results are on screen.
-    @State private var showsBench = false
 
     /// The view's content.
     var body: some View {
@@ -1487,16 +1474,6 @@ struct Trifoglio3DView: View {
                 }
                 .onEnded { _ in lastPinch = 1 })
             .overlay(alignment: .topLeading) { label }
-            .overlay(alignment: .top) {
-                if let step = bench.step {
-                    Label(step, systemImage: "gauge.with.dots.needle.67percent")
-                        .font(.footnote.bold())
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .glassEffect()
-                        .padding(.top, 8)
-                }
-            }
             .onAppear {
                 scene.viewSize = proxy.size
                 scene.reduceMotion = reduceMotion
@@ -1504,6 +1481,60 @@ struct Trifoglio3DView: View {
             }
             .onChange(of: dark) { _, dark in scene.dark = dark }
             .onChange(of: proxy.size) { _, size in scene.viewSize = size }
+        }
+    }
+
+    /// The lit classroom's name and seats, floating over it.
+    @ViewBuilder
+    private var label: some View {
+        if let point = scene.labelPoint, case .room(let csip, let csiv) = scene.level,
+           let room = scene.plan?.piani.first(where: { $0.csip == csip })?.aule.first(where: { $0.csiv == csiv }) {
+            Text(room.posti.map { "\(room.sigla) · \($0) posti" } ?? room.sigla)
+                .font(.footnote.bold())
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(.tint, in: .capsule)
+                .fixedSize()
+                .position(x: point.x, y: point.y - 22)
+                .allowsHitTesting(false)
+        }
+    }
+}
+
+/// The walk on screen: the 3D scene, where you are, and what you can go to next.
+struct Trifoglio3DView: View {
+    /// The scene and its animations.
+    @State private var scene = Trifoglio3DScene()
+    /// Whether the scene turns to its night palette when the system is in dark mode, as in
+    /// the app's map; the bench and the preview stay as by day.
+    var followsDarkMode = false
+    /// The system's appearance.
+    @Environment(\.colorScheme) private var colorScheme
+    /// Whether the night palette is on.
+    private var dark: Bool { followsDarkMode && colorScheme == .dark }
+
+    /// - Parameter followsDarkMode: Whether the scene turns to its night palette in dark mode.
+    init(followsDarkMode: Bool = false) {
+        self.followsDarkMode = followsDarkMode
+    }
+    /// The bench that measures the walk on this device.
+    @State private var bench = Trifoglio3DBench()
+    /// Whether the bench's results are on screen.
+    @State private var showsBench = false
+
+    /// The view's content.
+    var body: some View {
+        Trifoglio3DStage(scene: scene, dark: dark)
+        .overlay(alignment: .top) {
+            if let step = bench.step {
+                Label(step, systemImage: "gauge.with.dots.needle.67percent")
+                    .font(.footnote.bold())
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .glassEffect()
+                    .padding(.top, 8)
+            }
         }
         .background(dark ? Color(red: 0.05, green: 0.06, blue: 0.09) : Color(red: 0.91, green: 0.93, blue: 0.95))
         .ignoresSafeArea(edges: .bottom)
@@ -1554,23 +1585,6 @@ struct Trifoglio3DView: View {
     private func runBench(quick: Bool = false) async {
         await bench.run(on: scene, quick: quick)
         showsBench = true
-    }
-
-    /// The lit classroom's name and seats, floating over it.
-    @ViewBuilder
-    private var label: some View {
-        if let point = scene.labelPoint, case .room(let csip, let csiv) = scene.level,
-           let room = scene.plan?.piani.first(where: { $0.csip == csip })?.aule.first(where: { $0.csiv == csiv }) {
-            Text(room.posti.map { "\(room.sigla) · \($0) posti" } ?? room.sigla)
-                .font(.footnote.bold())
-                .foregroundStyle(.white)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(.tint, in: .capsule)
-                .fixedSize()
-                .position(x: point.x, y: point.y - 22)
-                .allowsHitTesting(false)
-        }
     }
 
     /// Where the camera is, each earlier step a button back to it.

@@ -317,7 +317,7 @@ struct SearchView: View {
             .autocorrectionDisabled()
             .sheet(item: $selectedEvent) { EventDetailView(event: $0) }
             .sheet(item: $selectedExam) { ExamDetailView(exam: $0) }
-            .navigationDestination(item: $spotlightRoom) { ClassroomDetailView(room: $0) }
+            .navigationDestination(item: $spotlightRoom) { RoomDestination(room: $0) }
             .navigationDestination(item: $spotlightTeacher) { TeacherDetailView(teacher: $0) }
             // A Spotlight hit lands here: the identifier says which screen,
             // and the object is looked up in what is already loaded.
@@ -750,7 +750,7 @@ struct SearchView: View {
                 .buttonStyle(.plain)
                 .simultaneousGesture(TapGesture().onEnded { remember(trimmed) })
         case .room(let room):
-            NavigationLink { ClassroomDetailView(room: room) } label: { label() }
+            NavigationLink { RoomDestination(room: room) } label: { label() }
                 .buttonStyle(.plain)
                 .simultaneousGesture(TapGesture().onEnded { remember(trimmed) })
         case .exam(let exam):
