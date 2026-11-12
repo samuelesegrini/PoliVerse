@@ -123,7 +123,7 @@ struct CampusMapScreen: View {
                         .fontWeight(.semibold)
                     }
                     .buttonStyle(.glassProminent)
-                    .tint(.green)
+                    .tint(.freeRoom)
                     .accessibilityLabel("Esci da Libere ora")
                     Menu {
                         Picker("Libere per", selection: $nearbyMinutes) {
@@ -266,7 +266,8 @@ struct CampusMapScreen: View {
                         bodyContent(now: context.date)
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 14)
+                    // Titles sit lower under the grabber; the campus search field stays close.
+                    .padding(.top, scene.level == .campus && !nearbyMode ? 14 : 26)
                     .padding(.bottom, 24)
                 }
                 .scrollBounceBehavior(.basedOnSize)
@@ -377,7 +378,7 @@ struct CampusMapScreen: View {
             Button {
                 openNearby()
             } label: {
-                chip("Libere ora", symbol: "checkmark", symbolColor: .green, on: false)
+                chip("Libere ora", symbol: "checkmark", symbolColor: .freeRoom, on: false)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Aule libere ora")
@@ -633,7 +634,10 @@ struct CampusMapScreen: View {
                     Task { await scene.go(to: .room(floor: item.csip, room: item.csiv)) }
                 } label: {
                     HStack(spacing: 0) {
-                        Text(item.sigla).font(.title3.weight(.bold)).frame(width: 72, alignment: .leading)
+                        // "A - ALDO ROSSI" keeps only its code here; the full name is in the room's page.
+                        Text(item.sigla.components(separatedBy: " - ").first ?? item.sigla)
+                            .font(.title3.weight(.bold)).lineLimit(1).minimumScaleFactor(0.7)
+                            .frame(width: 64, alignment: .leading).padding(.trailing, 8)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item.relation).font(.headline).foregroundStyle(.primary)
                             if let seats = item.seats {
@@ -643,7 +647,7 @@ struct CampusMapScreen: View {
                         Spacer(minLength: 8)
                         Text(item.until.map { String(localized: "fino alle \(clock($0))") } ?? String(localized: "tutto il giorno"))
                             .font(.footnote.weight(.semibold))
-                            .foregroundStyle(MapPalette.free)
+                            .foregroundStyle(Color.freeRoom)
                     }
                     .frame(minHeight: 62)
                     .contentShape(.rect)
@@ -730,7 +734,7 @@ struct CampusMapScreen: View {
                     .fill(Color.secondary.opacity(0.18))
                     .frame(width: 44, height: 6)
                     .overlay(alignment: .leading) {
-                        Capsule().fill(.green)
+                        Capsule().fill(.freeRoom)
                             .frame(width: 44 * CGFloat(free) / CGFloat(csivs.count), height: 6)
                     }
                     .accessibilityHidden(true)
@@ -1023,7 +1027,7 @@ struct CampusMapScreen: View {
             ? MapCounts.rooms(csivs.count)
             : MapCounts.free(free, of: csivs.count)
         return AnyView(Text(text).font(.subheadline).lineLimit(1).minimumScaleFactor(0.85)
-            .foregroundStyle(free > 0 ? MapPalette.free : Color.secondary))
+            .foregroundStyle(free > 0 ? Color.freeRoom : Color.secondary))
     }
 
     /// A room's status as a short tag in its colour: green while free, red while busy, nothing when unknown.
@@ -1036,7 +1040,7 @@ struct CampusMapScreen: View {
         case .free(let until):
             Text(until.map { String(localized: "fino alle \(clock($0))") } ?? String(localized: "libera"))
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(MapPalette.free)
+                .foregroundStyle(Color.freeRoom)
                 .accessibilityLabel(until.map { Text("Libera fino alle \(clock($0))") } ?? Text("Libera"))
         case .busy(let until, _):
             Text(String(localized: "occupata fino alle \(clock(until))"))
@@ -1347,7 +1351,7 @@ private struct MapDayStrip: View {
                 let width = geometry.size.width
                 ZStack(alignment: .topLeading) {
                     ConcentricRectangle(corners: .concentric(minimum: .fixed(6)), isUniform: true)
-                        .fill(Color.green.opacity(0.22))
+                        .fill(Color.freeRoom.opacity(0.22))
                         .frame(height: 30)
                         .offset(y: 6)
                     ForEach(bookings) { booking in
@@ -1488,14 +1492,3 @@ enum MapNearby {
     }
 }
 
-#if DEBUG && os(iOS)
-/// The map's colours.
-enum MapPalette {
-    /// Free rooms: a deeper green that reads on white, the system green at night.
-    static let free = Color(UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? .systemGreen
-            : UIColor(red: 0x2E / 255, green: 0x7D / 255, blue: 0x32 / 255, alpha: 1)
-    })
-}
-#endif

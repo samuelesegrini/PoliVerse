@@ -187,7 +187,7 @@ private struct AppleCampusMap: View {
     private var legend: some View {
         if map.showsAvailability {
             HStack(spacing: 14) {
-                swatch(.green, "molte")
+                swatch(.freeRoom, "molte")
                 swatch(.orange, "alcune")
                 swatch(.red, "poche")
             }
@@ -234,7 +234,7 @@ private struct AppleCampusMap: View {
     ///   occupancy has been counted.
     private func colour(for pin: MapPin) -> Color {
         switch pin.availability {
-        case .many: .green
+        case .many: .freeRoom
         case .some: .orange
         case .few: .red
         case .unknown: Theme.brand
