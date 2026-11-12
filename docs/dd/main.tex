@@ -1,7 +1,7 @@
 % Design document for the loading update of PoliVerse. Build: scripts/docs.sh
 \documentclass[dd]{se2doc}
 \input{../meta}
-\docversion{0.7}
+\docversion{0.8}
 \revision{0.1}{10 Nov 2026}{First draft, from RASD 1.0}
 \revision{0.2}{10 Nov 2026}{After building M2: one stored value per key with the fetch time of each part (decision 2); Progress named LoadProgress; the loader's \texttt{updates} and \texttt{dueParts}}
 \revision{0.3}{10 Nov 2026}{After building M3: the section kit as built (SectionStage, \texttt{arriving} with \texttt{hasRows}, \texttt{reveals}); the reveal's timing and when it plays}
@@ -9,6 +9,7 @@
 \revision{0.5}{11 Nov 2026}{After building M5: the deadline is applied by Query, which marks a part \texttt{late}; HostBreaker and HostPauses as built; only reads are answered from stored copies while a host is paused}
 \revision{0.6}{11 Nov 2026}{After building M6: a resource says what a part changed, through ChangeDetector; NewMarks and the mark as built; LectureMoves for the timetable; the exam detector stays beside the generic one (decision 6)}
 \revision{0.7}{11 Nov 2026}{After building M7: the budget is applied in RequestGate to every speculative request; LecturePrefetch runs TimetablePrefetch; floor plans through a loader; the settings in Dati e archiviazione; no 3D model to fetch}
+\revision{0.8}{12 Nov 2026}{After building M8: OfflinePack and OfflinePackPlan as built, four items; the pack's requests are speculative but follow the pack's own switch; rooms kept as one snapshot per campus, floor plans and course listings on disk; the Offline section lives in Dati e archiviazione; the syllabus is not in the pack yet}
 \input{../glossary}
 \usepackage{float}
 \usetikzlibrary{positioning,arrows.meta,fit}

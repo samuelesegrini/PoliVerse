@@ -51,7 +51,7 @@ New components are marked (new); the others exist and change.
   \item[SpeculativeBudget (new)] Says whether a speculative request may be sent now, and how many, from the network path, Low Power Mode and the thermal state, the student's settings and today's count. RequestGate asks it for every speculative request and keeps today's count (SpeculativeCount, by the day in Rome), so the budget binds every warm-up of the app, not only the prefetch. NetworkPath is the copy of the path's cost and Low Data Mode that the gate reads off the main actor.
   \item[TimetablePrefetch (new)] From the timetable and the current time, lists what the lectures of the next hour need: each room once (its bookings for the day, its floor plan, its equipment) and each course once (its WeBeep page), soonest first, with the requests each costs.
   \item[LecturePrefetch (new)] Runs TimetablePrefetch, asks the gate how many requests the budget allows, keeps the items that fit, and hands each to whoever warms it. It names no service: the warming is passed in. The building's 3D model is not on the list, because it ships with the app (in preview only today) and costs no request.
-  \item[OfflinePack (new)] Owns the list of parts of the pack, runs it in a processing task, and publishes what is stored and how old.
+  \item[OfflinePack (new)] Owns the four items of the pack (timetable, rooms, floor plans, course listings), stores them one after another in a processing task, and publishes what is stored for which account and how old. The work for each item is handed to it by the app; OfflinePackPlan decides whether a run may start and which items are still due.
   \item[BoundaryClock (new)] Computes the next booking boundary from stored bookings, and which rooms change at it. FreeRoomsModel sleeps until that instant and tells the screens that show rooms.
   \item[ChangeDetector (new)] Compares the items of a fetched part with its stored copy by identity and returns what was added, changed and removed. A stored copy with no items and an answer with no items are not compared: the first is a first look, the second is what the Politecnico's services answer between sessions.
   \item[LectureMoves (new)] From the stored copy of a week and the week just fetched, lists the lectures still ahead that kept their id and changed room or start, and words each as an update for UpdateFeed.
@@ -189,6 +189,14 @@ struct ChangeSet { var added, changed, removed: Set<String> }   // identities on
 enum ChangeDetector {
     static func changes<I: Identifiable & Equatable>(from old: [I], to new: [I]) -> ChangeSet
 }
+enum OfflinePackPlan {         // values in, decision out
+    static func refusal(enabled: Bool, account: String?, metered: Bool, byHand: Bool,
+                        state: OfflinePackState, now: Date) -> Refusal?   // off | noAccount | metered | done
+    static func due(state: OfflinePackState, account: String, now: Date) -> [OfflineItem]
+}
+enum OfflinePlan {
+    static func roomsDay(now: Date) -> Date   // today before 08:00, else tomorrow
+}
 enum LectureMoves {
     static func moves(from old: [AgendaEvent], to new: [AgendaEvent], now: Date) -> [LectureMove]
     static func update(for move: LectureMove, now: Date) -> ExamUpdate
@@ -298,11 +306,29 @@ used (\idref{R36}). For that to hold the floor plan is now read through a loader
 room's bookings go through the gate like every other request. The plan and the
 bookings stay in memory; M8 puts them on disk for the offline pack.
 
-\subsubsection{UC4: no connection}
+\subsubsection{UC4: the offline pack, and no connection}
+Once a day, when iOS grants the processing task and the network is neither
+metered nor in Low Data Mode, OfflinePack stores what is still due today, in
+order: the timetable (AgendaModel's usual load, from a week behind to a month
+ahead); the bookings of every room of the favourite campus for the next day the
+student may be on campus, today if the run is before 08:00 and otherwise
+tomorrow, written as one FreeRoomsSnapshot per campus; that campus's floor plans,
+now kept on disk by FloorPlanResource; and the listing of each course of this
+year, written as the course screen writes it (\idref{R21}). Every item but the
+timetable is warmed one key per flight in the speculative lane, so one room that
+does not answer does not take the others with it, each answer is on disk as soon
+as it arrives, and the day's limit stops the pack (\idref{R33}). The gate reads
+the run from a task-local: the pack's requests do not need ``Prepara in
+anticipo'', which is about lectures, and a run started by hand may use a metered
+network. An item is recorded as stored when it is whole, so a run iOS stopped
+resumes at the next item (\idref{P9}). The record is per account and goes at
+sign-out (\idref{R40}).
+
 \begin{enumerate}
   \item The query asks the loader; the loader restores every stored part from OfflineStore.
   \item NetworkMonitor reports no connection, so RequestGate fails requests at once.
   \item Parts with a stored copy are \texttt{held(age:)}; parts without are \texttt{failed}; the section kit shows each accordingly (\idref{R23}).
+  \item Aule libere shows the stored snapshot of that day and campus before its first request, with its age; rooms are replaced as they answer, and when none answers the copy stays and nothing is called hidden. With no copy the screen says the service does not answer. A floor plan is read from disk before it is asked for, and a failed request falls back on that copy.
   \item When the connection returns, FreshnessCoordinator runs a pass and only parts older than their max age are requested.
 \end{enumerate}
 
@@ -341,7 +367,7 @@ days.
   \item[6. Changes are found by identity, generically.] Alternative: one detector per kind of data, as UpdateFeed does today for exams. Relies on assumption D10. Values expose their items as \texttt{Identifiable \& Equatable}; kinds without stable ids are not compared. As built, the resource chooses what of an item counts: a sitting is compared on its date, room, mark and whether its window has opened, not on the number of students enrolled, which moves all day, nor on the student's own enrolment. The exam detector of UpdateFeed is kept beside the generic one rather than replaced: its rules (two consecutive misses before a sitting counts as withdrawn, a mark and its refusal window as one notice) need the history of readings, which a comparison of two answers does not have. The generic detector feeds the marks and the lectures that moved.
   \item[7. The ledger is the app's own file.] Alternatives: signposts or MetricKit alone. Signposts cannot be read back on the phone, and MetricKit delivers one aggregate a day without per-part detail. The ledger stores no content (\idref{R38}).
   \item[8. A boundary is one sleep until a known instant.] Relies on assumption D6. It is not polling: nothing is sent unless a boundary passed and the screen is visible.
-  \item[9. The offline pack uses a processing task.] The refresh task's 30 seconds cannot hold it (assumption D7). The pack is resumable because every part is filed when it arrives.
+  \item[9. The offline pack uses a processing task.] The refresh task's 30 seconds cannot hold it (assumption D7). The pack is resumable because every part is filed when it arrives. Rooms are kept as one snapshot per campus rather than one file per room and day, the shape the widget already reads: a day of a campus is about 150 small records, and one file is cheaper to write, read and replace. Floor plans are kept as JSON in the disk cache with the image in base64, a third larger than the image; the cache already measures and clears itself, and plans are a few megabytes per campus, well within \idref{P9}.
   \item[11. The budget lives in the gate, not in the prefetch.] Alternative: only TimetablePrefetch asks the budget. The app already warmed neighbouring rooms, weeks and course pages before M7; checking in the gate makes \idref{R30} to \idref{R33} hold for all of them, and the count is exact because it counts requests sent rather than items planned. LecturePrefetch still asks first, so it does not start what the budget would refuse. Cost: a warm-up refused by the budget fails like a request that failed, so the loader asks again a minute later at the earliest.
   \item[10. No separate package yet.] The store layer stays in the app target until this update has shipped; \texttt{Packages/} is also ignored by git today. Moving it is a later, mechanical step.
 \end{description}
