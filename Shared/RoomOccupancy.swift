@@ -22,21 +22,6 @@ nonisolated enum RoomOccupancy {
         case failed
     }
 
-    /// Fetches a campus's bookings for a day, in batches, stopping at a deadline.
-    ///
-    /// A widget extension may be halted before every request finishes, so a snapshot
-    /// containing the rooms that did answer is written rather than none at all. Rooms
-    /// that did not answer — failed or hidden — are omitted rather than reported free.
-    ///
-    /// - Parameters:
-    ///   - campus: The campus name to stamp on the snapshot.
-    ///   - rooms: The rooms to ask about.
-    ///   - day: The day to ask about.
-    ///   - deadline: When to stop starting batches.
-    ///   - concurrency: How many rooms are fetched at once.
-    ///   - session: The URL session to fetch through.
-    /// - Returns: A snapshot for the rooms that answered, each room's bookings sorted
-    ///   by start.
     /// `yyyyMMdd` in Europe/Rome: the only spelling of the day the endpoint reads.
     private static let dayStamp: DateFormatter = {
         let formatter = DateFormatter()
@@ -61,6 +46,21 @@ nonisolated enum RoomOccupancy {
             "ricerca/aula/occupazione/\(id)/\(dayStamp.string(from: day))")
     }
 
+    /// Fetches a campus's bookings for a day, in batches, stopping at a deadline.
+    ///
+    /// A widget extension may be halted before every request finishes, so a snapshot
+    /// containing the rooms that did answer is written rather than none at all. Rooms
+    /// that did not answer — failed or hidden — are omitted rather than reported free.
+    ///
+    /// - Parameters:
+    ///   - campus: The campus name to stamp on the snapshot.
+    ///   - rooms: The rooms to ask about.
+    ///   - day: The day to ask about.
+    ///   - deadline: When to stop starting batches.
+    ///   - concurrency: How many rooms are fetched at once.
+    ///   - session: The URL session to fetch through.
+    /// - Returns: A snapshot for the rooms that answered, each room's bookings sorted
+    ///   by start.
     /// Fetches one room's bookings for one day.
     ///
     /// A hidden room is reported as ``Result/hidden`` and a failure as
