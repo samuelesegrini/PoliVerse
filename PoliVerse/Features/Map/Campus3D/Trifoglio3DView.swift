@@ -19,6 +19,24 @@ import SwiftUI
 // with the few visited last kept and the rest let go. The numbers this is tuned against,
 // and the bench that measures them, are in `prototypes/trifoglio-3d-PROTOTYPE/banco/`.
 
+/// The colour type RealityKit's materials and lights take on this platform.
+#if canImport(UIKit)
+typealias Trifoglio3DColour = UIColor
+#else
+typealias Trifoglio3DColour = NSColor
+#endif
+
+/// `notte.json`: the shells' glass colours and which of them are lit at night.
+struct Trifoglio3DNight: Decodable {
+    let vetri: [Trifoglio3DGlass]
+}
+
+/// One glass colour, sRGB in 8 bits, and the light of its windows at night (`nil`: dark).
+struct Trifoglio3DGlass: Decodable {
+    let colore: [Int]
+    let luce: [Int]?
+}
+
 /// Where the camera stands on the walk from the campus to a classroom.
 enum Trifoglio3DLevel: Equatable {
     /// The whole campus from above.
@@ -212,6 +230,16 @@ final class Trifoglio3DScene {
     var viewSize: CGSize = .zero
     /// When on, every animation jumps to its end.
     var reduceMotion = false
+    /// The night palette: the models' colours dimmed towards blue and the lights turned down.
+    /// The lit classroom keeps its warm glow, which then reads as a lamp in the dark.
+    @ObservationIgnored var dark = false {
+        didSet {
+            guard dark != oldValue else { return }
+            setLights()
+            // Colours still under RealityKit's light need nothing: the lights above dim them.
+            if !bakedMaterials.isEmpty { Task { await setBakedLight() } }
+        }
+    }
 
     /// The buildings that have floors to walk into, in the order the campus offers them.
     static let buildings = ["MIA0203", "MIA0201", "MIA0101", "MIA0102", "MIA0103", "MIA0104", "MIA0106", "MIA0314", "MIA0403", "MIA1401", "MIA0306", "MIA0301", "MIA0302", "MIA0402", "MIA0601", "MIA0603", "MIA0901", "MIA0202", "MIA0206", "MIA0207", "MIA0208", "MIA0209", "MIA0214", "MIA0113", "MIA0109", "MIA0110", "MIA0114", "MIA0115", "MIA0105", "MIA0107", "MIA0108", "MIA0111", "MIA0112", "MIA0205", "MIA0212", "MIA0215"]
@@ -227,6 +255,18 @@ final class Trifoglio3DScene {
     @ObservationIgnored private let fill = Entity()
     /// `Trifoglio3DLight.usda`'s material, read once.
     @ObservationIgnored private var graph: ShaderGraphMaterial?
+    /// The glass colours of the shells and, for the windows lit at night, their light: from
+    /// `notte.json`, written by `prototypes/trifoglio-3d-PROTOTYPE/banco/notte.py`.
+    @ObservationIgnored private lazy var glass: [Trifoglio3DGlass] = {
+        guard let url = Bundle.main.url(forResource: "notte", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let night = try? JSONDecoder().decode(Trifoglio3DNight.self, from: data)
+        else { return [] }
+        return night.vetri
+    }()
+    /// The simplified shells' palette at night, `lontano_notte.png`: already dimmed, its lit
+    /// windows already warm. Read the first time the scene turns dark.
+    @ObservationIgnored private var nightPalette: TextureResource?
     /// The lit materials ``setBakedLight()`` took off, by entity.
     @ObservationIgnored private var bakedMaterials: [Entity.ID: [any RealityKit.Material]] = [:]
     /// The lit materials ``setUnlit(_:)`` took off, by entity.
@@ -273,6 +313,8 @@ final class Trifoglio3DScene {
     @ObservationIgnored private var distance: Float = 520
     @ObservationIgnored private var polar: Float = 0.95
     @ObservationIgnored private var azimuth: Float = Trifoglio3DScene.southWest
+    /// The campus's extent, which ``pan(by:)`` keeps the camera's target inside.
+    @ObservationIgnored private var panBounds: (min: SIMD3<Float>, max: SIMD3<Float>)?
     /// The side every flight looks from: the south-west, as the isometric drawings.
     private static let southWest: Float = -.pi / 4
     /// The camera's vertical field of view, in degrees.
@@ -347,11 +389,10 @@ final class Trifoglio3DScene {
         root.addChild(camera)
 
         // No shadows yet: the walk opens on the campus, which casts none (see `move(to:)`).
-        sun.components.set(DirectionalLightComponent(color: .white, intensity: 2600))
+        setLights()
         sun.look(at: [20, 0, 140], from: [-160, 260, 220], relativeTo: nil)
         root.addChild(sun)
         // A weaker light from the other side, so walls in shade are grey rather than black.
-        fill.components.set(DirectionalLightComponent(color: .white, intensity: 900))
         fill.look(at: [20, 0, 140], from: [220, 180, -120], relativeTo: nil)
         root.addChild(fill)
         content.add(root)
@@ -610,6 +651,35 @@ final class Trifoglio3DScene {
         }
     }
 
+    /// Sets the sun and the weaker light for day or, with ``dark``, for night: a dim bluish
+    /// moonlight. A shadow already on the sun stays.
+    private func setLights() {
+        let colour: Trifoglio3DColour = dark ? .init(red: 0.62, green: 0.72, blue: 1, alpha: 1) : .white
+        var sunLight = sun.components[DirectionalLightComponent.self] ?? DirectionalLightComponent()
+        sunLight.color = colour
+        sunLight.intensity = dark ? 650 : 2600
+        sun.components.set(sunLight)
+        var fillLight = fill.components[DirectionalLightComponent.self] ?? DirectionalLightComponent()
+        fillLight.color = colour
+        fillLight.intensity = dark ? 220 : 900
+        fill.components.set(fillLight)
+    }
+
+    /// A model's colour as the baked light draws it: itself by day; with ``dark`` dimmed
+    /// towards blue, as under the moon, or the warm light of a window that is lit.
+    private func shade(_ tint: Trifoglio3DColour) -> Trifoglio3DColour {
+        guard dark, let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let parts = tint.cgColor.converted(to: space, intent: .defaultIntent, options: nil)?.components,
+              parts.count == 4
+        else { return tint }
+        let bytes = parts.prefix(3).map { Int(($0 * 255).rounded()) }
+        if let light = glass.first(where: { pane in zip(pane.colore, bytes).allSatisfy { abs($0 - $1) <= 3 } })?.luce,
+           light.count == 3 {
+            return .init(red: CGFloat(light[0]) / 255, green: CGFloat(light[1]) / 255, blue: CGFloat(light[2]) / 255, alpha: parts[3])
+        }
+        return .init(red: parts[0] * 0.24, green: parts[1] * 0.28, blue: parts[2] * 0.38, alpha: parts[3])
+    }
+
     /// Puts the campus and Giuriati under the baked light of ``Trifoglio3DTuning/bakedLight``,
     /// or back under RealityKit's: run after each model is read and whenever the knob turns.
     ///
@@ -625,6 +695,11 @@ final class Trifoglio3DScene {
             graph = try? await ShaderGraphMaterial(named: "/Root/LuceCotta", from: "Trifoglio3DLight.usda", in: .main)
         }
         let graph = active && tuning.graphLight ? graph : nil
+        if dark, nightPalette == nil, let url = Bundle.main.url(forResource: "lontano_notte", withExtension: "png") {
+            // No mipmaps: each colour is an 8-pixel square, read at its centre.
+            nightPalette = try? await TextureResource(contentsOf: url, options: .init(semantic: .color, mipmapsMode: .none))
+        }
+        let nightPalette = dark ? nightPalette : nil
         for top in [campus, giuriati].compactMap({ $0 }) {
             visit(top) { entity in
                 guard var model = entity.components[ModelComponent.self] else { return }
@@ -633,10 +708,19 @@ final class Trifoglio3DScene {
                     model.materials = bakedMaterials[entity.id, default: []].map { material in
                         guard let lit = material as? PhysicallyBasedMaterial else { return material }
                         var baked = graph
+                        // A simplified shell holds every colour in one palette: at night the
+                        // palette itself changes, and the tint leaves it as it is.
+                        if let nightPalette, lit.baseColor.texture != nil,
+                           entity.name.hasSuffix(Self.distantSuffix) || entity.parent?.name.hasSuffix(Self.distantSuffix) == true {
+                            try? baked.setParameter(name: "BaseTexture", value: .textureResource(nightPalette))
+                            try? baked.setParameter(name: "Tint", value: .color(lit.baseColor.tint.cgColor))
+                            baked.faceCulling = lit.faceCulling
+                            return baked
+                        }
                         if let texture = lit.baseColor.texture {
                             try? baked.setParameter(name: "BaseTexture", value: .textureResource(texture.resource))
                         }
-                        try? baked.setParameter(name: "Tint", value: .color(lit.baseColor.tint.cgColor))
+                        try? baked.setParameter(name: "Tint", value: .color(shade(lit.baseColor.tint).cgColor))
                         baked.faceCulling = lit.faceCulling
                         return baked
                     }
@@ -646,7 +730,7 @@ final class Trifoglio3DScene {
                         guard let lit = material as? PhysicallyBasedMaterial,
                               var baked = try? CustomMaterial(surfaceShader: shader, lightingModel: .unlit)
                         else { return material }
-                        baked.baseColor = .init(tint: lit.baseColor.tint,
+                        baked.baseColor = .init(tint: shade(lit.baseColor.tint),
                                                 texture: lit.baseColor.texture.map { .init($0.resource) })
                         baked.faceCulling = lit.faceCulling
                         baked.custom.value = SIMD4(weights[0], weights[1], weights[2], weights[3])
@@ -969,7 +1053,7 @@ final class Trifoglio3DScene {
 
     // MARK: - Orbit by hand
 
-    /// Turns the orbit by a drag, for looking around while debugging.
+    /// Turns the orbit by a drag: how a classroom is looked around from inside.
     ///
     /// - Parameter translation: The drag's movement since the last call, in points.
     func orbit(by translation: CGSize) {
@@ -978,10 +1062,68 @@ final class Trifoglio3DScene {
         aim()
     }
 
+    /// A one-finger drag: slides the map under the finger, as in Apple Maps; inside a
+    /// classroom, where there is nowhere to slide to, it looks around.
+    ///
+    /// - Parameter translation: The drag's movement since the last call, in points.
+    func drag(by translation: CGSize) {
+        if case .inside = level { orbit(by: translation) } else { pan(by: translation) }
+    }
+
+    /// Whether the map moves freely under the fingers: only on the campus, and not during a
+    /// flight. With a building, a floor or a classroom chosen the camera stays on it, so
+    /// nobody loses what they chose by wandering off.
+    private var isFree: Bool { level == .campus && !isMoving
+    }
+
+    /// Slides the point the camera looks at over the ground, so the map follows the finger.
+    ///
+    /// - Parameter translation: The drag's movement since the last call, in points.
+    func pan(by translation: CGSize) {
+        guard isFree, viewSize.height > 0 else { return }
+        // Metres under one point at the centre of the screen; further along the ground the
+        // lower the camera looks, capped so a flat view does not fling the map away.
+        let metres = 2 * distance * tan(fieldOfView * .pi / 360) / Float(viewSize.height)
+        let forward = SIMD3<Float>(-sin(azimuth), 0, -cos(azimuth))
+        let right = SIMD3<Float>(cos(azimuth), 0, -sin(azimuth))
+        var point = target - right * Float(translation.width) * metres
+            + forward * Float(translation.height) * metres / max(cos(polar), 0.35)
+        if panBounds == nil, let campus {
+            let box = campus.visualBounds(relativeTo: nil)
+            panBounds = (box.min, box.max)
+        }
+        if let panBounds {
+            point.x = min(max(point.x, panBounds.min.x), panBounds.max.x)
+            point.z = min(max(point.z, panBounds.min.z), panBounds.max.z)
+        }
+        target = point
+        aim()
+    }
+
+    /// Turns the map around the point the camera looks at, by a two-finger twist.
+    ///
+    /// - Parameter angle: The twist since the last call, in radians, clockwise positive.
+    func rotate(by angle: Double) {
+        guard isFree else { return }
+        azimuth += Float(angle)
+        aim()
+    }
+
+    /// Tilts the camera between looking straight down and along the ground, by a two-finger
+    /// vertical drag.
+    ///
+    /// - Parameter points: The drag's vertical movement since the last call; up tilts more.
+    func tilt(by points: CGFloat) {
+        guard isFree else { return }
+        polar = min(max(polar - Float(points) * 0.004, 0.1), 1.45)
+        aim()
+    }
+
     /// Moves the camera nearer or further by a pinch.
     ///
     /// - Parameter scale: The pinch's change since the last call; above 1 comes nearer.
     func zoom(by scale: CGFloat) {
+        guard isFree else { return }
         distance = min(max(distance / Float(scale), 12), 900)
         aim()
     }
@@ -1238,6 +1380,43 @@ final class Trifoglio3DScene {
     }
 }
 
+extension View {
+    /// Adds the two-finger vertical drag that tilts the camera; on the Mac, which has no
+    /// such gesture, nothing.
+    @ViewBuilder
+    func trifoglio3DTilt(_ onChange: @escaping (CGFloat, Bool) -> Void) -> some View {
+        #if os(iOS)
+        gesture(Trifoglio3DTiltGesture(onChange: onChange))
+        #else
+        self
+        #endif
+    }
+}
+
+#if os(iOS)
+/// A two-finger vertical drag, which SwiftUI's own gestures cannot tell from one finger's:
+/// tilts the camera, as in Apple Maps.
+struct Trifoglio3DTiltGesture: UIGestureRecognizerRepresentable {
+    /// Called with the vertical movement since the last call, in points, and whether the
+    /// drag is still under way.
+    let onChange: (CGFloat, Bool) -> Void
+
+    func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+        let pan = UIPanGestureRecognizer()
+        pan.minimumNumberOfTouches = 2
+        pan.maximumNumberOfTouches = 2
+        return pan
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UIPanGestureRecognizer, context: Context) {
+        let active = recognizer.state == .began || recognizer.state == .changed
+        let moved = recognizer.translation(in: recognizer.view).y
+        recognizer.setTranslation(.zero, in: recognizer.view)
+        onChange(active ? moved : 0, active)
+    }
+}
+#endif
+
 /// The walk on screen: the 3D scene, where you are, and what you can go to next.
 struct Trifoglio3DView: View {
     /// The scene and its animations.
@@ -1246,8 +1425,24 @@ struct Trifoglio3DView: View {
     @State private var lastDrag: CGSize = .zero
     /// The pinch's scale at the last change, to zoom by the difference.
     @State private var lastPinch: CGFloat = 1
+    /// The twist's angle at the last change, in radians, to turn the map by the difference.
+    @State private var lastTwist: Double = 0
+    /// Whether a two-finger vertical drag is tilting the camera, so the one-finger drag stays out.
+    @State private var isTilting = false
     /// Reduce Motion, which makes every move a jump.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Whether the scene turns to its night palette when the system is in dark mode, as in
+    /// the app's map; the bench and the preview stay as by day.
+    var followsDarkMode = false
+    /// The system's appearance.
+    @Environment(\.colorScheme) private var colorScheme
+    /// Whether the night palette is on.
+    private var dark: Bool { followsDarkMode && colorScheme == .dark }
+
+    /// - Parameter followsDarkMode: Whether the scene turns to its night palette in dark mode.
+    init(followsDarkMode: Bool = false) {
+        self.followsDarkMode = followsDarkMode
+    }
     /// The bench that measures the walk on this device.
     @State private var bench = Trifoglio3DBench()
     /// Whether the bench's results are on screen.
@@ -1267,11 +1462,24 @@ struct Trifoglio3DView: View {
             })
             .simultaneousGesture(DragGesture(minimumDistance: 6)
                 .onChanged { value in
-                    scene.orbit(by: CGSize(width: value.translation.width - lastDrag.width,
-                                           height: value.translation.height - lastDrag.height))
+                    // With two fingers down the twist, the pinch and the tilt move the map.
+                    if !isTilting {
+                        scene.drag(by: CGSize(width: value.translation.width - lastDrag.width,
+                                              height: value.translation.height - lastDrag.height))
+                    }
                     lastDrag = value.translation
                 }
                 .onEnded { _ in lastDrag = .zero })
+            .simultaneousGesture(RotateGesture()
+                .onChanged { value in
+                    scene.rotate(by: value.rotation.radians - lastTwist)
+                    lastTwist = value.rotation.radians
+                }
+                .onEnded { _ in lastTwist = 0 })
+            .trifoglio3DTilt { change, active in
+                isTilting = active
+                scene.tilt(by: change)
+            }
             .simultaneousGesture(MagnifyGesture()
                 .onChanged { value in
                     scene.zoom(by: value.magnification / lastPinch)
@@ -1292,10 +1500,12 @@ struct Trifoglio3DView: View {
             .onAppear {
                 scene.viewSize = proxy.size
                 scene.reduceMotion = reduceMotion
+                scene.dark = dark
             }
+            .onChange(of: dark) { _, dark in scene.dark = dark }
             .onChange(of: proxy.size) { _, size in scene.viewSize = size }
         }
-        .background(Color(red: 0.91, green: 0.93, blue: 0.95))
+        .background(dark ? Color(red: 0.05, green: 0.06, blue: 0.09) : Color(red: 0.91, green: 0.93, blue: 0.95))
         .ignoresSafeArea(edges: .bottom)
         .safeAreaInset(edge: .top) { crumbs }
         .safeAreaInset(edge: .bottom) { panel }

@@ -50,6 +50,10 @@ Release and Mac builds keep Apple Maps even if defaults contain an old opt-in.
 The former `campusMapKind` preference is superseded; existing installs start
 with the safe Apple Maps fallback until they opt in on the new page.
 
+An addition to an experiment needs no flag of its own: the 3D campus follows
+the system's dark appearance as part of Campus 3D. Describe what an experiment
+offers in `BetaFeature.highlights`; Settings lists those lines under its switch.
+
 These flags are local switches for bundled code. There is no configuration
 server or remote kill switch. Add remote configuration only when needed, with
 validated data, cached defaults and explicit expiry/failure behavior.

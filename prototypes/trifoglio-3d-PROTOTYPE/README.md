@@ -109,6 +109,11 @@ campus lontano, nel suo frame: i suoi edifici restano fuori da `campus.usdz` e d
 
 ## Caricamento e prestazioni
 
+Per l'aspetto scuro, `python3 banco/notte.py "../../PoliVerse/Preview Content/Trifoglio3D"`
+scrive `notte.json` (i colori di vetro dei gusci e quali finestre restano accese) e
+`lontano_notte.png` (la tavolozza notturna di `campus_lontano.usdz`): va rilanciato dopo
+aver rigenerato il campus o cambiato un colore di vetro.
+
 Ogni `.usdz` che `esporta3d.py` scrive passa da `banco/ottimizza.py` (vertici saldati e tessere
 per il culling, stesso aspetto). L'app legge prima il solo `campus.usdz` e i piani di un edificio
 quando la camera ci va, tenendone al più 4. Obiettivi, metriche, banco di prova e numeri sono in

@@ -12,7 +12,18 @@ nonisolated enum BetaFeature: String, CaseIterable, Identifiable, Sendable {
     }
     var detail: LocalizedStringResource {
         switch self {
-        case .campus3D: "Esplora il Trifoglio in tre dimensioni. Il modello è ancora incompleto; disattiva l’anteprima per tornare ad Apple Maps."
+        case .campus3D: "Esplora il campus Leonardo in tre dimensioni al posto di Apple Maps. Il modello è ancora incompleto; disattiva l’anteprima per tornare ad Apple Maps."
+        }
+    }
+    /// What the experiment offers, one short line each, listed under its switch.
+    var highlights: [LocalizedStringResource] {
+        switch self {
+        case .campus3D: [
+            "Dal campus all’aula: edificio, piano e aula con un tocco",
+            "Campus libero: trascina per spostarti, pizzica, ruota e inclina con due dita",
+            "Piante dei piani e aule dentro gli edifici modellati",
+            "Di notte con l’aspetto scuro: campus al chiaro di luna e finestre accese",
+        ]
         }
     }
     var isAvailable: Bool {
