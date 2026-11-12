@@ -6,7 +6,7 @@ import OSLog
 /// Which rooms are free, and when.
 ///
 /// Built on the maps service's public occupancy endpoint,
-/// `GET /ricerca/aula/occupazione/{idaula}/{yyyy-MM-dd}`, which answers the booked
+/// `GET /ricerca/aula/occupazione/{idaula}/{yyyyMMdd}`, which answers the booked
 /// bands for one room on one day and needs no token. Rooms the university does not
 /// publish answer `MSG_OCCUPAZIONI_NASCOSTE`; those are reported in ``hiddenRooms``
 /// rather than guessed at.

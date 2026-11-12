@@ -331,7 +331,7 @@ join them to a building, floor and campus. Every number is a string.
 
 ### Occupancy — `maps_rest`, public, VERIFIED working
 
-**`GET /ricerca/aula/occupazione/{idaula}/{yyyy-MM-dd}`** → `200`, no token:
+**`GET /ricerca/aula/occupazione/{idaula}/{yyyyMMdd}`** → `200`, no token:
 
 ```json
 [{"inizio":"08:15","fine":"10:15"},{"inizio":"10:15","fine":"12:15"}]
@@ -340,6 +340,10 @@ join them to a building, floor and campus. Every number is a string.
 Busy bands, times only — the date is the one requested — as wall clock in
 Rome. Date-sensitive and real: 2026-12-25 and 2027-08-15 return `[]`, a
 teaching day returns the grid above.
+
+The day must be written `yyyyMMdd`. Checked on 2026-11-12: with dashes
+(`2026-11-12`) the service still answers `200`, but with `[]` for every room
+on every day, so every room looked free. `20261112` returns the real bands.
 
 `{idaula}` is the catalogue's **`idaula`**, not `sigla` and not `csiv`: the
 code answers 500, the `csiv` 404. All 353 rooms carry one.

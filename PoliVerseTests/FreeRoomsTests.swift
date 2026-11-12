@@ -197,7 +197,7 @@ struct RefusalTests {
     }
 }
 
-/// `/ricerca/aula/occupazione/{idaula}/{yyyy-MM-dd}` — the public endpoint the
+/// `/ricerca/aula/occupazione/{idaula}/{yyyyMMdd}` — the public endpoint the
 /// WADL gave up, after `ws_aule` turned out to be staff-only.
 @Suite("Occupancy bands")
 struct OccupancyBandTests {

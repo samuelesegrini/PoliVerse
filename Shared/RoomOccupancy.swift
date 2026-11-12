@@ -37,6 +37,30 @@ nonisolated enum RoomOccupancy {
     ///   - session: The URL session to fetch through.
     /// - Returns: A snapshot for the rooms that answered, each room's bookings sorted
     ///   by start.
+    /// `yyyyMMdd` in Europe/Rome: the only spelling of the day the endpoint reads.
+    private static let dayStamp: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "Europe/Rome")
+        formatter.dateFormat = "yyyyMMdd"
+        return formatter
+    }()
+
+    /// The address of one room's bookings for one day.
+    ///
+    /// The day is written `yyyyMMdd`, without dashes. With `yyyy-MM-dd` the service
+    /// does not refuse the request: it answers `200` and `[]` for every room on
+    /// every day, which reads exactly like a room that is free all day.
+    ///
+    /// - Parameters:
+    ///   - id: The room's occupancy identifier from the catalogue.
+    ///   - day: The day to ask about.
+    /// - Returns: The address to request.
+    static func address(occupancyID id: String, on day: Date) -> URL {
+        base.appendingPathComponent(
+            "ricerca/aula/occupazione/\(id)/\(dayStamp.string(from: day))")
+    }
+
     /// Fetches one room's bookings for one day.
     ///
     /// A hidden room is reported as ``Result/hidden`` and a failure as
@@ -52,8 +76,7 @@ nonisolated enum RoomOccupancy {
     static func fetch(
         occupancyID id: String, on day: Date, session: URLSession = .shared
     ) async -> Result {
-        let stamp = PoliMiDate.queryString(day)
-        let url = base.appendingPathComponent("ricerca/aula/occupazione/\(id)/\(stamp)")
+        let url = address(occupancyID: id, on: day)
         do {
             var request = URLRequest(url: url)
             request.setValue("application/json", forHTTPHeaderField: "Accept")
