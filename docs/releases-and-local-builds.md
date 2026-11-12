@@ -50,10 +50,9 @@ Release and Mac builds keep Apple Maps even if defaults contain an old opt-in.
 The former `campusMapKind` preference is superseded; existing installs start
 with the safe Apple Maps fallback until they opt in on the new page.
 
-Campus 3D di notte (`campus3DDark`) is the second: with it on, the 3D campus
-follows the system's dark appearance (dimmed bluish colours, darker
-background, moonlight); off, it stays as by day. Apple Maps follows the system
-by itself. It has the same availability as Campus 3D and does nothing without it.
+An addition to an experiment needs no flag of its own: the 3D campus follows
+the system's dark appearance as part of Campus 3D. Describe what an experiment
+offers in `BetaFeature.highlights`; Settings lists those lines under its switch.
 
 These flags are local switches for bundled code. There is no configuration
 server or remote kill switch. Add remote configuration only when needed, with

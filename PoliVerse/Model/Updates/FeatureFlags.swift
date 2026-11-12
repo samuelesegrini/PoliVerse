@@ -4,25 +4,30 @@ import Observation
 /// Experiments are opt-in per install. Availability is enforced here as well as in Settings.
 nonisolated enum BetaFeature: String, CaseIterable, Identifiable, Sendable {
     case campus3D
-    case campus3DDark
 
     var id: String { rawValue }
     var storageKey: String { "betaFeature." + rawValue }
     var title: LocalizedStringResource {
-        switch self {
-        case .campus3D: "Campus 3D"
-        case .campus3DDark: "Campus 3D di notte"
-        }
+        switch self { case .campus3D: "Campus 3D" }
     }
     var detail: LocalizedStringResource {
         switch self {
-        case .campus3D: "Esplora il Trifoglio in tre dimensioni. Il modello è ancora incompleto; disattiva l’anteprima per tornare ad Apple Maps."
-        case .campus3DDark: "Con l’aspetto scuro del telefono il campus in 3D passa a colori notturni. Richiede Campus 3D; disattivala per vederlo sempre come di giorno."
+        case .campus3D: "Esplora il campus Leonardo in tre dimensioni al posto di Apple Maps. Il modello è ancora incompleto; disattiva l’anteprima per tornare ad Apple Maps."
+        }
+    }
+    /// What the experiment offers, one short line each, listed under its switch.
+    var highlights: [LocalizedStringResource] {
+        switch self {
+        case .campus3D: [
+            "Dal campus all’aula: edificio, piano e aula con un tocco",
+            "Piante dei piani e aule dentro gli edifici modellati",
+            "Colori notturni con l’aspetto scuro del telefono",
+        ]
         }
     }
     var isAvailable: Bool {
         switch self {
-        case .campus3D, .campus3DDark:
+        case .campus3D:
             #if DEBUG && os(iOS)
             true
             #else

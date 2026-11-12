@@ -15,7 +15,7 @@ struct CampusMapView: View {
     var body: some View {
         #if DEBUG && os(iOS)
         if flags.isEnabled(.campus3D) {
-            Trifoglio3DView(followsDarkMode: flags.isEnabled(.campus3DDark))
+            Trifoglio3DView(followsDarkMode: true)
                 .navigationTitle("Mappa")
                 .navigationBarTitleDisplayMode(.inline)
         } else {

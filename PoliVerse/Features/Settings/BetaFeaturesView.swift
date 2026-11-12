@@ -14,7 +14,12 @@ struct BetaFeaturesView: View {
                     }
                     .accessibilityIdentifier("beta-" + feature.rawValue)
                 } footer: {
-                    Text(feature.detail)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(feature.detail)
+                        ForEach(Array(feature.highlights.enumerated()), id: \.offset) { _, line in
+                            Label { Text(line) } icon: { Image(systemName: "checkmark") }
+                        }
+                    }
                 }
                 .lookRow()
             }

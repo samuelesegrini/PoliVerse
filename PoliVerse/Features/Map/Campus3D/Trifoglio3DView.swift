@@ -1287,8 +1287,8 @@ struct Trifoglio3DView: View {
     @State private var lastPinch: CGFloat = 1
     /// Reduce Motion, which makes every move a jump.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Whether the scene turns to its night palette when the system is in dark mode
-    /// (``BetaFeature/campus3DDark``); otherwise it stays as by day.
+    /// Whether the scene turns to its night palette when the system is in dark mode, as in
+    /// the app's map; the bench and the preview stay as by day.
     var followsDarkMode = false
     /// The system's appearance.
     @Environment(\.colorScheme) private var colorScheme
