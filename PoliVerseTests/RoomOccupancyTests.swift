@@ -21,6 +21,23 @@ struct RoomOccupancyTests {
         return await RoomOccupancy.fetch(occupancyID: id, on: day, session: OccupancyStub.session)
     }
 
+    /// With dashes the service answers `200` and `[]` for every room, so every
+    /// room looked free all day.
+    @Test("Il giorno è chiesto come yyyyMMdd, senza trattini")
+    func dayIsCompact() throws {
+        let day = try #require(PoliMiDate.parse("2026-11-12"))
+        let url = RoomOccupancy.address(occupancyID: "32", on: day)
+        #expect(url.absoluteString.hasSuffix("/ricerca/aula/occupazione/32/20261112"))
+    }
+
+    /// Asked late in the evening from another time zone, the day is still Rome's.
+    @Test("Il giorno chiesto è quello di Roma")
+    func dayIsRomes() {
+        // 2026-11-12 23:30 in Rome, which is already the 13th further east.
+        let late = Date(timeIntervalSince1970: 1_794_522_600)
+        #expect(RoomOccupancy.address(occupancyID: "32", on: late).lastPathComponent == "20261112")
+    }
+
     @Test("Le fasce occupate tornano come intervalli su quel giorno")
     func busyBands() async throws {
         let result = await fetch(.body(#"[{"inizio":"08:15","fine":"10:15"},{"inizio":"14:30","fine":"16:00"}]"#))
