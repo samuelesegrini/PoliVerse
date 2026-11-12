@@ -265,7 +265,7 @@ struct CampusMapScreen: View {
                         header(now: context.date)
                         bodyContent(now: context.date)
                     }
-                    .padding(.horizontal, 18)
+                    .padding(.horizontal, 20)
                     .padding(.top, 14)
                     .padding(.bottom, 24)
                 }
@@ -572,8 +572,8 @@ struct CampusMapScreen: View {
 
     /// The title, the way out, the starting point and how long the rooms must stay free.
     private var nearbyHeader: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Libere vicino a te").font(.title2.bold()).accessibilityAddTraits(.isHeader)
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Libere vicino a te").font(.title.bold()).accessibilityAddTraits(.isHeader)
             Menu {
                 ForEach(modelledBuildings, id: \.self) { csie in
                     Button(MapNames.building(scene.plans[csie], csie: csie)) {
@@ -584,14 +584,16 @@ struct CampusMapScreen: View {
             } label: {
                 HStack(spacing: 6) {
                     Text(originLabel).lineLimit(1)
-                    Image(systemName: "chevron.down").font(.caption2.weight(.bold))
+                    Image(systemName: "chevron.down").font(.caption.weight(.bold))
                 }
-                .font(.footnote.weight(.medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundStyle(.primary)
-                .padding(.horizontal, 12)
-                .frame(height: 32)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
                 .background(Color.secondary.opacity(0.14), in: .capsule)
             }
+            .tint(.primary)
+            .padding(.bottom, 6)
         }
     }
 
@@ -621,7 +623,7 @@ struct CampusMapScreen: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 18)
+                .padding(.horizontal, 20)
                 .padding(.vertical, 16)
                 .background(cardFill, in: innerShape)
         } else if !candidates.isEmpty {
@@ -630,20 +632,20 @@ struct CampusMapScreen: View {
                     closeNearby()
                     Task { await scene.go(to: .room(floor: item.csip, room: item.csiv)) }
                 } label: {
-                    HStack(spacing: 12) {
-                        Text(item.sigla).font(.body.weight(.bold)).frame(width: 58, alignment: .leading)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(item.relation).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+                    HStack(spacing: 0) {
+                        Text(item.sigla).font(.title3.weight(.bold)).frame(width: 72, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.relation).font(.headline).foregroundStyle(.primary)
                             if let seats = item.seats {
-                                Text("\(seats) posti").font(.footnote).foregroundStyle(.secondary)
+                                Text("\(seats) posti").font(.subheadline).foregroundStyle(.secondary)
                             }
                         }
                         Spacer(minLength: 8)
                         Text(item.until.map { String(localized: "fino alle \(clock($0))") } ?? String(localized: "tutto il giorno"))
                             .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.green)
+                            .foregroundStyle(MapPalette.free)
                     }
-                    .padding(.vertical, 10)
+                    .frame(minHeight: 62)
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -1021,7 +1023,7 @@ struct CampusMapScreen: View {
             ? MapCounts.rooms(csivs.count)
             : MapCounts.free(free, of: csivs.count)
         return AnyView(Text(text).font(.subheadline).lineLimit(1).minimumScaleFactor(0.85)
-            .foregroundStyle(free > 0 ? Color.green : Color.secondary))
+            .foregroundStyle(free > 0 ? MapPalette.free : Color.secondary))
     }
 
     /// A room's status as a short tag in its colour: green while free, red while busy, nothing when unknown.
@@ -1034,7 +1036,7 @@ struct CampusMapScreen: View {
         case .free(let until):
             Text(until.map { String(localized: "fino alle \(clock($0))") } ?? String(localized: "libera"))
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(.green)
+                .foregroundStyle(MapPalette.free)
                 .accessibilityLabel(until.map { Text("Libera fino alle \(clock($0))") } ?? Text("Libera"))
         case .busy(let until, _):
             Text(String(localized: "occupata fino alle \(clock(until))"))
@@ -1468,6 +1470,12 @@ enum MapNearby {
         case -1: String(localized: "Un piano sotto")
         case 2: String(localized: "Due piani sopra")
         case -2: String(localized: "Due piani sotto")
+        case 3: String(localized: "Tre piani sopra")
+        case -3: String(localized: "Tre piani sotto")
+        case 4: String(localized: "Quattro piani sopra")
+        case -4: String(localized: "Quattro piani sotto")
+        case 5: String(localized: "Cinque piani sopra")
+        case -5: String(localized: "Cinque piani sotto")
         case let n where n > 0: String(localized: "\(n) piani sopra")
         default: String(localized: "\(-floorsUp) piani sotto")
         }
@@ -1479,3 +1487,15 @@ enum MapNearby {
             .distance(from: CLLocation(latitude: b.latitude, longitude: b.longitude))
     }
 }
+
+#if DEBUG && os(iOS)
+/// The map's colours.
+enum MapPalette {
+    /// Free rooms: a deeper green that reads on white, the system green at night.
+    static let free = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? .systemGreen
+            : UIColor(red: 0x2E / 255, green: 0x7D / 255, blue: 0x32 / 255, alpha: 1)
+    })
+}
+#endif
