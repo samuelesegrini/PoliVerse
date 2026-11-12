@@ -21,7 +21,7 @@ nonisolated enum BetaFeature: String, CaseIterable, Identifiable, Sendable {
         case .campus3D: [
             "Dal campus all’aula: edificio, piano e aula con un tocco",
             "Piante dei piani e aule dentro gli edifici modellati",
-            "Colori notturni con l’aspetto scuro del telefono",
+            "Di notte con l’aspetto scuro: campus al chiaro di luna e finestre accese",
         ]
         }
     }

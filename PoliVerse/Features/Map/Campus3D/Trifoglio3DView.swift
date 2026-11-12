@@ -26,6 +26,17 @@ typealias Trifoglio3DColour = UIColor
 typealias Trifoglio3DColour = NSColor
 #endif
 
+/// `notte.json`: the shells' glass colours and which of them are lit at night.
+struct Trifoglio3DNight: Decodable {
+    let vetri: [Trifoglio3DGlass]
+}
+
+/// One glass colour, sRGB in 8 bits, and the light of its windows at night (`nil`: dark).
+struct Trifoglio3DGlass: Decodable {
+    let colore: [Int]
+    let luce: [Int]?
+}
+
 /// Where the camera stands on the walk from the campus to a classroom.
 enum Trifoglio3DLevel: Equatable {
     /// The whole campus from above.
@@ -244,6 +255,18 @@ final class Trifoglio3DScene {
     @ObservationIgnored private let fill = Entity()
     /// `Trifoglio3DLight.usda`'s material, read once.
     @ObservationIgnored private var graph: ShaderGraphMaterial?
+    /// The glass colours of the shells and, for the windows lit at night, their light: from
+    /// `notte.json`, written by `prototypes/trifoglio-3d-PROTOTYPE/banco/notte.py`.
+    @ObservationIgnored private lazy var glass: [Trifoglio3DGlass] = {
+        guard let url = Bundle.main.url(forResource: "notte", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let night = try? JSONDecoder().decode(Trifoglio3DNight.self, from: data)
+        else { return [] }
+        return night.vetri
+    }()
+    /// The simplified shells' palette at night, `lontano_notte.png`: already dimmed, its lit
+    /// windows already warm. Read the first time the scene turns dark.
+    @ObservationIgnored private var nightPalette: TextureResource?
     /// The lit materials ``setBakedLight()`` took off, by entity.
     @ObservationIgnored private var bakedMaterials: [Entity.ID: [any RealityKit.Material]] = [:]
     /// The lit materials ``setUnlit(_:)`` took off, by entity.
@@ -640,12 +663,18 @@ final class Trifoglio3DScene {
         fill.components.set(fillLight)
     }
 
-    /// A model's colour as the baked light draws it: itself by day, dimmed towards blue with ``dark``.
+    /// A model's colour as the baked light draws it: itself by day; with ``dark`` dimmed
+    /// towards blue, as under the moon, or the warm light of a window that is lit.
     private func shade(_ tint: Trifoglio3DColour) -> Trifoglio3DColour {
         guard dark, let space = CGColorSpace(name: CGColorSpace.sRGB),
               let parts = tint.cgColor.converted(to: space, intent: .defaultIntent, options: nil)?.components,
               parts.count == 4
         else { return tint }
+        let bytes = parts.prefix(3).map { Int(($0 * 255).rounded()) }
+        if let light = glass.first(where: { pane in zip(pane.colore, bytes).allSatisfy { abs($0 - $1) <= 3 } })?.luce,
+           light.count == 3 {
+            return .init(red: CGFloat(light[0]) / 255, green: CGFloat(light[1]) / 255, blue: CGFloat(light[2]) / 255, alpha: parts[3])
+        }
         return .init(red: parts[0] * 0.24, green: parts[1] * 0.28, blue: parts[2] * 0.38, alpha: parts[3])
     }
 
@@ -664,6 +693,11 @@ final class Trifoglio3DScene {
             graph = try? await ShaderGraphMaterial(named: "/Root/LuceCotta", from: "Trifoglio3DLight.usda", in: .main)
         }
         let graph = active && tuning.graphLight ? graph : nil
+        if dark, nightPalette == nil, let url = Bundle.main.url(forResource: "lontano_notte", withExtension: "png") {
+            // No mipmaps: each colour is an 8-pixel square, read at its centre.
+            nightPalette = try? await TextureResource(contentsOf: url, options: .init(semantic: .color, mipmapsMode: .none))
+        }
+        let nightPalette = dark ? nightPalette : nil
         for top in [campus, giuriati].compactMap({ $0 }) {
             visit(top) { entity in
                 guard var model = entity.components[ModelComponent.self] else { return }
@@ -672,6 +706,15 @@ final class Trifoglio3DScene {
                     model.materials = bakedMaterials[entity.id, default: []].map { material in
                         guard let lit = material as? PhysicallyBasedMaterial else { return material }
                         var baked = graph
+                        // A simplified shell holds every colour in one palette: at night the
+                        // palette itself changes, and the tint leaves it as it is.
+                        if let nightPalette, lit.baseColor.texture != nil,
+                           entity.name.hasSuffix(Self.distantSuffix) || entity.parent?.name.hasSuffix(Self.distantSuffix) == true {
+                            try? baked.setParameter(name: "BaseTexture", value: .textureResource(nightPalette))
+                            try? baked.setParameter(name: "Tint", value: .color(lit.baseColor.tint.cgColor))
+                            baked.faceCulling = lit.faceCulling
+                            return baked
+                        }
                         if let texture = lit.baseColor.texture {
                             try? baked.setParameter(name: "BaseTexture", value: .textureResource(texture.resource))
                         }
