@@ -69,6 +69,10 @@ struct CampusMapScreen: View {
             .overlay(alignment: .topLeading) { backButton.padding(.leading, 16).padding(.top, 4) }
             .overlay(alignment: .topTrailing) { floorColumn.padding(.trailing, 16).padding(.top, 56) }
         }
+        // Only the map's own search makes room for the keyboard. Opened from Cerca with a room
+        // just typed, the keyboard is still going down during the push, and the whole screen
+        // was laid out above it, leaving a white band under the panel.
+        .ignoresSafeArea(searching ? [] : .keyboard, edges: .bottom)
         .background(dark ? Color(red: 0.05, green: 0.06, blue: 0.09) : Color(red: 0.91, green: 0.93, blue: 0.95))
         // The screen draws its own back button: the system one would sit above it, and pushed
         // from Cerca it stayed on screen with the bar hidden alone.
