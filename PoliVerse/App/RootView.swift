@@ -276,7 +276,7 @@ struct RootView: View {
             shell.route(to: .destination(place))
         }
         // Above the tab bar while there is a class today, like Music's player.
-        .currentClassAccessory(shell.singlePage ? nil : current)
+        .currentClassAccessory(shell.singlePage || shell.coversTabBar ? nil : current)
         // Around the day shown, so a day picked two months out is not empty.
         .task(id: shell.day) { await agenda.ensureLoaded(covering: shell.day) }
         // Wakes at the next start or end of a lesson today rather than every

@@ -34,6 +34,7 @@ struct CampusMapScreen: View {
     @FocusState private var searchFocused: Bool
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.shell) private var shell
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.openURL) private var openURL
     @Environment(RoomsModel.self) private var rooms
@@ -69,8 +70,17 @@ struct CampusMapScreen: View {
             .overlay(alignment: .topTrailing) { floorColumn.padding(.trailing, 16).padding(.top, 56) }
         }
         .background(dark ? Color(red: 0.05, green: 0.06, blue: 0.09) : Color(red: 0.91, green: 0.93, blue: 0.95))
+        // The screen draws its own back button: the system one would sit above it, and pushed
+        // from Cerca it stayed on screen with the bar hidden alone.
+        .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
+        // The current class accessory hangs from the tab view, not the tab bar, so hiding the
+        // bar leaves it floating over the panel.
+        .onAppear { shell.coversTabBar = true }
+        .onDisappear { shell.coversTabBar = false }
+        // A container, so the identifier does not replace those of the buttons inside.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("newmap")
         .sheet(item: $details) { room in
             NavigationStack {
@@ -364,7 +374,7 @@ struct CampusMapScreen: View {
                     Task { await scene.go(to: .building(csie)) }
                 } label: {
                     row(title: MapNames.building(scene.plans[csie], csie: csie),
-                        detail: scene.plans[csie]?.nome, trailing: nil)
+                        detail: MapNames.buildingDetail(scene.plans[csie], csie: csie), trailing: nil)
                 }
                 .buttonStyle(.plain)
             }
@@ -404,27 +414,31 @@ struct CampusMapScreen: View {
                 }
                 Spacer(minLength: 4)
             }
-            HStack(spacing: 8) {
-                if let room {
-                    Button {
-                        directions(to: room.buildingCode)
-                    } label: {
-                        Label("Indicazioni", systemImage: "figure.walk")
-                            .frame(maxWidth: .infinity)
+            // A room the catalogue does not know (an online lesson, a room outside the
+            // Politecnico) has no way there and no place on the map: no buttons, not empty ones.
+            if room != nil || level != nil {
+                HStack(spacing: 8) {
+                    if let room {
+                        Button {
+                            directions(to: room.buildingCode)
+                        } label: {
+                            Label("Indicazioni", systemImage: "figure.walk")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.glassProminent)
                     }
-                    .buttonStyle(.glassProminent)
-                }
-                if let level {
-                    Button {
-                        Task { await scene.go(to: level) }
-                    } label: {
-                        Text("Mostra aula").frame(maxWidth: .infinity)
+                    if let level {
+                        Button {
+                            Task { await scene.go(to: level) }
+                        } label: {
+                            Text("Mostra aula").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.glass)
+                        .accessibilityIdentifier("newmap-show-next")
                     }
-                    .buttonStyle(.glass)
-                    .accessibilityIdentifier("newmap-show-next")
                 }
+                .controlSize(.large)
             }
-            .controlSize(.large)
         }
         .padding(14)
         .background(Color.primary.opacity(0.05), in: .rect(cornerRadius: 22))
@@ -833,7 +847,8 @@ enum MapSearch {
             guard let plan = plans[csie] else { continue }
             let name = MapNames.building(plan, csie: csie)
             if plan.numero?.lowercased() == text || (plan.nome?.lowercased().contains(text) ?? false) {
-                buildings.append(Hit(id: csie, title: name, detail: plan.nome, csiv: nil, level: .building(csie)))
+                buildings.append(Hit(id: csie, title: name, detail: MapNames.buildingDetail(plan, csie: csie),
+                                     csiv: nil, level: .building(csie)))
             }
             for floor in plan.piani {
                 for room in floor.aule where room.sigla.lowercased().contains(text) && !seen.contains(room.csiv) {
@@ -859,9 +874,20 @@ enum MapSearch {
 
 /// Names for the model's buildings and floors.
 enum MapNames {
-    /// "Edificio 3", from the plan's number, else the code.
+    /// "Edificio 3", from the plan's number; a building with no number goes by its name, such
+    /// as "Casa dello Studente", and by its code only when it has neither.
     static func building(_ plan: Trifoglio3DPlan?, csie: String) -> String {
-        String(localized: "Edificio \(plan?.numero ?? csie)")
+        if let numero = plan?.numero?.trimmingCharacters(in: .whitespaces), !numero.isEmpty {
+            return String(localized: "Edificio \(numero)")
+        }
+        if let nome = plan?.nome?.trimmingCharacters(in: .whitespaces), !nome.isEmpty { return nome }
+        return String(localized: "Edificio \(csie)")
+    }
+
+    /// The building's name under its title, unless the title already is the name.
+    static func buildingDetail(_ plan: Trifoglio3DPlan?, csie: String) -> String? {
+        guard let nome = plan?.nome, !nome.isEmpty, nome != building(plan, csie: csie) else { return nil }
+        return nome
     }
 
     /// A floor's name from the last characters of its code.

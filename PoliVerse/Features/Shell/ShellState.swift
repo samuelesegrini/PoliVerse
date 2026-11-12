@@ -33,6 +33,9 @@ final class ShellState {
     /// The single-page layout is on screen: Oggi without the tab bar, with
     /// the bottom panel.
     var singlePage = false
+    /// A full-screen page, such as the new map, covers the tab bar: the current class
+    /// accessory steps aside with it.
+    var coversTabBar = false
     /// Personalizza is open over Oggi.
     #if DEBUG
     /// `-Customize` opens Personalizza at launch, for trying it out.
