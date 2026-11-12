@@ -47,6 +47,7 @@ enum PreviewEnvironment {
     static let freeRooms = FreeRoomsModel(catalogue: rooms, preview: RoomSchedule.samples(on: .now))
     /// The sample room equipment, seeded and told not to fetch.
     static let facilities = RoomFacilitiesModel(preview: RoomFacility.samples())
+    static let offlinePack = OfflinePack(work: [:], account: { nil }, metered: { false })
     /// The sample campus map, seeded and told not to fetch.
     static let campusMap = CampusMapModel(
         catalogue: rooms, freeRooms: freeRooms, preview: MapPin.samples())
@@ -114,6 +115,7 @@ extension View {
             .environment(PreviewEnvironment.careers)
             .environment(PreviewEnvironment.rooms)
             .environment(PreviewEnvironment.freeRooms)
+            .environment(PreviewEnvironment.offlinePack)
             .environment(PreviewEnvironment.facilities)
             .environment(PreviewEnvironment.campusMap)
             .environment(PreviewEnvironment.downloads)

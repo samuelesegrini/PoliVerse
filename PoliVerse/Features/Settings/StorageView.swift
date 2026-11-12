@@ -93,6 +93,9 @@ struct DataStorageView: View {
             PrefetchSettingsSection()
                 .lookRow()
 
+            OfflinePackSection()
+                .lookRow()
+
             #if os(iOS)
             Section {
                 Toggle("Scarica anche con la rete cellulare", isOn: Bindable(recordings).allowsCellular)

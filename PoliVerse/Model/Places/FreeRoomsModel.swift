@@ -307,6 +307,17 @@ final class FreeRoomsModel {
         // this day and campus; another day's bookings are not shown under this one.
         let staysListed = lastPass?.key == key
         if !staysListed, !rooms.isEmpty { rooms = [] }
+        // With nothing of this day on screen, the copy kept on the phone goes up
+        // first, with its age: the offline pack's, or the last pass's for today.
+        // Its rooms are then replaced one batch at a time as they answer.
+        var fromCopy = false
+        if rooms.isEmpty, let copy = await storedCopy(of: day, campus: campus) {
+            guard isCurrent() else { return }
+            rooms = copy.rooms
+            loadedAt = copy.fetchedAt
+            fromCopy = true
+        }
+        let keepsListed = staysListed || fromCopy
 
         var loaded: [RoomSchedule] = []
         var hidden: [String] = []
@@ -353,13 +364,26 @@ final class FreeRoomsModel {
             // Listed now, not when the last room of the campus has answered. A
             // room listed before keeps its bookings until it answers again.
             let answered = Set(loaded.map(\.id))
-            let before = rooms.filter { !answered.contains($0.id) && wantedIDs.contains($0.id) && staysListed }
+            let before = rooms.filter { !answered.contains($0.id) && wantedIDs.contains($0.id) && keepsListed }
             let listed = loaded + before
             if rooms != listed { rooms = listed }
             await eachBatch?()
             guard isCurrent() else { return }
         }
 
+        if loaded.isEmpty {
+            // Nothing answered: no signal, or the service is down. What is on
+            // screen is of this day and campus and stays, with its age; with
+            // nothing to show, the section says so rather than calling every
+            // room hidden.
+            if rooms.isEmpty {
+                errorMessage = String(localized: "Il servizio delle aule non risponde e non ci sono dati salvati per questo giorno.")
+            } else {
+                watchBoundaries()
+            }
+            log.notice("aule \(stamp, privacy: .public): no answers, \(self.rooms.count, privacy: .public) rooms kept from a stored copy")
+            return
+        }
         if rooms != loaded { rooms = loaded }
         hiddenRooms = hidden.sorted()
         // Only a pass that produced rooms counts. A campus where every request
@@ -371,6 +395,87 @@ final class FreeRoomsModel {
         watchBoundaries()
         let booked = loaded.reduce(0) { $0 + $1.bookings.count }
         log.notice("aule \(stamp, privacy: .public): \(loaded.count, privacy: .public) rooms, \(booked, privacy: .public) bookings, \(hidden.count, privacy: .public) hidden, \(self.freeRooms().count, privacy: .public) with free time")
+    }
+
+    // MARK: - Offline
+
+    /// The campus whose rooms the offline pack keeps: the student's favourite, or
+    /// else the one on screen.
+    func favouriteCampus() -> String? {
+        FavouriteCampus.resolve(FavouriteCampus.stored, among: catalogue.campuses,
+                                mainCampus: catalogue.mainCampus(inSite:)) ?? campus
+    }
+
+    /// The bookings kept on the phone for a day and campus: the last pass's for
+    /// today, or the offline pack's.
+    ///
+    /// - Parameters:
+    ///   - day: The day.
+    ///   - campus: The campus.
+    /// - Returns: The rooms, and when their bookings were fetched.
+    private func storedCopy(of day: Date, campus: String?) async -> (rooms: [RoomSchedule], fetchedAt: Date)? {
+        guard let campus else { return nil }
+        for name in [FreeRoomsSnapshot.cacheName, FreeRoomsSnapshot.packCacheName] {
+            guard let stored = await OfflineStore.shared.loaded(FreeRoomsSnapshot.self, as: name, account: campus),
+                  stored.value.covers(day), !stored.value.rooms.isEmpty else { continue }
+            return (Self.schedules(from: stored.value, catalogue: catalogue.rooms),
+                    Date.now.addingTimeInterval(-stored.age))
+        }
+        return nil
+    }
+
+    /// The rooms of a stored snapshot, with their `idaula` from the catalogue.
+    ///
+    /// - Parameters:
+    ///   - snapshot: What was stored.
+    ///   - catalogue: The room catalogue.
+    nonisolated static func schedules(from snapshot: FreeRoomsSnapshot, catalogue: [Classroom]) -> [RoomSchedule] {
+        let ids = Dictionary(catalogue.map { ($0.id, $0.occupancyID) }, uniquingKeysWith: { first, _ in first })
+        return snapshot.rooms.map { room in
+            RoomSchedule(
+                id: room.id, name: room.name, building: room.building, seats: room.seats,
+                occupancyID: ids[room.id] ?? nil,
+                bookings: room.busy.enumerated().map { index, band in
+                    RoomBooking(id: "\(room.id)-\(index)", start: band.start, end: band.end, title: nil)
+                })
+        }
+    }
+
+    /// Stores a day's bookings for a campus, for the offline pack.
+    ///
+    /// Every room is asked for in its own warm-up, in the speculative lane: a
+    /// hidden room does not take the others with it, and the pack stops at the
+    /// day's limit. What answered is written as one snapshot, which
+    /// ``load(force:eachBatch:)`` shows when the network does not answer.
+    ///
+    /// - Parameters:
+    ///   - other: The day, usually tomorrow.
+    ///   - chosen: The campus; the favourite one when `nil`.
+    /// - Returns: Whether the campus is stored. `false` when nothing answered or
+    ///   the budget stopped the run.
+    func storeForOffline(on other: Date, campus chosen: String? = nil) async -> Bool {
+        await catalogue.load()
+        guard let campus = chosen ?? favouriteCampus() else { return false }
+        let wanted = catalogue.rooms(matching: "", campus: campus).compactMap { room -> (Classroom, OccupancyKey)? in
+            room.occupancyID.map { (room, OccupancyKey(roomID: room.id, occupancyID: $0, day: PoliMiDate.queryString(other))) }
+        }
+        guard !wanted.isEmpty else { return false }
+        for (_, key) in wanted { await loader.warm([key], env: env) }
+        await loader.settle()
+        var stored: [FreeRoomsSnapshot.Room] = []
+        for (room, key) in wanted {
+            guard let bookings = await loader.cached(key, env: env)?.value else { continue }
+            stored.append(.init(
+                id: room.id, name: room.id, building: room.buildingName,
+                seats: room.capacity > 0 ? room.capacity : nil,
+                busy: bookings.map { .init(start: $0.start, end: max($0.start, $0.end)) }.sorted { $0.start < $1.start }))
+        }
+        guard !stored.isEmpty else { return false }
+        OfflineStore.shared.save(FreeRoomsSnapshot(day: other, campus: campus, rooms: stored),
+                                 as: FreeRoomsSnapshot.packCacheName, account: campus)
+        // Hidden rooms never answer, so "whole" is read from the budget: had it
+        // refused, it would refuse still.
+        return await RequestGate.shared.refusal(pack: OfflinePackContext.mode) == nil
     }
 
     // MARK: - Boundaries

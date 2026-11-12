@@ -836,6 +836,43 @@ extension WeBeepModel: CourseEnrolments {
         await pages.warm(ids, env: Env(session))
     }
 
+    /// Stores the listing of each course of this year on disk, for the offline pack.
+    ///
+    /// The pages are asked for in the speculative lane, one warm-up each, and each
+    /// listing is written as the course screen writes it, so the course opens with
+    /// its files on a train. A listing written today is not asked for again.
+    ///
+    /// - Parameter now: The current moment.
+    /// - Returns: Whether every course's listing is stored. `true` with nothing to
+    ///   store; `false` without a WeBeep connection.
+    func storeListingsForOffline(now: Date = .now) async -> Bool {
+        guard !session.useMockData, let api, let pages, let account = session.student?.matricola else { return false }
+        if courses.isEmpty { await restoreCourses(account: account) }
+        if courses.isEmpty { await loadCourses() }
+        let env = Env(session)
+        let wanted = courses.map { ($0, Course(moodle: $0)) }.filter { Self.isWatchable($0.1, now: now) }
+        var missing: [(MoodleCourse, Course)] = []
+        for entry in wanted {
+            let held = await listings.cached(entry.1.id, env: env)
+            let known = held == nil ? await listings.restore(entry.1.id, env: env) : held
+            guard let known, PoliMiDate.romeCalendar.isDate(known.fetchedAt, inSameDayAs: now) else {
+                missing.append(entry)
+                continue
+            }
+        }
+        for (moodle, _) in missing { await pages.warm([moodle.id], env: env) }
+        await pages.settle()
+        var stored = 0
+        for (moodle, course) in missing {
+            guard let raw = await pages.cached(moodle.id, env: env)?.value else { continue }
+            let courseID = course.id
+            let listing = await Compute.run { Self.listing(of: raw, courseID: courseID, api: api) }
+            await listings.put(listing, for: course.id, env: env)
+            stored += 1
+        }
+        return stored == missing.count
+    }
+
     /// Waits for every warm-up of course pages to land, for the background refresh.
     func settlePages() async {
         await pages?.settle()

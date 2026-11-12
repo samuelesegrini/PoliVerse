@@ -333,6 +333,9 @@ final class LoginFlow {
         ShapeMemory.shared.forget()
         // The marks on screen; their file goes with the offline copies below.
         NewMarks.shared.forget()
+        // What the offline pack stored, and for whom; the copies go with the
+        // account's offline store below.
+        UserDefaults.standard.removeObject(forKey: OfflinePackState.key)
         // Same reason: reminders naming someone else's lectures would keep
         // arriving after they signed out.
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()

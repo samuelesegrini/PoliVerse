@@ -74,6 +74,15 @@ nonisolated enum DiskCache {
         return try? JSONDecoder().decode(Entry<Value>.self, from: data)
     }
 
+    /// When a cached file was last written, read from the file system without
+    /// decoding it, or `nil` when there is none.
+    ///
+    /// - Parameter name: The file's base name.
+    static func writtenAt(_ name: String) -> Date? {
+        guard let url = directory?.appendingPathComponent("\(name).json") else { return nil }
+        return try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+    }
+
     /// Removes the whole cache directory.
     static func clear() {
         guard let directory else { return }

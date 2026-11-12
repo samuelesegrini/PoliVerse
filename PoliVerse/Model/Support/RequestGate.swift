@@ -61,7 +61,8 @@ actor RequestGate {
     /// Speculative requests in flight, per host.
     private var speculative: [String: Int] = [:]
     /// Speculative requests waiting for their turn, per host, oldest first.
-    private var waiting: [String: [(id: UUID, turn: CheckedContinuation<Void, any Error>)]] = [:]
+    private var waiting: [String: [(id: UUID, pack: OfflinePackContext.Mode?,
+                                    turn: CheckedContinuation<Void, any Error>)]] = [:]
 
     /// Creates a gate.
     ///
@@ -109,8 +110,17 @@ actor RequestGate {
     }
 
     /// Why no speculative request may go out now, or `nil` when one may.
-    func refusal() -> SpeculativeBudget.Refusal? {
-        SpeculativeBudget.refusal(device: device(), settings: settings(), sentToday: sentToday())
+    ///
+    /// - Parameter pack: The offline pack's run the request belongs to. The pack
+    ///   has a switch of its own, so "Prepara in anticipo" does not apply to it,
+    ///   and a run the student started by hand may use a metered network.
+    func refusal(pack: OfflinePackContext.Mode? = nil) -> SpeculativeBudget.Refusal? {
+        var chosen = settings()
+        if let pack {
+            chosen.enabled = true
+            if pack == .byHand { chosen.allowMetered = true }
+        }
+        return SpeculativeBudget.refusal(device: device(), settings: chosen, sentToday: sentToday())
     }
 
     // MARK: - Lanes
@@ -122,7 +132,8 @@ actor RequestGate {
             onScreen[host, default: 0] += 1
             return
         }
-        if let reason = refusal() { throw SpeculationRefused(reason: reason) }
+        let pack = OfflinePackContext.mode
+        if let reason = refusal(pack: pack) { throw SpeculationRefused(reason: reason) }
         if waiting[host, default: []].isEmpty, hasRoom(host) {
             begin(host)
             return
@@ -130,7 +141,7 @@ actor RequestGate {
         let id = UUID()
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { turn in
-                waiting[host, default: []].append((id, turn))
+                waiting[host, default: []].append((id, pack, turn))
             }
         } onCancel: {
             Task { await self.abandon(host: host, id: id) }
@@ -165,7 +176,7 @@ actor RequestGate {
         while hasRoom(host), var queue = waiting[host], !queue.isEmpty {
             let next = queue.removeFirst()
             waiting[host] = queue.isEmpty ? nil : queue
-            if let reason = refusal() {
+            if let reason = refusal(pack: next.pack) {
                 next.turn.resume(throwing: SpeculationRefused(reason: reason))
             } else {
                 begin(host)

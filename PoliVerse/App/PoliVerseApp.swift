@@ -55,6 +55,8 @@ struct PoliVerseApp: App {
     @State private var facilities: RoomFacilitiesModel
     /// Prepares what the next hour's lectures need.
     private let lecturePrefetch: LecturePrefetch
+    /// What is kept on the phone for a day with no signal.
+    @State private var offlinePack: OfflinePack
     @State private var campusMap: CampusMapModel
     @State private var careers: CareersModel
     @State private var notifications: NotificationModel
@@ -283,6 +285,29 @@ struct PoliVerseApp: App {
         self.lecturePrefetch = lecturePrefetch
         freshness.register("lecture-prefetch", afterScreen: true) { _ in await lecturePrefetch.run() }
 
+        // What a train with no signal needs, once a day on Wi-Fi in a
+        // processing task, or by hand from Dati e archiviazione.
+        let offlinePack = OfflinePack(
+            work: [
+                .timetable: {
+                    await agenda.load()
+                    return agenda.errorMessage == nil
+                },
+                .rooms: {
+                    await freeRooms.storeForOffline(on: OfflinePlan.roomsDay(now: .now))
+                },
+                .floorPlans: {
+                    if rooms.rooms.isEmpty { await rooms.load() }
+                    guard let campus = freeRooms.favouriteCampus() else { return false }
+                    return await facilities.storePlansForOffline(rooms.rooms(matching: "", campus: campus))
+                },
+                .courses: { await weBeep.storeListingsForOffline() },
+            ],
+            account: { session.useMockData ? nil : session.student?.matricola },
+            metered: { NetworkPath.current.expensive || NetworkPath.current.constrained })
+        _offlinePack = State(initialValue: offlinePack)
+        background.registerOfflinePack(run: { await offlinePack.run() }, cancel: { offlinePack.cancel() })
+
         // Watched here rather than with `onChange` on the window's view: iOS
         // launches the app in the background for refreshes and the Watch, with
         // no view, and a queued change should still go out when signal returns.
@@ -458,6 +483,7 @@ struct PoliVerseApp: App {
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background {
                     background.schedule()
+                    background.scheduleOfflinePack()
                     Task { await WidgetReloader.appDidEnterBackground() }
                 }
                 if phase == .active {
@@ -555,6 +581,7 @@ struct PoliVerseApp: App {
             .environment(notices)
             .environment(news)
             .environment(freeRooms)
+            .environment(offlinePack)
             .environment(facilities)
             .environment(campusMap)
             .environment(careers)

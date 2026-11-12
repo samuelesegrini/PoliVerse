@@ -11,6 +11,7 @@
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>segrini.samuele.PoliVerse</string>
+		<string>segrini.samuele.PoliVerse.offline</string>
 	</array>
 	<!-- Required by EventKit before ``CalendarExporter`` may ask for access.
 	     Without it the request is not a refusal, it is a crash. -->
@@ -56,6 +57,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
+		<string>processing</string>
 		<string>audio</string>
 	</array>
 </dict>

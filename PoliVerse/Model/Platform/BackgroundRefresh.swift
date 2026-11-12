@@ -18,6 +18,9 @@ final class BackgroundRefresh {
     /// The `BGTaskScheduler` identifier, which must also appear in the app's
     /// `BGTaskSchedulerPermittedIdentifiers`.
     static let taskIdentifier = "segrini.samuele.PoliVerse"
+    /// The processing task the offline pack runs in. Also in
+    /// `BGTaskSchedulerPermittedIdentifiers`, with `processing` in `UIBackgroundModes`.
+    static let offlineTaskIdentifier = "segrini.samuele.PoliVerse.offline"
 
     /// Diagnostic log for this type, under the `background` category.
     private let log = Logger(subsystem: "segrini.samuele.PoliVerse", category: "background")
@@ -100,6 +103,56 @@ final class BackgroundRefresh {
             work.cancel()
         }
     }
+
+    // MARK: - The offline pack
+
+    /// Registers the offline pack's processing task.
+    ///
+    /// A processing task, not a refresh: the pack is a few hundred requests, which
+    /// thirty seconds cannot hold. iOS runs it when the phone is idle, usually at
+    /// night and on charge, and may stop it at any moment; the pack resumes from
+    /// what it stored.
+    ///
+    /// - Parameters:
+    ///   - run: Runs the pack.
+    ///   - cancel: Stops the pack when iOS takes the time back.
+    func registerOfflinePack(run: @escaping @Sendable () async -> Void,
+                             cancel: @escaping @MainActor @Sendable () -> Void) {
+        BGTaskScheduler.shared.register(
+            forTaskWithIdentifier: Self.offlineTaskIdentifier, using: .main
+        ) { task in
+            MainActor.assumeIsolated {
+                self.scheduleOfflinePack()
+                let work = Task(name: "background.offline") {
+                    await run()
+                    task.setTaskCompleted(success: !Task.isCancelled)
+                }
+                // Not assumed to arrive on the main queue: hopped to it.
+                task.expirationHandler = {
+                    work.cancel()
+                    Task { @MainActor in cancel() }
+                }
+            }
+        }
+    }
+
+    /// Asks iOS for the next run of the offline pack, on a network connection and
+    /// not before a few hours from now. The pack itself does nothing on a day it
+    /// already stored everything, or on a metered network.
+    ///
+    /// - Parameter interval: The earliest the next run may begin, from now.
+    func scheduleOfflinePack(after interval: TimeInterval = 6 * 3600) {
+        let request = BGProcessingTaskRequest(identifier: Self.offlineTaskIdentifier)
+        request.requiresNetworkConnectivity = true
+        request.requiresExternalPower = false
+        request.earliestBeginDate = Date(timeIntervalSinceNow: interval)
+        let log = log
+        BGTaskScheduler.shared.submitTaskRequest(request) { error in
+            if let error {
+                log.debug("Could not schedule the offline pack: \(error.localizedDescription)")
+            }
+        }
+    }
 #else
     /// The scheduler the Mac uses in place of `BGTaskScheduler`, which macOS does not
     /// have. It runs the refresh every half hour, give or take, whenever the system is
@@ -135,5 +188,15 @@ final class BackgroundRefresh {
     ///
     /// - Parameter interval: Ignored.
     func schedule(after interval: TimeInterval = 3600) {}
+
+    /// Does nothing on the Mac, which is rarely without a connection: the pack
+    /// runs only by hand there.
+    func registerOfflinePack(run: @escaping @Sendable () async -> Void,
+                             cancel: @escaping @MainActor @Sendable () -> Void) {}
+
+    /// Does nothing on the Mac.
+    ///
+    /// - Parameter interval: Ignored.
+    func scheduleOfflinePack(after interval: TimeInterval = 6 * 3600) {}
 #endif
 }

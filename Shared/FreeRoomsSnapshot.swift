@@ -47,6 +47,8 @@ nonisolated struct FreeRoomsSnapshot: Codable, Sendable, Equatable {
 
     /// The record name this snapshot is stored under in the shared store.
     static let cacheName = "free-rooms"
+    /// The record name the offline pack stores a day ahead under, one day per campus.
+    static let packCacheName = "free-rooms-pack"
 
     /// Whether this snapshot describes the day a given date falls on.
     ///

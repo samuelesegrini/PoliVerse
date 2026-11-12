@@ -42,7 +42,15 @@ final class RoomFacilitiesModel {
     ///   could not be fetched.
     func floorPlan(for room: Classroom) async throws -> Data? {
         guard let url = room.floorPlanURL else { return nil }
-        return try await plans.value(url, env: env).value
+        // The copy on disk first: within a day it is the plan, with no request,
+        // and with no signal it is what there is.
+        let stored = await plans.restore(url, env: env)
+        do {
+            return try await plans.value(url, env: env).value
+        } catch {
+            if let held = await plans.cached(url, env: env) ?? stored { return held.value }
+            throw error
+        }
     }
 
     /// Warms the floor plans of rooms about to be opened, in the speculative lane.
@@ -125,6 +133,32 @@ final class RoomFacilitiesModel {
         if !ids.isEmpty { await loader.warm(ids, env: env) }
         let urls = withPlans ? rooms.compactMap(\.floorPlanURL) : []
         if !urls.isEmpty { await plans.warm(urls, env: env) }
+    }
+
+    /// Stores the floor plans of some rooms on disk, for the offline pack.
+    ///
+    /// A plan already on disk and less than a day old is not asked for again, so a
+    /// run that iOS stopped half way resumes where it was. The rest go in the
+    /// speculative lane, within the day's budget, and are written to disk as each
+    /// one answers. Whether one is stored is read from its file, not from memory,
+    /// which keeps only a few plans.
+    ///
+    /// - Parameters:
+    ///   - rooms: The rooms whose plans to store.
+    ///   - now: The current moment.
+    /// - Returns: Whether every plan is now stored.
+    func storePlansForOffline(_ rooms: [Classroom], now: Date = .now) async -> Bool {
+        func isStored(_ url: URL) -> Bool {
+            guard let date = DiskCache.writtenAt(FloorPlanResource.storageName(for: url)) else { return false }
+            return now.timeIntervalSince(date) < FloorPlanResource.ttl
+        }
+        let missing = Array(Set(rooms.compactMap(\.floorPlanURL))).filter { !isStored($0) }
+        guard !missing.isEmpty else { return true }
+        // One flight per plan: a plan that fails does not take the others with
+        // it, and each is on disk as soon as it answers.
+        for url in missing { await plans.warm([url], env: env) }
+        await plans.settle()
+        return missing.allSatisfy(isStored)
     }
 
     /// Waits for any warming to finish.
@@ -211,8 +245,9 @@ nonisolated struct RoomDetailsResource: Resource {
 ///
 /// Through a ``Loader`` rather than straight from the view, so a plan prepared
 /// before a lecture is there when the room is opened, and two views of one room
-/// cost one request. Held in memory for a day: plans change when a building is
-/// rearranged, not during a week.
+/// cost one request. Fresh for a day: plans change when a building is rearranged,
+/// not during a week. Also kept on disk, public and shared across accounts, so the
+/// offline pack's plans open with no signal.
 nonisolated struct FloorPlanResource: Resource {
     typealias Key = URL
     typealias Value = Data
@@ -222,8 +257,23 @@ nonisolated struct FloorPlanResource: Resource {
 
     static let id = "floor-plan"
     static let ttl: TimeInterval = 86_400
-    static let persistence = Persistence.memory
+    static let persistence = Persistence.publicDisk
     static let capacity = 24
+
+    /// One file per plan, named by the floor and the room it highlights.
+    func storageName(for key: URL) -> String {
+        Self.storageName(for: key)
+    }
+
+    /// The file a plan is kept in: `floor-plan-<floor>-<room>`, with anything
+    /// that is not a letter, a digit or a dash replaced.
+    static func storageName(for key: URL) -> String {
+        let components = key.pathComponents
+        let tail = components.firstIndex(of: "piano").map { components[($0 + 1)...] } ?? components.suffix(2)
+        let allowed = Set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-")
+        let safe = tail.joined(separator: "-").map { allowed.contains($0) ? $0 : "_" }
+        return "\(id)-\(String(safe))"
+    }
 
     /// The session the image is fetched through.
     var session: URLSession = .shared
