@@ -313,6 +313,8 @@ final class Trifoglio3DScene {
     @ObservationIgnored private var distance: Float = 520
     @ObservationIgnored private var polar: Float = 0.95
     @ObservationIgnored private var azimuth: Float = Trifoglio3DScene.southWest
+    /// The campus's extent, which ``pan(by:)`` keeps the camera's target inside.
+    @ObservationIgnored private var panBounds: (min: SIMD3<Float>, max: SIMD3<Float>)?
     /// The side every flight looks from: the south-west, as the isometric drawings.
     private static let southWest: Float = -.pi / 4
     /// The camera's vertical field of view, in degrees.
@@ -1051,12 +1053,63 @@ final class Trifoglio3DScene {
 
     // MARK: - Orbit by hand
 
-    /// Turns the orbit by a drag, for looking around while debugging.
+    /// Turns the orbit by a drag: how a classroom is looked around from inside.
     ///
     /// - Parameter translation: The drag's movement since the last call, in points.
     func orbit(by translation: CGSize) {
         azimuth -= Float(translation.width) * 0.006
         polar = min(max(polar - Float(translation.height) * 0.004, 0.1), 1.45)
+        aim()
+    }
+
+    /// A one-finger drag: slides the map under the finger, as in Apple Maps; inside a
+    /// classroom, where there is nowhere to slide to, it looks around.
+    ///
+    /// - Parameter translation: The drag's movement since the last call, in points.
+    func drag(by translation: CGSize) {
+        if case .inside = level { orbit(by: translation) } else { pan(by: translation) }
+    }
+
+    /// Slides the point the camera looks at over the ground, so the map follows the finger.
+    ///
+    /// - Parameter translation: The drag's movement since the last call, in points.
+    func pan(by translation: CGSize) {
+        guard !isMoving, viewSize.height > 0 else { return }
+        // Metres under one point at the centre of the screen; further along the ground the
+        // lower the camera looks, capped so a flat view does not fling the map away.
+        let metres = 2 * distance * tan(fieldOfView * .pi / 360) / Float(viewSize.height)
+        let forward = SIMD3<Float>(-sin(azimuth), 0, -cos(azimuth))
+        let right = SIMD3<Float>(cos(azimuth), 0, -sin(azimuth))
+        var point = target - right * Float(translation.width) * metres
+            + forward * Float(translation.height) * metres / max(cos(polar), 0.35)
+        if panBounds == nil, let campus {
+            let box = campus.visualBounds(relativeTo: nil)
+            panBounds = (box.min, box.max)
+        }
+        if let panBounds {
+            point.x = min(max(point.x, panBounds.min.x), panBounds.max.x)
+            point.z = min(max(point.z, panBounds.min.z), panBounds.max.z)
+        }
+        target = point
+        aim()
+    }
+
+    /// Turns the map around the point the camera looks at, by a two-finger twist.
+    ///
+    /// - Parameter angle: The twist since the last call, in radians, clockwise positive.
+    func rotate(by angle: Double) {
+        guard !isMoving else { return }
+        azimuth += Float(angle)
+        aim()
+    }
+
+    /// Tilts the camera between looking straight down and along the ground, by a two-finger
+    /// vertical drag.
+    ///
+    /// - Parameter points: The drag's vertical movement since the last call; up tilts more.
+    func tilt(by points: CGFloat) {
+        guard !isMoving else { return }
+        polar = min(max(polar - Float(points) * 0.004, 0.1), 1.45)
         aim()
     }
 
@@ -1320,6 +1373,28 @@ final class Trifoglio3DScene {
     }
 }
 
+/// A two-finger vertical drag, which SwiftUI's own gestures cannot tell from one finger's:
+/// tilts the camera, as in Apple Maps.
+struct Trifoglio3DTiltGesture: UIGestureRecognizerRepresentable {
+    /// Called with the vertical movement since the last call, in points, and whether the
+    /// drag is still under way.
+    let onChange: (CGFloat, Bool) -> Void
+
+    func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+        let pan = UIPanGestureRecognizer()
+        pan.minimumNumberOfTouches = 2
+        pan.maximumNumberOfTouches = 2
+        return pan
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UIPanGestureRecognizer, context: Context) {
+        let active = recognizer.state == .began || recognizer.state == .changed
+        let moved = recognizer.translation(in: recognizer.view).y
+        recognizer.setTranslation(.zero, in: recognizer.view)
+        onChange(active ? moved : 0, active)
+    }
+}
+
 /// The walk on screen: the 3D scene, where you are, and what you can go to next.
 struct Trifoglio3DView: View {
     /// The scene and its animations.
@@ -1328,6 +1403,10 @@ struct Trifoglio3DView: View {
     @State private var lastDrag: CGSize = .zero
     /// The pinch's scale at the last change, to zoom by the difference.
     @State private var lastPinch: CGFloat = 1
+    /// The twist's angle at the last change, in radians, to turn the map by the difference.
+    @State private var lastTwist: Double = 0
+    /// Whether a two-finger vertical drag is tilting the camera, so the one-finger drag stays out.
+    @State private var isTilting = false
     /// Reduce Motion, which makes every move a jump.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Whether the scene turns to its night palette when the system is in dark mode, as in
@@ -1361,11 +1440,24 @@ struct Trifoglio3DView: View {
             })
             .simultaneousGesture(DragGesture(minimumDistance: 6)
                 .onChanged { value in
-                    scene.orbit(by: CGSize(width: value.translation.width - lastDrag.width,
-                                           height: value.translation.height - lastDrag.height))
+                    // With two fingers down the twist, the pinch and the tilt move the map.
+                    if !isTilting {
+                        scene.drag(by: CGSize(width: value.translation.width - lastDrag.width,
+                                              height: value.translation.height - lastDrag.height))
+                    }
                     lastDrag = value.translation
                 }
                 .onEnded { _ in lastDrag = .zero })
+            .simultaneousGesture(RotateGesture()
+                .onChanged { value in
+                    scene.rotate(by: value.rotation.radians - lastTwist)
+                    lastTwist = value.rotation.radians
+                }
+                .onEnded { _ in lastTwist = 0 })
+            .gesture(Trifoglio3DTiltGesture { change, active in
+                isTilting = active
+                scene.tilt(by: change)
+            })
             .simultaneousGesture(MagnifyGesture()
                 .onChanged { value in
                     scene.zoom(by: value.magnification / lastPinch)
