@@ -121,7 +121,7 @@ successful fetch — `AgendaService.swift:122`, `CareerService.swift:240`,
 ```
 GET https://polimiapp.polimi.it/polimi_app/rest/jaf/public/props
 GET https://onlineservices.polimi.it/maps_rest/rest/spazi/aula
-GET https://onlineservices.polimi.it/maps_rest/rest/ricerca/aula/occupazione/67/2026-09-14
+GET https://onlineservices.polimi.it/maps_rest/rest/ricerca/aula/occupazione/67/20260914
 ```
 
 All three answered `200` with exactly these headers: `date`, `content-type`,
@@ -395,7 +395,7 @@ Measured against the Politecnico's servers, 2026-09-12, `curl -D -`:
 
 - `https://polimiapp.polimi.it/polimi_app/rest/jaf/public/props`
 - `https://onlineservices.polimi.it/maps_rest/rest/spazi/aula`
-- `https://onlineservices.polimi.it/maps_rest/rest/ricerca/aula/occupazione/67/2026-09-14`
+- `https://onlineservices.polimi.it/maps_rest/rest/ricerca/aula/occupazione/67/20260914`
 
 In this repo: [endpoint-status.md](endpoint-status.md),
 [lazy-loading.md](lazy-loading.md), [polimi-api-research.md](polimi-api-research.md).

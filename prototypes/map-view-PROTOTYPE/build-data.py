@@ -114,7 +114,7 @@ for i, r in enumerate(detail_rooms):
     entry = {}
     for key, path in (("dotazioni", f"/ricerca/aula/dotazioni/{r['idaula']}"),
                       ("software", f"/ricerca/aula/software/{r['idaula']}"),
-                      ("occupazione", f"/ricerca/aula/occupazione/{r['idaula']}/{today}")):
+                      ("occupazione", f"/ricerca/aula/occupazione/{r['idaula']}/{today.replace('-', '')}")):
         try:
             entry[key] = get(path)
         except Exception:
