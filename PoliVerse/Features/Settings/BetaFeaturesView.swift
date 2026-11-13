@@ -3,6 +3,8 @@ import SwiftUI
 /// Preview features use ordinary native switches and preserve a working fallback.
 struct BetaFeaturesView: View {
     @Environment(FeatureFlags.self) private var flags
+    /// The new map's panel background, to compare.
+    @AppStorage("newMap.sheetMaterial") private var sheetMaterial = 0
 
     var body: some View {
         List {
@@ -13,6 +15,14 @@ struct BetaFeaturesView: View {
                         Text(feature.title)
                     }
                     .accessibilityIdentifier("beta-" + feature.rawValue)
+                    #if DEBUG && os(iOS)
+                    if feature == .newMap, flags.isEnabled(feature) {
+                        Picker("Materiale del foglio", selection: $sheetMaterial) {
+                            ForEach(MapSheetMaterial.allCases) { Text($0.title).tag($0.rawValue) }
+                        }
+                        .accessibilityIdentifier("beta-newmap-material")
+                    }
+                    #endif
                 } footer: {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(feature.detail)

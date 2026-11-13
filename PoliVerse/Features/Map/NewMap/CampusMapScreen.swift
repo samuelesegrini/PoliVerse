@@ -56,6 +56,8 @@ struct CampusMapScreen: View {
     @State private var walk: (event: Int, minutes: Int, from: String)?
     /// The rooms and buildings opened from the search, most recent first, as text.
     @AppStorage("newMap.recents") private var recentsText = ""
+    /// The panel's background, chosen in Anteprime to compare.
+    @AppStorage(MapSheetMaterial.storageKey) private var sheetMaterial = MapSheetMaterial.systemGlass.rawValue
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.shell) private var shell
@@ -174,6 +176,7 @@ struct CampusMapScreen: View {
                 .presentationBackgroundInteraction(.enabled(upThrough: MapDetents.medium))
                 .presentationDragIndicator(.visible)
                 .interactiveDismissDisabled()
+                .mapSheetMaterial(MapSheetMaterial(rawValue: sheetMaterial) ?? .systemGlass)
         }
         .onChange(of: scene.level) { _, level in
             withAnimation(.snappy) { detent = MapDetents.for(level) }
