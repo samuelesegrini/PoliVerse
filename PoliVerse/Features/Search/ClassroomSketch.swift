@@ -6,8 +6,10 @@ import SwiftUI
 /// frame, the teacher's desk, and windows down the left wall.
 ///
 /// A port of the geometry in the design's `disegno-aula-generatore.py`: the same room, the
-/// same camera, drawn into a 322 × 250 frame and scaled to fill whatever it is given,
-/// centred, as the mock's `xMidYMid slice` does.
+/// same camera, framed by the board's viewBox `0 -34 322 177` (the whole room, from above the
+/// back wall down to the third-nearest row) and scaled to fill whatever it is given, centred,
+/// as the mock's `xMidYMid slice` does. At the card's width the scale is the width's, so the
+/// 193-point hero shows the whole room.
 struct ClassroomSketch: View {
     @Environment(\.colorScheme) private var scheme
 
@@ -44,11 +46,12 @@ struct ClassroomSketch: View {
 
     // MARK: - Geometry, as in the generator
 
-    private static let width: CGFloat = 322, height: CGFloat = 250
+    /// The board's viewBox: `0 -34 322 177`.
+    private static let viewBox = CGRect(x: 0, y: -34, width: 322, height: 177)
     private static let cx: CGFloat = 161, f: CGFloat = 150, camH: CGFloat = 4.4, h0: CGFloat = -4
     private static let zw: CGFloat = 15.5, xw: CGFloat = 6.2, yw: CGFloat = 4.2, zn: CGFloat = 2.2
 
-    /// A point of the room on the 322 × 250 drawing.
+    /// A point of the room on the generator's 322-wide drawing.
     private static func project(_ x: CGFloat, _ y: CGFloat, _ z: CGFloat) -> CGPoint {
         CGPoint(x: cx + x * f / z, y: h0 + (camH - y) * f / z)
     }
@@ -62,9 +65,10 @@ struct ClassroomSketch: View {
 
     static func draw(in context: inout GraphicsContext, size: CGSize, seat: GraphicsContext.Shading, palette: Palette) {
         // Fill the frame, centred, cropping what overflows.
-        let scale = max(size.width / width, size.height / height)
-        context.translateBy(x: (size.width - width * scale) / 2, y: (size.height - height * scale) / 2)
+        let scale = max(size.width / viewBox.width, size.height / viewBox.height)
+        context.translateBy(x: (size.width - viewBox.width * scale) / 2, y: (size.height - viewBox.height * scale) / 2)
         context.scaleBy(x: scale, y: scale)
+        context.translateBy(x: -viewBox.minX, y: -viewBox.minY)
 
         func fill(_ points: [(CGFloat, CGFloat, CGFloat)], _ colour: Color) {
             context.fill(polygon(points), with: .color(colour))
