@@ -21,7 +21,7 @@ struct CampusMapScreen: View {
     /// Whether the panel, a system sheet, is up: while the map is on screen.
     @State private var sheetShown = false
     /// How tall the panel sheet stands.
-    @State private var detent = MapDetents.compact
+    @State private var detent: PresentationDetent = MapDetents.compact
     /// The detent before the search took the whole height, to go back to.
     @State private var detentBeforeSearch = MapDetents.compact
     /// Whether the search page is pushed in the panel.
@@ -54,6 +54,8 @@ struct CampusMapScreen: View {
     @State private var walk: (event: Int, minutes: Int, from: String)?
     /// The rooms and buildings opened from the search, most recent first, as text.
     @AppStorage("newMap.recents") private var recentsText = ""
+    /// The low sheet's height on the campus, fitted to what it holds; 0 until measured.
+    @State private var compactHeight: CGFloat = 0
     /// The lesson opened from its card, in the panel.
     @State private var lessonDetail: AgendaEvent?
     /// The service shown: its places in the panel, nearest first, and its pins on the campus.
@@ -206,13 +208,13 @@ struct CampusMapScreen: View {
         // swiped away.
         .sheet(isPresented: $sheetShown) {
             panelSheet
-                .presentationDetents([MapDetents.compact, MapDetents.medium, MapDetents.room, .large], selection: $detent)
+                .presentationDetents([compactDetent, MapDetents.medium, MapDetents.room, .large], selection: $detent)
                 .presentationBackgroundInteraction(.enabled(upThrough: MapDetents.medium))
                 .presentationDragIndicator(.visible)
                 .interactiveDismissDisabled()
         }
         .onChange(of: scene.level) { _, level in
-            withAnimation(.snappy) { detent = MapDetents.for(level) }
+            withAnimation(.snappy) { detent = detentFor(level) }
         }
         .task { await rooms.load() }
         .task { await services.load() }
@@ -287,6 +289,13 @@ struct CampusMapScreen: View {
     private var floorColumn: some View {
         if scene.level != .campus, let plan = scene.plan, !plan.piani.isEmpty {
             VStack(spacing: 2) {
+                // Says what the column is: the building's floors.
+                Image(systemName: "square.3.layers.3d")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 40, height: 30)
+                    .accessibilityHidden(true)
+                Divider().frame(width: 24)
                 ForEach(plan.piani.reversed()) { floor in
                     let chosen = currentFloor == floor.csip
                     Button {
@@ -295,8 +304,8 @@ struct CampusMapScreen: View {
                         Text(MapNames.floorShort(floor.csip))
                             .font(.subheadline.weight(.semibold))
                             .frame(width: 40, height: 40)
-                            .foregroundStyle(chosen ? Theme.onAccent : Color.primary)
-                            .background { if chosen { Circle().fill(.tint) } }
+                            .foregroundStyle(chosen ? Color.white : Color.primary)
+                            .background { if chosen { Circle().fill(Color.accentColor) } }
                             .contentShape(.circle)
                     }
                     .buttonStyle(.plain)
@@ -330,7 +339,13 @@ struct CampusMapScreen: View {
                     .padding(.horizontal, 20)
                     // Titles sit lower under the grabber; the campus search field stays close.
                     .padding(.top, scene.level == .campus && !nearbyMode && service == nil ? 14 : 26)
-                    .padding(.bottom, 24)
+                    .padding(.bottom, campusAtRest ? 20 : 24)
+                    // On the campus at rest the low sheet is as tall as what it holds, so the
+                    // chips are never cut, with or without a lesson.
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                        guard campusAtRest, detent == compactDetent else { return }
+                        fitCompact(to: height)
+                    }
                 }
                 .scrollBounceBehavior(.basedOnSize)
             }
@@ -464,7 +479,7 @@ struct CampusMapScreen: View {
         .padding(.horizontal, -20)
 
         // The buildings wait under the fold: pulling the panel up shows them.
-        if detent != MapDetents.compact {
+        if detent != compactDetent {
             sectionHeader("Edifici")
             listCard(modelledBuildings, id: \.self) { csie in
                 Button {
@@ -768,6 +783,8 @@ struct CampusMapScreen: View {
                     .foregroundStyle(.secondary)
             }
             .fontWeight(.semibold)
+            // As much room inside its glass as the filter capsule.
+            .padding(.horizontal, 6)
         }
         // Black or white on the glass: the tint's light blue hardly reads on it at night.
         .tint(.primary)
@@ -884,7 +901,7 @@ struct CampusMapScreen: View {
     private func closeNearby() {
         withAnimation(.snappy) {
             nearbyMode = false
-            detent = MapDetents.for(scene.level)
+            detent = detentFor(scene.level)
         }
     }
 
@@ -1097,7 +1114,7 @@ struct CampusMapScreen: View {
     private func closeService() {
         withAnimation(.snappy) {
             service = nil
-            detent = MapDetents.for(scene.level)
+            detent = detentFor(scene.level)
         }
     }
 
@@ -1638,7 +1655,7 @@ struct CampusMapScreen: View {
             }
         }
         .onAppear {
-            detentBeforeSearch = detent == .large ? MapDetents.compact : detent
+            detentBeforeSearch = detent == .large ? compactDetent : detent
             withAnimation(.snappy) { detent = .large }
             searchFieldActive = true
         }
@@ -1647,7 +1664,9 @@ struct CampusMapScreen: View {
             scope = .all
             // A result has moved the camera: the sheet takes that level's height.
             withAnimation(.snappy) {
-                detent = scene.level == .campus ? detentBeforeSearch : MapDetents.for(scene.level)
+                // The low sheet may have been fitted again meanwhile: back to its current height.
+                let before = [MapDetents.medium, MapDetents.room].contains(detentBeforeSearch) ? detentBeforeSearch : compactDetent
+                detent = scene.level == .campus ? before : detentFor(scene.level)
             }
         }
     }
@@ -1674,6 +1693,34 @@ struct CampusMapScreen: View {
     /// The label on a filled tint button: white on the navy, dark on the light blue of night.
     private var onTint: Color {
         dark ? Color(white: 0.08) : .white
+    }
+
+    /// Whether the panel shows the campus with nothing chosen: the content the low sheet fits.
+    private var campusAtRest: Bool {
+        scene.level == .campus && !nearbyMode && service == nil
+    }
+
+    /// The low sheet: as tall as its content once measured, the fixed fraction before.
+    private var compactDetent: PresentationDetent {
+        compactHeight > 0 ? .height(compactHeight) : MapDetents.compact
+    }
+
+    /// The height for a level of the map, the low sheet fitted to its content.
+    private func detentFor(_ level: Trifoglio3DLevel) -> PresentationDetent {
+        let fixed = MapDetents.for(level)
+        return fixed == MapDetents.compact ? compactDetent : fixed
+    }
+
+    /// Fits the low sheet to its content, up to 55% of the screen, keeping it selected.
+    ///
+    /// - Parameter content: The content's height.
+    private func fitCompact(to content: CGFloat) {
+        let screen = scene.viewSize.height > 0 ? scene.viewSize.height : 874
+        let height = (min(content, screen * 0.55)).rounded()
+        guard abs(height - compactHeight) >= 1 else { return }
+        let wasCompact = detent == compactDetent
+        compactHeight = height
+        if wasCompact { detent = compactDetent }
     }
 
     /// The system's close button, in the system's glass circle, for leaving a level or a list.
@@ -2202,7 +2249,7 @@ private struct MapDayStrip: View {
 /// The heights the panel sheet stands at: compact on the campus, half-way inside a building,
 /// and the whole screen for the search.
 enum MapDetents {
-    static let compact = PresentationDetent.fraction(0.4)
+    static let compact = PresentationDetent.fraction(0.45)
     static let medium = PresentationDetent.fraction(0.6)
     /// A room's panel, as in the design: the lit room stays in view above it.
     static let room = PresentationDetent.fraction(0.5)
