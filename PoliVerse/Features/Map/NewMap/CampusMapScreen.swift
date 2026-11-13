@@ -54,6 +54,8 @@ struct CampusMapScreen: View {
     @State private var walk: (event: Int, minutes: Int, from: String)?
     /// The rooms and buildings opened from the search, most recent first, as text.
     @AppStorage("newMap.recents") private var recentsText = ""
+    /// The services' badge in the chips, growing with the text size.
+    @ScaledMetric(relativeTo: .body) private var chipBadge: CGFloat = 28
     /// The low sheet's height on the campus, fitted to what it holds; 0 until measured.
     @State private var compactHeight: CGFloat = 0
     /// The lesson opened from its card, in the panel.
@@ -514,9 +516,9 @@ struct CampusMapScreen: View {
                     .contentTransition(.numericText())
             }
         }
-        .font(.subheadline.weight(.medium))
-        .padding(.horizontal, 14)
-        .frame(height: 36)
+        .font(.body.weight(.medium))
+        .padding(.horizontal, 16)
+        .frame(minHeight: 44)
         .background(on ? AnyShapeStyle(.tint) : AnyShapeStyle(Color.secondary.opacity(0.14)), in: .capsule)
         .contentShape(.capsule)
     }
@@ -524,13 +526,13 @@ struct CampusMapScreen: View {
     /// A service's chip: its Maps-style badge and its name.
     private func serviceChip(_ item: CampusService) -> some View {
         HStack(spacing: 6) {
-            ServiceBadge(service: item, size: 22)
+            ServiceBadge(service: item, size: chipBadge)
             Text(item.title).foregroundStyle(.primary)
         }
-        .font(.subheadline.weight(.medium))
-        .padding(.leading, 7)
-        .padding(.trailing, 14)
-        .frame(height: 36)
+        .font(.body.weight(.medium))
+        .padding(.leading, 8)
+        .padding(.trailing, 16)
+        .frame(minHeight: 44)
         .background(Color.secondary.opacity(0.14), in: .capsule)
         .contentShape(.capsule)
     }
@@ -581,9 +583,16 @@ struct CampusMapScreen: View {
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 1) {
                 Text("\(clock(current.start))–\(clock(current.end))").font(.headline).monospacedDigit()
-                Text(MapLessonCard.endsIn(from: now, to: current.end))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                // Always one line: the whole sentence, else the short form, else nothing (the
+                // bar under it still says how much is left).
+                ViewThatFits(in: .horizontal) {
+                    ForEach(MapLessonCard.endsInVariants(from: now, to: current.end), id: \.self) { text in
+                        Text(text).lineLimit(1).fixedSize()
+                    }
+                    Color.clear.frame(width: 0, height: 0)
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
             }
         }
         Capsule()

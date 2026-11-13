@@ -157,6 +157,15 @@ nonisolated enum MapLessonCard {
             : String(localized: "termina tra \(hours) h \(rest) min")
     }
 
+    /// How long is left, longest first, for the card to show the first that fits on one line:
+    /// "termina tra 1 h 22 min", then "1 h 22′".
+    static func endsInVariants(from now: Date, to end: Date) -> [String] {
+        let minutes = max(1, Int((end.timeIntervalSince(now) / 60).rounded(.up)))
+        let hours = minutes / 60, rest = minutes % 60
+        let short = hours == 0 ? "\(minutes)′" : rest == 0 ? "\(hours) h" : "\(hours) h \(rest)′"
+        return [endsIn(from: now, to: end), short]
+    }
+
     /// Where the walk to a lesson starts: the lesson in progress, else the last one today that
     /// ended before it.
     ///

@@ -51,4 +51,10 @@ struct MapLessonCardTests {
         #expect(MapLessonCard.walkStart(to: current, in: events, now: nine.addingTimeInterval(0.95 * 3600)) == first)
         #expect(MapLessonCard.walkStart(to: first, in: events, now: nine) == nil)
     }
+
+    @Test func shortensWhatIsLeft() {
+        #expect(MapLessonCard.endsInVariants(from: nine, to: nine.addingTimeInterval(82 * 60)) == ["termina tra 1 h 22 min", "1 h 22′"])
+        #expect(MapLessonCard.endsInVariants(from: nine, to: nine.addingTimeInterval(40 * 60)) == ["termina tra 40 min", "40′"])
+        #expect(MapLessonCard.endsInVariants(from: nine, to: nine.addingTimeInterval(120 * 60)) == ["termina tra 2 h", "2 h"])
+    }
 }
