@@ -2145,7 +2145,6 @@ extension CampusService {
         }
     }
 }
-#endif
 
 
 /// What the map's search shows.
@@ -2321,4 +2320,4 @@ enum MapNearby {
             .distance(from: CLLocation(latitude: b.latitude, longitude: b.longitude))
     }
 }
-
+#endif
