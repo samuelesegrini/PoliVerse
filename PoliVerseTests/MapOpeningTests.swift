@@ -27,6 +27,14 @@ struct MapOpeningTests {
         #expect(MapFreeSummary.make(free: rooms, campus: "Bovisa", origin: "B3", metres: metres).nearest == "BL.27.1")
     }
 
+    @Test func theNearestCarriesWhenItStopsBeingFree() {
+        let at4 = Date(timeIntervalSince1970: 1_800_000_000)
+        let free = [MapFreeSummary.Room(id: "3.0.1", campus: "Leonardo", building: "B3", until: at4),
+                    MapFreeSummary.Room(id: "4.0.1", campus: "Leonardo", building: "B4")]
+        #expect(MapFreeSummary.make(free: free, campus: nil, origin: "B3", metres: [:]).until == at4)
+        #expect(MapFreeSummary.make(free: free, campus: nil, origin: "B4", metres: [:]).until == nil)
+    }
+
     @Test func withoutDistancesTheCodeDecides() {
         #expect(MapFreeSummary.make(free: rooms, campus: "Leonardo", origin: nil, metres: [:]).nearest == "3.1.2")
     }

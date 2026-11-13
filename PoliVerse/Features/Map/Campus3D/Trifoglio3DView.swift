@@ -226,6 +226,11 @@ final class Trifoglio3DScene {
     private(set) var failure: String?
     /// Where the lit classroom's label sits on screen, or `nil` when there is none in view.
     private(set) var labelPoint: CGPoint?
+    /// Where the top of each marked building lands on screen, by `csie`: the pins of a
+    /// service the new map is showing. Empty when nothing is marked.
+    private(set) var markPoints: [String: CGPoint] = [:]
+    /// The tops of the marked buildings, in the scene.
+    @ObservationIgnored private var markTops: [String: SIMD3<Float>] = [:]
     /// The size of the view the scene is drawn in, for placing the label.
     var viewSize: CGSize = .zero
     /// When on, every animation jumps to its end.
@@ -1296,6 +1301,35 @@ final class Trifoglio3DScene {
             }
         }
         pulse()
+        placeMarks()
+    }
+
+    /// Marks buildings on the campus, replacing the ones marked before: their tops are
+    /// tracked on screen in ``markPoints``. Buildings the campus has no shell for are left out.
+    ///
+    /// - Parameter buildings: The buildings' `csie` codes; empty clears the marks.
+    func mark(_ buildings: Set<String>) {
+        markTops = [:]
+        for shell in exteriors where buildings.contains(shell.name) {
+            let box = shell.visualBounds(relativeTo: nil)
+            markTops[shell.name] = SIMD3(box.center.x, box.max.y, box.center.z)
+        }
+        placeMarks(force: true)
+    }
+
+    /// Projects the marked buildings' tops, publishing only a move of half a point or more,
+    /// so a still camera costs no layout.
+    private func placeMarks(force: Bool = false) {
+        guard !markTops.isEmpty || !markPoints.isEmpty else { return }
+        var points: [String: CGPoint] = [:]
+        for (csie, top) in markTops {
+            if let point = project(top) { points[csie] = point }
+        }
+        let moved = points.count != markPoints.count || points.contains { csie, point in
+            guard let old = markPoints[csie] else { return true }
+            return abs(point.x - old.x) >= 0.5 || abs(point.y - old.y) >= 0.5
+        }
+        if force || moved { markPoints = points }
     }
 
     /// Places the camera on its orbit.

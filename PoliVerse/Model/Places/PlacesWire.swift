@@ -72,6 +72,10 @@ nonisolated struct BuildingDTO: Decodable, Sendable {
     let cittaEdificio: String?
     /// Whether the catalogue publishes this building.
     let visibile: String?
+    /// What the entrance is like: steps, the alternative entrance, the lift.
+    var noteAccesso: String? = nil
+    /// The same for wheelchair users and the blind: ramps, accessible toilets.
+    var noteAccessoDisabili: String? = nil
 
     /// The address as one line, assembled from the pieces the catalogue keeps apart —
     /// for example `"Via Colombo 40, Milano"`.

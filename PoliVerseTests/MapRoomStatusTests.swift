@@ -50,6 +50,9 @@ struct MapRoomStatusTests {
         #expect(MapCounts.freeNowTitle(1, locale: it) == "1 aula libera ora")
         #expect(MapCounts.freeNowTitle(12, locale: it) == "12 aule libere ora")
         #expect(MapCounts.freeNowTitle(0, locale: it) == "Nessuna aula libera ora")
+        #expect(MapCounts.freeNearbyTitle(1, locale: it) == "1 aula libera qui vicino")
+        #expect(MapCounts.freeNearbyTitle(12, locale: it) == "12 aule libere qui vicino")
+        #expect(MapCounts.freeNearbyTitle(0, locale: it) == "Nessuna aula libera ora")
     }
 
     // MARK: The room's sentence
@@ -114,5 +117,14 @@ struct MapRoomStatusTests {
         let bold = styled.runs.filter { $0.inlinePresentationIntent?.contains(.stronglyEmphasized) == true }
             .map { String(styled[$0.range].characters) }
         #expect(bold == ["Occupata", "12:15", "libera"])
+    }
+
+    @Test func saysHowLongUntilTheLesson() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        #expect(MapCounts.startsIn(from: now, to: now.addingTimeInterval(25 * 60), ongoing: false) == "tra 25 min")
+        #expect(MapCounts.startsIn(from: now, to: now.addingTimeInterval(24 * 60 + 10), ongoing: false) == "tra 25 min")
+        #expect(MapCounts.startsIn(from: now, to: now.addingTimeInterval(60 * 60), ongoing: false) == "tra 1 h")
+        #expect(MapCounts.startsIn(from: now, to: now.addingTimeInterval(70 * 60), ongoing: false) == "tra 1 h 10 min")
+        #expect(MapCounts.startsIn(from: now, to: now.addingTimeInterval(-60), ongoing: true) == "in corso")
     }
 }

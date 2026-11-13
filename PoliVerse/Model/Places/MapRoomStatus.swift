@@ -80,6 +80,27 @@ nonisolated enum MapCounts {
         return inflected(AttributedString(localized: "^[\(free) aula libera](inflect: true) ora", locale: locale))
     }
 
+    /// "12 aule libere qui vicino", "1 aula libera qui vicino": the campus's free rooms on the
+    /// opening sheet, with the nearest named under it.
+    static func freeNearbyTitle(_ free: Int, locale: Locale = .current) -> String {
+        guard free > 0 else { return String(localized: "Nessuna aula libera ora", locale: locale) }
+        return inflected(AttributedString(localized: "^[\(free) aula libera](inflect: true) qui vicino", locale: locale))
+    }
+
+    /// "tra 25 min", "tra 1 h 10 min", "in corso": how long until a lesson.
+    ///
+    /// - Parameters:
+    ///   - now: Now.
+    ///   - start: When the lesson starts.
+    ///   - ongoing: Whether it has started.
+    static func startsIn(from now: Date, to start: Date, ongoing: Bool) -> String {
+        let minutes = Int((start.timeIntervalSince(now) / 60).rounded(.up))
+        if ongoing || minutes <= 0 { return String(localized: "in corso") }
+        if minutes < 60 { return String(localized: "tra \(minutes) min") }
+        let hours = minutes / 60, rest = minutes % 60
+        return rest == 0 ? String(localized: "tra \(hours) h") : String(localized: "tra \(hours) h \(rest) min")
+    }
+
     private static func inflected(_ text: AttributedString) -> String {
         String(text.characters)
     }

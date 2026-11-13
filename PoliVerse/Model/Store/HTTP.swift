@@ -85,6 +85,10 @@ nonisolated struct PublicHTTP: HTTP {
         urlRequest.httpBody = request.body
         urlRequest.timeoutInterval = PoliMiAPI.timeout(for: request)
         urlRequest.setValue("application/json", forHTTPHeaderField: "Accept")
+        // As ``APIRequest/body`` promises: the maps service answers a body without it with 500.
+        if request.body != nil {
+            urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
 
         do {
             let (data, response) = try await fetch(urlRequest, retrying: request.method == "GET")

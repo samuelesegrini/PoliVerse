@@ -14,6 +14,8 @@ nonisolated enum MapFreeSummary {
         let campus: String?
         /// Its building's code.
         let building: String
+        /// When it stops being free today; `nil` when it stays free.
+        var until: Date? = nil
     }
 
     /// What the opening sheet writes.
@@ -22,6 +24,8 @@ nonisolated enum MapFreeSummary {
         let count: Int
         /// The nearest free room's code, `nil` when none is free.
         let nearest: String?
+        /// When the nearest stops being free; `nil` when it stays free all day.
+        var until: Date? = nil
     }
 
     /// Counts the free rooms on one campus and picks the nearest.
@@ -44,7 +48,7 @@ nonisolated enum MapFreeSummary {
             if a != b { return a < b }
             return left.id.localizedStandardCompare(right.id) == .orderedAscending
         }
-        return Summary(count: here.count, nearest: nearest?.id)
+        return Summary(count: here.count, nearest: nearest?.id, until: nearest?.until)
     }
 }
 
