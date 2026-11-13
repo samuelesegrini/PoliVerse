@@ -59,6 +59,9 @@ struct SearchView: View {
     @State private var spotlightCourse: Course?
     @State private var spotlightRoom: Classroom?
     @State private var spotlightTeacher: Teacher?
+    /// Whether the search field has the keyboard. In the new interface a room found as the
+    /// best match opens into its card when the keyboard goes down.
+    @FocusState private var fieldFocused: Bool
 
     /// A kind of result, which is also a token that narrows the search to it.
     nonisolated enum Kind: String, CaseIterable, Identifiable, Hashable {
@@ -317,6 +320,7 @@ struct SearchView: View {
                         prompt: Text("Corsi, docenti, aule, notizie, materiali")) { kind in
                 Label(kind.title, systemImage: kind.symbol)
             }
+            .searchFocused($fieldFocused)
             .onSubmit(of: .search) { remember(trimmed) }
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
@@ -667,42 +671,140 @@ struct SearchView: View {
 
     // MARK: - Results
 
+    /// Whether Cerca draws its results as the "Cerca · Un'aula" design does: in the new
+    /// interface with the new map on, in Debug builds, as the new map itself.
+    private var usesRoomCard: Bool {
+        #if DEBUG && os(iOS)
+        places != nil && flags.isEnabled(.newMap)
+        #else
+        false
+        #endif
+    }
+
+    /// The results, in the new design or the current one.
+    @ViewBuilder
+    private var resultsContent: some View {
+        #if DEBUG && os(iOS)
+        if usesRoomCard {
+            cardResultsContent
+        } else {
+            legacyResultsContent
+        }
+        #else
+        legacyResultsContent
+        #endif
+    }
+
+    #if DEBUG && os(iOS)
+    /// The results as the "Cerca · Un'aula" canvas draws them: the kinds as chips, the best
+    /// match as a card — a room's card when it is a room, which opens when the keyboard goes
+    /// down — then every other result in one list.
+    private var cardResultsContent: some View {
+        let results = results
+        let hit = topHit(in: results)
+        let roomHit: Classroom? = if case .room(let room)? = hit { room } else { nil }
+        let opened = roomHit != nil && !fieldFocused
+        return VStack(alignment: .leading, spacing: 14) {
+            if !opened, !results.isEmpty || !tokens.isEmpty {
+                resultChips(results)
+                    .transition(.opacity)
+            }
+            if results.isEmpty {
+                emptyResults
+            } else {
+                if let roomHit {
+                    RoomResultCard(room: roomHit, expanded: opened,
+                                   open: { remember(trimmed); fieldFocused = false },
+                                   remember: { remember(trimmed) })
+                } else if let hit {
+                    resultLink(hit) { TopHitCard(result: hit, colour: colour(for: hit.kind.symbol)) }
+                }
+                if !opened {
+                    otherResults(results, excluding: hit)
+                        .transition(.opacity)
+                }
+            }
+        }
+        .animation(.spring(duration: 0.35), value: opened)
+    }
+
+    /// Every result but the best match, in one list: three of each kind, or all of a kind
+    /// the chips narrowed the search to.
+    @ViewBuilder
+    private func otherResults(_ results: [(kind: Kind, items: [Result])], excluding hit: Result?) -> some View {
+        let others = results.flatMap { group -> [Result] in
+            let items = group.items.filter { $0.id != hit?.id }
+            return tokens.contains(group.kind) ? items : Array(items.prefix(3))
+        }
+        if !others.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Altri risultati")
+                    .font(.system(size: 20, weight: .bold))
+                    .padding(.horizontal, 4)
+                    .padding(.top, 2)
+                    .accessibilityAddTraits(.isHeader)
+                VStack(spacing: 0) {
+                    ForEach(others) { result in
+                        resultLink(result) {
+                            OtherResultRow(result: result, colour: colour(for: result.kind.symbol),
+                                           last: result.id == others.last?.id)
+                        }
+                    }
+                }
+                .background(Color.roomCard, in: .rect(cornerRadius: 22))
+                if others.contains(where: { $0.kind == .materials }) {
+                    Text("Solo i corsi WeBeep già aperti: cercarli tutti richiederebbe una richiesta per corso.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 4)
+                }
+            }
+        }
+    }
+    #endif
+
+    /// Nothing found: say so, and where else the thing might be.
+    @ViewBuilder
+    private var emptyResults: some View {
+        ContentUnavailableView.search(text: trimmed)
+            .padding(.top, 40)
+            .accessibilityIdentifier("search-empty")
+        // The search only reads what the app holds: say where else the
+        // thing might be, rather than leaving a dead end.
+        VStack(alignment: .leading, spacing: 10) {
+            LookHeading("Cerca anche in")
+            NavigationLink { ManifestiView() } label: {
+                HStack(spacing: 12) {
+                    CourseRowTile(symbol: "books.vertical", colour: colour(for: "books.vertical"))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Manifesto degli studi").font(.subheadline)
+                        Text("Gli insegnamenti di tutti i corsi di laurea").font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.vertical, 11)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 16)
+            .lookCard()
+            .accessibilityIdentifier("search-empty-manifesti")
+        }
+    }
+
     /// The results: the top hit above, then one group per kind, each expandable past its first
     /// few rows.
     @ViewBuilder
-    private var resultsContent: some View {
+    private var legacyResultsContent: some View {
         let results = results
         if !results.isEmpty || !tokens.isEmpty {
             resultChips(results)
         }
         if results.isEmpty {
-            ContentUnavailableView.search(text: trimmed)
-                .padding(.top, 40)
-                .accessibilityIdentifier("search-empty")
-            // The search only reads what the app holds: say where else the
-            // thing might be, rather than leaving a dead end.
-            VStack(alignment: .leading, spacing: 10) {
-                LookHeading("Cerca anche in")
-                NavigationLink { ManifestiView() } label: {
-                    HStack(spacing: 12) {
-                        CourseRowTile(symbol: "books.vertical", colour: colour(for: "books.vertical"))
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Manifesto degli studi").font(.subheadline)
-                            Text("Gli insegnamenti di tutti i corsi di laurea").font(.caption).foregroundStyle(.secondary)
-                        }
-                        Spacer(minLength: 8)
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(.vertical, 11)
-                    .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 16)
-                .lookCard()
-                .accessibilityIdentifier("search-empty-manifesti")
-            }
+            emptyResults
         } else {
             if let hit = topHit(in: results) {
                 VStack(alignment: .leading, spacing: 10) {
@@ -1109,6 +1211,150 @@ private struct ResultRow: View {
         .accessibilityElement(children: .combine)
     }
 }
+
+#if DEBUG && os(iOS)
+// MARK: - The "Cerca · Un'aula" design
+
+extension Result {
+    /// The second line in the new design: short sentences and commas, no middle dots.
+    /// "Oggi dalle 14:15 nella 3.1.2", "Docente di Analisi 1", "Edificio 3, primo piano".
+    ///
+    /// - Parameter locale: The locale dates are formatted in.
+    /// - Returns: The line, or `nil` when there is nothing to add.
+    @MainActor
+    func cardDetail(locale: Locale) -> String? {
+        switch self {
+        case .course(let course):
+            return [course.teacher == "—" ? nil : course.teacher, course.academicYear == "—" ? nil : course.academicYear]
+                .compactMap { $0 }.joined(separator: ", ").nonEmpty
+        case .teacher(let teacher):
+            if let first = teacher.courses.first { return String(localized: "Docente di \(first.name)") }
+            return teacher.email
+        case .room(let room):
+            return RoomWording.location(of: room).nonEmpty ?? String(localized: "\(room.capacity) posti")
+        case .event(let event):
+            let calendar = Calendar.current
+            let day = if calendar.isDateInToday(event.start) {
+                String(localized: "Oggi")
+            } else if calendar.isDateInTomorrow(event.start) {
+                String(localized: "Domani")
+            } else {
+                event.start.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale)).capitalized(with: locale)
+            }
+            let time = event.start.formatted(.dateTime.hour().minute().locale(locale))
+            if let room = event.roomLabel, !room.isEmpty {
+                return String(localized: "\(day) dalle \(time) nella \(room)")
+            }
+            return String(localized: "\(day) dalle \(time)")
+        default:
+            return detail(locale: locale)
+        }
+    }
+}
+
+/// A result's tile: a rounded square in the kind's colour with its symbol in white; a
+/// teacher's initials on a grey disc.
+private struct ResultTile: View {
+    let result: Result
+    let colour: Flavor.RGB
+    /// 34 points in the list, 64 on the best match.
+    let side: CGFloat
+
+    var body: some View {
+        Group {
+            if case .teacher(let teacher) = result {
+                Text(teacher.name.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined())
+                    .font(.system(size: side * 0.38, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: side, height: side)
+                    .background(Color(.systemGray), in: .circle)
+            } else {
+                Image(systemName: result.kind.symbol)
+                    .font(.system(size: side * 0.47, weight: .medium))
+                    .foregroundStyle(.white)
+                    .frame(width: side, height: side)
+                    .background(colour.color, in: .rect(cornerRadius: side * 0.3))
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// The best match when it is not a room: the same card as a room's, with the kind's tile in
+/// place of the map.
+private struct TopHitCard: View {
+    let result: Result
+    let colour: Flavor.RGB
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        HStack(spacing: 14) {
+            ResultTile(result: result, colour: colour, side: 64)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(result.title)
+                    .font(.system(size: 22, weight: .bold))
+                    .kerning(-0.3)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                if let detail = result.cardDetail(locale: locale) {
+                    Text(detail).font(.system(size: 15)).foregroundStyle(.secondary).lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(12)
+        .background {
+            RoundedRectangle(cornerRadius: 26)
+                .fill(Color.roomCard)
+                .shadow(color: .black.opacity(0.08), radius: 12, y: 6)
+        }
+        .contentShape(.rect)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// One of the other results: its tile, the name, what it is, and a chevron.
+private struct OtherResultRow: View {
+    let result: Result
+    let colour: Flavor.RGB
+    /// Whether this is the list's last row, which draws no hairline.
+    let last: Bool
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                ResultTile(result: result, colour: colour, side: 34)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(result.title)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    if let detail = result.cardDetail(locale: locale) {
+                        Text(detail).font(.system(size: 14)).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                if case .file = result {
+                    EmptyView()
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .padding(.vertical, 9)
+            .padding(.horizontal, 14)
+            if !last { Divider().padding(.leading, 62) }
+        }
+        .contentShape(.rect)
+        .accessibilityElement(children: .combine)
+    }
+}
+#endif
 
 // MARK: - Previews
 
