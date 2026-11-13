@@ -54,6 +54,8 @@ struct CampusMapScreen: View {
     @State private var walk: (event: Int, minutes: Int, from: String)?
     /// The rooms and buildings opened from the search, most recent first, as text.
     @AppStorage("newMap.recents") private var recentsText = ""
+    /// The lesson opened from its card, in the panel.
+    @State private var lessonDetail: AgendaEvent?
     /// The service shown: its places in the panel, nearest first, and its pins on the campus.
     @State private var service: CampusService?
     /// Metres from the starting point to each of the service's places, by place.
@@ -137,10 +139,11 @@ struct CampusMapScreen: View {
                         closeService()
                     } label: {
                         HStack(spacing: 6) {
-                            Image(systemName: service.symbol)
+                            Image(systemName: service.symbol).imageScale(.small)
                             Text(service.title)
                         }
                         .fontWeight(.semibold)
+                        .padding(.horizontal, 6)
                     }
                     .buttonStyle(.glassProminent)
                     .accessibilityLabel(Text("Esci da \(service.title)"))
@@ -334,6 +337,7 @@ struct CampusMapScreen: View {
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(isPresented: $searching) { searchPage }
             .navigationDestination(item: $details) { room in ClassroomDetailView(room: room) }
+            .navigationDestination(item: $lessonDetail) { event in EventDetailView(event: event) }
             .navigationDestination(isPresented: $showsFreeRooms) { FreeRoomsView() }
         }
         .accessibilityElement(children: .contain)
@@ -447,7 +451,7 @@ struct CampusMapScreen: View {
                         Button {
                             openService(item)
                         } label: {
-                            chip(LocalizedStringKey(item.title), symbol: item.symbol, symbolColor: .accentColor, on: false)
+                            serviceChip(item)
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("newmap-service-\(item.rawValue)")
@@ -502,6 +506,20 @@ struct CampusMapScreen: View {
         .contentShape(.capsule)
     }
 
+    /// A service's chip: its Maps-style badge and its name.
+    private func serviceChip(_ item: CampusService) -> some View {
+        HStack(spacing: 6) {
+            ServiceBadge(service: item, size: 22)
+            Text(item.title).foregroundStyle(.primary)
+        }
+        .font(.subheadline.weight(.medium))
+        .padding(.leading, 7)
+        .padding(.trailing, 14)
+        .frame(height: 36)
+        .background(Color.secondary.opacity(0.14), in: .capsule)
+        .contentShape(.capsule)
+    }
+
     /// The modelled buildings with a plan, by number.
     private var modelledBuildings: [String] {
         Trifoglio3DScene.buildings
@@ -537,38 +555,34 @@ struct CampusMapScreen: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            // A room the catalogue does not know (an online lesson, a room outside the
-            // Politecnico) has no way there and no place on the map: no buttons, not empty ones.
-            if room != nil || level != nil {
-                HStack(spacing: 8) {
-                    if let room {
-                        Button {
-                            directions(to: room.buildingCode)
-                        } label: {
-                            Label("Indicazioni", systemImage: "figure.walk")
-                                .frame(maxWidth: .infinity, minHeight: 44)
-                                .foregroundStyle(onTint)
-                                .background(Color.accentColor, in: .capsule)
-                                .contentShape(.capsule)
-                        }
-                        .buttonStyle(.plain)
+            // The way there when the room is known, and always the lesson itself: on the map
+            // when its room is modelled, else its details.
+            HStack(spacing: 8) {
+                if let room {
+                    Button {
+                        directions(to: room.buildingCode)
+                    } label: {
+                        Label("Indicazioni", systemImage: "figure.walk")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .foregroundStyle(.white)
+                            .background(Color.accentColor, in: .capsule)
+                            .contentShape(.capsule)
                     }
-                    if let level {
-                        Button {
-                            Task { await scene.go(to: level) }
-                        } label: {
-                            Text("Mostra aula")
-                                .frame(maxWidth: .infinity, minHeight: 44)
-                                .foregroundStyle(onGrey)
-                                .background(Color(uiColor: .tertiarySystemFill), in: .capsule)
-                                .contentShape(.capsule)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("newmap-show-next")
-                    }
+                    .buttonStyle(.plain)
                 }
-                .font(.callout.weight(.semibold))
+                Button {
+                    if let level { Task { await scene.go(to: level) } } else { lessonDetail = next.event }
+                } label: {
+                    Text(level != nil ? "Mostra aula" : "Dettagli")
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .foregroundStyle(onGrey)
+                        .background(Color(uiColor: .tertiarySystemFill), in: .capsule)
+                        .contentShape(.capsule)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("newmap-show-next")
             }
+            .font(.callout.weight(.semibold))
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
@@ -1067,10 +1081,7 @@ struct CampusMapScreen: View {
     /// One place: what it is, how far, and whether it is open or has room.
     private func placeRow(_ place: CampusPlace, now: Date) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: place.service.symbol)
-                .foregroundStyle(.tint)
-                .frame(width: 32, height: 32)
-                .background(Color.accentColor.opacity(0.12), in: .rect(cornerRadius: 9))
+            ServiceBadge(service: place.service, size: 32)
             VStack(alignment: .leading, spacing: 2) {
                 Text(placeTitle(place)).font(.headline).foregroundStyle(.primary).lineLimit(2)
                 Text(placeRelation(place)).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
@@ -1199,11 +1210,12 @@ struct CampusMapScreen: View {
                                 if let count = counts[csie], count > 1 { Text(count, format: .number) }
                             }
                             .font(.caption.weight(.bold))
-                            .foregroundStyle(onTint)
+                            .foregroundStyle(.white)
                             .padding(.horizontal, 8)
                             .frame(minWidth: 30, minHeight: 30)
-                            .background(Color.accentColor, in: .capsule)
-                            .overlay { Capsule().stroke(.white.opacity(0.9), lineWidth: 2) }
+                            .background(service.color, in: .capsule)
+                            .overlay { Capsule().stroke(.white, lineWidth: 2) }
+                            .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
                         }
                         .buttonStyle(.plain)
                         .fixedSize()
@@ -1251,7 +1263,7 @@ struct CampusMapScreen: View {
         }
         .buttonStyle(.borderedProminent)
         .buttonBorderShape(.capsule)
-        .foregroundStyle(onTint)
+        .foregroundStyle(.white)
         .controlSize(.large)
 
         if let access = services.access[csie] {
@@ -1350,7 +1362,7 @@ struct CampusMapScreen: View {
             }
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.capsule)
-            .foregroundStyle(onTint)
+            .foregroundStyle(.white)
             if scene.interior(csiv) != nil {
                 if case .inside = scene.level {
                     Button("Esci") { Task { await scene.go(to: .room(floor: csip, room: csiv)) } }
@@ -1925,7 +1937,40 @@ enum MapNames {
 #Preview("Nuova mappa") {
     CampusMapScreen().previewInNavigation()
 }
+
+/// A service's mark, as Maps draws its categories: a white glyph in a circle of the category's
+/// colour. In the chips, the list rows, and on the campus.
+struct ServiceBadge: View {
+    let service: CampusService
+    let size: CGFloat
+
+    var body: some View {
+        Image(systemName: service.symbol)
+            .font(.system(size: size * 0.48, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: size, height: size)
+            .background(service.color.gradient, in: .circle)
+            .accessibilityHidden(true)
+    }
+}
+
+extension CampusService {
+    /// The category's colour, as Maps gives it: orange for food and drink, blue for parking,
+    /// red for health. System colours, which adapt to the dark.
+    var color: Color {
+        switch self {
+        case .bar: .orange
+        case .water: .cyan
+        case .toilets: .indigo
+        case .bikes: .mint
+        case .parking: .blue
+        case .defibrillator: .red
+        case .study: .brown
+        }
+    }
+}
 #endif
+
 
 /// What the map's search shows.
 enum MapSearchScope: CaseIterable {
@@ -2037,7 +2082,7 @@ private struct MapDayStrip: View {
 /// The heights the panel sheet stands at: compact on the campus, half-way inside a building,
 /// and the whole screen for the search.
 enum MapDetents {
-    static let compact = PresentationDetent.fraction(0.34)
+    static let compact = PresentationDetent.fraction(0.4)
     static let medium = PresentationDetent.fraction(0.6)
     /// A room's panel, as in the design: the lit room stays in view above it.
     static let room = PresentationDetent.fraction(0.5)
