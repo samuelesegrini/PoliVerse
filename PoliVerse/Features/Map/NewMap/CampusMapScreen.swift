@@ -119,6 +119,8 @@ struct CampusMapScreen: View {
             }
             // The campus, as the title: choosing another moves the free count with it.
             if !nearbyMode, scene.level == .campus, aule.campuses.count > 1 {
+                // A glass of its own, apart from the back button's.
+                ToolbarSpacer(.fixed, placement: .topBarLeading)
                 ToolbarItem(placement: .topBarLeading) { campusMenu }
             }
             // "Libere vicino a te" keeps its filters over the map, as in the design: the way
