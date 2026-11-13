@@ -227,7 +227,7 @@ struct CampusMapScreen: View {
             await aule.load()
             await measureFree()
         }
-        .task(id: nextLesson?.event.id ?? -1) { await measureWalk() }
+        .task(id: lessons?.next?.id ?? -1) { await measureWalk() }
         .task {
             // Once the campus is drawn, straight to the room the map was opened for.
             guard let target else { return }
@@ -429,8 +429,8 @@ struct CampusMapScreen: View {
     /// the campus's services. Pulled up, the modelled buildings.
     @ViewBuilder
     private func campusBody(now: Date) -> some View {
-        if let next = nextLesson {
-            nextClassCard(next, now: now)
+        if let lessons {
+            lessonCard(lessons, now: now)
         }
         freeRow
         // One row, scrolled sideways and running off the trailing edge: the free rooms, then
@@ -531,64 +531,162 @@ struct CampusMapScreen: View {
             }
     }
 
-    /// The lesson in progress or the next today: its room and the walk there, when it starts,
-    /// and the way there.
-    private func nextClassCard(_ next: CurrentClass, now: Date) -> some View {
-        let room = RelevanceOrder.room(named: [next.event.roomAcronym, next.event.room], in: rooms.rooms)
-        let level = room.flatMap { MapTargets.level(of: $0, plans: scene.plans) }
-        let place = room.map { String(localized: "Aula \($0.id)") } ?? next.event.roomLabel
-        let walking = walk.flatMap { $0.event == next.event.id ? String(localized: "\($0.minutes) min a piedi") : nil }
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 12) {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(next.event.title).font(.headline).lineLimit(1)
-                    Text([place, walking].compactMap { $0 }.joined(separator: " · "))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-                Spacer(minLength: 8)
-                VStack(alignment: .trailing, spacing: 1) {
-                    Text(clock(next.event.start)).font(.headline).monospacedDigit()
-                    Text(MapCounts.startsIn(from: now, to: next.event.start, ongoing: next.isOngoing))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
+    /// The lesson card: the one in progress and the one after it, or else the next one.
+    @ViewBuilder
+    private func lessonCard(_ lessons: MapLessonCard.Lessons, now: Date) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let current = lessons.current {
+                currentLesson(current, after: lessons.next, now: now)
+            } else if let next = lessons.next {
+                nextLesson(next, now: now)
             }
-            // The way there when the room is known, and always the lesson itself: on the map
-            // when its room is modelled, else its details.
-            HStack(spacing: 8) {
-                if let room {
-                    Button {
-                        directions(to: room.buildingCode)
-                    } label: {
-                        Label("Indicazioni", systemImage: "figure.walk")
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .foregroundStyle(.white)
-                            .background(Color.accentColor, in: .capsule)
-                            .contentShape(.capsule)
-                    }
-                    .buttonStyle(.plain)
-                }
-                Button {
-                    if let level { Task { await scene.go(to: level) } } else { lessonDetail = next.event }
-                } label: {
-                    Text(level != nil ? "Mostra aula" : "Dettagli")
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .foregroundStyle(onGrey)
-                        .background(Color(uiColor: .tertiarySystemFill), in: .capsule)
-                        .contentShape(.capsule)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("newmap-show-next")
-            }
-            .font(.callout.weight(.semibold))
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
         .background(cardFill, in: innerShape)
         .containerShape(.rect(cornerRadius: 26))
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("newmap-next-lesson")
+    }
+
+    /// In progress: its room, its hours, how long is left on a bar; then the lesson after it,
+    /// with the way there and the details.
+    @ViewBuilder
+    private func currentLesson(_ current: AgendaEvent, after: AgendaEvent?, now: Date) -> some View {
+        let afterRoom = after.flatMap(lessonRoom)
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(current.title).font(.headline).lineLimit(1)
+                Text([String(localized: "In corso"), lessonRoom(current)?.id ?? current.roomLabel]
+                    .compactMap { $0 }.joined(separator: " · "))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            VStack(alignment: .trailing, spacing: 1) {
+                Text("\(clock(current.start))–\(clock(current.end))").font(.headline).monospacedDigit()
+                Text(MapLessonCard.endsIn(from: now, to: current.end))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        Capsule()
+            .fill(Color(uiColor: .tertiarySystemFill))
+            .frame(height: 6)
+            .overlay(alignment: .leading) {
+                GeometryReader { proxy in
+                    Capsule()
+                        .fill(Color.accentColor)
+                        .frame(width: proxy.size.width * MapLessonCard.progress(start: current.start, end: current.end, now: now))
+                }
+            }
+            .accessibilityHidden(true)
+        if let after {
+            Divider()
+            HStack(spacing: 10) {
+                Text("Dopo")
+                    .font(.footnote.weight(.semibold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(.secondary)
+                let title = Text(after.title).fontWeight(.semibold)
+                Text("\(title) · \(afterRoom?.id ?? after.roomLabel ?? "") alle \(clock(after.start))")
+                    .font(.subheadline)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                if let minutes = walkMinutes(to: after) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "figure.walk")
+                        Text("\(minutes) min")
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize()
+                }
+            }
+        }
+        lessonButtons(
+            primary: afterRoom.map { room in (String(localized: "Vai alla \(room.id)"), room.buildingCode) }
+                ?? lessonRoom(current).map { (String(localized: "Indicazioni"), $0.buildingCode) },
+            details: current)
+    }
+
+    /// Next today: its room, building and floor, when it starts, the walk from the lesson
+    /// before, the way there and the details.
+    @ViewBuilder
+    private func nextLesson(_ next: AgendaEvent, now: Date) -> some View {
+        let room = lessonRoom(next)
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(next.title).font(.headline).lineLimit(1)
+                Text(room.map { room in
+                    String(localized: "Aula \(room.id) · \(buildingName(room.buildingCode)), \(MapNames.floor(room.floorCode))")
+                } ?? next.roomLabel ?? "")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            VStack(alignment: .trailing, spacing: 1) {
+                Text(clock(next.start)).font(.headline).monospacedDigit()
+                Text(MapCounts.startsIn(from: now, to: next.start, ongoing: false))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        if let walk, walk.event == next.id {
+            HStack(spacing: 5) {
+                Image(systemName: "figure.walk")
+                Text("\(walk.minutes) min a piedi da \(walk.from)")
+            }
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .padding(.top, -4)
+        }
+        lessonButtons(primary: room.map { (String(localized: "Indicazioni"), $0.buildingCode) }, details: next)
+    }
+
+    /// The way there, filled, and the lesson's details, grey; the details alone when the room
+    /// is not one the catalogue knows.
+    private func lessonButtons(primary: (title: String, csie: String)?, details: AgendaEvent) -> some View {
+        HStack(spacing: 8) {
+            if let primary {
+                Button {
+                    directions(to: primary.csie)
+                } label: {
+                    Label(primary.title, systemImage: "figure.walk")
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .foregroundStyle(.white)
+                        .background(Color.accentColor, in: .capsule)
+                        .contentShape(.capsule)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("newmap-lesson-go")
+            }
+            Button {
+                lessonDetail = details
+            } label: {
+                Text("Dettagli")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .foregroundStyle(onGrey)
+                    .background(Color(uiColor: .tertiarySystemFill), in: .capsule)
+                    .contentShape(.capsule)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("newmap-show-next")
+        }
+        .font(.callout.weight(.semibold))
+    }
+
+    /// A lesson's room in the catalogue.
+    private func lessonRoom(_ event: AgendaEvent) -> Classroom? {
+        RelevanceOrder.room(named: [event.roomAcronym, event.room], in: rooms.rooms)
+    }
+
+    /// The minutes on foot to a lesson, once measured.
+    private func walkMinutes(to event: AgendaEvent) -> Int? {
+        walk.flatMap { $0.event == event.id ? $0.minutes : nil }
     }
 
     // MARK: Campus, free count, next lesson
@@ -734,9 +832,15 @@ struct CampusMapScreen: View {
         if campusHas3D { openNearby() } else { showsFreeRooms = true }
     }
 
-    /// The lesson in progress or the next today.
-    private var nextLesson: CurrentClass? {
-        CurrentClass.forAccessory(from: agenda.events(on: .now), now: .now)
+    /// Today's lessons, for the card.
+    private var todayLessons: [AgendaEvent] {
+        if let demo = MapLessonDemo.events(now: .now) { return demo }
+        return agenda.events(on: .now)
+    }
+
+    /// The lesson in progress and the next one, for the card.
+    private var lessons: MapLessonCard.Lessons? {
+        MapLessonCard.pick(todayLessons, now: .now)
     }
 
     /// Reads how far the free rooms' buildings are from the starting point.
@@ -750,21 +854,17 @@ struct CampusMapScreen: View {
         freeMetres = metres
     }
 
-    /// Reads the walk to the next lesson from the lesson before it today.
+    /// Reads the walk to the next lesson: from the lesson in progress, else from the one
+    /// before it today. Nothing when either room is unknown or both are in one building.
     private func measureWalk() async {
-        guard let next = nextLesson else { walk = nil; return }
-        let before = agenda.events(on: .now)
-            .filter { $0.end <= next.event.start && $0.id != next.event.id }
-            .max { $0.end < $1.end }
-        func room(_ event: AgendaEvent) -> Classroom? {
-            RelevanceOrder.room(named: [event.roomAcronym, event.room], in: rooms.rooms)
-        }
-        guard let before, let start = room(before), let end = room(next.event),
+        let events = todayLessons
+        guard let next = lessons?.next,
+              let before = MapLessonCard.walkStart(to: next, in: events, now: .now),
+              let start = lessonRoom(before), let end = lessonRoom(next),
               start.buildingCode != end.buildingCode,
               let a = await map.coordinate(of: start.buildingCode),
               let b = await map.coordinate(of: end.buildingCode) else { walk = nil; return }
-        let from = start.buildingName ?? start.id
-        walk = (next.event.id, MapWalk.minutes(metres: MapNearby.metres(from: a, to: b)), from)
+        walk = (next.id, MapWalk.minutes(metres: MapNearby.metres(from: a, to: b)), buildingName(start.buildingCode))
     }
 
     // MARK: Free near you
@@ -1236,7 +1336,7 @@ struct CampusMapScreen: View {
                 Text(text)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                    .lineLimit(accessExpanded ? nil : 3)
+                    .lineLimit(accessExpanded ? nil : 2)
             }
             Button(accessExpanded ? "Meno" : "Altro") {
                 withAnimation(.snappy) { accessExpanded.toggle() }
@@ -1936,6 +2036,26 @@ enum MapNames {
 
 #Preview("Nuova mappa") {
     CampusMapScreen().previewInNavigation()
+}
+
+/// Lessons to photograph the card with, from the launch arguments: `-MapLessonDemo inCorso`
+/// for one in progress and one after it, `-MapLessonDemo prossima` for one still to come.
+enum MapLessonDemo {
+    static func events(now: Date) -> [AgendaEvent]? {
+        guard let index = CommandLine.arguments.firstIndex(of: "-MapLessonDemo"),
+              CommandLine.arguments.indices.contains(index + 1) else { return nil }
+        func lesson(_ id: Int, _ title: String, _ from: Double, _ to: Double, _ room: String) -> AgendaEvent {
+            AgendaEvent(id: id, title: title, start: now.addingTimeInterval(from * 60),
+                        end: now.addingTimeInterval(to * 60), kind: .lecture, room: room,
+                        roomAcronym: room, calendarName: nil)
+        }
+        switch CommandLine.arguments[index + 1] {
+        case "inCorso":
+            return [lesson(-11, "Reti di Calcolatori", -80, 40, "B.5.1"), lesson(-12, "Analisi II", 55, 160, "3.1.2")]
+        default:
+            return [lesson(-21, "Fisica", -120, -20, "B.5.1"), lesson(-22, "Analisi II", 25, 145, "3.1.2")]
+        }
+    }
 }
 
 /// A service's mark, as Maps draws its categories: a white glyph in a circle of the category's

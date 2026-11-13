@@ -111,3 +111,62 @@ nonisolated enum MapRecents {
         return (try? JSONDecoder().decode([MapRecent].self, from: data)) ?? []
     }
 }
+
+/// The lesson card at the top of the new map's opening sheet: the lesson in progress with the
+/// one after it, or else the next lesson today.
+nonisolated enum MapLessonCard {
+    /// What the card shows.
+    struct Lessons: Equatable, Sendable {
+        /// The lesson in progress, if any.
+        let current: AgendaEvent?
+        /// The lesson after it today, or the next one today when none is in progress.
+        let next: AgendaEvent?
+    }
+
+    /// Picks the lessons for the card: lectures and exams of today that have not ended.
+    ///
+    /// - Parameters:
+    ///   - events: The agenda.
+    ///   - now: Now.
+    ///   - calendar: The calendar that says what today is.
+    /// - Returns: The lesson in progress and the next to start; `nil` with neither.
+    static func pick(_ events: [AgendaEvent], now: Date,
+                     calendar: Calendar = PoliMiDate.romeCalendar) -> Lessons? {
+        let today = events
+            .filter { [.lecture, .exam].contains($0.kind) && calendar.isDate($0.start, inSameDayAs: now) && $0.end > now }
+            .sorted { $0.start < $1.start }
+        let current = today.first { $0.isOngoing(at: now) }
+        let next = today.first { $0.start > now && $0.id != current?.id }
+        guard current != nil || next != nil else { return nil }
+        return Lessons(current: current, next: next)
+    }
+
+    /// How much of a lesson has gone, 0…1.
+    static func progress(start: Date, end: Date, now: Date) -> Double {
+        let length = end.timeIntervalSince(start)
+        guard length > 0 else { return 0 }
+        return min(max(now.timeIntervalSince(start) / length, 0), 1)
+    }
+
+    /// "termina tra 40 min", "termina tra 1 h 5 min".
+    static func endsIn(from now: Date, to end: Date) -> String {
+        let minutes = max(1, Int((end.timeIntervalSince(now) / 60).rounded(.up)))
+        if minutes < 60 { return String(localized: "termina tra \(minutes) min") }
+        let hours = minutes / 60, rest = minutes % 60
+        return rest == 0 ? String(localized: "termina tra \(hours) h")
+            : String(localized: "termina tra \(hours) h \(rest) min")
+    }
+
+    /// Where the walk to a lesson starts: the lesson in progress, else the last one today that
+    /// ended before it.
+    ///
+    /// - Parameters:
+    ///   - target: The lesson walked to.
+    ///   - events: Today's lessons.
+    ///   - now: Now.
+    static func walkStart(to target: AgendaEvent, in events: [AgendaEvent], now: Date) -> AgendaEvent? {
+        let lessons = events.filter { [.lecture, .exam].contains($0.kind) && $0.id != target.id }
+        if let current = lessons.first(where: { $0.isOngoing(at: now) && $0.end <= target.start }) { return current }
+        return lessons.filter { $0.end <= target.start }.max { $0.end < $1.end }
+    }
+}
