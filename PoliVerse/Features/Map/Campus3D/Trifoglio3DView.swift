@@ -808,6 +808,22 @@ final class Trifoglio3DScene {
     /// The building ``tour()`` goes to.
     static let tourBuilding = "MIA0203"
 
+    /// The campus with its sun, fill light and materials, as ``load(into:)`` sets them, for
+    /// an offscreen renderer rather than a RealityView: Cerca's room card draws a still of a
+    /// building from it (`RoomCampusStill`). Set ``dark`` first for the night palette. The
+    /// walk itself never calls this.
+    ///
+    /// - Returns: The scene's root, or `nil` when the campus could not be read.
+    func loadForStill() async -> Entity? {
+        setLights()
+        sun.look(at: [20, 0, 140], from: [-160, 260, 220], relativeTo: nil)
+        root.addChild(sun)
+        fill.look(at: [20, 0, 140], from: [220, 180, -120], relativeTo: nil)
+        root.addChild(fill)
+        await loadCampus()
+        return campus == nil ? nil : root
+    }
+
     /// Starts reading the tour's building when ``Trifoglio3DTuning/preloadTour`` says so and
     /// the camera is on the campus: the floors are then ready when "Portami all'aula" is tapped,
     /// instead of read during the flight and waited for at the building.

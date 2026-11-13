@@ -1,5 +1,4 @@
 #if DEBUG && os(iOS)
-import MapKit
 import SwiftUI
 
 // The picture at the top of Cerca's room card: the building from above with the room
@@ -31,54 +30,9 @@ enum RoomPhotoState: Equatable {
 
 // MARK: - Map
 
-/// The building seen from above, pitched, with realistic elevation: a still from MapKit,
-/// made once per building and look and kept for the launch.
-///
-/// A still rather than a live `Map`: the card is in a scrolling list and morphs from a
-/// 64-point thumbnail, which a snapshot scales through without a second map to render.
-@MainActor
-enum RoomMapSnapshot {
-    /// The stills made this launch, by building and look.
-    private static var cache: [String: UIImage] = [:]
-    /// Stills being made, so two cards of one building wait for the same one.
-    private static var inFlight: [String: Task<UIImage?, Never>] = [:]
-
-    /// The size the still is made at, in points: wider and taller than any card, so it can
-    /// be cropped to the hero and to the thumbnail from its centre.
-    static let size = CGSize(width: 440, height: 260)
-
-    /// A still of a building.
-    ///
-    /// - Parameters:
-    ///   - coordinate: The building's centre, which ends up in the middle of the still.
-    ///   - key: The building's code.
-    ///   - dark: Whether to draw it in the dark look.
-    /// - Returns: The still, or `nil` when MapKit cannot make one.
-    static func image(at coordinate: CLLocationCoordinate2D, key: String, dark: Bool) async -> UIImage? {
-        let cacheKey = "\(key)-\(dark)"
-        if let image = cache[cacheKey] { return image }
-        if let task = inFlight[cacheKey] { return await task.value }
-        let options = MKMapSnapshotter.Options()
-        options.camera = MKMapCamera(lookingAtCenter: coordinate, fromDistance: 520, pitch: 58, heading: 0)
-        options.size = size
-        options.preferredConfiguration = MKStandardMapConfiguration(elevationStyle: .realistic, emphasisStyle: .default)
-        options.pointOfInterestFilter = .excludingAll
-        options.showsBuildings = true
-        options.traitCollection = UITraitCollection(userInterfaceStyle: dark ? .dark : .light)
-        let task = Task<UIImage?, Never> {
-            let snapshotter = MKMapSnapshotter(options: options)
-            return try? await snapshotter.start().image
-        }
-        inFlight[cacheKey] = task
-        let image = await task.value
-        inFlight[cacheKey] = nil
-        if let image { cache[cacheKey] = image }
-        return image
-    }
-}
-
-/// The building from above, cropped from the centre to whatever frame it is given, with
-/// the room's pin in the middle.
+/// The building in the app's 3D campus (``RoomCampusStill``), cropped from the centre to
+/// whatever frame it is given, with the room's pin in the middle; a plain fill while the
+/// still is being drawn.
 struct RoomMapPicture: View {
     /// The still, or `nil` while it is being made.
     let image: UIImage?

@@ -66,13 +66,13 @@ struct RoomResultCard: View {
         .navigationDestination(isPresented: $showsMap) { RoomDestination(room: room) }
         .navigationDestination(isPresented: $showsDetails) { ClassroomDetailView(room: room) }
         .task(id: room.id) { await load() }
-        .task(id: "\(room.buildingCode)-\(scheme == .dark)") { await loadMap() }
+        .task(id: "\(room.buildingCode)-\(scheme == .dark)") { if onCampusMap { await loadMap() } }
         .task(id: expanded ? room.id : "") {
             guard expanded else { return }
             await loadNearby()
         }
-        .onChange(of: room.id) {
-            mode = .map
+        .onChange(of: room.id, initial: true) {
+            mode = onCampusMap ? .map : .room
             nearby = []
         }
     }
@@ -131,10 +131,14 @@ struct RoomResultCard: View {
     /// room is named after someone, whose name says nothing about where it is.
     @ViewBuilder
     private var thumbnail: some View {
-        if RoomNaming.isName(room.id), let image = photo.image {
+        if (RoomNaming.isName(room.id) || !onCampusMap), let image = photo.image {
             Image(uiImage: image).resizable().scaledToFill()
-        } else {
+        } else if onCampusMap {
             RoomMapPicture(image: mapImage, pinSize: 28)
+        } else if photo == .absent {
+            ClassroomSketch()
+        } else {
+            Color(.secondarySystemFill)
         }
     }
 
@@ -216,7 +220,7 @@ struct RoomResultCard: View {
                 EasedFade(colour: .roomCard).frame(height: 56)
             }
 
-            if photo != .unknown {
+            if onCampusMap, photo != .unknown {
                 RoomHeroSwitch(mode: $mode, roomTitle: photo == .absent ? "Aula" : "Foto")
                     .padding(.top, 12)
                     .transition(.opacity)
@@ -261,8 +265,10 @@ struct RoomResultCard: View {
                 Color(.secondarySystemFill)
                 ProgressView()
             }
-        case .absent, .unknown:
+        case .absent:
             ClassroomSketch()
+        case .unknown:
+            Color(.secondarySystemFill)
         }
     }
 
@@ -392,11 +398,15 @@ struct RoomResultCard: View {
         photo = .photo(id: id, image: prepared)
     }
 
+    /// The building in the app's 3D campus: drawn once per building and look, then read from disk.
     private func loadMap() async {
-        guard let point = await campusMap.coordinate(of: room.buildingCode) else { return }
-        let image = await RoomMapSnapshot.image(at: point, key: room.buildingCode, dark: scheme == .dark)
+        mapImage = nil
+        let image = await RoomCampusStill.image(for: room.buildingCode, dark: scheme == .dark)
         withAnimation(.easeOut(duration: 0.2)) { mapImage = image }
     }
+
+    /// Whether the room's building is in the 3D campus, so the card can show it on the map.
+    private var onCampusMap: Bool { RoomCampusStill.canDraw(room.buildingCode) }
 
     /// Up to three rooms of the same building that are free now, the same floor first.
     private func loadNearby() async {
