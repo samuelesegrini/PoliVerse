@@ -40,15 +40,15 @@ struct RoomMapPicture: View {
     var pinSize: CGFloat = 40
 
     var body: some View {
-        ZStack {
-            Color(.secondarySystemFill)
-            if let image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .transition(.opacity)
+        Color(.secondarySystemFill)
+            .overlay {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .transition(.opacity)
+                }
             }
-        }
         .overlay { RoomPin(size: pinSize) }
         .clipped()
         .accessibilityElement(children: .ignore)

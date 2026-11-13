@@ -751,7 +751,11 @@ struct SearchView: View {
                         }
                     }
                 }
-                .background(Color.roomCard, in: .rect(cornerRadius: 22))
+                .background {
+                    RoundedRectangle(cornerRadius: 22)
+                        .fill(Color.roomCard)
+                        .shadow(color: .black.opacity(0.06), radius: 10, y: 4)
+                }
                 if others.contains(where: { $0.kind == .materials }) {
                     Text("Solo i corsi WeBeep già aperti: cercarli tutti richiederebbe una richiesta per corso.")
                         .font(.caption)

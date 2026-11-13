@@ -68,6 +68,17 @@ nonisolated enum RoomWording {
         }
     }
 
+    /// "1 posto", "96 posti".
+    static func seats(_ count: Int, locale: Locale = .current) -> String {
+        count == 1 ? String(localized: "1 posto", locale: locale) : String(localized: "\(count) posti", locale: locale)
+    }
+
+    /// "1 accessibile", "2 accessibili".
+    static func accessibleSeats(_ count: Int, locale: Locale = .current) -> String {
+        count == 1 ? String(localized: "1 accessibile", locale: locale)
+            : String(localized: "\(count) accessibili", locale: locale)
+    }
+
     /// "Edificio 3, primo piano": the building, then the floor, joined by a comma.
     ///
     /// - Parameter room: The room.
@@ -95,9 +106,9 @@ nonisolated enum RoomWording {
     /// - Parameter room: The room.
     /// - Returns: The facts that are known, joined by commas.
     static func facts(of room: Classroom) -> String {
-        var parts = [String(localized: "\(room.capacity) posti")]
+        var parts = [seats(room.capacity)]
         if let accessible = room.accessibleSeats, accessible > 0 {
-            parts.append(String(localized: "\(accessible) accessibili"))
+            parts.append(accessibleSeats(accessible))
         }
         if let floor = floorOfBuilding(room) { parts.append(floor) }
         return parts.joined(separator: ", ")

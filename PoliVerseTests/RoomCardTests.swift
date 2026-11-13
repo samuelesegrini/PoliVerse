@@ -57,6 +57,14 @@ struct RoomCardTests {
         #expect(!RoomWording.location(of: room).contains("·"))
     }
 
+    @Test("Posti e posti accessibili concordano col numero")
+    func seatCounts() {
+        #expect(RoomWording.seats(1, locale: it) == "1 posto")
+        #expect(RoomWording.seats(96, locale: it) == "96 posti")
+        #expect(RoomWording.accessibleSeats(1, locale: it) == "1 accessibile")
+        #expect(RoomWording.accessibleSeats(2, locale: it) == "2 accessibili")
+    }
+
     // MARK: - Status
 
     @Test("Libera fino alla prossima lezione, con quanto manca e il suo nome")

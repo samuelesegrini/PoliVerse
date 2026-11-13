@@ -91,10 +91,16 @@ struct RoomPhotoViewer: View {
             GlassEffectContainer(spacing: 10) {
                 HStack(spacing: 10) {
                     fillButton
-                    Button(role: .close) { dismiss() }
-                        .buttonStyle(.glass)
-                        .buttonBorderShape(.circle)
-                        .controlSize(.large)
+                    Button(role: .close) { dismiss() } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: 44, height: 44)
+                            .contentShape(.circle)
+                    }
+                    .buttonStyle(.plain)
+                    .glassEffect(.regular.interactive(), in: .circle)
+                    .accessibilityLabel(Text("Chiudi"))
                 }
             }
         }
@@ -107,12 +113,13 @@ struct RoomPhotoViewer: View {
             withAnimation(.snappy) { reset(); fills.toggle() }
         } label: {
             Image(systemName: fills ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
-                .font(.system(size: 15, weight: .semibold))
-                .frame(width: 30, height: 30)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.primary)
+                .frame(width: 44, height: 44)
+                .contentShape(.circle)
         }
-        .buttonStyle(.glass)
-        .buttonBorderShape(.circle)
-        .controlSize(.large)
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .circle)
         .accessibilityLabel(Text(fills ? "Adatta la foto allo schermo" : "Riempi lo schermo con la foto"))
     }
 

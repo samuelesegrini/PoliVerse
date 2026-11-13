@@ -250,10 +250,10 @@ struct RoomResultCard: View {
     private var roomPicture: some View {
         switch photo {
         case .photo(_, let image?):
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFill()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Filled into the hero's own frame: on its own the photo's size would grow the
+            // hero past 193 points and push the switch and the fade out of the clip.
+            Color.clear
+                .overlay { Image(uiImage: image).resizable().scaledToFill() }
                 .clipped()
                 .contentShape(.rect)
                 .onTapGesture { showsPhoto = true }
@@ -310,9 +310,9 @@ struct RoomResultCard: View {
     /// Seats, and the accessible ones where there are any.
     private var facts: some View {
         HStack(spacing: 18) {
-            Label("\(room.capacity) posti", systemImage: "person.2")
+            Label(RoomWording.seats(room.capacity), systemImage: "person.2")
             if let accessible = room.accessibleSeats, accessible > 0 {
-                Label("\(accessible) accessibili", systemImage: "figure.roll")
+                Label(RoomWording.accessibleSeats(accessible), systemImage: "figure.roll")
             }
         }
         .labelStyle(FactLabelStyle())
@@ -348,6 +348,8 @@ struct RoomResultCard: View {
                                 Text("\(Text(item.status).foregroundStyle(Color.freeRoom).fontWeight(.semibold)), \(item.place)")
                                     .font(.system(size: 14))
                                     .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
                             }
                             Spacer(minLength: 8)
                             Image(systemName: "chevron.right")
@@ -365,7 +367,11 @@ struct RoomResultCard: View {
                     }
                 }
             }
-            .background(Color.roomCard, in: .rect(cornerRadius: 22))
+            .background {
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(Color.roomCard)
+                    .shadow(color: .black.opacity(0.06), radius: 10, y: 4)
+            }
         }
     }
 
