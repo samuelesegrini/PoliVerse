@@ -231,9 +231,11 @@ struct RoomResultCard: View {
                     Button { showsPhoto = true } label: {
                         Image(systemName: "arrow.up.left.and.arrow.down.right")
                             .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.primary)
                             .frame(width: 22, height: 22)
                     }
                     .buttonStyle(.glass)
+                    .tint(.primary)
                     .buttonBorderShape(.circle)
                     .accessibilityLabel(Text("Mostra la foto a schermo intero"))
                 }

@@ -84,6 +84,7 @@ struct RoomPhotoViewer: View {
         HStack {
             Text("Aula \(room.id)")
                 .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.primary)
                 .padding(.horizontal, 16)
                 .frame(height: 44)
                 .glassEffect(.regular, in: .capsule)
@@ -119,6 +120,7 @@ struct RoomPhotoViewer: View {
                 .contentShape(.circle)
         }
         .buttonStyle(.plain)
+        .tint(.primary)
         .glassEffect(.regular.interactive(), in: .circle)
         .accessibilityLabel(Text(fills ? "Adatta la foto allo schermo" : "Riempi lo schermo con la foto"))
     }
