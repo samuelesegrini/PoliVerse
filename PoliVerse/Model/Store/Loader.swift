@@ -427,6 +427,18 @@ actor Loader<R: Resource> {
             @concurrent () async throws -> [R.Key: Fetched] in
             let interval = R.signpost.map(PerfSignpost.begin)
             defer { interval.map(PerfSignpost.end) }
+            // A state forced from the launch arguments, for looking at a screen in it.
+            switch DebugLoadState.current {
+            case .loading?:
+                try await Task.sleep(for: .seconds(86_400))
+                throw CancellationError()
+            case .error?:
+                if let failure = DebugLoadState.error.failure { throw failure }
+            case .offline? where !env.isSample:
+                if let failure = DebugLoadState.offline.failure { throw failure }
+            default:
+                break
+            }
             if env.isSample {
                 let samples = keys.compactMap { key in
                     resource.sample(key).map { (key, Fetched(value: $0, arrived: all, failed: [])) }

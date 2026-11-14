@@ -314,7 +314,7 @@ struct OccupancyTimeline: View {
         VStack(alignment: .leading, spacing: 4) {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color.green.opacity(0.25))
+                    Capsule().fill(Color.freeRoom.opacity(0.25))
                     ForEach(bookings) { booking in
                         let frame = slot(booking.interval, in: geometry.size.width)
                         if frame.width > 0 {
@@ -396,7 +396,7 @@ struct RoomDayView: View {
 
                 ForEach(free, id: \.start) { slot in
                     Label(RoomScheduleView.format(slot), systemImage: "checkmark.circle")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(.freeRoom)
                         .font(.subheadline)
                 }
                 ForEach(bookings) { booking in

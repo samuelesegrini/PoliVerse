@@ -39,6 +39,11 @@ struct SearchView: View {
     @Environment(\.colorScheme) private var scheme
     /// The reader's text size: the campus tiles go to one column at accessibility sizes.
     @Environment(\.dynamicTypeSize) private var typeSize
+    /// Opt-in preview features: with the new map, a room's best match leads straight to it.
+    @Environment(FeatureFlags.self) private var flags
+    /// The buildings' coordinates, for walking directions from a best match.
+    @Environment(CampusMapModel.self) private var campusMap
+    @Environment(\.openURL) private var openURL
     @Environment(\.look) private var style
     /// The latest searches, newest first, one per line.
     @AppStorage("searchRecents") private var storedRecents = ""
@@ -317,7 +322,7 @@ struct SearchView: View {
             .autocorrectionDisabled()
             .sheet(item: $selectedEvent) { EventDetailView(event: $0) }
             .sheet(item: $selectedExam) { ExamDetailView(exam: $0) }
-            .navigationDestination(item: $spotlightRoom) { ClassroomDetailView(room: $0) }
+            .navigationDestination(item: $spotlightRoom) { RoomDestination(room: $0) }
             .navigationDestination(item: $spotlightTeacher) { TeacherDetailView(teacher: $0) }
             // A Spotlight hit lands here: the identifier says which screen,
             // and the object is looked up in what is already loaded.
@@ -427,6 +432,7 @@ struct SearchView: View {
                                   colour: colour(for: "map"))
                     }
                     .buttonStyle(.plain)
+                    .closesKeyboardOnTap()
                     NavigationLink { StudyPlanView() } label: {
                         PlaceTile(title: Text("Piano di studi"), detail: Text("Piano e simulazione"),
                                   symbol: "list.bullet.rectangle", colour: colour(for: "list.bullet.rectangle"))
@@ -502,6 +508,7 @@ struct SearchView: View {
                                   colour: colour(for: place.systemImage))
                     }
                     .buttonStyle(.plain)
+                    .closesKeyboardOnTap()
                     .accessibilityIdentifier("place-\(place.id)")
                 }
                 NavigationLink { RoomsView() } label: {
@@ -522,6 +529,7 @@ struct SearchView: View {
                 Label(NewDestination.map.title, systemImage: NewDestination.map.systemImage)
                     .frame(maxWidth: .infinity, minHeight: 32)
             }
+            .closesKeyboardOnTap()
             .accessibilityIdentifier("place-map")
             NavigationLink { RoomsView() } label: {
                 Label("Aule", systemImage: "building.2")
@@ -700,6 +708,7 @@ struct SearchView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     LookHeading("Migliore corrispondenza")
                     resultLink(hit) { TopHitPanel(result: hit, query: trimmed, colour: colour(for: hit.kind.symbol)) }
+                    mapActions(for: hit)
                 }
             }
             ForEach(results, id: \.kind) { group in
@@ -737,6 +746,40 @@ struct SearchView: View {
         }
     }
 
+    /// For a room the new map can show, the two things a student wants from it: see it on the
+    /// map, and the walk there.
+    @ViewBuilder
+    private func mapActions(for hit: Result) -> some View {
+        #if DEBUG && os(iOS)
+        if case .room(let room) = hit, flags.isEnabled(.newMap), CampusMapScreen.canShow(room) {
+            HStack(spacing: 8) {
+                NavigationLink { CampusMapScreen(target: room) } label: {
+                    Text("Mostra sulla mappa")
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .simultaneousGesture(TapGesture().onEnded { remember(trimmed) })
+                .closesKeyboardOnTap()
+                Button {
+                    Task {
+                        guard let point = await campusMap.coordinate(of: room.buildingCode),
+                              let url = URL(string: "http://maps.apple.com/?daddr=\(point.latitude),\(point.longitude)&dirflg=w")
+                        else { return }
+                        openURL(url)
+                    }
+                } label: {
+                    Label("Indicazioni", systemImage: "figure.walk").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
+            .buttonBorderShape(.capsule)
+            .controlSize(.large)
+        }
+        #endif
+    }
+
     /// A result as whatever opens it: a push, a sheet, or nothing for a file.
     @ViewBuilder
     private func resultLink(_ result: Result, @ViewBuilder label: () -> some View) -> some View {
@@ -750,9 +793,10 @@ struct SearchView: View {
                 .buttonStyle(.plain)
                 .simultaneousGesture(TapGesture().onEnded { remember(trimmed) })
         case .room(let room):
-            NavigationLink { ClassroomDetailView(room: room) } label: { label() }
+            NavigationLink { RoomDestination(room: room) } label: { label() }
                 .buttonStyle(.plain)
                 .simultaneousGesture(TapGesture().onEnded { remember(trimmed) })
+                .closesKeyboardOnTap()
         case .exam(let exam):
             Button { remember(trimmed); selectedExam = exam } label: { label() }
                 .buttonStyle(.plain)
@@ -1070,4 +1114,20 @@ private struct ResultRow: View {
 
 #Preview("Cerca") {
     SearchView().previewEnvironment()
+}
+
+private extension View {
+    /// Closes Cerca's keyboard as the link is tapped, before the push. The tab's search field
+    /// keeps the keyboard up when Cerca opens, and the new map, which hides the tab bar, was
+    /// laid out above the keyboard and kept that height after it went down: a white band
+    /// under its panel.
+    func closesKeyboardOnTap() -> some View {
+        #if os(iOS)
+        simultaneousGesture(TapGesture().onEnded {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        })
+        #else
+        self
+        #endif
+    }
 }

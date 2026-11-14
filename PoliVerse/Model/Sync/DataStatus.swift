@@ -107,6 +107,12 @@ final class DataStatus {
     ///    every service fails at once and the login screen already says why.
     /// 5. ``State/refreshing``, then ``State/updated(_:)``, then ``State/idle``.
     var state: State {
+        switch DebugLoadState.current {
+        case .loading?: return .refreshing
+        case .error?: return .failed(failures.isEmpty ? [String(localized: "Politecnico")] : failures)
+        case .offline?: return .offline
+        case nil: break
+        }
         if session.useMockData { return .sample }
         if !network.isOnline { return .offline }
         let silent = pauses.names

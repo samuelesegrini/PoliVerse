@@ -85,7 +85,7 @@ struct RoomsView: View {
                 Section {
                     ForEach(group.rooms) { room in
                         NavigationLink {
-                            ClassroomDetailView(room: room)
+                            RoomDestination(room: room)
                         } label: {
                             RoomRow(room: room)
                         }

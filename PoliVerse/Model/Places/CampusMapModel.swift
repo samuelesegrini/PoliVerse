@@ -260,6 +260,16 @@ final class CampusMapModel {
         freeRooms.visibleBuildings = MapPlacement.buildings(in: region, among: placed)
     }
 
+    /// Where a building is, for walking directions to it: from the coordinates already held,
+    /// or fetched once when there are none yet.
+    ///
+    /// - Parameter buildingCode: The building's `csie`.
+    /// - Returns: The centre of its bounding box, or `nil` when the geojson does not have it.
+    func coordinate(of buildingCode: String) async -> CLLocationCoordinate2D? {
+        if locations.isEmpty { await loadLocations() }
+        return locations[buildingCode]?.coordinate
+    }
+
     /// Fetches the building coordinates from the public geojson and caches them.
     ///
     /// The empty `filter` parameter is required: without it the service answers 400
